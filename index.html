@@ -442,15 +442,15 @@
       .w-key { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
       .w-key i { width: 14px; height: 14px; border: 1px solid var(--ink); border-radius: 2px; display: inline-block; }
 
-      /* ---- coastal mini-games ---- */
-      #wave, #net {
+      /* ---- chapter mini-games (roots created by the engine) ---- */
+      .mg-overlay {
         position: absolute;
         inset: 0;
         display: grid;
         place-items: center;
         background: rgba(23, 18, 14, 0.55);
       }
-      #wave[hidden], #net[hidden] { display: none; }
+      .mg-overlay[hidden] { display: none; }
       .c-track {
         position: relative;
         height: 44px;
@@ -549,8 +549,6 @@
           </div>
           <div id="journal" hidden></div>
           <div id="weave" hidden></div>
-          <div id="wave" hidden></div>
-          <div id="net" hidden></div>
           <div id="fade"></div>
           <div id="letter" hidden></div>
           <div id="title" hidden></div>

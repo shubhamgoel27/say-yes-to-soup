@@ -53,8 +53,9 @@ export const LETTERS: LetterDef[] = [
 /** The first def for `id` whose condition holds; content authoring guarantees
  * an unconditional fallback per id. */
 export function pickLetter(
+  letters: LetterDef[],
   id: string,
   check: (when?: { has?: string[]; not?: string[] }) => boolean,
 ): LetterDef | undefined {
-  return LETTERS.find((l) => l.id === id && check(l.when));
+  return letters.find((l) => l.id === id && check(l.when));
 }

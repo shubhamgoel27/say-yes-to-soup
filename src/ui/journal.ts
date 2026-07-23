@@ -1,6 +1,8 @@
 import type { GameState } from '../engine/state';
 import type { Dir } from '../engine/input';
-import type { JournalEntry, JournalTab } from '../content/schema';
+import type { JournalEntry, JournalTab, TaskDef } from '../content/schema';
+
+export type { TaskDef };
 
 /**
  * Nani's journal: the collection screen. Four tabs, her faded 1974 hand above
@@ -16,8 +18,6 @@ const TABS: { id: JournalTab | 'tasks'; label: string }[] = [
   { id: 'people', label: 'People' },
   { id: 'customs', label: 'Customs' },
 ];
-
-export type TaskDef = { when: { has?: string[]; not?: string[] }; text: string };
 
 export class JournalUI {
   private tab = 0;

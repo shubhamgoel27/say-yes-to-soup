@@ -35,14 +35,18 @@ type Puff = { x: number; y: number; t: number };
 const EMOTE_DUR = 0.8;
 const PUFF_DUR = 0.35;
 
-/** Per-map light: the same world, four different hours of it. */
-export type Mood = 'warm' | 'cool' | 'dusty' | 'interior' | 'garua' | 'glare';
+/** Per-map light. Built-ins below; chapters register their own by name. */
+export type Mood = string;
+
+/** The paintable half of a chapter's MoodSpec (ambient lives in the stage). */
+type MoodPaint = { top: string; mid: string; bottom: string; vig: number; glow?: string; noClouds?: boolean };
 
 export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   private time = 0;
   private tiles = new Tileset();
-  private atmospheres: Record<Mood, HTMLCanvasElement>;
+  private atmospheres: Record<string, HTMLCanvasElement>;
+  private noClouds = new Set<string>(['garua', 'interior']);
   private mood: Mood = 'warm';
   private nightK = 0;
   private emotes: Emote[] = [];
@@ -57,6 +61,14 @@ export class Renderer {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     this.atmospheres = buildAtmospheres();
+  }
+
+  /** Chapters bring their own weather. */
+  registerMoods(specs: Record<string, MoodPaint>) {
+    for (const [name, s] of Object.entries(specs)) {
+      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
+      if (s.noClouds) this.noClouds.add(name);
+    }
   }
 
   setMood(mood: Mood) {
@@ -168,13 +180,14 @@ export class Renderer {
     this.drawEmotes(cam);
     this.drawSmoke(map, cam);
     if (this.mood !== 'interior') {
-      // Under the garúa there is no sky to cast cloud shadows from.
-      if (this.nightK < 0.5 && this.mood !== 'garua') this.drawClouds(map, cam);
+      // Fog-lid moods have no sky to cast cloud shadows from.
+      if (this.nightK < 0.5 && !this.noClouds.has(this.mood)) this.drawClouds(map, cam);
       this.drawLeaves(map, cam);
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
     }
     this.drawMotes(map, cam);
-    ctx.drawImage(this.atmospheres[this.mood], 0, 0);
+    const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
+    if (atm) ctx.drawImage(atm, 0, 0);
   }
 
   /** World-anchored tonal patches, keyed to a coarse grid so they never move. */
@@ -422,37 +435,39 @@ export class Renderer {
 
 const NEVER = () => false;
 
-/** Static light passes, one per mood, at full art resolution. */
-function buildAtmospheres(): Record<Mood, HTMLCanvasElement> {
-  const make = (
-    top: string,
-    mid: string,
-    bottom: string,
-    vigStrength: number,
-    glow?: string,
-  ): HTMLCanvasElement => {
-    const { cv, g } = surface(W, H);
-    const grad = g.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, top);
-    grad.addColorStop(0.5, mid);
-    grad.addColorStop(1, bottom);
-    g.fillStyle = grad;
+/** One static light pass at full art resolution. */
+function makeAtmosphere(
+  top: string,
+  mid: string,
+  bottom: string,
+  vigStrength: number,
+  glow?: string,
+): HTMLCanvasElement {
+  const { cv, g } = surface(W, H);
+  const grad = g.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, top);
+  grad.addColorStop(0.5, mid);
+  grad.addColorStop(1, bottom);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, W, H);
+  if (glow) {
+    const gl = g.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, H * 0.75);
+    gl.addColorStop(0, glow);
+    gl.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gl;
     g.fillRect(0, 0, W, H);
-    if (glow) {
-      const gl = g.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, H * 0.75);
-      gl.addColorStop(0, glow);
-      gl.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = gl;
-      g.fillRect(0, 0, W, H);
-    }
-    const vig = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.05);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, `rgba(16,10,5,${vigStrength})`);
-    g.fillStyle = vig;
-    g.fillRect(0, 0, W, H);
-    return cv;
-  };
+  }
+  const vig = g.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.05);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, `rgba(16,10,5,${vigStrength})`);
+  g.fillStyle = vig;
+  g.fillRect(0, 0, W, H);
+  return cv;
+}
 
+/** The built-in moods every chapter can use without registering anything. */
+function buildAtmospheres(): Record<string, HTMLCanvasElement> {
+  const make = makeAtmosphere;
   return {
     warm: make('rgba(255,214,140,0.09)', 'rgba(255,214,140,0.02)', 'rgba(120,80,140,0.06)', 0.3),
     cool: make('rgba(150,180,215,0.10)', 'rgba(170,190,210,0.03)', 'rgba(90,110,150,0.07)', 0.34),

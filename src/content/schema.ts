@@ -103,3 +103,81 @@ export type RecallManifest = {
   /** [newPageId, oldPageId] pairs stitched in the journal. */
   rhymes: [string, string][];
 };
+
+/** One open thread in the Tasks tab; first matching entry is the HUD chip. */
+export type TaskDef = { when: Cond; text: string };
+
+/** A screen-space light pass tinting a whole map's mood. */
+export type MoodSpec = {
+  top: string;
+  mid: string;
+  bottom: string;
+  /** Vignette strength 0..1. */
+  vig: number;
+  /** Optional warm center glow (interiors). */
+  glow?: string;
+  /** Ambient light-map color for the PixiJS lighting pass. */
+  ambient: number;
+  /** Skip the drifting cloud shadows (fog ceilings have no sky). */
+  noClouds?: boolean;
+};
+
+/** Per-map presentation: which music arrangement and which mood/atmosphere. */
+export type MapMeta = { scene: 'outdoor' | 'interior' | 'road'; mood: string };
+
+/**
+ * A hands-on mini-game panel. The chapter provides a factory; the engine owns
+ * the overlay root, routes input while open, ticks it, and runs `doneNode`
+ * as narration when the panel closes itself via the onDone callback.
+ */
+export type GamePanel = {
+  readonly isOpen: boolean;
+  open(onDone: () => void): void;
+  onDir(dir: 'up' | 'down' | 'left' | 'right'): void;
+  onAction(): void;
+  tick?(dt: number): void;
+};
+
+export type GameDef = {
+  /** One-shot flag that launches the panel when a dialogue ends with it set. */
+  flag: string;
+  /** Narration node run after the panel closes (its effects clear the flag). */
+  doneNode: string;
+  make: (root: HTMLElement, audio: unknown) => GamePanel;
+};
+
+/**
+ * Later chapters may add entries to an EARLIER chapter's villager (the whole
+ * village reacts when you come home). Prepended before the NPC's own chain.
+ */
+export type NpcExtension = { npcId: string; entry: { when?: Cond; node: string }[] };
+
+/**
+ * One self-contained chapter. `src/content/world.ts` is the only file that
+ * knows there is more than one; everything merges from these.
+ */
+export type ChapterDef = {
+  id: string;
+  /** Maps in this chapter, keyed into the world by their own ids. */
+  maps: import('../engine/grid').MapData[];
+  npcs: NpcDef[];
+  npcExtensions?: NpcExtension[];
+  nodes: NodeMap;
+  examines: Record<string, ExamineArm[]>;
+  events: EventNode[];
+  journal: JournalEntry[];
+  tasks: TaskDef[];
+  errands?: ErrandDef[];
+  letters?: LetterDef[];
+  games?: GameDef[];
+  recall: RecallManifest;
+  /** Presentation per map id. */
+  meta: Record<string, MapMeta>;
+  /** Custom moods this chapter introduces, by name used in `meta`. */
+  moods?: Record<string, MoodSpec>;
+  /** Narration fired on first arrival: entering `map` runs `node` once.
+   * `when` gates it (the Return reuses old maps and must wait its turn). */
+  arrival?: { map: string; node: string; flag: string; when?: Cond };
+  /** Chapter-complete beat: when `flag` first appears, show the plate. */
+  completion?: { flag: string; plate: string; toasts: string[] };
+};

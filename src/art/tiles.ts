@@ -1,5 +1,6 @@
 import { ART, PAL, TILE } from '../engine/config';
 import { Rng, blob, cellHash, dot, glowSpot, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
+import { ART_SETS } from './sets';
 
 /**
  * The tileset, smooth-art era. Every texture is authored at 4x (64px tiles)
@@ -13,7 +14,9 @@ const S = TILE * ART; // 64: one tile of art
 /** Ground kinds that count as "water" for bank autotiling. */
 export const WATERY = new Set(['water', 'bridge', 'sea']);
 /** Ground kinds paths visually connect to instead of growing a soft edge. */
-export const PATHY = new Set(['path', 'plaza', 'bridge', 'dirt']);
+export const PATHY = new Set(['path', 'plaza', 'bridge', 'dirt', 'pierdeck']);
+/** House-like sprites: anchored a half-cell left, grounded by a base shadow. */
+const BUILDINGS = new Set(['house', 'casa']);
 
 export type Conn = (dx: number, dy: number) => boolean;
 
@@ -1264,6 +1267,16 @@ export class Tileset {
     this.make('thatchRidge', 2, (g) => {
       vgrad(g, 0, 0, S, S, shade('#a87f48', -0.1), shade('#a87f48', 0.02));
     });
+
+    // ---- chapter art sets: each new biome registers its kinds here ----
+    for (const set of ART_SETS) {
+      set.paint(this.make.bind(this));
+      for (const [k, v] of Object.entries(set.aliases ?? {})) ART_ALIAS[k] = v;
+      for (const k of set.grounded ?? []) GROUNDED_TALL.add(k);
+      for (const k of set.buildings ?? []) BUILDINGS.add(k);
+      for (const k of set.watery ?? []) WATERY.add(k);
+      for (const k of set.pathy ?? []) PATHY.add(k);
+    }
   }
 
   private make(
@@ -1423,7 +1436,7 @@ export class Tileset {
 
   drawTall(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
     const cvs = this.variant(kind, cx, cy);
-    const building = kind === 'house' || kind === 'casa';
+    const building = BUILDINGS.has(kind);
     const ox = building ? ART * 4 : Math.floor((cvs.width - S) / 2);
     const oy = cvs.height - S;
     if (kind === 'tree') {

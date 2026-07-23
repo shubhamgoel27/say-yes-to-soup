@@ -14,6 +14,7 @@ type Events = {
   journal: (id: string) => void;
   errand: (id: string | null) => void;
   letter: (id: string) => void;
+  travel: (dest: { map: string; x: number; y: number; dir: string }) => void;
   changed: () => void;
 };
 
@@ -25,12 +26,14 @@ export class GameState {
   private onJournal: Events['journal'][] = [];
   private onErrand: Events['errand'][] = [];
   private onLetter: Events['letter'][] = [];
+  private onTravel: Events['travel'][] = [];
   private onChanged: Events['changed'][] = [];
 
   on<K extends keyof Events>(ev: K, fn: Events[K]) {
     if (ev === 'journal') this.onJournal.push(fn as Events['journal']);
     else if (ev === 'errand') this.onErrand.push(fn as Events['errand']);
     else if (ev === 'letter') this.onLetter.push(fn as Events['letter']);
+    else if (ev === 'travel') this.onTravel.push(fn as Events['travel']);
     else this.onChanged.push(fn as Events['changed']);
   }
 
@@ -118,6 +121,22 @@ export class GameState {
           this.flags.add(`letter.read.${arg}`);
           for (const fn of this.onLetter) fn(arg);
           break;
+        case 'travel': {
+          // "travel:map,x,y,dir" or just "travel:map" (arrive at the map's
+          // own spawn): a journey taken from inside a conversation. The warp
+          // runs when the dialogue ends.
+          const [mapId, xs, ys, dir] = arg.split(',');
+          if (mapId) {
+            const dest = {
+              map: mapId,
+              x: xs === undefined ? -1 : Number.parseInt(xs, 10) || 0,
+              y: ys === undefined ? -1 : Number.parseInt(ys, 10) || 0,
+              dir: dir ?? '',
+            };
+            for (const fn of this.onTravel) fn(dest);
+          }
+          break;
+        }
         default:
           console.warn(`unknown effect: ${eff}`);
       }
