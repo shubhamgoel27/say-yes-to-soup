@@ -22,6 +22,9 @@ export class GameState {
   private flags = new Set<string>();
   private journal = new Set<string>();
   errand: string | null = null;
+  /** Where the player last stood; updated by the game loop, persisted with
+   * every save so Continue resumes the journey where it paused. */
+  place: { map: string; x: number; y: number; dir: string } | null = null;
 
   private onJournal: Events['journal'][] = [];
   private onErrand: Events['errand'][] = [];
@@ -149,7 +152,12 @@ export class GameState {
     try {
       localStorage.setItem(
         SAVE_KEY,
-        JSON.stringify({ flags: [...this.flags], journal: [...this.journal], errand: this.errand }),
+        JSON.stringify({
+          flags: [...this.flags],
+          journal: [...this.journal],
+          errand: this.errand,
+          place: this.place,
+        }),
       );
     } catch {
       // Private browsing or full storage: play on without persistence.
@@ -161,6 +169,7 @@ export class GameState {
     this.flags.clear();
     this.journal.clear();
     this.errand = null;
+    this.place = null;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch {
@@ -185,10 +194,16 @@ export class GameState {
       }
       const raw = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(OLD_SAVE_KEY);
       if (!raw) return;
-      const data = JSON.parse(raw) as { flags?: string[]; journal?: string[]; errand?: string | null };
+      const data = JSON.parse(raw) as {
+        flags?: string[];
+        journal?: string[];
+        errand?: string | null;
+        place?: { map: string; x: number; y: number; dir: string } | null;
+      };
       for (const f of data.flags ?? []) this.flags.add(f);
       for (const j of data.journal ?? []) this.journal.add(j);
       this.errand = data.errand ?? null;
+      this.place = data.place ?? null;
     } catch {
       // A corrupt save should never brick the game; start fresh.
     }

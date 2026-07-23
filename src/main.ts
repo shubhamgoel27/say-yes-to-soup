@@ -469,6 +469,8 @@ function updateWarp(dt: number) {
         }
         const [px, py] = player.renderPos();
         camera.follow(px, py, map.w, map.h);
+        state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
+        state.save();
         showPlate(map.name, 2600);
         audio.setScene(sceneFor(map.id));
         renderer.setMood(moodFor(map.id));
@@ -662,6 +664,13 @@ let mode: Mode = 'title';
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
+  // Continue resumes the journey where it paused, anywhere in the world.
+  if (!freshStart && !override && state.place && maps[state.place.map]) {
+    map = maps[state.place.map] as TileMap;
+    player.placeAt(state.place.x, state.place.y, state.place.dir as Dir);
+    const [px, py] = player.renderPos();
+    camera.follow(px, py, map.w, map.h);
+  }
   showPlate(map.name);
   audio.setScene(sceneFor(map.id));
   renderer.setMood(moodFor(map.id));
@@ -824,6 +833,9 @@ function update(dt: number) {
 
   const [px, py] = player.renderPos();
   camera.follow(px, py, map.w, map.h);
+
+  // Remember where we stand; persisted alongside the next save.
+  if (mode === 'play') state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
 
   dev.publish({
     mode,

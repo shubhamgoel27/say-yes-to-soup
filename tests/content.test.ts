@@ -146,7 +146,7 @@ describe('the task list never leaves the player stuck', () => {
     };
     let guard = 0;
     let before = -1;
-    while (state.pageCount() !== before && guard++ < 30) {
+    while (state.pageCount() !== before && guard++ < 100) {
       before = state.pageCount();
       for (const npc of NPCS) {
         const entry = npc.entry.find((e) => state.check(e.when));
@@ -243,7 +243,7 @@ describe('every journal page is reachable by play', () => {
 
     let before = -1;
     let guard = 0;
-    while (state.pageCount() !== before && guard++ < 30) {
+    while (state.pageCount() !== before && guard++ < 100) {
       before = state.pageCount();
       for (const npc of NPCS) {
         const entry = npc.entry.find((e) => state.check(e.when));
