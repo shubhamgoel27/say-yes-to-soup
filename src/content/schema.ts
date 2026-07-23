@@ -45,8 +45,12 @@ export type NpcDef = {
  */
 export type EventNode = { when?: Cond; node: string };
 
-/** Examine arms for one tile kind; first matching condition wins. */
-export type ExamineArm = { when?: Cond; node: string };
+/**
+ * Examine arms for one tile kind; first matching condition wins. An arm with
+ * `map` only applies on that map, letting the same prop speak differently in
+ * different chapters (the merged record lists map-tagged arms first).
+ */
+export type ExamineArm = { when?: Cond; node: string; map?: string };
 
 export type JournalTab = 'words' | 'dishes' | 'people' | 'customs';
 

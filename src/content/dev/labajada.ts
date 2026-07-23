@@ -90,5 +90,9 @@ export const LA_BAJADA_MAP: MapData = {
   },
   ground,
   objects,
-  triggers: [{ at: [0, 4], type: 'door', to: 'east-road', spawn: [50, 6], facing: 'left' }],
+  triggers: [
+    { at: [0, 4], type: 'door', to: 'east-road', spawn: [50, 6], facing: 'left' },
+    // The switchbacks keep going; the coast is real now.
+    { at: [20, 16], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
+  ],
 };

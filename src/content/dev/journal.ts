@@ -309,8 +309,8 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
     text: "Nani's letter wants opening at the east gate, past the terraces, where she meant to open it.",
   },
   {
-    when: { has: ['story.complete'] },
-    text: 'The east gate stands open: the pass, Paca, the descent, the first sight of the sea. Past the signboard the road is still being woven (Chapter Two is on its way). The village stays yours: blank pages, the dog, the people.',
+    when: { has: ['story.complete'], not: ['c2.arrived'] },
+    text: 'The east gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
   },
   {
     when: { not: ['met.rosa'] },

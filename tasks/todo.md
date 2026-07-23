@@ -369,18 +369,39 @@ the built world."
 - [x] Verified: 34 tests green (reachability + stuck detector), browser
       playthrough first→pay→rocks→tour, save persists met.pilar + page
 
-## Next (art-spec backlog, then Chapter Two)
+## P15: Elsewhere rename + the recall system + Chapter Two: La Caleta (done)
 
-- [ ] Continuous time-of-day curve + night (lit windows as emissives,
-      fireflies); characters tinted at 60%
-- [ ] Cloud-shadow drift layer; water 4-frame shore lapping
-- [ ] Particles via ParticleContainer (dust, leaves; garúa fog + rain for
-      the caleta); circle-wipe/Bayer transitions; camera lookahead
-- [ ] High-res dialogue portraits (the Eastward move)
-- [ ] **Chapter Two: La Caleta** (bible done!): quincha & adobe village,
-      the muelle, caballitos drying on their tails, the yapa/caserita loop,
-      ceviche-at-noon friction, El Niño fish-list mechanic, San Pedrito;
-      Chasca's album payoff; Pilar's sea-gift payoff (pilar.sea flag)
+- [x] Renamed the game to **Elsewhere** (title screen, package, save key with
+      old-key migration); repo pushed to github.com/shubhamgoel27/elsewhere
+- [x] Recall system, "the world rhymes":
+      knowledge keys (per-choice `when` conds; pages already double as flags),
+      rhyme stitching in the journal (derived, unmissable; Nani margin notes;
+      thread count in header), mail from home (`letter:` effect reuses the
+      letter overlay; Pilar and Aurelio letters react to real flags),
+      keepsakes as flags (Carmen's band, Pilar's sea gift), recall manifests
+      per chapter with ledger tests (consumed keys planted-or-backfilled,
+      c2 locality, rhymes authored both sides, letters resolvable)
+- [x] Chapter Two, La Caleta: 48x34 coastal map + picantería interior, 10 NPCs
+      (Marisol, Don Simón, Nilda, Rafa, Maestro Félix, Doña Petro, Don Wili,
+      Capitana Ríos, Chasca, plus pelicans), 27 journal pages, 15 tasks,
+      three frictions (ceviche o'clock, la mar, buying the yapa), casero loop,
+      lisa errand, tidepool gift for Pilar, harbor-office mail, caballito
+      wave-ride and net-mending minigames, garúa/glare weather moods,
+      coastal art kit (sand, pier, quincha casas, caballitos, boats, nets,
+      reeds, pelicans, emoliente cart), finale: earning working passage
+- [x] Verified: 40 tests green; scripted browser playthrough end to end
+      (arrival to CHAPTER TWO COMPLETE and the Crossing teaser); letters and
+      journal stitching verified in-browser with a Ch1-complete save
+- [x] Chapter Three research bible done: docs/crossing-content-bible.md
+
+## Next (Chapter Three, then art backlog)
+
+- [ ] **Chapter Three: The Crossing** (bible done: docs/crossing-content-bible.md):
+      the cargo ship as a village, galley cooking verb, star deck (Mayu /
+      Amanogawa rhyme with words.chaska), line-crossing ceremony, the mail
+      bundle mid-Pacific (Pilar's reply names the actual creature sent)
+- [ ] El Niño fish-list variation on Marisol's stall (bible mechanic, unbuilt)
+- [ ] Circle-wipe transitions; camera lookahead; high-res dialogue portraits
 - [ ] Deep true secret; sitting verb; ambient critters; accessibility pass
 
 ## Notes

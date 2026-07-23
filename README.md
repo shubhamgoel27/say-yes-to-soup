@@ -25,6 +25,8 @@ Open the printed localhost URL in a modern browser (WebGPU preferred, WebGL fall
 ## What is in the game
 
 - **Chapter One: Ch'aska Pampa**, a fictional Andean highland village. Around 30 journal pages of words, dishes, people, and customs, learned by playing: carry chicha without spilling it, sit at a loom, dig papas, pet the dog well past the recommended dose.
+- **Chapter Two: La Caleta**, a fishing village on the desert coast below. Become somebody's casero, earn the yapa, learn why ceviche is a clock, kneel onto a caballito de totora, mend nets in the evening circle, and earn working passage on a cargo ship.
+- **The world rhymes**: what you learned uphill changes how the coast treats you. The journal stitches threads between rhyming pages (yapa and ayni), Nani's margin notes become legible when you hold both halves, and letters from earlier villages find you at the harbor office, reacting to things you actually did.
 - **Gentle friction**: getting a custom slightly wrong is never punished; the wrong branch is always the warmer scene. Offer coins for soup and you meet ayni instead.
 - **Tasks journal**: every open thread, written like directions from a friend. A test proves no reachable state ever leaves you without one.
 - **A living village**: day/night cycle, window light, fireflies, generative Andean-flavored music, weather moods, one bridge with a self-appointed toll collector (the toll is one interesting fact).

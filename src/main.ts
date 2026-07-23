@@ -15,11 +15,10 @@ import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { TitleScreen } from './ui/title';
 import { WeavePanel } from './ui/weave';
+import { NetPanel, WavePanel } from './ui/coast';
 import { PixiStage, type LightSpec } from './render/stage';
-import { REGION_MAPS } from './content/dev/region';
-import { DIG_SPOTS, EXAMINES, NODES, NPCS } from './content/dev/npcs';
+import { DIG_SPOTS, EXAMINES, JOURNAL, JOURNAL_BY_ID, NODES, NPCS, REGION_MAPS, TASKS } from './content/world';
 import { pickLetter } from './content/letters';
-import { JOURNAL, JOURNAL_BY_ID, TASKS } from './content/dev/journal';
 import type { NpcDef } from './content/schema';
 
 // ---------------------------------------------------------------- boot
@@ -69,13 +68,16 @@ if (override) {
 }
 
 function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
-  return id === 'village' ? 'outdoor' : id === 'east-road' || id === 'la-bajada' ? 'road' : 'interior';
+  if (id === 'village' || id === 'la-caleta') return 'outdoor';
+  return id === 'east-road' || id === 'la-bajada' ? 'road' : 'interior';
 }
 
-function moodFor(id: string): 'warm' | 'cool' | 'dusty' | 'interior' {
+function moodFor(id: string): 'warm' | 'cool' | 'dusty' | 'interior' | 'garua' | 'glare' {
   if (id === 'village') return 'warm';
   if (id === 'east-road') return 'cool';
   if (id === 'la-bajada') return 'dusty';
+  // The coast has two weathers: the garúa lid, and the noon the lid lifts.
+  if (id === 'la-caleta') return dayT > 0.25 && dayT < 0.5 ? 'glare' : 'garua';
   return 'interior';
 }
 
@@ -85,6 +87,8 @@ const AMBIENT: Record<ReturnType<typeof moodFor>, number> = {
   cool: 0xe4ecf6,
   dusty: 0xffeed6,
   interior: 0xbfab96,
+  garua: 0xdfe3e6,
+  glare: 0xffffff,
 };
 
 // ---------------------------------------------------------------- day/night
@@ -149,7 +153,8 @@ for (const [id, tm] of Object.entries(maps)) {
   const wins: [number, number][] = [];
   for (let y = 0; y < tm.h; y++) {
     for (let x = 0; x < tm.w; x++) {
-      if (tm.object(x, y)?.t === 'house') {
+      const bk = tm.object(x, y)?.t;
+      if (bk === 'house' || bk === 'casa') {
         // Window centers within the 88-wide sprite anchored 4px left of the cell.
         wins.push([x * TILE - 4 + 19, y * TILE + 16 - 64 + 42]);
         wins.push([x * TILE - 4 + 71, y * TILE + 16 - 64 + 42]);
@@ -214,6 +219,8 @@ const textbox = new Textbox(
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, state);
 const title = new TitleScreen($('title'), $('letter'));
 const weave = new WeavePanel($('weave'), audio);
+const wave = new WavePanel($('wave'), audio);
+const net = new NetPanel($('net'), audio);
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
@@ -453,6 +460,10 @@ function updateWarp(dt: number) {
       warp = null;
       player.frozen = false;
       fadeEl.style.opacity = '0';
+      // First footfall in a new chapter gets its narration.
+      if (map.id === 'la-caleta' && !state.has('c2.arrived') && !textbox.isOpen) {
+        startNarration('mar.arrive');
+      }
     }
   }
 }
@@ -463,6 +474,7 @@ const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', righ
 
 let talkingTo: Villager | null = null;
 let celebrated = state.has('story.complete');
+let celebrated2 = state.has('c2.complete');
 /** Session pet counter for the dog. Resets on reload; affection does not. */
 let pets = 0;
 /** Sloshes taken while carrying Teófilo's caporal. */
@@ -505,6 +517,22 @@ function endDialogue() {
     startNarration('dig.finish');
     return;
   }
+  if (state.has('wave.start')) {
+    player.frozen = true;
+    wave.open(() => {
+      player.frozen = false;
+      startNarration('mar.rode');
+    });
+    return;
+  }
+  if (state.has('net.start')) {
+    player.frozen = true;
+    net.open(() => {
+      player.frozen = false;
+      startNarration('mar.mended');
+    });
+    return;
+  }
   if (state.has('photo.flash')) {
     state.clearFlag('photo.flash');
     flashT = 0.5;
@@ -520,6 +548,12 @@ function endDialogue() {
     showPlate('CHAPTER ONE · COMPLETE', 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
+  }
+  if (state.has('c2.complete') && !celebrated2) {
+    celebrated2 = true;
+    showPlate('CHAPTER TWO · COMPLETE', 5200);
+    toasts.show('✦ the village vouches for you');
+    toasts.show('the Crossing is being provisioned');
   }
 }
 
@@ -580,7 +614,7 @@ function tryInteract() {
     }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
-  const arm = EXAMINES[kind]?.find((a) => state.check(a.when));
+  const arm = EXAMINES[kind]?.find((a) => (!a.map || a.map === map.id) && state.check(a.when));
   if (arm) startNarration(arm.node);
 }
 
@@ -613,14 +647,17 @@ function update(dt: number) {
   renderer.tick(dt);
   textbox.tick(dt);
   weave.tick(dt);
+  wave.tick(dt);
   audio.tick(dt);
   stage.tick(dt);
 
   // The world turns.
   if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
+  // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
+  renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
-  stage.setZoomTarget(textbox.isOpen || weave.isOpen || journalUI.isOpen ? 1.06 : 1);
+  stage.setZoomTarget(textbox.isOpen || weave.isOpen || wave.isOpen || net.isOpen || journalUI.isOpen ? 1.06 : 1);
   updateWarp(dt);
 
   // Chasca's camera: a quick white blink over the world.
@@ -646,7 +683,7 @@ function update(dt: number) {
   const act = input.takeAction() || dev.takeAction();
   const menuDir = input.takeMenuDir() ?? dev.takeMenuDir();
   const back = input.takeBack();
-  const journalKey = input.takeJournal();
+  const journalKey = input.takeJournal() || dev.takeJournal();
 
   if (mode === 'title') {
     if (menuDir) {
@@ -683,6 +720,12 @@ function update(dt: number) {
   } else if (weave.isOpen) {
     if (menuDir) weave.onDir(menuDir);
     if (act) weave.onAction();
+  } else if (wave.isOpen) {
+    if (menuDir) wave.onDir(menuDir);
+    if (act) wave.onAction();
+  } else if (net.isOpen) {
+    if (menuDir) net.onDir(menuDir);
+    if (act) net.onAction();
   } else if (textbox.isOpen) {
     if (menuDir) {
       textbox.onDir(menuDir);

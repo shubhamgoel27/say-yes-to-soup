@@ -1054,7 +1054,7 @@ export const NODES: NodeMap = {
     lines: [
       { text: 'The board points east, carved by many hands over many years. Distances have been added, argued with, crossed out.' },
       { text: 'Someone has simply written: "MORE." The road agrees, and keeps going to prove it.' },
-      { text: 'Past this sign, the world is still being woven. The caleta by the sea comes next; for now, everything behind you stays open.' },
+      { text: 'Past this sign the road drops to the sea, and to a village that smells of salt and fried things. The caleta is real. Keep walking.' },
     ],
   },
   'ex.sea.first': {

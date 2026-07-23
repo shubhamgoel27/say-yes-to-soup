@@ -38,6 +38,16 @@ export class DevBridge {
     return seq !== '';
   }
 
+  private lastJournalSeq = '';
+  /** Toggles the journal by bumping `dataset.wfJournal`, mirroring the J key. */
+  takeJournal(): boolean {
+    if (!this.enabled) return false;
+    const seq = document.body.dataset.wfJournal ?? '';
+    if (seq === this.lastJournalSeq) return false;
+    this.lastJournalSeq = seq;
+    return seq !== '';
+  }
+
   private lastMenuSeq = '';
   /** Menu direction via `dataset.wfMenu = "down:3"` (direction:counter). */
   takeMenuDir(): Dir | null {

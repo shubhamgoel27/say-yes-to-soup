@@ -2,10 +2,34 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { GameState } from '../src/engine/state';
-import { DIG_SPOTS, EVENT_NODES, EXAMINES, NODES, NPCS } from '../src/content/dev/npcs';
-import { ERRAND_BY_ID, JOURNAL, JOURNAL_BY_ID, TASKS } from '../src/content/dev/journal';
-import { REGION_MAPS } from '../src/content/dev/region';
+import {
+  DIG_SPOTS,
+  ERRAND_BY_ID,
+  EVENT_NODES,
+  EXAMINES,
+  JOURNAL,
+  JOURNAL_BY_ID,
+  NODES,
+  NPCS,
+  RECALLS,
+  REGION_MAPS,
+  TASKS,
+} from '../src/content/world';
+import { LETTERS } from '../src/content/letters';
+import type { ExamineArm } from '../src/content/schema';
 import type { MapData } from '../src/engine/grid';
+
+/**
+ * Examines are map-contextual: an arm tagged with a map only fires there.
+ * Walking helpers visit each context a kind can be seen from.
+ */
+function examineContexts(arms: ExamineArm[]): (string | undefined)[] {
+  const tagged = [...new Set(arms.filter((a) => a.map).map((a) => a.map))];
+  return [...tagged, undefined];
+}
+function armFor(arms: ExamineArm[], ctx: string | undefined, state: GameState): ExamineArm | undefined {
+  return arms.find((a) => (!a.map || a.map === ctx) && state.check(a.when));
+}
 
 /**
  * Content integrity: every reference in the dialogue graph must resolve, and
@@ -31,11 +55,11 @@ describe('dialogue graph', () => {
     }
   });
 
-  it('every examine node exists', () => {
+  it('every examine node exists, with an untagged unconditional fallback', () => {
     for (const [kind, arms] of Object.entries(EXAMINES)) {
       for (const arm of arms) assert.ok(NODES[arm.node], `examine ${kind} -> ${arm.node} missing`);
       const last = arms.at(-1);
-      assert.ok(last && !last.when, `examine ${kind} has no unconditional fallback arm`);
+      assert.ok(last && !last.when && !last.map, `examine ${kind} has no universal fallback arm`);
     }
   });
 
@@ -129,8 +153,10 @@ describe('the task list never leaves the player stuck', () => {
         if (entry) walk(entry.node, new Set());
       }
       for (const arms of Object.values(EXAMINES)) {
-        const arm = arms.find((a) => state.check(a.when));
-        if (arm) walk(arm.node, new Set());
+        for (const ctx of examineContexts(arms)) {
+          const arm = armFor(arms, ctx, state);
+          if (arm) walk(arm.node, new Set());
+        }
       }
       for (const ev of EVENT_NODES) {
         if (state.check(ev.when)) walk(ev.node, new Set());
@@ -224,8 +250,10 @@ describe('every journal page is reachable by play', () => {
         if (entry) walk(entry.node, new Set());
       }
       for (const arms of Object.values(EXAMINES)) {
-        const arm = arms.find((a) => state.check(a.when));
-        if (arm) walk(arm.node, new Set());
+        for (const ctx of examineContexts(arms)) {
+          const arm = armFor(arms, ctx, state);
+          if (arm) walk(arm.node, new Set());
+        }
       }
       for (const ev of EVENT_NODES) {
         if (state.check(ev.when)) walk(ev.node, new Set());
@@ -234,6 +262,14 @@ describe('every journal page is reachable by play', () => {
 
     const missing = JOURNAL.filter((e) => !state.hasPage(e.id)).map((e) => e.id);
     assert.deepEqual(missing, [], `unreachable journal pages: ${missing.join(', ')}`);
+  });
+
+  it('a node whose choices are all gated can still move on', () => {
+    for (const [id, node] of Object.entries(NODES)) {
+      if (!node.choices?.length) continue;
+      const escape = node.choices.some((c) => !c.when) || node.next;
+      assert.ok(escape, `${id}: every choice is gated and there is no next`);
+    }
   });
 
   it('the ayni errand loop opens and closes', () => {
@@ -251,5 +287,70 @@ describe('every journal page is reachable by play', () => {
     const rosa = NPCS.find((n) => n.id === 'rosa');
     const entry = rosa?.entry.find((e) => state.check(e.when));
     assert.equal(entry?.node, 'rosa.even');
+  });
+});
+
+describe('the recall ledger stays honest across chapters', () => {
+  it('every consumed key is planted by an earlier chapter or backfilled locally', () => {
+    const plantedSoFar = new Set<string>();
+    for (const { chapter, recall } of RECALLS) {
+      for (const key of recall.consumes) {
+        const ok = plantedSoFar.has(key) || key in recall.backfills;
+        assert.ok(ok, `${chapter} consumes "${key}" but nothing earlier plants it and no local backfill exists`);
+      }
+      for (const key of recall.plants) plantedSoFar.add(key);
+    }
+  });
+
+  it('every backfill locksmith node exists', () => {
+    for (const { chapter, recall } of RECALLS) {
+      for (const [key, node] of Object.entries(recall.backfills)) {
+        assert.ok(NODES[node], `${chapter} backfill for "${key}" points at missing node ${node}`);
+      }
+    }
+  });
+
+  it('every declared rhyme matches a real, authored journal stitch', () => {
+    for (const { chapter, recall } of RECALLS) {
+      for (const [a, b] of recall.rhymes) {
+        assert.ok(JOURNAL_BY_ID.has(a), `${chapter} rhyme references missing page ${a}`);
+        assert.ok(JOURNAL_BY_ID.has(b), `${chapter} rhyme references missing page ${b}`);
+        const entry = JOURNAL_BY_ID.get(a);
+        assert.equal(entry?.rhyme?.with, b, `${chapter}: page ${a} does not carry the rhyme to ${b}`);
+        assert.ok(entry?.rhyme?.note, `${chapter}: rhyme ${a} -> ${b} has no margin note from Nani`);
+      }
+    }
+    // And the reverse: no authored rhyme goes undeclared.
+    const declared = new Set(RECALLS.flatMap(({ recall }) => recall.rhymes.map(([a, b]) => `${a}->${b}`)));
+    for (const e of JOURNAL) {
+      if (e.rhyme) assert.ok(declared.has(`${e.id}->${e.rhyme.with}`), `undeclared rhyme on page ${e.id}`);
+    }
+  });
+
+  it("chapter-local c2 flags cross the border only through the manifest", async () => {
+    const { TASKS: CH1_TASKS } = await import('../src/content/dev/journal');
+    const caletaPlants = new Set(RECALLS.find((r) => r.chapter === 'la-caleta')?.recall.plants ?? []);
+    const referencesC2 = (cond?: { has?: string[]; not?: string[] }) =>
+      [...(cond?.has ?? []), ...(cond?.not ?? [])].filter((f) => f.startsWith('c2.'));
+    // Chapter One content (tasks are the border crossing that matters today).
+    for (const t of CH1_TASKS) {
+      for (const f of referencesC2(t.when)) {
+        assert.ok(caletaPlants.has(f), `Chapter One task references "${f}" that la-caleta does not plant`);
+      }
+    }
+  });
+
+  it('every letter effect resolves, and every letter id has an unconditional variant', () => {
+    const ids = new Set<string>();
+    for (const node of Object.values(NODES)) {
+      for (const eff of node.effects ?? []) {
+        if (eff.startsWith('letter:')) ids.add(eff.slice(7));
+      }
+    }
+    for (const id of ids) {
+      const variants = LETTERS.filter((l) => l.id === id);
+      assert.ok(variants.length > 0, `letter:${id} has no authored letter`);
+      assert.ok(variants.at(-1) && !variants.at(-1)?.when, `letter ${id} has no unconditional fallback variant`);
+    }
   });
 });

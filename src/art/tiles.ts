@@ -20,7 +20,18 @@ export type Conn = (dx: number, dy: number) => boolean;
 /** Freestanding tall things that sit on a soft cast shadow. */
 const GROUNDED_TALL = new Set([
   'well', 'chichaflag', 'apacheta', 'tent', 'signpost', 'cactus', 'chomba', 'loom', 'stall', 'farol',
+  'caballito', 'boat', 'emoliente', 'harborsign', 'piersign',
 ]);
+
+/**
+ * Kinds that borrow another kind's art. Lets two chapters give the same prop
+ * different words (a signpost in the Andes examines differently than the
+ * harbor counter) without painting it twice.
+ */
+const ART_ALIAS: Record<string, string> = {
+  harborsign: 'signpost',
+  piersign: 'signpost',
+};
 
 export class Tileset {
   private v = new Map<string, HTMLCanvasElement[]>();
@@ -894,6 +905,348 @@ export class Tileset {
       }
     });
 
+    // ------------------------------------------------------------ the coast
+
+    this.make('sand', 5, (g, r) => {
+      groundBase(g, r, shade('#d9c298', 0.02));
+      for (let i = 0; i < 6; i++) {
+        dot(g, r.int(S), r.int(S), 1.4 + r.next(), shade('#d9c298', r.chance(0.5) ? -0.09 : 0.1));
+      }
+      // A faint wind ripple.
+      if (r.chance(0.6)) {
+        g.strokeStyle = 'rgba(150,125,85,0.16)';
+        g.lineWidth = 2;
+        const yy = 10 + r.int(S - 20);
+        g.beginPath();
+        g.moveTo(0, yy);
+        g.quadraticCurveTo(S / 2, yy + 5, S, yy);
+        g.stroke();
+      }
+      if (r.chance(0.16)) dot(g, r.int(S), r.int(S), 2.2, '#f0e7d2'); // a shell
+    });
+
+    this.make('sandWet', 3, (g, r) => {
+      groundBase(g, r, shade('#b6a077', -0.02));
+      for (let i = 0; i < 3; i++) {
+        const yy = r.int(S);
+        vgrad(g, 0, yy, S, 4, 'rgba(230,225,205,0.22)', 'rgba(0,0,0,0)');
+      }
+      if (r.chance(0.3)) oval(g, r.int(S), r.int(S), 5, 2, 'rgba(90,110,115,0.18)');
+    });
+
+    this.make('pierdeck', 3, (g, r) => {
+      const wood = shade('#8a6a44', (r.next() - 0.5) * 0.05);
+      rect(g, 0, 0, S, S, wood);
+      for (const py of [0, 22, 44]) {
+        rr(g, 1, py + 1, S - 2, 19, 3, shade(wood, (r.next() - 0.5) * 0.1));
+        vgrad(g, 1, py + 1, S - 2, 5, 'rgba(255,240,210,0.14)', 'rgba(0,0,0,0)');
+        g.strokeStyle = 'rgba(40,28,16,0.4)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(0, py);
+        g.lineTo(S, py);
+        g.stroke();
+        dot(g, 6 + r.int(10), py + 10, 1.6, 'rgba(40,28,16,0.5)');
+        dot(g, S - 8 - r.int(10), py + 10, 1.6, 'rgba(40,28,16,0.5)');
+      }
+    });
+
+    this.make('net', 2, (g, r) => {
+      softShadow(g, 32, 46, 26, 9, 0.14);
+      const c = r.chance(0.5) ? 'rgba(60,110,110,0.75)' : 'rgba(90,100,70,0.75)';
+      g.strokeStyle = c;
+      g.lineWidth = 1.6;
+      // A draped diamond mesh, sagging toward the middle.
+      for (let i = -4; i < 10; i++) {
+        g.beginPath();
+        g.moveTo(i * 10, 12);
+        g.quadraticCurveTo(32, 22 + (i % 3) * 2, i * 10 + 26, 52);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(i * 10 + 26, 12);
+        g.quadraticCurveTo(32, 22 + (i % 2) * 3, i * 10, 52);
+        g.stroke();
+      }
+      for (let i = 0; i < 4; i++) dot(g, 10 + i * 14, 14 + (i % 2) * 4, 3, '#c9a35f'); // corks
+    });
+
+    this.make('crate', 2, (g, r) => {
+      softShadow(g, 32, 52, 22, 6, 0.18);
+      rr(g, 12, 18, 40, 34, 3, '#9b7a50');
+      vgrad(g, 12, 18, 40, 8, 'rgba(255,240,210,0.2)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(50,36,20,0.45)';
+      g.lineWidth = 2;
+      g.strokeRect(14, 20, 36, 30);
+      g.beginPath(); g.moveTo(14, 34); g.lineTo(50, 34); g.stroke();
+      // Silver tails over the rim.
+      for (let i = 0; i < 3; i++) {
+        oval(g, 20 + i * 11, 18, 4.5, 2.6, '#b9c4c9');
+        oval(g, 24 + i * 11, 16.5, 2.6, 1.8, shade('#b9c4c9', -0.15));
+      }
+      void r;
+    });
+
+    this.make('pelican', 2, (g, r) => {
+      softShadow(g, 32, 52, 16, 5, 0.16);
+      const grey = r.chance(0.5) ? '#c9c4bb' : '#bdb6ac';
+      // Body and folded wing.
+      oval(g, 32, 40, 13, 9, grey);
+      oval(g, 35, 38, 10, 6.5, shade(grey, -0.08));
+      // Neck and head.
+      g.strokeStyle = '#e6e0d4';
+      g.lineWidth = 7;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(24, 38);
+      g.quadraticCurveTo(18, 28, 22, 20);
+      g.stroke();
+      dot(g, 23, 18, 5.5, '#e6e0d4');
+      // The famous beak, with pouch.
+      g.fillStyle = '#d09a58';
+      g.beginPath();
+      g.moveTo(26, 16);
+      g.lineTo(44, 20);
+      g.quadraticCurveTo(36, 27, 26, 21);
+      g.closePath();
+      g.fill();
+      dot(g, 25.5, 16.5, 1.5, '#2b2118');
+      // Feet.
+      g.strokeStyle = '#8a6238';
+      g.lineWidth = 2.6;
+      g.beginPath();
+      g.moveTo(28, 48); g.lineTo(28, 53); g.moveTo(36, 48); g.lineTo(36, 53);
+      g.stroke();
+    });
+
+    this.make('reeds', 3, (g, r) => {
+      // A totora clump: tall soft-green blades from one root.
+      for (let i = 0; i < 9; i++) {
+        const x0 = 20 + r.int(24);
+        const lean = (r.next() - 0.5) * 18;
+        g.strokeStyle = shade(i % 2 ? '#6f9b62' : '#5c8752', (r.next() - 0.5) * 0.1);
+        g.lineWidth = 2.6;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(x0, 58);
+        g.quadraticCurveTo(x0 + lean * 0.4, 34, x0 + lean, 6 + r.int(10));
+        g.stroke();
+      }
+      oval(g, 32, 58, 12, 4, 'rgba(50,70,45,0.35)');
+    });
+
+    this.make('caballito', 2, (g, r) => {
+      // The reed horse, stood upright on its tail to drain, prow curling high.
+      softShadow(g, 32, 90, 16, 5, 0.2);
+      const reed = shade('#d0b276', (r.next() - 0.5) * 0.08);
+      const bundle = (x: number, w: number) => {
+        g.beginPath();
+        g.moveTo(x, 88);
+        g.quadraticCurveTo(x - 4, 40, x + w * 0.2, 14);
+        g.quadraticCurveTo(x + w * 0.75, 2, x + w, 10);
+        g.lineTo(x + w, 88);
+        g.closePath();
+        const grad = g.createLinearGradient(x, 0, x + w, 0);
+        grad.addColorStop(0, shade(reed, 0.1));
+        grad.addColorStop(1, shade(reed, -0.12));
+        g.fillStyle = grad;
+        g.fill();
+      };
+      bundle(20, 12);
+      bundle(33, 12);
+      // Reed strokes.
+      g.strokeStyle = 'rgba(120,90,45,0.3)';
+      g.lineWidth = 1.4;
+      for (let i = 0; i < 8; i++) {
+        g.beginPath();
+        g.moveTo(23 + i * 2.6, 84);
+        g.quadraticCurveTo(22 + i * 2.6, 40, 26 + i * 2.4, 16);
+        g.stroke();
+      }
+      // Bindings.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 3;
+      for (const by of [26, 46, 66]) {
+        g.beginPath();
+        g.moveTo(18, by);
+        g.lineTo(46, by - 3);
+        g.stroke();
+      }
+    }, 64, 96);
+
+    this.make('boat', 2, (g, r) => {
+      // A chalana beached on its belly, oars shipped.
+      softShadow(g, 64, 82, 44, 9, 0.22);
+      const hull = r.chance(0.5) ? '#4e7d8a' : '#a0563c';
+      g.beginPath();
+      g.moveTo(14, 58);
+      g.quadraticCurveTo(64, 44, 114, 58);
+      g.quadraticCurveTo(104, 82, 64, 84);
+      g.quadraticCurveTo(24, 82, 14, 58);
+      g.closePath();
+      const grad = g.createLinearGradient(0, 44, 0, 84);
+      grad.addColorStop(0, shade(hull, 0.14));
+      grad.addColorStop(1, shade(hull, -0.16));
+      g.fillStyle = grad;
+      g.fill();
+      // Gunwale and strakes.
+      g.strokeStyle = shade(hull, -0.3);
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(14, 58);
+      g.quadraticCurveTo(64, 44, 114, 58);
+      g.stroke();
+      g.lineWidth = 1.8;
+      for (const off of [8, 16]) {
+        g.beginPath();
+        g.moveTo(20, 58 + off);
+        g.quadraticCurveTo(64, 48 + off, 108, 58 + off);
+        g.stroke();
+      }
+      // Peeling name plate.
+      rr(g, 50, 62, 28, 9, 3, shade('#e8dcc4', -0.05));
+      g.strokeStyle = 'rgba(60,40,25,0.55)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(54, 66.5); g.lineTo(74, 66.5);
+      g.stroke();
+    }, 128, 96);
+
+    this.make('emoliente', 1, (g) => {
+      // The emolientero's cart: glass jars of amber and violet, a small awning.
+      softShadow(g, 32, 90, 26, 6, 0.2);
+      // Wheels.
+      dot(g, 16, 82, 9, '#3d2f20');
+      dot(g, 16, 82, 3.4, '#8a6a44');
+      dot(g, 48, 82, 9, '#3d2f20');
+      dot(g, 48, 82, 3.4, '#8a6a44');
+      // Cart body.
+      rr(g, 6, 52, 52, 26, 4, '#3f7fb0');
+      vgrad(g, 6, 52, 52, 8, 'rgba(255,255,255,0.22)', 'rgba(0,0,0,0)');
+      // Jars on the counter.
+      for (let i = 0; i < 4; i++) {
+        const jx = 12 + i * 13;
+        const juice = ['#c98a2e', '#8a4a7d', '#b5573a', '#7d9b3f'][i] ?? '#c98a2e';
+        rr(g, jx, 36, 10, 17, 3, 'rgba(220,235,240,0.6)');
+        rr(g, jx + 1.5, 40, 7, 12, 2.5, juice);
+        rr(g, jx + 1, 34, 8, 3.5, 1.5, '#c9c4bb');
+      }
+      // Little awning.
+      rr(g, 2, 22, 60, 8, 4, PAL.terracotta);
+      g.fillStyle = PAL.cream;
+      g.fillRect(14, 22, 12, 8);
+      g.fillRect(38, 22, 12, 8);
+      rr(g, 4, 28, 2.6, 26, 1.3, '#7a5636');
+      rr(g, 57, 28, 2.6, 26, 1.3, '#7a5636');
+    }, 64, 96);
+
+    this.make('casa', 4, (g, r) => {
+      // 352x256: a flat-roofed coastal house, quincha and adobe under paint
+      // the salt keeps trying to take back.
+      const W = 352;
+      const coats = ['#6fa5a0', '#c98a7a', '#c9a35f', '#8ba3b5'];
+      const paint = shade(coats[r.int(4)] ?? '#6fa5a0', (r.next() - 0.5) * 0.06);
+      const wallTop = 96;
+      const wallBot = 252;
+
+      // Parapet and the flat roofline first, wall in front.
+      vgrad(g, 16, wallTop, W - 32, wallBot - wallTop, shade(paint, 0.08), shade(paint, -0.08));
+      // Salt-fade: pale vertical streaks washing down from the roofline.
+      for (let i = 0; i < 7; i++) {
+        const fx = 24 + r.int(W - 60);
+        vgrad(g, fx, wallTop, 12 + r.int(16), 60 + r.int(60), 'rgba(240,236,222,0.16)', 'rgba(0,0,0,0)');
+      }
+      // A patch where the paint lost and the quincha cane shows through.
+      if (r.chance(0.8)) {
+        const px2 = r.chance(0.5) ? 34 : W - 110;
+        const py2 = wallBot - 60 - r.int(50);
+        rr(g, px2, py2, 66, 40, 8, shade(PAL.earth, 0.05));
+        g.strokeStyle = 'rgba(110,80,50,0.55)';
+        g.lineWidth = 2;
+        for (let k = 0; k < 6; k++) {
+          g.beginPath();
+          g.moveTo(px2 + 6 + k * 10, py2 + 4);
+          g.lineTo(px2 + 6 + k * 10, py2 + 36);
+          g.stroke();
+        }
+        g.beginPath();
+        g.moveTo(px2 + 4, py2 + 20);
+        g.lineTo(px2 + 62, py2 + 20);
+        g.stroke();
+      }
+      // Base stain.
+      vgrad(g, 16, wallBot - 16, W - 32, 16, 'rgba(0,0,0,0)', 'rgba(50,44,34,0.3)');
+      // Side shade.
+      g.save();
+      g.globalAlpha = 0.16;
+      g.fillStyle = '#1c1712';
+      g.fillRect(W - 26, wallTop, 10, wallBot - wallTop);
+      g.restore();
+
+      // Door, same footprint as the highland house so village grids match.
+      rr(g, 150, wallBot - 96, 66, 96, 6, shade(paint, -0.32));
+      rr(g, 156, wallBot - 88, 54, 88, 5, '#4a5d63');
+      vgrad(g, 156, wallBot - 88, 54, 22, 'rgba(220,240,245,0.16)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(25,32,34,0.5)';
+      g.lineWidth = 2.4;
+      for (const lx of [174, 192]) {
+        g.beginPath(); g.moveTo(lx, wallBot - 84); g.lineTo(lx, wallBot - 6); g.stroke();
+      }
+      dot(g, 204, wallBot - 46, 3, PAL.cream);
+      rr(g, 146, wallBot - 102, 74, 10, 5, shade(paint, -0.22));
+
+      // Windows with weathered wooden shutters pinned open.
+      for (const wx of [52, 252]) {
+        rr(g, wx, wallTop + 34, 48, 44, 6, shade(paint, -0.32));
+        rr(g, wx + 4, wallTop + 38, 40, 36, 5, '#2c3e57');
+        vgrad(g, wx + 4, wallTop + 38, 40, 14, 'rgba(200,225,240,0.4)', 'rgba(0,0,0,0)');
+        g.strokeStyle = '#5c4630';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(wx + 24, wallTop + 38); g.lineTo(wx + 24, wallTop + 74);
+        g.stroke();
+        for (const shx of [wx - 14, wx + 48]) {
+          rr(g, shx, wallTop + 36, 14, 44, 3, shade('#5f8781', (r.next() - 0.5) * 0.1));
+          g.strokeStyle = 'rgba(30,42,40,0.5)';
+          g.lineWidth = 1.6;
+          for (let k = 1; k < 4; k++) {
+            g.beginPath();
+            g.moveTo(shx + 2, wallTop + 36 + k * 11);
+            g.lineTo(shx + 12, wallTop + 36 + k * 11);
+            g.stroke();
+          }
+        }
+        rr(g, wx - 3, wallTop + 78, 54, 8, 4, shade(paint, 0.14));
+      }
+
+      // Parapet band and the flat roof edge.
+      rr(g, 10, wallTop - 18, W - 20, 26, 6, shade(paint, -0.14));
+      vgrad(g, 10, wallTop - 18, W - 20, 8, 'rgba(255,250,235,0.25)', 'rgba(0,0,0,0)');
+      vgrad(g, 16, wallTop + 8, W - 32, 14, 'rgba(25,20,14,0.35)', 'rgba(0,0,0,0)');
+      // The rebar that means "second floor, someday."
+      for (const bx of [60, 96, 260, 296]) {
+        g.strokeStyle = '#7d6552';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(bx, wallTop - 18);
+        g.lineTo(bx, wallTop - 44 - (bx % 5) * 2);
+        g.stroke();
+        dot(g, bx, wallTop - 46 - (bx % 5) * 2, 2.2, '#8f7862');
+      }
+      // Sometimes a laundry line between two rebar stems.
+      if (r.chance(0.55)) {
+        g.strokeStyle = 'rgba(230,225,210,0.7)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(96, wallTop - 40);
+        g.quadraticCurveTo(178, wallTop - 28, 260, wallTop - 42);
+        g.stroke();
+        const wash = ['#c98a7a', '#7f9fb5', PAL.cream];
+        for (let k = 0; k < 3; k++) {
+          rr(g, 120 + k * 46, wallTop - 36 + (k % 2) * 3, 22, 18, 3, wash[k] ?? PAL.cream);
+        }
+      }
+    }, 352, 256);
+
     // Legacy kinds some content still references; simple smooth stand-ins.
     this.make('adobe', 2, (g, r) => {
       vgrad(g, 0, 0, S, S, shade(PAL.adobe, 0.12), shade(PAL.adobe, -0.02));
@@ -930,7 +1283,7 @@ export class Tileset {
   }
 
   private variant(kind: string, cx: number, cy: number): HTMLCanvasElement {
-    const list = this.v.get(kind);
+    const list = this.v.get(ART_ALIAS[kind] ?? kind);
     if (!list || list.length === 0) return this.fallback();
     const pick = list[Math.floor(cellHash(cx, cy, 5) * list.length)];
     return pick ?? this.fallback();
@@ -1070,11 +1423,12 @@ export class Tileset {
 
   drawTall(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
     const cvs = this.variant(kind, cx, cy);
-    const ox = kind === 'house' ? ART * 4 : Math.floor((cvs.width - S) / 2);
+    const building = kind === 'house' || kind === 'casa';
+    const ox = building ? ART * 4 : Math.floor((cvs.width - S) / 2);
     const oy = cvs.height - S;
     if (kind === 'tree') {
       softShadow(g, sx + S / 2, sy + S - 8, 40, 12, 0.24);
-    } else if (kind === 'house') {
+    } else if (building) {
       // The building grounds itself with a long soft base shadow.
       const grad = g.createLinearGradient(0, sy + S, 0, sy + S + 18);
       grad.addColorStop(0, 'rgba(26,18,12,0.3)');

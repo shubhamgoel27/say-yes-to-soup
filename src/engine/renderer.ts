@@ -36,7 +36,7 @@ const EMOTE_DUR = 0.8;
 const PUFF_DUR = 0.35;
 
 /** Per-map light: the same world, four different hours of it. */
-export type Mood = 'warm' | 'cool' | 'dusty' | 'interior';
+export type Mood = 'warm' | 'cool' | 'dusty' | 'interior' | 'garua' | 'glare';
 
 export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
@@ -168,7 +168,8 @@ export class Renderer {
     this.drawEmotes(cam);
     this.drawSmoke(map, cam);
     if (this.mood !== 'interior') {
-      if (this.nightK < 0.5) this.drawClouds(map, cam);
+      // Under the garúa there is no sky to cast cloud shadows from.
+      if (this.nightK < 0.5 && this.mood !== 'garua') this.drawClouds(map, cam);
       this.drawLeaves(map, cam);
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
     }
@@ -457,5 +458,10 @@ function buildAtmospheres(): Record<Mood, HTMLCanvasElement> {
     cool: make('rgba(150,180,215,0.10)', 'rgba(170,190,210,0.03)', 'rgba(90,110,150,0.07)', 0.34),
     dusty: make('rgba(255,196,120,0.13)', 'rgba(255,220,160,0.05)', 'rgba(200,140,90,0.07)', 0.26),
     interior: make('rgba(40,24,12,0.10)', 'rgba(0,0,0,0)', 'rgba(30,18,10,0.12)', 0.46, 'rgba(255,170,80,0.10)'),
+    // Winter coast: a pearl-grey fog ceiling, sea and sky one color. Flat
+    // light, soft vignette, no gold anywhere.
+    garua: make('rgba(202,208,214,0.20)', 'rgba(192,199,205,0.11)', 'rgba(168,180,190,0.10)', 0.2),
+    // Summer coast: hard blue glare off the water, black noon shadows.
+    glare: make('rgba(165,215,250,0.10)', 'rgba(255,250,235,0.05)', 'rgba(255,238,200,0.06)', 0.2),
   };
 }
