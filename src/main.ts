@@ -1,0 +1,822 @@
+import { Actor } from './engine/actor';
+import { AudioBus } from './engine/audio';
+import { Camera } from './engine/camera';
+import { STEP_DUR, TILE, TURN_DELAY } from './engine/config';
+import { DevBridge } from './engine/devbridge';
+import { TileMap, type TriggerDef } from './engine/grid';
+import { Input, type Dir } from './engine/input';
+import { startLoop } from './engine/loop';
+import { Renderer, type Sprite } from './engine/renderer';
+import { GameState } from './engine/state';
+import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
+import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
+import { Textbox } from './ui/textbox';
+import { JournalUI } from './ui/journal';
+import { Toasts } from './ui/toast';
+import { TitleScreen } from './ui/title';
+import { WeavePanel } from './ui/weave';
+import { PixiStage, type LightSpec } from './render/stage';
+import { REGION_MAPS } from './content/dev/region';
+import { DIG_SPOTS, EXAMINES, NODES, NPCS } from './content/dev/npcs';
+import { pickLetter } from './content/letters';
+import { JOURNAL, JOURNAL_BY_ID, TASKS } from './content/dev/journal';
+import type { NpcDef } from './content/schema';
+
+// ---------------------------------------------------------------- boot
+
+const $ = (id: string) => {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`missing #${id}`);
+  return el;
+};
+
+// The Canvas2D composer now paints into an offscreen buffer; PixiJS presents
+// it with lighting, bloom, and shimmer-free zoom on top.
+const worldCanvas = $('game') as HTMLCanvasElement;
+const renderer = new Renderer(worldCanvas);
+const stage = await PixiStage.create(worldCanvas, $('frame'));
+const debugEl = $('debug') as HTMLPreElement;
+const input = new Input();
+input.attach();
+const dev = new DevBridge();
+const audio = new AudioBus();
+
+// Browsers require a user gesture before audio; catch the first one.
+window.addEventListener('keydown', () => audio.ensure(), { once: true });
+window.addEventListener('pointerdown', () => audio.ensure(), { once: true });
+
+const state = new GameState();
+state.load();
+
+const maps: Record<string, TileMap> = Object.fromEntries(
+  Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)]),
+);
+const startMap = maps['village'];
+if (!startMap) throw new Error('village map missing');
+
+let map: TileMap = startMap;
+const camera = new Camera();
+const player = new Actor(map.spawn[0], map.spawn[1], map.spawnFacing);
+
+const override = dev.spawnOverride();
+if (override) {
+  if (override.map && maps[override.map]) {
+    map = maps[override.map] as TileMap;
+    player.placeAt(map.spawn[0], map.spawn[1], map.spawnFacing);
+  }
+  if (override.at) player.placeAt(override.at[0], override.at[1], override.dir);
+  else if (override.dir) player.face(override.dir);
+}
+
+function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
+  return id === 'village' ? 'outdoor' : id === 'east-road' || id === 'la-bajada' ? 'road' : 'interior';
+}
+
+function moodFor(id: string): 'warm' | 'cool' | 'dusty' | 'interior' {
+  if (id === 'village') return 'warm';
+  if (id === 'east-road') return 'cool';
+  if (id === 'la-bajada') return 'dusty';
+  return 'interior';
+}
+
+/** Ambient light per mood; interiors run dark so the fires carry the room. */
+const AMBIENT: Record<ReturnType<typeof moodFor>, number> = {
+  warm: 0xfdf6ea,
+  cool: 0xe4ecf6,
+  dusty: 0xffeed6,
+  interior: 0xbfab96,
+};
+
+// ---------------------------------------------------------------- day/night
+
+/**
+ * The world clock: one full day in five minutes, starting mid-morning.
+ * The ambient curve grades the whole scene; windows wake up at dusk.
+ * `?tod=0.7` pins the clock for development.
+ */
+const DAY_LEN = 300;
+const todOverride = dev.enabled
+  ? Number.parseFloat(new URLSearchParams(location.search).get('tod') ?? 'NaN')
+  : Number.NaN;
+let dayT = Number.isFinite(todOverride) ? todOverride : 0.18;
+
+/** Keyframed RGB multipliers over the day: dawn gold, noon clear, dusk ember, night blue. */
+const DAY_KEYS: [number, [number, number, number]][] = [
+  [0.0, [1.04, 0.88, 0.74]],
+  [0.1, [1.0, 1.0, 1.0]],
+  [0.45, [1.01, 0.98, 0.93]],
+  [0.55, [1.05, 0.8, 0.68]],
+  [0.63, [0.55, 0.58, 0.8]],
+  [0.9, [0.48, 0.53, 0.78]],
+  [0.97, [0.75, 0.68, 0.72]],
+  [1.0, [1.04, 0.88, 0.74]],
+];
+
+function dayCurve(t: number): [number, number, number] {
+  for (let i = 0; i < DAY_KEYS.length - 1; i++) {
+    const a = DAY_KEYS[i];
+    const b = DAY_KEYS[i + 1];
+    if (!a || !b || t > b[0]) continue;
+    const k = (t - a[0]) / (b[0] - a[0] || 1);
+    return [0, 1, 2].map((c) => (a[1][c] ?? 1) + ((b[1][c] ?? 1) - (a[1][c] ?? 1)) * k) as [number, number, number];
+  }
+  return [1, 1, 1];
+}
+
+/** How deep into night we are, 0..1, from the curve's darkness. */
+function nightLevel(t: number): number {
+  const [r, g, b] = dayCurve(t);
+  const lum = (r + g + b) / 3;
+  return Math.max(0, Math.min(1, (0.95 - lum) / 0.45));
+}
+
+/** Blend a mood ambient with the time-of-day curve into a light-map color. */
+function ambientNow(): number {
+  const mood = moodFor(map.id);
+  const base = AMBIENT[mood];
+  if (mood === 'interior') return base;
+  const [r, g, b] = dayCurve(dayT);
+  const mix = (ch: number, m: number) => {
+    const v = Math.round(((base >> ch) & 0xff) * m);
+    return Math.max(0x38, Math.min(0xff, v));
+  };
+  return (mix(16, r) << 16) | (mix(8, g) << 8) | mix(0, b);
+}
+
+/** Windows per map: two warm lights per house once dusk arrives. */
+const houseWindows: Record<string, [number, number][]> = {};
+for (const [id, tm] of Object.entries(maps)) {
+  const wins: [number, number][] = [];
+  for (let y = 0; y < tm.h; y++) {
+    for (let x = 0; x < tm.w; x++) {
+      if (tm.object(x, y)?.t === 'house') {
+        // Window centers within the 88-wide sprite anchored 4px left of the cell.
+        wins.push([x * TILE - 4 + 19, y * TILE + 16 - 64 + 42]);
+        wins.push([x * TILE - 4 + 71, y * TILE + 16 - 64 + 42]);
+      }
+    }
+  }
+  houseWindows[id] = wins;
+}
+
+/** Everything that glows, per map, found once at boot; each is a light. */
+const GLOW_KINDS: Record<string, { r: number; color: number; flicker: number; lift: number }> = {
+  qoncha: { r: 36, color: 0xffb066, flicker: 0.5, lift: 3 },
+  campfire: { r: 34, color: 0xffa858, flicker: 0.55, lift: 3 },
+  farol: { r: 26, color: 0xffd28a, flicker: 0.18, lift: 12 },
+};
+const fireCells: Record<string, [number, number, string][]> = {};
+for (const [id, tm] of Object.entries(maps)) {
+  const cells: [number, number, string][] = [];
+  for (let y = 0; y < tm.h; y++) {
+    for (let x = 0; x < tm.w; x++) {
+      const o = tm.object(x, y);
+      if (o && GLOW_KINDS[o.t]) cells.push([x, y, o.t]);
+    }
+  }
+  fireCells[id] = cells;
+}
+
+/**
+ * Once the chapter is done, the east gate is simply open: leaves folded back,
+ * tiles walkable, and stepping through carries you onto the road. A door,
+ * not a menu.
+ */
+function applyGateState() {
+  if (!state.has('story.complete')) return;
+  const village = maps['village'];
+  if (!village) return;
+  for (const [gx, gy] of [[41, 16], [42, 16]] as const) {
+    village.setObject(gx, gy, { t: 'gateOpen' });
+    village.addTrigger({ at: [gx, gy], type: 'door', to: 'east-road', spawn: [1, 6], facing: 'right' });
+  }
+}
+applyGateState();
+
+// ---------------------------------------------------------------- ui
+
+const toasts = new Toasts($('toasts'));
+const errandEl = $('errand');
+const fadeEl = $('fade');
+const plateEl = $('plate');
+const textbox = new Textbox(
+  {
+    root: $('textbox'),
+    portrait: $('tb-portrait'),
+    name: $('tb-name'),
+    text: $('tb-text'),
+    arrow: $('tb-arrow'),
+    choices: $('tb-choices'),
+  },
+  state,
+  () => audio.blip(),
+);
+const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, state);
+const title = new TitleScreen($('title'), $('letter'));
+const weave = new WeavePanel($('weave'), audio);
+
+/** The HUD chip always shows the most pressing open thread, shortened. */
+function refreshTaskChip() {
+  const top = journalUI.activeTasks()[0];
+  if (top && !state.has('story.complete')) {
+    const brief = top.length > 84 ? `${top.slice(0, 81)}...` : top;
+    errandEl.textContent = brief;
+    errandEl.hidden = false;
+  } else {
+    errandEl.hidden = true;
+  }
+}
+
+state.on('journal', (id) => {
+  const entry = JOURNAL_BY_ID.get(id);
+  toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
+  audio.chime();
+  if (!state.has('hint.journal')) {
+    state.set('hint.journal');
+    toasts.show('press J to open the journal');
+  }
+  // Did this page complete a rhyme? Then Nani noticed it first, in 1974.
+  const rhymed = JOURNAL.some(
+    (e) =>
+      e.rhyme &&
+      state.hasPage(e.id) &&
+      state.hasPage(e.rhyme.with) &&
+      (e.id === id || e.rhyme.with === id),
+  );
+  if (rhymed) toasts.show('✦ a margin note of Nani’s has become legible');
+});
+
+/** Mail raised by a `letter:` effect opens once the conversation ends. */
+let pendingLetter: string | null = null;
+state.on('letter', (id) => {
+  pendingLetter = id;
+});
+state.on('errand', (id) => {
+  refreshTaskChip();
+  toasts.show(id ? '✉ you are carrying something for someone' : '✉ delivered');
+});
+refreshTaskChip();
+
+let plateTimers: number[] = [];
+function showPlate(text: string, holdMs = 4200) {
+  for (const t of plateTimers) clearTimeout(t);
+  plateEl.textContent = text;
+  plateEl.classList.remove('show');
+  plateTimers = [
+    window.setTimeout(() => plateEl.classList.add('show'), 350),
+    window.setTimeout(() => plateEl.classList.remove('show'), holdMs),
+  ];
+}
+
+// ---------------------------------------------------------------- villagers
+
+type Villager = Sprite & {
+  def: NpcDef;
+  portrait: HTMLCanvasElement | null;
+  think: number;
+  want: Dir | null;
+};
+
+function sheetFor(def: NpcDef): HTMLCanvasElement {
+  if (def.sprite === 'dog') return makeDogSheet();
+  if (def.sprite === 'llama') return makeLlamaSheet('#e8ddc8');
+  if (def.sprite === 'llamaBrown') return makeLlamaSheet('#9c6b42');
+  return makeSheet(def.look);
+}
+
+const villagers: Villager[] = NPCS.map((def) => ({
+  def,
+  actor: new Actor(def.pos[0], def.pos[1], 'down'),
+  sheet: sheetFor(def),
+  rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
+  portrait: def.sprite ? null : makePortrait(def.look),
+  think: Math.random() * 2,
+  want: null,
+}));
+
+const dog = villagers.find((v) => v.def.id === 'allqu');
+const paca = villagers.find((v) => v.def.id === 'paca');
+
+/** The golden traveler, for those who remember an older code. */
+const GOLDEN_LOOK = {
+  ...PLAYER_LOOK,
+  cloth: '#c8a55b',
+  stripe: '#f2e6d0',
+  hat: '#e8c97a',
+};
+
+const playerSprite: Sprite = {
+  actor: player,
+  sheet: makeSheet(state.has('konami') ? GOLDEN_LOOK : PLAYER_LOOK),
+  rig: 'human',
+};
+
+/** ↑↑↓↓←→←→ on the title screen. Some traditions cross all borders. */
+const KONAMI: Dir[] = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
+let konamiAt = 0;
+function feedKonami(d: Dir) {
+  if (state.has('konami')) return;
+  konamiAt = d === KONAMI[konamiAt] ? konamiAt + 1 : d === 'up' ? 1 : 0;
+  if (konamiAt >= KONAMI.length) {
+    state.set('konami');
+    playerSprite.sheet = makeSheet(GOLDEN_LOOK);
+    audio.jingle();
+    toasts.show('✦ 30 lives. (You will not need them here.)');
+    toasts.show('your poncho remembers an older gold');
+  }
+}
+
+// Promising mounds for the dig, drawn as sprites so they can appear and go.
+const moundSheet = makeMoundSheet();
+const mounds = DIG_SPOTS.map((spot) => ({
+  spot,
+  sprite: { actor: new Actor(spot.at[0], spot.at[1], 'down'), sheet: moundSheet, rig: 'animal' } as Sprite,
+}));
+
+function moundsHere(): Sprite[] {
+  if (map.id !== 'village' || !state.has('dig.invite') || state.has('dig.done')) return [];
+  return mounds.filter((m) => !state.has(m.spot.flag)).map((m) => m.sprite);
+}
+
+function villagersHere(): Villager[] {
+  return villagers.filter((v) => v.def.map === map.id);
+}
+function spritesHere(): Sprite[] {
+  return [playerSprite, ...villagersHere()];
+}
+
+function occupied(x: number, y: number, self: Actor): boolean {
+  for (const s of spritesHere()) {
+    if (s.actor === self) continue;
+    // The dog never blocks anyone; it is small and agreeable.
+    if (s === dog) continue;
+    const [ox, oy] = s.actor.occupies();
+    if (ox === x && oy === y) return true;
+  }
+  return false;
+}
+
+function blockedFor(self: Actor): (x: number, y: number) => boolean {
+  return (x, y) => map.solid(x, y) || occupied(x, y, self);
+}
+
+function updateVillager(v: Villager, dt: number) {
+  if (v.actor.frozen) return;
+
+  // The dog, once befriended, has one job: be nearby.
+  if (v === dog && state.has('allqu.friend')) {
+    const dx = player.x - v.actor.x;
+    const dy = player.y - v.actor.y;
+    const dist = Math.abs(dx) + Math.abs(dy);
+    let intent: Dir | null = null;
+    if (dist > 1) {
+      intent =
+        Math.abs(dx) >= Math.abs(dy)
+          ? dx > 0
+            ? 'right'
+            : 'left'
+          : dy > 0
+            ? 'down'
+            : 'up';
+    }
+    const [px, py] = player.occupies();
+    v.actor.update(dt, {
+      intent,
+      blocked: (x, y) => map.solid(x, y) || (x === px && y === py),
+    });
+    return;
+  }
+
+  if (v.def.range === 0 || dev.freezeWander) return;
+  v.think -= dt;
+  if (v.think <= 0) {
+    // Mostly stand around; occasionally amble. Village time moves slowly.
+    v.want =
+      Math.random() < 0.4
+        ? ((['up', 'down', 'left', 'right'] as Dir[])[Math.floor(Math.random() * 4)] ?? null)
+        : null;
+    v.think = 1.0 + Math.random() * 2.8;
+  }
+  const [hx, hy] = v.def.pos;
+  const r = v.def.range;
+  const leash = (x: number, y: number) => x < hx - r || x > hx + r || y < hy - r || y > hy + r;
+  const blocked = blockedFor(v.actor);
+  v.actor.update(dt, { intent: v.want, blocked: (x, y) => blocked(x, y) || leash(x, y) });
+}
+
+// ---------------------------------------------------------------- doors
+
+const FADE_DUR = 0.22;
+let warp: { t: number; phase: 'out' | 'in'; to: TriggerDef & { type: 'door' } } | null = null;
+
+function startWarp(trig: TriggerDef & { type: 'door' }) {
+  if (warp) return;
+  warp = { t: 0, phase: 'out', to: trig };
+  player.frozen = true;
+  audio.door();
+}
+
+function updateWarp(dt: number) {
+  if (!warp) return;
+  warp.t += dt;
+  if (warp.phase === 'out') {
+    fadeEl.style.opacity = String(Math.min(1, warp.t / FADE_DUR));
+    if (warp.t >= FADE_DUR) {
+      const dest = maps[warp.to.to];
+      if (dest) {
+        map = dest;
+        player.placeAt(warp.to.spawn[0], warp.to.spawn[1], warp.to.facing ?? 'down');
+        // A befriended dog refuses to be door-blocked; it simply arrives too.
+        if (dog && state.has('allqu.friend')) {
+          dog.def.map = map.id;
+          const spots: [number, number][] = [
+            [player.x, player.y + 1],
+            [player.x - 1, player.y],
+            [player.x + 1, player.y],
+            [player.x, player.y - 1],
+          ];
+          const free = spots.find(([x, y]) => !map.solid(x, y));
+          if (free) dog.actor.placeAt(free[0], free[1], player.dir);
+        }
+        const [px, py] = player.renderPos();
+        camera.follow(px, py, map.w, map.h);
+        showPlate(map.name, 2600);
+        audio.setScene(sceneFor(map.id));
+        renderer.setMood(moodFor(map.id));
+        stage.setAmbient(AMBIENT[moodFor(map.id)]);
+      }
+      warp = { t: 0, phase: 'in', to: warp.to };
+    }
+  } else {
+    fadeEl.style.opacity = String(Math.max(0, 1 - warp.t / FADE_DUR));
+    if (warp.t >= FADE_DUR) {
+      warp = null;
+      player.frozen = false;
+      fadeEl.style.opacity = '0';
+    }
+  }
+}
+
+// ---------------------------------------------------------------- interaction
+
+const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
+
+let talkingTo: Villager | null = null;
+let celebrated = state.has('story.complete');
+/** Session pet counter for the dog. Resets on reload; affection does not. */
+let pets = 0;
+/** Sloshes taken while carrying Teófilo's caporal. */
+let sloshes = 0;
+/** White camera-flash timer, in seconds remaining. */
+let flashT = 0;
+
+function endDialogue() {
+  player.frozen = false;
+  if (talkingTo) talkingTo.actor.frozen = false;
+  talkingTo = null;
+
+  // Mail handed over during the conversation unfolds now.
+  if (pendingLetter) {
+    const def = pickLetter(pendingLetter, (w) => state.check(w));
+    pendingLetter = null;
+    if (def) {
+      player.frozen = true;
+      audio.pageFlip();
+      title.showLetter({ from: def.from, body: def.body });
+      return;
+    }
+  }
+
+  // One-shot signals raised by dialogue effects, consumed here.
+  if (state.has('weave.start')) {
+    state.clearFlag('weave.start');
+    player.frozen = true;
+    weave.open(() => {
+      player.frozen = false;
+      startNarration('carmen.woven');
+    });
+    return;
+  }
+  if (
+    state.has('dig.invite') &&
+    !state.has('dig.done') &&
+    DIG_SPOTS.every((s) => state.has(s.flag))
+  ) {
+    startNarration('dig.finish');
+    return;
+  }
+  if (state.has('photo.flash')) {
+    state.clearFlag('photo.flash');
+    flashT = 0.5;
+    audio.shutter();
+  }
+  if (state.has('carry.chicha') && sloshes === 0 && !state.has('chicha.hinted')) {
+    state.set('chicha.hinted');
+    toasts.show('carry it steady: three bumps and the floor drinks it');
+  }
+  if (state.has('story.complete') && !celebrated) {
+    celebrated = true;
+    applyGateState();
+    showPlate('CHAPTER ONE · COMPLETE', 5200);
+    toasts.show('✦ the journal remembers her now');
+    toasts.show('the east gate stands open');
+  }
+}
+
+const PET_NODES = ['allqu.pet1', 'allqu.pet2', 'allqu.pet3', 'allqu.pet4', 'allqu.pet5'];
+
+function startNpcDialogue(v: Villager) {
+  // A befriended dog is no longer talked to. It is petted. Repeatedly.
+  if (v === dog && state.has('allqu.friend')) {
+    pets++;
+    renderer.emote(v.actor, '♥');
+    audio.pet();
+    if (pets === 13) toasts.show('✦ 13/10. would pet again');
+    const node = PET_NODES[Math.min(PET_NODES.length - 1, Math.floor((pets - 1) / 2))] ?? 'allqu.pet1';
+    player.frozen = true;
+    const [ox, oy] = v.actor.occupies();
+    v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
+    v.actor.frozen = true;
+    talkingTo = v;
+    textbox.open(NODES, node, null, endDialogue);
+    return;
+  }
+
+  const entry = v.def.entry.find((e) => state.check(e.when));
+  if (!entry) return;
+  const [ox, oy] = v.actor.occupies();
+  v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
+  v.actor.frozen = true;
+  player.frozen = true;
+  talkingTo = v;
+  renderer.emote(v.actor, '!');
+  if (v.def.sprite === 'dog') audio.bark();
+  else if (v.def.sprite) audio.hum();
+  textbox.open(NODES, entry.node, v.portrait, endDialogue);
+}
+
+function startNarration(nodeId: string) {
+  player.frozen = true;
+  textbox.open(NODES, nodeId, null, endDialogue);
+}
+
+function tryInteract() {
+  const [fx, fy] = player.facingCell();
+  const v = villagersHere().find((n) => {
+    const [ox, oy] = n.actor.occupies();
+    return ox === fx && oy === fy;
+  });
+  if (v) {
+    startNpcDialogue(v);
+    return;
+  }
+  // The dig mounds, while Justina's invitation stands.
+  if (map.id === 'village' && state.has('dig.invite') && !state.has('dig.done')) {
+    const spot = DIG_SPOTS.find((s) => s.at[0] === fx && s.at[1] === fy && !state.has(s.flag));
+    if (spot) {
+      audio.dig();
+      startNarration(spot.node);
+      return;
+    }
+  }
+  const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
+  const arm = EXAMINES[kind]?.find((a) => state.check(a.when));
+  if (arm) startNarration(arm.node);
+}
+
+// ---------------------------------------------------------------- modes
+
+type Mode = 'title' | 'letter' | 'play';
+let mode: Mode = 'title';
+
+function beginPlay(freshStart: boolean) {
+  mode = 'play';
+  showPlate(map.name);
+  audio.setScene(sceneFor(map.id));
+  renderer.setMood(moodFor(map.id));
+  stage.setAmbient(AMBIENT[moodFor(map.id)]);
+  if (freshStart) {
+    setTimeout(() => {
+      if (!textbox.isOpen) startNarration('intro.wake');
+    }, 900);
+    toasts.show('walk with the arrow keys or WASD');
+    toasts.show('Space talks to people and touches things');
+  }
+}
+
+// ---------------------------------------------------------------- loop
+
+let showDebug = false;
+let bumps = 0;
+
+function update(dt: number) {
+  renderer.tick(dt);
+  textbox.tick(dt);
+  weave.tick(dt);
+  audio.tick(dt);
+  stage.tick(dt);
+
+  // The world turns.
+  if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
+  renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
+  stage.setAmbient(ambientNow());
+  stage.setZoomTarget(textbox.isOpen || weave.isOpen || journalUI.isOpen ? 1.06 : 1);
+  updateWarp(dt);
+
+  // Chasca's camera: a quick white blink over the world.
+  if (flashT > 0) {
+    flashT = Math.max(0, flashT - dt);
+    const a = flashT > 0.35 ? 1 : flashT / 0.35;
+    fadeEl.style.background = '#f8f4ea';
+    fadeEl.style.opacity = String(a * 0.9);
+    if (flashT === 0) {
+      fadeEl.style.opacity = '0';
+      fadeEl.style.background = '#17120e';
+    }
+  }
+
+  if (input.takeDebug()) {
+    showDebug = !showDebug;
+    debugEl.dataset.on = showDebug ? '1' : '0';
+  }
+  if (input.takeMute()) {
+    toasts.show(audio.toggleMute() ? 'sound off' : 'sound on');
+  }
+
+  const act = input.takeAction() || dev.takeAction();
+  const menuDir = input.takeMenuDir() ?? dev.takeMenuDir();
+  const back = input.takeBack();
+  const journalKey = input.takeJournal();
+
+  if (mode === 'title') {
+    if (menuDir) {
+      title.onDir(menuDir);
+      feedKonami(menuDir);
+      audio.select();
+    }
+    if (act) {
+      audio.confirm();
+      const choice = title.choose();
+      title.hideTitle();
+      if (choice === 'new') {
+        state.reset();
+        refreshTaskChip();
+        mode = 'letter';
+        title.showLetter();
+      } else {
+        beginPlay(false);
+      }
+    }
+  } else if (mode === 'letter') {
+    if (act || back) {
+      audio.confirm();
+      title.hideLetter();
+      beginPlay(true);
+    }
+  } else if (title.letterOpen) {
+    // Mail from home, read mid-journey.
+    if (act || back) {
+      audio.confirm();
+      title.hideLetter();
+      player.frozen = false;
+    }
+  } else if (weave.isOpen) {
+    if (menuDir) weave.onDir(menuDir);
+    if (act) weave.onAction();
+  } else if (textbox.isOpen) {
+    if (menuDir) {
+      textbox.onDir(menuDir);
+      audio.select();
+    }
+    if (act || back) textbox.onAction();
+  } else if (journalUI.isOpen) {
+    if (menuDir) {
+      journalUI.onDir(menuDir);
+      audio.select();
+    }
+    if (back || journalKey || act) {
+      journalUI.close();
+      audio.pageFlip();
+    }
+  } else if (!warp) {
+    if (journalKey) {
+      journalUI.open();
+      audio.pageFlip();
+    } else if (act) {
+      tryInteract();
+    } else {
+      const intent = dev.heldOverride() ?? input.intent();
+      const prevX = player.x;
+      const prevY = player.y;
+      const ev = player.update(dt, { intent, blocked: blockedFor(player) });
+      if (ev?.kind === 'bumped') {
+        bumps++;
+        audio.bump();
+        // The full caporal does not appreciate walls.
+        if (state.has('carry.chicha')) {
+          sloshes++;
+          audio.slosh();
+          if (sloshes >= 3) {
+            sloshes = 0;
+            state.clearFlag('carry.chicha');
+            state.set('chicha.spilled');
+            toasts.show('...the glass is empty. Rosa is going to enjoy this.');
+          } else {
+            toasts.show(`the chicha sloshes! (${sloshes}/3)`);
+          }
+        }
+      }
+      if (ev?.kind === 'arrived') {
+        audio.step(map.ground(ev.x, ev.y).t);
+        renderer.puffAt(prevX, prevY);
+        const trig = map.triggerAt(ev.x, ev.y);
+        if (trig?.type === 'door') startWarp(trig);
+      }
+      for (const v of villagersHere()) updateVillager(v, dt);
+    }
+  }
+
+  // Paca yields the pass, one llama-meter, once Faustino whistles.
+  if (paca && state.has('paca.moved') && paca.actor.x === 30 && paca.actor.y === 6) {
+    paca.actor.placeAt(28, 4, 'down');
+  }
+
+  const [px, py] = player.renderPos();
+  camera.follow(px, py, map.w, map.h);
+
+  dev.publish({
+    mode,
+    map: map.id,
+    tile: [player.x, player.y],
+    dir: player.dir,
+    facing: player.facingCell(),
+    dialogue: textbox.currentNode,
+    journalOpen: journalUI.isOpen,
+    weaveOpen: weave.isOpen,
+    pages: state.pageCount(),
+    errand: state.errand,
+    npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
+    bumps,
+  });
+}
+
+function render() {
+  renderer.drawWorld(map, camera, [...spritesHere(), ...moundsHere()]);
+
+  // Every fire and lamp on this map becomes a flickering point light.
+  const specs: LightSpec[] = (fireCells[map.id] ?? []).map(([cx, cy, kind]) => {
+    const def = GLOW_KINDS[kind] ?? { r: 30, color: 0xffb066, flicker: 0.4, lift: 3 };
+    return {
+      x: cx * TILE + TILE / 2 - camera.x,
+      y: cy * TILE + TILE / 2 - def.lift - camera.y,
+      r: def.r,
+      color: def.color,
+      flicker: def.flicker,
+    };
+  });
+  // At dusk the houses light their windows from inside.
+  const nk = moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
+  if (nk > 0.3) {
+    for (const [wx, wy] of houseWindows[map.id] ?? []) {
+      specs.push({
+        x: wx - camera.x,
+        y: wy - camera.y,
+        r: 15 + nk * 6,
+        color: 0xffc878,
+        flicker: 0.08,
+      });
+    }
+  }
+  stage.setLights(specs);
+  stage.render();
+
+  if (showDebug) {
+    const [fx, fy] = player.facingCell();
+    debugEl.textContent = [
+      `map    ${map.name} (${map.id})  ${map.w}x${map.h}  mode ${mode}`,
+      `tile   ${player.x},${player.y}  facing ${player.dir}`,
+      `front  ${fx},${fy}  ${blockedFor(player)(fx, fy) ? 'solid' : 'open'}`,
+      `pages  ${state.pageCount()}  errand ${state.errand ?? '-'}`,
+      `node   ${textbox.currentNode || '-'}  bumps ${bumps}`,
+      `step   ${(STEP_DUR * 1000).toFixed(0)}ms  turn ${(TURN_DELAY * 1000).toFixed(0)}ms`,
+    ].join('\n');
+  }
+}
+
+// ---------------------------------------------------------------- start
+
+// `?skiptitle=1` drops straight into play for quick dev iteration.
+if (dev.enabled && new URLSearchParams(location.search).has('skiptitle')) {
+  beginPlay(!state.has('intro.done'));
+} else {
+  title.showTitle(state.hasSave());
+}
+
+// Dev-only: lets automation advance the simulation synchronously, independent
+// of rAF (which Chrome pauses entirely in hidden tabs).
+dev.attachCommands((frames) => {
+  for (let i = 0; i < frames; i++) update(1 / 60);
+  render();
+});
+
+startLoop(update, render);
