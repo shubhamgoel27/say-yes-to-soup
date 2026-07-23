@@ -1236,6 +1236,21 @@ export const NODES: NodeMap = {
   'ex.rug': {
     lines: [{ text: 'A woven rug in the house colors. Your feet feel welcomed.' }],
   },
+  'ex.floor': {
+    lines: [{ text: 'Packed earth, swept morning and evening until it shines like something harder. A floor that is also a habit.' }],
+  },
+  'ex.wallStone': {
+    lines: [{ text: 'Dry stone, stacked by hands that trusted gravity and won. No mortar; just patience with corners.' }],
+  },
+  'ex.dirt': {
+    lines: [{ text: 'Bare worked earth. Somebody turns this ground and the ground, on balance, cooperates.' }],
+  },
+  'ex.wallInt': {
+    lines: [{ text: 'A wall that has heard everything and repeated none of it.' }],
+  },
+  'ex.mat': {
+    lines: [{ text: 'The threshold mat, thin with welcomes.' }],
+  },
   'ex.pot': {
     lines: [
       { text: 'A clay pot of chuño, potatoes freeze-dried under June stars. Ten years of winters could not outlast it.' },
@@ -1278,6 +1293,11 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   stool: [{ node: 'ex.stool' }],
   shelf: [{ node: 'ex.shelf' }],
   rug: [{ node: 'ex.rug' }],
+  floorEarth: [{ node: 'ex.floor' }],
+  wallStone: [{ node: 'ex.wallStone' }],
+  dirt: [{ node: 'ex.dirt' }],
+  wallInt: [{ node: 'ex.wallInt' }],
+  mat: [{ node: 'ex.mat' }],
   pot: [{ node: 'ex.pot' }],
   cuy: [{ node: 'ex.cuy' }],
   gate: [

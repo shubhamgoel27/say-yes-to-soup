@@ -857,18 +857,20 @@ function render() {
   renderer.drawWorld(map, camera, [...spritesHere(), ...moundsHere()]);
 
   // Every fire and lamp on this map becomes a flickering point light.
+  // Outdoors they wake with the dusk; interior fires carry the room all day.
+  const nk = moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
+  const outdoorK = moodFor(map.id) === 'interior' ? 1 : 0.25 + 0.75 * Math.min(1, nk * 2);
   const specs: LightSpec[] = (fireCells[map.id] ?? []).map(([cx, cy, kind]) => {
     const def = GLOW_STYLE[kind] ?? { r: 30, color: 0xffb066, flicker: 0.4, lift: 3 };
     return {
       x: cx * TILE + TILE / 2 - camera.x,
       y: cy * TILE + TILE / 2 - def.lift - camera.y,
-      r: def.r,
+      r: def.r * outdoorK,
       color: def.color,
       flicker: def.flicker,
     };
   });
   // At dusk the houses light their windows from inside.
-  const nk = moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
   if (nk > 0.3) {
     for (const [wx, wy] of houseWindows[map.id] ?? []) {
       specs.push({

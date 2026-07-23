@@ -56,4 +56,18 @@ export function registerArt(set: ChapterArt) {
   for (const k of set.glows ?? []) GLOW_KINDS.add(k);
 }
 
-// ---- chapter art modules (side-effect imports; one line per chapter) ----
+// ---- chapter art modules (registered here; two lines per chapter) ----
+import { ART as CROSSING_ART } from './crossing';
+import { ART as SHIONOURA_ART } from './shionoura';
+import { ART as BUSAN_ART } from './busan';
+import { ART as KERALA_ART } from './kerala';
+import { ART as ZANZIBAR_ART } from './zanzibar';
+import { ART as SICILY_ART } from './sicily';
+import { ART as OAXACA_ART } from './oaxaca';
+registerArt(CROSSING_ART);
+registerArt(SHIONOURA_ART);
+registerArt(BUSAN_ART);
+registerArt(KERALA_ART);
+registerArt(ZANZIBAR_ART);
+registerArt(SICILY_ART);
+registerArt(OAXACA_ART);

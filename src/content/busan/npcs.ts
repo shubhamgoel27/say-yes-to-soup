@@ -1,0 +1,760 @@
+import type { EventNode, ExamineArm, LetterDef, NodeMap, NpcDef } from '../schema';
+
+/**
+ * Mulmang-gol's people. Busan satoori by temperament: blunt, fast, warm
+ * underneath, allergic to ceremony. Rules unchanged: nobody lectures, people
+ * disagree, the wrong branch is the warmer scene, two short sentences.
+ */
+
+export const BUSAN_NPCS: NpcDef[] = [
+  {
+    id: 'sunhee',
+    name: 'Sun-hee',
+    map: 'busan',
+    pos: [17, 12],
+    range: 1,
+    look: {
+      skin: '#e0b68a',
+      hair: '#241a12',
+      cloth: '#b03a4a',
+      stripe: '#f2e6d0',
+      hat: '#d9694a',
+      hatStyle: 'none',
+      skirt: '#2e4a44',
+    },
+    entry: [
+      { when: { not: ['c5.met.sunhee'] }, node: 'c5.sunhee.first' },
+      { when: { has: ['c5.met.sunhee', 'c5.met.cook'], not: ['c5.sunhee2'] }, node: 'c5.sunhee.second' },
+      { when: { has: ['c5.sunhee2', 'c5.met.mija'], not: ['c5.deom'] }, node: 'c5.sunhee.deom' },
+      { node: 'c5.sunhee.idle' },
+    ],
+  },
+  {
+    id: 'cho',
+    name: 'Old Man Cho',
+    map: 'teahouse',
+    pos: [4, 2],
+    range: 0,
+    look: {
+      skin: '#d8ac80',
+      hair: '#b8b2a6',
+      cloth: '#7a8a96',
+      stripe: '#e8e2d4',
+      hat: '#8c8479',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c5.met.cho'] }, node: 'c5.cho.first' },
+      { when: { has: ['c5.met.cho', 'c5.deom'], not: ['riddle.cho'] }, node: 'c5.cho.riddle' },
+      { when: { has: ['riddle.cho'], not: ['c5.riddle2'] }, node: 'c5.cho.again' },
+      { node: 'c5.cho.idle' },
+    ],
+  },
+  {
+    id: 'mija',
+    name: 'Mi-ja',
+    map: 'busan',
+    pos: [12, 14],
+    range: 0,
+    look: {
+      skin: '#dcae82',
+      hair: '#2e2018',
+      cloth: '#8a4a7d',
+      stripe: '#f2e6d0',
+      hat: '#c9a35f',
+      hatStyle: 'none',
+      skirt: '#54455c',
+    },
+    entry: [
+      { when: { not: ['c5.met.mija'] }, node: 'c5.mija.first' },
+      { when: { has: ['c5.met.mija'], not: ['c5.hotteok.done'] }, node: 'c5.mija.offer' },
+      { when: { has: ['c5.hotteok.done'], not: ['c5.mija2'] }, node: 'c5.mija.after' },
+      { node: 'c5.mija.idle' },
+    ],
+  },
+  {
+    id: 'daeho',
+    name: 'Dae-ho',
+    map: 'busan',
+    pos: [13, 14],
+    range: 1,
+    look: {
+      skin: '#cfa06f',
+      hair: '#4a4038',
+      cloth: '#4d6a44',
+      stripe: '#c9a35f',
+      hat: '#5c4630',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c5.met.daeho'] }, node: 'c5.daeho.first' },
+      { when: { has: ['c5.hotteok.done'], not: ['c5.daeho2'] }, node: 'c5.daeho.props' },
+      { node: 'c5.daeho.idle' },
+    ],
+  },
+  {
+    id: 'byeongok',
+    name: 'Emo Byeong-ok',
+    map: 'busan',
+    pos: [5, 14],
+    range: 1,
+    look: {
+      skin: '#d8a878',
+      hair: '#3a2e24',
+      cloth: '#a34a2a',
+      stripe: '#e8dcc4',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#3c4a5c',
+    },
+    entry: [
+      { when: { not: ['c5.met.cook'] }, node: 'c5.cook.first' },
+      { when: { has: ['c5.met.cook'], not: ['c5.sticks.why'] }, node: 'c5.cook.ask' },
+      { when: { has: ['c5.sticks.why'], not: ['c5.sikhye'] }, node: 'c5.cook.second' },
+      { node: 'c5.cook.idle' },
+    ],
+  },
+  {
+    id: 'bak',
+    name: 'Mr. Bak',
+    map: 'busan',
+    pos: [26, 13],
+    range: 2,
+    look: {
+      skin: '#c99a68',
+      hair: '#1c1410',
+      cloth: '#3e5a77',
+      stripe: '#8fcbe8',
+      hat: '#2c3e57',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c5.met.bak'] }, node: 'c5.bak.first' },
+      { node: 'c5.bak.idle' },
+    ],
+  },
+  {
+    id: 'gong',
+    name: 'Mr. Gong',
+    map: 'busan',
+    pos: [37, 24],
+    range: 0,
+    look: {
+      skin: '#d3a678',
+      hair: '#2e2018',
+      cloth: '#2c3e57',
+      stripe: '#e8dcc4',
+      hat: '#2c3e57',
+      hatStyle: 'montera',
+    },
+    entry: [
+      { when: { not: ['c5.met.gong'] }, node: 'c5.gong.first' },
+      {
+        when: {
+          has: ['c5.met.gong', 'c5.deom', 'riddle.cho', 'c5.hotteok.done', 'joseph.letter'],
+          not: ['c5.complete'],
+        },
+        node: 'c5.gong.berth',
+      },
+      {
+        when: { has: ['c5.met.gong', 'c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.complete'] },
+        node: 'c5.gong.berth2',
+      },
+      { when: { has: ['c5.complete'] }, node: 'c5.gong.sail' },
+      { node: 'c5.gong.not' },
+    ],
+  },
+  {
+    id: 'chascaC5',
+    name: 'Chasca',
+    map: 'busan',
+    pos: [30, 19],
+    range: 0,
+    look: {
+      skin: '#c98f5e',
+      hair: '#241a12',
+      cloth: '#8a4a7d',
+      stripe: '#8fcbe8',
+      hat: '#d9694a',
+      hatStyle: 'montera',
+      skirt: '#54708a',
+    },
+    entry: [
+      { when: { not: ['c5.met.chasca'] }, node: 'c5.chasca.alley' },
+      { node: 'c5.chasca.album' },
+    ],
+  },
+];
+
+export const BUSAN_NODES: NodeMap = {
+  // ---------------- arrival ----------------
+  'c5.arrive': {
+    lines: [
+      { text: 'The ferry reached the harbor in the dark and then waited politely at anchor for the morning to open. You woke to gulls.' },
+      { text: 'Now: diesel, salt, dawn the color of oyster shell. Container cranes stand along the water like orange giraffes at a trough.' },
+      { text: 'An old woman at the rail says this boat has crossed for most of a century, and that the crossing was not always anyone’s choice.' },
+      { text: 'Behind the quay, small houses climb the hill in stacked pastels, still holding last night’s lights. Somewhere close, sugar is frying.' },
+    ],
+    effects: ['set:c5.arrived'],
+  },
+
+  // ---------------- Sun-hee, the stall ----------------
+  'c5.sunhee.first': {
+    lines: [
+      { text: 'The awning is red, the basins are red, and the mackerel lie nose to tail like a drawer of knives. A woman watches you look.' },
+      { who: 'Sun-hee', text: 'Off the night ferry, still smelling of Japan. Buy nothing, fine, stand there. Looking is free today.' },
+      { who: 'Sun-hee', text: 'Ajumma, you may call me. Say it like you mean somebody who works. Then it is a good word.' },
+    ],
+    effects: ['set:c5.met.sunhee', 'journal:people.sunhee', 'journal:words.ajumma'],
+  },
+  'c5.sunhee.second': {
+    lines: [
+      { who: 'Sun-hee', text: 'You came back. A face turns into a person around the second visit. Mackerel, or are you feeling rich?' },
+      { who: 'Sun-hee', text: 'The auction is at five, chanted numbers, crates of ice. I was here for it. The lane sleeps late because it can afford to. It has us.' },
+      { who: 'Sun-hee', text: 'My mother sold fish from this corner through some hard years. That is the whole story, and it fed three children.' },
+    ],
+    effects: ['set:c5.sunhee2', 'journal:customs.dawnmarket'],
+  },
+  'c5.sunhee.deom': {
+    lines: [
+      { text: 'Third visit. She weighs your mackerel, wraps it, then drops one small extra fish in the bag without a word or a glance.' },
+      { text: 'You take the bag with one hand. She reaches over and tucks your other hand up under it herself, laughing.' },
+      { who: 'Sun-hee', text: 'Two hands. A thing given is heavier than a thing bought. Carry it properly.' },
+    ],
+    effects: ['set:c5.deom', 'journal:words.deom', 'journal:customs.twohands'],
+    choices: [
+      { text: '"In Peru they call this yapa."', goto: 'c5.sunhee.yapa', when: { has: ['page.words.yapa'] } },
+      { text: 'Ask what the extra fish is called', goto: 'c5.sunhee.deomword' },
+      { text: 'Just say thank you, with both hands', goto: 'c5.sunhee.thanks' },
+    ],
+  },
+  'c5.sunhee.yapa': {
+    lines: [
+      { who: 'Sun-hee', text: 'Yapa. Hm. Then Peru has good manners.' },
+      { who: 'Sun-hee', text: 'Here it is deom. Nobody announces it. If you have to ask for it, it is not deom, it is haggling.' },
+    ],
+  },
+  'c5.sunhee.deomword': {
+    lines: [
+      { who: 'Sun-hee', text: 'Deom, we call it. The little more that rides on top of what you paid for.' },
+      { who: 'Sun-hee', text: 'Not charity, not a discount. It means the scale is between friends now.' },
+    ],
+  },
+  'c5.sunhee.thanks': {
+    lines: [
+      { who: 'Sun-hee', text: 'Mm. Both hands, no fuss. You learn fast for somebody off a ferry.' },
+    ],
+  },
+  'c5.sunhee.idle': {
+    lines: [
+      { who: 'Sun-hee', text: 'Mackerel, hairtail, whatever the dawn decided. Come earlier tomorrow and argue with me properly.' },
+    ],
+  },
+
+  // ---------------- Old Man Cho, the tea house ----------------
+  'c5.cho.first': {
+    lines: [
+      { text: 'Shoes off at the step. Low tables, a kettle breathing, light coming through paper the color of morning.' },
+      { who: 'Old Man Cho', text: 'You came up the stairs slowly. Did the market teach you that, or did you bring it with you?' },
+      { text: 'He pours ssanghwacha, dark and sweet as bark and honey. He does not hurry it, and it does not hurry you.' },
+    ],
+    effects: ['set:c5.met.cho', 'journal:people.cho'],
+    choices: [
+      { text: '"The market taught me."', goto: 'c5.cho.a1' },
+      { text: '"I brought it with me."', goto: 'c5.cho.a2' },
+    ],
+  },
+  'c5.cho.a1': {
+    lines: [
+      { who: 'Old Man Cho', text: 'Did it? Then you were listening under the noise. What else did it say?' },
+      { text: 'You drink the tea instead of answering. This appears to be the correct answer.' },
+    ],
+  },
+  'c5.cho.a2': {
+    lines: [
+      { who: 'Old Man Cho', text: 'Did you? Then why did the ferry feel so long?' },
+      { text: 'The kettle laughs first, in steam. You get there a moment later.' },
+    ],
+  },
+  'c5.cho.riddle': {
+    lines: [
+      { who: 'Old Man Cho', text: 'The ajumma below gave you one fish too many. What do you call that, where you have walked?' },
+      { who: 'Old Man Cho', text: 'Ayni, yapa, deom. You collect names for the same weightless thing.' },
+      { who: 'Old Man Cho', text: 'Tell me what it weighs when you find the last one.' },
+      { who: 'Old Man Cho', text: 'Here the thing has a mother word: jeong. Time, food, small kindnesses, stacked until they hold. Does that weigh?' },
+    ],
+    effects: ['set:riddle.cho', 'journal:words.jeong'],
+    choices: [
+      { text: '"In the mountains they call it ayni. Help that comes back."', goto: 'c5.cho.ayni', when: { has: ['page.customs.ayni'] } },
+      { text: 'Hold the question and drink the tea', goto: 'c5.cho.listen' },
+    ],
+  },
+  'c5.cho.ayni': {
+    lines: [
+      { who: 'Old Man Cho', text: 'Ayni. So the mountain answers work with work, and the market answers fish with fish. And what answers time?' },
+      { text: 'You suspect the tea is the answer, or a piece of it. He refills your cup before it is empty.' },
+    ],
+  },
+  'c5.cho.listen': {
+    lines: [
+      { who: 'Old Man Cho', text: 'Where my wife grew up, help went up the valley and came back down in a different season. Nobody wrote it down, and nobody forgot.' },
+      { who: 'Old Man Cho', text: 'The fish, the seed in the pancake, the plate that refills. One thing, many aprons. Keep counting the names.' },
+    ],
+  },
+  'c5.cho.again': {
+    lines: [
+      { who: 'Old Man Cho', text: 'Still carrying my question? Good. Has it grown lighter, or have you grown stronger? Those feel the same from inside.' },
+    ],
+    effects: ['set:c5.riddle2'],
+  },
+  'c5.cho.idle': {
+    lines: [{ who: 'Old Man Cho', text: 'More tea? The kettle is patient. Are you?' }],
+  },
+
+  // ---------------- Mi-ja and Dae-ho, the griddle ----------------
+  'c5.mija.first': {
+    lines: [
+      { text: 'A round iron griddle, discs of dough going gold. The smell is sugar deciding to become caramel.' },
+      { who: 'Mi-ja', text: 'Ssiat hotteok. Seeds in the fold, Busan style. Seoul sells it plain, which is their business and their loss.' },
+      { who: 'Dae-ho', text: 'Thirty years she flips, I stuff. The marriage survives because we never swap jobs.' },
+    ],
+    effects: ['set:c5.met.mija', 'journal:people.hotteokcouple'],
+    choices: [
+      { text: 'Take the spatula', goto: 'c5.mija.start' },
+      { text: 'Watch a round first', goto: 'c5.mija.watch' },
+    ],
+  },
+  'c5.mija.start': {
+    lines: [
+      { who: 'Mi-ja', text: 'Press when the edge goes gold. Not before, not after. The griddle will tell you; listen with your eyes.' },
+    ],
+    effects: ['set:c5.hotteok.start'],
+  },
+  'c5.mija.watch': {
+    lines: [
+      { text: 'Press, sizzle, flip. She makes it look like the pancake does the work and she is only agreeing with it.' },
+    ],
+  },
+  'c5.mija.offer': {
+    lines: [{ who: 'Mi-ja', text: 'The spatula is still warm. Ready this time?' }],
+    choices: [
+      { text: 'Take the spatula', goto: 'c5.mija.start' },
+      { text: 'Not just yet', goto: 'c5.mija.later' },
+    ],
+  },
+  'c5.mija.later': {
+    lines: [{ who: 'Mi-ja', text: 'The dough can wait. Not long, but it can.' }],
+  },
+  'c5.hotteok.flipped': {
+    lines: [
+      { text: 'The good ones go into paper cups, seeds spilling at the fold. Nothing that touched the griddle gets thrown away.' },
+      { who: 'Mi-ja', text: 'Burnt ones are for the cook. That is the rule: nothing wasted, nobody shamed.' },
+      { text: 'You eat yours too fast and the sugar lava finds your chin. Worth it, entirely.' },
+    ],
+    effects: ['clear:c5.hotteok.start', 'set:c5.hotteok.done', 'journal:dishes.hotteok'],
+  },
+  'c5.mija.after': {
+    lines: [
+      { who: 'Mi-ja', text: 'The griddle likes you. It does not like everyone; ask my husband.' },
+      { who: 'Dae-ho', text: 'It has never liked me. Thirty years.' },
+    ],
+    effects: ['set:c5.mija2'],
+  },
+  'c5.mija.idle': {
+    lines: [{ who: 'Mi-ja', text: 'One more? The line forms behind the smell.' }],
+  },
+  'c5.daeho.first': {
+    lines: [
+      { who: 'Dae-ho', text: 'Sunflower, pumpkin, a little peanut. My grandfather ate hotteok exactly like this. Tradition, straight down the line.' },
+      { who: 'Mi-ja', text: 'Your grandfather ate it plain with sugar and was glad. The seeds are younger than our marriage.' },
+      { who: 'Dae-ho', text: 'A tradition is anything your wife has done for thirty years. I stand by it.' },
+    ],
+    effects: ['set:c5.met.daeho'],
+  },
+  'c5.daeho.props': {
+    lines: [
+      { who: 'Dae-ho', text: 'I saw the flip. Wrist, not elbow. You have worked dough before, or lied to it convincingly.' },
+    ],
+    effects: ['set:c5.daeho2'],
+  },
+  'c5.daeho.idle': {
+    lines: [
+      { who: 'Dae-ho', text: 'I count seeds and coins. Only one of the two is allowed to be approximate.' },
+    ],
+  },
+
+  // ---------------- Emo Byeong-ok, the gukbap counter ----------------
+  'c5.cook.first': {
+    lines: [
+      { text: 'A low counter under a tented stall, one pot the size of weather. The cook looks up from the ladle.' },
+      { who: 'Emo Byeong-ok', text: 'Bap meogeosseo? Have you eaten?' },
+      { text: 'It is a greeting, not a question, except it is also a question. A bowl is already moving toward you.' },
+    ],
+    effects: ['journal:words.bapmeogeosseo'],
+    next: 'c5.cook.meal',
+  },
+  'c5.cook.meal': {
+    lines: [
+      { text: 'Milky pork broth over rice. Then the table crowds itself: kimchi, greens, tiny fish, radish. You ordered one thing.' },
+      { text: 'You park your chopsticks upright in the rice. Without a word, mid-sentence, she lays them flat across the bowl and keeps talking.' },
+    ],
+    effects: ['set:c5.met.cook', 'journal:dishes.gukbap', 'journal:customs.banchan'],
+    choices: [
+      { text: 'Ask why she moved your chopsticks', goto: 'c5.cook.sticks' },
+      { text: 'Eat quietly and watch the table', goto: 'c5.cook.quiet' },
+    ],
+  },
+  'c5.cook.sticks': {
+    lines: [
+      { who: 'Emo Byeong-ok', text: 'Standing up, they look like incense at a funeral rite. We do not point dinner at the dead.' },
+      { who: 'Emo Byeong-ok', text: 'You did not know, so it cost nothing. Now you know. Eat.' },
+    ],
+    effects: ['set:c5.sticks.why'],
+  },
+  'c5.cook.quiet': {
+    lines: [
+      { text: 'The little plates empty and refill like tide pools. Nobody is charged for any of it, and nobody finds that remarkable but you.' },
+    ],
+  },
+  'c5.cook.ask': {
+    lines: [
+      { text: 'You ask about the chopsticks, the way she moved them without a word.' },
+      { who: 'Emo Byeong-ok', text: 'Upright, they are incense for the dead. At my table we feed the living.' },
+      { who: 'Emo Byeong-ok', text: 'You did not know, so it cost nothing. Now you know. Eat.' },
+    ],
+    effects: ['set:c5.sticks.why'],
+  },
+  'c5.cook.second': {
+    lines: [
+      { who: 'Emo Byeong-ok', text: 'Sit. Say it first: jal meokkessumnida. I will eat well. You say it to the cook and to the food, both.' },
+      { text: 'After, you offer the other half without being told: jal meogeossumnida. I ate well. Her nod is a whole paragraph.' },
+      { text: 'She sets down a bowl of sikhye, sweet rice punch, unasked. "Service," she says, and that is all the explanation the extra ever gets here.' },
+    ],
+    effects: ['set:c5.sikhye', 'journal:words.jalmeok', 'journal:dishes.sikhye'],
+  },
+  'c5.cook.idle': {
+    lines: [
+      { who: 'Emo Byeong-ok', text: 'Bap meogeosseo? If yes, sit anyway. Broth waits better than people do.' },
+    ],
+  },
+
+  // ---------------- Mr. Bak, who does not care that you exist ----------------
+  'c5.bak.first': {
+    lines: [
+      { text: 'A hand cart stacked with ice crates takes the lane at ramming speed. You are, briefly, in the way.' },
+      { who: 'Mr. Bak', text: 'Ppalli ppalli! Move, walk, live, whichever, but do it faster!' },
+      { text: 'He is gone before your apology lands. He did not ask your name. He is never going to ask your name.' },
+    ],
+    effects: ['set:c5.met.bak'],
+  },
+  'c5.bak.idle': {
+    lines: [
+      { who: 'Mr. Bak', text: 'Still here? The ice is not.' },
+      { text: 'The cart takes the corner on one wheel. Somewhere ahead, a fish is urgently expected.' },
+    ],
+  },
+
+  // ---------------- Mr. Gong, ferry and freight ----------------
+  'c5.gong.first': {
+    lines: [
+      { text: 'FERRY AND FREIGHT. The window is small, the stamp is loud, and the man behind both is faster than the stamp.' },
+      { who: 'Mr. Gong', text: 'Name, destination, purpose, in that order and quickly. The boats respect neither of us.' },
+    ],
+    effects: ['set:c5.met.gong'],
+    choices: [
+      { text: 'Show him the address on Joseph’s letter', goto: 'c5.gong.letter', when: { has: ['joseph.letter'] } },
+      { text: 'Ask about passage to Kerala', goto: 'c5.gong.ask' },
+    ],
+  },
+  'c5.gong.letter': {
+    lines: [
+      { text: 'You show the envelope from the Yacana: Joseph’s careful handwriting, an address in Kerala, a mother’s name.' },
+      { who: 'Mr. Gong', text: 'Joseph? I know this family. His cousin Thomas runs a freighter to Kochi out of this office. Keep the letter; deliver it with your own hands.' },
+      { who: 'Mr. Gong', text: 'Berths on that boat are vouched, not sold. So go be vouched for. The lane decides these things, not me. Ppalli ppalli.' },
+    ],
+  },
+  'c5.gong.ask': {
+    lines: [
+      { who: 'Mr. Gong', text: 'Kochi. There is a freighter, the Malabar Star, run by the cousin of a sailor this office trusts. Berths are vouched, not sold.' },
+      { who: 'Mr. Gong', text: 'Let the market know you first. Then come back, and bring that quickly.' },
+    ],
+  },
+  'c5.gong.berth': {
+    lines: [
+      { who: 'Mr. Gong', text: 'The ajumma vouches, the tea house vouches, even the griddle couple vouches. That is three more than most passengers get.' },
+      { who: 'Mr. Gong', text: 'Thomas sails for Kochi on the evening tide. Joseph’s letter rides with you, so his mother gets it from warm hands, not a mailbag.' },
+      { text: 'The stamp comes down like a small decision. Berth: one. Galley duty: assumed.' },
+    ],
+    effects: ['set:c5.complete'],
+  },
+  'c5.gong.berth2': {
+    lines: [
+      { who: 'Mr. Gong', text: 'The lane vouches for you, all of it, which is rare and slightly suspicious. Berth on the Malabar Star, evening tide.' },
+      { text: 'The stamp comes down like a small decision. Kochi, then. The map keeps unrolling south.' },
+    ],
+    effects: ['set:c5.complete'],
+  },
+  'c5.gong.sail': {
+    lines: [
+      { who: 'Mr. Gong', text: 'The Malabar Star loads at dusk. Board now, or make your bows first. Either way, do it ppalli ppalli.' },
+    ],
+    choices: [
+      { text: 'Board for Kochi', goto: 'c5.gong.go' },
+      { text: 'Not yet. The lane deserves goodbyes.', goto: 'c5.gong.stay' },
+    ],
+  },
+  'c5.gong.go': {
+    lines: [
+      { text: 'The gangway bounces underfoot. Busan stacks itself up the hill behind you, pastel over pastel, cranes waving a slow orange goodbye.' },
+    ],
+    effects: ['travel:kerala'],
+  },
+  'c5.gong.stay': {
+    lines: [{ who: 'Mr. Gong', text: 'Sentiment. Fine. The tide is less flexible than I am.' }],
+  },
+  'c5.gong.not': {
+    lines: [
+      { who: 'Mr. Gong', text: 'Berths are vouched, not bought, and the lane has not finished with you. Fish stall, tea house, griddle. Go.' },
+    ],
+  },
+
+  // ---------------- Chasca, in the dried-fish alley ----------------
+  'c5.chasca.alley': {
+    lines: [
+      { who: 'Chasca', text: 'The soup-eater! You crossed a whole ocean and still walk like the road is a friend. Perfect. Do not move.' },
+      { text: 'She frames the dried-fish alley: silver rows on strings, steam drifting through, you in the middle of the weather it makes.' },
+      { who: 'Chasca', text: 'The album needed a street that smells like this. Say fuzzy pickles!' },
+    ],
+    effects: ['set:c5.met.chasca', 'set:photo.flash', 'set:photo.c5.alley'],
+    choices: [
+      { text: 'Ask about the photo from the pier', goto: 'c5.chasca.pier', when: { has: ['photo.c2.pier'] } },
+      { text: 'Ask how the album is growing', goto: 'c5.chasca.why' },
+    ],
+  },
+  'c5.chasca.pier': {
+    lines: [
+      { who: 'Chasca', text: 'You at the pier, the reed horses on end, the fog like a lid? Still undeveloped, still perfect.' },
+      { who: 'Chasca', text: 'This one goes beside it. Sea to sea, and you a little saltier in the second.' },
+    ],
+  },
+  'c5.chasca.why': {
+    lines: [
+      { who: 'Chasca', text: 'Mountain, coast, ship, island, market. The album is turning into a route. Someday somebody will read it backwards and cry.' },
+    ],
+  },
+  'c5.chasca.album': {
+    lines: [
+      { who: 'Chasca', text: 'No second picture in the same town. The first one is true; the second one starts posing.' },
+    ],
+  },
+
+  // ---------------- the post window ----------------
+  'c5.post.pilar': {
+    lines: [
+      { text: 'A postal window the size of a biscuit tin. The clerk inside produces an envelope addressed in handwriting like an invoice.' },
+    ],
+    effects: ['letter:c5.pilar'],
+  },
+  'c5.post.marisol': {
+    lines: [
+      { text: 'The clerk holds up one finger, checks a pigeonhole, and slides out a second envelope smelling faintly of newspaper and salt.' },
+    ],
+    effects: ['letter:c5.marisol'],
+  },
+  'c5.post.idle': {
+    lines: [
+      { text: 'MULMANG-GOL POST. Window open, clerk asleep with great dignity. No more mail for you today.' },
+    ],
+  },
+
+  // ---------------- examines, market ----------------
+  'c5.ex.lane': {
+    lines: [
+      { text: 'Paving stones dark with hose water and fish scales. The lane gets washed before the town wakes; the ajummas see to it.' },
+    ],
+  },
+  'c5.ex.awning': {
+    lines: [
+      { text: 'A stall awning, patched where patched, bright where bright. Under it the morning catch is arranged like an argument you will lose.' },
+    ],
+  },
+  'c5.ex.rack': {
+    lines: [
+      { text: 'Racks of drying fish, silver going gold in rows. The smell is ammonia-sweet and absolute; your coat has decided to keep it.' },
+    ],
+  },
+  'c5.ex.basin': {
+    lines: [
+      { text: 'A red basin of seawater, fish nosing the rim. The whole market runs on these: one basin, one knife, one formidable woman.' },
+    ],
+  },
+  'c5.ex.vent': {
+    lines: [{ text: 'A grate breathing steam up from some kitchen below. The lane wears it like a scarf.' }],
+  },
+  'c5.ex.eomuk1': {
+    lines: [
+      { text: 'Eomuk skewers stand in salty broth, a kettle of it steaming. A ladle and paper cups wait on the honor system.' },
+      { text: 'You sip. Warmth goes down like a lit hallway. The broth is free, and that is not an accident, it is a philosophy.' },
+    ],
+    effects: ['set:c5.eomuk', 'journal:dishes.eomuk'],
+  },
+  'c5.ex.eomuk2': {
+    lines: [{ text: 'The broth kettle steams on. You are developing a taste for standing soup.' }],
+  },
+  'c5.ex.griddle': {
+    lines: [
+      { text: 'The griddle idles between rushes, shining with oil. Three dents in the iron mark thirty years of the same flip.' },
+    ],
+  },
+  'c5.ex.hill': {
+    lines: [
+      { text: 'Houses stacked up the hillside in pastel steps, each roof somebody’s floor. Refugees built them; their grandchildren painted them.' },
+    ],
+  },
+  'c5.ex.crane': {
+    lines: [
+      { text: 'Orange giraffes, feeding. The harbor never quite sleeps; it only slows to a graze.' },
+    ],
+  },
+  'c5.ex.teahouse': {
+    lines: [
+      { text: 'A wooden tea house above the market noise, paper windows glowing faintly. The door stands open the width of an invitation.' },
+    ],
+  },
+  'c5.ex.ferrysign': {
+    lines: [
+      { text: 'FERRY AND FREIGHT: SHIMONOSEKI, KOCHI, PLACES THE STAMP CAN REACH. Below, smaller: BERTHS VOUCHED, NOT SOLD.' },
+    ],
+  },
+  'c5.ex.kettle': {
+    lines: [
+      { text: 'The kettle mutters to itself on the brazier. Cho says it is the only thing in the room allowed to hurry.' },
+    ],
+  },
+  'c5.ex.lamp': {
+    lines: [
+      { text: 'A lamp of hanji paper on a wooden post. The light comes through the way morning comes through fog: filtered, patient, warm.' },
+    ],
+  },
+  'c5.ex.ondol': {
+    lines: [
+      { text: 'The floor is warm underfoot. The fire lives under the room, and the whole house sits in its lap.' },
+    ],
+  },
+  'c5.ex.bench': {
+    lines: [
+      { text: 'A bench polished by decades of aunties resting exactly here. It is the true town hall.' },
+    ],
+  },
+  'c5.ex.farol': {
+    lines: [
+      { text: 'A harbor lamp still burning against the dawn. By night an orange tent bar glows under it; by day the lamp just remembers one.' },
+    ],
+  },
+  'c5.ex.crate': {
+    lines: [
+      { text: 'Fish crates packed with chipped ice. Numbers were chanted over these at the dawn auction, hours before you woke.' },
+    ],
+  },
+  'c5.ex.pier': {
+    lines: [
+      { text: 'Quay concrete and old timber, rinsed by decades of tides and hoses. The overnight ferry dwarfs everything, gently.' },
+    ],
+  },
+  'c5.ex.sea': {
+    lines: [
+      { text: 'Harbor water, dawn-grey, an oil-sheen rainbow at the pilings. Gulls patrol it like they are owed money.' },
+    ],
+  },
+  'c5.ex.gukbap': {
+    lines: [
+      { text: 'One pot the size of weather, a counter, low stools. The menu is the smell, and the smell is generous.' },
+    ],
+  },
+  'c5.ex.teatable': {
+    lines: [
+      { text: 'A low table, knee height, older than the room. The floor is the chair here; it has always been the honest altitude.' },
+    ],
+  },
+};
+
+/** Examine arms; shared props keep their coastal words at home via map tags. */
+export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
+  lanepave: [{ node: 'c5.ex.lane' }],
+  awning: [{ node: 'c5.ex.awning' }],
+  fishrack: [{ node: 'c5.ex.rack' }],
+  basin: [{ node: 'c5.ex.basin' }],
+  steamvent: [{ node: 'c5.ex.vent' }],
+  eomukcart: [
+    { when: { not: ['c5.eomuk'] }, node: 'c5.ex.eomuk1' },
+    { node: 'c5.ex.eomuk2' },
+  ],
+  hotteokcart: [{ node: 'c5.ex.griddle' }],
+  hillhouses: [{ node: 'c5.ex.hill' }],
+  crane: [{ node: 'c5.ex.crane' }],
+  teahouse: [{ node: 'c5.ex.teahouse' }],
+  ferrysign: [{ node: 'c5.ex.ferrysign' }],
+  postwindow: [
+    { when: { not: ['letter.read.c5.pilar'] }, node: 'c5.post.pilar' },
+    { when: { has: ['letter.read.c5.pilar'], not: ['letter.read.c5.marisol'] }, node: 'c5.post.marisol' },
+    { node: 'c5.post.idle' },
+  ],
+  kettle: [{ node: 'c5.ex.kettle' }],
+  hanjilamp: [{ node: 'c5.ex.lamp' }],
+  floorOndol: [{ node: 'c5.ex.ondol' }],
+  bench: [{ map: 'busan', node: 'c5.ex.bench' }],
+  farol: [{ map: 'busan', node: 'c5.ex.farol' }],
+  crate: [{ map: 'busan', node: 'c5.ex.crate' }],
+  pierdeck: [{ map: 'busan', node: 'c5.ex.pier' }],
+  sea: [{ map: 'busan', node: 'c5.ex.sea' }],
+  stall: [{ map: 'busan', node: 'c5.ex.gukbap' }],
+  table: [{ map: 'teahouse', node: 'c5.ex.teatable' }],
+};
+
+/** Event-triggered nodes, listed with gating so tests can prove them reachable. */
+export const BUSAN_EVENTS: EventNode[] = [
+  { node: 'c5.arrive' },
+  { when: { has: ['c5.hotteok.start'] }, node: 'c5.hotteok.flipped' },
+];
+
+/** Mail waiting at the tiny post window. */
+export const BUSAN_LETTERS: LetterDef[] = [
+  {
+    id: 'c5.pilar',
+    from: 'Pilar, Museum of the Sea (Gift Shop Division)',
+    when: { has: ['c2.gift.sent'] },
+    body: [
+      'Dear co-owner. Museum attendance is steady. Admission remains one fact, but facts about Korea will be accepted at a favorable exchange rate.',
+      'The sea thing you mailed has been promoted to Exhibit A. Visitors ask if it is real. I charge a second fact for the answer.',
+      'NEW: the museum has a GIFT SHOP. Inventory: rocks. Customers say they recognize them from my first enterprise. Correct. Provenance doubles the price.',
+      'Send nothing this time. The shelf is full. This is not sentiment, it is inventory management.',
+    ],
+  },
+  {
+    id: 'c5.pilar',
+    from: 'Pilar, Museum of the Sea',
+    body: [
+      'Dear traveler. The museum thrives. The gift shop opened Tuesday. It sells rocks.',
+      'Some customers claim they saw these rocks in an earlier scheme of mine. Correct. The rocks have experience now, and experienced rocks cost more.',
+      'The dog has opinions about the gift shop. As he pays in neither facts nor money, they are noted and ignored.',
+    ],
+  },
+  {
+    id: 'c5.marisol',
+    from: 'Marisol, the stall on the malecón',
+    when: { has: ['c2.casero'] },
+    body: [
+      'Casero. The harbor office swears this will find you in Korea, which I only half believe, so I keep it short in case the ocean reads it.',
+      'The bonito came back the week you left. Typical. Your fish waits for no one, but your stall remembers you.',
+      'They tell me the markets there are run by the aunties. Of course they are, pe. Learn their word for the yapa and bring it home to me.',
+    ],
+  },
+  {
+    id: 'c5.marisol',
+    from: 'Marisol, fishmonger of La Caleta',
+    body: [
+      'You bought fish from me once, maybe twice. Not enough for the yapa, but enough for a letter, it seems.',
+      'The stall stands, the sea provides, the pelican is still a criminal. Come back someday and make a habit of us.',
+    ],
+  },
+];

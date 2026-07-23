@@ -394,7 +394,26 @@ the built world."
       journal stitching verified in-browser with a Ch1-complete save
 - [x] Chapter Three research bible done: docs/crossing-content-bible.md
 
-## Next (Chapter Three, then art backlog)
+## P16: The whole world (chapters 3-10, parallel-built) (done)
+
+- [x] Chapter plugin architecture (ChapterDef contract, art set registry,
+      registerable moods, generic minigame overlays, travel: effects,
+      gated arrivals, lint-chapter tool, location-persistent saves)
+- [x] Six sourced research bibles + docs/story-arc.md canon (Nani's answer:
+      the guelaguetza ledger in Oaxaca; her hand stops mid-sentence in Sicily)
+- [x] Eight chapters built by parallel agents to the shared contract:
+      crossing (MV Yacana), shionoura, busan, kerala, zanzibar, sicily,
+      oaxaca, return (reunion extensions + album credits + the last page)
+- [x] Integrated in play order; ~200 journal pages, ~20 maps, 14 minigames,
+      10 Pilar letters; 41 tests green (reachability fixpoint, stuck
+      detector, recall ledger, letter variants, map integrity)
+- [x] Browser-verified: boarding + travel between chapters, all new map
+      renders (with grading fixes to Zanzibar tideout + Sicily basalt),
+      minigame overlays, mail, the Return's homecoming and reunions
+- [x] Australia honestly deferred as a post-game letter (consultation-grade
+      research standard, per the roadmap rule)
+
+## Next (polish backlog)
 
 - [ ] **Chapter Three: The Crossing** (bible done: docs/crossing-content-bible.md):
       the cargo ship as a village, galley cooking verb, star deck (Mayu /
@@ -403,6 +422,44 @@ the built world."
 - [ ] El Niño fish-list variation on Marisol's stall (bible mechanic, unbuilt)
 - [ ] Circle-wipe transitions; camera lookahead; high-res dialogue portraits
 - [ ] Deep true secret; sitting verb; ambient critters; accessibility pass
+
+## P16: Chapter Three: The Crossing (built; awaiting integration)
+
+Plan (per docs/chapter-authoring-guide.md; new files only, no shared edits):
+
+- [x] src/content/crossing/map.ts: `ship` exterior 44x32 (tapered hull, four container bays, house, funnel)
+      + `galley` interior 14x10; every walkable cell proven reachable from spawn
+- [x] src/content/crossing/npcs.ts: Mang Ben, Joseph, Hana, Olena, the bosun, Capitana Rios, Chasca, the cat;
+      NODES, EXAMINES (19 new kinds + map-tagged shared kinds), EVENTS, LETTERS (c3.pilar x4, c3.petro x2)
+- [x] src/content/crossing/journal.ts: 20 pages (6 Nani texts, rhymes starriver~chaska, sinigang~sudado),
+      13 tasks with catch-all + post-completion + errand mid-states
+- [x] src/content/crossing/recall.ts: consumes pilar.gift.*, c2.casero, c2.complete, page.words.lamar;
+      plants c3.arrived, joseph.letter, photo.c3.deck, c3.complete, c3.shellback, page.customs.starriver
+- [x] src/content/crossing/index.ts: CHAPTER assembly, games wiring, openocean mood, arrival, completion
+- [x] src/art/sets/crossing.ts: deck, railing, contA/B/C, lifeboat, winch, bollard, funnel, shiphouse, hammock,
+      shipbell, jackstaff, shipcat, stove, karaoke, trayrack, wallSteel, floorSteel
+- [x] src/ui/games/crossing.ts: GalleyPanel (adobo, no fail) + StarPanel (three skies, no fail)
+- [x] Verify: tsc clean; lint-chapter OK, 0 warnings; npm test 40/40; headless playthrough sim completes
+      the chapter and fills 20/20 pages both with and without earlier-chapter keys
+
+### Review
+
+Integration needs two lines: import CHAPTER into world.ts CHAPTERS after LA_CALETA, and a side-effect
+registerArt import for src/art/sets/crossing.ts. Entry is the la-caleta piersign examine (gated on
+c2.complete) which runs `travel:ship`; departure runs `travel:shionoura` from the jackstaff at the bow
+once c3.complete (map exists at C4 integration; until then runtime logs "travel to unknown map").
+
+## P17: Chapter Four: Shionoura (done)
+
+Plan (per docs/chapter-authoring-guide.md; new files only, no shared edits):
+
+- [x] src/content/shionoura/map.ts: `shionoura` exterior 46x32 (harbor, shotengai, Ebisu shrine, minshuku) + `minshuku` interior (genkan, tatami, irori, ofuro)
+- [x] src/art/sets/shionoura.ts: machiya (352x256), noren, torii, ishidoro, bamboo, bambooWish, tairyobata, chochin, postbox, yatai, keitruck, ebisudo, tatami, floorWood, tataki, wallShoji, irori, ofuro
+- [x] src/ui/games/shionoura.ts: KingyoPanel (goldfish scooping; paper poi + soak meter; no real fail)
+- [x] src/content/shionoura/npcs.ts: Hana, Fumi, Daisuke, Sachiko, Genji, Taro, Captain Isao, Chasca; nodes, examines, events; omiyage chooser; tanzaku wish scene
+- [x] src/content/shionoura/journal.ts: 23 pages (6 Nani texts; rhymes tanabata~starriver, otsukaresama~espera), tasks with catch-all + post-completion
+- [x] src/content/shionoura/recall.ts + index.ts: letters (c4.pilar, c4.marisol), games, moods, arrival, completion, travel:busan departure
+- [x] Verify: npx tsc --noEmit and npx tsx tests/lint-chapter.ts src/content/shionoura until both clean
 
 ## Notes
 

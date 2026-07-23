@@ -9,13 +9,13 @@ import {
   EXAMINES,
   JOURNAL,
   JOURNAL_BY_ID,
+  LETTERS,
   NODES,
   NPCS,
   RECALLS,
   REGION_MAPS,
   TASKS,
 } from '../src/content/world';
-import { LETTERS } from '../src/content/letters';
 import type { ExamineArm } from '../src/content/schema';
 import type { MapData } from '../src/engine/grid';
 
@@ -337,6 +337,20 @@ describe('the recall ledger stays honest across chapters', () => {
       for (const f of referencesC2(t.when)) {
         assert.ok(caletaPlants.has(f), `Chapter One task references "${f}" that la-caleta does not plant`);
       }
+    }
+  });
+
+  it("Pilar's mid-ocean letter names the actual creature you mailed her", () => {
+    for (const [flag, word] of [
+      ['pilar.gift.puffer', /puffer/i],
+      ['pilar.gift.star', /star/i],
+      ['pilar.gift.claw', /claw|crab/i],
+    ] as const) {
+      const state = new GameState();
+      state.apply([`set:${flag}`, 'set:c2.gift.sent']);
+      const def = LETTERS.find((l) => l.id === 'c3.pilar' && state.check(l.when));
+      assert.ok(def, `no c3.pilar letter for ${flag}`);
+      assert.ok(def.body.some((p) => word.test(p)), `c3.pilar letter for ${flag} never mentions it`);
     }
   });
 

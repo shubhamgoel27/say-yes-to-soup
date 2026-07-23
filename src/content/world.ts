@@ -16,6 +16,14 @@ import type {
 
 import { CHAPTER as CHASKA_PAMPA, DIG_SPOTS as CH1_DIG_SPOTS } from './dev';
 import { CHAPTER as LA_CALETA } from './caleta';
+import { CHAPTER as CROSSING } from './crossing';
+import { CHAPTER as SHIONOURA } from './shionoura';
+import { CHAPTER as BUSAN } from './busan';
+import { CHAPTER as KERALA } from './kerala';
+import { CHAPTER as ZANZIBAR } from './zanzibar';
+import { CHAPTER as SICILY } from './sicily';
+import { CHAPTER as OAXACA } from './oaxaca';
+import { CHAPTER as RETURN } from './return';
 import { LETTERS as BASE_LETTERS } from './letters';
 
 /**
@@ -24,7 +32,18 @@ import { LETTERS as BASE_LETTERS } from './letters';
  * play order; several merges run newest-first so a later chapter's arms and
  * tasks can front-run an earlier chapter's fallbacks.
  */
-export const CHAPTERS: ChapterDef[] = [CHASKA_PAMPA, LA_CALETA];
+export const CHAPTERS: ChapterDef[] = [
+  CHASKA_PAMPA,
+  LA_CALETA,
+  CROSSING,
+  SHIONOURA,
+  BUSAN,
+  KERALA,
+  ZANZIBAR,
+  SICILY,
+  OAXACA,
+  RETURN,
+];
 
 const newestFirst = [...CHAPTERS].reverse();
 
@@ -54,7 +73,11 @@ export const EXAMINES: Record<string, ExamineArm[]> = (() => {
   return merged;
 })();
 
-export const EVENT_NODES = CHAPTERS.flatMap((c) => c.events);
+/** Arrivals count as events so the reachability walk can enter chapters. */
+export const EVENT_NODES = [
+  ...CHAPTERS.flatMap((c) => c.events),
+  ...CHAPTERS.flatMap((c) => (c.arrival ? [{ when: c.arrival.when, node: c.arrival.node }] : [])),
+];
 export const DIG_SPOTS = CH1_DIG_SPOTS;
 
 export const JOURNAL: JournalEntry[] = CHAPTERS.flatMap((c) => c.journal);

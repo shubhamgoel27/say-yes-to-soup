@@ -11,6 +11,7 @@ export const RECALL: RecallManifest = {
   ],
   plants: [
     'c2.arrived', // the highlands' task list hands over once you are down
+    'c2.complete', // later chapters gate their entry hooks on it
     'page.words.yapa',
     'page.words.lamar',
     'c2.casero',
