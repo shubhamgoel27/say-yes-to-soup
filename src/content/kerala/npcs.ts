@@ -843,6 +843,150 @@ export const KERALA_NODES: NodeMap = {
       { text: 'The aduppu: a clay hearth burning coconut husk and shell. The smoke has seasoned the rafters, the pots, and the family stories.' },
     ],
   },
+  // ---------------- examines: the love pass ----------------
+  'c6.ex.nilavilakku': {
+    lines: [
+      { text: 'A brass nilavilakku by the doorway, polished to a quiet gold. Lit at dusk without fail; a small flame with the enormous job of meaning home.' },
+    ],
+  },
+  'c6.ex.umbrellas': {
+    lines: [
+      { text: 'Three black umbrellas stand open on the veranda like bats airing before the night shift. The sky has been given a date.' },
+    ],
+  },
+  'c6.ex.umbrellas.rain': {
+    lines: [
+      { text: 'Two black umbrellas drip on the veranda, off duty between downpours. The third is out in the weather, earning its keep.' },
+    ],
+  },
+  'c6.ex.jacktree': {
+    lines: [
+      { text: 'A jackfruit tree, trunk hung with fruit the size of good luggage. You admire it from a radius the whole village agrees on.' },
+    ],
+  },
+  'c6.ex.peppervine': {
+    lines: [
+      { text: 'A pepper vine spirals up the areca palm, unhurried. These small green berries once towed Roman ships across an ocean.' },
+    ],
+  },
+  'c6.ex.glassrack': {
+    lines: [
+      { text: 'The chaya-glass rack, a dozen glasses drying upside down in ranks. Shaji calls it the regiment and inspects it like one.' },
+    ],
+  },
+  'c6.ex.cricketwall': {
+    lines: [
+      { text: 'Three stumps chalked on the wall, redrawn a little taller every summer. The crease is a scuff; the boundary is wherever the arguing says.' },
+    ],
+    effects: ['set:c6.stumps.seen'],
+  },
+  'c6.ex.tennisball': {
+    lines: [
+      { text: 'One bald tennis ball in the gutter, shaved smooth by the lane. Somewhere nearby, a wall knows the whole story.' },
+    ],
+  },
+  'c6.ex.tennisball.six': {
+    lines: [
+      { text: 'So the gutter is the boundary. One bald tennis ball, retired exactly where the last big six put it, waiting for someone brave to fetch it.' },
+    ],
+  },
+  'c6.ex.oars': {
+    lines: [
+      { text: 'Oars lean at the jetty in order of height, like a family photo. None are labeled and all are somebody’s; everybody simply knows.' },
+    ],
+  },
+  'c6.ex.spicesacks': {
+    lines: [
+      { text: 'Spice sacks under a tarpaulin, stenciled CARDAMOM. The smell escapes the jute anyway; fragrance has never respected packaging.' },
+    ],
+  },
+  'c6.ex.spicesacks.manifest': {
+    lines: [
+      { text: 'Cardamom under tarpaulin, counted twice daily by Moosa without appearing to count. The next boat west has your name penciled in the margin.' },
+    ],
+  },
+  'c6.ex.postbox': {
+    lines: [
+      { text: 'A post box on a pole, painted the stubborn red of an empire that left. It swallows the village’s love twice a week at collection time.' },
+    ],
+  },
+  'c6.ex.postbox.carried': {
+    lines: [
+      { text: 'The red box takes letters for Sharjah, Muscat, and Kochi. You carried one by hand across an ocean; the box pretends not to be impressed.' },
+    ],
+  },
+  'c6.ex.lungiline': {
+    lines: [
+      { text: 'Lungis drying on the line, checks and stripes, flapping like the flags of a calm country. The rain will undo this work; nobody minds much.' },
+    ],
+  },
+  'c6.ex.huskpile': {
+    lines: [
+      { text: 'Coconut husks bound for the canal, where six months of soaking turns stubbornness into golden rope. Patience, stacked in public.' },
+    ],
+  },
+  'c6.ex.hyacinth': {
+    lines: [
+      { text: 'Water hyacinth, drifting in a raft of its own opinions. Pretty, uninvited, and impossible to argue out of the channel.' },
+    ],
+  },
+  'c6.ex.waterlily': {
+    lines: [
+      { text: 'A waterlily open at the channel edge, holding the grey sky like it ordered it specially. The frogs treat the pads as furniture.' },
+    ],
+  },
+  'c6.ex.anthill': {
+    lines: [
+      { text: 'An anthill, red as the lanes, at a respectful distance from everything. Nobody disturbs it and nobody says why; both facts feel related.' },
+    ],
+    effects: ['set:c6.ant.seen'],
+  },
+  'c6.ex.anthill.again': {
+    lines: [
+      { text: 'Still there, still busy. Whatever the arrangement is, it predates everyone who could explain it, and it is clearly working.' },
+    ],
+  },
+  'c6.ex.busstop': {
+    lines: [
+      { text: 'A bus shelter with one bench and one timetable. The bus keeps its own counsel; the timetable carries forty annotations, all in disagreement.' },
+    ],
+  },
+  'c6.ex.posterwall': {
+    lines: [
+      { text: 'A temple festival poster peeling in the damp: elephants, drummers, a date the rain has half eaten. Judging by the wall, it was a great night.' },
+    ],
+  },
+  'c6.ex.fallennut': {
+    lines: [
+      { text: 'A coconut down since the last big wind. By custom the first to notice it may claim it; you appear to have just noticed it.' },
+    ],
+  },
+  'c6.ex.ammi': {
+    lines: [
+      { text: 'The ammikkallu, a grinding stone worn into a shallow smile by three generations of chutney. Mixers exist; the stone is not worried.' },
+    ],
+  },
+  'c6.ex.leafstack': {
+    lines: [
+      { text: 'Banana leaves cut and stacked, narrow ends all pointing the same way. Even in a pile they keep their table manners.' },
+    ],
+  },
+  'c6.ex.leafstack.after': {
+    lines: [
+      { text: 'A few banana leaves left over from the sadya. Mariamma will find them a duty; nothing in this kitchen is allowed to retire.' },
+    ],
+  },
+  'c6.ex.cat': {
+    lines: [
+      { text: 'A cat asleep in the warm corner, employed at the rank of kitchen supervisor. The smoke, the rain, the sadya: not her problem.' },
+    ],
+    effects: ['set:c6.cat.seen'],
+  },
+  'c6.ex.cat.again': {
+    lines: [
+      { text: 'Still asleep. One ear has rotated toward the fish curry pot; the rest of the cat remains firmly off duty.' },
+    ],
+  },
   // ---------------- examines: shared kinds, this map's voice ----------------
   'c6.ex.water': {
     lines: [
@@ -909,6 +1053,48 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { not: ['letter.read.kochi.pilar'] }, node: 'c6.post.pilar' },
     { when: { has: ['letter.read.kochi.pilar'], not: ['letter.read.kochi.hana'] }, node: 'c6.post.hana' },
     { node: 'c6.post.idle' },
+  ],
+  nilavilakku: [{ node: 'c6.ex.nilavilakku' }],
+  umbrellas: [
+    { when: { has: ['c6.rain'] }, node: 'c6.ex.umbrellas.rain' },
+    { node: 'c6.ex.umbrellas' },
+  ],
+  jacktree: [{ node: 'c6.ex.jacktree' }],
+  peppervine: [{ node: 'c6.ex.peppervine' }],
+  glassrack: [{ node: 'c6.ex.glassrack' }],
+  cricketwall: [{ node: 'c6.ex.cricketwall' }],
+  tennisball: [
+    { when: { has: ['c6.stumps.seen'] }, node: 'c6.ex.tennisball.six' },
+    { node: 'c6.ex.tennisball' },
+  ],
+  oars: [{ node: 'c6.ex.oars' }],
+  spicesacks: [
+    { when: { has: ['c6.depart.ready'] }, node: 'c6.ex.spicesacks.manifest' },
+    { node: 'c6.ex.spicesacks' },
+  ],
+  postbox: [
+    { when: { has: ['c6.letter.delivered'] }, node: 'c6.ex.postbox.carried' },
+    { node: 'c6.ex.postbox' },
+  ],
+  lungiline: [{ node: 'c6.ex.lungiline' }],
+  huskpile: [{ node: 'c6.ex.huskpile' }],
+  hyacinth: [{ node: 'c6.ex.hyacinth' }],
+  waterlily: [{ node: 'c6.ex.waterlily' }],
+  anthill: [
+    { when: { has: ['c6.ant.seen'] }, node: 'c6.ex.anthill.again' },
+    { node: 'c6.ex.anthill' },
+  ],
+  busstop: [{ node: 'c6.ex.busstop' }],
+  posterwall: [{ node: 'c6.ex.posterwall' }],
+  fallennut: [{ node: 'c6.ex.fallennut' }],
+  ammi: [{ node: 'c6.ex.ammi' }],
+  leafstack: [
+    { when: { has: ['c6.sadya.done'] }, node: 'c6.ex.leafstack.after' },
+    { node: 'c6.ex.leafstack' },
+  ],
+  keralacat: [
+    { when: { has: ['c6.cat.seen'] }, node: 'c6.ex.cat.again' },
+    { node: 'c6.ex.cat' },
   ],
   water: [{ map: 'kerala', node: 'c6.ex.water' }],
   pierdeck: [{ map: 'kerala', node: 'c6.ex.pier' }],

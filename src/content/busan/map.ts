@@ -1,4 +1,5 @@
 import type { MapData } from '../../engine/grid';
+import { cellHash } from '../../art/pix';
 
 /**
  * Mulmang-gol: a fictional harborside market quarter in Busan, folded between
@@ -28,6 +29,47 @@ function groundAt(x: number, y: number): string {
   if (x >= 8 && x <= 9 && y >= 7 && y <= 11) return '-';
   return 'd';
 }
+
+/**
+ * The clutter of a lived-in lane, placed by hand. Market rows loud and
+ * stacked; the hill terrace quieter, all jars and drying mats and weeds.
+ */
+const POIS: Record<string, string> = {
+  // Market lane and stall rows.
+  '21,11': 'B', // basins stacked head-high beside the stalls
+  '27,11': 'w', // the wall of hand-written price signs
+  '35,11': 'p', // a market parasol past the eomuk cart
+  '39,11': 't', // the tteok shop's steamer stack
+  '2,13': 's', // the delivery scooter, parked at the lane's west end
+  '10,14': 'h', // the lane-washing hose, coiled by its drain
+  '9,15': 'p', // parasol shading the gukbap counter's overflow stool
+  // Mid-block, between lane and quay.
+  '4,17': 'z', // rubber boots upside down on the fence
+  '19,18': 'l', // lotus lanterns strung beside the jetty path
+  '22,20': 'l',
+  '30,22': 'h', // the alley's own hose, by its own drain
+  // The dried-fish alley walls.
+  '29,19': 'q', // dried squid pinned up like laundry
+  '32,18': 'q',
+  // The hill terrace: quieter, older, greener.
+  '2,3': 'j', // onggi jars at the pastel houses' feet
+  '11,3': 'j', // the tea house's own onggi corner
+  '41,3': 'j',
+  '13,6': 'c', // gochugaru chilies drying on woven mats
+  '33,3': 'c',
+  '38,6': 'c',
+  '28,4': 'g', // the magpie's wire
+  '20,5': 'Y', // winter's yeontan, delivered early and stacked proud
+  '36,8': 'z', // more boots, drying where the hill wind runs
+  '7,9': 'r', // the stair handrail, with its halfway stool
+  // The quay.
+  '6,23': 'B', // basins rinsed and stacked by the water
+  '15,24': 'y', // styrofoam towers
+  '3,25': 'y',
+  '31,25': 'y',
+  '28,24': 'C', // the market cat, asleep on a lid
+  '17,25': 'U', // a bollard, under new management (a gull)
+};
 
 function objectAt(x: number, y: number): string {
   // The hillside backdrop: two rows of stacked pastel houses.
@@ -77,6 +119,10 @@ function objectAt(x: number, y: number): string {
   if (y === 25 && x === 34) return 'K';
   // Cranes stand in the first water row so the quay can look up at them.
   if (y === 26 && (x === 5 || x === 11 || x === 36 || x === 41)) return 'R';
+  const poi = POIS[`${x},${y}`];
+  if (poi) return poi;
+  // Weeds in the yard corners, deterministic so the map never crawls.
+  if (groundAt(x, y) === 'd' && cellHash(x, y, 55) < 0.05) return 'i';
   return ' ';
 }
 
@@ -129,6 +175,24 @@ export const BUSAN_MAP: MapData = {
     v: { t: 'steamvent', solid: true },
     n: { t: 'bench', solid: true },
     K: { t: 'crate', solid: true },
+    B: { t: 'basinstack', solid: true, tall: true },
+    q: { t: 'squidline', solid: true, tall: true },
+    j: { t: 'onggi', solid: true, tall: true },
+    p: { t: 'parasol', solid: true, tall: true },
+    s: { t: 'scooter', solid: true, tall: true },
+    l: { t: 'lotusline', solid: true, tall: true },
+    g: { t: 'magpie', solid: true, tall: true },
+    w: { t: 'pricewall', solid: true, tall: true },
+    z: { t: 'bootfence', solid: true, tall: true },
+    t: { t: 'steamerstack', solid: true, tall: true },
+    r: { t: 'handrail', solid: true, tall: true },
+    c: { t: 'chilimat', solid: true },
+    y: { t: 'foambox', solid: true },
+    C: { t: 'marketcat', solid: true },
+    U: { t: 'gullpost', solid: true },
+    Y: { t: 'yeontan', solid: true },
+    h: { t: 'hosecoil' },
+    i: { t: 'tuft' },
   },
   ground,
   objects,
@@ -149,6 +213,9 @@ export const TEAHOUSE_MAP: MapData = {
     s: { t: 'stool', solid: true },
     m: { t: 'mat' },
     h: { t: 'hanjilamp', solid: true, tall: true },
+    e: { t: 'shoerow', solid: true },
+    g: { t: 'goboard', solid: true },
+    y: { t: 'yeontan', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -164,13 +231,13 @@ export const TEAHOUSE_MAP: MapData = {
   ],
   objects: [
     '####S##S####',
-    '#h  k      #',
+    '#h  k    y #',
     '#          #',
     '# TTs  TTs #',
     '# mm   mm  #',
     '#          #',
-    '#  TTs     #',
-    '#  mm     h#',
+    '#  TTs  g  #',
+    '#  mm e   h#',
     '#####m######',
   ],
   triggers: [{ at: [5, 8], type: 'door', to: 'busan', spawn: [8, 7], facing: 'down' }],

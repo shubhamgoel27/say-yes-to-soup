@@ -19,7 +19,10 @@ const MARIGOLD_HI = '#ffa53f';
 
 export const ART: ChapterArt = {
   aliases: { correo: 'signpost', colectivo: 'signpost' },
-  grounded: ['portales', 'panstall', 'barrostall', 'telar', 'ofrenda', 'correo', 'colectivo'],
+  grounded: [
+    'portales', 'panstall', 'barrostall', 'telar', 'ofrenda', 'correo', 'colectivo',
+    'tuba', 'rotulo', 'mercadocrates', 'pantray', 'bugambilia', 'nicho', 'paletas', 'ristra',
+  ],
   buildings: ['casona'],
   windows: {
     casona: [
@@ -27,8 +30,9 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['comal', 'veladora'],
+  glows: ['comal', 'veladora', 'nicho'],
   pathy: ['petalpath'],
+  noInk: ['gallina', 'cohete', 'streetdog'],
 
   paint(make) {
     // ------------------------------------------------------------ grounds
@@ -387,6 +391,753 @@ export const ART: ChapterArt = {
       rr(g, 24, 44, 5, 7, 1.2, 'rgba(200,225,225,0.55)');
       dot(g, 26.5, 43, 1.2, '#ffe9ad');
       for (let i = 0; i < 5; i++) dot(g, 12 + i * 9, 63 + (i % 2) * 2, 2, MARIGOLD);
+    }, 64, 96);
+
+    // -------------------------------------------------- the love layer
+
+    // Cut cempasuchil: armfuls tied with twine, waiting to be strung.
+    make('cempacut', 3, (g, r) => {
+      softShadow(g, 32, 50, 20, 6, 0.16);
+      const bundles = r.chance(0.5) ? 2 : 3;
+      for (let b = 0; b < bundles; b++) {
+        const bx = 18 + b * 14 + r.int(4);
+        const by = 44 + (b % 2) * 5;
+        const a = -0.5 + r.next() * 1;
+        // Stems bunched toward one end, twine, then the burning heads.
+        g.strokeStyle = shade('#6b8a42', -0.06 + r.next() * 0.1);
+        g.lineWidth = 1.6;
+        for (let s = 0; s < 4; s++) {
+          g.beginPath();
+          g.moveTo(bx - 10, by + 3 - s * 1.6);
+          g.lineTo(bx + 4, by - 2 + Math.sin(a) * 2);
+          g.stroke();
+        }
+        rr(g, bx - 4, by - 3.4, 3, 6.4, 1.4, '#c9b06a');
+        for (let f = 0; f < 6; f++) {
+          const fx = bx + 5 + r.int(8);
+          const fy = by - 5 + r.int(10);
+          dot(g, fx, fy, 3.6 + r.next() * 1.6, r.chance(0.6) ? MARIGOLD : MARIGOLD_HI);
+          dot(g, fx - 1.2, fy - 1.2, 1.4, '#ffcf7a');
+        }
+      }
+      // A loose head that escaped the twine.
+      dot(g, 12 + r.int(8), 54, 2.4, '#c9581f');
+    });
+
+    // An agave piña resting by a doorway: eight years, trimmed to a heart.
+    make('agavepina', 2, (g, r) => {
+      softShadow(g, 32, 54, 18, 6, 0.2);
+      // The heart: pale flesh, leaf scars ringing it like tree rings.
+      oval(g, 32, 42, 15, 13, '#d8c98f');
+      oval(g, 32, 40, 14, 11, '#e6d9a4');
+      for (let ring = 0; ring < 4; ring++) {
+        g.strokeStyle = `rgba(138,122,60,${0.5 - ring * 0.08})`;
+        g.lineWidth = 1.4;
+        g.beginPath();
+        g.ellipse(32, 42 - ring * 4, 13 - ring * 2.6, 4.4 - ring * 0.7, 0, Math.PI, Math.PI * 2);
+        g.stroke();
+      }
+      // Trimmed leaf stubs, still a little green where the machete stopped.
+      for (let i = 0; i < 7; i++) {
+        const a = -0.4 - i * 0.38 + r.next() * 0.1;
+        const sx = 32 + Math.cos(a) * 13;
+        const sy = 40 + Math.sin(a) * 10;
+        oval(g, sx, sy, 3.4, 2, shade('#8fae5c', (r.next() - 0.5) * 0.12), a);
+      }
+      dot(g, 27, 35, 3, 'rgba(255,246,220,0.5)');
+    });
+
+    // Papel picado not yet strung: folded flat, colors sorted, scissors on top.
+    make('papelstack', 1, (g) => {
+      softShadow(g, 32, 52, 18, 5, 0.16);
+      const cols = ['#c94f7c', '#5fb0a5', MARIGOLD_HI, '#8a5fb0', '#e8dcc4', '#7d9b3f'];
+      for (let i = 0; i < 6; i++) {
+        const c = cols[i] ?? '#c94f7c';
+        rr(g, 16 + (i % 2) * 2, 46 - i * 2.6, 30, 4.4, 1, c);
+        rect(g, 16 + (i % 2) * 2, 48.2 - i * 2.6, 30, 1, shade(c, -0.22));
+      }
+      // The scissors, resting mid-thought.
+      g.strokeStyle = '#5c6570';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(26, 28);
+      g.lineTo(38, 33);
+      g.moveTo(28, 33);
+      g.lineTo(38, 29);
+      g.stroke();
+      dot(g, 26.5, 27.5, 2, '#8a4a3a');
+      dot(g, 27.5, 33.5, 2, '#8a4a3a');
+    });
+
+    // The street dog: warmest doorstep in the village, thoroughly earned.
+    make('streetdog', 2, (g, r) => {
+      // The doorstep mat he has annexed.
+      oval(g, 32, 47, 19, 9, shade('#a2764a', -0.1));
+      oval(g, 32, 46, 17, 7.5, '#b58755');
+      rect(g, 17, 44, 30, 1.2, 'rgba(122,86,54,0.4)');
+      const coat = r.chance(0.6) ? '#c9a06a' : '#9c7a4e';
+      // Body stretched flat on its side, ribs rising once a minute.
+      oval(g, 34, 42, 12, 6.5, coat);
+      oval(g, 41, 40.5, 5.5, 5, shade(coat, -0.04));
+      // The darker saddle every village dog is issued.
+      oval(g, 35, 39.5, 7, 3.4, shade(coat, -0.16));
+      // Head flat on the stone, ear flopped over, muzzle pale, nose dark.
+      oval(g, 22, 42.5, 5.6, 4.4, coat);
+      oval(g, 24.5, 38.8, 2.8, 3.6, shade(coat, -0.22), 0.5);
+      oval(g, 16.8, 43.8, 3, 2.3, shade(coat, 0.2));
+      dot(g, 14.6, 43.8, 1.4, '#3a2a20');
+      // Closed eye: one contented line.
+      g.strokeStyle = '#4a3826';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(20.5, 40.8);
+      g.lineTo(23, 40.8);
+      g.stroke();
+      // Front paws out ahead, tail curled around, pale at the tip.
+      oval(g, 20, 47.5, 4.4, 1.8, shade(coat, 0.1));
+      g.strokeStyle = shade(coat, -0.12);
+      g.lineWidth = 3.2;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(45, 44);
+      g.quadraticCurveTo(48, 49, 41, 50);
+      g.stroke();
+      dot(g, 40.5, 50, 1.8, shade(coat, 0.25));
+    });
+
+    // Chapulines by the scoop: toasted red, lime wedges standing by.
+    make('chapulines', 2, (g, r) => {
+      softShadow(g, 32, 52, 18, 5, 0.18);
+      oval(g, 32, 44, 17, 9, '#9b7a50');
+      oval(g, 32, 43, 15, 7.5, shade('#9b7a50', 0.12));
+      oval(g, 32, 43, 13, 6, '#7a4a2a');
+      // The heap, freckled with chile and salt.
+      oval(g, 32, 41.5, 11.5, 5, '#a04a28');
+      for (let i = 0; i < 16; i++) {
+        dot(g, 23 + r.int(19), 37.5 + r.int(7), 0.9, r.chance(0.6) ? '#7a3018' : '#c1512f');
+      }
+      for (let i = 0; i < 5; i++) dot(g, 24 + r.int(17), 38 + r.int(6), 0.5, '#f0e0c0');
+      // Lime wedges and the wooden scoop.
+      oval(g, 45, 49, 3, 2.2, '#9bc25c', 0.4);
+      oval(g, 48, 47, 3, 2.2, '#b8d878', -0.3);
+      rr(g, 16, 46, 9, 3.4, 1.6, '#8a6238');
+      oval(g, 17.5, 47.6, 2.6, 1.4, shade('#8a6238', -0.2));
+    });
+
+    // Cantaros in the shade: clay water jars, plates over their mouths.
+    make('cantaros', 2, (g, r) => {
+      softShadow(g, 32, 54, 19, 6, 0.2);
+      for (const [cx, cy, cr] of [
+        [24, 42, 10],
+        [42, 45, 8],
+      ] as const) {
+        oval(g, cx, cy, cr, cr * 0.92, '#a2603a');
+        oval(g, cx - cr * 0.3, cy - cr * 0.3, cr * 0.42, cr * 0.34, 'rgba(255,240,215,0.28)');
+        oval(g, cx, cy + cr * 0.5, cr * 0.8, cr * 0.28, shade('#a2603a', -0.2));
+        // Neck, and the little plate that keeps the flies honest.
+        rr(g, cx - 3.4, cy - cr - 3, 6.8, 5, 2, shade('#a2603a', -0.08));
+        oval(g, cx, cy - cr - 3, 5.4, 1.8, '#c9b06a');
+      }
+      // The dark bloom of dampness where the big jar sweats.
+      oval(g, 24, 47, 6, 3, 'rgba(60,38,26,0.25)');
+      if (r.chance(0.6)) dot(g, 33, 52, 1.2, 'rgba(90,130,150,0.5)');
+    });
+
+    // The metate: volcanic stone, three legs, generations of grinding.
+    make('metate', 1, (g) => {
+      softShadow(g, 32, 54, 19, 5, 0.2);
+      // Legs first, then the sloped plate over them.
+      for (const [lx, ly] of [
+        [20, 49],
+        [44, 49],
+        [32, 53],
+      ] as const) {
+        rr(g, lx - 3, ly - 4, 6, 8, 2, '#4a4544');
+      }
+      g.fillStyle = '#5c5654';
+      g.beginPath();
+      g.moveTo(14, 44);
+      g.lineTo(50, 40);
+      g.lineTo(52, 46);
+      g.lineTo(16, 50);
+      g.closePath();
+      g.fill();
+      // The working face, polished paler by years of cacao and chile.
+      g.fillStyle = '#736a66';
+      g.beginPath();
+      g.moveTo(16, 43);
+      g.lineTo(48, 39.4);
+      g.lineTo(50, 43);
+      g.lineTo(18, 46.6);
+      g.closePath();
+      g.fill();
+      oval(g, 33, 42.6, 10, 2.2, 'rgba(240,225,205,0.2)', -0.08);
+      // The mano, resting across the top, and a dust of ground cacao.
+      rr(g, 24, 36, 17, 4.4, 2.2, '#4a4544');
+      oval(g, 25, 38, 2, 2, '#5c5654');
+      for (let i = 0; i < 5; i++) dot(g, 22 + i * 5, 44 - i * 0.5, 0.8, '#5c4030');
+    });
+
+    // A broom mid-shift: every door sweeps to the middle of the street.
+    make('escoba', 2, (g, r) => {
+      // Swept arcs in the dust, the broom's signature.
+      g.strokeStyle = 'rgba(120,90,60,0.3)';
+      g.lineWidth = 1.2;
+      for (let i = 0; i < 3; i++) {
+        g.beginPath();
+        g.arc(30 + i * 3, 52, 10 + i * 3, Math.PI * 1.15, Math.PI * 1.85);
+        g.stroke();
+      }
+      softShadow(g, 34, 52, 14, 4, 0.14);
+      // Handle leaning at the honest angle of a pause, not an abandonment.
+      g.strokeStyle = '#8a6238';
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(22 + r.int(3), 10);
+      g.lineTo(38, 44);
+      g.stroke();
+      // The bound twig head, worn to a slant.
+      g.fillStyle = '#b09550';
+      g.beginPath();
+      g.moveTo(34, 40);
+      g.lineTo(46, 44);
+      g.lineTo(44, 52);
+      g.lineTo(30, 48);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = shade('#b09550', -0.25);
+      g.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        g.beginPath();
+        g.moveTo(33 + i * 2.6, 42 + i * 0.8);
+        g.lineTo(31 + i * 2.6, 50 + i * 0.5);
+        g.stroke();
+      }
+      rr(g, 33, 40, 8, 3, 1.5, '#a02335');
+    });
+
+    // Hens on audit: whatever the comal drops, the committee finds.
+    make('gallina', 3, (g, r) => {
+      const brown = shade('#a2603a', (r.next() - 0.5) * 0.1);
+      // Scratch marks: evidence of due diligence.
+      g.strokeStyle = 'rgba(120,90,60,0.35)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        g.beginPath();
+        g.moveTo(14 + r.int(34), 50 + r.int(6));
+        g.lineTo(18 + r.int(34), 52 + r.int(6));
+        g.stroke();
+      }
+      // Hen one, brown, mid-peck: compact, tail up, beak to the ground.
+      softShadow(g, 23, 50, 8, 2.6, 0.14);
+      oval(g, 23, 43.5, 6.5, 5, brown);
+      oval(g, 18.5, 39.5, 3.4, 4.6, shade(brown, -0.14), 0.5); // tail up
+      dot(g, 28.5, 45.5, 2.6, shade(brown, 0.1)); // head, low
+      dot(g, 29.2, 43.2, 1.1, '#c1512f'); // comb
+      g.strokeStyle = '#e8a53f';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(30.5, 46.5);
+      g.lineTo(32.5, 48.5); // beak, at work
+      g.moveTo(21, 48);
+      g.lineTo(21, 51);
+      g.moveTo(25, 48);
+      g.lineTo(25, 51);
+      g.stroke();
+      dot(g, 33.6, 49.6, 0.7, '#c9b06a'); // the finding
+      // Hen two, white, upright, supervising the audit.
+      softShadow(g, 44, 51, 7, 2.6, 0.14);
+      const white = '#e8dcc4';
+      oval(g, 44, 43, 6, 4.8, white);
+      oval(g, 39, 39, 3, 4.2, shade(white, -0.14), -0.5); // tail
+      dot(g, 48.5, 37.5, 2.7, shade(white, 0.05)); // head, high
+      oval(g, 47, 40.5, 2.2, 3, shade(white, 0.02), 0.3); // neck
+      dot(g, 48.7, 34.7, 1.2, '#c1512f'); // comb
+      g.strokeStyle = '#e8a53f';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(51, 37.8);
+      g.lineTo(53.4, 38.4); // beak, level, judging
+      g.moveTo(42, 47.5);
+      g.lineTo(42, 51);
+      g.moveTo(46, 47.5);
+      g.lineTo(46, 51);
+      g.stroke();
+      dot(g, 49.6, 36.6, 0.6, '#3a2a20'); // the eye that misses nothing
+    });
+
+    // A spent cohete: the stick comes down somewhere, every single time.
+    make('cohete', 3, (g, r) => {
+      const a = r.next() * 0.8 - 0.4;
+      const cx = 26 + r.int(12);
+      const cy = 44 + r.int(8);
+      // The cane stick, and the scorched twist that did the announcing.
+      g.strokeStyle = '#c9b06a';
+      g.lineWidth = 2;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(cx - Math.cos(a) * 16, cy - Math.sin(a) * 6);
+      g.lineTo(cx + Math.cos(a) * 12, cy + Math.sin(a) * 6);
+      g.stroke();
+      rr(g, cx + Math.cos(a) * 10 - 2.4, cy + Math.sin(a) * 6 - 3.6, 5.4, 7, 1.6, '#4a4038');
+      dot(g, cx + Math.cos(a) * 10, cy + Math.sin(a) * 6 - 4, 1.6, '#2b2118');
+      // A little ash, already being redistributed by hens.
+      for (let i = 0; i < 4; i++) dot(g, cx + r.int(14) - 7, cy + 6 + r.int(4), 0.8, 'rgba(80,72,64,0.5)');
+    });
+
+    // The whitewash cubeta: tomb-tidying is housework for family who moved.
+    make('cubeta', 1, (g) => {
+      softShadow(g, 30, 54, 14, 5, 0.18);
+      // Galvanized bucket, wire handle at ease.
+      g.fillStyle = '#8a9299';
+      g.beginPath();
+      g.moveTo(20, 36);
+      g.lineTo(40, 36);
+      g.lineTo(37, 52);
+      g.lineTo(23, 52);
+      g.closePath();
+      g.fill();
+      vgrad(g, 20, 36, 20, 6, 'rgba(235,240,245,0.4)', 'rgba(0,0,0,0)');
+      oval(g, 30, 36, 10, 3, '#6b7278');
+      oval(g, 30, 36, 8.4, 2.2, '#e8e4da');
+      g.strokeStyle = '#6b7278';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.arc(30, 38, 10, Math.PI * 1.1, Math.PI * 1.9);
+      g.stroke();
+      // The brush across the rim, and one drip that got away.
+      rr(g, 33, 28, 4, 12, 2, '#8a6238');
+      rr(g, 31.5, 25, 7, 5, 2, '#d9d2c2');
+      dot(g, 26, 54, 1.6, '#e8e4da');
+      dot(g, 42, 51, 1.2, '#e8e4da');
+    });
+
+    // The costal of petals: the whole field, folded into one sack.
+    make('costal', 1, (g) => {
+      softShadow(g, 32, 54, 17, 6, 0.2);
+      // Woven sack with a rolled cuff, leaning slightly, full of orange.
+      g.fillStyle = '#c9b06a';
+      g.beginPath();
+      g.moveTo(20, 30);
+      g.quadraticCurveTo(14, 44, 18, 53);
+      g.lineTo(46, 53);
+      g.quadraticCurveTo(50, 42, 44, 30);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(122,102,54,0.5)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 4; i++) {
+        g.beginPath();
+        g.moveTo(18, 34 + i * 5);
+        g.lineTo(47, 34 + i * 5);
+        g.stroke();
+      }
+      rr(g, 17, 27, 30, 6, 3, shade('#c9b06a', -0.1));
+      // The payload, heaped over the cuff.
+      for (let i = 0; i < 12; i++) {
+        const px = 21 + ((i * 7) % 22);
+        const py = 24 - Math.sin((i / 12) * Math.PI) * 4 + (i % 3);
+        dot(g, px, py, 2.6, i % 2 ? MARIGOLD : MARIGOLD_HI);
+      }
+      // Petals that have already deserted.
+      oval(g, 13, 52, 2.2, 1.3, '#c9581f', 0.4);
+      oval(g, 50, 50, 2.2, 1.3, MARIGOLD, -0.3);
+    });
+
+    // Jicaras mouth-down: tejate tastes better from a gourd, and they know it.
+    make('jicaras', 1, (g) => {
+      softShadow(g, 32, 52, 16, 5, 0.16);
+      // The drying stack, lacquer red and black.
+      for (let i = 0; i < 3; i++) {
+        const c = i % 2 ? '#8a2a28' : '#3a2a26';
+        oval(g, 26, 48 - i * 5, 11 - i * 1.4, 4.6, c);
+        oval(g, 26, 46.5 - i * 5, 9.5 - i * 1.4, 3.4, shade(c, 0.12));
+      }
+      // One upright, showing off its painted flowers.
+      oval(g, 46, 46, 8, 6.5, '#a02335');
+      oval(g, 46, 44.5, 6.6, 4.6, '#701a26');
+      for (let i = 0; i < 3; i++) {
+        dot(g, 41 + i * 5, 48.5, 1.4, i % 2 ? MARIGOLD_HI : '#5fb0a5');
+        dot(g, 43.5 + i * 5, 50.5, 0.9, '#e8dcc4');
+      }
+    });
+
+    // Cazuelas by size: the big one at the bottom is mole-only, and everyone knows.
+    make('cazuelas', 1, (g) => {
+      softShadow(g, 32, 54, 17, 5, 0.18);
+      const clay = '#b06a3c';
+      for (let i = 0; i < 3; i++) {
+        const w = 16 - i * 4;
+        const y = 48 - i * 8;
+        // The bowl: glazed clay body with a bright wide rim.
+        oval(g, 32, y, w, w * 0.55, shade(clay, -0.06 + i * 0.03));
+        oval(g, 32, y - w * 0.28, w, w * 0.3, shade(clay, 0.16));
+        oval(g, 32, y - w * 0.26, w - 2.4, w * 0.22, '#5c3424');
+        // The glaze catching the one window's light.
+        oval(g, 32 - w * 0.5, y - 1, 2.6, w * 0.3, 'rgba(255,235,205,0.38)', 0.3);
+        // Each chipped in a different honest place.
+        dot(g, 32 + (i % 2 ? w - 1.4 : 1.4 - w), y - w * 0.24, 1.1, '#e6d3ae');
+      }
+      // Little handles on the mole pot, for the two-person carry.
+      oval(g, 15, 47, 2.2, 1.6, shade(clay, 0.1));
+      oval(g, 49, 47, 2.2, 1.6, shade(clay, 0.1));
+      // A wooden spoon standing in the top one, on principle.
+      g.strokeStyle = '#a2764a';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(34, 30);
+      g.lineTo(40, 16);
+      g.stroke();
+      oval(g, 40.8, 14.5, 2.4, 3.2, '#b58755', 0.4);
+    });
+
+    // The tuba on its own chair outside rehearsal. The chair was brought out.
+    make('tuba', 1, (g) => {
+      softShadow(g, 32, 90, 20, 5, 0.2);
+      // A woven-seat chair, the kind lent to instruments and grandmothers.
+      g.strokeStyle = '#8a6238';
+      g.lineWidth = 3.4;
+      g.lineCap = 'round';
+      for (const [x1, y1, x2, y2] of [
+        [20, 88, 20, 62],
+        [44, 88, 44, 62],
+        [20, 62, 20, 34],
+        [44, 62, 44, 34],
+      ] as const) {
+        g.beginPath();
+        g.moveTo(x1, y1);
+        g.lineTo(x2, y2);
+        g.stroke();
+      }
+      rr(g, 18, 58, 28, 7, 2, '#a2764a');
+      rect(g, 20, 59.5, 24, 1.6, 'rgba(240,220,180,0.35)');
+      rr(g, 18, 34, 28, 5, 2, '#8a6238');
+      // The tuba itself: one big ring of tubing, bell wide open to the sky.
+      const brass = '#c9a35f';
+      g.strokeStyle = shade(brass, -0.22);
+      g.lineWidth = 7.5;
+      g.beginPath();
+      g.arc(30, 52, 11.5, 0, Math.PI * 2);
+      g.stroke();
+      g.strokeStyle = brass;
+      g.lineWidth = 4.4;
+      g.beginPath();
+      g.arc(30, 52, 11.5, 0, Math.PI * 2);
+      g.stroke();
+      g.strokeStyle = 'rgba(255,240,205,0.55)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.arc(30, 52, 13, Math.PI * 1.15, Math.PI * 1.55);
+      g.stroke();
+      // The neck climbing out of the ring toward the bell.
+      g.strokeStyle = shade(brass, -0.08);
+      g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(36, 42);
+      g.quadraticCurveTo(42, 36, 40, 30);
+      g.stroke();
+      // The bell: a wide brass trumpet mouth, nothing like a face.
+      g.fillStyle = shade(brass, 0.04);
+      g.beginPath();
+      g.moveTo(32, 30);
+      g.quadraticCurveTo(30, 18, 26, 13);
+      g.quadraticCurveTo(40, 8, 52, 14);
+      g.quadraticCurveTo(46, 21, 46, 30);
+      g.quadraticCurveTo(39, 34, 32, 30);
+      g.closePath();
+      g.fill();
+      oval(g, 39, 14.5, 12, 4.6, shade(brass, -0.32), -0.08);
+      oval(g, 39, 14.2, 10, 3.4, '#6e522a', -0.08);
+      g.strokeStyle = '#fff0cf';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.arc(39, 16, 11.4, Math.PI * 1.05, Math.PI * 1.45);
+      g.stroke();
+      // Valve caps riding the near side of the ring.
+      for (let i = 0; i < 3; i++) dot(g, 22 + i * 4.4, 60 - i * 3.6, 1.7, shade(brass, 0.18));
+    }, 64, 96);
+
+    // The rotulista's sign, half finished: lunch outranked the last letters.
+    make('rotulo', 1, (g) => {
+      softShadow(g, 32, 90, 20, 5, 0.2);
+      // Board leaning against the wall, one shoulder higher.
+      g.save();
+      g.translate(32, 55);
+      g.rotate(-0.06);
+      rr(g, -24, -26, 48, 58, 3, '#f0e8d4');
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 3;
+      g.strokeRect(-24, -26, 48, 58);
+      // Finished letters: fat, shadowed, joyful. Abstract at this size.
+      const done = ['#a02335', '#1c5c8a', '#a02335'];
+      for (let i = 0; i < 3; i++) {
+        const c = done[i] ?? '#a02335';
+        rr(g, -18 + i * 13, -20, 9, 14, 2, c);
+        rr(g, -16.5 + i * 13, -18.5, 9, 14, 2, 'rgba(0,0,0,0.18)');
+        rr(g, -18 + i * 13, -20, 9, 14, 2, c);
+        dot(g, -14 + i * 13, -16, 2, 'rgba(255,240,210,0.5)');
+      }
+      // The pencil ghosts of the letters still waiting.
+      g.strokeStyle = 'rgba(90,80,70,0.4)';
+      g.lineWidth = 1.2;
+      for (let i = 0; i < 4; i++) {
+        g.strokeRect(-18 + i * 10, 2, 7, 12);
+      }
+      // A flourish underline, finished first because it was the fun part.
+      g.strokeStyle = '#c98a2e';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(-19, 22);
+      g.quadraticCurveTo(0, 27, 19, 21);
+      g.stroke();
+      g.restore();
+      // Paint cans and the brush, holding the painter's place.
+      oval(g, 12, 88, 5, 3, '#6b7278');
+      rr(g, 7, 78, 10, 10, 2, '#8a9299');
+      oval(g, 12, 78, 5, 1.8, '#a02335');
+      g.strokeStyle = '#8a6238';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(50, 88);
+      g.lineTo(56, 76);
+      g.stroke();
+      dot(g, 56.5, 74.5, 2, '#a02335');
+    }, 64, 96);
+
+    // Market crates: tomatillos in their paper lanterns, chiles ranked by menace.
+    make('mercadocrates', 1, (g, r) => {
+      softShadow(g, 32, 90, 22, 5, 0.2);
+      const slat = (x: number, y: number, w: number, h: number, c: string) => {
+        rr(g, x, y, w, h, 2, c);
+        g.strokeStyle = shade(c, -0.22);
+        g.lineWidth = 1.2;
+        for (let i = 1; i < 3; i++) {
+          g.beginPath();
+          g.moveTo(x + 2, y + (h / 3) * i);
+          g.lineTo(x + w - 2, y + (h / 3) * i);
+          g.stroke();
+        }
+      };
+      // Bottom: dried pasilla, almost black, sweet like raisins.
+      slat(10, 66, 44, 22, '#9b7a50');
+      for (let i = 0; i < 7; i++) {
+        oval(g, 15 + i * 5.6, 66 + r.int(4), 2.2, 5, '#3a2430', 0.2 + r.next() * 0.3);
+      }
+      // Middle, offset: red chiles with intentions.
+      slat(14, 46, 40, 20, '#a2764a');
+      for (let i = 0; i < 8; i++) {
+        oval(g, 18 + i * 4.6, 46 + r.int(4), 2, 4.4, r.chance(0.7) ? '#b52a28' : '#c1512f', r.next() * 0.6 - 0.3);
+      }
+      // Top: tomatillos, husks half open like paper lanterns.
+      slat(12, 26, 38, 20, '#8a6238');
+      for (let i = 0; i < 6; i++) {
+        const tx = 17 + i * 5.6;
+        const ty = 26 + (i % 2) * 3;
+        dot(g, tx, ty, 3.2, '#9bc25c');
+        dot(g, tx - 1, ty - 1, 1.2, '#c9e28f');
+        g.strokeStyle = '#c9b06a';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(tx - 3, ty - 2);
+        g.lineTo(tx - 4.4, ty - 5);
+        g.moveTo(tx + 3, ty - 2);
+        g.lineTo(tx + 4.4, ty - 5);
+        g.stroke();
+      }
+    }, 64, 96);
+
+    // Pan de muerto cooling by the door: forty caritas, all pointed at the street.
+    make('pantray', 1, (g, r) => {
+      softShadow(g, 32, 90, 22, 5, 0.2);
+      // The rack: two shelves on sawhorse legs, a cloth for the top batch.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 3;
+      for (const [x1, x2] of [
+        [14, 10],
+        [50, 54],
+      ] as const) {
+        g.beginPath();
+        g.moveTo(x1, 58);
+        g.lineTo(x2, 90);
+        g.stroke();
+      }
+      for (const y of [58, 36] as const) {
+        rr(g, 8, y, 48, 6, 2, '#9b7a50');
+        vgrad(g, 8, y, 48, 3, 'rgba(255,240,210,0.25)', 'rgba(0,0,0,0)');
+      }
+      // Loaves: round, bone strips crossed, sugar catching the light.
+      for (const [row, count] of [
+        [52, 4],
+        [30, 4],
+      ] as const) {
+        for (let i = 0; i < count; i++) {
+          const bx = 14 + i * 12;
+          dot(g, bx, row, 5.4, '#c98a2e');
+          dot(g, bx - 1, row - 1.4, 4, shade('#c98a2e', 0.14));
+          g.strokeStyle = shade('#c98a2e', 0.32);
+          g.lineWidth = 1.4;
+          g.beginPath();
+          g.moveTo(bx - 4, row - 3);
+          g.lineTo(bx + 4, row + 3);
+          g.moveTo(bx + 4, row - 3);
+          g.lineTo(bx - 4, row + 3);
+          g.stroke();
+          if (r.chance(0.65)) {
+            dot(g, bx, row - 1.6, 1.8, '#f0e0c0');
+            dot(g, bx - 0.7, row - 2, 0.45, '#7a4a20');
+            dot(g, bx + 0.7, row - 2, 0.45, '#7a4a20');
+          }
+        }
+      }
+      // The cloth, thrown back: this batch is cool enough to meet people.
+      g.fillStyle = '#e8dcc4';
+      g.beginPath();
+      g.moveTo(50, 34);
+      g.quadraticCurveTo(60, 40, 57, 52);
+      g.lineTo(52, 52);
+      g.quadraticCurveTo(54, 42, 48, 38);
+      g.closePath();
+      g.fill();
+    }, 64, 96);
+
+    // Bougainvillea over the wall: magenta by the armload, rent paid in color.
+    make('bugambilia', 2, (g, r) => {
+      softShadow(g, 32, 90, 18, 5, 0.16);
+      // The woody idea of a trunk, mostly hidden by its own enthusiasm.
+      g.strokeStyle = '#6e4a30';
+      g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(30, 88);
+      g.quadraticCurveTo(24, 60, 30, 34);
+      g.stroke();
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(30, 56);
+      g.quadraticCurveTo(42, 46, 50, 30);
+      g.stroke();
+      // The cascade: green underneath, magenta absolutely everywhere else.
+      for (let i = 0; i < 30; i++) {
+        const t = i / 30;
+        const bx = 14 + r.int(38);
+        const by = 8 + t * 52 + r.int(10);
+        dot(g, bx, by, 3 + r.next() * 2.4, r.chance(0.3) ? '#4d7440' : shade('#c9356b', (r.next() - 0.5) * 0.14));
+      }
+      for (let i = 0; i < 8; i++) {
+        dot(g, 16 + r.int(34), 10 + r.int(48), 1.2, '#e88ab0');
+      }
+      // The tiny true flowers, cream, hiding inside the colored bracts.
+      for (let i = 0; i < 6; i++) dot(g, 18 + r.int(30), 14 + r.int(40), 0.9, '#f2e6d0');
+      // Fallen bracts: the wall keeps sweeping, the vine keeps paying.
+      for (let i = 0; i < 5; i++) {
+        oval(g, 14 + r.int(36), 84 + r.int(8), 2, 1.2, '#b05080', r.next() * 3);
+      }
+    }, 64, 96);
+
+    // A corner nicho: a thumb-sized saint, fresh marigolds, one steady flame.
+    make('nicho', 1, (g) => {
+      softShadow(g, 32, 90, 16, 5, 0.2);
+      // The masonry post, whitewashed, sky-blue inside the arch.
+      rr(g, 20, 34, 24, 54, 3, '#e6ded0');
+      vgrad(g, 20, 34, 24, 10, 'rgba(255,255,245,0.5)', 'rgba(0,0,0,0)');
+      rr(g, 24, 40, 16, 22, 7, '#54708a');
+      rr(g, 25.5, 41.5, 13, 19, 6, '#3c5a78');
+      // The saint: small, white-robed, infinitely patient.
+      oval(g, 32, 54, 4, 6, '#e8dcc4');
+      dot(g, 32, 46.5, 2.6, '#d9a97c');
+      dot(g, 32, 44, 3.4, 'rgba(255,230,160,0.55)');
+      // The veladora at the ledge, and the marigolds changed this morning.
+      glowSpot(g, 27, 60, 8, '#ffd28a', 0.5);
+      rr(g, 25, 58, 4.4, 6, 1.6, 'rgba(200,225,225,0.6)');
+      oval(g, 27.2, 57.5, 1.2, 2, '#ffe9ad');
+      for (let i = 0; i < 3; i++) dot(g, 34 + i * 3, 62.5, 2, i % 2 ? MARIGOLD : MARIGOLD_HI);
+      // A small cross on top, and the ledge's permanent wax history.
+      g.strokeStyle = '#8c8479';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(32, 26);
+      g.lineTo(32, 36);
+      g.moveTo(28, 29.5);
+      g.lineTo(36, 29.5);
+      g.stroke();
+      dot(g, 26, 65, 1, 'rgba(255,240,210,0.6)');
+    }, 64, 96);
+
+    // The paletero's bicycle cart, bell included. Every child can hear it.
+    make('paletas', 1, (g) => {
+      softShadow(g, 32, 90, 22, 5, 0.2);
+      // Wheels first: the cart is a bicycle that grew up.
+      for (const wx of [17, 47] as const) {
+        dot(g, wx, 80, 9, '#3d3630');
+        dot(g, wx, 80, 6.5, '#6b655c');
+        dot(g, wx, 80, 2, '#c9c2b4');
+        g.strokeStyle = '#c9c2b4';
+        g.lineWidth = 1;
+        for (let s = 0; s < 4; s++) {
+          const a = (s / 4) * Math.PI;
+          g.beginPath();
+          g.moveTo(wx - Math.cos(a) * 6, 80 - Math.sin(a) * 6);
+          g.lineTo(wx + Math.cos(a) * 6, 80 + Math.sin(a) * 6);
+          g.stroke();
+        }
+      }
+      // The insulated box, white as a promise of ice.
+      rr(g, 10, 44, 44, 32, 4, '#f0ece2');
+      vgrad(g, 10, 44, 44, 8, 'rgba(255,255,250,0.6)', 'rgba(0,0,0,0)');
+      rr(g, 10, 44, 44, 7, 3, '#4a7ab5');
+      // PALETAS, painted as joyful color-blocks at this scale.
+      for (let i = 0; i < 6; i++) {
+        rr(g, 14 + i * 6.4, 58, 4.4, 8, 1, i % 2 ? '#c94f7c' : '#4a7ab5');
+      }
+      // A painted paleta on the side, mid-melt, aspirational.
+      rr(g, 44, 56, 6, 11, 3, '#5fb0a5');
+      rect(g, 46.4, 67, 1.4, 5, '#8a6238');
+      // Handlebar and THE BELL, silver, understated, world-famous.
+      g.strokeStyle = '#6b655c';
+      g.lineWidth = 2.6;
+      g.beginPath();
+      g.moveTo(54, 48);
+      g.quadraticCurveTo(60, 44, 59, 38);
+      g.stroke();
+      dot(g, 59, 36, 2.6, '#c9c2b4');
+      dot(g, 58.2, 35.2, 1, '#fff6e0');
+      // The lid handle, worn to shine by one thumb.
+      rr(g, 26, 41, 12, 3.4, 1.6, '#c9a35f');
+    }, 64, 96);
+
+    // A ristra and its garlic neighbor, hung from the kitchen beam.
+    make('ristra', 1, (g, r) => {
+      // The peg and the twine loop: infrastructure of a serious kitchen.
+      rr(g, 26, 8, 12, 5, 2, '#7a5636');
+      g.strokeStyle = '#c9b06a';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(30, 13);
+      g.lineTo(28, 20);
+      g.moveTo(34, 13);
+      g.lineTo(38, 20);
+      g.stroke();
+      // The ristra: chiles shingled tight, tapering, darkening as they dry.
+      for (let i = 0; i < 9; i++) {
+        const t = i / 9;
+        const rx = 28 + Math.sin(i * 1.7) * 3;
+        const ry = 22 + t * 44;
+        const w = 4.6 - t * 1.6;
+        oval(g, rx, ry, w, w * 1.9, shade('#b52a28', -t * 0.18 + (r.next() - 0.5) * 0.06), Math.sin(i) * 0.3);
+        oval(g, rx - 1, ry - w, 1.2, 1.8, '#4d7440');
+      }
+      oval(g, 28, 70, 2.4, 4, '#701a26', 0.2);
+      // The garlic braid: quieter, but it holds the whole cuisine together.
+      for (let i = 0; i < 4; i++) {
+        dot(g, 42, 24 + i * 8, 3.6 - i * 0.3, '#e8e0cc');
+        dot(g, 41, 23 + i * 8, 1.4, '#f6f0e0');
+      }
+      g.strokeStyle = '#c9b06a';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(42, 20);
+      g.lineTo(42, 56);
+      g.stroke();
     }, 64, 96);
 
     // ------------------------------------------------------------ casona

@@ -23,6 +23,13 @@ export const ART: ChapterArt = {
     'chiesa',
     'macchina',
     'trofei',
+    'testadimoro',
+    'edicola',
+    'fichidindia',
+    'pomodori',
+    'avvisi',
+    'lavagna',
+    'ventola',
   ],
   buildings: ['casedda'],
   windows: {
@@ -31,8 +38,9 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['barlamp'],
+  glows: ['barlamp', 'edicola'],
   pathy: ['basalto'],
+  noInk: ['campetto', 'limoni'],
 
   paint(make) {
     // ------------------------------------------------------------ grounds
@@ -319,6 +327,394 @@ export const ART: ChapterArt = {
       dot(g, 29, 20, 1.6, '#b9c4c9');
     });
 
+    // ------------------------------------------------------------ street life
+
+    make('lemoncrate', 3, (g, r) => {
+      softShadow(g, 32, 56, 22, 6, 0.2);
+      const wood = '#b58a54';
+      // Lower crate, slatted, with the cooperative's stencil band.
+      rr(g, 10, 34, 44, 22, 3, shade(wood, -0.06));
+      g.strokeStyle = 'rgba(60,40,20,0.35)';
+      g.lineWidth = 2;
+      for (const ly of [40, 50]) {
+        g.beginPath();
+        g.moveTo(12, ly);
+        g.lineTo(52, ly);
+        g.stroke();
+      }
+      // The stencil: blue band, pale letters, crooked the same way every time.
+      g.save();
+      g.translate(32, 45);
+      g.rotate((r.next() - 0.5) * 0.06 - 0.03);
+      rr(g, -17, -4, 34, 8, 2, 'rgba(58,109,156,0.85)');
+      g.strokeStyle = 'rgba(242,237,224,0.9)';
+      g.lineWidth = 1.5;
+      for (let k = 0; k < 6; k++) {
+        const lx = -13 + k * 5 + (r.next() - 0.5);
+        g.beginPath();
+        g.moveTo(lx, -1.6);
+        g.lineTo(lx + 2.4, 1.8);
+        g.stroke();
+      }
+      g.restore();
+      // Upper crate rides a little off-square; lemons crowd the rim.
+      const ox = r.chance(0.5) ? -3 : 3;
+      rr(g, 14 + ox, 18, 38, 18, 3, wood);
+      vgrad(g, 14 + ox, 18, 38, 6, 'rgba(255,240,210,0.2)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(60,40,20,0.35)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(16 + ox, 27);
+      g.lineTo(50 + ox, 27);
+      g.stroke();
+      for (let i = 0; i < 6; i++) {
+        dot(g, 20 + ox + i * 5.2, 17 + (i % 2) * 2.4, 3.4, i % 2 ? '#e3cf49' : '#d9c22e');
+      }
+      if (r.chance(0.7)) oval(g, 26 + ox, 13.5, 4, 1.8, '#5f7a44', 0.5);
+    });
+
+    make('testadimoro', 2, (g, r) => {
+      // A glazed maiolica head for a planter, basil for hair. The legend
+      // supplies the rest.
+      softShadow(g, 32, 90, 17, 5, 0.2);
+      const skin = r.chance(0.5) ? '#b07848' : '#6e4a30';
+      // The base: white ceramic collar painted with a blue wave, the shelf
+      // the whole legend stands on.
+      rr(g, 18, 74, 28, 14, 5, '#efe9dc');
+      g.strokeStyle = '#3a6d9c';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(21, 81);
+      for (let k = 0; k < 4; k++) g.quadraticCurveTo(24 + k * 6, 77.5, 27 + k * 6, 81);
+      g.stroke();
+      // The head, glazed and wide, with a ceramic shine up one cheek.
+      oval(g, 32, 58, 17, 18, skin);
+      oval(g, 25, 52, 5, 8, shade(skin, 0.18), -0.3);
+      // Face: calm, painted, in on the joke.
+      dot(g, 26, 57, 2, '#2b2016');
+      dot(g, 38, 57, 2, '#2b2016');
+      g.strokeStyle = '#2b2016';
+      g.lineWidth = 1.5;
+      for (const bx of [26, 38]) {
+        g.beginPath();
+        g.moveTo(bx - 3.4, 53);
+        g.quadraticCurveTo(bx, 51, bx + 3.4, 53);
+        g.stroke();
+      }
+      dot(g, 32, 67, 2.6, '#a04738');
+      dot(g, 15, 60, 2.2, '#c9a35f');
+      dot(g, 49, 60, 2.2, '#c9a35f');
+      // The hair: basil, thriving, faintly smug.
+      blob(g, 32, 28, 12, PAL.greenDark, r, 0.3);
+      blob(g, 22, 33, 8, '#5f7a44', r, 0.3);
+      blob(g, 42, 32, 8, shade('#5f7a44', 0.12), r, 0.3);
+      blob(g, 32, 20, 7, shade(PAL.green, 0.12), r, 0.3);
+      dot(g, 26, 22, 1.6, shade(PAL.green, 0.3));
+      dot(g, 39, 26, 1.6, shade(PAL.green, 0.3));
+      // Crown over the brow, painted after the basil so royalty stays visible.
+      rr(g, 20, 40, 24, 7, 3, '#c9a35f');
+      g.fillStyle = '#c9a35f';
+      for (const px of [23, 30, 37]) {
+        g.beginPath();
+        g.moveTo(px, 41);
+        g.lineTo(px + 3.5, 35);
+        g.lineTo(px + 7, 41);
+        g.closePath();
+        g.fill();
+      }
+      dot(g, 26, 43.5, 1.5, '#b5443a');
+      dot(g, 32, 43.5, 1.5, '#3a6d9c');
+      dot(g, 38, 43.5, 1.5, '#4a7a4a');
+    }, 64, 96);
+
+    make('edicola', 1, (g) => {
+      softShadow(g, 32, 90, 16, 5, 0.2);
+      // A lava-stone aedicule with a little pediment.
+      g.fillStyle = '#3a3540';
+      g.beginPath();
+      g.moveTo(10, 32);
+      g.lineTo(32, 16);
+      g.lineTo(54, 32);
+      g.closePath();
+      g.fill();
+      rr(g, 14, 30, 36, 58, 4, '#3a3540');
+      // The niche, plastered pale.
+      g.fillStyle = '#efe9dc';
+      g.beginPath();
+      g.moveTo(20, 84);
+      g.lineTo(20, 48);
+      g.quadraticCurveTo(32, 34, 44, 48);
+      g.lineTo(44, 84);
+      g.closePath();
+      g.fill();
+      // The Madonna: blue robe, gold halo, small and certain.
+      g.strokeStyle = '#c9a35f';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.arc(32, 52, 5.5, 0, Math.PI * 2);
+      g.stroke();
+      oval(g, 32, 67, 6, 10, '#3a6d9c');
+      oval(g, 32, 64, 4.5, 7, shade('#3a6d9c', 0.12));
+      dot(g, 32, 53, 3.6, '#e0b48a');
+      // Two electric candles, steady in any wind.
+      glowSpot(g, 24.5, 73, 8, '#ffd98c', 0.6);
+      glowSpot(g, 39.5, 73, 8, '#ffd98c', 0.6);
+      rr(g, 23, 74, 3, 9, 1.5, '#f2ede0');
+      rr(g, 38, 74, 3, 9, 1.5, '#f2ede0');
+      dot(g, 24.5, 72.5, 1.4, '#ffb54d');
+      dot(g, 39.5, 72.5, 1.4, '#ffb54d');
+      // A jam jar of bougainvillea somebody keeps current.
+      rr(g, 29, 78, 6, 7, 2, 'rgba(214,232,240,0.8)');
+      dot(g, 30, 76, 2, '#c65a8a');
+      dot(g, 34, 75.5, 2, '#a04a78');
+    }, 64, 96);
+
+    make('fichidindia', 2, (g, r) => {
+      softShadow(g, 32, 90, 19, 6, 0.22);
+      // Prickly pear with a toe-hold in the lava.
+      blob(g, 32, 84, 9, '#38323e', r, 0.3);
+      const pad = '#5f7a44';
+      oval(g, 30, 66, 10, 14, pad, -0.15);
+      oval(g, 18, 53, 8, 11, shade(pad, 0.08), -0.5);
+      oval(g, 43, 51, 9, 12, shade(pad, -0.06), 0.4);
+      oval(g, 31, 39, 8, 11, shade(pad, 0.14), 0.1);
+      // Fruit along the rims, sunset-colored and defended.
+      dot(g, 34, 29, 2.8, '#d9694a');
+      dot(g, 27, 31, 2.4, '#c1512f');
+      dot(g, 48, 42, 2.6, '#d9694a');
+      dot(g, 14, 45, 2.3, '#c98a3e');
+      // Spines: small pale ticks, entirely serious.
+      g.strokeStyle = 'rgba(240,238,225,0.7)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 10; i++) {
+        const px = 16 + r.int(32);
+        const py = 38 + r.int(34);
+        g.beginPath();
+        g.moveTo(px, py);
+        g.lineTo(px + 1.6, py - 2.2);
+        g.stroke();
+      }
+    }, 64, 96);
+
+    make('nonnachair', 1, (g) => {
+      softShadow(g, 32, 56, 16, 5, 0.2);
+      // A kitchen chair, set at the angle the shade will want at four o'clock.
+      g.save();
+      g.translate(32, 40);
+      g.rotate(-0.14);
+      const wood = '#8a6a3a';
+      g.strokeStyle = shade(wood, -0.1);
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      for (const [lx, ly] of [[-11, 14], [11, 14], [-9, 10], [9, 10]] as const) {
+        g.beginPath();
+        g.moveTo(lx * 0.85, 2);
+        g.lineTo(lx, ly);
+        g.stroke();
+      }
+      // Woven rush seat, worn pale in the middle.
+      rr(g, -13, -4, 26, 11, 3, '#d0b276');
+      oval(g, 0, 1, 8, 3.5, shade('#d0b276', 0.14));
+      // Ladder back, two slats and the posts.
+      g.strokeStyle = wood;
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(-12, -4);
+      g.lineTo(-12, -32);
+      g.moveTo(12, -4);
+      g.lineTo(12, -32);
+      g.stroke();
+      rr(g, -12, -31, 24, 4.5, 2, wood);
+      rr(g, -12, -21, 24, 4.5, 2, shade(wood, -0.06));
+      g.restore();
+    });
+
+    make('gattu', 1, (g, r) => {
+      softShadow(g, 32, 52, 18, 5, 0.18);
+      // The fruit bowl, ceramic, no longer in charge of fruit.
+      oval(g, 32, 45, 19, 8, '#3a6d9c');
+      oval(g, 32, 42, 17, 6, shade('#3a6d9c', 0.16));
+      // Two lemons, demoted to pillows.
+      dot(g, 17, 40, 4, '#e3cf49');
+      dot(g, 47, 41, 3.6, '#d9c22e');
+      // The cat, curled to the exact diameter of the bowl.
+      const fur = r.chance(0.5) ? '#c98a5e' : '#8c8479';
+      blob(g, 32, 35, 11, fur, r, 0.14);
+      // Tail wrapped round like a signature.
+      g.strokeStyle = shade(fur, -0.12);
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(42, 38);
+      g.quadraticCurveTo(46, 30, 38, 27);
+      g.stroke();
+      // Head tucked, one ear up on duty.
+      dot(g, 24, 31, 5.5, shade(fur, 0.06));
+      g.fillStyle = shade(fur, -0.06);
+      g.beginPath();
+      g.moveTo(20, 28);
+      g.lineTo(22, 22.5);
+      g.lineTo(25, 27);
+      g.closePath();
+      g.fill();
+      // Stripes and a shut eye.
+      g.strokeStyle = shade(fur, -0.18);
+      g.lineWidth = 1.6;
+      for (const sx of [30, 35, 39]) {
+        g.beginPath();
+        g.moveTo(sx, 28);
+        g.quadraticCurveTo(sx + 1, 32, sx, 36);
+        g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(21.5, 31.5);
+      g.quadraticCurveTo(23.5, 33, 25.5, 31.5);
+      g.stroke();
+    });
+
+    make('campetto', 1, (g, r) => {
+      // Chalk goal on the wall behind, ball at the base. No ink, no shadow:
+      // chalk is not an object, it is a claim.
+      const chalk = 'rgba(240,238,230,0.8)';
+      g.strokeStyle = chalk;
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(13, 58);
+      g.quadraticCurveTo(12 + r.next(), 38, 14, 18);
+      g.quadraticCurveTo(30, 16.5, 46, 18);
+      g.quadraticCurveTo(47 + r.next(), 38, 46, 58);
+      g.stroke();
+      // A few strokes of net, drawn by the optimist of the two.
+      g.strokeStyle = 'rgba(240,238,230,0.32)';
+      g.lineWidth = 1.2;
+      for (let i = 0; i < 4; i++) {
+        g.beginPath();
+        g.moveTo(17 + i * 7, 20);
+        g.lineTo(23 + i * 7, 54);
+        g.stroke();
+      }
+      // The score: three tallies, then two with one crossed out and rewritten.
+      g.strokeStyle = chalk;
+      g.lineWidth = 2.2;
+      for (let i = 0; i < 3; i++) {
+        g.beginPath();
+        g.moveTo(51 + i * 4, 22);
+        g.lineTo(51.6 + i * 4, 30);
+        g.stroke();
+      }
+      for (let i = 0; i < 2; i++) {
+        g.beginPath();
+        g.moveTo(51 + i * 4, 36);
+        g.lineTo(51.6 + i * 4, 44);
+        g.stroke();
+      }
+      // The dispute, in strikethrough.
+      g.strokeStyle = 'rgba(240,238,230,0.55)';
+      g.beginPath();
+      g.moveTo(49, 42);
+      g.lineTo(60, 38);
+      g.stroke();
+      g.strokeStyle = 'rgba(255,255,255,0.9)';
+      g.beginPath();
+      g.moveTo(53, 48);
+      g.lineTo(53.8, 56);
+      g.stroke();
+      // The ball, waiting for jurisprudence.
+      dot(g, 44, 86, 5.5, '#e8e4d6');
+      dot(g, 42, 84.5, 1.8, '#3a3430');
+      dot(g, 46.5, 87.5, 1.5, '#3a3430');
+      oval(g, 44, 90, 6, 2, 'rgba(20,16,24,0.18)');
+      // Penalty spot, regulation chalk.
+      dot(g, 26, 84, 2, 'rgba(240,238,230,0.5)');
+    }, 64, 96);
+
+    make('pomodori', 1, (g, r) => {
+      softShadow(g, 32, 90, 18, 5, 0.2);
+      // An A-frame of old oars, strung with drying tomato bunches.
+      const wood = '#6e5138';
+      g.strokeStyle = wood;
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(14, 88);
+      g.lineTo(27, 28);
+      g.moveTo(50, 88);
+      g.lineTo(37, 28);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(16, 38);
+      g.lineTo(48, 38);
+      g.stroke();
+      for (const bx of [22, 32, 42]) {
+        g.strokeStyle = '#8a7a5a';
+        g.lineWidth = 1.4;
+        g.beginPath();
+        g.moveTo(bx, 38);
+        g.lineTo(bx, 46);
+        g.stroke();
+        const reds = ['#b5443a', '#c1512f', '#8f3030'];
+        for (let i = 0; i < 9; i++) {
+          dot(g, bx + (r.next() - 0.5) * 8, 47 + r.next() * 20, 2.5, reds[r.int(3)] ?? '#b5443a');
+        }
+      }
+    }, 64, 96);
+
+    make('avvisi', 1, (g, r) => {
+      softShadow(g, 32, 90, 19, 5, 0.2);
+      const wood = '#5c4630';
+      rr(g, 12, 50, 4, 38, 2, wood);
+      rr(g, 48, 50, 4, 38, 2, wood);
+      // The board, roofed like everything the parish owns.
+      rr(g, 4, 16, 56, 8, 3, '#a8583a');
+      rr(g, 6, 22, 52, 34, 3, '#6e5138');
+      rr(g, 9, 25, 46, 28, 2, '#4a3a2c');
+      // Notices: mass times, the festival bill with its red band, a small
+      // handwritten one pinned at an angle of mild emergency.
+      rr(g, 12, 28, 14, 11, 1, '#f2ede0');
+      rr(g, 29, 27, 18, 15, 1, '#efe9dc');
+      rect(g, 31, 29, 14, 3.4, '#b5443a');
+      g.strokeStyle = 'rgba(58,74,99,0.6)';
+      g.lineWidth = 1;
+      for (let i = 0; i < 3; i++) {
+        g.beginPath();
+        g.moveTo(14, 31 + i * 2.6);
+        g.lineTo(24, 31 + i * 2.6);
+        g.moveTo(31, 35 + i * 2.4);
+        g.lineTo(44, 35 + i * 2.4);
+        g.stroke();
+      }
+      g.save();
+      g.translate(20, 46);
+      g.rotate(0.12 + (r.next() - 0.5) * 0.06);
+      rr(g, -5, -4, 10, 8, 1, '#e8dcc4');
+      g.strokeStyle = 'rgba(90,70,50,0.6)';
+      g.beginPath();
+      g.moveTo(-3, -1);
+      g.lineTo(3, -1);
+      g.moveTo(-3, 1.6);
+      g.lineTo(2, 1.6);
+      g.stroke();
+      g.restore();
+      // Pins.
+      dot(g, 19, 27, 1.2, '#b5443a');
+      dot(g, 38, 26, 1.2, '#3a6d9c');
+      dot(g, 20, 42, 1.2, '#b5443a');
+    }, 64, 96);
+
+    make('limoni', 3, (g, r) => {
+      // Windfall lemons: no outline, no shadow, just fruit met with grass.
+      const n = 2 + r.int(2);
+      for (let i = 0; i < n; i++) {
+        const x = 14 + r.int(36);
+        const y = 26 + r.int(24);
+        oval(g, x, y + 3.5, 6, 2, 'rgba(30,40,20,0.18)');
+        oval(g, x, y, 5.5, 4.2, i % 2 ? '#e3cf49' : '#d9c22e', (r.next() - 0.5) * 0.8);
+        dot(g, x + 3.4, y - 1.4, 1, 'rgba(255,250,220,0.7)');
+      }
+      if (r.chance(0.6)) oval(g, 20 + r.int(24), 30 + r.int(16), 4, 1.6, '#5f7a44', r.next());
+    });
+
     // ------------------------------------------------------------ buildings
 
     make('casedda', 4, (g, r) => {
@@ -559,6 +955,96 @@ export const ART: ChapterArt = {
       g.lineTo(8, 22);
       g.closePath();
       g.fill();
+    }, 64, 96);
+
+    make('lavagna', 1, (g) => {
+      // The score blackboard: NOI on the left, LORO on the right, forever.
+      rr(g, 8, 18, 48, 62, 3, '#6e5138');
+      rr(g, 12, 22, 40, 54, 2, '#2e3330');
+      // Ghosts of erased seasons under tonight's chalk.
+      rr(g, 15, 40, 16, 10, 2, 'rgba(200,200,195,0.08)');
+      rr(g, 34, 55, 14, 12, 2, 'rgba(200,200,195,0.08)');
+      const chalk = 'rgba(238,236,228,0.8)';
+      g.strokeStyle = chalk;
+      g.lineWidth = 1.8;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(32, 26);
+      g.lineTo(32, 72);
+      g.stroke();
+      // Headers: two scribbles standing in for the eternal teams.
+      g.beginPath();
+      g.moveTo(16, 28);
+      g.quadraticCurveTo(22, 26.5, 28, 28);
+      g.moveTo(36, 28);
+      g.quadraticCurveTo(42, 26.5, 48, 28);
+      g.stroke();
+      // Tonight's tallies, gate style, one side already smug.
+      for (let i = 0; i < 4; i++) {
+        g.beginPath();
+        g.moveTo(16 + i * 3.4, 34);
+        g.lineTo(16.6 + i * 3.4, 42);
+        g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(14.5, 41);
+      g.lineTo(28, 35);
+      g.stroke();
+      for (let i = 0; i < 3; i++) {
+        g.beginPath();
+        g.moveTo(37 + i * 3.4, 34);
+        g.lineTo(37.6 + i * 3.4, 42);
+        g.stroke();
+      }
+      // Older rows, fading with dignity.
+      g.strokeStyle = 'rgba(238,236,228,0.35)';
+      for (let i = 0; i < 5; i++) {
+        g.beginPath();
+        g.moveTo(15 + i * 3.2, 52);
+        g.lineTo(15.6 + i * 3.2, 58);
+        g.stroke();
+      }
+      // Chalk ledge, one stub, one rag beyond hope.
+      rr(g, 10, 78, 44, 4.5, 2, '#8a6a3a');
+      rr(g, 20, 74.5, 6, 3.4, 1.5, '#efe9dc');
+      oval(g, 42, 77, 6, 2.4, '#8c8479');
+    }, 64, 96);
+
+    make('ventola', 1, (g) => {
+      softShadow(g, 32, 90, 12, 4, 0.16);
+      // The standing fan, member since 1968, tilted mid-argument.
+      g.save();
+      g.translate(32, 86);
+      g.rotate(0.05);
+      oval(g, 0, 0, 11, 3.5, '#3a3430');
+      g.strokeStyle = '#7a838a';
+      g.lineWidth = 3.4;
+      g.beginPath();
+      g.moveTo(0, -2);
+      g.lineTo(0, -34);
+      g.stroke();
+      // The cage, chrome that remembers being shiny.
+      g.strokeStyle = '#9aa6ab';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.arc(0, -48, 14, 0, Math.PI * 2);
+      g.stroke();
+      g.lineWidth = 1;
+      g.beginPath();
+      g.arc(0, -48, 9, 0, Math.PI * 2);
+      g.stroke();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(Math.cos(a) * 3.4, -48 + Math.sin(a) * 3.4);
+        g.lineTo(Math.cos(a) * 13.4, -48 + Math.sin(a) * 13.4);
+        g.stroke();
+      }
+      // Blades at rest behind the wire, and the hub.
+      oval(g, -5, -44, 6, 3, 'rgba(154,166,171,0.5)', 0.6);
+      oval(g, 5, -52, 6, 3, 'rgba(154,166,171,0.5)', 0.6);
+      dot(g, 0, -48, 3.4, '#6b7378');
+      g.restore();
     }, 64, 96);
   },
 };

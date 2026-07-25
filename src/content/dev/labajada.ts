@@ -37,6 +37,11 @@ function objectAt(x: number, y: number): string {
   if (groundAt(x, y) !== ',') return ' ';
   // The photographer's tripod spot faces the overlook.
   if (x === 12 && y === 18) return ' ';
+  // Apachetas along the descent, gaining a stone per traveler. They grow
+  // taller the closer the road gets to the sea, as the loads get lighter.
+  if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 19 && y === 15)) return 'a';
+  // Lizards keep the lower, warmer stretch of road.
+  if ((x === 10 && y === 12) || (x === 17 && y === 18)) return 'z';
   const h = cellHash(x, y, 47);
   // Drier life as the map descends.
   if (y > 12) {
@@ -87,6 +92,8 @@ export const LA_BAJADA_MAP: MapData = {
     i: { t: 'tuft' },
     f: { t: 'flower' },
     r: { t: 'rock', solid: true },
+    a: { t: 'apachetita', solid: true },
+    z: { t: 'lagarto' },
   },
   ground,
   objects,

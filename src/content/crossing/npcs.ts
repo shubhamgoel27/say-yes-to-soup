@@ -633,6 +633,54 @@ export const CROSSING_NODES: NodeMap = {
   'c3.ex.sea': {
     lines: [{ text: 'La mar, all the way down and all the way out. Fourteen knots of west for weeks, and she still looks like she is deciding.' }],
   },
+  'c3.ex.oildrum': {
+    lines: [{ text: 'Oil drums lashed in a rank, stenciled CALLAO STORES over older stencils from older ports. A drum never retires; it just changes jobs.' }],
+  },
+  'c3.ex.hosereel': {
+    lines: [{ text: 'The fire hose on its reel, drilled monthly, needed never. The bosun re-rolls it after every drill because the last man rolled it wrong.' }],
+  },
+  'c3.ex.paintcans': {
+    lines: [{ text: 'Deck green by the gallon, one can open and a brush mid-career. Joseph says the color is called International Green; the sea calls it a challenge.' }],
+  },
+  'c3.ex.rustpatch': {
+    lines: [{ text: 'A rust bloom, wire-brushed at the edges where somebody fought back. The bosun is losing this one politely, a few square inches per week.' }],
+  },
+  'c3.ex.ropecoil': {
+    lines: [{ text: 'A mooring line flemished into a perfect flat spiral. There is no sign saying do not step on it; you just know, the way you know about altars.' }],
+  },
+  'c3.ex.flyingfish': {
+    lines: [{ text: 'A flying fish, stranded on deck overnight, wings folded like a closed umbrella. Ben calls this room service and the pan is already warm.' }],
+  },
+  'c3.ex.tarp3': {
+    lines: [{ text: 'Landfall eve, and the tarp is still a tarp. Whatever it is, it has crossed the whole Pacific unexplained, which by now feels like tenure.' }],
+  },
+  'c3.ex.tarp2': {
+    lines: [{ text: 'A shellback outranks a secret, so you ask again. The bosun pats the tarp fondly: she is not ready to meet people, he says.' }],
+  },
+  'c3.ex.tarp': {
+    lines: [{ text: 'Something bulky under a green tarp, lashed with the bosun’s best crosses. Nobody aboard will say what it is, and asking only makes the smiles worse.' }],
+  },
+  'c3.ex.portcrate2': {
+    lines: [{ text: 'Tomorrow somebody stencils a red line through KOBE. MOMBASA moves up one, the way ports do, the way places wait for you.' }],
+  },
+  'c3.ex.portcrate': {
+    lines: [{ text: 'Crates stenciled with ports: CALLAO struck through in red, KOBE waiting in white, MOMBASA queued below. Cargo reads like an itinerary.' }],
+  },
+  'c3.ex.lifering': {
+    lines: [{ text: 'M V YACANA, stenciled around the orange ring. If the worst happens, the ship throws you her own name and hauls you back to it.' }],
+  },
+  'c3.ex.deckshrine': {
+    lines: [{ text: 'A welded shrine the size of a breadbox: battery candle, coins in five currencies, one plastic flower zip-tied on. La mar accepts all denominations.' }],
+  },
+  'c3.ex.laundry': {
+    lines: [{ text: 'Coveralls drying between rails: engine-room orange, deck navy, one pair sized like weather. Nobody asks whose that one is.' }],
+  },
+  'c3.ex.sternrod': {
+    lines: [{ text: 'A fishing rod lashed to the stern rail, trolling since Callao with a bell on its tip. Total catch so far: one clump of kelp, morale high.' }],
+  },
+  'c3.ex.matdeck': {
+    lines: [{ text: 'A coir mat that says WELCOME, laid at the foot of a six-dogged watertight door. Ben put it there, and the door has felt friendlier since.' }],
+  },
 
   // ---------------- examines: the galley ----------------
   'c3.ex.stove': {
@@ -658,6 +706,30 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ex.pot': {
     lines: [{ text: 'The stockpot mutters on its hook. Whatever it is becoming, it has been becoming it since Callao.' }],
+  },
+  'c3.ex.matgalley': {
+    lines: [{ text: 'The threshold mat, worn to the weave by every pair of deck boots aboard. Wipe twice; Ben hears the difference between once and twice.' }],
+  },
+  'c3.ex.menuboard2': {
+    lines: [{ text: 'Tonight the chalk says adobo and sinigang, underlined twice. Smaller, underneath: ask the new hands how it happened.' }],
+  },
+  'c3.ex.menuboard': {
+    lines: [{ text: 'The chalkboard menu, in Ben’s square hand: rice, fried fish, soup of the day. The soup of the day has been "yes" since Callao.' }],
+  },
+  'c3.ex.dartboard': {
+    lines: [{ text: 'The mess dartboard, two darts up and one hole in the set. The third went over the side off Panama in 2019; scores carry an asterisk since.' }],
+  },
+  'c3.ex.chessset2': {
+    lines: [{ text: 'White claims the missing Tuesday ate one of their moves. The chief engineer has appealed to the captain, who has wisely declined the case.' }],
+  },
+  'c3.ex.chessset': {
+    lines: [{ text: 'A chess game paused mid-siege, board taped down against weather. Olena versus the chief engineer, day nineteen; touching it is mutiny.' }],
+  },
+  'c3.ex.galleyplant2': {
+    lines: [{ text: 'The pothos got watered three times today. Everyone thinks their turn should not be the one it dies on, so close to land.' }],
+  },
+  'c3.ex.galleyplant': {
+    lines: [{ text: 'A pothos in a rice tin, the ship’s one garden. The watering rota is taped on: HANA, JOSEPH, OLENA, BEN, and the bosun in different ink.' }],
   },
 };
 
@@ -690,6 +762,38 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c3.shellback'] }, node: 'c3.ex.cat2' },
     { node: 'c3.ex.cat' },
   ],
+  oildrum: [{ node: 'c3.ex.oildrum' }],
+  hosereel: [{ node: 'c3.ex.hosereel' }],
+  paintcans: [{ node: 'c3.ex.paintcans' }],
+  rustpatch: [{ node: 'c3.ex.rustpatch' }],
+  ropecoil: [{ node: 'c3.ex.ropecoil' }],
+  flyingfish: [{ node: 'c3.ex.flyingfish' }],
+  tarpthing: [
+    { when: { has: ['c3.complete'] }, node: 'c3.ex.tarp3' },
+    { when: { has: ['c3.shellback'] }, node: 'c3.ex.tarp2' },
+    { node: 'c3.ex.tarp' },
+  ],
+  portcrate: [
+    { when: { has: ['c3.complete'] }, node: 'c3.ex.portcrate2' },
+    { node: 'c3.ex.portcrate' },
+  ],
+  lifering: [{ node: 'c3.ex.lifering' }],
+  deckshrine: [{ node: 'c3.ex.deckshrine' }],
+  laundry: [{ node: 'c3.ex.laundry' }],
+  sternrod: [{ node: 'c3.ex.sternrod' }],
+  menuboard: [
+    { when: { has: ['c3.cook.done'] }, node: 'c3.ex.menuboard2' },
+    { node: 'c3.ex.menuboard' },
+  ],
+  dartboard: [{ node: 'c3.ex.dartboard' }],
+  chessset: [
+    { when: { has: ['c3.olena.dateline'] }, node: 'c3.ex.chessset2' },
+    { node: 'c3.ex.chessset' },
+  ],
+  galleyplant: [
+    { when: { has: ['c3.complete'] }, node: 'c3.ex.galleyplant2' },
+    { node: 'c3.ex.galleyplant' },
+  ],
   stove: [{ node: 'c3.ex.stove' }],
   karaoke: [
     { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke' },
@@ -701,6 +805,10 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   // Shared kinds, spoken in this chapter's voice only on this chapter's maps.
   sea: [{ map: 'ship', node: 'c3.ex.sea' }],
   crate: [{ map: 'ship', node: 'c3.ex.crate' }],
+  mat: [
+    { map: 'ship', node: 'c3.ex.matdeck' },
+    { map: 'galley', node: 'c3.ex.matgalley' },
+  ],
   table: [{ map: 'galley', node: 'c3.ex.table' }],
   shelf: [{ map: 'galley', node: 'c3.ex.shelf' }],
   pot: [{ map: 'galley', node: 'c3.ex.pot' }],

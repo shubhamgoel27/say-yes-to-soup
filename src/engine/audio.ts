@@ -26,7 +26,7 @@ export type MusicStyle = {
   lead: OscillatorType;
   shimmer: OscillatorType;
   /** Percussion recipe; 'none' keeps only the heartbeat bass. */
-  drum: 'bombo' | 'taiko' | 'janggu' | 'chenda' | 'ngoma' | 'tamburello' | 'marimba' | 'creak' | 'none';
+  drum: 'bombo' | 'taiko' | 'janggu' | 'chenda' | 'ngoma' | 'tamburello' | 'marimba' | 'tabla' | 'creak' | 'none';
   /** 0 = straight eighths, up to ~0.32 = a 6/8 lilt. */
   swing: number;
   /** Shimmer density multiplier. */
@@ -98,6 +98,13 @@ const MUSIC: Record<string, MusicStyle> = {
     chords: [[N.G3, N.B3, N.D4], [N.C4, N.E4, N.G4], [N.D4, N.Fs4, N.A4], [N.E3 * 2, N.G4, N.B4]],
     lead: 'sine', shimmer: 'sine', drum: 'marimba', swing: 0.26, density: 0.85, melodyChance: 0.55,
   },
+  // Old Delhi at dusk: a harmonium-warm drone home, tabla underneath,
+  // the scale leaning Des: major going up, that soft C natural coming down.
+  delhi: {
+    bpm: 78, scale: [N.D4, N.E4, N.Fs4, N.G4, N.A4, N.B4, N.C5, N.D5],
+    chords: [[N.D3 * 2, N.A3, N.D4], [N.G3, N.B3, N.D4], [N.C4, N.E4, N.G4], [N.D3 * 2, N.A3, N.D4]],
+    lead: 'triangle', shimmer: 'sawtooth', drum: 'tabla', swing: 0.14, density: 0.8, melodyChance: 0.6,
+  },
   // The camposanto at night: candles, breath, almost only the pad.
   velacion: {
     bpm: 56, scale: [N.G3, N.Bb3, N.C4, N.D4, N.F4, N.G4],
@@ -132,6 +139,7 @@ const VOICES: Record<string, VoiceStyle> = {
   zanzibar: { base: 580, range: 5, drift: -0.2, gait: 3, wave: 'triangle' },
   sicily: { base: 640, range: 9, drift: 0.6, gait: 2, wave: 'sawtooth' },
   oaxaca: { base: 610, range: 6, drift: 0.1, gait: 2, wave: 'triangle' },
+  delhi: { base: 615, range: 7, drift: 0.25, gait: 2, wave: 'triangle' },
 };
 
 /** A stable small hash for per-speaker voice identity. */
@@ -653,6 +661,13 @@ export class AudioBus {
           this.note(root / 2, when, 0.05, 0.3, 'sine');
           this.note(root, when + 0.004, 0.035, 0.22, 'sine');
         }
+        break;
+      case 'tabla':
+        // Baya heartbeat, dayan answering: dha .. tin . ge . na .
+        if (step === 0) boom(94, 62, 0.065, 0.2);
+        if (step === 3) tick(2000, 0.02, 0.05);
+        if (step === 4 && bar % 2 === 1) boom(150, 118, 0.04, 0.12);
+        if (step === 6) tick(2400, 0.022, 0.05);
         break;
       case 'creak':
         // The hull, once in a long while, remembering it is wood and steel.

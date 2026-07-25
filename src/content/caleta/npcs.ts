@@ -832,6 +832,82 @@ export const CALETA_NODES: NodeMap = {
       { text: 'Chapter Three is being provisioned. The tide will say when.' },
     ],
   },
+
+  // ---------------- the love layer: background things, each with a voice ----------------
+  'mar.ex.seaweed': {
+    lines: [{ text: 'Yuyo the tide tore loose, drying into dark ribbons. At noon it will be under someone’s ceviche; for now it is the sea’s laundry.' }],
+  },
+  'mar.ex.jelly': {
+    lines: [{ text: 'A jellyfish the tide forgot, clear as a spilled dessert. You consider poking it, and decline with honor.' }],
+    effects: ['set:c2.seen.jelly'],
+  },
+  'mar.ex.jelly2': {
+    lines: [{ text: 'Still there. Still ninety percent sea and ten percent bad idea; the next tide can have it back.' }],
+  },
+  'mar.ex.shellbarrow': {
+    lines: [{ text: 'A wheelbarrow heaped with concha shells from Petro’s kitchen. They will pave something someday, she says, and the barrow keeps waiting.' }],
+  },
+  'mar.ex.emolcrate': {
+    lines: [{ text: 'Don Wili’s spare bottles, green and amber, straw between them. One has no label; that one, he says, is for the cold in the bones.' }],
+  },
+  'mar.ex.gato.pic': {
+    lines: [{ text: 'The picantería cat, asleep at the warm end of the room. Petro calls it a bad cat, and the full bowl by the qoncha is also Petro’s.' }],
+  },
+  'mar.ex.gato': {
+    lines: [{ text: 'A cat asleep exactly where the fish smell is best. It did nothing to earn this spot except be a cat, which was plenty.' }],
+  },
+  'mar.ex.driftbench': {
+    lines: [{ text: 'A bench built from what the sea returned: two planks, one pallet, somebody’s old blue paint. Naturally, it faces the water.' }],
+  },
+  'mar.ex.limebasket': {
+    lines: [{ text: 'Limones, small and mean and perfect. Their whole job takes under a minute, and they do it like a verdict.' }],
+  },
+  'mar.ex.laradio': {
+    lines: [{ text: 'An old radio playing cumbia to the empty stools, quietly. Nobody remembers buying it and nobody would dare turn it off.' }],
+  },
+  'mar.ex.saltrack': {
+    lines: [{ text: 'Lisa split and salted, going stiff and golden in the fog. The gallinazos keep a respectful distance of exactly one lunge.' }],
+  },
+  'mar.ex.dryreeds': {
+    lines: [{ text: 'Totora cut green from the ponds, standing up to dry. In fifteen days it will be a horse; for now it is very patient grass.' }],
+  },
+  'mar.ex.dryreeds2': {
+    lines: [{ text: 'Félix claims he can tell which pond a bundle came from by the smell. Nobody has ever caught him wrong, which proves nothing, pe.' }],
+  },
+  'mar.ex.netpoles': {
+    lines: [{ text: 'Gillnets hung between poles to dry, corks ticking in the wind. Tonight they will be checked knot by knot, like every night.' }],
+  },
+  'mar.ex.netpoles2': {
+    lines: [{ text: 'Somewhere in this mesh are the knots you tied with Don Simón. The net keeps them anonymous, the way la mar prefers.' }],
+  },
+  'mar.ex.crabtraps': {
+    lines: [{ text: 'Crab traps stacked in a tower that leans like it has somewhere to be. The crabs know the whole design and come anyway.' }],
+  },
+  'mar.ex.picchairs': {
+    lines: [{ text: 'Plastic chairs stacked seven high, sun-faded from red to a loyal pink. At noon they scatter, and every single one is taken.' }],
+  },
+  'mar.ex.buoywall': {
+    lines: [{ text: 'Retired buoys hung on nails, sorted by nobody. Each one held a line once; each owner still swears he could tell you which.' }],
+  },
+  'mar.ex.kidmural': {
+    lines: [{ text: 'The school kids painted la mar, and she came out purple with a whale in it. Nobody here has seen a whale, and nobody will paint over it.' }],
+  },
+  'mar.ex.pelicanpost': {
+    lines: [{ text: 'A mooring post from the sugar days, now a full-time pelican office. Current occupant: present, upright, unimpressed.' }],
+  },
+  'mar.ex.galli': {
+    lines: [{ text: 'Gallinazos in a row, black as spilled ink, supervising the beach. Nothing has died; they wait anyway, professionally.' }],
+    effects: ['set:c2.seen.galli'],
+  },
+  'mar.ex.galli2': {
+    lines: [{ text: 'One has shuffled half a step closer to the fish racks. The others pretend not to notice, which is how you know they noticed.' }],
+  },
+  'mar.ex.mototaxi': {
+    lines: [{ text: 'A mototaxi parked at an angle only its owner could love. The mudflap says GRACIAS A DIOS; the engine, for now, says nothing.' }],
+  },
+  'mar.ex.pizarra': {
+    lines: [{ text: 'The chalkboard says HOY: LO QUE DIGA LA MAR. Under it, in ghost chalk, the faded ancestors of every dish this week ever was.' }],
+  },
 };
 
 /** Coastal examine arms; map-tagged so shared props keep their Andes words at home. */
@@ -865,6 +941,41 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   plaza: [{ map: 'la-caleta', node: 'mar.ex.plaza2' }],
   water: [{ map: 'la-caleta', node: 'mar.ex.pond' }],
   tuft: [{ map: 'la-caleta', node: 'mar.ex.tuft2' }],
+  // The love layer: every background thing answers when looked at.
+  seaweed: [{ node: 'mar.ex.seaweed' }],
+  jellyfish: [
+    { when: { has: ['c2.seen.jelly'] }, node: 'mar.ex.jelly2' },
+    { node: 'mar.ex.jelly' },
+  ],
+  shellbarrow: [{ node: 'mar.ex.shellbarrow' }],
+  emolcrate: [{ node: 'mar.ex.emolcrate' }],
+  gato: [
+    { map: 'picanteria', node: 'mar.ex.gato.pic' },
+    { node: 'mar.ex.gato' },
+  ],
+  driftbench: [{ node: 'mar.ex.driftbench' }],
+  limebasket: [{ node: 'mar.ex.limebasket' }],
+  laradio: [{ node: 'mar.ex.laradio' }],
+  saltrack: [{ node: 'mar.ex.saltrack' }],
+  dryreeds: [
+    { when: { has: ['c2.ponds'] }, node: 'mar.ex.dryreeds2' },
+    { node: 'mar.ex.dryreeds' },
+  ],
+  netpoles: [
+    { when: { has: ['c2.nets.done'] }, node: 'mar.ex.netpoles2' },
+    { node: 'mar.ex.netpoles' },
+  ],
+  crabtraps: [{ node: 'mar.ex.crabtraps' }],
+  picchairs: [{ node: 'mar.ex.picchairs' }],
+  buoywall: [{ node: 'mar.ex.buoywall' }],
+  kidmural: [{ node: 'mar.ex.kidmural' }],
+  pelicanpost: [{ node: 'mar.ex.pelicanpost' }],
+  gallinazos: [
+    { when: { has: ['c2.seen.galli'] }, node: 'mar.ex.galli2' },
+    { node: 'mar.ex.galli' },
+  ],
+  mototaxi: [{ node: 'mar.ex.mototaxi' }],
+  pizarra: [{ node: 'mar.ex.pizarra' }],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */

@@ -84,6 +84,31 @@ function objectAt(x: number, y: number): string {
   if (y === 3 && (x === 5 || x === 17)) return 'm';
   // Clove and mango trees on the farm edge.
   if ((y === 2 && (x === 20 || x === 28 || x === 36 || x === 43)) || (y === 3 && (x === 24 || x === 32 || x === 40))) return 'T';
+  // --- the love pass: life gathers at doors, corners, and the water line ---
+  // Repairs against the fourth house: scaffolding, coral blocks, lime wash.
+  if (x === 36 && y === 8) return 'R';
+  if (x === 36 && y === 9) return 'O';
+  if (x === 37 && y === 9) return 'V';
+  // A kanga line strung between houses, out of the lane's dust.
+  if (x === 19 && y === 8) return 'L';
+  // Rashid's corner: the kahawa round, parked mid-conversation.
+  if (x === 17 && y === 11) return 'J';
+  // Doormats where the latched doors keep their households.
+  if ((x === 33 && y === 11) || (x === 5 && y === 18)) return 'Z';
+  // Cats, stationed where everyone must step around them.
+  if ((x === 14 && y === 18) || (x === 44 && y === 16)) return 'P';
+  // A white chicken patrols outside the kanga shop, on brand.
+  if (x === 19 && y === 16) return 'Q';
+  // The henna stall at the shop corner.
+  if (x === 26 && y === 17) return 'U';
+  // Market edges: the fish bicycle, and bao beside the domino table.
+  if (x === 35 && y === 15) return 'B';
+  if (x === 39 && y === 16) return 'A';
+  // Fish traps stacked along the shore, and a spare sail on trestles.
+  if ((x === 42 || x === 33) && y === 20) return 'E';
+  if (x === 26 && y === 20) return 'W';
+  // Two flip-flops, one goal.
+  if (x === 18 && y === 21) return 'F';
   // Sparse dry tufts on open sand, deterministic so nothing crawls.
   if (groundAt(x, y) === '.' && y < 20) {
     if (cellHash(x, y, 71) < 0.04) return 'i';
@@ -91,6 +116,9 @@ function objectAt(x: number, y: number): string {
   if (groundAt(x, y) === 'G') {
     if (cellHash(x, y, 72) < 0.1) return 'i';
   }
+  // What the tide forgot: starfish, shells, one crab with big plans.
+  if (groundAt(x, y) === 'u' && cellHash(x, y, 73) < 0.055) return 'Y';
+  if (groundAt(x, y) === '.' && y >= 20 && cellHash(x, y, 74) < 0.035) return 'Y';
   return ' ';
 }
 
@@ -146,6 +174,21 @@ export const ZANZIBAR_MAP: MapData = {
     H: { t: 'dhow', solid: true, tall: true },
     m: { t: 'clovemat', solid: true },
     w: { t: 'mwanirow', solid: true },
+    A: { t: 'baoboard', solid: true, tall: true },
+    B: { t: 'baiskeli', solid: true },
+    E: { t: 'madema', solid: true, tall: true },
+    F: { t: 'flipflopgoal' },
+    J: { t: 'kahawatray', solid: true },
+    L: { t: 'kangaline', solid: true, tall: true },
+    O: { t: 'coralblocks', solid: true },
+    P: { t: 'paka', solid: true },
+    Q: { t: 'kuku', solid: true },
+    R: { t: 'scaffold', solid: true, tall: true },
+    U: { t: 'hennastool', solid: true },
+    V: { t: 'limepail', solid: true },
+    W: { t: 'sailspar', solid: true, tall: true },
+    Y: { t: 'starfish' },
+    Z: { t: 'doormat' },
   },
   ground,
   objects,
@@ -166,6 +209,9 @@ export const KANGASHOP_MAP: MapData = {
     o: { t: 'stool', solid: true },
     r: { t: 'rug' },
     m: { t: 'mat' },
+    R: { t: 'radio', solid: true },
+    w: { t: 'sewing', solid: true },
+    P: { t: 'paka', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -183,9 +229,9 @@ export const KANGASHOP_MAP: MapData = {
     '#S#S#kk#S#S##',
     '#...........#',
     '#.k.......k.#',
-    '#...........#',
-    '#..t....r...#',
-    '#..o........#',
+    '#.........P.#',
+    '#..tR...r...#',
+    '#..o.....w..#',
     '#...........#',
     '#...........#',
     '######m######',

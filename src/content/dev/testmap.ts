@@ -61,9 +61,19 @@ function objectAt(x: number, y: number): string {
     if (x >= hx && x < hx + 5 && y >= hy && y < hy + 5) {
       if (x === hx + 2 && y === hy + 4) return OPEN_DOORS.has(`${hx},${hy}`) ? ' ' : 'D';
       if (x === hx && y === hy + 4) return 'H';
+      // The southeast house keeps the soccer ball on its roof: a tall sprite
+      // borrowing this collision cell, painted high enough to sit on the thatch.
+      if (hx === 29 && x === hx + 4 && y === hy + 4) return 'l';
       return 'x';
     }
   }
+  // The pirca along the top of the terraces, with the gap everyone uses
+  // instead of walking around. The cat owns the warmest stone at x=37.
+  if (y === 20 && x >= 30 && x <= 40) {
+    if (x === 35) return ' '; // the gap, ratified by feet (and the harvest)
+    return x === 37 ? 'Q' : 'q';
+  }
+  if (x === 32 && y === 26) return 'k'; // the chakitaqlla leans on the house wall
   if (x === 21 && y === 15) return 'W'; // the well
   if ((x === 18 && y === 14) || (x === 25 && y === 18)) return 'M'; // market stalls
   if (x === 13 && y === 26) return 'F'; // Rosa's chicha flag, beside her door
@@ -73,6 +83,19 @@ function objectAt(x: number, y: number): string {
   if ((x === 9 && y === 26) || (x === 32 && y === 11)) return 'p'; // planters
   if ((x === 17 && y === 13) || (x === 25 && y === 13) || (x === 7 && y === 15) || (x === 36 && y === 12)) return 'L'; // lamp posts
   for (const [tx, ty] of TREES) if (x === tx && y === ty) return 'T';
+
+  // Background life: clustered at doors, corners, and the cold flat, the way
+  // it actually gathers. Every kind here answers the action button.
+  if (x === 13 && y === 12) return 'a'; // ají and maize drying by the north house
+  if ((x === 13 && y === 4) || (x === 14 && y === 4) || (x === 14 && y === 5)) return 'u'; // chuño on the cold flat
+  if (x === 27 && y === 27) return 'B'; // adobe bricks curing under plastic
+  if (x === 11 && y === 26) return 'g'; // geraniums in lard cans by the chichería door
+  if (x === 20 && y === 10) return 'N'; // the votive niche beside the lane
+  if (x === 26 && y === 18) return 'S'; // sacks of mote and habas at the stall
+  if (x === 25 && y === 19) return 'j'; // spilled barley; the hens know
+  if (x === 33 && y === 4) return 't'; // the clothesline behind Carmen's house
+  if ((x === 6 && y === 9) || (x === 6 && y === 23)) return 'e'; // eucalyptus saplings on the bank
+  if ((x === 15 && y === 22) || (x === 7 && y === 17) || (x === 8 && y === 25)) return 'h'; // hens
 
   // Scattered life on open grassland only, deterministic so it never shifts.
   if (groundAt(x, y) === ',') {
@@ -137,6 +160,20 @@ export const VILLAGE_MAP: MapData = {
     f: { t: 'flower' },
     i: { t: 'tuft' },
     r: { t: 'rock', solid: true },
+    q: { t: 'pirca', solid: true },
+    Q: { t: 'pircamichi', solid: true },
+    k: { t: 'chakitaqlla', solid: true, tall: true },
+    a: { t: 'ajirack', solid: true, tall: true },
+    u: { t: 'chuno' },
+    B: { t: 'adobera', solid: true },
+    g: { t: 'latacan', solid: true },
+    N: { t: 'nicho', solid: true, tall: true },
+    S: { t: 'sacos', solid: true },
+    j: { t: 'grano' },
+    t: { t: 'tendedero', solid: true, tall: true },
+    e: { t: 'sapling', solid: true, tall: true },
+    h: { t: 'gallina' },
+    l: { t: 'pelota', solid: true, tall: true },
   },
   ground,
   objects,

@@ -20,6 +20,10 @@ const INTERIOR_LEGEND: MapData['legend'] = {
   r: { t: 'rug' },
   y: { t: 'cuy' },
   m: { t: 'mat' },
+  j: { t: 'sacos', solid: true },
+  c: { t: 'charango', solid: true },
+  u: { t: 'pushka', solid: true },
+  d: { t: 'dyepots', solid: true },
   ' ': { t: 'void' },
 };
 
@@ -43,7 +47,7 @@ export const CHICHERIA_MAP: MapData = {
   ],
   objects: [
     '##S###S##S###',
-    '#C   q      #',
+    '#Cj  q     c#',
     '#           #',
     '#  T   rr   #',
     '# s    rr y #',
@@ -77,9 +81,9 @@ export const CASA_CARMEN_MAP: MapData = {
     '##S####S###',
     '#L     B  #',
     '#         #',
-    '#  rr    p#',
+    '#d rr    p#',
     '#  rr     #',
-    '#  y      #',
+    '#  y     u#',
     '#         #',
     '#         #',
     '#####m#####',

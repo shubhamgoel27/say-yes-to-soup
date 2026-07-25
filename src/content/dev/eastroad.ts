@@ -28,10 +28,14 @@ function objectAt(x: number, y: number): string {
   if ((x === 30 || x === 31) && (y === ROAD_Y - 1 || y === ROAD_Y + 1)) return 'o';
 
   if (x === 14 && y === ROAD_Y - 1) return 'A'; // the apacheta cairn
+  if (x === 13 && y === ROAD_Y - 1) return 'e'; // a traveler's q'epi, resting by it
+  // The kite tree: a wind-bent queñua holding somebody's condor, mid-descent.
+  if (x === 9 && y === ROAD_Y - 2) return 'K';
   // The arriero's camp, south of the road past the pass.
   if (x === 38 && y === ROAD_Y + 2) return 'E'; // tent
   if (x === 40 && y === ROAD_Y + 2) return 'k'; // campfire
   if (x === 40 && y === ROAD_Y + 3) return 's'; // stool
+  if (x === 36 && y === ROAD_Y + 2) return 'h'; // the hitching rail, swept
   if (x === 49 && y === ROAD_Y - 1) return 'P'; // the signboard east
 
   // Windswept scatter, sparser than the valley floor.
@@ -77,6 +81,9 @@ export const EAST_ROAD_MAP: MapData = {
     k: { t: 'campfire', solid: true },
     s: { t: 'stool', solid: true },
     P: { t: 'signpost', solid: true, tall: true },
+    e: { t: 'qepi', solid: true },
+    K: { t: 'condorkite', solid: true, tall: true },
+    h: { t: 'hitchpost', solid: true, tall: true },
     f: { t: 'flower' },
     i: { t: 'tuft' },
     r: { t: 'rock', solid: true },

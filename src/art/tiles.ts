@@ -1,6 +1,6 @@
 import { ART, PAL, TILE } from '../engine/config';
 import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
-import { ART_SETS } from './sets';
+import { ART_SETS, SOFT_KINDS } from './sets';
 
 /**
  * The tileset, smooth-art era. Every texture is authored at 4x (64px tiles)
@@ -1405,7 +1405,7 @@ export class Tileset {
    */
   private inkCache = new Map<HTMLCanvasElement, HTMLCanvasElement>();
   private inked(cvs: HTMLCanvasElement, kind: string): HTMLCanvasElement {
-    if (NO_INK.has(kind)) return cvs;
+    if (NO_INK.has(kind) || SOFT_KINDS.has(kind)) return cvs;
     let out = this.inkCache.get(cvs);
     if (!out) {
       const building = BUILDINGS.has(kind);

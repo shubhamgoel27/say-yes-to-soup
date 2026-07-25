@@ -146,6 +146,151 @@ function paint(make: MakeTile) {
     dot(g, 47, 31, 1.4, 'rgba(255,255,255,0.5)');
   });
 
+  make('menuboard', 1, (g) => {
+    // A wall tile wearing the galley chalkboard: today's menu, in Ben's hand.
+    vgrad(g, 0, 0, S, S, shade(STEEL, -0.06), shade(STEEL, 0.04));
+    vgrad(g, 0, 0, S, 14, 'rgba(60,60,50,0.25)', 'rgba(0,0,0,0)');
+    rr(g, 10, 14, 44, 38, 3, '#7a5636');
+    rr(g, 13, 17, 38, 32, 2, '#28322c');
+    // Chalk lines: a heading, three dishes, one triumphant underline.
+    rect(g, 20, 21, 24, 2.4, 'rgba(240,238,225,0.85)');
+    rect(g, 17, 27, 20, 1.8, 'rgba(240,238,225,0.6)');
+    rect(g, 17, 32, 26, 1.8, 'rgba(240,238,225,0.6)');
+    rect(g, 17, 37, 16, 1.8, 'rgba(240,238,225,0.6)');
+    rect(g, 17, 43, 22, 1.8, 'rgba(250,220,120,0.75)');
+    rect(g, 17, 45.6, 22, 1, 'rgba(250,220,120,0.5)');
+    // The chalk ledge, one stub and its dust.
+    rr(g, 13, 50, 38, 3.4, 1.5, '#8a6a48');
+    rr(g, 22, 47.6, 6, 2.4, 1, '#eae6d8');
+    oval(g, 34, 51, 5, 1, 'rgba(240,238,225,0.35)');
+  });
+
+  make('dartboard', 1, (g) => {
+    // A wall tile with the dartboard. Two darts present. The third is a saga.
+    vgrad(g, 0, 0, S, S, shade(STEEL, -0.06), shade(STEEL, 0.04));
+    vgrad(g, 0, 0, S, 14, 'rgba(60,60,50,0.25)', 'rgba(0,0,0,0)');
+    dot(g, 32, 32, 17, '#3a2e22');
+    for (let k = 0; k < 10; k++) {
+      const a0 = (k / 10) * Math.PI * 2;
+      g.fillStyle = k % 2 ? '#1c1a16' : '#e2d8bc';
+      g.beginPath();
+      g.moveTo(32, 32);
+      g.arc(32, 32, 15, a0, a0 + Math.PI / 5);
+      g.closePath();
+      g.fill();
+    }
+    dot(g, 32, 32, 6.5, '#3f7050');
+    dot(g, 32, 32, 2.4, '#c1512f');
+    // Two darts in, flights out; the empty ring where the third should hang.
+    for (const [dx, dy, fc] of [
+      [26, 27, '#c94a2e'],
+      [37, 38, '#3f7fb0'],
+    ] as const) {
+      g.strokeStyle = '#c9c4b4';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(dx, dy);
+      g.lineTo(dx + 7, dy - 7);
+      g.stroke();
+      oval(g, dx + 8, dy - 8, 3, 2, fc, -Math.PI / 4);
+    }
+    // The chalk score column, one side clearly winning.
+    rect(g, 6, 20, 8, 1.6, 'rgba(240,238,225,0.5)');
+    rect(g, 6, 24, 6, 1.6, 'rgba(240,238,225,0.5)');
+    rect(g, 6, 28, 9, 1.6, 'rgba(240,238,225,0.5)');
+    rect(g, 54, 24, 5, 1.6, 'rgba(240,238,225,0.4)');
+  });
+
+  make('chessset', 1, (g) => {
+    // One seat of the mess table, annexed by a game nobody will hurry.
+    const wood = '#8a6238';
+    softShadow(g, S / 2, 56, 28, 6, 0.2);
+    rr(g, 10, 44, 7, 12, 2, shade(wood, -0.16));
+    rr(g, S - 17, 44, 7, 12, 2, shade(wood, -0.16));
+    rr(g, 4, 14, S - 8, 34, 6, wood);
+    vgrad(g, 4, 14, S - 8, 8, 'rgba(255,235,200,0.28)', 'rgba(0,0,0,0)');
+    // The board, taped down at the corners against weather.
+    rr(g, 14, 18, 28, 24, 2, '#e2d8bc');
+    for (let bx = 0; bx < 6; bx++) {
+      for (let by = 0; by < 5; by++) {
+        if ((bx + by) % 2) rect(g, 16 + bx * 4, 20 + by * 4, 4, 4, '#5c4630');
+      }
+    }
+    for (const [cx, cy] of [
+      [15, 19],
+      [41, 19],
+      [15, 41],
+      [41, 41],
+    ] as const) {
+      oval(g, cx, cy, 2.6, 1.6, 'rgba(200,200,190,0.6)');
+    }
+    // Mid-game: pieces as little heads, white cornered but plotting.
+    for (const [px, py] of [
+      [18, 22],
+      [26, 26],
+      [30, 22],
+      [34, 30],
+    ] as const) {
+      dot(g, px, py, 2, '#efe8d4');
+      dot(g, px - 0.6, py - 0.6, 0.8, '#ffffff');
+    }
+    for (const [px, py] of [
+      [22, 34],
+      [30, 38],
+      [38, 26],
+    ] as const) {
+      dot(g, px, py, 2, '#33291e');
+      dot(g, px - 0.6, py - 0.6, 0.8, 'rgba(255,255,255,0.35)');
+    }
+    // Casualties beside the board, and somebody's cold coffee ring.
+    dot(g, 48, 24, 2, '#efe8d4');
+    dot(g, 51, 28, 2, '#33291e');
+    g.strokeStyle = 'rgba(90,60,35,0.4)';
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.arc(49, 37, 4.6, 0, Math.PI * 2);
+    g.stroke();
+  });
+
+  make('galleyplant', 1, (g) => {
+    // The crew's one shared plant, in a rice tin, watered by rota.
+    softShadow(g, 32, 90, 16, 4, 0.18);
+    rr(g, 22, 66, 20, 22, 3, '#b8b2a2');
+    vgrad(g, 22, 66, 20, 6, 'rgba(255,255,245,0.3)', 'rgba(0,0,0,0)');
+    rect(g, 22, 74, 20, 5, '#c1512f'); // the tin's old label band
+    oval(g, 32, 66, 9, 3, '#4a3a28');
+    // A pothos going where it pleases: stems and heart leaves.
+    g.strokeStyle = '#4d7440';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(32, 64);
+    g.quadraticCurveTo(20, 48, 24, 34);
+    g.moveTo(32, 64);
+    g.quadraticCurveTo(44, 50, 42, 32);
+    g.moveTo(32, 64);
+    g.quadraticCurveTo(30, 50, 34, 44);
+    g.stroke();
+    for (const [lx, ly, rot] of [
+      [24, 34, -0.5],
+      [20, 44, 0.4],
+      [28, 52, -0.3],
+      [42, 32, 0.5],
+      [46, 42, -0.4],
+      [38, 50, 0.3],
+      [34, 42, 0.1],
+      [30, 58, -0.2],
+    ] as const) {
+      oval(g, lx, ly, 5, 3.6, '#5c8a4a', rot);
+      oval(g, lx - 1, ly - 1, 2.4, 1.6, 'rgba(220,240,190,0.35)', rot);
+    }
+    // The rota card, taped to the tin: four names, one crossed out.
+    rr(g, 36, 78, 12, 9, 1, '#f2ead8');
+    rect(g, 38, 80, 8, 1, 'rgba(60,60,55,0.6)');
+    rect(g, 38, 82.4, 8, 1, 'rgba(60,60,55,0.6)');
+    rect(g, 38, 84.8, 6, 1, 'rgba(60,60,55,0.6)');
+    rect(g, 37, 82.8, 10, 0.8, 'rgba(193,81,47,0.7)');
+  }, S, 96);
+
   // ------------------------------------------------------------ deck kit
 
   make('railing', 2, (g, r) => {
@@ -448,6 +593,473 @@ function paint(make: MakeTile) {
     g.stroke();
   });
 
+  // --------------------------------------------------- deck life, small
+
+  make('ropecoil', 2, (g, r) => {
+    // A mooring line flemished into a flat spiral. Museum-grade rope tidiness.
+    const rope = '#c9b48a';
+    g.lineCap = 'round';
+    for (let rad = 20; rad > 3; rad -= 4.4) {
+      g.strokeStyle = rad % 8.8 < 4.4 ? shade(rope, -0.1) : rope;
+      g.lineWidth = 4;
+      g.beginPath();
+      g.arc(32, 34, rad, 0.25, Math.PI * 2 + 0.05);
+      g.stroke();
+    }
+    // Lay of the rope: little diagonal ticks across the coils.
+    g.strokeStyle = 'rgba(90,70,40,0.4)';
+    g.lineWidth = 1.2;
+    for (let k = 0; k < 14; k++) {
+      const a = r.next() * Math.PI * 2;
+      const rad = 6 + r.int(15);
+      const x = 32 + Math.cos(a) * rad;
+      const y = 34 + Math.sin(a) * rad;
+      g.beginPath();
+      g.moveTo(x - 2, y - 2);
+      g.lineTo(x + 2, y + 2);
+      g.stroke();
+    }
+    // The bitter end, whipped in red, tucked with intent.
+    g.strokeStyle = rope;
+    g.lineWidth = 4;
+    g.beginPath();
+    g.moveTo(50, 40);
+    g.quadraticCurveTo(56, 46, 52, 52);
+    g.stroke();
+    rect(g, 50, 49, 5, 3.6, '#c1512f');
+  });
+
+  make('rustpatch', 3, (g, r) => {
+    // A bloom the bosun is losing to, politely. Paint bubbles at the border.
+    const cx = 30 + r.int(6);
+    const cy = 30 + r.int(6);
+    oval(g, cx, cy, 13 + r.int(5), 9 + r.int(4), 'rgba(122,72,40,0.4)', r.next());
+    oval(g, cx + 3, cy - 2, 8, 6, 'rgba(150,88,44,0.45)', r.next());
+    oval(g, cx - 3, cy + 3, 5, 3.6, 'rgba(92,52,30,0.5)', r.next());
+    for (let k = 0; k < 8; k++) {
+      const a = r.next() * Math.PI * 2;
+      const d = 12 + r.int(7);
+      dot(g, cx + Math.cos(a) * d, cy + Math.sin(a) * d * 0.7, 1.4 + r.next(), 'rgba(138,84,48,0.4)');
+    }
+    // A halo of lifted paint, one shade proud of the deck.
+    g.strokeStyle = 'rgba(220,225,215,0.22)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.ellipse(cx, cy, 16, 11, r.next(), 0.4, 2.6);
+    g.stroke();
+    // Wire-brush scratches: somebody has been fighting back.
+    g.strokeStyle = 'rgba(180,178,162,0.35)';
+    g.lineWidth = 1.2;
+    for (let k = 0; k < 4; k++) {
+      const sx = cx - 8 + r.int(16);
+      g.beginPath();
+      g.moveTo(sx, cy - 6 + r.int(4));
+      g.lineTo(sx + 6, cy + 2 + r.int(4));
+      g.stroke();
+    }
+  });
+
+  make('flyingfish', 1, (g) => {
+    // Overnight arrival, found at dawn. The cook calls this room service.
+    oval(g, 32, 40, 14, 5, 'rgba(160,200,220,0.18)'); // drying salt sheen
+    const silver = '#b8c4c9';
+    oval(g, 30, 36, 12, 3.6, silver, -0.12);
+    oval(g, 27, 35, 8, 2.6, 'rgba(240,248,250,0.6)', -0.12); // belly shine
+    // The tail, forked; the great wing fin, folded over the back.
+    g.fillStyle = shade(silver, -0.18);
+    g.beginPath();
+    g.moveTo(42, 36);
+    g.lineTo(48, 31);
+    g.lineTo(46, 36);
+    g.lineTo(48, 40);
+    g.closePath();
+    g.fill();
+    g.beginPath();
+    g.moveTo(28, 34);
+    g.quadraticCurveTo(36, 22, 44, 30);
+    g.quadraticCurveTo(36, 30, 30, 36);
+    g.closePath();
+    g.fillStyle = 'rgba(120,150,165,0.75)';
+    g.fill();
+    g.strokeStyle = 'rgba(70,95,110,0.5)';
+    g.lineWidth = 0.8;
+    for (const wx of [33, 36, 39]) {
+      g.beginPath();
+      g.moveTo(29, 34);
+      g.lineTo(wx + 4, 26);
+      g.stroke();
+    }
+    dot(g, 21, 35, 1.4, '#22303a'); // the astonished eye
+  });
+
+  make('oildrum', 1, (g) => {
+    // Two 200-liter drums, lashed, stenciled, repurposed forever.
+    softShadow(g, 32, 56, 26, 6, 0.22);
+    for (const [dx, c] of [
+      [17, NAVY],
+      [43, '#8a4030'],
+    ] as const) {
+      const grad = g.createLinearGradient(dx - 13, 0, dx + 13, 0);
+      grad.addColorStop(0, shade(c, -0.14));
+      grad.addColorStop(0.4, shade(c, 0.12));
+      grad.addColorStop(1, shade(c, -0.2));
+      g.fillStyle = grad;
+      g.fillRect(dx - 13, 18, 26, 38);
+      // Rolling hoops.
+      for (const hy of [28, 42]) {
+        rect(g, dx - 13, hy, 26, 3, shade(c, -0.24));
+        rect(g, dx - 13, hy, 26, 1.2, shade(c, 0.16));
+      }
+      oval(g, dx, 18, 13, 4.4, shade(c, 0.18));
+      oval(g, dx, 17.4, 9, 2.6, shade(c, -0.06));
+      dot(g, dx + 5, 17, 2, shade(c, -0.3)); // the bung
+      // Stencil band: blocky paint marks, port-of-origin issue.
+      for (let k = 0; k < 4; k++) {
+        rect(g, dx - 9 + k * 5, 34, 3.4, 4.4, 'rgba(240,238,225,0.75)');
+      }
+    }
+    // One lashing across both, because the bosun trusts nothing round.
+    g.strokeStyle = 'rgba(210,210,200,0.6)';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(3, 50);
+    g.lineTo(61, 46);
+    g.stroke();
+  });
+
+  make('hosereel', 1, (g) => {
+    // The fire hose on its reel, drilled monthly, needed never. So far.
+    softShadow(g, 32, 56, 24, 6, 0.2);
+    rr(g, 10, 20, 44, 34, 4, '#c1512f');
+    vgrad(g, 10, 20, 44, 8, 'rgba(255,255,245,0.2)', 'rgba(0,0,0,0)');
+    // The wound hose, pale canvas, coiled in rows.
+    for (const hy of [28, 34, 40, 46]) {
+      rr(g, 14, hy, 36, 5, 2.4, hy % 12 === 4 ? '#ddd6c2' : '#cfc7b0');
+      rect(g, 14, hy + 3.6, 36, 1, 'rgba(90,85,70,0.3)');
+    }
+    // Axle bosses and the brass nozzle, hooked and ready.
+    dot(g, 12, 37, 4, '#8a3a24');
+    dot(g, 52, 37, 4, '#8a3a24');
+    g.strokeStyle = '#cfc7b0';
+    g.lineWidth = 3.4;
+    g.beginPath();
+    g.moveTo(50, 48);
+    g.quadraticCurveTo(58, 50, 56, 40);
+    g.stroke();
+    rr(g, 53, 30, 6, 11, 2, '#c9a83f');
+    // Stencil dashes: FIRE, in the universal font of red boxes.
+    for (let k = 0; k < 3; k++) rect(g, 20 + k * 8, 23, 5, 2.6, 'rgba(240,238,225,0.8)');
+  });
+
+  make('paintcans', 1, (g) => {
+    // Deck green by the gallon: the other side of Joseph's argument.
+    softShadow(g, 30, 54, 22, 5, 0.18);
+    // The drop rag, folded with suspicious neatness.
+    rr(g, 12, 42, 40, 12, 2, '#c2b797');
+    rect(g, 12, 46, 40, 1.2, 'rgba(120,105,75,0.35)');
+    oval(g, 24, 46, 4, 2, 'rgba(99,114,106,0.6)');
+    oval(g, 40, 49, 3, 1.6, 'rgba(138,84,48,0.5)');
+    // Two shut cans, one open with the brush across it.
+    const tin = '#8f9490';
+    for (const [cx2, cy2] of [
+      [20, 30],
+      [34, 26],
+    ] as const) {
+      rect(g, cx2 - 8, cy2, 16, 14, tin);
+      rect(g, cx2 - 8, cy2, 3, 14, shade(tin, -0.16));
+      rect(g, cx2 + 4, cy2, 4, 14, shade(tin, -0.22));
+      oval(g, cx2, cy2, 8, 3, shade(tin, 0.24));
+      oval(g, cx2, cy2 + 0.4, 6, 2, shade(DECK, -0.1)); // lid drips tell the color
+      rect(g, cx2 - 8, cy2 + 5, 16, 2, shade(tin, -0.18));
+    }
+    rect(g, 40, 34, 16, 14, tin);
+    rect(g, 40, 34, 3, 14, shade(tin, -0.16));
+    rect(g, 52, 34, 4, 14, shade(tin, -0.22));
+    oval(g, 48, 34, 8, 3, shade(tin, -0.28));
+    oval(g, 48, 34, 6, 2.2, DECK); // open: the paint itself
+    oval(g, 46, 33.6, 2.6, 1, shade(DECK, 0.2));
+    // The brush, resting across the rim, mid-career.
+    g.strokeStyle = '#8a6238';
+    g.lineWidth = 2.6;
+    g.beginPath();
+    g.moveTo(41, 28);
+    g.lineTo(52, 37);
+    g.stroke();
+    rr(g, 51, 36, 6, 5, 1, shade(DECK, -0.1));
+    // One honest drip down the can.
+    rect(g, 43, 37, 1.6, 6, shade(DECK, -0.06));
+    dot(g, 43.8, 44, 1.4, shade(DECK, -0.06));
+  });
+
+  make('tarpthing', 1, (g) => {
+    // The tarp-covered something. Lashed by a professional. Discussed by all.
+    softShadow(g, 32, 56, 26, 6, 0.22);
+    const tarp = '#5c7a5c';
+    g.beginPath();
+    g.moveTo(8, 54);
+    g.quadraticCurveTo(6, 34, 18, 26);
+    g.quadraticCurveTo(26, 12, 40, 18);
+    g.quadraticCurveTo(54, 18, 56, 34);
+    g.quadraticCurveTo(60, 48, 54, 54);
+    g.closePath();
+    const grad = g.createLinearGradient(0, 12, 0, 54);
+    grad.addColorStop(0, shade(tarp, 0.16));
+    grad.addColorStop(1, shade(tarp, -0.14));
+    g.fillStyle = grad;
+    g.fill();
+    // Folds, and two bulges that suggest and confirm nothing.
+    g.strokeStyle = shade(tarp, -0.2);
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(20, 28);
+    g.quadraticCurveTo(28, 40, 24, 54);
+    g.moveTo(40, 20);
+    g.quadraticCurveTo(44, 34, 40, 52);
+    g.stroke();
+    oval(g, 30, 24, 8, 4, shade(tarp, 0.2), -0.3);
+    oval(g, 48, 34, 5, 3, shade(tarp, 0.18), 0.4);
+    // Cross lashings to deck rings, tensioned like an opinion.
+    g.strokeStyle = '#c9b48a';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.moveTo(12, 30);
+    g.lineTo(52, 50);
+    g.moveTo(50, 24);
+    g.lineTo(14, 52);
+    g.stroke();
+    for (const [ax, ay] of [
+      [10, 56],
+      [54, 56],
+    ] as const) {
+      dot(g, ax, ay, 2.6, '#4c4f4c');
+      dot(g, ax, ay, 1.2, '#2e3130');
+    }
+  });
+
+  // --------------------------------------------------- deck life, tall
+
+  make('portcrate', 1, (g) => {
+    // Break-bulk crates stenciled with ports: where she has been, where next.
+    softShadow(g, 32, 90, 26, 6, 0.22);
+    const wood = '#a08a5c';
+    for (const [top, hgt, c] of [
+      [50, 38, wood],
+      [16, 32, shade(wood, 0.08)],
+    ] as const) {
+      const grad = g.createLinearGradient(0, top, 0, top + hgt);
+      grad.addColorStop(0, shade(c, 0.1));
+      grad.addColorStop(1, shade(c, -0.12));
+      g.fillStyle = grad;
+      g.fillRect(6, top, 52, hgt);
+      // Plank lines and the diagonal brace.
+      g.strokeStyle = 'rgba(80,60,35,0.4)';
+      g.lineWidth = 1.4;
+      for (let py = top + 8; py < top + hgt; py += 8) {
+        g.beginPath();
+        g.moveTo(6, py);
+        g.lineTo(58, py);
+        g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(8, top + hgt - 2);
+      g.lineTo(56, top + 2);
+      g.stroke();
+      rect(g, 6, top, 3, hgt, shade(c, -0.18));
+      rect(g, 55, top, 3, hgt, shade(c, -0.18));
+    }
+    // Stencils: three port names, two crossed out, one waiting.
+    for (let k = 0; k < 5; k++) rect(g, 15 + k * 6, 58, 4, 5, 'rgba(45,40,32,0.7)');
+    rect(g, 13, 60, 34, 1.6, 'rgba(193,81,47,0.8)'); // struck through: been there
+    for (let k = 0; k < 4; k++) rect(g, 17 + k * 6, 70, 4, 5, 'rgba(45,40,32,0.7)');
+    rect(g, 15, 72, 28, 1.6, 'rgba(193,81,47,0.8)'); // and there
+    for (let k = 0; k < 6; k++) rect(g, 13 + k * 6, 24, 4, 5, 'rgba(240,238,225,0.85)'); // still to come
+    // FRAGILE-ish glyphs and this-way-up arrows, ignored respectfully.
+    g.strokeStyle = 'rgba(45,40,32,0.7)';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(46, 40);
+    g.lineTo(46, 34);
+    g.moveTo(43, 37);
+    g.lineTo(46, 34);
+    g.lineTo(49, 37);
+    g.stroke();
+  }, S, 96);
+
+  make('lifering', 1, (g) => {
+    // The ship's name in a circle you can throw. Checked weekly, thrown never.
+    softShadow(g, 32, 90, 14, 4, 0.16);
+    rect(g, 29, 34, 6, 54, '#e9e7dd');
+    rect(g, 29, 34, 2.4, 54, '#ffffff');
+    rr(g, 22, 84, 20, 5, 2, shade('#e9e7dd', -0.2));
+    // The ring on its bracket, quartered orange and white.
+    dot(g, 32, 30, 16, '#d96b2e');
+    for (const a of [Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4]) {
+      g.fillStyle = '#f2ead8';
+      g.beginPath();
+      g.arc(32, 30, 16, a - 0.35, a + 0.35);
+      g.arc(32, 30, 8, a + 0.35, a - 0.35, true);
+      g.closePath();
+      g.fill();
+    }
+    g.save(); // punch the middle out so the world shows through
+    g.globalCompositeOperation = 'destination-out';
+    dot(g, 32, 30, 8, '#000');
+    g.restore();
+    rect(g, 30, 33, 4, 5.4, shade('#e9e7dd', -0.24)); // the post, seen through the hole
+    oval(g, 27, 25, 4, 2, 'rgba(255,255,250,0.4)', -0.6);
+    // The grab line, looped around the ring in four bights.
+    g.strokeStyle = '#c9b48a';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(18, 24);
+    g.quadraticCurveTo(12, 30, 18, 37);
+    g.moveTo(46, 24);
+    g.quadraticCurveTo(52, 30, 46, 37);
+    g.moveTo(25, 15);
+    g.quadraticCurveTo(32, 11, 39, 15);
+    g.moveTo(25, 45);
+    g.quadraticCurveTo(32, 49, 39, 45);
+    g.stroke();
+    // Name band marks: M V  Y A C A N A, in stencil dashes.
+    for (let k = 0; k < 4; k++) rect(g, 25 + k * 4, 40, 2.6, 3, 'rgba(45,40,32,0.75)');
+  }, S, 96);
+
+  make('deckshrine', 1, (g) => {
+    // A welded-bracket shrine: many faiths, one sea, one plastic flower.
+    softShadow(g, 32, 90, 16, 4, 0.18);
+    rect(g, 29, 52, 6, 36, '#b8b2a2');
+    // The little house: steel box, painted roof, open to the weather's mercy.
+    rr(g, 12, 20, 40, 34, 3, '#8a3a24');
+    rr(g, 15, 26, 34, 28, 2, '#3a2e22');
+    g.fillStyle = '#c1512f';
+    g.beginPath();
+    g.moveTo(8, 22);
+    g.lineTo(32, 8);
+    g.lineTo(56, 22);
+    g.closePath();
+    g.fill();
+    g.beginPath();
+    g.moveTo(12, 20);
+    g.lineTo(32, 10);
+    g.lineTo(52, 20);
+    g.lineTo(48, 16);
+    g.lineTo(32, 8);
+    g.lineTo(16, 16);
+    g.closePath();
+    g.fillStyle = shade('#c1512f', 0.18);
+    g.fill();
+    // Inside: a small light, a card, coins from five currencies.
+    dot(g, 32, 40, 6, 'rgba(255,205,120,0.5)');
+    dot(g, 32, 41, 2.4, '#ffd88a');
+    rr(g, 20, 34, 8, 11, 1, '#f2ead8');
+    rect(g, 21, 36, 6, 1, 'rgba(60,60,55,0.5)');
+    rect(g, 21, 38.4, 6, 1, 'rgba(60,60,55,0.5)');
+    for (const [mx, my] of [
+      [40, 48],
+      [43, 50],
+      [38, 51],
+    ] as const) {
+      dot(g, mx, my, 2, '#c9a83f');
+      dot(g, mx - 0.6, my - 0.6, 0.8, 'rgba(255,255,240,0.6)');
+    }
+    // The plastic flower, zip-tied to the post, eternally in season.
+    g.strokeStyle = '#4d7440';
+    g.lineWidth = 1.8;
+    g.beginPath();
+    g.moveTo(38, 76);
+    g.quadraticCurveTo(40, 66, 38, 60);
+    g.stroke();
+    for (const a of [0, 1.25, 2.5, 3.75, 5]) {
+      oval(g, 38 + Math.cos(a) * 4, 59 + Math.sin(a) * 4, 3.2, 2.2, '#d9694a', a);
+    }
+    dot(g, 38, 59, 2.4, '#ffd88a');
+    rect(g, 33, 74, 8, 2.4, '#ddd6c2'); // the zip tie, doing its forever job
+  }, S, 96);
+
+  make('laundry', 1, (g) => {
+    // The crew's coveralls drying between rails: the flag of the off-watch.
+    softShadow(g, 32, 90, 24, 5, 0.14);
+    rect(g, 6, 14, 3.4, 74, '#e9e7dd');
+    rect(g, 54, 14, 3.4, 74, '#e9e7dd');
+    g.strokeStyle = 'rgba(220,218,205,0.8)';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(8, 20);
+    g.quadraticCurveTo(32, 26, 56, 20);
+    g.stroke();
+    // Three coveralls: engine-room orange, deck navy, and one size bosun.
+    const overall = (ox: number, oy: number, w: number, len: number, c: string) => {
+      rr(g, ox - w / 2, oy, w, len * 0.44, 3, c); // torso
+      rect(g, ox - w / 2, oy + len * 0.42, w * 0.42, len * 0.58, shade(c, -0.06));
+      rect(g, ox + w * 0.08, oy + len * 0.42, w * 0.42, len * 0.58, shade(c, -0.1));
+      rect(g, ox - w / 2, oy + 3, w, 3, shade(c, 0.14)); // shoulder fold
+      dot(g, ox - w / 2 + 1, oy, 1.4, '#8a6238'); // pegs
+      dot(g, ox + w / 2 - 1, oy, 1.4, '#8a6238');
+    };
+    overall(16, 23, 13, 34, '#d96b2e');
+    overall(31, 25, 13, 34, NAVY);
+    overall(47, 22, 17, 42, '#3f7fb0');
+    // One stripe of reflective tape each, catching the light.
+    for (const [tx, ty, tw] of [
+      [10, 40, 12],
+      [25, 42, 12],
+      [39, 44, 16],
+    ] as const) {
+      rect(g, tx, ty, tw, 2, 'rgba(240,240,225,0.7)');
+    }
+    // And somebody's lucky towel, which has seen things.
+    rr(g, 24, 20, 9, 16, 1, '#8fcbe8');
+    rect(g, 24, 30, 9, 2, 'rgba(255,255,255,0.5)');
+  }, S, 96);
+
+  make('sternrod', 1, (g) => {
+    // The fishing rod lashed to the stern rail, trolling since Callao.
+    softShadow(g, 32, 90, 16, 4, 0.14);
+    // A stub of rail to belong to.
+    rect(g, 10, 44, 4, 44, '#e9e7dd');
+    rect(g, 4, 46, 40, 3, shade('#e9e7dd', -0.1));
+    rect(g, 4, 60, 40, 3, shade('#e9e7dd', -0.1));
+    // The rod, aged bamboo, arced with hope rather than fish.
+    g.strokeStyle = '#a08a5c';
+    g.lineWidth = 3;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(14, 84);
+    g.quadraticCurveTo(30, 44, 52, 14);
+    g.stroke();
+    g.strokeStyle = shade('#a08a5c', 0.2);
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(14, 83);
+    g.quadraticCurveTo(30, 44, 51, 14);
+    g.stroke();
+    // Lashings to the rail, tidy x's.
+    g.strokeStyle = '#c9b48a';
+    g.lineWidth = 2;
+    for (const ly of [50, 62] as const) {
+      g.beginPath();
+      g.moveTo(12, ly - 4);
+      g.lineTo(22, ly + 4);
+      g.moveTo(22, ly - 4);
+      g.lineTo(12, ly + 4);
+      g.stroke();
+    }
+    // Reel, line, and the little bell that will wake the whole deck someday.
+    dot(g, 24, 66, 5, '#4c4f4c');
+    dot(g, 24, 66, 2, '#8a8478');
+    g.strokeStyle = 'rgba(230,235,235,0.65)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(52, 14);
+    g.quadraticCurveTo(58, 30, 60, 50);
+    g.stroke();
+    dot(g, 52, 18, 2.6, '#c9a83f');
+    // The hopeful bucket at its foot.
+    rr(g, 34, 74, 18, 14, 2, '#3f7fb0');
+    oval(g, 43, 74, 9, 3, shade('#3f7fb0', 0.16));
+    oval(g, 43, 74.4, 7, 2.2, '#2a4a63');
+  }, S, 96);
+
   // ------------------------------------------------------------ the house
 
   make('shiphouse', 1, (g) => {
@@ -559,7 +1171,10 @@ function paint(make: MakeTile) {
 
 export const ART: ChapterArt = {
   paint,
-  grounded: ['contA', 'contB', 'contC', 'lifeboat', 'funnel', 'shipbell', 'jackstaff', 'hammock', 'karaoke'],
+  grounded: [
+    'contA', 'contB', 'contC', 'lifeboat', 'funnel', 'shipbell', 'jackstaff', 'hammock', 'karaoke',
+    'portcrate', 'lifering', 'deckshrine', 'laundry', 'sternrod', 'galleyplant',
+  ],
   buildings: ['shiphouse'],
   windows: {
     shiphouse: [
@@ -567,5 +1182,6 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['stove'],
+  glows: ['stove', 'deckshrine'],
+  noInk: ['ropecoil', 'rustpatch', 'flyingfish'],
 };

@@ -68,6 +68,23 @@ function objectAt(x: number, y: number): string {
   if (x === 17 && y === 15) return 'h'; // a hammock, between the stacks
   if (x === 17 && y === 27) return 'c'; // the ship's cat, off duty
   if (x === 20 && y === 9) return 't'; // spare hatch beams, lashed
+  // Life clusters where the work is: the bosun's starboard-forward corner.
+  if (x === 27 && y === 7) return 'D'; // oil drums, stenciled
+  if (x === 28 && y === 8) return 'R'; // fire hose on its reel
+  // Joseph's port-rail war on rust, tools staged where he left them.
+  if (x === 15 && y === 9) return 'p'; // paint cans and a wire brush
+  if ((x === 15 && y === 13) || (x === 28 && y === 17)) return 'u'; // rust blooms
+  if ((x === 17 && y === 10) || (x === 26 && y === 19)) return 'r'; // rope coils, flemished flat
+  if (x === 23 && y === 4) return 'f'; // a flying fish, stranded overnight
+  if (x === 24 && y === 10) return 'T'; // the tarp-covered something
+  if ((x === 26 && y === 15) || (x === 15 && y === 20)) return 'P'; // port-stenciled crates
+  if (x === 28 && y === 24) return 'G'; // life ring on its stand, named
+  if (x === 15 && y === 27) return 'D'; // more drums, aft
+  // The aft port strip, where off-watch life happens in the house's lee.
+  if (x === 18 && y === 22) return 'V'; // the little deck shrine
+  if (x === 16 && y === 24) return 'y'; // the laundry line
+  if (x === 24 && y === 28) return 'z'; // the fishing rod, lashed to the stern rail
+  if (x === 21 && y === 27) return 'm'; // the welcome mat at the watertight door
   return ' ';
 }
 
@@ -115,6 +132,19 @@ export const SHIP_MAP: MapData = {
     h: { t: 'hammock', solid: true, tall: true },
     c: { t: 'shipcat', solid: true },
     t: { t: 'crate', solid: true },
+    D: { t: 'oildrum', solid: true },
+    R: { t: 'hosereel', solid: true },
+    p: { t: 'paintcans', solid: true },
+    u: { t: 'rustpatch' },
+    r: { t: 'ropecoil' },
+    f: { t: 'flyingfish' },
+    T: { t: 'tarpthing', solid: true },
+    P: { t: 'portcrate', solid: true, tall: true },
+    G: { t: 'lifering', solid: true, tall: true },
+    V: { t: 'deckshrine', solid: true, tall: true },
+    y: { t: 'laundry', solid: true, tall: true },
+    z: { t: 'sternrod', solid: true, tall: true },
+    m: { t: 'mat' },
   },
   ground,
   objects,
@@ -137,6 +167,10 @@ export const GALLEY_MAP: MapData = {
     K: { t: 'karaoke', solid: true, tall: true },
     t: { t: 'trayrack', solid: true },
     m: { t: 'mat' },
+    M: { t: 'menuboard', solid: true, tall: true },
+    D: { t: 'dartboard', solid: true, tall: true },
+    G: { t: 'chessset', solid: true },
+    P: { t: 'galleyplant', solid: true, tall: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -152,14 +186,14 @@ export const GALLEY_MAP: MapData = {
     '..............',
   ],
   objects: [
-    '##S#S#S##S####',
+    '##SMS#S##S#D##',
     '#q p p      K#',
     '#            #',
-    '#  sTTTTTTs  #',
+    '#  sTTTTTGs  #',
     '#            #',
     '#  sTTTTTTs  #',
     '#            #',
-    '# t          #',
+    '# t         P#',
     '#            #',
     '#######m######',
   ],

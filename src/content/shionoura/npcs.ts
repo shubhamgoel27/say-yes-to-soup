@@ -1030,6 +1030,149 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Chapter Five is being provisioned. Captain Isao has already chalked your name on the manifest, spelled almost correctly.' },
     ],
   },
+  // ---------------- examines: the love pass ----------------
+  'c4.ex.jizo': {
+    lines: [
+      { text: 'A small stone Jizo beside the steps, hands folded, wearing a knitted red bib and cap. Someone has swept the leaves from his feet.' },
+      { text: 'At his feet, one mikan jelly cup and a chipped teacup. The going rate, apparently, for watching over a town.' },
+    ],
+    effects: ['set:c4.seen.jizo'],
+  },
+  'c4.ex.jizo2': {
+    lines: [
+      { text: 'Look closer: the bib\'s wool is new, the stitches small and sure. Somebody in town reknits it every winter, and has for longer than anyone says.' },
+    ],
+  },
+  'c4.ex.ema': {
+    lines: [
+      { text: 'Wooden ema hang two rows deep: safe boats, a fat catch, pass the exam. One just says COME BACK SOON, pressed hard enough to dent the plaque.' },
+    ],
+  },
+  'c4.ex.koke': {
+    lines: [
+      { text: 'Moss upholsters the edges of the step, older than anyone who climbs it. The middle stays bare, argued smooth by feet with somewhere to be.' },
+    ],
+  },
+  'c4.ex.jihanki': {
+    lines: [
+      { text: 'A vending machine hums alone on the corner, lit like a small shrine. Cold tea, hot coffee, corn soup: all hours, all seasons, no explanation.' },
+    ],
+    effects: ['set:c4.seen.jihanki'],
+  },
+  'c4.ex.jihanki2': {
+    lines: [
+      { text: 'Blue tabs for TSUMETAI, red for ATSUI: cold and hot living in one box. At dusk its light comes on, and the corner quietly counts on it.' },
+    ],
+  },
+  'c4.ex.ukidama': {
+    lines: [
+      { text: 'Glass floats in a net bag, green as bottled sea. Plastic took their job years ago; nobody here would dream of letting the old crew go.' },
+    ],
+  },
+  'c4.ex.mikanbako': {
+    lines: [
+      { text: 'Mikan crates stenciled SETODA, on summer duty with juice and jelly. The fruit itself is asleep on the terraces until autumn.' },
+    ],
+  },
+  'c4.ex.jitensha': {
+    lines: [
+      { text: 'A granny bike with a basket, a bell, and no lock. The clack of its kickstand is one of the town\'s official sounds.' },
+    ],
+  },
+  'c4.ex.ittokan': {
+    lines: [
+      { text: 'A square kerosene can, retired into a planter and heavy with hydrangeas. Nothing in Shionoura is thrown away; it is reassigned.' },
+    ],
+  },
+  'c4.ex.ajisai': {
+    lines: [
+      { text: 'Hydrangeas holding the exact blue of seven in the evening. Tsuyu is a tiresome guest, but it does pay its rent in flowers.' },
+    ],
+  },
+  'c4.ex.himono': {
+    lines: [
+      { text: 'Small fish dry butterflied on the net rack, salted and patient. It stands exactly one cat\'s jump too high, built by a town that knows its cats.' },
+    ],
+  },
+  'c4.ex.monohoshi': {
+    lines: [
+      { text: 'Towels and aprons pinned hard against the sea wind. Fumi consults the sky like a tide table before trusting it with a single sock.' },
+    ],
+  },
+  'c4.ex.gyokyo': {
+    lines: [
+      { text: 'The co-op board: quota notices, a typhoon drill, a crayon poster for the goldfish stall. Official and unofficial share the same four nails.' },
+    ],
+  },
+  'c4.gyokyo.after': {
+    lines: [
+      { text: 'A new notice, brushed by hand: THE SEVENTH NIGHT WENT WELL. OTSUKARESAMA, MINNA. The co-op stamp underneath makes it official policy.' },
+    ],
+  },
+  'c4.ex.furin': {
+    lines: [
+      { text: 'A glass furin translating sea wind into small bright syllables. Its paper strip adds a wish to every gust, free of charge.' },
+    ],
+  },
+  'c4.ex.neko1': {
+    lines: [
+      { text: 'On the warm quay stone, a calico in full loaf: paws stowed, eyes at half mast. You have been seen, filed, and dismissed.' },
+    ],
+    effects: ['set:c4.seen.neko1'],
+  },
+  'c4.ex.neko1b': {
+    lines: [
+      { text: 'The loaf has not moved, but the eyes track you with the calm of middle management. This stretch of quay is hers, and the paperwork is in order.' },
+    ],
+  },
+  'c4.neko2.tai': {
+    lines: [
+      { text: 'The stall cat has noticed Fumi\'s tai. He falls in beside you with the sudden warm loyalty of an old friend you have never met.' },
+    ],
+  },
+  'c4.ex.neko2': {
+    lines: [
+      { text: 'A big scarred tom sits by the fish stall like he holds shares in it. Daisuke calls him Kacho, the section chief. Nobody laughs twice.' },
+    ],
+    effects: ['set:c4.seen.neko2'],
+  },
+  'c4.ex.neko2b': {
+    lines: [
+      { text: 'Kacho inspects the crates, the nets, and you, in that order of importance. Promotion here does not go through him; respect, however, does.' },
+    ],
+  },
+  'c4.ex.neko3': {
+    lines: [
+      { text: 'Under the bench, a small black cat sleeps in the shade the grandmothers keep warm for it. The afternoon shift, technically on duty.' },
+    ],
+    effects: ['set:c4.seen.neko3'],
+  },
+  'c4.ex.neko3b': {
+    lines: [
+      { text: 'One ear swivels toward your footsteps, weighs the information, and stands down. You have been classified: harmless, carries no snacks.' },
+    ],
+  },
+  'c4.ex.kaigara': {
+    lines: [
+      { text: 'Shells and sea glass, the tide\'s small change. Taro\'s exchange rate: white is common, pink is money, blue glass is beyond price.' },
+    ],
+  },
+  'c4.ex.senpuki': {
+    lines: [
+      { text: 'An elderly electric fan sweeps the room in slow no\'s, disagreeing with summer on principle. It has outlived three sleeker replacements.' },
+    ],
+  },
+  'c4.ex.mugicha': {
+    lines: [
+      { text: 'Cold mugicha sweating politely on its tray, one glass already poured for whoever passes. Refusing it is possible in theory only.' },
+    ],
+  },
+  'c4.ex.getarow': {
+    lines: [
+      { text: 'Geta and sandals at the genkan edge, toes pointed out the door. The house sends you off ready, whichever way your feet decide.' },
+    ],
+  },
+
   'c4.ex.tablelow': {
     lines: [
       { text: 'The low table, legs folded under it like a resting animal. Meals, letters, homework, tea: the whole house happens at knee height.' },
@@ -1082,6 +1225,45 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['met.hana'], not: ['c4.kingyo.start', 'c4.kingyo.done'] }, node: 'c4.kingyo.offer' },
     { node: 'c4.ex.yatai' },
   ],
+  jizo: [
+    { when: { not: ['c4.seen.jizo'] }, node: 'c4.ex.jizo' },
+    { node: 'c4.ex.jizo2' },
+  ],
+  ema: [{ node: 'c4.ex.ema' }],
+  koke: [{ node: 'c4.ex.koke' }],
+  jihanki: [
+    { when: { not: ['c4.seen.jihanki'] }, node: 'c4.ex.jihanki' },
+    { node: 'c4.ex.jihanki2' },
+  ],
+  ukidama: [{ node: 'c4.ex.ukidama' }],
+  mikanbako: [{ node: 'c4.ex.mikanbako' }],
+  jitensha: [{ node: 'c4.ex.jitensha' }],
+  ittokan: [{ node: 'c4.ex.ittokan' }],
+  ajisai: [{ node: 'c4.ex.ajisai' }],
+  himono: [{ node: 'c4.ex.himono' }],
+  monohoshi: [{ node: 'c4.ex.monohoshi' }],
+  gyokyo: [
+    { when: { has: ['c4.complete'] }, node: 'c4.gyokyo.after' },
+    { node: 'c4.ex.gyokyo' },
+  ],
+  furin: [{ node: 'c4.ex.furin' }],
+  nekoloaf: [
+    { when: { not: ['c4.seen.neko1'] }, node: 'c4.ex.neko1' },
+    { node: 'c4.ex.neko1b' },
+  ],
+  nekoboss: [
+    { when: { has: ['c4.tai.got'], not: ['c4.taisomen'] }, node: 'c4.neko2.tai' },
+    { when: { not: ['c4.seen.neko2'] }, node: 'c4.ex.neko2' },
+    { node: 'c4.ex.neko2b' },
+  ],
+  nekonap: [
+    { when: { not: ['c4.seen.neko3'] }, node: 'c4.ex.neko3' },
+    { node: 'c4.ex.neko3b' },
+  ],
+  kaigara: [{ node: 'c4.ex.kaigara' }],
+  senpuki: [{ node: 'c4.ex.senpuki' }],
+  mugicha: [{ node: 'c4.ex.mugicha' }],
+  getarow: [{ node: 'c4.ex.getarow' }],
   tatami: [{ node: 'c4.ex.tatami' }],
   floorWood: [{ node: 'c4.ex.floorWood' }],
   tataki: [{ node: 'c4.ex.tataki' }],

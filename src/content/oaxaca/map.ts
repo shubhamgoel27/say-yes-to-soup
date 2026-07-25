@@ -43,6 +43,33 @@ function groundAt(x: number, y: number): string {
   return 's';
 }
 
+/**
+ * The love layer: small true things clustered where life actually gathers,
+ * doorways, the market lane, the patio, the road out. Nothing blocks a lane.
+ */
+const EXTRAS = new Map<string, string>([
+  ['5,10', 'A'], // agave piña resting by a door, eight years old
+  ['21,10', 'u'], // the banda's tuba, on its own chair outside rehearsal
+  ['13,10', 'W'], // papel picado still folded, waiting in a doorway
+  ['27,10', 'd'], // the street dog on the warm panaderia step
+  ['30,10', 'y'], // pan de muerto trays cooling by the bakery
+  ['10,7', 'R'], // the rotulista's half-finished sign between casonas
+  ['12,12', 'q'], // market crates: tomatillos and chiles
+  ['14,12', 'h'], // the chapulines basket at the stall's elbow
+  ['23,3', 'N'], // corner nicho on the camposanto road
+  ['1,12', 'b'], // bougainvillea over the west wall
+  ['44,15', 'b'], // bougainvillea over the east wall
+  ['5,20', 'J'], // Refugio's water cantaros in the shade
+  ['10,23', 'e'], // the metate on Chela's patio
+  ['12,23', 'Q'], // the patio broom, mid-shift
+  ['26,28', 'z'], // the paletero's bicycle cart near the colectivo
+  ['11,27', 'K'], // cut cempasuchil bundles at the field edge
+  ['12,28', 'K'],
+  ['42,12', 'K'], // bundles staged by the camposanto lane
+  ['3,18', 'l'], // hens auditing the ground
+  ['33,26', 'l'],
+]);
+
 function objectAt(x: number, y: number): string {
   // Boundary adobe-and-stone wall; the camposanto arch parts the north side.
   if (y === 0 || y === H - 1 || x === 0 || x === W - 1) return 'o';
@@ -77,10 +104,13 @@ function objectAt(x: number, y: number): string {
   // Trees: jacaranda shade and bougainvillea climbing the walls.
   const trees = new Set(['3,11', '31,15', '43,18', '12,25', '33,25', '9,2', '31,2', '3,24']);
   if (trees.has(`${x},${y}`)) return 't';
+  const extra = EXTRAS.get(`${x},${y}`);
+  if (extra) return extra;
   // Sparse dry-valley life, deterministic so it never shifts.
   if (groundAt(x, y) === 's') {
     const h = cellHash(x, y, 91);
     if (h < 0.04) return 'i';
+    if (h > 0.986 && h < 0.993) return 'k'; // spent cohete sticks, obviously
     if (h > 0.995) return 'r';
   }
   return ' ';
@@ -147,6 +177,23 @@ export const OAXACA_MAP: MapData = {
     t: { t: 'tree', solid: true, tall: true },
     r: { t: 'rock', solid: true },
     i: { t: 'tuft' },
+    A: { t: 'agavepina', solid: true },
+    u: { t: 'tuba', solid: true, tall: true },
+    W: { t: 'papelstack', solid: true },
+    d: { t: 'streetdog', solid: true },
+    y: { t: 'pantray', solid: true, tall: true },
+    R: { t: 'rotulo', solid: true, tall: true },
+    q: { t: 'mercadocrates', solid: true, tall: true },
+    h: { t: 'chapulines', solid: true },
+    N: { t: 'nicho', solid: true, tall: true },
+    b: { t: 'bugambilia', solid: true, tall: true },
+    J: { t: 'cantaros', solid: true },
+    e: { t: 'metate', solid: true },
+    Q: { t: 'escoba', solid: true },
+    z: { t: 'paletas', solid: true, tall: true },
+    K: { t: 'cempacut', solid: true },
+    l: { t: 'gallina' },
+    k: { t: 'cohete' },
     ' ': { t: 'void' },
   },
   ground: main.ground,
@@ -170,6 +217,9 @@ export const COCINA_MAP: MapData = {
     s: { t: 'stool', solid: true },
     r: { t: 'rug' },
     m: { t: 'mat' },
+    R: { t: 'ristra', solid: true, tall: true },
+    j: { t: 'jicaras', solid: true },
+    z: { t: 'cazuelas', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -186,8 +236,8 @@ export const COCINA_MAP: MapData = {
   ],
   objects: [
     '##S########S##',
-    '#p  vO  O v  #',
-    '#            #',
+    '#p RvO  O vj #',
+    '#z           #',
     '#            #',
     '#            #',
     '#   sTTTTs   #',
@@ -219,6 +269,11 @@ function campoObject(x: number, y: number): string {
   if ((x === 2 && y === 11) || (x === 17 && y === 11)) return 't';
   // Benches for the vigil: brought out each year, facing the family rows.
   if ((x === 4 && y === 12) || (x === 15 && y === 12)) return 'n';
+  // The caretaker's working corner: whitewash, broom, the costal of petals.
+  if (x === 12 && y === 12) return 'c'; // the petal costal by the gate
+  if (x === 8 && y === 7) return 'B'; // whitewash bucket between graves
+  if (x === 18 && y === 3) return 'Q'; // Melitón's slanted broom
+  if (x === 3 && y === 2) return 'K'; // cut marigolds below the wall row
   return ' ';
 }
 
@@ -238,6 +293,10 @@ export const CAMPOSANTO_MAP: MapData = {
     v: { t: 'veladora', solid: true },
     t: { t: 'tree', solid: true, tall: true },
     n: { t: 'bench', solid: true },
+    c: { t: 'costal', solid: true },
+    B: { t: 'cubeta', solid: true },
+    Q: { t: 'escoba', solid: true },
+    K: { t: 'cempacut', solid: true },
     ' ': { t: 'void' },
   },
   ground: campo.ground,

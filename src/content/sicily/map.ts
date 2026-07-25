@@ -77,6 +77,23 @@ function objectAt(x: number, y: number): string {
   if ((x === 9 || x === 28) && y === 18) return 'L';
   if ((x === 18 || x === 26) && y === 21) return 'n';
   if ((x === 14 && y === 23) || (x === 24 && y === 25)) return 'N';
+  // Life gathers at the doors: teste di moro flank the walkway of the
+  // seafront casedda; a chair holds the shade by one lane door, a cat holds
+  // the fruit bowl by another.
+  if ((x === 3 || x === 5) && y === 19) return 'm';
+  if (x === 12 && y === 6) return 'c';
+  if (x === 29 && y === 6) return 'a';
+  // The church corner: notice board on one side, votive edicola on the other.
+  if (x === 18 && y === 7) return 'A';
+  if (x === 23 && y === 7) return 'e';
+  // The chalk goal on the north wall, score still under dispute.
+  if (x === 32 && y === 1) return 'w';
+  // Tomatoes drying beside Nonna Concetta's lane; prickly pear on the lava.
+  if (x === 7 && y === 16) return 'P';
+  if ((x === 33 && y === 12) || (x === 34 && y === 27)) return 'f';
+  // The cooperative's lemon crates: terrace edge, granita bar, mole-side
+  // stack waiting for Patanè's ship.
+  if ((x === 7 && y === 12) || (x === 12 && y === 14) || (x === 33 && y === 19)) return 'k';
   // Lemon trees on both terraces.
   if ((x === 3 && y === 9) || (x === 5 && y === 11) || (x === 3 && y === 13) || (x === 6 && y === 9)) return 'T';
   if ((x === 15 && y === 2) || (x === 18 && y === 3) || (x === 21 && y === 2) || (x === 24 && y === 3)) return 'T';
@@ -86,6 +103,8 @@ function objectAt(x: number, y: number): string {
     if (cellHash(x, y, 71) < 0.05) return 'r';
   }
   if (g === 'g') {
+    // Windfall lemons first, then the dry tufts; both fixed forever.
+    if (cellHash(x, y, 73) < 0.08) return 'z';
     if (cellHash(x, y, 72) < 0.1) return 'i';
   }
   return ' ';
@@ -142,6 +161,16 @@ export const SICILY_MAP: MapData = {
     N: { t: 'net', solid: true },
     r: { t: 'lavarock', solid: true },
     i: { t: 'tuft' },
+    k: { t: 'lemoncrate', solid: true },
+    m: { t: 'testadimoro', solid: true, tall: true },
+    e: { t: 'edicola', solid: true, tall: true },
+    f: { t: 'fichidindia', solid: true, tall: true },
+    c: { t: 'nonnachair', solid: true },
+    a: { t: 'gattu', solid: true },
+    w: { t: 'campetto', tall: true },
+    P: { t: 'pomodori', solid: true, tall: true },
+    A: { t: 'avvisi', solid: true, tall: true },
+    z: { t: 'limoni' },
   },
   ground,
   objects,
@@ -159,6 +188,8 @@ export const CIRCOLO_MAP: MapData = {
     S: { t: 'shelf', solid: true, tall: true },
     R: { t: 'trofei', solid: true, tall: true },
     E: { t: 'macchina', solid: true, tall: true },
+    B: { t: 'lavagna', solid: true, tall: true },
+    f: { t: 'ventola', solid: true, tall: true },
     T: { t: 'table', solid: true },
     s: { t: 'stool', solid: true },
     u: { t: 'rug' },
@@ -178,14 +209,14 @@ export const CIRCOLO_MAP: MapData = {
     '..............',
   ],
   objects: [
-    '#RR##SS###E###',
+    '#RR##SS#B#E###',
     '#            #',
     '# sTTs  sTTs #',
     '# sTTs  sTTs #',
     '#            #',
     '#     u      #',
     '#            #',
-    '#            #',
+    '#f           #',
     '#            #',
     '######m#######',
   ],

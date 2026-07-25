@@ -60,11 +60,16 @@ function objectAt(x: number, y: number): string {
   if (y >= 5 && y <= 8 && x >= 31 && x <= 44 && x !== 36) return 'F';
   // The torii stands over the steps; you walk under it.
   if (x === 36 && y === 7) return 'T';
-  // Shrine yard: the Ebisu hall, stone lanterns, bamboo.
+  // Moss owns the step edges; feet keep only the middle bare.
+  if (x === 36 && (y === 8 || y === 9)) return 'm';
+  // Shrine yard: the Ebisu hall, stone lanterns, bamboo, the ema rack.
   if (x === 37 && y === 1) return 'E';
   if ((x === 35 || x === 39) && y === 2) return 'I';
+  if (x === 33 && y === 2) return 'a';
   if (x === 33 && y === 3) return 'B';
   if (x === 41 && y === 3) return 'b';
+  // The Jizo at the foot of the steps, in his knitted red bib.
+  if (x === 37 && y === 9) return 'j';
   for (const [hx, hy] of MACHIYA) {
     if (x >= hx && x < hx + 5 && y >= hy && y < hy + 5) {
       if (x === hx + 2 && y === hy + 4) return OPEN_DOORS.has(`${hx},${hy}`) ? 'N' : 'D';
@@ -80,26 +85,49 @@ function objectAt(x: number, y: number): string {
   if (x === 12 && y === 11) return 'L'; // Sachiko's omiyage counter
   if ((x === 2 || x === 30) && y === 11) return 'n';
   if ((x === 4 || x === 13 || x === 27) && y === 12) return 'c';
+  // Life gathers at the shop doors: a bike, crates, flowers at a shut door.
+  if (x === 10 && y === 10) return 'y'; // the granny bike outside Kadoya
+  if (x === 14 && y === 10) return 'M'; // Setoda crates on summer duty
+  if (x === 27 && y === 10) return 'q'; // still watered, though the shop sleeps
+  if (x === 29 && y === 11) return '3'; // the bench's afternoon shift
+  if (x === 31 && y === 12) return 'V'; // the vending machine on the corner
+  // The minshuku's dooryard: wind chime, planter, hydrangeas, laundry.
+  if (x === 24 && y === 18) return 'z';
+  if (x === 27 && y === 18) return 'q';
+  if (x === 28 && y === 19) return 'H';
+  if (x === 15 && y === 13) return 'H';
+  if (x === 30 && y === 16) return 'l';
   // The quay.
   if (x === 7 && y === 22) return 'f';
+  if (x === 9 && y === 22) return 'o'; // glass floats, retired with honors
   if (x === 14 && y === 22) return 'L'; // Daisuke's morning stall
   if (x === 15 && y === 22) return 'h';
+  if (x === 16 && y === 22) return '2'; // Kacho, the section chief
   if (x === 18 && y === 22) return 'G'; // the town sign
+  if (x === 20 && y === 22) return '1'; // the quay supervisor, loafed
   if ((x === 25 || x === 29) && y === 22) return 'c';
   if (x === 27 && y === 22) return 'Y'; // the kingyo-sukui stall
+  if (x === 30 && y === 22) return 'y'; // a bike leaned by the postbox
   if (x === 31 && y === 22) return 'X'; // the red postbox
+  if (x === 34 && y === 22) return 'Q'; // the fishing co-op notice board
   if (x === 37 && y === 22) return 'p'; // the ferry timetable board
   // The pier: big-catch flags up for Tanabata, a stone lantern at the mouth.
   if (x === 21 && (y === 24 || y === 27)) return 'f';
   if (x === 21 && y === 30) return 'I';
   // The beach: boats, the kei truck backed onto the sand, drying nets.
   if (x === 11 && y === 24) return 'K';
+  if (x === 13 && y === 24) return 'i'; // himono rack, one cat-jump too high
   if ((x === 8 || x === 32) && y === 25) return 't';
   if (x === 34 && y === 25) return 'v';
   if ((x === 5 || x === 40) && y === 26) return 'r';
   // Sparse grass tufts, deterministic so nothing crawls.
   if (groundAt(x, y) === 'g' && y >= 3 && y <= 21) {
     if (cellHash(x, y, 47) < 0.05) return 'w';
+  }
+  // Shells and sea glass where the tide leaves its small change.
+  const gk = groundAt(x, y);
+  if ((gk === 's' || gk === 'u') && y >= 24) {
+    if (cellHash(x, y, 91) < 0.06) return 'e';
   }
   return ' ';
 }
@@ -162,6 +190,23 @@ export const SHIONOURA_MAP: MapData = {
     t: { t: 'boat', solid: true, tall: true },
     v: { t: 'net', solid: true },
     w: { t: 'tuft' },
+    j: { t: 'jizo', solid: true, tall: true },
+    a: { t: 'ema', solid: true, tall: true },
+    m: { t: 'koke' },
+    V: { t: 'jihanki', solid: true, tall: true },
+    o: { t: 'ukidama', solid: true },
+    M: { t: 'mikanbako', solid: true },
+    y: { t: 'jitensha', solid: true },
+    q: { t: 'ittokan', solid: true },
+    H: { t: 'ajisai', solid: true },
+    i: { t: 'himono', solid: true, tall: true },
+    l: { t: 'monohoshi', solid: true, tall: true },
+    Q: { t: 'gyokyo', solid: true, tall: true },
+    z: { t: 'furin', solid: true, tall: true },
+    '1': { t: 'nekoloaf', solid: true },
+    '2': { t: 'nekoboss', solid: true },
+    '3': { t: 'nekonap', solid: true },
+    e: { t: 'kaigara' },
   },
   ground,
   objects,
@@ -189,6 +234,9 @@ export const MINSHUKU_MAP: MapData = {
     T: { t: 'table', solid: true },
     s: { t: 'stool', solid: true },
     m: { t: 'mat' },
+    f: { t: 'senpuki', solid: true },
+    j: { t: 'mugicha', solid: true },
+    z: { t: 'getarow' },
     ' ': { t: 'void' },
   },
   ground: [
@@ -210,13 +258,13 @@ export const MINSHUKU_MAP: MapData = {
     '#S  i   # o   p#',
     '#       #      #',
     '# sTTs  #      #',
+    '#f             #',
     '#              #',
     '#              #',
     '#              #',
+    '#             j#',
     '#              #',
-    '#              #',
-    '#              #',
-    '#    m         #',
+    '#    m  z      #',
     '####### ########',
   ],
   triggers: [{ at: [7, 11], type: 'door', to: 'shionoura', spawn: [26, 18], facing: 'down' }],

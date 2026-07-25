@@ -19,6 +19,8 @@ export const ART: ChapterArt = {
   grounded: [
     'palm', 'banana', 'vallam', 'kettuvallam', 'coirrack', 'thattukada', 'muralwall',
     'postsign', 'shaapsign', // aliased signpost art keeps its baked shadow
+    'nilavilakku', 'jacktree', 'peppervine', 'oars', 'spicesacks', 'postbox',
+    'cricketwall', 'posterwall', 'lungiline', 'busstop',
   ],
   buildings: ['veedu'],
   windows: {
@@ -27,7 +29,8 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['thattukada', 'aduppu'],
+  glows: ['thattukada', 'aduppu', 'nilavilakku'],
+  noInk: ['huskpile', 'hyacinth', 'waterlily', 'anthill', 'fallennut', 'tennisball', 'keralacat'],
 
   paint(make) {
     // ---------------------------------------------------------- grounds
@@ -357,6 +360,830 @@ export const ART: ChapterArt = {
       // Rain streak, already rehearsing.
       vgrad(g, 8 + r.int(40), 36, 6, 30, 'rgba(140,130,105,0.2)', 'rgba(0,0,0,0)');
     }, 64, 96);
+
+    // ------------------------------------------------- the love pass: talls
+
+    // The nilavilakku: the brass lamp by the doorway, lit at dusk without
+    // fail. In `glows`, so its small flame does its enormous job at night.
+    make('nilavilakku', 1, (g) => {
+      softShadow(g, 32, 90, 13, 4, 0.22);
+      const brass = '#c8973b';
+      // Foot: stacked discs.
+      oval(g, 32, 86, 13, 4.5, shade(brass, -0.14));
+      oval(g, 32, 83, 10, 3.5, brass);
+      oval(g, 32, 80, 6.5, 2.6, shade(brass, 0.1));
+      // Stem with a knop at the waist.
+      rr(g, 29.5, 54, 5, 28, 2.5, shade(brass, -0.06));
+      oval(g, 32, 68, 6, 2.8, brass);
+      // The oil bowl, lip flared for five wicks.
+      oval(g, 32, 52, 11, 4.5, shade(brass, -0.1));
+      oval(g, 32, 49.5, 11, 4, shade(brass, 0.08));
+      oval(g, 32, 48, 7.5, 2.8, shade(brass, -0.2));
+      // Polish catches the light down one side.
+      g.strokeStyle = 'rgba(255,240,200,0.5)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(30, 58);
+      g.lineTo(30, 78);
+      g.stroke();
+      // The flame, small and certain.
+      glowSpot(g, 32, 42, 10, '#ffca6a', 0.5);
+      g.fillStyle = '#ffd98c';
+      g.beginPath();
+      g.moveTo(32, 36);
+      g.quadraticCurveTo(35.4, 43, 32, 46.5);
+      g.quadraticCurveTo(28.6, 43, 32, 36);
+      g.fill();
+      dot(g, 32, 44, 1.6, '#fff3d0');
+    }, 64, 96);
+
+    // The jackfruit tree: fruit straight off the trunk, the size of good
+    // luggage, admired from a radius the whole village agrees on.
+    make('jacktree', 2, (g, r) => {
+      softShadow(g, 32, 122, 24, 5, 0.22);
+      // Stout trunk.
+      g.strokeStyle = '#6f5238';
+      g.lineWidth = 10;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(33, 122);
+      g.quadraticCurveTo(30, 88, 31, 52);
+      g.stroke();
+      // Dense, dark canopy.
+      blob(g, 20, 48, 13, '#4d7440', r, 0.25);
+      blob(g, 45, 46, 14, '#38592f', r, 0.25);
+      blob(g, 32, 36, 17, '#3f6636', r, 0.24);
+      blob(g, 32, 24, 12, '#4d7440', r, 0.26);
+      blob(g, 16, 34, 9, '#38592f', r, 0.25);
+      blob(g, 48, 32, 9, '#4d7440', r, 0.25);
+      // The jackfruit, frank and enormous, hanging on the trunk itself.
+      for (const [fx, fy, s] of [[27, 80, 1], [37, 95, 0.85]] as const) {
+        g.strokeStyle = '#5a4630';
+        g.lineWidth = 2.4;
+        g.beginPath();
+        g.moveTo(fx, fy - 12 * s);
+        g.lineTo(fx + 2, fy - 16 * s);
+        g.stroke();
+        oval(g, fx, fy, 7.5 * s, 11 * s, shade('#9aa14f', (r.next() - 0.5) * 0.08));
+        oval(g, fx - 2 * s, fy - 2 * s, 5 * s, 8 * s, shade('#a8ae59', 0.04));
+        // Pebbled rind.
+        g.fillStyle = 'rgba(90,100,50,0.5)';
+        for (let i = 0; i < 14; i++) {
+          const a = r.next() * Math.PI * 2;
+          const rad = r.next() * 6 * s;
+          g.fillRect(fx + Math.cos(a) * rad, fy + Math.sin(a) * rad * 1.4, 1.4, 1.4);
+        }
+      }
+    }, 64, 128);
+
+    // Pepper on an areca: the vine that towed Roman ships, now climbing a
+    // thin palm at its own pace.
+    make('peppervine', 2, (g, r) => {
+      softShadow(g, 32, 90, 15, 4, 0.2);
+      // Slim ringed trunk.
+      g.strokeStyle = '#9c8468';
+      g.lineWidth = 5;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(33, 90);
+      g.quadraticCurveTo(31, 60, 32, 26);
+      g.stroke();
+      g.strokeStyle = 'rgba(90,70,48,0.4)';
+      g.lineWidth = 1.2;
+      for (let yy = 34; yy < 88; yy += 7) {
+        g.beginPath();
+        g.moveTo(29.5, yy);
+        g.lineTo(35.5, yy - 1);
+        g.stroke();
+      }
+      // A modest crown.
+      for (let i = 0; i < 5; i++) {
+        const a = -Math.PI * 0.9 + (i / 4) * Math.PI * 0.8;
+        g.strokeStyle = shade('#5f8a4a', (r.next() - 0.5) * 0.1);
+        g.lineWidth = 2.6;
+        g.beginPath();
+        g.moveTo(32, 26);
+        g.quadraticCurveTo(32 + Math.cos(a) * 8, 20, 32 + Math.cos(a) * 15, 24 + Math.sin(a) * 7 + 6);
+        g.stroke();
+      }
+      // The vine, spiraling: in front, behind, in front.
+      g.strokeStyle = '#3f6636';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(38, 88);
+      g.bezierCurveTo(24, 78, 42, 66, 28, 56);
+      g.bezierCurveTo(40, 48, 26, 40, 34, 32);
+      g.stroke();
+      // Heart leaves along the climb, alternating sides.
+      for (const [lx, ly, flip] of [[39, 84, 1], [26, 74, -1], [41, 63, 1], [25, 52, -1], [39, 44, 1], [28, 35, -1]] as const) {
+        const c = shade('#4d7440', (r.next() - 0.5) * 0.1);
+        oval(g, lx, ly, 5.2, 3.8, c, flip * 0.6);
+        oval(g, lx - flip * 2, ly + 2, 3.6, 2.6, shade(c, 0.08), flip * 0.4);
+      }
+      // Berry spikes: small green chains, patience in fruit form.
+      for (const [bx, by] of [[24, 68], [41, 50]] as const) {
+        for (let i = 0; i < 4; i++) dot(g, bx, by + i * 3, 1.5, i % 2 ? '#6f9b52' : '#5f8a4a');
+      }
+    }, 64, 96);
+
+    // Oars by the jetty, propped in a lean cluster, blades up. None labeled,
+    // all somebody's; everybody simply knows.
+    make('oars', 2, (g, r) => {
+      softShadow(g, 32, 90, 20, 5, 0.2);
+      // A stout mooring post to lean on.
+      rr(g, 29, 54, 7, 36, 3, '#5c4630');
+      oval(g, 32.5, 55, 3.8, 2.2, '#7d5e3c');
+      // Three paddles leaning together, tallest in the middle.
+      const spec: [number, number, number][] = [
+        [18, 12, 30], // baseX, topX, topY
+        [30, 27, 18],
+        [44, 47, 26],
+      ];
+      for (let i = 0; i < 3; i++) {
+        const [bx0, tx0, ty0] = spec[i] ?? [30, 27, 18];
+        const bx = bx0 + r.int(3);
+        const tx = tx0 + r.int(3);
+        const ty = ty0 + r.int(4);
+        const wood = shade(i === 1 ? '#9c7a4c' : '#8a6a44', (r.next() - 0.5) * 0.1);
+        // Shaft.
+        g.strokeStyle = shade(wood, -0.1);
+        g.lineWidth = 3.2;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(bx, 88);
+        g.lineTo(tx, ty + 14);
+        g.stroke();
+        // Blade: long leaf shape continuing the shaft's line.
+        const ang = Math.atan2(ty + 14 - 88, tx - bx);
+        const bxc = tx + Math.cos(ang) * 9;
+        const byc = ty + 14 + Math.sin(ang) * 9;
+        oval(g, bxc, byc, 5.5, 12, wood, ang + Math.PI / 2);
+        // Midrib catching the light.
+        g.strokeStyle = shade(wood, 0.18);
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(bxc - Math.cos(ang) * 8, byc - Math.sin(ang) * 8);
+        g.lineTo(bxc + Math.cos(ang) * 8, byc + Math.sin(ang) * 8);
+        g.stroke();
+      }
+    }, 64, 96);
+
+    // Cardamom sacks under blue tarpaulin at the jetty office, counted twice
+    // daily by a man who never appears to count.
+    make('spicesacks', 2, (g, r) => {
+      softShadow(g, 32, 90, 28, 6, 0.22);
+      const jute = shade('#b09468', (r.next() - 0.5) * 0.06);
+      // A low, wide pile: back row under canvas, front row owning up to it.
+      rr(g, 12, 52, 20, 24, 8, shade(jute, -0.1));
+      rr(g, 32, 52, 20, 24, 8, shade(jute, -0.14));
+      rr(g, 4, 64, 22, 24, 8, shade(jute, 0.04));
+      rr(g, 24, 66, 20, 22, 8, jute);
+      rr(g, 42, 64, 19, 24, 8, shade(jute, -0.04));
+      // Ear corners where the sacks were tied off.
+      oval(g, 8, 64, 3, 4, shade(jute, -0.08), -0.5);
+      oval(g, 58, 64, 3, 4, shade(jute, -0.12), 0.5);
+      // Jute weave hints on the front row.
+      g.strokeStyle = 'rgba(90,70,44,0.35)';
+      g.lineWidth = 1;
+      for (const [sx, sy] of [[7, 72], [27, 74], [45, 72]] as const) {
+        for (let k = 0; k < 3; k++) {
+          g.beginPath();
+          g.moveTo(sx, sy + k * 4.5);
+          g.lineTo(sx + 14, sy + k * 4.5 + 1);
+          g.stroke();
+        }
+      }
+      // Stencil on one sack only: a shipping word, half worn.
+      g.fillStyle = 'rgba(60,44,26,0.65)';
+      for (let k = 0; k < 4; k++) g.fillRect(27 + k * 4, 72, 2.4, 1.6);
+      // The tarpaulin: an angular sheet over the back row, one corner hanging.
+      g.beginPath();
+      g.moveTo(2, 58);
+      g.lineTo(10, 42);
+      g.lineTo(40, 40);
+      g.lineTo(58, 50);
+      g.lineTo(60, 62);
+      g.lineTo(52, 58);
+      g.lineTo(50, 70);
+      g.lineTo(44, 60);
+      g.lineTo(20, 62);
+      g.lineTo(12, 58);
+      g.closePath();
+      const tg = g.createLinearGradient(0, 40, 0, 68);
+      tg.addColorStop(0, shade('#4a6f8a', 0.1));
+      tg.addColorStop(1, shade('#4a6f8a', -0.12));
+      g.fillStyle = tg;
+      g.fill();
+      // Fold creases, straight the way canvas folds straight.
+      g.strokeStyle = 'rgba(220,235,240,0.3)';
+      g.lineWidth = 1.3;
+      g.beginPath();
+      g.moveTo(12, 56);
+      g.lineTo(38, 46);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(24, 60);
+      g.lineTo(52, 52);
+      g.stroke();
+      // The tie-down rope, doing most of the actual work.
+      g.strokeStyle = '#c8a55b';
+      g.lineWidth = 1.8;
+      g.beginPath();
+      g.moveTo(3, 64);
+      g.quadraticCurveTo(30, 56, 59, 60);
+      g.stroke();
+      dot(g, 59, 60, 2, '#a2762c');
+    }, 64, 96);
+
+    // The post box: British red on a pole, older than everyone's opinions
+    // about it, fed with letters for Sharjah, Muscat, and Kochi.
+    make('postbox', 1, (g) => {
+      softShadow(g, 32, 90, 11, 4, 0.2);
+      // Pole.
+      rr(g, 30, 52, 4.5, 38, 2, '#4a4640');
+      // The cylinder.
+      const red = '#b5382e';
+      rr(g, 20, 26, 24, 30, 7, red);
+      const pg = g.createLinearGradient(20, 0, 44, 0);
+      pg.addColorStop(0, 'rgba(255,220,200,0.25)');
+      pg.addColorStop(0.5, 'rgba(0,0,0,0)');
+      pg.addColorStop(1, 'rgba(40,10,10,0.25)');
+      g.fillStyle = pg;
+      g.beginPath();
+      g.roundRect(20, 26, 24, 30, 7);
+      g.fill();
+      // Domed cap.
+      oval(g, 32, 26, 13, 5.5, shade(red, -0.12));
+      oval(g, 32, 24, 11, 4.2, shade(red, 0.06));
+      dot(g, 32, 20.5, 2, shade(red, -0.1));
+      // The slot, hungry.
+      rr(g, 25, 33, 14, 2.8, 1.4, '#241a12');
+      // Collection plate, twice a week.
+      rr(g, 26, 40, 12, 7, 1, '#e8e0cc');
+      g.strokeStyle = 'rgba(60,50,40,0.6)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(28, 43);
+      g.lineTo(36, 43);
+      g.moveTo(28, 45);
+      g.lineTo(34, 45);
+      g.stroke();
+      // A monsoon's worth of rust starting at the collar.
+      vgrad(g, 29, 54, 3, 10, 'rgba(120,60,30,0.5)', 'rgba(0,0,0,0)');
+    }, 64, 96);
+
+    // Chalked cricket stumps: the wall keeps wicket all year. Same coping as
+    // the mural walls, because it is the same wall, further along.
+    make('cricketwall', 1, (g, r) => {
+      softShadow(g, 32, 90, 26, 5, 0.18);
+      rr(g, 4, 34, 56, 54, 2, '#e8e0cc');
+      vgrad(g, 4, 34, 56, 10, 'rgba(120,110,90,0.18)', 'rgba(0,0,0,0)');
+      rr(g, 2, 28, 60, 9, 3, '#a35a3c');
+      for (let x = 6; x < 60; x += 8) {
+        g.strokeStyle = 'rgba(90,44,28,0.5)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(x, 29);
+        g.lineTo(x, 36);
+        g.stroke();
+      }
+      // Last year's stumps, faded, drawn shorter.
+      g.strokeStyle = 'rgba(250,248,240,0.28)';
+      g.lineWidth = 2;
+      for (const sx of [20, 26, 32]) {
+        g.beginPath();
+        g.moveTo(sx + 8, 58);
+        g.lineTo(sx + 7, 78);
+        g.stroke();
+      }
+      // This year's stumps, taller, with bails and conviction.
+      g.strokeStyle = 'rgba(252,250,242,0.95)';
+      g.lineWidth = 3;
+      for (const sx of [24, 31, 38]) {
+        g.beginPath();
+        g.moveTo(sx, 52 + r.int(2));
+        g.lineTo(sx - 1, 80);
+        g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(22, 51);
+      g.lineTo(40, 50);
+      g.stroke();
+      // Ball scuffs, red as the lanes the ball lives on.
+      for (let i = 0; i < 5; i++) {
+        dot(g, 12 + r.int(40), 44 + r.int(38), 1.8 + r.next(), 'rgba(163,90,60,0.4)');
+      }
+      // A contested score, chalked and half rubbed out.
+      g.strokeStyle = 'rgba(250,248,240,0.5)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(48, 44);
+      g.lineTo(54, 44);
+      g.moveTo(48, 47);
+      g.lineTo(52, 47);
+      g.stroke();
+    }, 64, 96);
+
+    // The temple festival poster, peeling in the damp: elephants, drummers,
+    // a date the rain has half eaten.
+    make('posterwall', 1, (g, r) => {
+      softShadow(g, 32, 90, 26, 5, 0.18);
+      // Older plaster, once cream, now instructive.
+      rr(g, 4, 34, 56, 54, 2, '#ddd2b4');
+      vgrad(g, 4, 34, 56, 10, 'rgba(110,100,80,0.2)', 'rgba(0,0,0,0)');
+      vgrad(g, 4, 74, 56, 14, 'rgba(0,0,0,0)', 'rgba(70,90,60,0.28)');
+      rr(g, 2, 28, 60, 9, 3, '#a35a3c');
+      for (let x = 6; x < 60; x += 8) {
+        g.strokeStyle = 'rgba(90,44,28,0.5)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(x, 29);
+        g.lineTo(x, 36);
+        g.stroke();
+      }
+      // The poster: marigold field, red title band.
+      rr(g, 13, 42, 34, 36, 1, '#e8b23c');
+      rr(g, 13, 42, 34, 8, 1, '#c1512f');
+      g.fillStyle = 'rgba(255,240,210,0.85)';
+      for (let k = 0; k < 4; k++) g.fillRect(16 + k * 7, 45, 4.5, 2);
+      // The elephant, caparisoned, mid-procession.
+      oval(g, 27, 62, 8, 6.5, '#3a3630');
+      dot(g, 36, 59, 4, '#3a3630');
+      g.strokeStyle = '#3a3630';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(39, 61);
+      g.quadraticCurveTo(42, 66, 40, 70);
+      g.stroke();
+      rr(g, 32, 54, 7, 4, 1, '#c8973b'); // the golden nettipattam
+      // Legs.
+      g.lineWidth = 2.2;
+      for (const lx of [22, 26, 30]) {
+        g.beginPath();
+        g.moveTo(lx, 66);
+        g.lineTo(lx, 71);
+        g.stroke();
+      }
+      // The date, half eaten by rain.
+      g.fillStyle = 'rgba(60,44,26,0.6)';
+      for (let k = 0; k < 3; k++) g.fillRect(17 + k * 6, 73, 4, 2);
+      vgrad(g, 28, 70, 12, 8, 'rgba(221,210,180,0.7)', 'rgba(0,0,0,0)');
+      // The peel: one corner giving up, pale side out.
+      g.fillStyle = '#f2ead8';
+      g.beginPath();
+      g.moveTo(47, 78);
+      g.lineTo(38, 78);
+      g.lineTo(47, 67);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(90,70,44,0.4)';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(38, 78);
+      g.lineTo(47, 67);
+      g.stroke();
+      // Rain streak, keeping at it.
+      vgrad(g, 8 + r.int(40), 36, 5, 28, 'rgba(140,130,105,0.2)', 'rgba(0,0,0,0)');
+    }, 64, 96);
+
+    // The lungi line: checks and stripes flying the flags of a calm country.
+    make('lungiline', 2, (g, r) => {
+      softShadow(g, 64, 90, 46, 6, 0.16);
+      // Poles.
+      rr(g, 8, 36, 4.5, 54, 2, '#6f5238');
+      rr(g, 115, 36, 4.5, 54, 2, '#6f5238');
+      // The line, sagging honestly.
+      g.strokeStyle = '#4a4034';
+      g.lineWidth = 1.8;
+      g.beginPath();
+      g.moveTo(10, 40);
+      g.quadraticCurveTo(64, 50, 117, 40);
+      g.stroke();
+      // Four lungis over the line.
+      const cloths: [string, string][] = [
+        ['#3c6e64', '#2c554c'],
+        ['#7d3f34', '#5f2f28'],
+        ['#c8a55b', '#a2762c'],
+        ['#e8e0cc', '#b0a890'],
+      ];
+      for (let i = 0; i < 4; i++) {
+        const cx = 18 + i * 24 + r.int(2);
+        const topY = 40 + (1 - Math.abs(i - 1.5) / 1.5) * 4 + i * 0.5;
+        const w = 19;
+        const h = 32 + r.int(4);
+        const c = cloths[i] ?? ['#3c6e64', '#2c554c'];
+        // The hanging panel, bottom edge wavy.
+        g.fillStyle = shade(c[0], (r.next() - 0.5) * 0.05);
+        g.beginPath();
+        g.moveTo(cx, topY);
+        g.lineTo(cx + w, topY + 1);
+        g.lineTo(cx + w - 1, topY + h);
+        g.quadraticCurveTo(cx + w / 2, topY + h + 4, cx + 1, topY + h - 1);
+        g.closePath();
+        g.fill();
+        // Checks: the madras grid.
+        g.strokeStyle = shade(c[1], 0);
+        g.lineWidth = 1;
+        for (let gx = cx + 4; gx < cx + w; gx += 6) {
+          g.beginPath();
+          g.moveTo(gx, topY + 1);
+          g.lineTo(gx, topY + h);
+          g.stroke();
+        }
+        for (let gy = topY + 6; gy < topY + h; gy += 7) {
+          g.beginPath();
+          g.moveTo(cx + 1, gy);
+          g.lineTo(cx + w - 1, gy);
+          g.stroke();
+        }
+        // Fold light down the middle.
+        vgrad(g, cx + w / 2 - 2, topY + 2, 4, h - 4, 'rgba(255,250,235,0.18)', 'rgba(0,0,0,0)');
+        // Clothespins.
+        dot(g, cx + 2, topY, 1.4, '#8a6a44');
+        dot(g, cx + w - 2, topY + 1, 1.4, '#8a6a44');
+      }
+    }, 128, 96);
+
+    // The bus shelter: one bench, one timetable, forty annotations. The bus
+    // keeps its own counsel.
+    make('busstop', 1, (g, r) => {
+      softShadow(g, 64, 122, 52, 7, 0.22);
+      // Back wall, washed cyan gone chalky.
+      rr(g, 14, 60, 100, 60, 2, '#c6d0c2');
+      vgrad(g, 14, 60, 100, 14, 'rgba(40,45,40,0.3)', 'rgba(0,0,0,0)');
+      vgrad(g, 14, 104, 100, 16, 'rgba(0,0,0,0)', 'rgba(70,90,60,0.3)');
+      // A painted ad ghost, mostly weather now.
+      g.fillStyle = 'rgba(60,90,140,0.28)';
+      for (let k = 0; k < 3; k++) g.fillRect(24 + k * 12, 78, 8, 5);
+      // The timetable, argued with in several hands.
+      rr(g, 72, 70, 28, 22, 1, '#e8e4d8');
+      g.strokeStyle = 'rgba(50,60,80,0.65)';
+      g.lineWidth = 1;
+      for (let k = 0; k < 5; k++) {
+        g.beginPath();
+        g.moveTo(75, 74 + k * 3.6);
+        g.lineTo(75 + 12 + r.int(9), 74 + k * 3.6);
+        g.stroke();
+      }
+      // Corrections, in ballpoint and conviction.
+      g.strokeStyle = 'rgba(150,50,40,0.7)';
+      g.beginPath();
+      g.moveTo(76, 77);
+      g.lineTo(94, 76);
+      g.moveTo(82, 84);
+      g.quadraticCurveTo(88, 80, 95, 85);
+      g.stroke();
+      // The bench, one, slab and legs.
+      rr(g, 26, 98, 74, 6, 2, '#7d5e3c');
+      rr(g, 30, 104, 5, 14, 2, shade('#7d5e3c', -0.15));
+      rr(g, 91, 104, 5, 14, 2, shade('#7d5e3c', -0.15));
+      // Posts.
+      rr(g, 9, 50, 6, 72, 2, '#8c8479');
+      rr(g, 113, 50, 6, 72, 2, '#8c8479');
+      // The tin roof, rusting at its own speed.
+      g.beginPath();
+      g.moveTo(2, 60);
+      g.lineTo(126, 60);
+      g.lineTo(118, 38);
+      g.lineTo(10, 38);
+      g.closePath();
+      const rg = g.createLinearGradient(0, 38, 0, 60);
+      rg.addColorStop(0, shade('#8a7264', 0.1));
+      rg.addColorStop(1, shade('#8a7264', -0.14));
+      g.fillStyle = rg;
+      g.fill();
+      // Corrugations.
+      g.strokeStyle = 'rgba(60,45,35,0.35)';
+      g.lineWidth = 1.4;
+      for (let x = 12; x < 120; x += 8) {
+        g.beginPath();
+        g.moveTo(x + 5, 39);
+        g.lineTo(x, 59);
+        g.stroke();
+      }
+      // Rust blooms where the rain lingers.
+      oval(g, 30 + r.int(60), 44 + r.int(10), 6, 3, 'rgba(150,84,58,0.4)');
+      oval(g, 20 + r.int(80), 50 + r.int(8), 4, 2, 'rgba(150,84,58,0.35)');
+      // Shade under the roof.
+      vgrad(g, 14, 60, 100, 12, 'rgba(25,20,14,0.35)', 'rgba(0,0,0,0)');
+    }, 128, 128);
+
+    // ------------------------------------------------- the love pass: flats
+
+    // Retting husk piles: patience, stacked in public on the way to the canal.
+    make('huskpile', 3, (g, r) => {
+      oval(g, 32, 50, 21, 6.5, 'rgba(30,24,16,0.16)');
+      for (let i = 0; i < 9; i++) {
+        const hx = 18 + r.int(28);
+        const hy = 34 + r.int(14);
+        const c = r.pick(['#8a6a44', '#9b7a50', '#7a5636'] as const);
+        oval(g, hx, hy, 5.5 + r.next() * 2.5, 3.6 + r.next() * 1.4, shade(c, (r.next() - 0.5) * 0.1), (r.next() - 0.5) * 1.2);
+      }
+      // Loose fiber, gone golden already.
+      g.strokeStyle = 'rgba(200,165,91,0.55)';
+      g.lineWidth = 1.2;
+      for (let i = 0; i < 5; i++) {
+        const fx = 16 + r.int(32);
+        const fy = 36 + r.int(12);
+        g.beginPath();
+        g.moveTo(fx, fy);
+        g.quadraticCurveTo(fx + 3, fy + 2, fx + 6 + r.int(3), fy + 1);
+        g.stroke();
+      }
+    });
+
+    // Water hyacinth: a raft of its own opinions, uninvited, glossy.
+    make('hyacinth', 3, (g, r) => {
+      oval(g, 32, 38, 22, 12, 'rgba(15,35,30,0.3)');
+      for (let i = 0; i < 9; i++) {
+        const a = r.next() * Math.PI * 2;
+        const d = r.next() * 15;
+        const lx = 32 + Math.cos(a) * d;
+        const ly = 38 + Math.sin(a) * d * 0.55;
+        const c = r.pick(['#4f7d43', '#6f9b52', '#5f8a4a'] as const);
+        dot(g, lx, ly, 4 + r.next() * 2.4, c);
+        dot(g, lx - 1.4, ly - 1.4, 1.3, shade(c, 0.2));
+      }
+      // The bulbous floats that keep the whole argument up.
+      for (let i = 0; i < 3; i++) {
+        oval(g, 20 + r.int(24), 42 + r.int(4), 2.6, 3.4, '#8fae6f');
+      }
+      // A flower spike or two, lavender and pleased with itself.
+      if (r.chance(0.75)) {
+        const fx = 26 + r.int(12);
+        for (let k = 0; k < 3; k++) dot(g, fx, 26 + k * 3, 2 - k * 0.3, k ? '#a78ac0' : '#b89cd0');
+      }
+    });
+
+    // A waterlily holding the grey sky like it ordered it specially.
+    make('waterlily', 2, (g, r) => {
+      oval(g, 32, 40, 20, 10, 'rgba(15,35,30,0.28)');
+      // Pads: discs with the classic notch.
+      for (const [px2, py, rad, a0] of [[24, 40, 9.5, 0.6], [43, 44, 6.5, 2.4]] as const) {
+        g.fillStyle = shade('#4d7440', (r.next() - 0.5) * 0.08);
+        g.beginPath();
+        g.moveTo(px2, py);
+        g.arc(px2, py, rad, a0, a0 + Math.PI * 2 - 0.55);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(220,240,220,0.25)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.arc(px2, py, rad * 0.6, a0 + 0.4, a0 + 2.2);
+        g.stroke();
+      }
+      // The blossom, open to whatever the sky decides.
+      for (let i = 0; i < 7; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        oval(g, 33 + Math.cos(a) * 4.5, 32 + Math.sin(a) * 3, 3.4, 1.9, '#f2e6ea', a);
+      }
+      dot(g, 33, 32, 2.2, '#e8b23c');
+    });
+
+    // The anthill nobody disturbs. Nobody says why; both facts feel related.
+    make('anthill', 2, (g, r) => {
+      oval(g, 32, 54, 19, 6, 'rgba(30,24,16,0.18)');
+      blob(g, 32, 46, 13, '#96543a', r, 0.2);
+      blob(g, 31, 37, 9.5, '#a35a3c', r, 0.22);
+      blob(g, 33, 29, 6, '#96543a', r, 0.25);
+      // Weathered runnels down the flanks.
+      g.strokeStyle = 'rgba(90,44,28,0.35)';
+      g.lineWidth = 1.4;
+      for (const [sx, sy] of [[26, 34], [36, 32], [30, 42]] as const) {
+        g.beginPath();
+        g.moveTo(sx, sy);
+        g.quadraticCurveTo(sx - 1, sy + 6, sx + 1, sy + 11);
+        g.stroke();
+      }
+      // Doors. Small ones, but busy.
+      dot(g, 28, 44, 1.8, '#3a231a');
+      dot(g, 37, 40, 1.4, '#3a231a');
+      dot(g, 33, 27, 1.2, '#3a231a');
+      // Grass keeping a respectful distance, mostly.
+      g.strokeStyle = '#5f8a4a';
+      g.lineWidth = 1.4;
+      for (const gx of [16, 46, 40]) {
+        g.beginPath();
+        g.moveTo(gx, 52);
+        g.quadraticCurveTo(gx + 1, 47, gx + 3, 44 + r.int(3));
+        g.stroke();
+      }
+    });
+
+    // A fallen coconut: by custom, the first to notice it may claim it.
+    make('fallennut', 3, (g, r) => {
+      oval(g, 33, 45, 11, 3.6, 'rgba(30,24,16,0.2)');
+      const c = shade('#7a5a2e', (r.next() - 0.5) * 0.12);
+      const tilt = -0.35 + (r.next() - 0.5) * 0.3;
+      // Ovoid in the husk, one end coming to a soft point.
+      oval(g, 31, 39, 10.5, 7, c, tilt);
+      oval(g, 38, 36, 4, 3.4, c, tilt);
+      oval(g, 28, 37, 4.5, 2.8, shade(c, 0.16), tilt);
+      // Husk ridges running the long way.
+      g.strokeStyle = 'rgba(60,42,26,0.4)';
+      g.lineWidth = 1;
+      for (const dy of [-3, 0, 3]) {
+        g.beginPath();
+        g.moveTo(23, 39 + dy);
+        g.quadraticCurveTo(31, 36 + dy * 1.6, 40, 38 + dy);
+        g.stroke();
+      }
+      // Sometimes a green one, down early and unripe about it.
+      if (r.chance(0.5)) oval(g, 45, 43, 5.5, 4.2, '#8fae4f', 0.3);
+      // A torn scrap of frond that came down with it.
+      g.strokeStyle = shade('#4d7440', -0.05);
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(14, 46);
+      g.quadraticCurveTo(19, 43, 24, 46);
+      g.stroke();
+    });
+
+    // The lost tennis ball, bald from the lane, retired to the gutter.
+    make('tennisball', 1, (g) => {
+      oval(g, 33, 44, 7.5, 2.8, 'rgba(30,24,16,0.25)');
+      dot(g, 32, 39, 6.5, '#b3a44e');
+      dot(g, 30, 37, 2.2, shade('#b3a44e', 0.16));
+      // The seam, worn to a rumor.
+      g.strokeStyle = 'rgba(240,236,214,0.5)';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.arc(35, 36, 6.5, 1.4, 2.9);
+      g.stroke();
+      // Laterite dust: the lane keeps its share.
+      dot(g, 35, 42, 1.6, 'rgba(163,90,60,0.5)');
+      // A dead leaf, also retired.
+      oval(g, 45, 45, 5, 2.2, '#9b7a50', 0.5);
+    });
+
+    // The chaya-glass rack: the regiment, drying upside down in ranks.
+    make('glassrack', 1, (g) => {
+      softShadow(g, 32, 58, 21, 4, 0.18);
+      // Painted wooden frame, teal like the stall it serves.
+      rr(g, 11, 20, 3.5, 38, 1.5, '#35625a');
+      rr(g, 49.5, 20, 3.5, 38, 1.5, '#35625a');
+      rr(g, 9, 36, 46, 3.5, 1.5, '#3c6e64');
+      rr(g, 9, 54, 46, 3.5, 1.5, '#3c6e64');
+      // Two ranks of glasses, bottoms up.
+      for (const shelfY of [36, 54]) {
+        for (let i = 0; i < 5; i++) {
+          const gx = 14 + i * 8;
+          rr(g, gx, shelfY - 10, 6, 10, 1.5, 'rgba(215,232,232,0.7)');
+          rr(g, gx + 0.8, shelfY - 10, 4.4, 2.2, 1, 'rgba(250,255,255,0.65)');
+          // The faint chaya ring no washing fully retires.
+          rr(g, gx + 1, shelfY - 4, 4, 1.4, 0.7, 'rgba(181,113,63,0.4)');
+        }
+      }
+    });
+
+    // Umbrellas open on the veranda to dry, like bats airing before a shift.
+    make('umbrellas', 2, (g, r) => {
+      oval(g, 32, 50, 22, 6, 'rgba(30,24,16,0.18)');
+      const brolly = (cx: number, cy: number, rad: number, lean: number) => {
+        const ink = shade('#241a20', (r.next() - 0.5) * 0.06);
+        // Canopy: a dome with a scalloped hem.
+        g.fillStyle = ink;
+        g.beginPath();
+        g.moveTo(cx - rad, cy);
+        g.quadraticCurveTo(cx - rad * 0.6, cy - rad * 0.95, cx + lean, cy - rad);
+        g.quadraticCurveTo(cx + rad * 0.7, cy - rad * 0.9, cx + rad, cy);
+        for (let k = 3; k >= 0; k--) {
+          const sx = cx - rad + ((k + 0.5) / 4) * rad * 2;
+          g.quadraticCurveTo(sx + rad / 8, cy + 3, sx - rad / 8, cy);
+        }
+        g.closePath();
+        g.fill();
+        // Ribs catching what light there is.
+        g.strokeStyle = 'rgba(150,160,175,0.4)';
+        g.lineWidth = 1;
+        for (const t of [-0.5, 0, 0.5]) {
+          g.beginPath();
+          g.moveTo(cx + lean, cy - rad);
+          g.quadraticCurveTo(cx + t * rad * 0.7, cy - rad * 0.5, cx + t * rad * 0.9, cy);
+          g.stroke();
+        }
+        // Wet sheen along one shoulder; drying is a slow argument here.
+        g.strokeStyle = 'rgba(200,215,230,0.35)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(cx - rad * 0.75, cy - rad * 0.3);
+        g.quadraticCurveTo(cx - rad * 0.4, cy - rad * 0.85, cx + lean - 2, cy - rad * 0.95);
+        g.stroke();
+        // Ferrule and handle.
+        g.strokeStyle = '#4a4034';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(cx + lean, cy - rad);
+        g.lineTo(cx + lean, cy - rad - 4);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(cx - lean * 0.5, cy);
+        g.quadraticCurveTo(cx - lean * 0.5 + 2, cy + 6, cx - lean * 0.5 + 5, cy + 5);
+        g.stroke();
+      };
+      brolly(20, 40, 13, 2);
+      brolly(43, 44, 11, -2);
+    });
+
+    // ---------------------------------------------- the love pass: interior
+
+    // The ammikkallu: a grinding stone worn into a shallow smile.
+    make('ammi', 1, (g) => {
+      oval(g, 32, 50, 20, 5.5, 'rgba(30,24,16,0.2)');
+      // The slab.
+      rr(g, 12, 34, 40, 15, 7, '#6b6a66');
+      vgrad(g, 12, 34, 40, 6, 'rgba(255,250,240,0.18)', 'rgba(0,0,0,0)');
+      // The hollow three generations ground into it.
+      oval(g, 32, 42, 12, 4.5, '#5a5956');
+      // The roller, resting mid-thought.
+      rr(g, 22, 26, 20, 9, 4.5, '#7d7c78');
+      vgrad(g, 22, 26, 20, 4, 'rgba(255,250,240,0.22)', 'rgba(0,0,0,0)');
+      // Turmeric, which never fully leaves.
+      oval(g, 45, 44, 3.6, 1.8, 'rgba(200,151,59,0.7)');
+      oval(g, 18, 46, 2.4, 1.3, 'rgba(200,151,59,0.5)');
+    });
+
+    // Banana leaves cut and stacked, narrow ends pointing the same way.
+    make('leafstack', 1, (g, r) => {
+      oval(g, 32, 48, 20, 5, 'rgba(30,24,16,0.18)');
+      for (let i = 0; i < 5; i++) {
+        const c = shade(i % 2 ? '#5f8a4a' : '#4d7440', (r.next() - 0.5) * 0.06);
+        oval(g, 32 + (i % 2) * 2 - 1, 44 - i * 2.6, 21 - i * 1.2, 5, c, (i % 2 ? 0.05 : -0.04));
+      }
+      // Midrib on the top leaf.
+      g.strokeStyle = 'rgba(240,250,220,0.4)';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(13, 34);
+      g.lineTo(51, 33);
+      g.stroke();
+      g.strokeStyle = 'rgba(30,45,25,0.3)';
+      g.lineWidth = 0.8;
+      for (let x = 17; x < 49; x += 5) {
+        g.beginPath();
+        g.moveTo(x, 33.5);
+        g.lineTo(x + 2, 30);
+        g.stroke();
+      }
+    });
+
+    // The kitchen supervisor, asleep at her post, on a mat she has claimed.
+    make('keralacat', 1, (g) => {
+      // The claimed mat: woven, once for guests.
+      oval(g, 32, 42, 19, 10, '#7a8a5c');
+      oval(g, 32, 42, 15.5, 7.5, '#8a9a68');
+      g.strokeStyle = 'rgba(90,60,40,0.4)';
+      g.lineWidth = 1;
+      for (const rad of [11, 6]) {
+        g.beginPath();
+        g.ellipse(32, 42, rad, rad * 0.5, 0, 0, Math.PI * 2);
+        g.stroke();
+      }
+      oval(g, 32, 44, 13, 5, 'rgba(30,24,16,0.2)');
+      const fur = '#d09055';
+      // Curled body.
+      dot(g, 33, 38, 11, fur);
+      oval(g, 36, 34, 6, 4.5, shade(fur, 0.12));
+      // The tail, wrapped like a drawn curtain.
+      g.strokeStyle = '#b5713f';
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(42, 42);
+      g.quadraticCurveTo(34, 49, 24, 44);
+      g.stroke();
+      // Head tucked in, ears still on duty.
+      dot(g, 24, 40, 6, fur);
+      g.fillStyle = shade(fur, -0.08);
+      g.beginPath();
+      g.moveTo(20, 36);
+      g.lineTo(22, 31);
+      g.lineTo(24.5, 35);
+      g.closePath();
+      g.fill();
+      g.beginPath();
+      g.moveTo(26, 34.5);
+      g.lineTo(28.5, 30.5);
+      g.lineTo(30, 35);
+      g.closePath();
+      g.fill();
+      // Stripes, faint, like a manager's pinstripe.
+      g.strokeStyle = 'rgba(155,90,45,0.5)';
+      g.lineWidth = 1.6;
+      for (const [ax, s0, s1] of [[33, -0.6, 0.4], [37, -0.4, 0.5]] as const) {
+        g.beginPath();
+        g.arc(ax, 37, 7, s0, s1);
+        g.stroke();
+      }
+      // The closed eye and a nose the size of a lentil.
+      g.strokeStyle = '#5a3a22';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(21, 40);
+      g.quadraticCurveTo(22.5, 41, 24, 40);
+      g.stroke();
+      dot(g, 20, 42.5, 1, '#a86a6a');
+    });
 
     // ---------------------------------------------------------- the veedu
     // 352x256, casa wall geometry so village grids match: tiled roof over

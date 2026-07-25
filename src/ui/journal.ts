@@ -24,6 +24,7 @@ const TABS: { id: JournalTab | 'tasks' | 'route'; label: string }[] = [
 
 export class JournalUI {
   private tab = 0;
+  private opening = false;
   private cursor = 0;
 
   constructor(
@@ -71,7 +72,11 @@ export class JournalUI {
   open() {
     this.root.hidden = false;
     this.cursor = 0;
+    // The book-open flourish belongs to opening; re-renders (tab switches,
+    // cursor moves) must not replay it or the whole screen blinks.
+    this.opening = true;
     this.render();
+    this.opening = false;
   }
 
   close() {
@@ -154,7 +159,7 @@ export class JournalUI {
       : `<div class="j-empty">Nothing noticed here yet.<br>The village is not hiding. Go and talk.</div>`;
 
     this.root.innerHTML = `
-      <div class="j-book">
+      <div class="j-book${this.opening ? ' opening' : ''}">
         <div class="j-head">
           <div class="j-name">Nani&rsquo;s Journal</div>
           <div class="j-progress">${
@@ -216,7 +221,7 @@ export class JournalUI {
     const total = this.entries.length;
     const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
     this.root.innerHTML = `
-      <div class="j-book">
+      <div class="j-book${this.opening ? ' opening' : ''}">
         <div class="j-head">
           <div class="j-name">Nani&rsquo;s Journal</div>
           <div class="j-progress">${found} / ${total} pages</div>
@@ -243,7 +248,7 @@ export class JournalUI {
     const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
 
     this.root.innerHTML = `
-      <div class="j-book">
+      <div class="j-book${this.opening ? ' opening' : ''}">
         <div class="j-head">
           <div class="j-name">Nani&rsquo;s Journal</div>
           <div class="j-progress">${found} / ${total} pages</div>

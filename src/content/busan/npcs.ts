@@ -750,6 +750,132 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'A low wooden stool, tea-colored where forty years of hands have steadied it. Sitting here is permission for the kettle to take its time.' },
     ],
   },
+
+  // ---------------- examines, the clutter the lane is made of ----------------
+  'c5.ex.basinstack': {
+    lines: [
+      { text: 'Red plastic basins stacked a head higher than the woman who owns them. Down at dawn, up by noon, rinsed and in order.' },
+      { text: 'The count has never once been wrong. Ask the man who tried to borrow one.' },
+    ],
+  },
+  'c5.ex.squidline': {
+    lines: [
+      { text: 'Dried squid pinned to the line like laundry, arms down, very flat, very surprised. The alley smell starts here and never really ends.' },
+    ],
+  },
+  'c5.ex.onggi1': {
+    lines: [
+      { text: 'Onggi jars, brown-glazed, warm where the sun has been. Each one belongs to a different grandmother, and every lid sits like a signature.' },
+      { text: 'Mixing them up has started feuds. The jars know whose they are; the trick is that the grandmothers know too.' },
+    ],
+    effects: ['set:c5.onggi.looked'],
+  },
+  'c5.ex.onggi2': {
+    lines: [
+      { text: 'You lift a lid one polite centimeter. Kimchi, months deep into its education; you set the lid back exactly as its grandmother left it.' },
+    ],
+  },
+  'c5.ex.chilimat': {
+    lines: [
+      { text: 'Gochugaru chilies drying on a woven mat, red as a siren and twice as serious. A whole winter of kimchi is sunbathing at your feet.' },
+    ],
+  },
+  'c5.ex.foambox': {
+    lines: [
+      { text: 'Styrofoam boxes in a wobbly white tower. The marker on each lid names a fish, a weight, and an auntie who will notice if either is wrong.' },
+    ],
+  },
+  'c5.ex.foambox2': {
+    lines: [
+      { text: 'One stack is markered KOCHI and taped apart from the rest. The evening tide is already being packed for.' },
+    ],
+  },
+  'c5.ex.parasol': {
+    lines: [
+      { text: 'A market parasol faded to the color of weak tea, leaning with intent. Under it, one plastic stool: the throne of whoever sat down first.' },
+    ],
+  },
+  'c5.ex.scooter': {
+    lines: [
+      { text: 'A delivery scooter under a bungeed tower of boxes three times its height. The driver calls the load light; the lane calls him a legend.' },
+    ],
+  },
+  'c5.ex.lotusline': {
+    lines: [
+      { text: 'Lotus lanterns strung pole to pole, left up from the last festival or early for the next. Nobody takes them down; hope keeps well.' },
+    ],
+  },
+  'c5.ex.magpie1': {
+    lines: [
+      { text: 'A magpie on the wire, black, white, and certain. The old belief says its chatter means good news, or a welcome guest on the way.' },
+    ],
+  },
+  'c5.ex.magpie2': {
+    lines: [
+      { text: 'The magpie chatters twice and bobs on its wire. Good news coming, says the old belief; the evening tide, says the ferry office. Same thing.' },
+    ],
+  },
+  'c5.ex.pricewall': {
+    lines: [
+      { text: 'A wall of hand-written price signs taped over each other for years. Somewhere in the under-layers, mackerel still costs what it used to.' },
+    ],
+  },
+  'c5.ex.hosecoil': {
+    lines: [
+      { text: 'A green hose coiled by the drain, still dripping. It washed the whole lane before you woke and will do it again before you wake tomorrow.' },
+    ],
+  },
+  'c5.ex.bootfence': {
+    lines: [
+      { text: 'Rubber boots drying upside down on the fence posts. Read left to right: small, small, large, patched, and one retired with honors.' },
+    ],
+  },
+  'c5.ex.steamerstack': {
+    lines: [
+      { text: 'The tteok shop’s wooden steamers, stacked and faintly breathing sweet rice. The sign says closed; the smell says any minute now.' },
+    ],
+  },
+  'c5.ex.handrail': {
+    lines: [
+      { text: 'A green handrail up the hill steps, with a plastic stool parked exactly halfway. The stool is a signed confession: the hill won.' },
+    ],
+  },
+  'c5.ex.cat1': {
+    lines: [
+      { text: 'A cat asleep on a styrofoam lid, curled like a comma in the market’s long sentence. It sleeps beside a ton of fish; it has solved life.' },
+    ],
+    effects: ['set:c5.cat.seen'],
+  },
+  'c5.ex.cat2': {
+    lines: [
+      { text: 'One eye opens to a slit, files you under harmless, and closes. You have been processed.' },
+    ],
+  },
+  'c5.ex.gullpost': {
+    lines: [
+      { text: 'The rope holds the ferry, the bollard holds the rope, and the gull holds the bollard. Everyone on this quay has a job.' },
+    ],
+  },
+  'c5.ex.shoerow': {
+    lines: [
+      { text: 'Shoes lined at the step, toes pointed out the door, ready before their owners are. Past this line, the warm floor belongs to socks.' },
+    ],
+  },
+  'c5.ex.goboard': {
+    lines: [
+      { text: 'A baduk board mid-game, abandoned with honor. Black is losing politely, and both players intend to finish some other decade.' },
+    ],
+  },
+  'c5.ex.yeontan': {
+    lines: [
+      { text: 'Yeontan briquettes, grey as old moons, air holes lined up neat. The warm floor is their doing; the whole room is in their debt.' },
+    ],
+  },
+  'c5.ex.tuft': {
+    lines: [
+      { text: 'Weeds in the yard corners, unmoved by commerce. The hill keeps sending green down between the houses to check on everyone.' },
+    ],
+  },
 };
 
 /** Examine arms; shared props keep their coastal words at home via map tags. */
@@ -784,6 +910,38 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   stall: [{ map: 'busan', node: 'c5.ex.gukbap' }],
   table: [{ map: 'teahouse', node: 'c5.ex.teatable' }],
   stool: [{ map: 'teahouse', node: 'c5.ex.stool' }],
+  tuft: [{ map: 'busan', node: 'c5.ex.tuft' }],
+  basinstack: [{ node: 'c5.ex.basinstack' }],
+  squidline: [{ node: 'c5.ex.squidline' }],
+  onggi: [
+    { when: { not: ['c5.onggi.looked'] }, node: 'c5.ex.onggi1' },
+    { node: 'c5.ex.onggi2' },
+  ],
+  chilimat: [{ node: 'c5.ex.chilimat' }],
+  foambox: [
+    { when: { has: ['c5.complete'] }, node: 'c5.ex.foambox2' },
+    { node: 'c5.ex.foambox' },
+  ],
+  parasol: [{ node: 'c5.ex.parasol' }],
+  scooter: [{ node: 'c5.ex.scooter' }],
+  lotusline: [{ node: 'c5.ex.lotusline' }],
+  magpie: [
+    { when: { has: ['c5.complete'] }, node: 'c5.ex.magpie2' },
+    { node: 'c5.ex.magpie1' },
+  ],
+  pricewall: [{ node: 'c5.ex.pricewall' }],
+  hosecoil: [{ node: 'c5.ex.hosecoil' }],
+  bootfence: [{ node: 'c5.ex.bootfence' }],
+  steamerstack: [{ node: 'c5.ex.steamerstack' }],
+  handrail: [{ node: 'c5.ex.handrail' }],
+  marketcat: [
+    { when: { not: ['c5.cat.seen'] }, node: 'c5.ex.cat1' },
+    { node: 'c5.ex.cat2' },
+  ],
+  gullpost: [{ node: 'c5.ex.gullpost' }],
+  shoerow: [{ node: 'c5.ex.shoerow' }],
+  goboard: [{ node: 'c5.ex.goboard' }],
+  yeontan: [{ node: 'c5.ex.yeontan' }],
 };
 
 /** Event-triggered nodes, listed with gating so tests can prove them reachable. */

@@ -1310,6 +1310,165 @@ export const NODES: NodeMap = {
       { text: 'The kitchen census: about twenty, all opinionated.' },
     ],
   },
+
+  // ---------------- the background life ----------------
+  'ex.pirca': {
+    lines: [
+      { text: 'A pirca, field stones stacked without mortar. Every stone got picked up twice: once to clear the field, once to become the wall.' },
+      { text: 'There is a gap a few steps along. It is not a failure of the wall; it is the door everyone voted for with their feet.' },
+    ],
+  },
+  'ex.michi': {
+    lines: [
+      { text: 'On the warmest stone of the wall, a cat has folded itself into a perfect circle. It is off duty. It was never on duty.' },
+    ],
+    effects: ['set:michi.seen'],
+  },
+  'ex.michi.again': {
+    lines: [
+      { text: 'Still asleep. One ear swivels toward you, files a brief report, and stands down.' },
+    ],
+  },
+  'ex.ajirack': {
+    lines: [
+      { text: 'Strings of red ají and gold maize dry on the rack, out of reach of the dogs and almost out of reach of the children.' },
+      { text: 'Every house can read a rack like this the way a bank reads a ledger. It says: a good year.' },
+    ],
+  },
+  'ex.chuno': {
+    lines: [
+      { text: 'Bitter potatoes spread on straw, freezing all night and drying all day. In a week they will be chuño, and chuño keeps ten years.' },
+      { text: 'The frost works for free. It is the only laborer in the valley nobody owes ayni.' },
+    ],
+  },
+  'ex.adobera': {
+    lines: [
+      { text: 'Adobe bricks curing under a plastic sheet, mud and straw on their way to being somebody\'s second room.' },
+      { text: 'One brick holds a perfect dog print. It will be laid anyway; walls need a little luck worked in.' },
+    ],
+  },
+  'ex.latacan': {
+    lines: [
+      { text: 'Geraniums blazing out of rusty lard cans by the door. Nobody repaints the cans; the flowers are carrying the whole act.' },
+    ],
+  },
+  'ex.nicho': {
+    lines: [
+      { text: 'A whitewashed niche, and inside, a small saint in a hand-woven manta sized for a doll.' },
+      { text: 'The flowers are fresh today. Whoever tends this does not want to be thanked, so you nod and keep walking.' },
+    ],
+  },
+  'ex.nicho.after': {
+    lines: [
+      { text: 'The little saint has a new knitted hat against the coming cold. It fits, which means somebody measured.' },
+    ],
+  },
+  'ex.sacos.stall': {
+    lines: [
+      { text: 'Sacks rolled open at the mouth: white mote, dried habas, coffee-dark chuño. The scoop is a tin cup with firm opinions on fair measure.' },
+    ],
+  },
+  'ex.sacos': {
+    lines: [
+      { text: 'Sacks of sprouted corn resting against the wall. Rosa calls it jora; the chomba in the corner calls it destiny.' },
+    ],
+  },
+  'ex.grano': {
+    lines: [
+      { text: 'Spilled barley by the stall. The hens found out before you did, and they are working the spill in shifts.' },
+    ],
+  },
+  'ex.chakitaqlla': {
+    lines: [
+      { text: 'A chakitaqlla leans on the wall: the foot plow, older here than the wheel and considerably less impressed by it.' },
+      { text: 'The footrest is polished bright. That shine is a hundred planting mornings deep.' },
+    ],
+  },
+  'ex.tendedero': {
+    lines: [
+      { text: 'Llicllas and a heavy pollera dry on the line, hems weighted so the wind takes no souvenirs.' },
+    ],
+  },
+  'ex.tendedero.pallay': {
+    lines: [
+      { text: 'You can read the line now: ch\'aska stars, a river border running like the Mayu. Carmen\'s alphabet, out in the sun.' },
+    ],
+  },
+  'ex.sapling': {
+    lines: [
+      { text: 'A eucalyptus sapling tied to a cane, planted the same season as somebody\'s baby. They are neck and neck.' },
+    ],
+  },
+  'ex.pelota': {
+    lines: [
+      { text: 'A soccer ball, wedged in the roof grass. It has been up there long enough to fade on one side.' },
+      { text: 'Ask anyone: greatest goal ever scored in this valley. Ask the goalkeeper: wind.' },
+    ],
+    effects: ['set:pelota.seen'],
+  },
+  'ex.pelota.again': {
+    lines: [
+      { text: 'Still up there. Rescue plans exist, but every ladder in the village turns out to be busy.' },
+    ],
+  },
+  'ex.gallina': {
+    lines: [
+      { text: 'A hen, auditing the ground with total confidence. She finds something every third step, or claims to.' },
+    ],
+  },
+  'ex.kite': {
+    lines: [
+      { text: 'High in the branches, a kite shaped like a condor, tail ribbons still trying. It flew beautifully once, witnesses insist.' },
+    ],
+  },
+  'ex.kite.faustino': {
+    lines: [
+      { text: 'Faustino swears a real condor circled it twice and left unconvinced. The kite has chosen to take this as a compliment.' },
+    ],
+  },
+  'ex.hitchpost': {
+    lines: [
+      { text: 'A hitching rail rubbed smooth by mule rope, salt going one way over the pass and sugar coming back the other.' },
+      { text: 'The ground nearby has been diplomatically swept. Mules are mules.' },
+    ],
+  },
+  'ex.qepi': {
+    lines: [
+      { text: 'A traveler\'s q\'epi rests by the cairn: a carrying cloth knotted around everything that matters today.' },
+      { text: 'You do not look inside. The knot is a door, and it is closed.' },
+    ],
+  },
+  'ex.apachetita': {
+    lines: [
+      { text: 'A young apacheta, ankle high. Every traveler leaves a stone, and with it a little of the weight that has no weight.' },
+    ],
+  },
+  'ex.apachetita.stone': {
+    lines: [
+      { text: 'You add a stone before you have finished deciding to. The pile is one traveler taller now, and so, somehow, are you.' },
+    ],
+  },
+  'ex.lagarto': {
+    lines: [
+      { text: 'A lizard flat on a warm stone, doing the most important work on this road: nothing, magnificently.' },
+    ],
+  },
+  'ex.charango': {
+    lines: [
+      { text: 'Don Teófilo\'s charango, propped where his hand can find it without looking. The strings are new; the jokes they accompany are not.' },
+    ],
+  },
+  'ex.pushka': {
+    lines: [
+      { text: 'A pushka drop spindle in a basket of cloud-colored wool. It is never idle long; hands here spin even while walking.' },
+    ],
+  },
+  'ex.dyepots': {
+    lines: [
+      { text: 'Little pots of dye: cochineal red from crushed insects, q\'olle yellow from flowers. A kitchen, but for color.' },
+      { text: 'The red pot is stained a red that will outlive the pot.' },
+    ],
+  },
 };
 
 /**
@@ -1373,6 +1532,50 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['sea.seen'] }, node: 'ex.sea' },
     { node: 'ex.sea.first' },
   ],
+  // The background life, all of it with something to say.
+  pirca: [{ node: 'ex.pirca' }],
+  pircamichi: [
+    { when: { has: ['michi.seen'] }, node: 'ex.michi.again' },
+    { node: 'ex.michi' },
+  ],
+  ajirack: [{ node: 'ex.ajirack' }],
+  chuno: [{ node: 'ex.chuno' }],
+  adobera: [{ node: 'ex.adobera' }],
+  latacan: [{ node: 'ex.latacan' }],
+  nicho: [
+    { when: { has: ['story.complete'] }, node: 'ex.nicho.after' },
+    { node: 'ex.nicho' },
+  ],
+  sacos: [
+    { map: 'village', node: 'ex.sacos.stall' },
+    { node: 'ex.sacos' },
+  ],
+  grano: [{ node: 'ex.grano' }],
+  chakitaqlla: [{ node: 'ex.chakitaqlla' }],
+  tendedero: [
+    { when: { has: ['pallay.done'] }, node: 'ex.tendedero.pallay' },
+    { node: 'ex.tendedero' },
+  ],
+  sapling: [{ node: 'ex.sapling' }],
+  pelota: [
+    { when: { has: ['pelota.seen'] }, node: 'ex.pelota.again' },
+    { node: 'ex.pelota' },
+  ],
+  gallina: [{ node: 'ex.gallina' }],
+  condorkite: [
+    { when: { has: ['met.faustino'] }, node: 'ex.kite.faustino' },
+    { node: 'ex.kite' },
+  ],
+  hitchpost: [{ node: 'ex.hitchpost' }],
+  qepi: [{ node: 'ex.qepi' }],
+  apachetita: [
+    { when: { has: ['sea.seen'] }, node: 'ex.apachetita.stone' },
+    { node: 'ex.apachetita' },
+  ],
+  lagarto: [{ node: 'ex.lagarto' }],
+  charango: [{ node: 'ex.charango' }],
+  pushka: [{ node: 'ex.pushka' }],
+  dyepots: [{ node: 'ex.dyepots' }],
   // The look-is-never-wasted rule: even plain ground answers.
   puna: [{ node: 'ex.puna' }],
   path: [{ node: 'ex.path' }],

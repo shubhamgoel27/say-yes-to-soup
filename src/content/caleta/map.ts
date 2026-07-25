@@ -27,6 +27,38 @@ const OPEN_DOORS = new Set(['16,14']);
 
 const inPier = (x: number, y: number) => (x === 22 || x === 23) && y >= 22 && y <= 30;
 
+/**
+ * The love layer: hand-placed working clutter, clustered the way life
+ * clusters (doors, corners, the pier root, the water line). Keys are "x,y".
+ */
+const PROPS: Record<string, string> = {
+  // Upper village: the road in, and the pond edge where totora dries.
+  '5,11': 'X', // the mototaxi, parked at its owner's angle
+  '36,1': 'G', // gallinazos on the dune ridge, supervising
+  '39,5': 'T', // totora bundles drying by the ponds
+  '40,10': 'T',
+  // The picanteria's orbit: chairs, shells, buoys, the cat.
+  '15,18': 'b', // buoys on the seaward wall
+  '14,19': 'W', // the shell wheelbarrow
+  '20,19': 'H', // stacked plastic chairs
+  '17,19': 'z', // the cat, where the fish smell is best
+  '5,19': 'm', // the school kids' mural of la mar
+  // Marisol's stall and the harbor office: fish work.
+  '29,20': 'Y', // salted lisa on racks
+  '33,20': 'Y',
+  '38,20': 'Q', // Don Wili's spare bottle crate
+  // The pier root and the beach: gear at rest.
+  '26,23': 't', // crab traps by the fish crates
+  '21,24': 'E', // the pelican's post
+  '31,24': 'G', // more gallinazos, nearer the racks
+  '11,27': 'p', // nets drying on poles, west beach
+  '40,24': 'p', // and east
+  '7,25': 'F', // the driftwood bench, facing the water
+  '17,28': 'J', // one stranded jellyfish, tide's own still life
+};
+
+const isBeach = (x: number, y: number) => y >= 26 && y <= 28 && !inPier(x, y);
+
 function groundAt(x: number, y: number): string {
   if (inPier(x, y) && y >= 24) return 'k';
   if (y >= 29) return 'S';
@@ -84,6 +116,13 @@ function objectAt(x: number, y: number): string {
   if (groundAt(x, y) === '.') {
     if ((x === 40 && (y === 5 || y === 7)) || (x === 46 && (y === 5 || y === 7))) return 'R';
     if ((x === 42 && y === 4) || (x === 44 && y === 9) || (x === 41 && y === 9)) return 'R';
+  }
+  const prop = PROPS[`${x},${y}`];
+  if (prop) return prop;
+  // Tide wrack along the water line, deterministic like all scatter.
+  if (isBeach(x, y)) {
+    const gr = groundAt(x, y);
+    if ((gr === 's' || gr === 'u') && cellHash(x, y, 71) < 0.09) return 'y';
   }
   // Sparse dry life on open sand, deterministic so it never shifts.
   if (groundAt(x, y) === 's' && y < 22) {
@@ -151,6 +190,23 @@ export const LA_CALETA_MAP: MapData = {
     R: { t: 'reeds', solid: true },
     r: { t: 'rock', solid: true },
     i: { t: 'tuft' },
+    // The love layer's kinds.
+    X: { t: 'mototaxi', solid: true, tall: true },
+    G: { t: 'gallinazos', solid: true, tall: true },
+    T: { t: 'dryreeds', solid: true, tall: true },
+    Y: { t: 'saltrack', solid: true, tall: true },
+    p: { t: 'netpoles', solid: true, tall: true },
+    t: { t: 'crabtraps', solid: true, tall: true },
+    b: { t: 'buoywall', solid: true, tall: true },
+    m: { t: 'kidmural', solid: true, tall: true },
+    E: { t: 'pelicanpost', solid: true, tall: true },
+    H: { t: 'picchairs', solid: true, tall: true },
+    W: { t: 'shellbarrow', solid: true },
+    Q: { t: 'emolcrate', solid: true },
+    F: { t: 'driftbench', solid: true },
+    z: { t: 'gato', solid: true },
+    J: { t: 'jellyfish' },
+    y: { t: 'seaweed' },
   },
   ground,
   objects,
@@ -172,6 +228,10 @@ export const PICANTERIA_MAP: MapData = {
     p: { t: 'pot', solid: true },
     r: { t: 'rug' },
     m: { t: 'mat' },
+    l: { t: 'limebasket', solid: true },
+    Z: { t: 'pizarra', solid: true, tall: true },
+    a: { t: 'laradio', solid: true },
+    z: { t: 'gato', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -188,14 +248,14 @@ export const PICANTERIA_MAP: MapData = {
   ],
   objects: [
     '##S#S####S####',
-    '#q p p       #',
+    '#q p pl   Z  #',
     '#            #',
     '#  sTTTTTTs  #',
     '#  s      s  #',
     '#  sTTTTTTs  #',
     '#            #',
-    '#   r        #',
-    '#            #',
+    '#  zr        #',
+    '#           a#',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'la-caleta', spawn: [18, 19], facing: 'down' }],

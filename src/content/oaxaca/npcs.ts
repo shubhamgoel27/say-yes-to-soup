@@ -997,6 +997,146 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'Dry valley grass, gone gold. At 1,500 meters the light cuts sharp and everything casts an opinion of a shadow.' },
     ],
   },
+
+  // ---------------- the love layer: small things, each with a voice ----------------
+  'c9.ex.cempacut': {
+    lines: [
+      { text: 'Cut cempasúchil in tied armfuls, stems to one side, fire to the other. The stems are for the living to carry; the color is for someone else.' },
+    ],
+  },
+  'c9.ex.agave': {
+    lines: [
+      { text: 'An agave piña by the door, fat as a sleeping pig. Eight years growing in the hills, and it will be sipped slowly, which is only fair.' },
+    ],
+  },
+  'c9.ex.papelstack': {
+    lines: [
+      { text: 'Papel picado still folded in its stack, colors sorted, scissors resting. A whole sky, waiting in a doorway to be hung.' },
+    ],
+  },
+  'c9.ex.dog1': {
+    lines: [
+      { text: 'A village dog asleep on the panadería step, the warmest stone on the street.' },
+      { text: 'He audited every doorway in the village for a year. This is his published finding.' },
+    ],
+    effects: ['set:c9.dog.known'],
+  },
+  'c9.ex.dog2': {
+    lines: [
+      { text: 'He opens one eye, files you under harmless, and closes it again. The oven wall backs his decision completely.' },
+    ],
+  },
+  'c9.ex.chapulines': {
+    lines: [
+      { text: 'Chapulines by the scoop, toasted with lime and chile. Crunchy, salty, and proof the valley wastes nothing that hops.' },
+    ],
+  },
+  'c9.ex.cantaros': {
+    lines: [
+      { text: 'Clay cántaros sweating politely in the shade, a plate over each mouth. The water tastes of rain first and the jar second, in that order.' },
+    ],
+  },
+  'c9.ex.metate': {
+    lines: [
+      { text: 'Chela’s metate, knee-high, older than the patio around it. Cacao and chile have polished the stone into one long shallow smile.' },
+    ],
+  },
+  'c9.ex.escoba': {
+    lines: [
+      { text: 'A broom resting mid-shift. Every door sweeps to the middle of the street, where its territory meets the neighbor’s, exactly.' },
+    ],
+  },
+  'c9.ex.gallina': {
+    lines: [
+      { text: 'Hens auditing the ground, clause by clause. Whatever the comal drops, the committee finds it first.' },
+    ],
+  },
+  'c9.ex.cohete': {
+    lines: [
+      { text: 'A spent cohete stick, back down from this morning’s announcement. One bang, no spectacle: the sky clearing its throat, the dogs objecting.' },
+    ],
+  },
+  'c9.ex.cubeta': {
+    lines: [
+      { text: 'Whitewash and a stiff brush, resting between graves. Tidying a tomb is housework here, done for family who only moved.' },
+    ],
+  },
+  'c9.ex.costal.full': {
+    lines: [
+      { text: 'A costal packed with cempasúchil petals to the brim. It smells like the whole field agreed to travel.' },
+    ],
+  },
+  'c9.ex.costal.empty': {
+    lines: [
+      { text: 'The costal, empty now and folded square. Every petal it held is out on the path, doing its one bright job.' },
+    ],
+  },
+  'c9.ex.jicaras': {
+    lines: [
+      { text: 'Painted jícaras stacked mouth-down to dry, red and black lacquer. Tejate tastes better from a gourd, and the gourds seem to know.' },
+    ],
+  },
+  'c9.ex.cazuelas': {
+    lines: [
+      { text: 'Cazuelas stacked by size, each chipped in a different honest place.' },
+      { text: 'The big one at the bottom is for mole only. Everyone knows this without being told.' },
+    ],
+  },
+  'c9.ex.tuba1': {
+    lines: [
+      { text: 'The banda’s tuba rests on a chair outside rehearsal, catching its breath.' },
+      { text: 'The chair was carried out specifically. A tuba does not sit on the ground like some clarinet.' },
+    ],
+    effects: ['set:c9.tuba.known'],
+  },
+  'c9.ex.tuba2': {
+    lines: [
+      { text: 'Inside, the banda runs the same eight bars without it. You can hear the exact hole where the tuba goes.' },
+    ],
+  },
+  'c9.ex.rotulo': {
+    lines: [
+      { text: 'A hand-painted sign, half born: three letters with fat shadows and curls, then pencil ghosts where the rest will be.' },
+      { text: 'The flourish underneath is already finished. It was clearly the fun part.' },
+    ],
+  },
+  'c9.ex.bugambilia': {
+    lines: [
+      { text: 'Bougainvillea pouring over the wall, magenta by the armload. The wall considers this fair rent for being slowly taken apart.' },
+    ],
+  },
+  'c9.ex.nicho': {
+    lines: [
+      { text: 'A corner nicho: a saint the size of a thumb, marigolds changed this morning, one steady flame. Easy to miss, kept too well to be forgotten.' },
+    ],
+  },
+  'c9.ex.paletas': {
+    lines: [
+      { text: 'The paletero’s bicycle cart, parked with intent near the colectivo stop.' },
+      { text: 'The bell is small and silver, and every child in the valley can hear it through a closed door and a nap.' },
+    ],
+  },
+  'c9.ex.crates': {
+    lines: [
+      { text: 'Market crates in a leaning tower: tomatillos still in their paper lanterns, chiles ranked by how much they intend to hurt you.' },
+    ],
+  },
+  'c9.ex.pantray': {
+    lines: [
+      { text: 'Trays of pan de muerto cooling by the door, caritas up. Forty small painted faces, patient, all pointed at the street.' },
+    ],
+  },
+  'c9.ex.pantray.out': {
+    lines: [
+      { text: 'The rack stands one batch lighter: the altar bread went out first, warm, in your arms. The rest cools for the living, who can wait.' },
+    ],
+  },
+  'c9.ex.alebrije.close': {
+    lines: [
+      { text: 'Up close the half-painted one is an argument: cobalt insists, orange objects, dots file in to mediate. The colors argue, and the colors win.' },
+    ],
+    effects: ['set:c9.alebrije.close'],
+  },
 };
 
 /** Valley examine arms; shared props keep map tags so other coasts stay themselves. */
@@ -1015,7 +1155,10 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   panstall: [{ node: 'c9.ex.panstall' }],
   barrostall: [{ node: 'c9.ex.barrostall' }],
   telar: [{ node: 'c9.ex.telar' }],
-  alebrije: [{ node: 'c9.ex.alebrije' }],
+  alebrije: [
+    { when: { has: ['met.carver'], not: ['c9.alebrije.close'] }, node: 'c9.ex.alebrije.close' },
+    { node: 'c9.ex.alebrije' },
+  ],
   campogate: [{ node: 'c9.ex.campogate' }],
   tumba: [
     { when: { has: ['c9.complete'] }, node: 'c9.ex.tumba.night' },
@@ -1052,6 +1195,39 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   bench: [{ map: 'oaxaca', node: 'c9.ex.bench9' }],
   farol: [{ map: 'oaxaca', node: 'c9.ex.farol9' }],
   tuft: [{ map: 'oaxaca', node: 'c9.ex.tuft9' }],
+  cempacut: [{ node: 'c9.ex.cempacut' }],
+  agavepina: [{ node: 'c9.ex.agave' }],
+  papelstack: [{ node: 'c9.ex.papelstack' }],
+  streetdog: [
+    { when: { not: ['c9.dog.known'] }, node: 'c9.ex.dog1' },
+    { node: 'c9.ex.dog2' },
+  ],
+  chapulines: [{ node: 'c9.ex.chapulines' }],
+  cantaros: [{ node: 'c9.ex.cantaros' }],
+  metate: [{ node: 'c9.ex.metate' }],
+  escoba: [{ node: 'c9.ex.escoba' }],
+  gallina: [{ node: 'c9.ex.gallina' }],
+  cohete: [{ node: 'c9.ex.cohete' }],
+  cubeta: [{ node: 'c9.ex.cubeta' }],
+  costal: [
+    { when: { has: ['c9.path.laid'] }, node: 'c9.ex.costal.empty' },
+    { node: 'c9.ex.costal.full' },
+  ],
+  jicaras: [{ node: 'c9.ex.jicaras' }],
+  cazuelas: [{ node: 'c9.ex.cazuelas' }],
+  tuba: [
+    { when: { not: ['c9.tuba.known'] }, node: 'c9.ex.tuba1' },
+    { node: 'c9.ex.tuba2' },
+  ],
+  rotulo: [{ node: 'c9.ex.rotulo' }],
+  bugambilia: [{ node: 'c9.ex.bugambilia' }],
+  nicho: [{ node: 'c9.ex.nicho' }],
+  paletas: [{ node: 'c9.ex.paletas' }],
+  mercadocrates: [{ node: 'c9.ex.crates' }],
+  pantray: [
+    { when: { has: ['c9.bread.done'] }, node: 'c9.ex.pantray.out' },
+    { node: 'c9.ex.pantray' },
+  ],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */

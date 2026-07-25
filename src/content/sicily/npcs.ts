@@ -982,7 +982,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.vespa': {
     lines: [
-      { text: 'A Vespa the color of pistachio gelato, leaning with intent. It belongs to everyone’s nephew and is always about to leave.' },
+      { text: 'A Vespa the color of pistachio gelato, leaning on its stand. It is older than the mayor and runs better; both facts are public record.' },
     ],
   },
   'c8.ex.postsign': {
@@ -998,6 +998,89 @@ export const SICILY_NODES: NodeMap = {
   'c8.ex.trofei': {
     lines: [
       { text: 'Trophies: a regatta cup, a scopa tournament plate from 1961, a swordfish bill mounted like a saint’s relic. Nobody dusts the second-place ones.' },
+    ],
+  },
+  'c8.ex.lemoncrate': {
+    lines: [
+      { text: 'Lemon crates stamped COOP. AGRUMARIA in blue stencil. It sits crooked on every crate, the same crooked, which takes practice.' },
+    ],
+  },
+  'c8.ex.testadimoro': {
+    lines: [
+      { text: 'A painted ceramic head with basil growing for hair. The legend: a Moor loved a local girl and meant to sail home to another life.' },
+      { text: 'She kept his head for a planter. The basil thrives, and the town considers the matter settled in her favor.' },
+    ],
+  },
+  'c8.ex.edicola': {
+    lines: [
+      { text: 'A votive shrine in the lava stone, the Madonna small and certain in her arch. Two electric candles burn with bureaucratic steadiness.' },
+      { text: 'The sea wind kept taking the real flames, so faith on this coast learned wiring. Somebody still changes the bougainvillea daily.' },
+    ],
+  },
+  'c8.ex.edicola2': {
+    lines: [
+      { text: 'A third candle has appeared since the pageant. Four rowers, one swimming fish, everyone home wet and safe: that is worth a bulb.' },
+    ],
+  },
+  'c8.ex.fichidindia': {
+    lines: [
+      { text: 'Prickly pear, growing out of bare lava like it signed a lease. The fruit is sweet, the spines are personal, and the harvest gloves are not optional.' },
+    ],
+  },
+  'c8.ex.nonnachair': {
+    lines: [
+      { text: 'A kitchen chair set outside the door at a precise angle. It marks where the afternoon shade will be, updated seasonally, accurate to the minute.' },
+    ],
+  },
+  'c8.ex.gattu': {
+    lines: [
+      { text: 'A cat asleep in the fruit bowl by the door, using two lemons as pillows. The household lost this argument years ago and now just buys more bowls.' },
+    ],
+  },
+  'c8.ex.campetto': {
+    lines: [
+      { text: 'A chalk goal on the wall, and beside it a score: three tallies against two, the two crossed out and rewritten in fresher chalk.' },
+      { text: 'The dispute is in its third day. Nobody plays until it is settled, so everyone argues instead of practicing.' },
+    ],
+  },
+  'c8.ex.pomodori': {
+    lines: [
+      { text: 'Tomato bunches drying on a frame of retired oars, going from red to a deeper red with opinions. Winter sauce, paying its rent in advance.' },
+    ],
+  },
+  'c8.ex.avvisi': {
+    lines: [
+      { text: 'The church notice board: mass times, the feast committee, and U PISCI A MARI in letters bigger than both. A pinned note asks for one more rower.' },
+    ],
+  },
+  'c8.ex.avvisi2': {
+    lines: [
+      { text: 'Under the festival bill someone has chalked ANNATA BONA. Good year. The board keeps the parish records; the chalk keeps the important ones.' },
+    ],
+  },
+  'c8.ex.limoni': {
+    lines: [
+      { text: 'Windfall lemons in the grass, too bruised for the crates, too proud for the compost. The terrace smells like the inside of the color yellow.' },
+    ],
+  },
+  'c8.ex.lavagna': {
+    lines: [
+      { text: 'The score blackboard. NOI and LORO, us and them, in tallies that reset every night and settle nothing across decades.' },
+    ],
+  },
+  'c8.ex.ventola': {
+    lines: [
+      { text: 'The standing fan, a member since 1968. It turns to face each speaker in turn, like it is following the argument, which it is.' },
+    ],
+  },
+  'c8.ex.rug': {
+    lines: [
+      { text: 'A rug the color of old wine, worn to the weave under the card table. Fifty years of dropped aces and spilled coffee live in it.' },
+    ],
+  },
+  'c8.ex.mat': {
+    lines: [
+      { text: 'The doormat says nothing at all. Members wipe their feet out of respect, not instruction.' },
     ],
   },
 
@@ -1080,6 +1163,24 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   vespa: [{ node: 'c8.ex.vespa' }],
   macchina: [{ node: 'c8.ex.macchina' }],
   trofei: [{ node: 'c8.ex.trofei' }],
+  lemoncrate: [{ node: 'c8.ex.lemoncrate' }],
+  testadimoro: [{ node: 'c8.ex.testadimoro' }],
+  edicola: [
+    { when: { has: ['c8.pisci.won'] }, node: 'c8.ex.edicola2' },
+    { node: 'c8.ex.edicola' },
+  ],
+  fichidindia: [{ node: 'c8.ex.fichidindia' }],
+  nonnachair: [{ node: 'c8.ex.nonnachair' }],
+  gattu: [{ node: 'c8.ex.gattu' }],
+  campetto: [{ node: 'c8.ex.campetto' }],
+  pomodori: [{ node: 'c8.ex.pomodori' }],
+  avvisi: [
+    { when: { has: ['c8.pisci.won'] }, node: 'c8.ex.avvisi2' },
+    { node: 'c8.ex.avvisi' },
+  ],
+  limoni: [{ node: 'c8.ex.limoni' }],
+  lavagna: [{ node: 'c8.ex.lavagna' }],
+  ventola: [{ node: 'c8.ex.ventola' }],
   postsign: [
     { when: { not: ['letter.read.sicily.pilar'] }, node: 'c8.post.pilar' },
     {
@@ -1100,6 +1201,8 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   table: [{ map: 'circolo', node: 'c8.ex.table' }],
   stool: [{ map: 'circolo', node: 'c8.ex.stool' }],
   shelf: [{ map: 'circolo', node: 'c8.ex.shelf' }],
+  rug: [{ map: 'circolo', node: 'c8.ex.rug' }],
+  mat: [{ map: 'circolo', node: 'c8.ex.mat' }],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */

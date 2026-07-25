@@ -39,8 +39,9 @@ export const CHAPTER: ChapterDef = {
     'la-caleta': { scene: 'outdoor', mood: 'garua' },
     picanteria: { scene: 'interior', mood: 'interior' },
   },
-  // Sitting on a fish crate at the pier is correct; the picantería stools too.
-  sitKinds: ['crate', 'stool'],
+  // Sitting on a fish crate at the pier is correct; the picantería stools too,
+  // and the driftwood bench that faces the water because of course it does.
+  sitKinds: ['crate', 'stool', 'driftbench'],
   sitLines: {
     'la-caleta': [
       'The sea sets the tempo and the malecón keeps it: stroll, pause, greet, stroll. Nobody finishes this walk early.',

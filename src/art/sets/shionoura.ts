@@ -1,5 +1,5 @@
 import type { ChapterArt } from './index';
-import { dot, oval, rect, rr, shade, softShadow, vgrad, glowSpot } from '../pix';
+import { blob, dot, oval, rect, rr, shade, softShadow, vgrad, glowSpot } from '../pix';
 
 /**
  * Shionoura's kit: weathered machiya wood, indigo noren, vermilion torii,
@@ -455,6 +455,563 @@ export const ART: ChapterArt = {
       dot(g, 64, 40, 3.4, '#c9a35f');
     }, 128, 96);
 
+    // ------------------------------------------------- the love pass: flats
+
+    make('koke', 3, (g, r) => {
+      // Moss on the stone steps: the edges upholstered, the middle argued
+      // bare by feet. Soft decor; no ink, no shadow.
+      for (let i = 0; i < 8; i++) {
+        const a = r.next() * Math.PI * 2;
+        const rad = 21 + r.int(10);
+        const mx = 32 + Math.cos(a) * rad;
+        const my = 32 + Math.sin(a) * rad;
+        oval(g, mx, my, 5 + r.int(5), 3 + r.int(3), `rgba(104,132,72,${0.3 + r.next() * 0.25})`, (r.next() - 0.5) * 1.2);
+      }
+      for (let i = 0; i < 6; i++) {
+        const a = r.next() * Math.PI * 2;
+        const rad = 20 + r.int(11);
+        dot(g, 32 + Math.cos(a) * rad, 32 + Math.sin(a) * rad, 1 + r.next(), 'rgba(74,100,52,0.4)');
+      }
+    });
+
+    make('kaigara', 4, (g, r) => {
+      // The tide's small change: shells, and sometimes sea glass.
+      const n = 3 + r.int(3);
+      for (let i = 0; i < n; i++) {
+        const sx = 10 + r.int(44);
+        const sy = 10 + r.int(44);
+        const c = r.chance(0.3) ? '#e8c9c4' : '#efe8da';
+        oval(g, sx, sy, 3 + r.next() * 2, 2.2 + r.next(), c, r.next() * 3);
+        dot(g, sx, sy + 1, 0.9, 'rgba(120,100,88,0.4)');
+      }
+      if (r.chance(0.4)) dot(g, 12 + r.int(40), 12 + r.int(40), 2.2, 'rgba(110,180,190,0.8)');
+    });
+
+    make('getarow', 2, (g, r) => {
+      // Footwear at the genkan edge, toes pointed out the door. No ink.
+      const cols = ['#8a6a44', '#5c4630', '#9b3f35'];
+      for (let i = 0; i < 3; i++) {
+        const bx = 8 + i * 18 + r.int(3);
+        const col = shade(cols[i] ?? '#8a6a44', (r.next() - 0.5) * 0.06);
+        for (const dx of [0, 8]) {
+          const by = 22 + r.int(3);
+          rr(g, bx + dx, by, 6, 20, 3, col);
+          vgrad(g, bx + dx, by, 6, 5, 'rgba(255,240,210,0.2)', 'rgba(0,0,0,0)');
+          g.strokeStyle = 'rgba(40,28,16,0.55)';
+          g.lineWidth = 1.3;
+          g.beginPath();
+          g.moveTo(bx + dx + 3, by + 4);
+          g.lineTo(bx + dx + (dx ? 5 : 1), by + 11);
+          g.stroke();
+        }
+      }
+    });
+
+    make('ukidama', 2, (g, r) => {
+      // Glass floats in a net bag: bottled sea, retired with honors.
+      softShadow(g, 32, 52, 20, 6, 0.18);
+      for (const [bx, by, br] of [[24, 40, 11], [42, 42, 10], [33, 28, 9]] as const) {
+        dot(g, bx, by, br, shade('#4f7f6a', (r.next() - 0.5) * 0.1));
+        dot(g, bx - br * 0.35, by - br * 0.35, br * 0.3, 'rgba(220,245,235,0.55)');
+      }
+      g.strokeStyle = 'rgba(90,70,46,0.6)';
+      g.lineWidth = 1.4;
+      for (let i = -2; i <= 2; i++) {
+        g.beginPath();
+        g.moveTo(33 + i * 3, 16);
+        g.quadraticCurveTo(33 + i * 12, 36, 33 + i * 9, 52);
+        g.stroke();
+      }
+      for (const ny of [30, 40]) {
+        g.beginPath();
+        g.moveTo(14, ny);
+        g.quadraticCurveTo(33, ny + 6, 52, ny);
+        g.stroke();
+      }
+      dot(g, 33, 15, 3, '#8a6a44'); // the knot
+    });
+
+    make('mikanbako', 2, (g, r) => {
+      // Setoda crates on summer duty: juice and jelly until the fruit wakes.
+      softShadow(g, 32, 56, 22, 6, 0.18);
+      const crate = (x: number, y: number, w: number, h: number) => {
+        rr(g, x, y, w, h, 2, shade('#b08b58', (r.next() - 0.5) * 0.08));
+        vgrad(g, x, y, w, 5, 'rgba(255,240,210,0.18)', 'rgba(0,0,0,0)');
+        g.strokeStyle = 'rgba(60,40,22,0.5)';
+        g.lineWidth = 1.6;
+        for (const ly of [y + h * 0.38, y + h * 0.72]) {
+          g.beginPath();
+          g.moveTo(x + 2, ly);
+          g.lineTo(x + w - 2, ly);
+          g.stroke();
+        }
+      };
+      crate(10, 32, 40, 24);
+      crate(16, 12, 34, 22); // stacked slightly off, like real life
+      // The stencil: one mikan, and rough brush marks beside it.
+      dot(g, 30, 22, 5, '#e8862f');
+      oval(g, 30, 17.5, 2.2, 1.2, '#4d7440', 0.3);
+      g.strokeStyle = 'rgba(60,40,22,0.75)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(38, 19); g.lineTo(45, 19);
+      g.moveTo(41.5, 16); g.lineTo(41.5, 25);
+      g.moveTo(20, 42); g.lineTo(28, 42);
+      g.moveTo(20, 47); g.lineTo(26, 47);
+      g.stroke();
+    });
+
+    make('jitensha', 2, (g, r) => {
+      // The granny bike: basket, bell, kickstand, no lock.
+      softShadow(g, 32, 56, 24, 5, 0.16);
+      const frame = r.chance(0.5) ? '#5d4a63' : '#3c6e64';
+      g.strokeStyle = '#3a3f47';
+      g.lineWidth = 2.2;
+      for (const wx of [16, 48]) {
+        g.beginPath();
+        g.arc(wx, 44, 11, 0, Math.PI * 2);
+        g.stroke();
+        dot(g, wx, 44, 1.8, '#3a3f47');
+      }
+      g.strokeStyle = frame;
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(16, 44); g.lineTo(30, 30); g.lineTo(44, 30); g.lineTo(48, 44);
+      g.moveTo(30, 30); g.lineTo(34, 44); g.lineTo(16, 44);
+      g.stroke();
+      g.beginPath(); g.moveTo(44, 30); g.lineTo(46, 22); g.stroke(); // stem
+      g.beginPath(); g.moveTo(30, 30); g.lineTo(27, 24); g.stroke(); // seatpost
+      g.strokeStyle = '#8a9096';
+      g.lineWidth = 1.8;
+      g.beginPath(); g.moveTo(34, 44); g.lineTo(37, 52); g.stroke(); // kickstand
+      rr(g, 22, 21, 10, 4, 2, '#2b2118'); // saddle
+      rr(g, 43, 17, 14, 11, 2, '#a8845c'); // the basket
+      g.strokeStyle = 'rgba(40,28,16,0.5)';
+      g.lineWidth = 1;
+      for (const lx of [46, 49.5, 53]) {
+        g.beginPath(); g.moveTo(lx, 18); g.lineTo(lx, 27); g.stroke();
+      }
+      g.beginPath(); g.moveTo(44, 21); g.lineTo(56, 21); g.moveTo(44, 24.5); g.lineTo(56, 24.5); g.stroke();
+      dot(g, 42, 24, 1.7, '#c9c4bb'); // the bell
+    });
+
+    make('ittokan', 2, (g, r) => {
+      // An 18-liter kerosene can, reassigned to hydrangeas.
+      softShadow(g, 32, 58, 16, 5, 0.18);
+      vgrad(g, 18, 30, 28, 28, shade('#7d8894', 0.06), shade('#7d8894', -0.08));
+      rect(g, 18, 30, 28, 3.5, shade('#7d8894', 0.14));
+      g.strokeStyle = 'rgba(70,80,90,0.4)';
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(32, 34); g.lineTo(32, 57); g.stroke(); // the seam
+      for (let i = 0; i < 4; i++) {
+        dot(g, 19 + r.int(26), 35 + r.int(21), 1.3 + r.next(), 'rgba(150,84,44,0.5)');
+      }
+      for (const [hx, hy, hr, hc] of [[24, 22, 8, '#7f8fc4'], [38, 20, 9, '#9b86bd'], [31, 27, 7, '#6f9fc9']] as const) {
+        for (let i = 0; i < 10; i++) {
+          const a = r.next() * Math.PI * 2;
+          const rad = Math.sqrt(r.next()) * hr;
+          dot(g, hx + Math.cos(a) * rad, hy + Math.sin(a) * rad * 0.8, 2.2, shade(hc, (r.next() - 0.5) * 0.16));
+        }
+      }
+      oval(g, 21, 30, 5, 2.5, '#4d7440', 0.4);
+      oval(g, 43, 29, 5, 2.5, '#5a8a50', -0.3);
+    });
+
+    make('ajisai', 3, (g, r) => {
+      // Hydrangeas: tsuyu is a tiresome guest, but it pays rent in flowers.
+      softShadow(g, 32, 56, 20, 6, 0.16);
+      blob(g, 32, 43, 15, '#48663f', r, 0.28);
+      blob(g, 19, 47, 8, '#3f5c38', r, 0.3);
+      blob(g, 46, 46, 8, '#42603c', r, 0.3);
+      for (const [hx, hy, hr, hc] of [[20, 33, 9, '#7f8fc4'], [36, 27, 10, '#8f7fc0'], [46, 37, 8, '#6f9fc9'], [29, 41, 7, '#8aa3d4']] as const) {
+        for (let i = 0; i < 14; i++) {
+          const a = r.next() * Math.PI * 2;
+          const rad = Math.sqrt(r.next()) * hr;
+          dot(g, hx + Math.cos(a) * rad, hy + Math.sin(a) * rad * 0.85, 2.4, shade(hc, (r.next() - 0.5) * 0.18));
+        }
+        dot(g, hx - hr * 0.3, hy - hr * 0.3, 2, shade(hc, 0.22));
+      }
+    });
+
+    // ------------------------------------------------- the love pass: cats
+
+    make('nekoloaf', 2, (g, r) => {
+      // The quay supervisor, in full loaf formation.
+      softShadow(g, 32, 52, 18, 5, 0.16);
+      const coat = '#ece5d8';
+      oval(g, 30, 42, 17, 11, coat); // the loaf
+      dot(g, 45, 36, 8, coat); // head
+      oval(g, 23, 38, 7, 5, '#d98a4a', 0.4); // calico patches
+      oval(g, 35, 46, 6, 4, '#3a3430', -0.3);
+      oval(g, 48, 31, 3.5, 3, '#d98a4a', 0.2);
+      g.fillStyle = coat;
+      g.beginPath(); g.moveTo(39, 32); g.lineTo(41, 25); g.lineTo(44, 31); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(46, 30); g.lineTo(49, 24); g.lineTo(51, 31); g.closePath(); g.fill();
+      g.strokeStyle = '#3a3430';
+      g.lineWidth = 1.2;
+      g.lineCap = 'round';
+      g.beginPath(); // eyes at half mast
+      g.moveTo(41.5, 36); g.lineTo(44, 36.5);
+      g.moveTo(47.5, 36.5); g.lineTo(50, 36);
+      g.stroke();
+      dot(g, 45.5, 39, 0.9, '#b06a52'); // nose
+      g.strokeStyle = '#d98a4a';
+      g.lineWidth = 3.4;
+      g.beginPath(); g.moveTo(14, 43); g.quadraticCurveTo(22, 52, 34, 50); g.stroke(); // tail, stowed
+      if (r.chance(0.5)) dot(g, 30, 38, 1.1, 'rgba(58,52,48,0.5)'); // one extra spot
+    });
+
+    make('nekoboss', 1, (g) => {
+      // Kacho. The section chief of the fish stall.
+      softShadow(g, 32, 58, 16, 5, 0.18);
+      const coat = '#8a8078';
+      oval(g, 32, 43, 13, 15, coat); // seated bulk
+      oval(g, 32, 48, 6, 8, '#ece5d8'); // chest
+      g.strokeStyle = shade(coat, -0.22); // tabby stripes
+      g.lineWidth = 2;
+      g.lineCap = 'round';
+      for (const sy of [34, 39, 44]) {
+        g.beginPath();
+        g.moveTo(22, sy);
+        g.quadraticCurveTo(32, sy + 3, 42, sy);
+        g.stroke();
+      }
+      dot(g, 32, 22, 9.5, coat); // the head
+      g.fillStyle = coat;
+      g.beginPath(); g.moveTo(23, 18); g.lineTo(24, 9); g.lineTo(30, 14); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(34, 14); g.lineTo(40, 9); g.lineTo(41, 18); g.closePath(); g.fill();
+      g.save(); // the left ear's notch: an old negotiation
+      g.globalCompositeOperation = 'destination-out';
+      dot(g, 24.5, 10.5, 2.4, '#000');
+      g.restore();
+      dot(g, 28.5, 21, 1.7, '#d9a441'); // amber eyes
+      dot(g, 35.5, 21, 1.7, '#d9a441');
+      dot(g, 28.5, 21, 0.7, '#2b2118');
+      dot(g, 35.5, 21, 0.7, '#2b2118');
+      dot(g, 32, 25, 1, '#b06a52');
+      g.strokeStyle = 'rgba(236,229,216,0.8)';
+      g.lineWidth = 0.9;
+      g.beginPath();
+      g.moveTo(24, 24); g.lineTo(14, 22.5);
+      g.moveTo(24, 26); g.lineTo(15, 27);
+      g.moveTo(40, 24); g.lineTo(50, 22.5);
+      g.moveTo(40, 26); g.lineTo(49, 27);
+      g.stroke();
+      g.strokeStyle = shade(coat, -0.12); // the tail, wrapped like an audit
+      g.lineWidth = 4;
+      g.beginPath(); g.moveTo(44, 52); g.quadraticCurveTo(52, 54, 50, 44); g.stroke();
+    });
+
+    make('nekonap', 2, (g, r) => {
+      // The afternoon shift, under the bench, technically on duty.
+      softShadow(g, 32, 50, 16, 5, 0.14);
+      const coat = '#3a3430';
+      oval(g, 32, 42, 16, 10, coat); // the curl
+      dot(g, 42, 38, 6.5, coat); // head tucked toward the tail
+      g.fillStyle = coat;
+      g.beginPath(); g.moveTo(38, 33); g.lineTo(39, 28); g.lineTo(43, 32); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(44, 32); g.lineTo(47, 28.5); g.lineTo(48, 33.5); g.closePath(); g.fill();
+      oval(g, 27, 48, 5, 2.5, '#ece5d8', 0.2); // one white sock, deployed
+      if (r.chance(0.6)) oval(g, 38, 49, 4, 2.2, '#ece5d8', -0.2); // sometimes two
+      g.strokeStyle = shade(coat, 0.28);
+      g.lineWidth = 3.6;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(18, 44); g.quadraticCurveTo(28, 50, 40, 44); g.stroke(); // tail over nose
+      g.strokeStyle = '#8a8078';
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(43, 38.5); g.lineTo(45.5, 38.8); g.stroke(); // the closed eye
+    });
+
+    // ------------------------------------------------- the love pass: talls
+
+    make('jizo', 2, (g, r) => {
+      // The steps' smallest guardian, dressed warmly by somebody, every year.
+      softShadow(g, 32, 90, 16, 5, 0.2);
+      const st = shade(STONE, (r.next() - 0.5) * 0.05);
+      rr(g, 18, 80, 28, 8, 2, shade(st, -0.1)); // plinth
+      g.fillStyle = st; // the body, a soft standing stone
+      g.beginPath();
+      g.moveTo(22, 82);
+      g.quadraticCurveTo(20, 58, 32, 52);
+      g.quadraticCurveTo(44, 58, 42, 82);
+      g.closePath();
+      g.fill();
+      dot(g, 32, 46, 9, st); // head
+      g.fillStyle = '#b5473a'; // the knitted cap
+      g.beginPath();
+      g.arc(32, 45, 9.6, Math.PI, Math.PI * 2);
+      g.closePath();
+      g.fill();
+      dot(g, 32, 35.5, 2.2, '#b5473a');
+      g.fillStyle = '#b5473a'; // and the bib
+      g.beginPath();
+      g.moveTo(24, 55); g.lineTo(40, 55); g.lineTo(32, 68);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(255,220,205,0.4)'; // knit rows
+      g.lineWidth = 0.9;
+      for (const ky of [58, 61, 64]) {
+        const kw = (68 - ky) * 0.6;
+        g.beginPath();
+        g.moveTo(32 - kw, ky);
+        g.lineTo(32 + kw, ky);
+        g.stroke();
+      }
+      g.strokeStyle = 'rgba(58,52,48,0.65)'; // the serene face
+      g.lineWidth = 1;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(28, 47); g.quadraticCurveTo(29.4, 48.2, 30.8, 47);
+      g.moveTo(33.2, 47); g.quadraticCurveTo(34.6, 48.2, 36, 47);
+      g.moveTo(30.5, 51); g.quadraticCurveTo(32, 52.2, 33.5, 51);
+      g.stroke();
+      dot(g, 25, 78, 2.6, '#e8862f'); // a mikan jelly cup, the going rate
+      rr(g, 37, 75, 5, 4, 1, '#c9c4bb'); // and a teacup
+      if (r.chance(0.6)) dot(g, 20, 84, 2.4, '#6f9b62'); // moss at his feet
+    }, 64, 96);
+
+    make('ema', 2, (g, r) => {
+      // The wish rack: small wooden plaques, heavy cargo.
+      softShadow(g, 32, 90, 20, 5, 0.18);
+      for (const px of [11, 51]) {
+        vgrad(g, px - 2, 34, 5, 54, shade(WOOD, 0.02), shade(WOOD, -0.16));
+      }
+      g.fillStyle = KAWARA; // a tiny tiled cap, taken seriously
+      g.beginPath();
+      g.moveTo(3, 34); g.lineTo(32, 24); g.lineTo(61, 34);
+      g.lineTo(57, 38); g.lineTo(32, 30); g.lineTo(7, 38);
+      g.closePath();
+      g.fill();
+      for (const ry of [46, 66]) {
+        rect(g, 9, ry, 46, 3, shade(WOOD, -0.1));
+        for (let i = 0; i < 4; i++) {
+          const ex = 11 + i * 11 + r.int(2);
+          g.strokeStyle = 'rgba(160,60,50,0.8)';
+          g.lineWidth = 1;
+          g.beginPath(); g.moveTo(ex + 4.5, ry + 3); g.lineTo(ex + 4.5, ry + 7); g.stroke();
+          g.fillStyle = shade('#d9b57f', (r.next() - 0.5) * 0.14);
+          g.beginPath(); // the plaque, gabled like a very small house
+          g.moveTo(ex - 0.5, ry + 9); g.lineTo(ex + 4.5, ry + 5.5); g.lineTo(ex + 9.5, ry + 9);
+          g.lineTo(ex + 9, ry + 17); g.lineTo(ex, ry + 17);
+          g.closePath();
+          g.fill();
+          g.strokeStyle = 'rgba(60,44,30,0.6)';
+          g.lineWidth = 0.8;
+          g.beginPath();
+          g.moveTo(ex + 2, ry + 11); g.lineTo(ex + 7, ry + 11);
+          g.moveTo(ex + 2, ry + 13.5); g.lineTo(ex + 6, ry + 13.5);
+          g.stroke();
+        }
+      }
+    }, 64, 96);
+
+    make('jihanki', 2, (g, r) => {
+      // It hums. It glows. It has outlasted two shops and one mayor.
+      softShadow(g, 32, 90, 18, 5, 0.2);
+      vgrad(g, 16, 20, 32, 66, shade('#dfe3e6', 0.04), shade('#b9c2c9', -0.04));
+      rect(g, 16, 20, 32, 3, '#eef0ee');
+      rr(g, 19, 26, 26, 32, 2, '#f6f0d8'); // the lit face
+      glowSpot(g, 32, 42, 20, '#fff2c4', 0.5);
+      const canCols = ['#c1512f', '#3f7fb0', '#4d7440', '#c9a35f'];
+      for (let row = 0; row < 2; row++) {
+        for (let i = 0; i < 4; i++) {
+          rr(g, 21.5 + i * 5.6, 29 + row * 13, 4.4, 9, 1, canCols[(i + row) % 4] ?? '#c1512f');
+        }
+      }
+      rect(g, 21, 53, 10, 3.5, '#b5473a'); // ATSUI red
+      rect(g, 34, 53, 10, 3.5, '#3f7fb0'); // TSUMETAI blue
+      rect(g, 41, 62, 3.5, 6, '#3a3f47'); // coin slot
+      rr(g, 20, 73, 20, 9, 2, '#3a3f47'); // the vend hatch
+      rect(g, 16, 84, 32, 3, '#8a9096');
+      if (r.chance(0.5)) dot(g, 45, 23.5, 1.6, '#d9694a'); // the little brand dot
+    }, 64, 96);
+
+    make('himono', 2, (g, r) => {
+      // Today's small fish, drying into tomorrow's breakfast.
+      softShadow(g, 32, 90, 20, 5, 0.16);
+      g.strokeStyle = '#5c4630';
+      g.lineWidth = 3;
+      for (const px of [10, 54]) {
+        g.beginPath(); g.moveTo(px, 88); g.lineTo(px, 36); g.stroke();
+      }
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(8, 42); g.lineTo(56, 42); g.stroke();
+      g.strokeStyle = 'rgba(96,116,104,0.7)'; // the net shelf
+      g.lineWidth = 1;
+      for (let i = 0; i <= 6; i++) {
+        g.beginPath(); g.moveTo(10 + i * 7.3, 46); g.lineTo(12 + i * 7.3, 62); g.stroke();
+      }
+      for (const ny of [48, 54, 60]) {
+        g.beginPath(); g.moveTo(10, ny); g.lineTo(56, ny); g.stroke();
+      }
+      for (let i = 0; i < 4; i++) {
+        const fx = 15 + i * 11 + r.int(3);
+        const fy = 52 + (i % 2) * 4;
+        oval(g, fx, fy, 5, 3.2, shade('#d9c9a8', (r.next() - 0.5) * 0.08), 0.15);
+        g.strokeStyle = 'rgba(120,96,66,0.6)';
+        g.lineWidth = 0.8;
+        g.beginPath(); g.moveTo(fx - 4, fy); g.lineTo(fx + 4, fy); g.stroke();
+        g.fillStyle = '#b9a988';
+        g.beginPath();
+        g.moveTo(fx + 4, fy - 1.4); g.lineTo(fx + 7.4, fy); g.lineTo(fx + 4, fy + 1.4);
+        g.closePath();
+        g.fill();
+        dot(g, fx - 3, fy - 0.8, 0.6, '#5c4630');
+      }
+    }, 64, 96);
+
+    make('monohoshi', 3, (g, r) => {
+      // The laundry pole reads the sky before committing to anything.
+      softShadow(g, 32, 90, 20, 5, 0.16);
+      g.strokeStyle = '#7a6a52';
+      g.lineWidth = 3;
+      for (const px of [8, 56]) {
+        g.beginPath(); g.moveTo(px, 88); g.lineTo(px, 26); g.stroke();
+      }
+      g.strokeStyle = '#9aa0a6';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(4, 32); g.lineTo(60, 32); g.stroke();
+      const cols = ['#f2e6d0', '#3f7fb0', '#7d8894', '#c9a35f'];
+      let cx = 9 + r.int(3);
+      for (let i = 0; i < 3; i++) {
+        const w = 10 + r.int(7);
+        const h = 22 + r.int(14);
+        const col = shade(cols[(i + r.int(2)) % 4] ?? '#f2e6d0', (r.next() - 0.5) * 0.06);
+        const sway = (r.next() - 0.5) * 4;
+        g.fillStyle = col;
+        g.beginPath();
+        g.moveTo(cx, 33); g.lineTo(cx + w, 33); g.lineTo(cx + w + sway, 33 + h);
+        g.quadraticCurveTo(cx + w / 2, 37 + h, cx + sway, 33 + h);
+        g.closePath();
+        g.fill();
+        vgrad(g, cx, 33, w, 8, 'rgba(255,255,255,0.18)', 'rgba(0,0,0,0)');
+        dot(g, cx + 2, 33, 1.4, '#d9694a'); // pins, emphatic
+        dot(g, cx + w - 2, 33, 1.4, '#d9694a');
+        cx += w + 4 + r.int(4);
+      }
+    }, 64, 96);
+
+    make('gyokyo', 2, (g, r) => {
+      // The co-op board: everything official and everything true, same nails.
+      softShadow(g, 32, 90, 20, 5, 0.18);
+      for (const px of [14, 50]) {
+        vgrad(g, px - 2, 42, 5, 46, shade(WOOD, 0.02), shade(WOOD, -0.16));
+      }
+      rr(g, 8, 26, 48, 42, 2, shade(WOOD, -0.12));
+      rr(g, 11, 29, 42, 36, 1, '#dcd4c2');
+      g.fillStyle = KAWARA;
+      g.beginPath();
+      g.moveTo(4, 26); g.lineTo(32, 18); g.lineTo(60, 26);
+      g.lineTo(56, 30); g.lineTo(32, 23); g.lineTo(8, 30);
+      g.closePath();
+      g.fill();
+      const paper = (x: number, y: number, w: number, h: number, rot: number, c: string) => {
+        g.save();
+        g.translate(x, y);
+        g.rotate(rot);
+        rr(g, -w / 2, -h / 2, w, h, 1, c);
+        g.restore();
+        dot(g, x, y - h / 2 + 1.4, 1.1, '#8a5a3c'); // its pin
+      };
+      paper(20, 39, 12, 15, -0.05 + (r.next() - 0.5) * 0.04, '#f6f2e4');
+      paper(35, 41, 14, 16, 0.06, '#fdfdfa');
+      paper(47, 45, 9, 12, -0.1, '#f2e6d0');
+      paper(24, 56, 13, 12, 0.08, '#e8f0f4');
+      g.strokeStyle = 'rgba(60,60,64,0.55)'; // lines of print
+      g.lineWidth = 0.9;
+      for (const [lx, ly] of [[15, 35], [15, 38], [30, 37], [30, 40], [30, 43], [43.5, 42], [19, 54]] as const) {
+        g.beginPath(); g.moveTo(lx, ly); g.lineTo(lx + 8, ly); g.stroke();
+      }
+      dot(g, 39, 46, 2.4, 'rgba(180,60,50,0.8)'); // the hanko stamp
+      oval(g, 24, 58, 4, 2, '#e8862f', 0.2); // the crayon goldfish
+      dot(g, 21.2, 57.4, 0.6, '#3a3430');
+    }, 64, 96);
+
+    make('furin', 1, (g) => {
+      // Sea wind, translated into small bright syllables.
+      softShadow(g, 32, 90, 12, 4, 0.14);
+      g.strokeStyle = '#5c4630';
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(24, 90); g.lineTo(24, 18); g.stroke();
+      g.beginPath(); g.moveTo(24, 20); g.quadraticCurveTo(36, 16, 42, 22); g.stroke();
+      g.strokeStyle = 'rgba(90,70,46,0.6)';
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(42, 22); g.lineTo(42, 29); g.stroke();
+      glowSpot(g, 42, 35, 12, '#cfe8ec', 0.4);
+      g.fillStyle = 'rgba(190,225,232,0.65)'; // the glass bowl
+      g.beginPath();
+      g.arc(42, 35, 7.5, Math.PI * 0.98, Math.PI * 2.02);
+      g.closePath();
+      g.fill();
+      oval(g, 42, 40.3, 7.3, 2, 'rgba(150,195,205,0.7)');
+      dot(g, 39.5, 32, 2, 'rgba(255,255,255,0.7)');
+      g.strokeStyle = 'rgba(90,70,46,0.7)';
+      g.lineWidth = 1;
+      g.beginPath(); g.moveTo(42, 36); g.lineTo(42.5, 46); g.stroke();
+      dot(g, 42.3, 44, 1.6, '#8a6a44'); // the clapper
+      g.save();
+      g.translate(42.5, 46);
+      g.rotate(0.18);
+      rr(g, -3, 0, 6, 16, 1, '#f2e6d0'); // the paper strip
+      g.restore();
+      g.strokeStyle = 'rgba(60,90,140,0.5)';
+      g.beginPath();
+      g.moveTo(42, 50); g.lineTo(46, 50.6);
+      g.moveTo(42.6, 54); g.lineTo(46.6, 54.6);
+      g.stroke();
+    }, 64, 96);
+
+    // ------------------------------------------------- the love pass: indoors
+
+    make('senpuki', 1, (g) => {
+      // Showa-era, three speeds: low, lower, and consideration.
+      softShadow(g, 32, 58, 14, 4, 0.16);
+      g.strokeStyle = '#8a9096';
+      g.lineWidth = 2.6;
+      g.beginPath(); g.moveTo(32, 54); g.lineTo(32, 36); g.stroke();
+      oval(g, 32, 55, 11, 3.5, '#b9c2c9');
+      oval(g, 32, 54, 9, 2.6, '#cfd6da');
+      dot(g, 32, 26, 13, '#cfd6da'); // the guard
+      dot(g, 32, 26, 11.2, '#e8ecee');
+      for (const a of [0.3, 2.4, 4.5]) { // blades, mid-turn forever
+        g.save();
+        g.translate(32, 26);
+        g.rotate(a);
+        oval(g, 6.5, 0, 6, 3.4, 'rgba(140,170,185,0.75)', 0.5);
+        g.restore();
+      }
+      dot(g, 32, 26, 3, '#8a9096');
+      g.strokeStyle = 'rgba(90,100,108,0.5)';
+      g.lineWidth = 0.8;
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(32, 26);
+        g.lineTo(32 + Math.cos(a) * 12.6, 26 + Math.sin(a) * 12.6);
+        g.stroke();
+      }
+      g.beginPath(); g.arc(32, 26, 12.8, 0, Math.PI * 2); g.stroke();
+      dot(g, 27, 51, 1.2, '#b5473a'); // the one red button that matters
+    });
+
+    make('mugicha', 1, (g) => {
+      // Cold barley tea: the house's standing answer to July.
+      softShadow(g, 32, 52, 16, 4, 0.14);
+      oval(g, 32, 48, 20, 6, '#8a6a44'); // the tray
+      oval(g, 32, 46.5, 18, 4.6, '#a8845c');
+      vgrad(g, 24, 24, 14, 22, 'rgba(200,150,80,0.85)', 'rgba(148,94,40,0.92)'); // the jug
+      rr(g, 23, 20, 16, 5, 2, '#d9c9a8'); // lid
+      dot(g, 31, 19, 2, '#b9a988');
+      dot(g, 27, 32, 1, 'rgba(255,255,255,0.55)'); // condensation, honest
+      dot(g, 35, 38, 1, 'rgba(255,255,255,0.55)');
+      dot(g, 30, 41, 0.8, 'rgba(255,255,255,0.45)');
+      rr(g, 43, 36, 7, 10, 1, 'rgba(220,235,240,0.75)'); // one glass, poured
+      rect(g, 44, 39.5, 5, 5.5, 'rgba(190,130,60,0.8)');
+      rr(g, 14, 37, 7, 10, 1, 'rgba(220,235,240,0.75)'); // one glass, waiting
+    });
+
     make('machiya', 4, (g, r) => {
       // 352x256: a wooden townhouse in the Inland Sea manner. Same wall and
       // door geometry as `casa`, so village grids and window lights match.
@@ -597,6 +1154,7 @@ export const ART: ChapterArt = {
   grounded: [
     'noren', 'torii', 'ishidoro', 'bamboo', 'bambooWish', 'tairyobata',
     'chochin', 'postbox', 'yatai', 'keitruck', 'ebisudo',
+    'jizo', 'ema', 'jihanki', 'himono', 'monohoshi', 'gyokyo', 'furin',
   ],
   buildings: ['machiya'],
   windows: {
@@ -605,7 +1163,8 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['ishidoro', 'chochin', 'irori'],
+  glows: ['ishidoro', 'chochin', 'irori', 'jihanki'],
+  noInk: ['koke', 'kaigara', 'getarow'],
 };
 
 // No side effects here; the integrator registers this set in art/sets/index.ts.

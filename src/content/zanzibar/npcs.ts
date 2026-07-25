@@ -992,6 +992,141 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'Folded kangas by the hundred, sorted by loudness. The shelf is a library that happens to be wearable.' },
     ],
   },
+
+  // ---------------- the love pass: small things, given voices ----------------
+  'c7.ex.kline.a': {
+    lines: [
+      { text: 'Kangas drying in pairs, each hem holding its printed sentence up to the wind.' },
+      { text: 'The nearest reads Wache waseme: let them talk. Somebody hung that one facing the lane on purpose.' },
+    ],
+    effects: ['set:c7.seen.kline'],
+  },
+  'c7.ex.kline.b': {
+    lines: [
+      { text: 'The cloths have turned in the wind; the message has not. Whoever should let them talk has presumably walked past by now.' },
+    ],
+  },
+  'c7.ex.bao.a': {
+    lines: [
+      { text: 'A bao board mid-game on a barrel, seeds counted into their pits. Both players walked away; the game did not end, it is only breathing.' },
+    ],
+    effects: ['set:c7.seen.bao'],
+  },
+  'c7.ex.bao.b': {
+    lines: [
+      { text: 'You could move one seed and change two friendships. Do not touch the seeds. Every cat on this lane saw you think it.' },
+    ],
+  },
+  'c7.ex.tray.after': {
+    lines: [
+      { text: 'The kahawa boy has moved down the lane. One of these cups was yours; the bench remembers who drank from it, which is how benches collect people.' },
+    ],
+  },
+  'c7.ex.tray': {
+    lines: [
+      { text: 'A brass kahawa pot and cups the size of thimbles. The cup is small so the sitting can be long; refills are how the bench keeps you.' },
+    ],
+  },
+  'c7.ex.madema': {
+    lines: [
+      { text: 'Madema: woven fish traps stacked like baskets that learned a trick. The fish swims in, reconsiders, and finds the door has become a wall.' },
+    ],
+  },
+  'c7.ex.coral': {
+    lines: [
+      { text: 'Coral-rag blocks queued for repairs, pale and pocked, still faintly reef. Somebody’s wall is about to remember the sea again.' },
+    ],
+  },
+  'c7.ex.limepail': {
+    lines: [
+      { text: 'A pail of lime wash and a stiff brush. The wall and the salt air are in a very old argument, and this is the wall’s next word.' },
+    ],
+  },
+  'c7.ex.scaffold': {
+    lines: [
+      { text: 'Mangrove poles lashed with rope, not a nail anywhere, holding up a mason who is at lunch. The knots are the oldest technology on the wall.' },
+    ],
+  },
+  'c7.ex.cat.a': {
+    lines: [
+      { text: 'A cat, seated exactly where everyone must step around her. She looks at you the way a landlord looks at a tenant.' },
+    ],
+    effects: ['set:c7.cat.one'],
+  },
+  'c7.ex.cat.b': {
+    lines: [
+      { text: 'Still there. Stone Town cats fear nothing; the dhows shipped their ancestors in as ratters, and the harbor has owed them wages ever since.' },
+    ],
+    effects: ['set:c7.cat.two'],
+  },
+  'c7.ex.cat.c': {
+    lines: [
+      { text: 'You and the cat have reached an understanding. The understanding is that the cat was right.' },
+    ],
+  },
+  'c7.ex.kuku.a': {
+    lines: [
+      { text: 'A white chicken patrols the shop front like she holds the lease.' },
+      { text: 'Mgeni ni kuku mweupe, says the cloth inside: a guest is a white chicken. This one has heard it, and it went straight to her head.' },
+    ],
+    effects: ['set:c7.seen.kuku'],
+  },
+  'c7.ex.kuku.b': {
+    lines: [
+      { text: 'Still here, still white, still special. The proverb never said anything about modesty.' },
+    ],
+  },
+  'c7.ex.baiskeli': {
+    lines: [
+      { text: 'A bicycle with a fish crate lashed over the back wheel. The bell works perfectly; the brakes are more of a conversation.' },
+    ],
+  },
+  'c7.ex.henna': {
+    lines: [
+      { text: 'A low stool and a tray of henna cones, aimed and ready. Sit, hold still, and your hands leave wearing vines a wedding would envy.' },
+    ],
+  },
+  'c7.ex.doormat': {
+    lines: [
+      { text: 'A woven mat squared to the doorstep, shoes queued beside it. You can take the household census without knocking.' },
+    ],
+  },
+  'c7.ex.goal': {
+    lines: [
+      { text: 'Two flip-flops, one goal. Kickoff is when school ends; full time is when somebody’s mother uses their whole name.' },
+    ],
+  },
+  'c7.ex.starfish': {
+    lines: [
+      { text: 'The tide left in a hurry and forgot things: a starfish, a shell, one small crab with big plans. It will be back for none of them.' },
+    ],
+  },
+  'c7.ex.sailspar.after': {
+    lines: [
+      { text: 'A spare sail furled on its spar. You look at it differently now; somewhere in those wraps is the exact place the wind leans, and your hands know it.' },
+    ],
+  },
+  'c7.ex.sailspar': {
+    lines: [
+      { text: 'A lateen sail furled fat along its spar, resting on trestles above the sand. Folded wind, waiting for the kaskazi to ask for it back.' },
+    ],
+  },
+  'c7.ex.radio.a': {
+    lines: [
+      { text: 'A radio with its antenna aimed at Stone Town. Taarab pours out: strings, a violin, a voice saying something sharp, deniably.' },
+    ],
+    effects: ['set:c7.seen.radio'],
+  },
+  'c7.ex.radio.b': {
+    lines: [
+      { text: 'Bi Amina turns it up for one song and says only: Siti binti Saad recorded before any man on this coast dared. The shop folds cloth in time.' },
+    ],
+  },
+  'c7.ex.sewing': {
+    lines: [
+      { text: 'Scissors, chalk, a tape measure coiled like something tame. This is the table where a gora becomes two kangas: one to keep, one to give.' },
+    ],
+  },
 };
 
 /** Examine arms; shared kinds stay map-tagged so their words stay home. */
@@ -1012,6 +1147,45 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['letter.read.c7.pilar'], not: ['letter.read.c7.mangben'] }, node: 'c7.post.mangben' },
     { node: 'c7.post.idle' },
   ],
+  kangaline: [
+    { when: { not: ['c7.seen.kline'] }, node: 'c7.ex.kline.a' },
+    { node: 'c7.ex.kline.b' },
+  ],
+  baoboard: [
+    { when: { not: ['c7.seen.bao'] }, node: 'c7.ex.bao.a' },
+    { node: 'c7.ex.bao.b' },
+  ],
+  kahawatray: [
+    { when: { has: ['c7.rashid.past'] }, node: 'c7.ex.tray.after' },
+    { node: 'c7.ex.tray' },
+  ],
+  madema: [{ node: 'c7.ex.madema' }],
+  coralblocks: [{ node: 'c7.ex.coral' }],
+  limepail: [{ node: 'c7.ex.limepail' }],
+  scaffold: [{ node: 'c7.ex.scaffold' }],
+  paka: [
+    { when: { not: ['c7.cat.one'] }, node: 'c7.ex.cat.a' },
+    { when: { has: ['c7.cat.one'], not: ['c7.cat.two'] }, node: 'c7.ex.cat.b' },
+    { node: 'c7.ex.cat.c' },
+  ],
+  kuku: [
+    { when: { not: ['c7.seen.kuku'] }, node: 'c7.ex.kuku.a' },
+    { node: 'c7.ex.kuku.b' },
+  ],
+  baiskeli: [{ node: 'c7.ex.baiskeli' }],
+  hennastool: [{ node: 'c7.ex.henna' }],
+  doormat: [{ node: 'c7.ex.doormat' }],
+  flipflopgoal: [{ node: 'c7.ex.goal' }],
+  starfish: [{ node: 'c7.ex.starfish' }],
+  sailspar: [
+    { when: { has: ['c7.sail.ok'] }, node: 'c7.ex.sailspar.after' },
+    { node: 'c7.ex.sailspar' },
+  ],
+  radio: [
+    { when: { not: ['c7.seen.radio'] }, node: 'c7.ex.radio.a' },
+    { node: 'c7.ex.radio.b' },
+  ],
+  sewing: [{ node: 'c7.ex.sewing' }],
   sand: [{ map: 'zanzibar', node: 'c7.ex.sand' }],
   sandWet: [{ map: 'zanzibar', node: 'c7.ex.flats' }],
   sea: [{ map: 'zanzibar', node: 'c7.ex.sea' }],

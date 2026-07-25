@@ -15,6 +15,16 @@ import { cellHash, surface } from '../art/pix';
 
 const A = ART;
 const S = TILE * A;
+
+/** Which ground kinds grow which family of walkable micro-decor. */
+const LIFE_FAMILY: Record<string, string> = {
+  grass: 'green', puna: 'green',
+  dirt: 'earth', laterite: 'earth',
+  sand: 'sand',
+  plaza: 'stone', lanepave: 'stone', corallane: 'stone', basalto: 'stone', tataki: 'stone',
+};
+/** Fraction of eligible cells that sprout; hand-tuned per family. */
+const LIFE_DENSITY: Record<string, number> = { green: 0.16, earth: 0.12, sand: 0.12, stone: 0.15 };
 const AW = CHAR_W * A;
 const AH = CHAR_H * A;
 const W = VIEW_W * A;
@@ -63,6 +73,8 @@ export class Renderer {
    */
   private shadowBlob: HTMLCanvasElement;
   private tintPatches: HTMLCanvasElement[] = [];
+  /** Baked walkable micro-decor per ground family; see groundLifePass. */
+  private groundLife = new Map<string, HTMLCanvasElement[]>();
   private wallShadeStrip: HTMLCanvasElement;
   private cloudPuff: HTMLCanvasElement;
   private fireflyGlow: HTMLCanvasElement;
@@ -145,6 +157,168 @@ export class Renderer {
       ff.g.fillRect(0, 0, 16, 16);
       this.fireflyGlow = ff.cv;
     }
+
+    this.bakeGroundLife();
+  }
+
+  /**
+   * Ground life: the small stuff a place accumulates when people live in it.
+   * Sprigs and clover on grass, pebbles and straw on earth lanes, shells on
+   * sand, weeds working the joints of paving. Baked once as tile-sized
+   * stamps; scattered deterministically so the world never reshuffles.
+   */
+  private bakeGroundLife() {
+    const sprig = (g: CanvasRenderingContext2D, x: number, y: number, c1: string, c2: string, s = 1) => {
+      g.lineCap = 'round';
+      g.lineWidth = 2.2 * s;
+      g.strokeStyle = c1;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x - 3 * s, y - 5 * s, x - 4 * s, y - 9 * s);
+      g.stroke();
+      g.strokeStyle = c2;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x + 3 * s, y - 6 * s, x + 3.6 * s, y - 10 * s);
+      g.stroke();
+    };
+    const flower = (g: CanvasRenderingContext2D, x: number, y: number, c: string, heart: string) => {
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2 + 0.5;
+        g.beginPath();
+        g.ellipse(x + Math.cos(a) * 3, y + Math.sin(a) * 3, 2.6, 1.8, a, 0, Math.PI * 2);
+        g.fillStyle = c;
+        g.fill();
+      }
+      g.beginPath();
+      g.arc(x, y, 1.8, 0, Math.PI * 2);
+      g.fillStyle = heart;
+      g.fill();
+    };
+    const pebble = (g: CanvasRenderingContext2D, x: number, y: number, rx: number, c: string) => {
+      g.beginPath();
+      g.ellipse(x, y, rx, rx * 0.72, 0, 0, Math.PI * 2);
+      g.fillStyle = c;
+      g.fill();
+      g.beginPath();
+      g.ellipse(x - rx * 0.2, y - rx * 0.25, rx * 0.55, rx * 0.34, 0, 0, Math.PI * 2);
+      g.fillStyle = 'rgba(255,250,235,0.28)';
+      g.fill();
+    };
+    const straw = (g: CanvasRenderingContext2D, x: number, y: number, c: string) => {
+      g.lineCap = 'round';
+      g.lineWidth = 1.7;
+      g.strokeStyle = c;
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x + 6, y - 2, x + 12, y - 1);
+      g.moveTo(x + 3, y + 3);
+      g.quadraticCurveTo(x + 8, y + 1, x + 11, y + 3);
+      g.stroke();
+    };
+    const clover = (g: CanvasRenderingContext2D, x: number, y: number, c: string) => {
+      for (const [dx, dy] of [[-2.4, 0.8], [2.4, 0.8], [0, -2.2]] as const) {
+        g.beginPath();
+        g.arc(x + dx, y + dy, 2.5, 0, Math.PI * 2);
+        g.fillStyle = c;
+        g.fill();
+      }
+    };
+    const shell = (g: CanvasRenderingContext2D, x: number, y: number, c: string, rib: string) => {
+      g.beginPath();
+      g.moveTo(x, y);
+      g.arc(x, y, 5, Math.PI * 1.15, Math.PI * 1.85);
+      g.closePath();
+      g.fillStyle = c;
+      g.fill();
+      g.strokeStyle = rib;
+      g.lineWidth = 1;
+      for (const a of [1.3, 1.5, 1.7]) {
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + Math.cos(Math.PI * a) * 4.6, y + Math.sin(Math.PI * a) * 4.6);
+        g.stroke();
+      }
+    };
+    const moss = (g: CanvasRenderingContext2D, x: number, y: number, r: number) => {
+      g.beginPath();
+      g.ellipse(x, y, r, r * 0.6, 0.3, 0, Math.PI * 2);
+      g.fillStyle = 'rgba(96,118,58,0.42)';
+      g.fill();
+      g.beginPath();
+      g.ellipse(x + r * 0.5, y + r * 0.3, r * 0.5, r * 0.32, 0.3, 0, Math.PI * 2);
+      g.fillStyle = 'rgba(96,118,58,0.30)';
+      g.fill();
+    };
+    const crack = (g: CanvasRenderingContext2D, x: number, y: number) => {
+      g.strokeStyle = 'rgba(50,40,30,0.16)';
+      g.lineWidth = 1.4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + 7, y + 4);
+      g.lineTo(x + 10, y + 11);
+      g.moveTo(x + 7, y + 4);
+      g.lineTo(x + 13, y + 5);
+      g.stroke();
+    };
+
+    const G1 = '#5d7a3c';
+    const G2 = '#7a9a4e';
+    const bake = (family: string, painters: ((g: CanvasRenderingContext2D) => void)[]) => {
+      this.groundLife.set(
+        family,
+        painters.map((paint) => {
+          const { cv, g } = surface(S, S);
+          paint(g);
+          return cv;
+        }),
+      );
+    };
+
+    bake('green', [
+      (g) => { sprig(g, 22, 40, G1, G2); sprig(g, 40, 30, G1, G2, 0.8); },
+      (g) => { flower(g, 30, 32, '#efe9d4', '#d9a441'); sprig(g, 44, 44, G1, G2, 0.8); },
+      (g) => { clover(g, 24, 36, 'rgba(74,102,52,0.55)'); clover(g, 40, 26, 'rgba(74,102,52,0.4)'); },
+      (g) => { flower(g, 40, 40, '#d9a441', '#b5713f'); },
+      (g) => { sprig(g, 18, 30, G1, G2); sprig(g, 34, 44, G1, G2, 0.9); sprig(g, 46, 26, G1, G2, 0.7); },
+      (g) => { flower(g, 24, 28, '#c9a9d9', '#8a6b9a'); sprig(g, 42, 42, G1, G2, 0.8); },
+    ]);
+    bake('earth', [
+      (g) => { pebble(g, 26, 36, 4, '#8d8578'); pebble(g, 36, 42, 2.8, '#9a9184'); },
+      (g) => { straw(g, 20, 34, 'rgba(200,169,94,0.6)'); },
+      (g) => { pebble(g, 40, 28, 3.2, '#8d8578'); straw(g, 18, 44, 'rgba(200,169,94,0.45)'); },
+      (g) => { crack(g, 24, 26); },
+      (g) => { pebble(g, 22, 40, 2.6, '#97836d'); pebble(g, 30, 34, 3.6, '#8d8578'); pebble(g, 41, 41, 2.2, '#9a9184'); },
+      (g) => { sprig(g, 44, 36, 'rgba(122,138,84,0.7)', 'rgba(150,164,104,0.7)', 0.7); },
+    ]);
+    bake('sand', [
+      (g) => { shell(g, 30, 38, '#d8c8ae', 'rgba(150,130,105,0.5)'); },
+      (g) => { pebble(g, 24, 32, 3, '#b8a88e'); pebble(g, 40, 44, 2.2, '#c4b49a'); },
+      (g) => {
+        g.strokeStyle = 'rgba(255,252,240,0.22)';
+        g.lineWidth = 2;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(16, 34); g.quadraticCurveTo(28, 30, 40, 34);
+        g.stroke();
+      },
+      (g) => { shell(g, 42, 28, '#c9b295', 'rgba(140,120,95,0.5)'); pebble(g, 22, 44, 2.4, '#b8a88e'); },
+      (g) => { pebble(g, 34, 36, 2, '#7fa8a0'); },
+      (g) => { shell(g, 26, 42, '#d8c8ae', 'rgba(150,130,105,0.5)'); },
+    ]);
+    bake('stone', [
+      (g) => { sprig(g, 30, 40, 'rgba(86,116,52,0.95)', 'rgba(116,150,70,0.95)', 1.05); },
+      (g) => { moss(g, 24, 44, 8); sprig(g, 30, 46, 'rgba(86,116,52,0.8)', 'rgba(116,150,70,0.8)', 0.7); },
+      (g) => { crack(g, 30, 28); },
+      (g) => { moss(g, 44, 26, 6); sprig(g, 20, 38, 'rgba(86,116,52,0.9)', 'rgba(116,150,70,0.9)', 0.85); },
+      (g) => {
+        g.fillStyle = 'rgba(239,233,212,0.5)';
+        g.beginPath(); g.ellipse(28, 34, 2.4, 1.6, 0.4, 0, Math.PI * 2); g.fill();
+        g.beginPath(); g.ellipse(38, 42, 2, 1.4, -0.6, 0, Math.PI * 2); g.fill();
+      },
+      (g) => { sprig(g, 46, 30, 'rgba(93,122,60,0.7)', 'rgba(122,154,78,0.7)', 0.7); },
+    ]);
   }
 
   /** Chapters bring their own weather. */
@@ -298,6 +472,25 @@ export class Renderer {
     // Pass 1b2: the water is alive. Sun glints ride the swell by day, and a
     // breathing line of foam works every edge where the sea meets land.
     this.drawWaterLife(map, cam, x0, y0, x1, y1, kindAt);
+
+    // Pass 1b3: ground life. Open walkable ground grows sprigs, pebbles,
+    // shells, and joint-weeds so no screenful of land reads unfinished.
+    for (let cy = y0; cy <= y1; cy++) {
+      for (let cx = x0; cx <= x1; cx++) {
+        if (!map.inBounds(cx, cy) || map.object(cx, cy)) continue;
+        const family = LIFE_FAMILY[kindAt(cx, cy)];
+        if (!family) continue;
+        const h = cellHash(cx, cy, 131);
+        if (h >= (LIFE_DENSITY[family] ?? 0)) continue;
+        const stamps = this.groundLife.get(family);
+        if (!stamps?.length) continue;
+        const pick = stamps[Math.floor(cellHash(cx, cy, 137) * stamps.length)];
+        if (!pick) continue;
+        const jx = (cellHash(cx, cy, 139) - 0.5) * 14;
+        const jy = (cellHash(cx, cy, 149) - 0.5) * 10;
+        ctx.drawImage(pick, (cx * TILE - cam.x) * A + jx, (cy * TILE - cam.y) * A + jy);
+      }
+    }
 
     // Pass 1c: cast shade and walkable decor.
     for (let cy = y0; cy <= y1; cy++) {

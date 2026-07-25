@@ -31,6 +31,8 @@ export type ChapterArt = {
   watery?: string[];
   /** Ground kinds paths visually connect to. */
   pathy?: string[];
+  /** Soft ground decor that melts into the earth: no ink outline, no shadow. */
+  noInk?: string[];
 };
 
 export const ART_SETS: ChapterArt[] = [];
@@ -50,13 +52,19 @@ export const WINDOW_OFFSETS: Record<string, [number, number][]> = {
 /** Object kinds that get a flickering light at night, extended by chapters. */
 export const GLOW_KINDS = new Set(['qoncha', 'campfire', 'farol']);
 
+/** Soft-decor kinds contributed by chapters; tiles.ts folds these into NO_INK. */
+export const SOFT_KINDS = new Set<string>();
+
 export function registerArt(set: ChapterArt) {
   ART_SETS.push(set);
+  for (const k of set.noInk ?? []) SOFT_KINDS.add(k);
   for (const [k, v] of Object.entries(set.windows ?? {})) WINDOW_OFFSETS[k] = v;
   for (const k of set.glows ?? []) GLOW_KINDS.add(k);
 }
 
 // ---- chapter art modules (registered here; two lines per chapter) ----
+import { ART as CHASKA_ART } from './chaska';
+import { ART as CALETA_ART } from './caleta';
 import { ART as CROSSING_ART } from './crossing';
 import { ART as SHIONOURA_ART } from './shionoura';
 import { ART as BUSAN_ART } from './busan';
@@ -64,6 +72,8 @@ import { ART as KERALA_ART } from './kerala';
 import { ART as ZANZIBAR_ART } from './zanzibar';
 import { ART as SICILY_ART } from './sicily';
 import { ART as OAXACA_ART } from './oaxaca';
+registerArt(CHASKA_ART);
+registerArt(CALETA_ART);
 registerArt(CROSSING_ART);
 registerArt(SHIONOURA_ART);
 registerArt(BUSAN_ART);

@@ -129,9 +129,9 @@
       /* ---- errand chip ---- */
       #errand {
         position: absolute;
-        bottom: 16px;
-        right: 16px;
-        max-width: min(46%, 420px);
+        top: 16px;
+        left: 16px;
+        max-width: min(38%, 380px);
         padding: 6px 12px;
         background: rgba(23, 18, 14, 0.82);
         color: #e8dcc4;
@@ -279,18 +279,19 @@
         display: flex;
         flex-direction: column;
         background:
+          linear-gradient(rgba(244, 234, 214, 0.78), rgba(244, 234, 214, 0.78)),
           url('/assets/textures/paper-aged-cream.jpg') repeat,
           linear-gradient(120deg, var(--paper), var(--paper-dark));
-        background-blend-mode: multiply, normal;
-        background-size: 480px, auto;
+        background-blend-mode: normal, multiply, normal;
+        background-size: auto, 480px, auto;
         border: 2px solid var(--ink);
         border-radius: 4px;
         box-shadow: var(--shadow-card);
         color: var(--ink);
         padding: 14px 18px 10px;
         line-height: 1.45;
-        animation: bookOpen 0.22s ease-out;
       }
+      .j-book.opening { animation: bookOpen 0.22s ease-out; }
       @keyframes bookOpen {
         from { transform: translateY(10px) scale(0.96); opacity: 0; }
         to { transform: none; opacity: 1; }
@@ -714,10 +715,11 @@
       .p-card {
         width: min(86vw, 460px);
         background:
+          linear-gradient(rgba(244, 234, 214, 0.78), rgba(244, 234, 214, 0.78)),
           url('/assets/textures/paper-aged-cream.jpg') repeat,
           linear-gradient(120deg, var(--paper), var(--paper-dark));
-        background-blend-mode: multiply, normal;
-        background-size: 480px, auto;
+        background-blend-mode: normal, multiply, normal;
+        background-size: auto, 480px, auto;
         border: 2px solid var(--ink);
         border-radius: 4px;
         box-shadow: var(--shadow-card);

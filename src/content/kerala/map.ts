@@ -56,6 +56,36 @@ const BANANAS = new Set(
   [[11, 11], [17, 10], [33, 11], [42, 8], [31, 15], [2, 13]].map(([x, y]) => `${x},${y}`),
 );
 
+/** The love pass: small true things, clustered where life gathers. */
+const DECOR: Record<string, string> = {
+  '13,11': 'N', // the nilavilakku, flanking Mariamma's door
+  '15,11': 'U', // umbrellas open to dry on the veranda, like bats
+  '17,7': 'J', // the jackfruit tree, admired from a sensible radius
+  '42,14': 'e', // pepper vine on an areca, among Kuttan's palms
+  '17,13': 'G', // the chaya-glass rack, Shaji's regiment
+  '23,9': 'W', // chalked cricket stumps beside the murals
+  '23,11': 't', // the lost tennis ball, in the gutter by the lane
+  '20,24': 'o', // oars leaning by the jetty
+  '26,24': 'S', // spice sacks under tarp, by the jetty office
+  '21,22': 'B', // the post box on its pole
+  '11,14': 'l', // the lungi line, between coir yard and paddy
+  '4,11': 'h', // husk piles bound for the retting canal
+  '9,25': 'h',
+  '3,24': 'h',
+  '5,26': 'y', // hyacinth rafts at the channel edge
+  '27,26': 'y',
+  '44,26': 'y',
+  '14,26': 'Y', // waterlilies
+  '36,26': 'Y',
+  '34,20': 'a', // the anthill nobody disturbs
+  '43,11': 's', // the bus shelter, one bench, forty timetable opinions
+  '35,22': 'r', // the temple festival poster, peeling
+  '19,5': 'f', // fallen coconuts, claimed by nobody for now
+  '40,5': 'f',
+  '28,23': 'f',
+  '20,20': 'f',
+};
+
 function objectAt(x: number, y: number): string {
   // Pandanus hedge seals the land edges; the water seals the south.
   if (y === 0) return 'H';
@@ -70,6 +100,8 @@ function objectAt(x: number, y: number): string {
   const key = `${x},${y}`;
   if (PALMS.has(key)) return 'P';
   if (BANANAS.has(key)) return 'b';
+  const dec = DECOR[key];
+  if (dec) return dec;
   // The village's furniture.
   if (x === 18 && y === 13) return 'K'; // Shaji's thattukada
   if (x === 15 && y === 13) return 'n'; // the chaya bench
@@ -139,6 +171,24 @@ export const KERALA_MAP: MapData = {
     n: { t: 'bench', solid: true },
     j: { t: 'pot', solid: true },
     i: { t: 'tuft' },
+    N: { t: 'nilavilakku', solid: true, tall: true },
+    U: { t: 'umbrellas', solid: true },
+    J: { t: 'jacktree', solid: true, tall: true },
+    e: { t: 'peppervine', solid: true, tall: true },
+    G: { t: 'glassrack', solid: true },
+    W: { t: 'cricketwall', solid: true, tall: true },
+    t: { t: 'tennisball' },
+    o: { t: 'oars', solid: true, tall: true },
+    S: { t: 'spicesacks', solid: true, tall: true },
+    B: { t: 'postbox', solid: true, tall: true },
+    l: { t: 'lungiline', solid: true, tall: true },
+    h: { t: 'huskpile' },
+    y: { t: 'hyacinth' },
+    Y: { t: 'waterlily' },
+    a: { t: 'anthill', solid: true },
+    s: { t: 'busstop', solid: true, tall: true },
+    r: { t: 'posterwall', solid: true, tall: true },
+    f: { t: 'fallennut' },
   },
   ground,
   objects,
@@ -161,6 +211,9 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
     p: { t: 'pot', solid: true },
     m: { t: 'mat' },
     r: { t: 'rug' },
+    g: { t: 'ammi', solid: true },
+    l: { t: 'leafstack', solid: true },
+    c: { t: 'keralacat', solid: true },
   },
   ground: [
     '..............',
@@ -176,13 +229,13 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
   ],
   objects: [
     '###S#S####S###',
-    '#a p p       #',
+    '#a p p      g#',
     '#            #',
     '#  sTTTTs    #',
     '#            #',
     '#   mmmm     #',
     '#            #',
-    '#     r      #',
+    '#l    r     c#',
     '#            #',
     '#######m######',
   ],
