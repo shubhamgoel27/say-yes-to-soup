@@ -37,8 +37,9 @@ export class Textbox {
   constructor(
     private els: Els,
     private state: GameState,
-    /** Called once per newly revealed character (for the typewriter tick). */
-    private onType?: () => void,
+    /** Called once per newly revealed character, with the speaker (if any),
+     * so the tick can babble in the speaker's language. */
+    private onType?: (who?: string) => void,
   ) {}
 
   get isOpen(): boolean {
@@ -114,7 +115,7 @@ export class Textbox {
     this.shown = Math.min(line.text.length, this.shown + dt * CHARS_PER_SEC);
     const now = Math.floor(this.shown);
     this.els.text.textContent = line.text.slice(0, now);
-    if (now > before) this.onType?.();
+    if (now > before) this.onType?.(line.who);
     if (this.shown >= line.text.length) this.finishLine();
   }
 

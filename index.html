@@ -300,6 +300,22 @@
         opacity: 0.75;
       }
       .j-thread-to { font-size: 12px; font-style: normal; color: #a3542f; margin-top: 6px; }
+      .j-native { font-size: 15px; color: #7a5a3a; margin-left: 8px; font-weight: normal; }
+      .j-route { flex: 1; overflow-y: auto; padding-right: 8px; }
+      .j-route-stop { padding: 4px 2px; opacity: 0.55; }
+      .j-route-stop.been { opacity: 0.85; }
+      .j-route-stop.here { opacity: 1; }
+      .j-route-head { display: flex; align-items: baseline; gap: 8px; }
+      .j-route-glyph { width: 16px; text-align: center; color: #c1512f; }
+      .j-route-name { font-size: 15.5px; }
+      .j-route-stop.here .j-route-name { color: var(--ink); font-weight: 600; }
+      .j-route-hop { font-size: 12px; font-style: italic; color: #8a7455; }
+      .j-route-nani { font-size: 12.5px; font-style: italic; color: #8a7455; margin: 1px 0 2px 24px; }
+      .j-route-nani.empty { opacity: 0.6; }
+      .j-route-stitch {
+        width: 2px; height: 8px; margin-left: 9px;
+        background: repeating-linear-gradient(180deg, #b59a72 0 3px, transparent 3px 6px);
+      }
       .j-tasks { flex: 1; overflow-y: auto; padding-right: 6px; }
       .j-task {
         font-size: 14px;

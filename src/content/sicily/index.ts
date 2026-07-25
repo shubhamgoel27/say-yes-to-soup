@@ -68,7 +68,7 @@ export const CHAPTER: ChapterDef = {
   ],
   recall: RECALL,
   meta: {
-    sicily: { scene: 'outdoor', mood: 'ciclopi' },
+    sicily: { scene: 'outdoor', mood: 'ciclopi', moodDusk: 'passeggiata' },
     circolo: { scene: 'interior', mood: 'interior' },
   },
   moods: {

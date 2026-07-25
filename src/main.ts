@@ -31,9 +31,12 @@ import {
   NODES,
   NPCS,
   REGION_MAPS,
+  SIT_KINDS,
+  SIT_LINES,
   TASKS,
 } from './content/world';
 import { pickLetter } from './content/letters';
+import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 
 // ---------------------------------------------------------------- boot
@@ -80,6 +83,10 @@ if (override) {
   }
   if (override.at) player.placeAt(override.at[0], override.at[1], override.dir);
   else if (override.dir) player.face(override.dir);
+} else if (state.place && maps[state.place.map]) {
+  // The title screen idles over wherever the journey paused, not always home.
+  map = maps[state.place.map] as TileMap;
+  player.placeAt(state.place.x, state.place.y, state.place.dir as import('./engine/input').Dir);
 }
 
 function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
@@ -89,7 +96,27 @@ function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
 function moodFor(id: string): string {
   // The coast has two weathers: the garúa lid, and the noon the lid lifts.
   if (id === 'la-caleta') return dayT > 0.25 && dayT < 0.5 ? 'glare' : 'garua';
-  return MAP_META[id]?.mood ?? 'interior';
+  const meta = MAP_META[id];
+  if (!meta) return 'interior';
+  // Evening maps that declared a dusk light get to use it.
+  if (meta.moodDusk && nightLevel(dayT) > 0.3) return meta.moodDusk;
+  return meta.mood;
+}
+
+/** Which musical/linguistic coast each map belongs to. */
+const REGION_BY_MAP: Record<string, string> = {
+  village: 'andes', chicheria: 'andes', 'casa-carmen': 'andes', 'east-road': 'andes', 'la-bajada': 'andes',
+  'la-caleta': 'coast', picanteria: 'coast',
+  ship: 'ocean', galley: 'ocean',
+  shionoura: 'shionoura', minshuku: 'shionoura',
+  busan: 'busan', teahouse: 'busan',
+  kerala: 'kerala', 'mariamma-veedu': 'kerala',
+  zanzibar: 'zanzibar', kangashop: 'zanzibar',
+  sicily: 'sicily', circolo: 'sicily',
+  oaxaca: 'oaxaca', cocina: 'oaxaca', camposanto: 'velacion',
+};
+function regionFor(id: string): string {
+  return MAP_META[id]?.region ?? REGION_BY_MAP[id] ?? 'andes';
 }
 
 /** Ambient light per mood; interiors run dark so the fires carry the room. */
@@ -223,9 +250,9 @@ const textbox = new Textbox(
     choices: $('tb-choices'),
   },
   state,
-  () => audio.blip(),
+  (who) => audio.speak(who),
 );
-const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, state);
+const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'));
 const weave = new WeavePanel($('weave'), audio);
 
@@ -368,7 +395,9 @@ function moundsHere(): Sprite[] {
 }
 
 function villagersHere(): Villager[] {
-  return villagers.filter((v) => v.def.map === map.id);
+  // A villager with a `when` is only in town while it holds (travelers,
+  // homecomings). Everyone else simply lives here.
+  return villagers.filter((v) => v.def.map === map.id && state.check(v.def.when));
 }
 function spritesHere(): Sprite[] {
   return [playerSprite, ...villagersHere()];
@@ -473,6 +502,7 @@ function updateWarp(dt: number) {
         state.save();
         showPlate(map.name, 2600);
         audio.setScene(sceneFor(map.id));
+        audio.setRegion(regionFor(map.id));
         renderer.setMood(moodFor(map.id));
         stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
       }
@@ -633,6 +663,52 @@ function startNarration(nodeId: string) {
   textbox.open(NODES, nodeId, null, endDialogue);
 }
 
+// ---------------------------------------------------------------- sitting
+//
+// The game's thesis as a verb: press the button at a bench and simply stay.
+// The camera leans back, the band steps aside for the air, villagers keep
+// living, time moves a little faster, and thoughts drift past. Any key rises.
+
+let sitting = false;
+let sitT = 0;
+let sitLineIdx = 0;
+
+const DEFAULT_SIT_LINES = [
+  'You sit. Nobody needs you to be anywhere. It takes a minute to believe it.',
+  'The village goes on doing what villages do, at the speed they do it.',
+  'Somewhere behind you, someone laughs at something you will never know.',
+  'Nani used to say the best seat is the one you stop looking past.',
+];
+
+function startSitting() {
+  sitting = true;
+  sitT = 0;
+  sitLineIdx = 0;
+  player.frozen = true;
+  audio.setSitting(true);
+  toasts.show('you sit. (any key to rise)');
+}
+
+function standUp() {
+  sitting = false;
+  player.frozen = false;
+  audio.setSitting(false);
+}
+
+function updateSitting(dt: number) {
+  if (!sitting) return;
+  sitT += dt;
+  // Sitting is how you watch the light change: the day breathes faster.
+  if (!Number.isFinite(todOverride)) dayT = (dayT + (dt * 5) / DAY_LEN) % 1;
+  if (sitT > 5.5) {
+    sitT = 0;
+    const lines = SIT_LINES[map.id] ?? DEFAULT_SIT_LINES;
+    const line = lines[sitLineIdx % lines.length];
+    sitLineIdx++;
+    if (line) toasts.show(line);
+  }
+}
+
 function tryInteract() {
   const [fx, fy] = player.facingCell();
   const v = villagersHere().find((n) => {
@@ -653,6 +729,10 @@ function tryInteract() {
     }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
+  if (SIT_KINDS.has(kind)) {
+    startSitting();
+    return;
+  }
   const arm = EXAMINES[kind]?.find((a) => (!a.map || a.map === map.id) && state.check(a.when));
   if (arm) startNarration(arm.node);
 }
@@ -673,6 +753,7 @@ function beginPlay(freshStart: boolean) {
   }
   showPlate(map.name);
   audio.setScene(sceneFor(map.id));
+  audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
   if (freshStart) {
@@ -703,7 +784,11 @@ function update(dt: number) {
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
-  stage.setZoomTarget(textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen ? 1.06 : 1);
+  // Sitting pushes in slowly, like settling; dialogue leans in just a little.
+  stage.setZoomTarget(
+    sitting ? 1.15 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen ? 1.06 : 1,
+  );
+  updateSitting(dt);
   updateWarp(dt);
 
   // Chasca's camera: a quick white blink over the world.
@@ -788,6 +873,8 @@ function update(dt: number) {
       journalUI.close();
       audio.pageFlip();
     }
+  } else if (sitting) {
+    if (act || back || menuDir || journalKey || input.intent()) standUp();
   } else if (!warp) {
     if (journalKey) {
       journalUI.open();

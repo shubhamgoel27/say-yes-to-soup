@@ -69,7 +69,7 @@ export const CHAPTER: ChapterDef = {
   ],
   recall: RECALL,
   meta: {
-    shionoura: { scene: 'outdoor', mood: 'setouchi' },
+    shionoura: { scene: 'outdoor', mood: 'setouchi', moodDusk: 'tanabataNight' },
     minshuku: { scene: 'interior', mood: 'interior' },
   },
   moods: {

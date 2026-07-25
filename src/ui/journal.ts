@@ -1,6 +1,7 @@
 import type { GameState } from '../engine/state';
 import type { Dir } from '../engine/input';
 import type { JournalEntry, JournalTab, TaskDef } from '../content/schema';
+import type { RouteStop } from '../content/route';
 
 export type { TaskDef };
 
@@ -11,8 +12,9 @@ export type { TaskDef };
  * notice, never what.
  */
 
-const TABS: { id: JournalTab | 'tasks'; label: string }[] = [
+const TABS: { id: JournalTab | 'tasks' | 'route'; label: string }[] = [
   { id: 'tasks', label: 'Tasks' },
+  { id: 'route', label: 'Route' },
   { id: 'words', label: 'Words' },
   { id: 'dishes', label: 'Dishes' },
   { id: 'people', label: 'People' },
@@ -27,6 +29,7 @@ export class JournalUI {
     private root: HTMLElement,
     private entries: JournalEntry[],
     private tasks: TaskDef[],
+    private route: RouteStop[],
     private state: GameState,
   ) {}
 
@@ -92,7 +95,7 @@ export class JournalUI {
 
   private tabEntries(): JournalEntry[] {
     const t = TABS[this.tab]?.id;
-    if (t === 'tasks') return [];
+    if (t === 'tasks' || t === 'route') return [];
     return this.entries.filter((e) => e.tab === t);
   }
 
@@ -103,6 +106,10 @@ export class JournalUI {
   private render() {
     if (TABS[this.tab]?.id === 'tasks') {
       this.renderTasks();
+      return;
+    }
+    if (TABS[this.tab]?.id === 'route') {
+      this.renderRoute();
       return;
     }
     const all = this.tabEntries();
@@ -131,7 +138,7 @@ export class JournalUI {
 
     const rhyme = sel ? this.rhymeFor(sel.id) : null;
     const detailHtml = sel
-      ? `<div class="j-title">${sel.title}</div>` +
+      ? `<div class="j-title">${sel.title}${sel.script ? ` <span class="j-native">${sel.script}</span>` : ''}</div>` +
         (sel.sub ? `<div class="j-sub">${sel.sub}</div>` : '') +
         (sel.nani
           ? `<div class="j-nani"><span>Nani, 1974</span>${sel.nani}</div>`
@@ -160,6 +167,58 @@ export class JournalUI {
           <div class="j-detail">${detailHtml}</div>
         </div>
         <div class="j-hint">&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close</div>
+      </div>`;
+  }
+
+  /**
+   * The Route tab: her 1974 itinerary inside the front cover, inked over by
+   * your progress. After Sicily her pencil goes silent; the blank space shows.
+   */
+  private renderRoute() {
+    const tabsHtml = TABS.map(
+      (t, i) => `<span class="j-tab${i === this.tab ? ' on' : ''}">${t.label}</span>`,
+    ).join('');
+    const arrived = (s: RouteStop) => !s.arrived || this.state.check(s.arrived);
+    const completed = (s: RouteStop) => !!s.complete && this.state.check(s.complete);
+    // "Here" is the farthest stop reached that is not yet finished.
+    let hereIdx = 0;
+    this.route.forEach((s, i) => {
+      if (arrived(s)) hereIdx = i;
+    });
+    const rows = this.route
+      .map((s, i) => {
+        const been = arrived(s);
+        const done = completed(s);
+        const here = i === hereIdx && !this.state.check({ has: ['story.end'] });
+        const glyph = done ? '&#10022;' : here ? '&#9656;' : been ? '&middot;' : '&#9702;';
+        const cls = here ? ' here' : been ? ' been' : '';
+        const note = s.nani
+          ? `<div class="j-route-nani">${s.nani}</div>`
+          : been
+            ? `<div class="j-route-nani empty">(her pencil stops here)</div>`
+            : '';
+        return `<div class="j-route-stop${cls}">
+            <div class="j-route-head"><span class="j-route-glyph">${glyph}</span>
+            <span class="j-route-name">${s.name}</span>
+            <span class="j-route-hop">${s.hop}</span></div>
+            ${note}
+          </div>`;
+      })
+      .join('<div class="j-route-stitch"></div>');
+    const total = this.entries.length;
+    const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
+    this.root.innerHTML = `
+      <div class="j-book">
+        <div class="j-head">
+          <div class="j-name">Nani&rsquo;s Journal</div>
+          <div class="j-progress">${found} / ${total} pages</div>
+        </div>
+        <div class="j-tabs">${tabsHtml}</div>
+        <div class="j-body"><div class="j-route">
+          <div class="j-sub" style="margin-bottom:8px">Inside the front cover, in pencil, 1974:</div>
+          ${rows}
+        </div></div>
+        <div class="j-hint">&#8592;&#8594; sections &nbsp; J close</div>
       </div>`;
   }
 

@@ -29,6 +29,8 @@ export type NpcDef = {
   name: string;
   /** Which map this villager lives on. */
   map: string;
+  /** Present only while this holds: travelers arrive, homecomings happen. */
+  when?: Cond;
   pos: [number, number];
   /** Wander leash radius in tiles. 0 = stands still. */
   range: number;
@@ -58,6 +60,8 @@ export type JournalEntry = {
   id: string;
   tab: JournalTab;
   title: string;
+  /** The word in its own writing (ハングル, かな, മലയാളം...), shown beside the title. */
+  script?: string;
   /** Short gloss shown under the title. */
   sub?: string;
   /** Nani's faded 1974 entry. Absent = she never reached this page. */
@@ -122,8 +126,16 @@ export type MoodSpec = {
   noClouds?: boolean;
 };
 
-/** Per-map presentation: which music arrangement and which mood/atmosphere. */
-export type MapMeta = { scene: 'outdoor' | 'interior' | 'road'; mood: string };
+/** Per-map presentation: scene arrangement, mood, optional dusk mood swap,
+ * and the musical/voice region (defaults are assigned centrally by map). */
+export type MapMeta = {
+  scene: 'outdoor' | 'interior' | 'road';
+  mood: string;
+  /** When dusk falls, outdoors maps may change into their evening light. */
+  moodDusk?: string;
+  /** Music + babble region key; falls back to a central per-map table. */
+  region?: string;
+};
 
 /**
  * A hands-on mini-game panel. The chapter provides a factory; the engine owns
@@ -175,6 +187,13 @@ export type ChapterDef = {
   meta: Record<string, MapMeta>;
   /** Custom moods this chapter introduces, by name used in `meta`. */
   moods?: Record<string, MoodSpec>;
+  /**
+   * Sitting: per-map thoughts that drift by while the player rests on a bench
+   * (or baraza, or church step). Three to six lines per map, rotated.
+   */
+  sitLines?: Record<string, string[]>;
+  /** Extra tile kinds that count as sittable in this chapter's maps. */
+  sitKinds?: string[];
   /** Narration fired on first arrival: entering `map` runs `node` once.
    * `when` gates it (the Return reuses old maps and must wait its turn). */
   arrival?: { map: string; node: string; flag: string; when?: Cond };

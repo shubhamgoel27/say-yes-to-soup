@@ -104,6 +104,17 @@ export const MOODS: Record<string, MoodSpec> = Object.assign({}, ...CHAPTERS.map
 export const ARRIVALS = CHAPTERS.flatMap((c) => (c.arrival ? [c.arrival] : []));
 export const COMPLETIONS = CHAPTERS.flatMap((c) => (c.completion ? [c.completion] : []));
 
+/** Sitting: per-map resting thoughts, and which kinds invite you to sit. */
+export const SIT_LINES: Record<string, string[]> = Object.assign(
+  {},
+  ...CHAPTERS.map((c) => c.sitLines ?? {}),
+);
+export const SIT_KINDS = new Set<string>([
+  'bench',
+  'baraza',
+  ...CHAPTERS.flatMap((c) => c.sitKinds ?? []),
+]);
+
 /** Chapter manifests in play order; tests hold the ledger honest. */
 export const RECALLS: { chapter: string; recall: RecallManifest }[] = CHAPTERS.map((c) => ({
   chapter: c.id,

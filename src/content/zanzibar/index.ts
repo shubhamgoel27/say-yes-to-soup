@@ -84,7 +84,7 @@ export const CHAPTER: ChapterDef = {
   ],
   recall: RECALL,
   meta: {
-    zanzibar: { scene: 'outdoor', mood: 'tideout' },
+    zanzibar: { scene: 'outdoor', mood: 'tideout', moodDusk: 'dusklamp' },
     kangashop: { scene: 'interior', mood: 'interior' },
   },
   moods: {

@@ -308,7 +308,12 @@ export const NODES: NodeMap = {
   // ---------------- intro ----------------
   'intro.wake': {
     lines: [
-      { text: "Nani's journal, first page: \"Ch'aska Pampa. Start where the water is.\"" },
+      { text: 'The bus left you at the bottom of the valley an hour ago. The driver pointed uphill and said only: arriba.' },
+      { text: 'You grew up on her postcards. A camel with opinions. A sea the color of a bruise. "Eat first, ask after," in six languages.' },
+      { text: 'Then the postcards stopped being from elsewhere, and then, last winter, they stopped.' },
+      { text: 'The lawyer\'s envelope held no money and one journal, half full. Her note said the empty half was always yours.' },
+      { text: 'So: unpaid leave, one bag, her route. You told everyone it was a short trip. Nobody believed you, least of all the bag.' },
+      { text: "The journal's first page: \"Ch'aska Pampa. Start where the water is.\"" },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
     effects: ['set:intro.done'],
