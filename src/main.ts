@@ -259,6 +259,7 @@ function applyDressings() {
   }
 }
 applyDressings();
+renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
 
 // ---------------------------------------------------------------- ui
 
@@ -598,6 +599,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
+  renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
 }
 
@@ -928,6 +930,7 @@ function tryInteract() {
 type Mode = 'title' | 'letter' | 'play';
 let mode: Mode = 'title';
 let attractT = 0;
+let quietHud = false;
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
@@ -942,6 +945,7 @@ function beginPlay(freshStart: boolean) {
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
+  renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
   if (freshStart) {
     setTimeout(() => {
@@ -969,7 +973,6 @@ function update(dt: number) {
   if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
   renderer.setSun(dayT);
-  renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
@@ -981,10 +984,14 @@ function update(dt: number) {
     sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen ? 1.06 : 1,
   );
   // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
-  document.body.classList.toggle(
-    'quiet-hud',
-    mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen,
-  );
+  {
+    const quiet =
+      mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen;
+    if (quiet !== quietHud) {
+      quietHud = quiet;
+      document.body.classList.toggle('quiet-hud', quiet);
+    }
+  }
 
   // Whoever is mid-sentence leans into it.
   renderer.setSpeaker(textbox.isTyping && talkingTo ? talkingTo.actor : null);
@@ -1203,8 +1210,17 @@ function update(dt: number) {
     camera.follow(ppx, ppy, map.w, map.h);
   }
 
-  // Remember where we stand; persisted alongside the next save.
-  if (mode === 'play') state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
+  // Remember where we stand; persisted alongside the next save. Mutated in
+  // place: allocating a fresh object 60 times a second is how GC hitches start.
+  if (mode === 'play') {
+    if (!state.place) state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
+    else {
+      state.place.map = map.id;
+      state.place.x = player.x;
+      state.place.y = player.y;
+      state.place.dir = player.dir;
+    }
+  }
 
   dev.publish({
     mode,

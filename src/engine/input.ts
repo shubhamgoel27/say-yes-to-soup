@@ -55,6 +55,12 @@ export class Input {
     target.addEventListener('keyup', this.onUp);
     // Releasing focus mid-walk would otherwise leave a key stuck down forever.
     target.addEventListener('blur', this.releaseAll);
+    target.addEventListener('gamepadconnected', () => {
+      this.padSeen = true;
+    });
+    target.addEventListener('gamepaddisconnected', () => {
+      this.padSeen = (navigator.getGamepads?.() ?? []).some((p) => p && p.connected);
+    });
   }
 
   private onDown = (e: KeyboardEvent) => {
@@ -119,8 +125,12 @@ export class Input {
    * which covers every pad a cozy player is likely to own.
    */
   private padAwake = false;
+  private padSeen = false;
 
   pollGamepad() {
+    // navigator.getGamepads() every frame is measurable overhead; skip it
+    // entirely until the browser tells us a pad exists.
+    if (!this.padSeen) return;
     const pads = navigator.getGamepads?.() ?? [];
     const pad = pads.find((p) => p && p.connected && p.mapping === 'standard');
     // A resting controller with axis drift must not ghost-drive the menus:

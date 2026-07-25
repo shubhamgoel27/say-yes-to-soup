@@ -158,6 +158,10 @@ export class AudioBus {
   private windGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
+  /** One 3s noise buffer shared by every burst sound. Allocating a fresh
+   * buffer per footstep and per drum tick was a silent GC drip that showed
+   * up as stutter; now the noise is minted once and sliced forever. */
+  private sharedNoise: AudioBuffer | null = null;
   /** Creature calls and weather beds, separate from the wind loop. */
   private ambGain: GainNode | null = null;
   private rainGain: GainNode | null = null;
@@ -210,6 +214,8 @@ export class AudioBus {
       noise.connect(bp).connect(windGain).connect(master);
       noise.start();
       lfo.start();
+
+      this.sharedNoise = this.noiseBuffer(ctx, 3);
 
       const musicGain = ctx.createGain();
       musicGain.gain.value = 0.85 * this.mix.music;
@@ -308,10 +314,10 @@ export class AudioBus {
 
   /** A short noise burst through a filter: the percussion family. */
   private thud(freq: number, dur: number, vol: number, type: BiquadFilterType = 'lowpass') {
-    if (!this.ctx || !this.master) return;
+    if (!this.ctx || !this.master || !this.sharedNoise) return;
     const t = this.ctx.currentTime;
     const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer(this.ctx, dur + 0.05);
+    src.buffer = this.sharedNoise;
     const f = this.ctx.createBiquadFilter();
     f.type = type;
     f.frequency.value = freq;
@@ -319,8 +325,7 @@ export class AudioBus {
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     src.connect(f).connect(g).connect(this.sfxGain ?? this.master);
-    src.start(t);
-    src.stop(t + dur + 0.05);
+    src.start(t, Math.random() * 2.5, dur + 0.05);
   }
 
   /** Terrain-aware footstep: every coast underfoot sounds like itself, and no
@@ -502,8 +507,13 @@ export class AudioBus {
     this.babblePos = 0;
   }
 
-  /** Dialogue ducking: the band lowers its voice while someone talks. */
+  /** Dialogue ducking: the band lowers its voice while someone talks.
+   * Guarded: scheduling a gain ramp EVERY frame floods the automation
+   * timeline and stutters the whole page; only edges may schedule. */
+  private ducked = false;
   setDucked(on: boolean) {
+    if (on === this.ducked) return;
+    this.ducked = on;
     if (!this.musicGain || !this.ctx) return;
     const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1);
     this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, on ? 0.2 : 0.5);
@@ -595,9 +605,9 @@ export class AudioBus {
       osc.stop(when + dur + 0.05);
     };
     const tick = (freq: number, vol: number, dur: number) => {
-      if (!this.ctx || !this.musicGain) return;
+      if (!this.ctx || !this.musicGain || !this.sharedNoise) return;
       const src = this.ctx.createBufferSource();
-      src.buffer = this.noiseBuffer(this.ctx, dur + 0.05);
+      src.buffer = this.sharedNoise;
       const f = this.ctx.createBiquadFilter();
       f.type = 'bandpass';
       f.frequency.value = freq;
@@ -606,8 +616,7 @@ export class AudioBus {
       g.gain.setValueAtTime(vol, when);
       g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
       src.connect(f).connect(g).connect(this.musicGain);
-      src.start(when);
-      src.stop(when + dur + 0.05);
+      src.start(when, Math.random() * 2.5, dur + 0.05);
     };
     switch (kind) {
       case 'bombo':
@@ -723,7 +732,7 @@ export class AudioBus {
     if (!this.ctx || !this.ambGain) return;
     // A narrow hot buzz that swells and lets go.
     const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer(this.ctx, 3.2);
+    src.buffer = this.sharedNoise ?? this.noiseBuffer(this.ctx, 3.2);
     const bp = this.ctx.createBiquadFilter();
     bp.type = 'bandpass';
     bp.frequency.value = 5600;
@@ -768,7 +777,7 @@ export class AudioBus {
     if (!this.ctx || !this.ambGain) return;
     // A far-off pop and its little crackle: the valley celebrating something.
     const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer(this.ctx, 0.5);
+    src.buffer = this.sharedNoise ?? this.noiseBuffer(this.ctx, 0.5);
     const lp = this.ctx.createBiquadFilter();
     lp.type = 'lowpass';
     lp.frequency.value = 900;
