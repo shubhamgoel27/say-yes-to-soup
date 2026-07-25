@@ -276,9 +276,9 @@ const anyGameOpen = () => games.some((g) => g.panel.isOpen);
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
   const top = journalUI.activeTasks()[0];
-  if (top && !state.has('story.complete')) {
-    const brief = top.length > 84 ? `${top.slice(0, 81)}...` : top;
-    errandEl.textContent = brief;
+  // The chip shows whole thoughts; CSS clamps politely at two lines.
+  if (top && !state.has('story.end')) {
+    errandEl.textContent = top;
     errandEl.hidden = false;
   } else {
     errandEl.hidden = true;
@@ -522,9 +522,10 @@ function startWarp(trig: TriggerDef & { type: 'door' }) {
     const stop = ROUTE.find((s) => s.id === STOP_BY_MAP[trig.to]);
     const dest = REGION_MAPS[trig.to];
     journeyEl.innerHTML = `
-      <div class="jc-name">${dest?.name ?? stop?.name ?? ''}</div>
-      <div class="jc-rule"></div>
-      <div class="jc-hop">${stop?.hop ?? 'onward'}</div>`;
+      <div>
+        <div class="jc-stamp"><div class="jc-name">${dest?.name ?? stop?.name ?? ''}</div></div>
+        <div class="jc-hop">${stop?.hop ?? 'onward'}</div>
+      </div>`;
   }
 }
 
@@ -873,6 +874,11 @@ function update(dt: number) {
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   stage.setZoomTarget(
     sitting ? 1.15 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen ? 1.06 : 1,
+  );
+  // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
+  document.body.classList.toggle(
+    'quiet-hud',
+    mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen(),
   );
   updateSitting(dt);
   updateWarp(dt);

@@ -90,11 +90,17 @@ export class TitleScreen {
       .join('');
     this.titleEl.innerHTML = `
       <div class="t-card">
-        <div class="t-kicker">a journal, half full</div>
-        <div class="t-name">SAY YES<br>TO SOUP</div>
-        <div class="t-rule"></div>
-        <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
-        <div class="t-menu">${menu}</div>
+        <div class="t-cover">
+          <div class="t-band"></div>
+          <div class="t-kicker">a journal, half full</div>
+          <div class="t-name">SAY YES<br>TO SOUP</div>
+          <div class="t-bowl">
+            <span class="t-steam s1"></span><span class="t-steam s2"></span><span class="t-steam s3"></span>
+            <div class="bowl"></div>
+          </div>
+          <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
+          <div class="t-menu">${menu}</div>
+        </div>
         <div class="t-controls">
           <span><b>&#8592;&#8593;&#8595;&#8594;</b> / WASD&nbsp; walk</span>
           <span><b>Space</b> / Z&nbsp; talk &amp; touch things</span>
