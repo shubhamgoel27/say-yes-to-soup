@@ -767,6 +767,7 @@ function startNpcDialogue(v: Villager) {
     pets++;
     renderer.emote(v.actor, '♥');
     audio.pet();
+    renderer.bounce(v.actor);
     if (pets === 13) toasts.show('✦ 13/10. would pet again');
     const node = PET_NODES[Math.min(PET_NODES.length - 1, Math.floor((pets - 1) / 2))] ?? 'allqu.pet1';
     player.frozen = true;
@@ -786,6 +787,7 @@ function startNpcDialogue(v: Villager) {
   player.frozen = true;
   talkingTo = v;
   renderer.emote(v.actor, '!');
+  if (!v.def.sprite) renderer.wave(v.actor);
   if (v.def.sprite === 'dog') audio.bark();
   else if (v.def.sprite) audio.hum();
   textbox.open(NODES, entry.node, v.portrait, endDialogue);
@@ -818,6 +820,7 @@ function startSitting() {
   sitT = 0;
   sitLineIdx = 0;
   player.frozen = true;
+  player.pose = 'sit';
   audio.setSitting(true);
   toasts.show('you sit. (any key to rise)');
 }
@@ -825,6 +828,7 @@ function startSitting() {
 function standUp() {
   sitting = false;
   player.frozen = false;
+  player.pose = 'none';
   audio.setSitting(false);
 }
 
@@ -929,6 +933,35 @@ function update(dt: number) {
     'quiet-hud',
     mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen(),
   );
+
+  // Whoever is mid-sentence leans into it.
+  renderer.setSpeaker(textbox.isTyping && talkingTo ? talkingTo.actor : null);
+
+  // The curiosity dot: does the cell you face have anything to say?
+  if (mode === 'play' && !textbox.isOpen && !journalUI.isOpen && !sitting && !warp && !anyGameOpen()) {
+    const [fx, fy] = player.facingCell();
+    const npcThere = villagersHere().some((v) => {
+      const [ox, oy] = v.actor.occupies();
+      return ox === fx && oy === fy;
+    });
+    // Only THINGS earn the dot (props, seats, mounds, people); bare ground
+    // still answers when examined, but quietly, undiscovered on purpose.
+    const objKind = map.object(fx, fy)?.t;
+    const digThere =
+      map.id === 'village' &&
+      state.has('dig.invite') &&
+      !state.has('dig.done') &&
+      DIG_SPOTS.some((sp) => sp.at[0] === fx && sp.at[1] === fy && !state.has(sp.flag));
+    const examThere =
+      digThere ||
+      (objKind !== undefined &&
+        objKind !== 'blocked' &&
+        (SIT_KINDS.has(objKind) ||
+          (EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false)));
+    renderer.setHint(npcThere || examThere ? [fx, fy] : null);
+  } else {
+    renderer.setHint(null);
+  }
   updateSitting(dt);
   updateWarp(dt);
 

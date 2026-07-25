@@ -50,6 +50,11 @@ export class Textbox {
     return this.isOpen ? this.nodeId : '';
   }
 
+  /** True while the typewriter is still revealing the current line. */
+  get isTyping(): boolean {
+    return this.isOpen && this.typing;
+  }
+
   open(nodes: NodeMap, startId: string, portrait: HTMLCanvasElement | null, onClose?: () => void) {
     this.nodes = nodes;
     this.portraitCv = portrait;

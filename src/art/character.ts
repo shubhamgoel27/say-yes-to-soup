@@ -11,7 +11,7 @@ import { dot, outlineSheet, oval, rr, shade, surface, vgrad } from './pix';
 export const CHAR_W = 20;
 export const CHAR_H = 32;
 /** Sheet columns: 0-5 = six-frame walk (0 doubles as idle), 6 = blink. */
-export const CHAR_COLS = 7;
+export const CHAR_COLS = 9; // 0-5 walk, 6 blink, 7 sit, 8 wave
 
 export const DIR_ROW = { down: 0, up: 1, left: 2, right: 3 } as const;
 
@@ -77,11 +77,16 @@ function drawPose(g: CanvasRenderingContext2D, look: Look, dir: 'down' | 'up' | 
     g.translate(-AW / 2, -126);
   }
   const blink = frame === 6;
-  const f = blink ? 0 : frame;
+  const sit = frame === 7;
+  const wave = frame === 8;
+  const f = frame >= 6 ? 0 : frame;
   const BOB = [0, -3, 0, 0, -3, 0] as const;
-  const bob = BOB[f] ?? 0;
+  const bob = sit ? 4 : (BOB[f] ?? 0);
   const SWING = [1, 0, -1, -1, 0, 1] as const;
-  const swing = SWING[f] ?? 0;
+  const swing = sit || wave ? 0 : (SWING[f] ?? 0);
+
+  // Sitting settles the whole figure toward the bench.
+  if (sit) g.translate(0, 10);
 
   const cx = AW / 2;
   const clothDark = shade(look.cloth, -0.2);
@@ -109,7 +114,40 @@ function drawPose(g: CanvasRenderingContext2D, look: Look, dir: 'down' | 'up' | 
     g.lineTo(lx + fwd + 1.5, 121 - lift);
     g.stroke();
   };
-  if (dir === 'left') {
+  if (sit) {
+    // Folded knees peeking out, shoes together: the international rest pose.
+    g.strokeStyle = leg;
+    g.lineWidth = 9;
+    g.lineCap = 'round';
+    if (dir === 'left') {
+      g.beginPath();
+      g.moveTo(cx - 2, legY + 4);
+      g.lineTo(cx + 9, legY + 6);
+      g.stroke();
+      g.strokeStyle = shoe;
+      g.lineWidth = 8;
+      g.beginPath();
+      g.moveTo(cx + 9, legY + 12);
+      g.lineTo(cx + 10.5, legY + 12);
+      g.stroke();
+    } else {
+      for (const lx of [cx - 8, cx + 8]) {
+        g.beginPath();
+        g.moveTo(lx, legY + 4);
+        g.lineTo(lx, legY + 7);
+        g.stroke();
+      }
+      g.strokeStyle = shoe;
+      g.lineWidth = 8;
+      for (const lx of [cx - 8, cx + 8]) {
+        g.beginPath();
+        g.moveTo(lx, legY + 12);
+        g.lineTo(lx + 1.5, legY + 12);
+        g.stroke();
+      }
+      g.strokeStyle = leg;
+    }
+  } else if (dir === 'left') {
     drawLeg(cx + 2, swing < 0 ? 5 : 0, swing * 6);
     drawLeg(cx - 4, swing > 0 ? 5 : 0, -swing * 6);
   } else {
@@ -202,7 +240,15 @@ function drawPose(g: CanvasRenderingContext2D, look: Look, dir: 'down' | 'up' | 
     dot(g, 0, 28, 4.4, skinShade); // hand
     g.restore();
   };
-  if (dir === 'left') {
+  if (wave) {
+    // One arm up in greeting, palm open; the other rests.
+    if (dir === 'left') {
+      drawArm(cx - 2, 2.6, clothDark);
+    } else {
+      drawArm(cx - 19, -0.1, dir === 'up' ? clothDark : shade(look.cloth, -0.08));
+      drawArm(cx + 19, 2.7, dir === 'up' ? clothDark : shade(look.cloth, -0.08));
+    }
+  } else if (dir === 'left') {
     drawArm(cx - 2, swing * 0.5, clothDark);
   } else {
     drawArm(cx - 19, -swing * 0.4, dir === 'up' ? clothDark : shade(look.cloth, -0.08));

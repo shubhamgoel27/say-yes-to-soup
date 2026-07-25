@@ -33,6 +33,8 @@ export class Actor {
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
   frozen = false;
+  /** Transient body pose: 'sit' folds the legs and settles the figure. */
+  pose: 'none' | 'sit' = 'none';
 
   constructor(x: number, y: number, dir: Dir = 'down') {
     this.x = x;

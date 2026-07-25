@@ -61,6 +61,13 @@ export class Renderer {
   private fireScreen: [number, number][] = [];
   /** Scratch cell for per-sprite compositing (fire rim). */
   private scratch = surface(AW, AH);
+  /** Greeting waves and happy hops, keyed by actor, counted down in tick. */
+  private waves = new Map<Actor, number>();
+  private bounces = new Map<Actor, number>();
+  /** Whoever is mid-sentence bobs gently. */
+  private speaker: Actor | null = null;
+  /** The facing-cell hint: a quiet pulse over whatever would respond. */
+  private hint: [number, number] | null = null;
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -120,6 +127,34 @@ export class Renderer {
     this.emotes = this.emotes.filter((e) => e.t < EMOTE_DUR);
     for (const p of this.puffs) p.t += dt;
     this.puffs = this.puffs.filter((p) => p.t < PUFF_DUR);
+    for (const [a, t] of this.waves) {
+      if (t - dt <= 0) this.waves.delete(a);
+      else this.waves.set(a, t - dt);
+    }
+    for (const [a, t] of this.bounces) {
+      if (t - dt <= 0) this.bounces.delete(a);
+      else this.bounces.set(a, t - dt);
+    }
+  }
+
+  /** A raised-arm hello, played as dialogue opens. */
+  wave(actor: Actor) {
+    this.waves.set(actor, 0.9);
+  }
+
+  /** A happy little hop (petting, gifts, good news). */
+  bounce(actor: Actor) {
+    this.bounces.set(actor, 0.45);
+  }
+
+  /** The actor currently mid-sentence, or null. */
+  setSpeaker(actor: Actor | null) {
+    this.speaker = actor;
+  }
+
+  /** World tile that would respond to the action button, or null. */
+  setHint(cell: [number, number] | null) {
+    this.hint = cell;
   }
 
   /** Pop a little thought bubble over someone's head. */
@@ -237,6 +272,24 @@ export class Renderer {
     }
     layers.sort((a, b) => a.sort - b.sort);
     for (const l of layers) l.draw();
+
+    // The quiet cursor of curiosity: a breathing dot over what would answer.
+    if (this.hint) {
+      const [hx, hy] = this.hint;
+      const x = (hx * TILE + TILE / 2 - cam.x) * A;
+      const y = (hy * TILE - cam.y) * A - 10;
+      const pulse = 0.5 + Math.sin(this.time * 3.2) * 0.5;
+      ctx.save();
+      ctx.globalAlpha = 0.4 + pulse * 0.3;
+      ctx.fillStyle = '#f2e6d0';
+      ctx.strokeStyle = 'rgba(38,26,16,0.6)';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(x, y - pulse * 3, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
 
     this.drawPuffs(cam);
     this.drawEmotes(cam);
@@ -510,21 +563,34 @@ export class Renderer {
       ctx.drawImage(cv, dx, dy + ddy);
     };
 
+    // Happy hops and speaking bobs ride on top of any pose.
+    const bounceT = this.bounces.get(s.actor) ?? 0;
+    const hop = bounceT > 0 ? -Math.sin((1 - bounceT / 0.45) * Math.PI) * 7 : 0;
+    const speakBob = this.speaker === s.actor ? Math.sin(this.time * 9) * 1.6 : 0;
+    const lift = hop + speakBob;
+
     if (s.rig === 'animal') {
       const col = s.actor.walkFrame();
       mirror(col);
-      drawLit(col, 0);
+      drawLit(col, lift);
       return;
     }
 
     // Humans: six-frame walk; at rest, a slow breath and the occasional blink.
+    // A seated pose overrides the legs entirely; a wave overrides the arms.
     const idle = !s.actor.isMoving;
     let col = idle ? 0 : s.actor.walkFrame6();
     if (idle && s.actor.dir === 'down' && ((this.time + index * 1.37) % 4.1) < 0.14) {
       col = 6; // blink
     }
+    if (idle && (this.waves.get(s.actor) ?? 0) > 0) col = 8;
+    if (s.actor.pose === 'sit') {
+      mirror(7);
+      drawLit(7, lift);
+      return;
+    }
     mirror(col);
-    if (idle) {
+    if (idle && lift === 0 && col !== 8) {
       const breathe = Math.sin((this.time + index * 0.9) * 2.6) * 1.6;
       if (breathe > 0.4) {
         const split = 18 * A;
@@ -534,7 +600,7 @@ export class Renderer {
         return;
       }
     }
-    drawLit(col, 0);
+    drawLit(col, lift);
   }
 
   /** Nearest fire within reach, as direction + falloff. */
