@@ -18,6 +18,9 @@ export class Camera {
     const k = 1 - Math.exp(-dt * 1.6); // slow drift, never a jerk
     this.leadX += (dirX * MAX - this.leadX) * k;
     this.leadY += (dirY * MAX - this.leadY) * k;
+    // Fully settled is fully still: no sub-pixel breathing at rest.
+    if (dirX === 0 && Math.abs(this.leadX) < 0.05) this.leadX = 0;
+    if (dirY === 0 && Math.abs(this.leadY) < 0.05) this.leadY = 0;
   }
 
   /** Drop the lookahead instantly (map changes, cutscenes). */
@@ -38,9 +41,11 @@ export class Camera {
     x = worldW <= VIEW_W ? (worldW - VIEW_W) / 2 : clamp(x, 0, worldW - VIEW_W);
     y = worldH <= VIEW_H ? (worldH - VIEW_H) / 2 : clamp(y, 0, worldH - VIEW_H);
 
-    // Whole pixels only. Sub-pixel camera offsets make pixel art shimmer.
-    this.x = Math.round(x);
-    this.y = Math.round(y);
+    // Sub-pixel camera: the smooth-art renderer is antialiased at 4x, so
+    // fractional scroll is glassy. (Whole-pixel snapping made every ease-out
+    // land as discrete 4-device-px jumps: the post-stop stutter.)
+    this.x = x;
+    this.y = y;
   }
 }
 

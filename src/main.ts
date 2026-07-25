@@ -1227,6 +1227,7 @@ function update(dt: number) {
     map: map.id,
     tile: [player.x, player.y],
     px: player.renderPos(),
+    cam: [camera.x, camera.y],
     dir: player.dir,
     facing: player.facingCell(),
     dialogue: textbox.currentNode,

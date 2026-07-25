@@ -180,11 +180,24 @@ describe('Camera', () => {
     assert.equal(cam.y, Math.round((6 * TILE - VIEW_H) / 2));
   });
 
-  it('always lands on whole pixels', () => {
+  it('follows fractionally, so eased motion never quantizes into jumps', () => {
     const cam = new Camera();
     cam.follow(30 * TILE + 7.3, 25 * TILE + 2.9, bigW, bigH);
-    assert.equal(cam.x % 1, 0);
-    assert.equal(cam.y % 1, 0);
-    assert.ok(VIEW_W > 0 && VIEW_H > 0);
+    assert.equal(cam.x, 30 * TILE + 7.3 + TILE / 2 - VIEW_W / 2);
+    assert.equal(cam.y, 25 * TILE + 2.9 + TILE / 2 - VIEW_H / 2);
+  });
+
+  it('lookahead decays to exactly zero at rest (no endless sub-pixel drift)', () => {
+    const cam = new Camera();
+    for (let i = 0; i < 60; i++) cam.lead(1, 0, 1 / 60); // walk right one second
+    const px = 30 * TILE;
+    const py = 25 * TILE;
+    cam.follow(px, py, bigW, bigH);
+    const ahead = cam.x;
+    for (let i = 0; i < 600; i++) cam.lead(0, 0, 1 / 60); // stand still
+    cam.follow(px, py, bigW, bigH);
+    assert.ok(cam.x < ahead, 'camera eased back after stopping');
+    const centered = px + TILE / 2 - VIEW_W / 2;
+    assert.equal(cam.x, centered); // snapped, not asymptotically wandering
   });
 });

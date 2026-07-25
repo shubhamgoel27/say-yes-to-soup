@@ -591,8 +591,10 @@ export class Renderer {
     reflect: { x: number; y: number; w: number; h: number } | null = null,
   ) {
     const ctx = this.ctx;
-    const sx = Math.round(sxf);
-    const sy = Math.round(syf);
+    // Fractional positions: sprites glide with the sub-pixel camera instead
+    // of ticking against it.
+    const sx = sxf;
+    const sy = syf;
     // A directional cast shadow: the figure stands IN the light, not on a dot.
     this.castShadow(sx + S / 2, sy + S - 6, 30, 0.24);
 
