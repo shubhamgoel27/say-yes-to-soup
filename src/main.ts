@@ -96,6 +96,8 @@ function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
 function moodFor(id: string): string {
   // The coast has two weathers: the garúa lid, and the noon the lid lifts.
   if (id === 'la-caleta') return dayT > 0.25 && dayT < 0.5 ? 'glare' : 'garua';
+  // Kerala's monsoon arrives mid-chapter and then it simply rains.
+  if (id === 'kerala' && state.has('c6.rain')) return 'monsoon';
   const meta = MAP_META[id];
   if (!meta) return 'interior';
   // Evening maps that declared a dusk light get to use it.
@@ -466,61 +468,142 @@ function updateVillager(v: Villager, dt: number) {
 }
 
 // ---------------------------------------------------------------- doors
+//
+// Two transitions. Doors within a region iris: the classic circle wipe,
+// closing on where you were and opening on where you are. Crossing INTO a
+// new region is a journey: fade out, hold on a quiet card with the place's
+// name and how you got there (in Nani's route words), then arrive. The road
+// between chapters should feel like distance, not like a cut.
 
-const FADE_DUR = 0.22;
-let warp: { t: number; phase: 'out' | 'in'; to: TriggerDef & { type: 'door' } } | null = null;
+const IRIS_DUR = 0.3;
+const JOURNEY_OUT = 0.5;
+const JOURNEY_HOLD = 2.6;
+const JOURNEY_IN = 0.7;
+
+/** The Route stop that describes arriving at a given map, for journey cards. */
+const STOP_BY_MAP: Record<string, string> = {
+  'la-caleta': 'la-caleta', ship: 'crossing', shionoura: 'shionoura', busan: 'busan',
+  kerala: 'kerala', zanzibar: 'zanzibar', sicily: 'sicily', oaxaca: 'oaxaca',
+};
+
+type Warp = {
+  t: number;
+  phase: 'out' | 'hold' | 'in';
+  to: TriggerDef & { type: 'door' };
+  style: 'iris' | 'journey';
+};
+let warp: Warp | null = null;
+
+const irisEl = $('iris');
+const journeyEl = $('journeycard');
+
+/** Radius (vmax units) that fully clears the screen for the iris hole. */
+const IRIS_MAX = 75;
+
+function setIris(k: number) {
+  // k = 1 fully open (invisible), k = 0 fully closed (black).
+  if (k >= 1) {
+    irisEl.style.display = 'none';
+    return;
+  }
+  irisEl.style.display = 'block';
+  irisEl.style.boxShadow = `0 0 0 200vmax #17120e`;
+  irisEl.style.width = `${IRIS_MAX * 2 * k}vmax`;
+  irisEl.style.height = `${IRIS_MAX * 2 * k}vmax`;
+}
 
 function startWarp(trig: TriggerDef & { type: 'door' }) {
   if (warp) return;
-  warp = { t: 0, phase: 'out', to: trig };
+  const style = regionFor(map.id) !== regionFor(trig.to) ? 'journey' : 'iris';
+  warp = { t: 0, phase: 'out', to: trig, style };
   player.frozen = true;
   audio.door();
+  if (style === 'journey') {
+    const stop = ROUTE.find((s) => s.id === STOP_BY_MAP[trig.to]);
+    const dest = REGION_MAPS[trig.to];
+    journeyEl.innerHTML = `
+      <div class="jc-name">${dest?.name ?? stop?.name ?? ''}</div>
+      <div class="jc-rule"></div>
+      <div class="jc-hop">${stop?.hop ?? 'onward'}</div>`;
+  }
+}
+
+/** The map swap at the dark middle of any transition. */
+function arriveAt(trig: TriggerDef & { type: 'door' }) {
+  const dest = maps[trig.to];
+  if (!dest) return;
+  map = dest;
+  player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
+  // A befriended dog refuses to be door-blocked; it simply arrives too.
+  if (dog && state.has('allqu.friend')) {
+    dog.def.map = map.id;
+    const spots: [number, number][] = [
+      [player.x, player.y + 1],
+      [player.x - 1, player.y],
+      [player.x + 1, player.y],
+      [player.x, player.y - 1],
+    ];
+    const free = spots.find(([x, y]) => !map.solid(x, y));
+    if (free) dog.actor.placeAt(free[0], free[1], player.dir);
+  }
+  camera.resetLead();
+  const [px, py] = player.renderPos();
+  camera.follow(px, py, map.w, map.h);
+  state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
+  state.save();
+  showPlate(map.name, 2600);
+  audio.setScene(sceneFor(map.id));
+  audio.setRegion(regionFor(map.id));
+  renderer.setMood(moodFor(map.id));
+  stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
+}
+
+function endWarp() {
+  warp = null;
+  player.frozen = false;
+  fadeEl.style.opacity = '0';
+  journeyEl.classList.remove('show');
+  setIris(1);
+  // First footfall in a new chapter gets its narration.
+  const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
+  if (arr && !textbox.isOpen) startNarration(arr.node);
 }
 
 function updateWarp(dt: number) {
   if (!warp) return;
   warp.t += dt;
-  if (warp.phase === 'out') {
-    fadeEl.style.opacity = String(Math.min(1, warp.t / FADE_DUR));
-    if (warp.t >= FADE_DUR) {
-      const dest = maps[warp.to.to];
-      if (dest) {
-        map = dest;
-        player.placeAt(warp.to.spawn[0], warp.to.spawn[1], warp.to.facing ?? 'down');
-        // A befriended dog refuses to be door-blocked; it simply arrives too.
-        if (dog && state.has('allqu.friend')) {
-          dog.def.map = map.id;
-          const spots: [number, number][] = [
-            [player.x, player.y + 1],
-            [player.x - 1, player.y],
-            [player.x + 1, player.y],
-            [player.x, player.y - 1],
-          ];
-          const free = spots.find(([x, y]) => !map.solid(x, y));
-          if (free) dog.actor.placeAt(free[0], free[1], player.dir);
-        }
-        const [px, py] = player.renderPos();
-        camera.follow(px, py, map.w, map.h);
-        state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
-        state.save();
-        showPlate(map.name, 2600);
-        audio.setScene(sceneFor(map.id));
-        audio.setRegion(regionFor(map.id));
-        renderer.setMood(moodFor(map.id));
-        stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
+
+  if (warp.style === 'iris') {
+    if (warp.phase === 'out') {
+      setIris(Math.max(0, 1 - warp.t / IRIS_DUR));
+      if (warp.t >= IRIS_DUR) {
+        arriveAt(warp.to);
+        warp = { ...warp, t: 0, phase: 'in' };
       }
-      warp = { t: 0, phase: 'in', to: warp.to };
+    } else {
+      setIris(Math.min(1, warp.t / IRIS_DUR));
+      if (warp.t >= IRIS_DUR) endWarp();
+    }
+    return;
+  }
+
+  // The journey: out, a held breath with the card, in.
+  if (warp.phase === 'out') {
+    fadeEl.style.opacity = String(Math.min(1, warp.t / JOURNEY_OUT));
+    if (warp.t >= JOURNEY_OUT) {
+      arriveAt(warp.to);
+      journeyEl.classList.add('show');
+      warp = { ...warp, t: 0, phase: 'hold' };
+    }
+  } else if (warp.phase === 'hold') {
+    fadeEl.style.opacity = '1';
+    if (warp.t >= JOURNEY_HOLD) {
+      journeyEl.classList.remove('show');
+      warp = { ...warp, t: 0, phase: 'in' };
     }
   } else {
-    fadeEl.style.opacity = String(Math.max(0, 1 - warp.t / FADE_DUR));
-    if (warp.t >= FADE_DUR) {
-      warp = null;
-      player.frozen = false;
-      fadeEl.style.opacity = '0';
-      // First footfall in a new chapter gets its narration.
-      const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
-      if (arr && !textbox.isOpen) startNarration(arr.node);
-    }
+    fadeEl.style.opacity = String(Math.max(0, 1 - warp.t / JOURNEY_IN));
+    if (warp.t >= JOURNEY_IN) endWarp();
   }
 }
 
@@ -886,6 +969,11 @@ function update(dt: number) {
       tryInteract();
     } else {
       const intent = dev.heldOverride() ?? input.intent();
+      // The camera leans a little into sustained walking, easing home at rest.
+      const lead = intent
+        ? { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[intent]
+        : [0, 0];
+      camera.lead(lead?.[0] ?? 0, lead?.[1] ?? 0, dt);
       const prevX = player.x;
       const prevY = player.y;
       const ev = player.update(dt, { intent, blocked: blockedFor(player) });

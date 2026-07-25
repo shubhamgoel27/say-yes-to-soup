@@ -232,6 +232,14 @@
         color: var(--ink);
         padding: 14px 18px 10px;
         line-height: 1.45;
+        animation: bookOpen 0.22s ease-out;
+      }
+      @keyframes bookOpen {
+        from { transform: translateY(10px) scale(0.96); opacity: 0; }
+        to { transform: none; opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .j-book, .letter-paper, .w-panel { animation: none !important; }
       }
       .j-head { display: flex; justify-content: space-between; align-items: baseline; }
       .j-name { font-size: 19px; letter-spacing: 0.04em; }
@@ -350,6 +358,27 @@
         place-items: center;
         background: rgba(19, 14, 10, 0.82);
       }
+      /* The star plain, remembered: a slow drift of faint stars over the title. */
+      #title::before {
+        content: '';
+        position: absolute;
+        inset: -20% 0 0 0;
+        pointer-events: none;
+        background-image:
+          radial-gradient(1.6px 1.6px at 12% 22%, rgba(242,230,208,0.8), transparent 60%),
+          radial-gradient(1.2px 1.2px at 34% 64%, rgba(242,230,208,0.55), transparent 60%),
+          radial-gradient(2px 2px at 56% 18%, rgba(232,220,196,0.7), transparent 60%),
+          radial-gradient(1.2px 1.2px at 71% 47%, rgba(242,230,208,0.5), transparent 60%),
+          radial-gradient(1.7px 1.7px at 88% 28%, rgba(242,230,208,0.75), transparent 60%),
+          radial-gradient(1.2px 1.2px at 22% 82%, rgba(242,230,208,0.45), transparent 60%),
+          radial-gradient(1.5px 1.5px at 64% 84%, rgba(242,230,208,0.6), transparent 60%),
+          radial-gradient(1.2px 1.2px at 45% 38%, rgba(242,230,208,0.5), transparent 60%),
+          radial-gradient(1.8px 1.8px at 79% 68%, rgba(242,230,208,0.65), transparent 60%);
+        animation: starDrift 90s linear infinite, starBreathe 5s ease-in-out infinite;
+      }
+      @keyframes starDrift { from { transform: translateY(0); } to { transform: translateY(12%); } }
+      @keyframes starBreathe { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { #title::before { animation: none; } }
       #title[hidden], #letter[hidden], #journal[hidden], #textbox[hidden] { display: none; }
       .t-card { text-align: center; color: #e8dcc4; padding: 0 24px; }
       .t-kicker {
@@ -399,6 +428,11 @@
         box-shadow: 4px 4px 0 rgba(43, 33, 24, 0.5), 0 0 70px rgba(0, 0, 0, 0.55);
         padding: 26px 32px 14px;
         color: #3d3022;
+        animation: letterOpen 0.4s ease-out;
+      }
+      @keyframes letterOpen {
+        from { transform: translateY(16px) rotate(-0.6deg) scale(0.97); opacity: 0; }
+        to { transform: none; opacity: 1; }
       }
       .letter-body { font-style: italic; font-size: 15.5px; line-height: 1.55; }
       .letter-body p { margin: 0 0 12px; }
@@ -432,6 +466,7 @@
         padding: 14px 20px 12px;
         color: var(--ink);
         text-align: center;
+        animation: bookOpen 0.2s ease-out;
       }
       .w-title { font-size: 17px; letter-spacing: 0.12em; margin-bottom: 8px; }
       .w-cloth {
@@ -528,6 +563,50 @@
         pointer-events: none;
       }
 
+      /* ---- the iris wipe: a hole in the dark, closing and opening ---- */
+      #iris {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        pointer-events: none;
+        display: none;
+      }
+
+      /* ---- the journey card: a held breath between regions ---- */
+      #journeycard {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.55s ease;
+        color: #e8dcc4;
+      }
+      #journeycard.show { opacity: 1; }
+      .jc-name {
+        font-size: clamp(26px, 4.4vw, 44px);
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+      }
+      .jc-rule {
+        width: 120px;
+        height: 3px;
+        margin: 14px auto 12px;
+        border-radius: 2px;
+        background: repeating-linear-gradient(
+          90deg,
+          #c1512f 0 12px, #d9a441 12px 24px, #3f7fb0 24px 36px, #6b8e4e 36px 48px
+        );
+        opacity: 0.85;
+      }
+      .jc-hop { font-size: 15px; font-style: italic; color: #a8987c; }
+
       /* ---- debug ---- */
       #debug {
         position: fixed;
@@ -568,6 +647,8 @@
           <div id="journal" hidden></div>
           <div id="weave" hidden></div>
           <div id="fade"></div>
+          <div id="iris"></div>
+          <div id="journeycard"></div>
           <div id="letter" hidden></div>
           <div id="title" hidden></div>
         </div>

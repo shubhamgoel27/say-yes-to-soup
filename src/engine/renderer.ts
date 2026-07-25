@@ -186,6 +186,7 @@ export class Renderer {
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
     }
     this.drawMotes(map, cam);
+    this.drawWeather(map, cam);
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
   }
@@ -333,6 +334,76 @@ export class Renderer {
   }
 
   /** Slow cloud shade drifting across the land. */
+  /**
+   * Live weather, by mood. The monsoon actually rains; the garúa actually
+   * drifts. Weather is the difference between a backdrop and a place.
+   */
+  private drawWeather(map: TileMap, cam: Camera) {
+    const ctx = this.ctx;
+    const mood = this.mood;
+    if (mood === 'monsoon') {
+      // Rain: fast slanted streaks in two depths, plus splash rings on the
+      // ground that bloom and vanish. Steady, warm, unbothered.
+      for (let layer = 0; layer < 2; layer++) {
+        const n = layer === 0 ? 70 : 45;
+        const speed = layer === 0 ? 640 : 430;
+        const len = layer === 0 ? 26 : 16;
+        const alpha = layer === 0 ? 0.34 : 0.2;
+        ctx.strokeStyle = `rgba(205,225,235,${alpha})`;
+        ctx.lineWidth = layer === 0 ? 1.8 : 1.2;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+          const h1 = cellHash(i, 101 + layer, 3);
+          const h2 = cellHash(i, 137 + layer, 5);
+          const fall = (this.time * speed * (0.8 + h2 * 0.4)) % (H + 80);
+          const x = ((h1 * (W + 160) + this.time * 60) % (W + 160)) - 80;
+          const y = fall - 40;
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - len * 0.22, y + len);
+        }
+        ctx.stroke();
+      }
+      for (let i = 0; i < 12; i++) {
+        const h1 = cellHash(i, 173, 7);
+        const h2 = cellHash(i, 191, 11);
+        const cycle = (this.time * (1.1 + h2 * 0.5) + h1 * 7) % 1;
+        const wx = h1 * map.w * TILE;
+        const wy = h2 * map.h * TILE;
+        const x = (wx - cam.x) * A;
+        const y = (wy - cam.y) * A;
+        if (x < 0 || x >= W || y < 0 || y >= H) continue;
+        const a = (1 - cycle) * 0.3;
+        ctx.strokeStyle = `rgba(220,235,240,${a})`;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.ellipse(x, y, 3 + cycle * 9, (3 + cycle * 9) * 0.4, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (mood === 'garua' || mood === 'premonsoon') {
+      // Fog bands sliding sideways, barely there, plus the finest drizzle.
+      for (let i = 0; i < 4; i++) {
+        const h1 = cellHash(i, 211, 13);
+        const wy = ((h1 * H * 1.4 + this.time * 6 * (i % 2 ? 1 : -1)) % (H * 1.4)) - H * 0.2;
+        const grad = ctx.createLinearGradient(0, wy - 40, 0, wy + 40);
+        grad.addColorStop(0, 'rgba(215,222,226,0)');
+        grad.addColorStop(0.5, `rgba(215,222,226,${mood === 'garua' ? 0.1 : 0.06})`);
+        grad.addColorStop(1, 'rgba(215,222,226,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, wy - 40, W, 80);
+      }
+      if (mood === 'garua') {
+        ctx.fillStyle = 'rgba(210,222,228,0.4)';
+        for (let i = 0; i < 30; i++) {
+          const h1 = cellHash(i, 227, 17);
+          const h2 = cellHash(i, 241, 19);
+          const x = (h1 * W + Math.sin(this.time * 0.8 + i) * 20) % W;
+          const y = (h2 * H + this.time * 34 * (0.7 + h1 * 0.5)) % H;
+          ctx.fillRect(x, y, 1.6, 3.2);
+        }
+      }
+    }
+  }
+
   private drawClouds(map: TileMap, cam: Camera) {
     const ctx = this.ctx;
     const worldW = map.w * TILE + 260;
