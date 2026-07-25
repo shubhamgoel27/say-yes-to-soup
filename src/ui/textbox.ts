@@ -11,9 +11,9 @@ import type { NodeMap } from '../content/schema';
  * more here than pixel purity, and the box sits over the world, not in it.
  */
 
-/** Characters revealed per second. Driven by the game loop, not a timer, so it
- * cannot be throttled independently of the rest of the game. */
-const CHARS_PER_SEC = 60;
+/** Characters revealed per second (default; Settings can change it). Driven by
+ * the game loop, not a timer, so it cannot be throttled independently. */
+const DEFAULT_CPS = 60;
 
 type Els = {
   root: HTMLElement;
@@ -32,6 +32,7 @@ export class Textbox {
   private typing = false;
   private cursor = 0;
   private portraitCv: HTMLCanvasElement | null = null;
+  private cps = DEFAULT_CPS;
   private onClose: (() => void) | null = null;
 
   constructor(
@@ -53,6 +54,11 @@ export class Textbox {
   /** True while the typewriter is still revealing the current line. */
   get isTyping(): boolean {
     return this.isOpen && this.typing;
+  }
+
+  /** Settings hook: characters per second (a huge number reads as instant). */
+  setSpeed(cps: number) {
+    this.cps = cps;
   }
 
   open(nodes: NodeMap, startId: string, portrait: HTMLCanvasElement | null, onClose?: () => void) {
@@ -117,7 +123,7 @@ export class Textbox {
     const line = this.nodes[this.nodeId]?.lines[this.lineIdx];
     if (!line) return;
     const before = Math.floor(this.shown);
-    this.shown = Math.min(line.text.length, this.shown + dt * CHARS_PER_SEC);
+    this.shown = Math.min(line.text.length, this.shown + dt * this.cps);
     const now = Math.floor(this.shown);
     this.els.text.textContent = line.text.slice(0, now);
     if (now > before) this.onType?.(line.who);

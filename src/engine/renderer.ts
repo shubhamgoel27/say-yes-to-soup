@@ -31,6 +31,8 @@ export type Sprite = {
 type Emote = { actor: Actor; kind: string; t: number };
 /** A puff of dust where a foot just left. */
 type Puff = { x: number; y: number; t: number };
+/** Celebration particles: sparkle rings and drifting petals, cozy physics. */
+type Party = { x: number; y: number; vx: number; vy: number; t: number; life: number; kind: 'sparkle' | 'petal'; hue: string; spin: number };
 
 const EMOTE_DUR = 0.8;
 const PUFF_DUR = 0.35;
@@ -51,6 +53,7 @@ export class Renderer {
   private nightK = 0;
   private emotes: Emote[] = [];
   private puffs: Puff[] = [];
+  private party: Party[] = [];
 
   /**
    * Per-frame gradients are the silent frame killer: at 60fps every
@@ -184,6 +187,19 @@ export class Renderer {
     this.emotes = this.emotes.filter((e) => e.t < EMOTE_DUR);
     for (const p of this.puffs) p.t += dt;
     this.puffs = this.puffs.filter((p) => p.t < PUFF_DUR);
+    for (const p of this.party) {
+      p.t += dt;
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.kind === 'sparkle') {
+        p.vx *= 1 - dt * 3;
+        p.vy *= 1 - dt * 3;
+      } else {
+        p.vy += 26 * dt; // low gravity: flutter, not fall
+        p.x += Math.sin(p.t * 3 + p.spin * 5) * 14 * dt;
+      }
+    }
+    this.party = this.party.filter((p) => p.t < p.life);
     for (const [a, t] of this.waves) {
       if (t - dt <= 0) this.waves.delete(a);
       else this.waves.set(a, t - dt);
@@ -218,6 +234,30 @@ export class Renderer {
   emote(actor: Actor, kind: '!' | '♥' | '♪' | '?') {
     this.emotes = this.emotes.filter((e) => e.actor !== actor);
     this.emotes.push({ actor, kind, t: 0 });
+  }
+
+  /**
+   * Cozy celebration burst at a world position. Sparkles: a small ring, no
+   * gravity, half a second. Petals: a slow flutter with sine drift, seconds.
+   * Per the cookbook: overshoot small, gravity low, nothing startles.
+   */
+  burst(wx: number, wy: number, kind: 'sparkle' | 'petal', hues: string[] = ['#f2e6d0']) {
+    const n = kind === 'sparkle' ? 10 : 16;
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + Math.random() * 0.5;
+      const sp = kind === 'sparkle' ? 26 + Math.random() * 18 : 8 + Math.random() * 16;
+      this.party.push({
+        x: wx,
+        y: wy,
+        vx: Math.cos(a) * sp,
+        vy: kind === 'sparkle' ? Math.sin(a) * sp : -14 - Math.random() * 18,
+        t: 0,
+        life: kind === 'sparkle' ? 0.55 : 1.8 + Math.random() * 1.2,
+        kind,
+        hue: hues[i % hues.length] ?? '#f2e6d0',
+        spin: (Math.random() - 0.5) * 3,
+      });
+    }
   }
 
   /** Kick up dust at a tile a foot just left. */
@@ -345,6 +385,7 @@ export class Renderer {
     }
 
     this.drawPuffs(cam);
+    this.drawParty(cam);
     this.drawEmotes(cam);
     this.drawSmoke(map, cam);
     if (this.mood !== 'interior') {
@@ -651,6 +692,42 @@ export class Renderer {
       if (!best || k > best.k) best = { dx: ddx, k };
     }
     return best;
+  }
+
+  private drawParty(cam: Camera) {
+    const ctx = this.ctx;
+    for (const p of this.party) {
+      const k = p.t / p.life;
+      const x = (p.x - cam.x) * A;
+      const y = (p.y - cam.y) * A;
+      ctx.save();
+      if (p.kind === 'sparkle') {
+        // A twinkle: a four-point star shrinking as it fades.
+        const r = (1 - k) * 6 + 1.5;
+        ctx.globalAlpha = (1 - k) * (0.6 + Math.sin(p.t * 30) * 0.3);
+        ctx.fillStyle = p.hue;
+        ctx.translate(x, y);
+        ctx.rotate(p.spin + p.t * 2);
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const rr2 = i % 2 === 0 ? r : r * 0.4;
+          const a2 = (i / 8) * Math.PI * 2;
+          ctx.lineTo(Math.cos(a2) * rr2, Math.sin(a2) * rr2);
+        }
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // A petal: a tilted teardrop, alpha easing out at the end.
+        ctx.globalAlpha = k > 0.75 ? (1 - k) * 4 : 0.9;
+        ctx.fillStyle = p.hue;
+        ctx.translate(x, y);
+        ctx.rotate(p.spin + Math.sin(p.t * 2.4) * 0.8);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 5, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
   }
 
   private drawPuffs(cam: Camera) {

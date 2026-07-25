@@ -141,11 +141,32 @@ function nameHash(s: string): number {
   return h;
 }
 
+/** Mix preferences, persisted separately from the save. */
+type Mix = { music: number; sfx: number; ambience: number };
+const MIX_KEY = 'soup.mix';
+function loadMix(): Mix {
+  try {
+    const raw = localStorage.getItem(MIX_KEY);
+    if (raw) return { music: 1, sfx: 1, ambience: 1, ...JSON.parse(raw) };
+  } catch { /* defaults */ }
+  return { music: 1, sfx: 1, ambience: 1 };
+}
+
 export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private windGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private sfxGain: GainNode | null = null;
+  /** Creature calls and weather beds, separate from the wind loop. */
+  private ambGain: GainNode | null = null;
+  private rainGain: GainNode | null = null;
+  readonly mix: Mix = loadMix();
+  /** World state the ambience reads: how deep the night, is it raining. */
+  private nightA = 0;
+  private raining = false;
+  /** Next-call clocks for each creature, in ctx time. */
+  private nextCall: Record<string, number> = {};
   muted = false;
   private blipCount = 0;
   private scene: Scene = 'outdoor';
@@ -191,13 +212,37 @@ export class AudioBus {
       lfo.start();
 
       const musicGain = ctx.createGain();
-      musicGain.gain.value = 0.85;
+      musicGain.gain.value = 0.85 * this.mix.music;
       musicGain.connect(master);
+
+      const sfxGain = ctx.createGain();
+      sfxGain.gain.value = this.mix.sfx;
+      sfxGain.connect(master);
+
+      const ambGain = ctx.createGain();
+      ambGain.gain.value = this.mix.ambience;
+      ambGain.connect(master);
+      this.ambGain = ambGain;
+
+      // Rain: a denser, brighter cousin of the wind, silent until the monsoon.
+      const rainSrc = ctx.createBufferSource();
+      rainSrc.buffer = this.noiseBuffer(ctx, 2.1);
+      rainSrc.loop = true;
+      const rainBp = ctx.createBiquadFilter();
+      rainBp.type = 'bandpass';
+      rainBp.frequency.value = 2400;
+      rainBp.Q.value = 0.4;
+      const rainGain = ctx.createGain();
+      rainGain.gain.value = 0;
+      rainSrc.connect(rainBp).connect(rainGain).connect(ambGain);
+      rainSrc.start();
+      this.rainGain = rainGain;
 
       this.ctx = ctx;
       this.master = master;
       this.windGain = windGain;
       this.musicGain = musicGain;
+      this.sfxGain = sfxGain;
       this.applyScene();
     } catch {
       // No audio environment (headless, denied). The game plays silent.
@@ -209,6 +254,33 @@ export class AudioBus {
     const data = buf.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
     return buf;
+  }
+
+  /** Live mixer: 0..1 per channel, persisted immediately. */
+  setMix(channel: keyof Mix, v: number) {
+    this.mix[channel] = Math.max(0, Math.min(1, v));
+    try {
+      localStorage.setItem(MIX_KEY, JSON.stringify(this.mix));
+    } catch { /* private browsing */ }
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    if (channel === 'music' && this.musicGain) this.musicGain.gain.setTargetAtTime(0.85 * this.mix.music, t, 0.05);
+    if (channel === 'sfx' && this.sfxGain) this.sfxGain.gain.setTargetAtTime(this.mix.sfx, t, 0.05);
+    if (channel === 'ambience') {
+      this.applyScene();
+      if (this.ambGain && this.ctx) this.ambGain.gain.setTargetAtTime(this.mix.ambience, this.ctx.currentTime, 0.05);
+    }
+  }
+
+  /** The ambience reads the world: night depth and rain. */
+  setWorldAmbience(nightK: number, raining: boolean) {
+    this.nightA = nightK;
+    if (raining !== this.raining) {
+      this.raining = raining;
+      if (this.rainGain && this.ctx) {
+        this.rainGain.gain.setTargetAtTime(raining ? 0.16 : 0, this.ctx.currentTime, 2.5);
+      }
+    }
   }
 
   toggleMute(): boolean {
@@ -229,7 +301,7 @@ export class AudioBus {
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g).connect(this.master);
+    osc.connect(g).connect(this.sfxGain ?? this.master);
     osc.start(t);
     osc.stop(t + dur + 0.05);
   }
@@ -246,54 +318,56 @@ export class AudioBus {
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(vol, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f).connect(g).connect(this.master);
+    src.connect(f).connect(g).connect(this.sfxGain ?? this.master);
     src.start(t);
     src.stop(t + dur + 0.05);
   }
 
-  /** Terrain-aware footstep: every coast underfoot sounds like itself. */
+  /** Terrain-aware footstep: every coast underfoot sounds like itself, and no
+   * two steps are the identical sample (a small pitch wander keeps feet human). */
   step(groundKind: string) {
-    switch (groundKind) {
+    const j = 0.88 + Math.random() * 0.24;
+        switch (groundKind) {
       case 'plaza':
       case 'floorEarth':
       case 'floorOndol':
       case 'lanepave':
-        this.thud(900, 0.05, 0.05, 'bandpass');
+        this.thud(900 * j, 0.05, 0.05, 'bandpass');
         break;
       case 'bridge':
       case 'pierdeck':
       case 'floorWood':
-        this.thud(420, 0.09, 0.09, 'bandpass');
+        this.thud(420 * j, 0.09, 0.09, 'bandpass');
         break;
       case 'deck':
       case 'floorSteel':
         // Steel: a ringing tap over a dull body.
-        this.thud(300, 0.07, 0.06, 'bandpass');
+        this.thud(300 * j, 0.07, 0.06, 'bandpass');
         this.pluck(1250, 0, 0.014, 0.05);
         break;
       case 'sand':
       case 'sandWet':
-        this.thud(420, 0.1, 0.045, 'lowpass');
+        this.thud(420 * j, 0.1, 0.045, 'lowpass');
         break;
       case 'basalto':
       case 'corallane':
       case 'laterite':
-        this.thud(700, 0.06, 0.06, 'bandpass');
+        this.thud(700 * j, 0.06, 0.06, 'bandpass');
         break;
       case 'tatami':
-        this.thud(500, 0.09, 0.035, 'lowpass');
+        this.thud(500 * j, 0.09, 0.035, 'lowpass');
         break;
       case 'paddy':
-        this.thud(600, 0.11, 0.06, 'bandpass');
+        this.thud(600 * j, 0.11, 0.06, 'bandpass');
         break;
       case 'path':
       case 'dirt':
       case 'crop':
       case 'petalpath':
-        this.thud(240, 0.07, 0.07);
+        this.thud(240 * j, 0.07, 0.07);
         break;
       default:
-        this.thud(160, 0.08, 0.055); // grass and puna: soft
+        this.thud(160 * j, 0.08, 0.055); // grass and puna: soft
     }
   }
 
@@ -331,7 +405,7 @@ export class AudioBus {
     const g = this.ctx.createGain();
     g.gain.setValueAtTime(v.wave === 'sawtooth' ? 0.016 : 0.03, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.055);
-    osc.connect(g).connect(this.master);
+    osc.connect(g).connect(this.sfxGain ?? this.master);
     osc.start(t);
     osc.stop(t + 0.1);
   }
@@ -428,6 +502,35 @@ export class AudioBus {
     this.babblePos = 0;
   }
 
+  /** Dialogue ducking: the band lowers its voice while someone talks. */
+  setDucked(on: boolean) {
+    if (!this.musicGain || !this.ctx) return;
+    const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1);
+    this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, on ? 0.2 : 0.5);
+  }
+
+  /** A soft reversed-feeling cancel: the confirm's two notes, walked back. */
+  back() {
+    this.pluck(784, 0, 0.05, 0.1);
+    this.pluck(523.25, 0.05, 0.06, 0.14);
+  }
+
+  /** The gentle "that doesn't go there": never harsh, never silent. */
+  denied() {
+    this.thud(220, 0.09, 0.06);
+    this.pluck(180, 0.02, 0.05, 0.12);
+  }
+
+  /**
+   * A celebration stinger over ducked ambience: four rising notes from the
+   * current region's own scale, so every coast celebrates in its own key.
+   */
+  stinger() {
+    const sc = this.style.scale;
+    const picks = [0, 2, Math.min(4, sc.length - 1), sc.length - 1];
+    picks.forEach((idx, k) => this.pluck((sc[idx] ?? 440) * (k === 3 ? 2 : 1), k * 0.13, 0.12, 0.9));
+  }
+
   /** Sitting: the band steps back, the air steps forward. */
   setSitting(on: boolean) {
     if (this.sitting === on) return;
@@ -442,7 +545,7 @@ export class AudioBus {
     if (!this.windGain || !this.ctx) return;
     let target = this.scene === 'interior' ? 0.03 : this.scene === 'road' ? 0.14 : 0.1;
     if (this.sitting && this.scene !== 'interior') target += 0.06;
-    this.windGain.gain.setTargetAtTime(target, this.ctx.currentTime, 1.0);
+    this.windGain.gain.setTargetAtTime(target * this.mix.ambience, this.ctx.currentTime, 1.0);
   }
 
   // ---------------------------------------------------------------- music
@@ -587,6 +690,115 @@ export class AudioBus {
     }
   }
 
+  // ------------------------------------------------------------- creatures
+  //
+  // The places sound inhabited: gulls over any harbor, cicadas in the summer
+  // trees, crickets after dark, a far-off cohete over the valley. Every call
+  // is synthesized on the spot and spaced far enough apart to stay a texture.
+
+  private gull(when: number, dist: number) {
+    if (!this.ctx || !this.ambGain) return;
+    // Two falling cries, the second shorter: the gull's whole vocabulary.
+    for (const [off, len] of [[0, 0.34], [0.42, 0.22]] as const) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(1150 + dist * 200, when + off);
+      osc.frequency.exponentialRampToValueAtTime(620, when + off + len);
+      const f = this.ctx.createBiquadFilter();
+      f.type = 'bandpass';
+      f.frequency.value = 1500;
+      f.Q.value = 1.6;
+      const g = this.ctx.createGain();
+      const v = 0.028 * (1 - dist * 0.6);
+      g.gain.setValueAtTime(0.0001, when + off);
+      g.gain.exponentialRampToValueAtTime(v, when + off + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, when + off + len);
+      osc.connect(f).connect(g).connect(this.ambGain);
+      osc.start(when + off);
+      osc.stop(when + off + len + 0.05);
+    }
+  }
+
+  private cicada(when: number) {
+    if (!this.ctx || !this.ambGain) return;
+    // A narrow hot buzz that swells and lets go.
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(this.ctx, 3.2);
+    const bp = this.ctx.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 5600;
+    bp.Q.value = 14;
+    const am = this.ctx.createGain();
+    const lfo = this.ctx.createOscillator();
+    lfo.frequency.value = 170;
+    const lfoG = this.ctx.createGain();
+    lfoG.gain.value = 0.5;
+    lfo.connect(lfoG).connect(am.gain);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.linearRampToValueAtTime(0.02, when + 1.1);
+    g.gain.setValueAtTime(0.02, when + 2.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 3.0);
+    src.connect(bp).connect(am).connect(g).connect(this.ambGain);
+    src.start(when);
+    src.stop(when + 3.2);
+    lfo.start(when);
+    lfo.stop(when + 3.2);
+  }
+
+  private cricket(when: number) {
+    if (!this.ctx || !this.ambGain) return;
+    // A train of four tiny pips.
+    for (let i = 0; i < 4; i++) {
+      const t = when + i * 0.09;
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 4300;
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.016, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+      osc.connect(g).connect(this.ambGain);
+      osc.start(t);
+      osc.stop(t + 0.08);
+    }
+  }
+
+  private cohete(when: number) {
+    if (!this.ctx || !this.ambGain) return;
+    // A far-off pop and its little crackle: the valley celebrating something.
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer(this.ctx, 0.5);
+    const lp = this.ctx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 900;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(0.05, when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + 0.45);
+    src.connect(lp).connect(g).connect(this.ambGain);
+    src.start(when);
+    src.stop(when + 0.5);
+  }
+
+  /** Which creatures live where. */
+  private ambientLife(now: number) {
+    if (!this.ctx || this.scene === 'interior') return;
+    const due = (key: string, minGap: number, spread: number): boolean => {
+      const next = this.nextCall[key] ?? 0;
+      if (now < next) return false;
+      this.nextCall[key] = now + minGap + Math.random() * spread;
+      return true;
+    };
+    const r = this.region;
+    const day = this.nightA < 0.45;
+    const seaside = r === 'coast' || r === 'shionoura' || r === 'busan' || r === 'zanzibar' || r === 'sicily' || r === 'ocean';
+    if (seaside && day && due('gull', 7, 9)) this.gull(now + 0.05, Math.random());
+    if ((r === 'shionoura' || r === 'sicily') && day && due('cicada', 9, 12)) this.cicada(now + 0.05);
+    if (!day && r !== 'ocean' && due('cricket', 2.5, 3.5)) this.cricket(now + 0.05);
+    if ((r === 'oaxaca') && due('cohete', 24, 30)) this.cohete(now + 0.1);
+  }
+
   /** Called from the game loop; keeps the band half a second ahead. */
   tick(dt: number) {
     void dt;
@@ -595,6 +807,7 @@ export class AudioBus {
     if (this.nextBeatTime === 0 || this.nextBeatTime < now - 1) {
       this.nextBeatTime = now + 0.12;
     }
+    this.ambientLife(now);
     const horizon = now + 0.55;
     while (this.nextBeatTime < horizon) {
       this.scheduleBeat(this.beat, this.nextBeatTime);

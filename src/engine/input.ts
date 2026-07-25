@@ -43,6 +43,10 @@ export class Input {
   private journalEdge = false;
   private debugEdge = false;
   private muteEdge = false;
+  private pauseEdge = false;
+  /** Gamepad state from the previous poll, for edge detection. */
+  private padButtons: boolean[] = [];
+  private padDir: Dir | null = null;
   /** Direction keydown edge for menu navigation, independent of held movement. */
   private menuDirEdge: Dir | null = null;
 
@@ -67,6 +71,10 @@ export class Input {
     if (ACTION_KEYS.has(e.code)) {
       e.preventDefault();
       this.actionEdge = true;
+    } else if (e.code === 'Escape') {
+      e.preventDefault();
+      this.pauseEdge = true;
+      this.backEdge = true;
     } else if (BACK_KEYS.has(e.code)) {
       e.preventDefault();
       this.backEdge = true;
@@ -103,6 +111,61 @@ export class Input {
       if (code !== releasing && DIR_KEYS[code] === dir) return true;
     }
     return false;
+  }
+
+  /**
+   * Gamepad: dpad or left stick walks, A talks, B backs, Y opens the journal,
+   * Start pauses. Polled once per simulation frame; standard mapping only,
+   * which covers every pad a cozy player is likely to own.
+   */
+  pollGamepad() {
+    const pads = navigator.getGamepads?.() ?? [];
+    const pad = pads.find((p) => p && p.connected);
+    if (!pad) {
+      if (this.padDir) {
+        this.dirStack = this.dirStack.filter((d) => d !== this.padDir);
+        this.padDir = null;
+      }
+      return;
+    }
+    const b = (i: number) => pad.buttons[i]?.pressed ?? false;
+    const edge = (i: number) => {
+      const now = b(i);
+      const was = this.padButtons[i] ?? false;
+      this.padButtons[i] = now;
+      return now && !was;
+    };
+    if (edge(0)) this.actionEdge = true; // A / Cross
+    if (edge(1)) this.backEdge = true; // B / Circle
+    if (edge(3)) this.journalEdge = true; // Y / Triangle
+    if (edge(9)) this.pauseEdge = true; // Start / Options
+
+    const ax = pad.axes[0] ?? 0;
+    const ay = pad.axes[1] ?? 0;
+    let dir: Dir | null = null;
+    if (b(12)) dir = 'up';
+    else if (b(13)) dir = 'down';
+    else if (b(14)) dir = 'left';
+    else if (b(15)) dir = 'right';
+    else if (Math.abs(ax) > 0.45 || Math.abs(ay) > 0.45) {
+      dir = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 'right' : 'left') : ay > 0 ? 'down' : 'up';
+    }
+    if (dir !== this.padDir) {
+      if (this.padDir) this.dirStack = this.dirStack.filter((d) => d !== this.padDir);
+      if (dir) {
+        this.dirStack = this.dirStack.filter((d) => d !== dir);
+        this.dirStack.push(dir);
+        this.tapDir = dir;
+        this.menuDirEdge = dir;
+      }
+      this.padDir = dir;
+    }
+  }
+
+  takePause(): boolean {
+    const v = this.pauseEdge;
+    this.pauseEdge = false;
+    return v;
   }
 
   /**

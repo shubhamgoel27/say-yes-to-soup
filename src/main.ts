@@ -16,6 +16,7 @@ import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { TitleScreen } from './ui/title';
 import { WeavePanel } from './ui/weave';
+import { PauseMenu } from './ui/pause';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
@@ -280,6 +281,14 @@ const textbox = new Textbox(
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'));
 const weave = new WeavePanel($('weave'), audio);
+const pauseMenu = new PauseMenu($('pause'), audio, {
+  onTextSpeed: (cps) => textbox.setSpeed(cps),
+  onToTitle: () => {
+    mode = 'title';
+    standUp();
+    title.showTitle(state.hasSave());
+  },
+});
 
 /** Chapter mini-games: the engine owns one overlay root per panel. */
 function makeOverlayRoot(id: string): HTMLElement {
@@ -312,6 +321,10 @@ state.on('journal', (id) => {
   const entry = JOURNAL_BY_ID.get(id);
   toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
   audio.chime();
+  {
+    const [px, py] = player.renderPos();
+    renderer.burst(px + TILE / 2, py + 2, 'sparkle', ['#f2e6d0', '#d9a441']);
+  }
   if (!state.has('hint.journal')) {
     state.set('hint.journal');
     toasts.show('press J to open the journal');
@@ -755,6 +768,7 @@ applyDressings();
       celebratedFlags.add(c.flag);
       showPlate(c.plate, 5200);
       for (const t of c.toasts) toasts.show(t);
+      celebrate();
     }
   }
 }
@@ -796,6 +810,36 @@ function startNpcDialogue(v: Villager) {
 function startNarration(nodeId: string) {
   player.frozen = true;
   textbox.open(NODES, nodeId, null, endDialogue);
+}
+
+/** What falls from the sky when a chapter completes, by region. */
+const PETALS: Record<string, string[]> = {
+  andes: ['#c1512f', '#d9a441', '#8fcbe8'],
+  coast: ['#8fcbe8', '#f2e6d0', '#d9a441'],
+  ocean: ['#cfe3ee', '#f2e6d0'],
+  shionoura: ['#f0b6c8', '#f2e6d0', '#e88ca8'],
+  busan: ['#e88c6a', '#f2e6d0', '#d9a441'],
+  kerala: ['#7db35a', '#d9a441', '#f2e6d0'],
+  zanzibar: ['#d9694a', '#e8d44d', '#f2e6d0'],
+  sicily: ['#e8d44d', '#f2e6d0', '#8fcbe8'],
+  oaxaca: ['#e8862f', '#d9a441', '#c1512f'],
+  velacion: ['#e8862f', '#f2e6d0'],
+};
+
+/** The savor pause: input rests while a big moment lands. */
+let celebrateT = 0;
+
+function celebrate() {
+  celebrateT = 1.6;
+  audio.setDucked(true);
+  audio.stinger();
+  const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
+  const [px, py] = player.renderPos();
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      renderer.burst(px + TILE / 2 + (i - 1) * 20, py - 10 - i * 8, 'petal', hues);
+    }, i * 180);
+  }
 }
 
 // ---------------------------------------------------------------- sitting
@@ -924,14 +968,17 @@ function update(dt: number) {
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
+  audio.setDucked(textbox.isOpen || celebrateT > 0);
+  audio.setWorldAmbience(nightLevel(dayT), moodFor(map.id) === 'monsoon');
+
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   stage.setZoomTarget(
-    sitting ? 1.15 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen ? 1.06 : 1,
+    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen ? 1.06 : 1,
   );
   // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
   document.body.classList.toggle(
     'quiet-hud',
-    mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen(),
+    mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen,
   );
 
   // Whoever is mid-sentence leans into it.
@@ -985,12 +1032,36 @@ function update(dt: number) {
     toasts.show(audio.toggleMute() ? 'sound off' : 'sound on');
   }
 
+  input.pollGamepad();
   const act = input.takeAction() || dev.takeAction();
   const menuDir = input.takeMenuDir() ?? dev.takeMenuDir();
   const back = input.takeBack();
+  const pauseKey = input.takePause();
   const journalKey = input.takeJournal() || dev.takeJournal();
 
-  if (mode === 'title') {
+  // The savor pause: the world keeps breathing, input rests.
+  if (celebrateT > 0) {
+    celebrateT -= dt;
+    if (celebrateT <= 0) audio.setDucked(textbox.isOpen);
+  }
+
+  if (pauseMenu.isOpen) {
+    if (menuDir) {
+      pauseMenu.onDir(menuDir);
+      audio.select();
+    }
+    if (act) {
+      pauseMenu.onAction();
+      audio.confirm();
+    }
+    if ((back || pauseKey) && !act) {
+      pauseMenu.onBack();
+      audio.back();
+    }
+  } else if (mode === 'title') {
+    if (pauseKey) {
+      // Nothing to pause yet; Esc on the title is a no-op.
+    }
     if (menuDir) {
       title.onDir(menuDir);
       feedKonami(menuDir);
@@ -999,6 +1070,10 @@ function update(dt: number) {
     if (act) {
       audio.confirm();
       const choice = title.choose();
+      if (choice === 'settings' || choice === 'credits') {
+        pauseMenu.open(choice, true);
+        return;
+      }
       title.hideTitle();
       if (choice === 'new') {
         state.reset();
@@ -1053,9 +1128,14 @@ function update(dt: number) {
   } else if (sitting) {
     if (act || back || menuDir || journalKey || input.intent()) standUp();
   } else if (!warp) {
-    if (journalKey) {
+    if (pauseKey && celebrateT <= 0) {
+      pauseMenu.open('menu');
+      audio.pageFlip();
+    } else if (journalKey) {
       journalUI.open();
       audio.pageFlip();
+    } else if (celebrateT > 0) {
+      // The moment is still landing; let it.
     } else if (act) {
       tryInteract();
     } else {

@@ -91,3 +91,11 @@ before re-testing).
 **Rule:** Drive dev builds through DOM data attributes (`DevBridge`:
 `data-wf-hold`, `data-wf-state`), verify logic in headless tests, and use the
 browser only for visual confirmation.
+
+## Full-frame canvas blends belong on the GPU (2026-07-25)
+The paper-grain `multiply` pattern fill on the 2D composer canvas forced
+Chrome to de-accelerate the whole canvas: 64% of frame time became
+texSubImage2D and the game visibly stuttered. Rule: any whole-frame blend
+or pattern pass goes on the Pixi stage (native GPU blending); the 2D
+canvas stays drawImage/fill only. And every visual pass ships with a
+before/after frame-time probe, not just a screenshot.

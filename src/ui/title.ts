@@ -6,7 +6,7 @@ import type { Dir } from '../engine/input';
  * softly behind them like an attract screen.
  */
 
-export type TitleChoice = 'new' | 'continue';
+export type TitleChoice = 'new' | 'continue' | 'settings' | 'credits';
 
 export class TitleScreen {
   private cursor = 0;
@@ -29,8 +29,14 @@ export class TitleScreen {
       ? [
           { id: 'continue', label: 'Continue the journey' },
           { id: 'new', label: 'Begin again' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'credits', label: 'Credits' },
         ]
-      : [{ id: 'new', label: 'Begin the journey' }];
+      : [
+          { id: 'new', label: 'Begin the journey' },
+          { id: 'settings', label: 'Settings' },
+          { id: 'credits', label: 'Credits' },
+        ];
     this.cursor = 0;
     this.titleEl.hidden = false;
     this.render();
@@ -70,10 +76,11 @@ export class TitleScreen {
 
   onDir(dir: Dir) {
     if (!this.titleOpen || this.options.length < 2) return;
-    if (dir === 'up' || dir === 'down') {
-      this.cursor = (this.cursor + 1) % this.options.length;
-      this.render();
-    }
+    const n = this.options.length;
+    if (dir === 'up') this.cursor = (this.cursor + n - 1) % n;
+    else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
+    else return;
+    this.render();
   }
 
   /** Returns the chosen option when the title menu is confirmed. */
