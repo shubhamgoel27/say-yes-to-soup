@@ -1,34 +1,35 @@
 /**
- * Fixed-timestep update with a decoupled render. Simulation runs at a steady
- * 60Hz no matter the display refresh rate, so movement timing is identical on a
- * 60Hz laptop and a 120Hz monitor.
+ * Variable-timestep update, clamped: the simulation advances by exactly the
+ * time the display shows, so motion is glassy on 60Hz, 120Hz ProMotion, and
+ * anything else.
+ *
+ * This game earns the simple loop: everything in it is tween- and timer-based
+ * (positions move by dt, nothing integrates forces), so variable dt changes
+ * no outcomes. The previous fixed-step accumulator quantized motion to 60Hz
+ * chunks and delivered 4 steps one frame and 5 the next, which the eye reads
+ * as stutter no matter how healthy the frame rate is. (Automation still gets
+ * determinism: the DevBridge drives update() directly with fixed steps.)
  */
 
-const STEP = 1 / 60;
-/** Never simulate more than this much time in one frame (tab-switch guard). */
-const MAX_FRAME = 0.25;
+/** Never simulate more than this in one frame (tab-switch / hitch guard). */
+const MAX_DT = 1 / 20;
 
 export type Loop = { stop: () => void };
 
 export function startLoop(update: (dt: number) => void, render: () => void): Loop {
   let last = performance.now();
-  let acc = 0;
   let running = true;
 
   function frame(now: number) {
     if (!running) return;
-    acc += Math.min((now - last) / 1000, MAX_FRAME);
+    const dt = Math.min((now - last) / 1000, MAX_DT);
     last = now;
     // A thrown frame must never kill the game; log it and keep breathing.
     try {
-      while (acc >= STEP) {
-        update(STEP);
-        acc -= STEP;
-      }
+      update(dt);
       render();
     } catch (err) {
       console.error('[soup] frame error:', err);
-      acc = 0;
     }
     requestAnimationFrame(frame);
   }
