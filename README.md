@@ -53,7 +53,7 @@ Open the printed localhost URL in a modern browser (WebGPU preferred, WebGL fall
 ## How it is built
 
 - Vite + TypeScript and a thin custom engine (fixed-timestep 60 Hz sim, 16 px logical tiles); PixiJS handles only the final composite: screen-space lighting, bloom, iris wipes, and shimmer-free zoom over a Canvas2D-painted world.
-- All art is procedural: painterly canvas drawing at 4x resolution, zero image assets. All audio is synthesized WebAudio, zero audio assets.
+- All world art is procedural: painterly canvas drawing at 4x resolution, no sprite sheets. All audio is synthesized WebAudio, zero audio files. The only bitmaps in the repo are a handful of CC0 paper and cloth textures dressing the UI.
 - Content is data: maps are ASCII rows plus a legend; dialogue is a condition-gated node graph; one `effects` array is the entire learning system. Each chapter is a self-contained plugin folder (content, art set, minigames, weather moods, recall manifest).
 - The test suite plays the game abstractly: a reachability fixpoint proves all ~200 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, and a recall ledger proves every cross-chapter callback was actually planted before it pays off.
 
