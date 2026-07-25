@@ -265,19 +265,38 @@ export function rect(
 }
 
 /**
- * Adds a 1px dark outline around every sprite in a sheet, cell by cell so
- * neighboring frames never bleed into each other. Classic pixel-art
- * readability: characters pop off any background.
+ * Wraps every sprite in a sheet with a soft ink edge, cell by cell so
+ * neighboring frames never bleed into each other. In the smooth era this is
+ * the cut-paper look: figures read as illustrations pasted into the world,
+ * and pop off any ground they stand on.
  */
+/** Mixes a hex color toward its own gray, for grounds that should recede. */
+export function mute(hex: string, k: number): string {
+  const n = Number.parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 0xff;
+  const g = (n >> 8) & 0xff;
+  const b = n & 0xff;
+  const l = 0.299 * r + 0.587 * g + 0.114 * b;
+  const mix = (c: number) => Math.round(c + (l - c) * k);
+  return `#${((mix(r) << 16) | (mix(g) << 8) | mix(b)).toString(16).padStart(6, '0')}`;
+}
+
 export function outlineSheet(
   sheet: HTMLCanvasElement,
   cellW: number,
   cellH: number,
-  color = '#241a12',
+  color = 'rgba(38,26,16,0.55)',
+  radius = 2,
 ): HTMLCanvasElement {
   const { cv: out, g } = surface(sheet.width, sheet.height);
   const { cv: cell, g: cg } = surface(cellW, cellH);
   const { cv: sil, g: sg } = surface(cellW, cellH);
+
+  // Eight offsets make a smooth ring at antialiased resolution.
+  const ring: [number, number][] = [];
+  for (let k = 0; k < 8; k++) {
+    ring.push([Math.cos((k / 8) * Math.PI * 2) * radius, Math.sin((k / 8) * Math.PI * 2) * radius]);
+  }
 
   for (let cy = 0; cy < sheet.height; cy += cellH) {
     for (let cx = 0; cx < sheet.width; cx += cellW) {
@@ -290,13 +309,13 @@ export function outlineSheet(
       sg.globalCompositeOperation = 'source-in';
       sg.fillStyle = color;
       sg.fillRect(0, 0, cellW, cellH);
-      // Stamp the silhouette at the four cardinal offsets, then the art on
-      // top, clipped so nothing leaks into the neighboring frame.
+      // Stamp the silhouette around the ring, then the art on top, clipped
+      // so nothing leaks into the neighboring frame.
       g.save();
       g.beginPath();
       g.rect(cx, cy, cellW, cellH);
       g.clip();
-      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      for (const [dx, dy] of ring) {
         g.drawImage(sil, cx + dx, cy + dy);
       }
       g.drawImage(cell, cx, cy);

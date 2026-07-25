@@ -52,6 +52,8 @@ export class Renderer {
   private emotes: Emote[] = [];
   private puffs: Puff[] = [];
 
+  private grain: CanvasPattern | null = null;
+
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('2d canvas context unavailable');
@@ -61,6 +63,13 @@ export class Renderer {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     this.atmospheres = buildAtmospheres();
+    // Paper tooth over the whole frame: the world is an illustration in her
+    // journal, and illustrations live on paper. Loads lazily; absent, no harm.
+    const grainImg = new Image();
+    grainImg.onload = () => {
+      this.grain = ctx.createPattern(grainImg, 'repeat');
+    };
+    grainImg.src = '/assets/textures/paper-grain-white.jpg';
   }
 
   /** Chapters bring their own weather. */
@@ -169,8 +178,14 @@ export class Renderer {
     for (const t of tall) {
       layers.push({
         sort: t.cy + 0.5,
-        draw: () =>
-          this.tiles.drawTall(ctx, t.kind, (t.cx * TILE - cam.x) * A, (t.cy * TILE - cam.y) * A, t.cx, t.cy),
+        draw: () => {
+          const tx = (t.cx * TILE - cam.x) * A;
+          const ty = (t.cy * TILE - cam.y) * A;
+          // Trees and freestanding props cast into the same sun as people.
+          if (t.kind === 'tree' || t.kind === 'palm') this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
+          else if (this.tiles.castsSun(t.kind)) this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
+          this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
+        },
       });
     }
     layers.sort((a, b) => a.sort - b.sort);
@@ -189,53 +204,87 @@ export class Renderer {
     this.drawWeather(map, cam);
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
+    if (this.grain) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = 0.09;
+      ctx.fillStyle = this.grain;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
   }
 
   /** World-anchored tonal patches, keyed to a coarse grid so they never move. */
   private groundTint(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
     const ctx = this.ctx;
+    // Two octaves of gouache: broad warm/cool washes the size of a meadow,
+    // then the familiar smaller patches. Flat fields stop being flat.
     const TINTS = [
-      'rgba(96,70,36,0.085)', // dry shadowed earth
-      'rgba(255,236,180,0.075)', // sun-bleached
-      'rgba(88,104,60,0.07)', // faint green flush
-      'rgba(140,90,50,0.06)', // iron warmth
+      'rgba(96,70,36,0.11)', // dry shadowed earth
+      'rgba(255,236,180,0.10)', // sun-bleached
+      'rgba(88,104,60,0.10)', // faint green flush
+      'rgba(140,90,50,0.08)', // iron warmth
     ];
-    for (let gy = (y0 >> 2) - 1; gy <= (y1 >> 2) + 1; gy++) {
-      for (let gx = (x0 >> 2) - 1; gx <= (x1 >> 2) + 1; gx++) {
-        const h = cellHash(gx, gy, 101);
-        if (h > 0.62) continue;
-        const tint = TINTS[Math.floor(h * 40) % TINTS.length] ?? TINTS[0]!;
-        const wx = (gx * 4 + 2 + (cellHash(gx, gy, 55) - 0.5) * 4) * TILE;
-        const wy = (gy * 4 + 2 + (cellHash(gx, gy, 77) - 0.5) * 4) * TILE;
-        // Skip patches centered outside the map so scree stays calm.
-        if (!map.inBounds(Math.floor(wx / TILE), Math.floor(wy / TILE))) continue;
-        const x = (wx - cam.x) * A;
-        const y = (wy - cam.y) * A;
-        const r = (2.2 + cellHash(gx, gy, 91) * 2.4) * TILE * A;
-        const grad = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
-        grad.addColorStop(0, tint);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    const octave = (cell: number, salt: number, rBase: number, rVar: number, boost: number) => {
+      const gy0 = Math.floor(y0 / cell) - 1;
+      const gy1 = Math.floor(y1 / cell) + 1;
+      const gx0 = Math.floor(x0 / cell) - 1;
+      const gx1 = Math.floor(x1 / cell) + 1;
+      for (let gy = gy0; gy <= gy1; gy++) {
+        for (let gx = gx0; gx <= gx1; gx++) {
+          const h = cellHash(gx, gy, salt);
+          if (h > 0.62) continue;
+          const tint = TINTS[Math.floor(h * 40) % TINTS.length] ?? TINTS[0]!;
+          const wx = (gx * cell + cell / 2 + (cellHash(gx, gy, salt + 3) - 0.5) * cell) * TILE;
+          const wy = (gy * cell + cell / 2 + (cellHash(gx, gy, salt + 7) - 0.5) * cell) * TILE;
+          // Skip patches centered outside the map so scree stays calm.
+          if (!map.inBounds(Math.floor(wx / TILE), Math.floor(wy / TILE))) continue;
+          const x = (wx - cam.x) * A;
+          const y = (wy - cam.y) * A;
+          const r = (rBase + cellHash(gx, gy, salt + 11) * rVar) * TILE * A;
+          const grad = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
+          grad.addColorStop(0, tint);
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.save();
+          ctx.globalAlpha = boost;
+          ctx.fillStyle = grad;
+          ctx.fillRect(x - r, y - r, r * 2, r * 2);
+          ctx.restore();
+        }
       }
-    }
+    };
+    octave(9, 131, 5.5, 4.5, 1); // the meadow-scale washes
+    octave(4, 101, 2.2, 2.4, 0.9); // the close-up dapple
+  }
+
+  /**
+   * The sun has a direction. Everything that stands casts a soft skewed
+   * shadow toward the north-west of the screen; at dusk the shadows stretch.
+   * This one pass does more "real place" work than any texture.
+   */
+  private castShadow(sx: number, sy: number, w: number, strength = 0.22) {
+    const ctx = this.ctx;
+    const stretch = 1 + this.nightK * 0.5; // dusk pulls shadows long
+    const grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, w);
+    grad.addColorStop(0, `rgba(38,26,14,${strength})`);
+    grad.addColorStop(0.7, `rgba(38,26,14,${strength * 0.4})`);
+    grad.addColorStop(1, 'rgba(38,26,14,0)');
+    ctx.save();
+    ctx.translate(sx, sy);
+    // Skew toward the lower-left: late-morning Andean sun, kept forever.
+    ctx.transform(1, 0, -0.55, 0.34 * stretch, 0, 0);
+    ctx.translate(-sx, -sy);
+    ctx.fillStyle = grad;
+    ctx.fillRect(sx - w, sy - w, w * 2, w * 2);
+    ctx.restore();
   }
 
   private drawSprite(s: Sprite, sxf: number, syf: number, index: number) {
     const ctx = this.ctx;
     const sx = Math.round(sxf);
     const sy = Math.round(syf);
-    // Soft contact shadow; the body bobs over it.
-    const shGrad = ctx.createRadialGradient(sx + S / 2, sy + S - 6, 2, sx + S / 2, sy + S - 6, 22);
-    shGrad.addColorStop(0, 'rgba(26,18,12,0.30)');
-    shGrad.addColorStop(1, 'rgba(26,18,12,0)');
-    ctx.save();
-    ctx.translate(sx + S / 2, sy + S - 6);
-    ctx.scale(1, 0.38);
-    ctx.translate(-(sx + S / 2), -(sy + S - 6));
-    ctx.fillStyle = shGrad;
-    ctx.fillRect(sx + S / 2 - 24, sy + S - 30, 48, 48);
-    ctx.restore();
+    // A directional cast shadow: the figure stands IN the light, not on a dot.
+    this.castShadow(sx + S / 2, sy + S - 6, 30, 0.24);
 
     const row = DIR_ROW[s.actor.dir];
     const dx = sx - Math.floor((AW - S) / 2);

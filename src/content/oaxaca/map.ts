@@ -106,7 +106,7 @@ const main = paint(W, H, groundAt, objectAt);
 
 export const OAXACA_MAP: MapData = {
   id: 'oaxaca',
-  name: 'The Valley Village',
+  name: 'San Isidro Guelazana',
   spawn: [24, 27],
   spawnFacing: 'up',
   triggers: [

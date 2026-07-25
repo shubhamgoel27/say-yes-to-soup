@@ -1,5 +1,5 @@
 import { ART, PAL, TILE } from '../engine/config';
-import { Rng, blob, cellHash, dot, glowSpot, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
+import { Rng, blob, cellHash, dot, glowSpot, mute, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
 import { ART_SETS } from './sets';
 
 /**
@@ -67,7 +67,7 @@ export class Tileset {
     };
 
     this.make('puna', 6, (g, r) => {
-      groundBase(g, r, shade(PAL.gold, 0.02));
+      groundBase(g, r, mute(shade(PAL.gold, 0.02), 0.12));
       for (let i = 0; i < 7; i++) {
         grassTuft(g, r, 10 + r.int(S - 20), 14 + r.int(S - 20), shade(PAL.goldDark, 0.06), shade(PAL.gold, 0.16));
       }
@@ -75,7 +75,7 @@ export class Tileset {
     });
 
     this.make('grass', 5, (g, r) => {
-      groundBase(g, r, shade(PAL.green, 0.03));
+      groundBase(g, r, mute(shade(PAL.green, 0.03), 0.14));
       for (let i = 0; i < 7; i++) {
         grassTuft(g, r, 10 + r.int(S - 20), 14 + r.int(S - 20), shade(PAL.greenDark, 0.1), shade(PAL.green, 0.2));
       }
@@ -911,7 +911,7 @@ export class Tileset {
     // ------------------------------------------------------------ the coast
 
     this.make('sand', 5, (g, r) => {
-      groundBase(g, r, shade('#d9c298', 0.02));
+      groundBase(g, r, mute(shade('#d9c298', 0.02), 0.1));
       for (let i = 0; i < 6; i++) {
         dot(g, r.int(S), r.int(S), 1.4 + r.next(), shade('#d9c298', r.chance(0.5) ? -0.09 : 0.1));
       }
@@ -1434,13 +1434,18 @@ export class Tileset {
     }
   }
 
+  /** Freestanding props whose sun shadow the renderer casts directionally. */
+  castsSun(kind: string): boolean {
+    return GROUNDED_TALL.has(ART_ALIAS[kind] ?? kind) || GROUNDED_TALL.has(kind);
+  }
+
   drawTall(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
     const cvs = this.variant(kind, cx, cy);
     const building = BUILDINGS.has(kind);
     const ox = building ? ART * 4 : Math.floor((cvs.width - S) / 2);
     const oy = cvs.height - S;
     if (kind === 'tree') {
-      softShadow(g, sx + S / 2, sy + S - 8, 40, 12, 0.24);
+      // The renderer casts the directional shadow; nothing extra here.
     } else if (building) {
       // The building grounds itself with a long soft base shadow.
       const grad = g.createLinearGradient(0, sy + S, 0, sy + S + 18);

@@ -1,6 +1,7 @@
 import {
   Application,
   CanvasSource,
+  ColorMatrixFilter,
   Container,
   RenderTexture,
   Sprite,
@@ -107,7 +108,12 @@ export class PixiStage {
     s.scene.addChild(worldSprite);
     s.scene.addChild(lightLayer);
     for (const gl of s.glowPool) s.scene.addChild(gl);
+    // A touch of gouache richness: figures and props carry slightly more
+    // chroma than the receding grounds, so the saturation lands where it should.
+    const grade = new ColorMatrixFilter();
+    grade.saturate(0.08, true);
     s.scene.filters = [
+      grade,
       new AdvancedBloomFilter({ threshold: 0.66, bloomScale: 0.5, brightness: 1, blur: 6, quality: 4 }),
     ];
 

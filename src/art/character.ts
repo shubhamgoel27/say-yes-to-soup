@@ -1,5 +1,5 @@
 import { ART, PAL } from '../engine/config';
-import { dot, oval, rr, shade, surface, vgrad } from './pix';
+import { dot, outlineSheet, oval, rr, shade, surface, vgrad } from './pix';
 
 /**
  * Character rig, smooth-art era. Logical size stays 20x32 (2 tiles tall);
@@ -60,7 +60,8 @@ export function makeSheet(look: Look): HTMLCanvasElement {
       g.restore();
     }
   }
-  return cv;
+  // The cut-paper edge: figures are illustrations pasted into the world.
+  return outlineSheet(cv, AW, AH);
 }
 
 /**
