@@ -84,6 +84,11 @@ export class TileMap {
     this.objectOverrides.set(key(x, y), def);
   }
 
+  /** Drop all runtime overrides (a fresh journey starts undressed). */
+  clearOverrides() {
+    this.objectOverrides.clear();
+  }
+
   /** Add or replace a trigger at runtime. */
   addTrigger(trig: TriggerDef) {
     this.triggerIndex.set(key(trig.at[0], trig.at[1]), trig);

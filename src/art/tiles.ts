@@ -1479,6 +1479,14 @@ export class Tileset {
     return BUILDINGS.has(kind);
   }
 
+  /** The inked tall sprite plus its anchor offsets, for reflections. */
+  tallImage(kind: string, cx: number, cy: number): { cvs: HTMLCanvasElement; ox: number; oy: number } | null {
+    const cvs = this.inked(this.variant(kind, cx, cy), kind);
+    if (!cvs) return null;
+    const ox = BUILDINGS.has(kind) ? ART * 4 : Math.floor((cvs.width - S) / 2);
+    return { cvs, ox, oy: cvs.height - S };
+  }
+
   drawTall(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
     const cvs = this.inked(this.variant(kind, cx, cy), kind);
     const building = BUILDINGS.has(kind);

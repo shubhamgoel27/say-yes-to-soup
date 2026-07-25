@@ -135,6 +135,22 @@ export const CHAPTER: ChapterDef = {
     ],
   },
   sitKinds: ['stool'],
+  // The night before the vigil, candles line the marigold path to the gate.
+  dressings: [
+    {
+      map: 'oaxaca',
+      when: { has: ['c9.ofrenda.done'] },
+      cells: [
+        [41, 2, { t: 'veladora', solid: true }],
+        [41, 5, { t: 'veladora', solid: true }],
+        [41, 9, { t: 'veladora', solid: true }],
+        [41, 11, { t: 'veladora', solid: true }],
+        [39, 3, { t: 'veladora', solid: true }],
+        [39, 7, { t: 'veladora', solid: true }],
+        [39, 10, { t: 'veladora', solid: true }],
+      ],
+    },
+  ],
   arrival: { map: 'oaxaca', node: 'c9.arrive', flag: 'c9.arrived' },
   completion: {
     flag: 'c9.complete',

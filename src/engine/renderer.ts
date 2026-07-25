@@ -53,6 +53,14 @@ export class Renderer {
   private puffs: Puff[] = [];
 
   private grain: CanvasPattern | null = null;
+  /** Sun geometry, driven by the world clock: skew sign is throw direction. */
+  private sunSkew = -0.55;
+  private sunLen = 1;
+  /** Fires on the current map (tile coords), for the warm-side sprite pass. */
+  private fires: [number, number][] = [];
+  private fireScreen: [number, number][] = [];
+  /** Scratch cell for per-sprite compositing (fire rim). */
+  private scratch = surface(AW, AH);
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -87,6 +95,22 @@ export class Renderer {
   /** 0 = full day, 1 = deep night; gates the fireflies. */
   setNight(k: number) {
     this.nightK = k;
+  }
+
+  /**
+   * The sun crosses the sky. Morning throws shadows one way, noon pulls them
+   * short, evening throws them the other; night holds the last dusk angle,
+   * faded, for the lamps to argue with.
+   */
+  setSun(dayT: number) {
+    const d = Math.max(0, Math.min(1, (dayT - 0.02) / 0.58));
+    this.sunSkew = -Math.cos(Math.PI * d) * 0.75;
+    this.sunLen = 0.55 + Math.abs(Math.cos(Math.PI * d)) * 0.9 + this.nightK * 0.3;
+  }
+
+  /** The current map's fires, for warming the near side of whoever stands close. */
+  setFires(cells: [number, number][]) {
+    this.fires = cells;
   }
 
   /** Advance ambient animation. Called from the fixed-timestep update. */
@@ -172,11 +196,24 @@ export class Renderer {
     type Layer = { sort: number; draw: () => void };
     const layers: Layer[] = [];
 
+    // Fires into screen space once per frame for the warm-side pass.
+    this.fireScreen = this.fires.map(([fx, fy]) => [
+      (fx * TILE + TILE / 2 - cam.x) * A,
+      (fy * TILE + TILE / 2 - cam.y) * A,
+    ]);
+
+    const watery = (k: string) => k === 'sea' || k === 'water';
     sprites.forEach((s, i) => {
       const [px, py] = s.actor.renderPos();
+      const bx = Math.round(px / TILE);
+      const by = Math.round(py / TILE);
+      // Standing at the water's edge, you are in the water too, upside down.
+      const reflect = watery(kindAt(bx, by + 1))
+        ? { x: (bx * TILE - cam.x) * A - S * 0.5, y: ((by + 1) * TILE - cam.y) * A, w: S * 2, h: S * 1.5 }
+        : null;
       layers.push({
         sort: py / TILE,
-        draw: () => this.drawSprite(s, (px - cam.x) * A, (py - cam.y) * A, i),
+        draw: () => this.drawSprite(s, (px - cam.x) * A, (py - cam.y) * A, i, reflect),
       });
     });
     for (const t of tall) {
@@ -186,9 +223,14 @@ export class Renderer {
           const tx = (t.cx * TILE - cam.x) * A;
           const ty = (t.cy * TILE - cam.y) * A;
           // Trees, props, and whole buildings cast into the same sun as people.
-          if (t.kind === 'tree' || t.kind === 'palm') this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
-          else if (this.tiles.isBuilding(t.kind)) this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
+          if (t.kind === 'tree' || t.kind === 'palm') {
+            this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
+            this.drawDapple(tx + S / 2, ty + S - 8, t.cx, t.cy);
+          } else if (this.tiles.isBuilding(t.kind)) this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
           else if (this.tiles.castsSun(t.kind)) this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
+          if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
+            this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
+          }
           this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
         },
       });
@@ -353,24 +395,72 @@ export class Renderer {
    * shadow toward the north-west of the screen; at dusk the shadows stretch.
    * This one pass does more "real place" work than any texture.
    */
-  private castShadow(sx: number, sy: number, w: number, strength = 0.22) {
+  /** Light through leaves: bright coins wobbling inside a canopy's shadow. */
+  private drawDapple(sx: number, sy: number, cx: number, cy: number) {
+    const dayK = 1 - this.nightK;
+    if (dayK < 0.35) return;
     const ctx = this.ctx;
-    const stretch = 1 + this.nightK * 0.5; // dusk pulls shadows long
-    const grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, w);
-    grad.addColorStop(0, `rgba(38,26,14,${strength})`);
-    grad.addColorStop(0.7, `rgba(38,26,14,${strength * 0.4})`);
-    grad.addColorStop(1, 'rgba(38,26,14,0)');
     ctx.save();
-    ctx.translate(sx, sy);
-    // Skew toward the lower-left: late-morning Andean sun, kept forever.
-    ctx.transform(1, 0, -0.55, 0.34 * stretch, 0, 0);
-    ctx.translate(-sx, -sy);
-    ctx.fillStyle = grad;
-    ctx.fillRect(sx - w, sy - w, w * 2, w * 2);
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 4; i++) {
+      const h1 = cellHash(cx, cy, 400 + i * 7);
+      const h2 = cellHash(cx, cy, 430 + i * 11);
+      const wob = Math.sin(this.time * 1.2 + i * 1.9 + cx) * 4;
+      const px = sx + this.sunSkew * this.sunLen * 26 + (h1 - 0.5) * 64 + wob;
+      const py = sy - 2 + h2 * 16;
+      ctx.globalAlpha = (0.05 + h2 * 0.05) * dayK;
+      ctx.fillStyle = '#ffe9b0';
+      ctx.beginPath();
+      ctx.ellipse(px, py, 8 + h1 * 5, 3.4 + h2 * 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
-  private drawSprite(s: Sprite, sxf: number, syf: number, index: number) {
+  /** A tall prop doubled into the water below it, wobbling with the swell. */
+  private reflectTall(kind: string, sx: number, sy: number, cx: number, cy: number, cam: Camera) {
+    const img = this.tiles.tallImage(kind, cx, cy);
+    if (!img) return;
+    const ctx = this.ctx;
+    const baseY = sy + S - 2;
+    const clipY = ((cy + 1) * TILE - cam.y) * A;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(sx - S, clipY, S * 3, S * 2);
+    ctx.clip();
+    ctx.globalAlpha = 0.18;
+    const wob = Math.sin(this.time * 1.7 + cx * 1.3) * 2;
+    ctx.translate(wob, 2 * baseY);
+    ctx.scale(1, -1);
+    ctx.drawImage(img.cvs, sx - img.ox, sy - img.oy);
+    ctx.restore();
+  }
+
+  private castShadow(sx: number, sy: number, w: number, strength = 0.22) {
+    const ctx = this.ctx;
+    const a = strength * (1 - this.nightK * 0.55);
+    if (a < 0.02) return;
+    const ww = w * (0.7 + 0.35 * this.sunLen);
+    const grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, ww);
+    grad.addColorStop(0, `rgba(38,26,14,${a})`);
+    grad.addColorStop(0.7, `rgba(38,26,14,${a * 0.4})`);
+    grad.addColorStop(1, 'rgba(38,26,14,0)');
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.transform(1, 0, this.sunSkew * this.sunLen, 0.32, 0, 0);
+    ctx.translate(-sx, -sy);
+    ctx.fillStyle = grad;
+    ctx.fillRect(sx - ww, sy - ww, ww * 2, ww * 2);
+    ctx.restore();
+  }
+
+  private drawSprite(
+    s: Sprite,
+    sxf: number,
+    syf: number,
+    index: number,
+    reflect: { x: number; y: number; w: number; h: number } | null = null,
+  ) {
     const ctx = this.ctx;
     const sx = Math.round(sxf);
     const sy = Math.round(syf);
@@ -381,9 +471,49 @@ export class Renderer {
     const dx = sx - Math.floor((AW - S) / 2);
     const dy = sy - (AH - S);
 
+    const mirror = (col: number) => {
+      if (!reflect) return;
+      const baseY = sy + S - 2;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(reflect.x, reflect.y, reflect.w, reflect.h);
+      ctx.clip();
+      ctx.globalAlpha = 0.2;
+      ctx.translate(Math.sin(this.time * 2 + sx * 0.02) * 2, 2 * baseY);
+      ctx.scale(1, -1);
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy, AW, AH);
+      ctx.restore();
+    };
+
+    /**
+     * Firelight warms the near side. Composited on a scratch cell so the
+     * tint stays inside the figure's silhouette.
+     */
+    const drawLit = (col: number, ddy: number) => {
+      const near = this.nearestFire(sx + S / 2, sy + S / 2);
+      const strength = near ? near.k * (0.22 + this.nightK * 0.2) : 0;
+      if (strength < 0.05) {
+        ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy + ddy, AW, AH);
+        return;
+      }
+      const { cv, g } = this.scratch;
+      g.clearRect(0, 0, AW, AH);
+      g.globalCompositeOperation = 'source-over';
+      g.drawImage(s.sheet, col * AW, row * AH, AW, AH, 0, 0, AW, AH);
+      g.globalCompositeOperation = 'source-atop';
+      const fromLeft = near !== null && near.dx < 0;
+      const grad = g.createLinearGradient(fromLeft ? 0 : AW, 0, fromLeft ? AW : 0, 0);
+      grad.addColorStop(0, `rgba(255,158,74,${strength})`);
+      grad.addColorStop(0.65, 'rgba(255,158,74,0)');
+      g.fillStyle = grad;
+      g.fillRect(0, 0, AW, AH);
+      ctx.drawImage(cv, dx, dy + ddy);
+    };
+
     if (s.rig === 'animal') {
       const col = s.actor.walkFrame();
-      ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy, AW, AH);
+      mirror(col);
+      drawLit(col, 0);
       return;
     }
 
@@ -393,6 +523,7 @@ export class Renderer {
     if (idle && s.actor.dir === 'down' && ((this.time + index * 1.37) % 4.1) < 0.14) {
       col = 6; // blink
     }
+    mirror(col);
     if (idle) {
       const breathe = Math.sin((this.time + index * 0.9) * 2.6) * 1.6;
       if (breathe > 0.4) {
@@ -403,7 +534,22 @@ export class Renderer {
         return;
       }
     }
-    ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy, AW, AH);
+    drawLit(col, 0);
+  }
+
+  /** Nearest fire within reach, as direction + falloff. */
+  private nearestFire(sx: number, sy: number): { dx: number; k: number } | null {
+    let best: { dx: number; k: number } | null = null;
+    for (const [fx, fy] of this.fireScreen) {
+      // Fires arrive in screen space from drawWorld's precompute.
+      const ddx = fx - sx;
+      const ddy = fy - sy;
+      const d = Math.hypot(ddx, ddy) / (TILE * A);
+      if (d > 3.5) continue;
+      const k = 1 - d / 3.5;
+      if (!best || k > best.k) best = { dx: ddx, k };
+    }
+    return best;
   }
 
   private drawPuffs(cam: Camera) {

@@ -21,6 +21,7 @@ import {
   ARRIVALS,
   COMPLETIONS,
   DIG_SPOTS,
+  DRESSINGS,
   EXAMINES,
   GAMES,
   JOURNAL,
@@ -236,6 +237,28 @@ function applyGateState() {
 }
 applyGateState();
 
+/**
+ * Festival dressing: chapters redecorate their maps as the story moves
+ * (bamboo fills with wishes, candles line the marigold path). Idempotent;
+ * runs at boot and whenever flags change.
+ */
+function applyDressings() {
+  for (const d of DRESSINGS) {
+    if (!state.check(d.when)) continue;
+    const tm = maps[d.map];
+    if (!tm) continue;
+    if (d.swap) {
+      for (let y = 0; y < tm.h; y++) {
+        for (let x = 0; x < tm.w; x++) {
+          if (tm.object(x, y)?.t === d.swap.from) tm.setObject(x, y, d.swap.to);
+        }
+      }
+    }
+    for (const [x, y, def] of d.cells ?? []) tm.setObject(x, y, def);
+  }
+}
+applyDressings();
+
 // ---------------------------------------------------------------- ui
 
 const toasts = new Toasts($('toasts'));
@@ -309,6 +332,7 @@ let pendingLetter: string | null = null;
 state.on('letter', (id) => {
   pendingLetter = id;
 });
+state.on('changed', () => applyDressings());
 state.on('errand', (id) => {
   refreshTaskChip();
   toasts.show(id ? '✉ you are carrying something for someone' : '✉ delivered');
@@ -700,6 +724,28 @@ function endDialogue() {
   if (state.has('story.complete') && !celebrated) {
     celebrated = true;
     applyGateState();
+
+/**
+ * Festival dressing: chapters redecorate their maps as the story moves
+ * (bamboo fills with wishes, candles line the marigold path). Idempotent;
+ * runs at boot and whenever flags change.
+ */
+function applyDressings() {
+  for (const d of DRESSINGS) {
+    if (!state.check(d.when)) continue;
+    const tm = maps[d.map];
+    if (!tm) continue;
+    if (d.swap) {
+      for (let y = 0; y < tm.h; y++) {
+        for (let x = 0; x < tm.w; x++) {
+          if (tm.object(x, y)?.t === d.swap.from) tm.setObject(x, y, d.swap.to);
+        }
+      }
+    }
+    for (const [x, y, def] of d.cells ?? []) tm.setObject(x, y, def);
+  }
+}
+applyDressings();
     showPlate('CHAPTER ONE · COMPLETE', 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
@@ -828,6 +874,7 @@ function tryInteract() {
 
 type Mode = 'title' | 'letter' | 'play';
 let mode: Mode = 'title';
+let attractT = 0;
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
@@ -868,6 +915,8 @@ function update(dt: number) {
   // The world turns.
   if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
+  renderer.setSun(dayT);
+  renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
@@ -920,6 +969,9 @@ function update(dt: number) {
       title.hideTitle();
       if (choice === 'new') {
         state.reset();
+        for (const tm of Object.values(maps)) tm.clearOverrides();
+        applyGateState();
+        applyDressings();
         refreshTaskChip();
         mode = 'letter';
         title.showLetter();
@@ -1015,8 +1067,17 @@ function update(dt: number) {
     paca.actor.placeAt(28, 4, 'down');
   }
 
-  const [px, py] = player.renderPos();
-  camera.follow(px, py, map.w, map.h);
+  if (mode === 'title') {
+    // Attract mode: the camera drifts across wherever the journey paused,
+    // like a memory browsing itself behind the cover.
+    attractT += dt;
+    const wx = (map.w * TILE) / 2 + Math.sin(attractT * 0.045) * map.w * TILE * 0.32 - TILE / 2;
+    const wy = (map.h * TILE) / 2 + Math.sin(attractT * 0.031 + 1.7) * map.h * TILE * 0.32 - TILE / 2;
+    camera.follow(wx, wy, map.w, map.h);
+  } else {
+    const [ppx, ppy] = player.renderPos();
+    camera.follow(ppx, ppy, map.w, map.h);
+  }
 
   // Remember where we stand; persisted alongside the next save.
   if (mode === 'play') state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };

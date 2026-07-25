@@ -117,6 +117,15 @@ export const CHAPTER: ChapterDef = {
       'Fumi\'s slippers pass the doorway, pause, and pass again. The house is being run.',
     ],
   },
+  // Once your tanzaku hangs, every plain bamboo in town fills with wishes:
+  // the festival arrives because you joined it.
+  dressings: [
+    {
+      map: 'shionoura',
+      when: { has: ['wish.written'] },
+      swap: { from: 'bamboo', to: { t: 'bambooWish', solid: true, tall: true } },
+    },
+  ],
   arrival: { map: 'shionoura', node: 'c4.arrive', flag: 'c4.arrived' },
   completion: {
     flag: 'c4.complete',

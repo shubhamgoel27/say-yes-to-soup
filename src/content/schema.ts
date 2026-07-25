@@ -197,6 +197,18 @@ export type ChapterDef = {
   /** Narration fired on first arrival: entering `map` runs `node` once.
    * `when` gates it (the Return reuses old maps and must wait its turn). */
   arrival?: { map: string; node: string; flag: string; when?: Cond };
+  /**
+   * Festival dressing: the map changes as the story does. While `when` holds,
+   * either every object of kind `swap.from` becomes `swap.to`, or the listed
+   * cells gain the given object (null clears a cell). Idempotent; reapplied
+   * whenever flags change.
+   */
+  dressings?: {
+    map: string;
+    when: Cond;
+    swap?: { from: string; to: { t: string; solid?: boolean; tall?: boolean } };
+    cells?: [number, number, { t: string; solid?: boolean; tall?: boolean } | null][];
+  }[];
   /** Chapter-complete beat: when `flag` first appears, show the plate. */
   completion?: { flag: string; plate: string; toasts: string[] };
 };

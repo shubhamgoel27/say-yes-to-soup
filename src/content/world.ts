@@ -102,6 +102,7 @@ export const MAP_META: Record<string, MapMeta> = Object.assign({}, ...CHAPTERS.m
 export const MOODS: Record<string, MoodSpec> = Object.assign({}, ...CHAPTERS.map((c) => c.moods ?? {}));
 
 export const ARRIVALS = CHAPTERS.flatMap((c) => (c.arrival ? [c.arrival] : []));
+export const DRESSINGS = CHAPTERS.flatMap((c) => c.dressings ?? []);
 export const COMPLETIONS = CHAPTERS.flatMap((c) => (c.completion ? [c.completion] : []));
 
 /** Sitting: per-map resting thoughts, and which kinds invite you to sit. */
