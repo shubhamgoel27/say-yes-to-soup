@@ -446,6 +446,9 @@ function updateVillager(v: Villager, dt: number) {
   }
 
   if (v.def.range === 0 || dev.freezeWander) return;
+  // Deep evening: the wandering stops. People stand where the day left them,
+  // finishing conversations, and the village audibly settles.
+  if (sceneFor(map.id) !== 'interior' && nightLevel(dayT) > 0.6) return;
   v.think -= dt;
   if (v.think <= 0) {
     // Mostly stand around; occasionally amble. Village time moves slowly.

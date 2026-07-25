@@ -2,6 +2,7 @@ import type { GameState } from '../engine/state';
 import type { Dir } from '../engine/input';
 import type { JournalEntry, JournalTab, TaskDef } from '../content/schema';
 import type { RouteStop } from '../content/route';
+import { makeDishArt } from '../art/dishes';
 
 export type { TaskDef };
 
@@ -140,6 +141,7 @@ export class JournalUI {
     const detailHtml = sel
       ? `<div class="j-title">${sel.title}${sel.script ? ` <span class="j-native">${sel.script}</span>` : ''}</div>` +
         (sel.sub ? `<div class="j-sub">${sel.sub}</div>` : '') +
+        (sel.tab === 'dishes' ? `<div class="j-dishart"></div>` : '') +
         (sel.nani
           ? `<div class="j-nani"><span>Nani, 1974</span>${sel.nani}</div>`
           : `<div class="j-nani empty"><span>Nani, 1974</span>(she never reached this page)</div>`) +
@@ -168,6 +170,12 @@ export class JournalUI {
         </div>
         <div class="j-hint">&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close</div>
       </div>`;
+    // The dish gets its little painting, mounted after the HTML lands.
+    if (sel?.tab === 'dishes') {
+      const slot = this.root.querySelector('.j-dishart');
+      const art = slot ? makeDishArt(sel.id) : null;
+      if (slot && art) slot.appendChild(art);
+    }
   }
 
   /**
