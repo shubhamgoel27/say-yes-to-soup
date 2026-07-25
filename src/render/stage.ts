@@ -1,11 +1,13 @@
 import {
   Application,
+  Assets,
   CanvasSource,
   ColorMatrixFilter,
   Container,
   RenderTexture,
   Sprite,
   Texture,
+  TilingSprite,
 } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
 import { ART, VIEW_H, VIEW_W } from '../engine/config';
@@ -106,12 +108,28 @@ export class PixiStage {
 
     s.scene = new Container();
     s.scene.addChild(worldSprite);
+
+    // Paper tooth over the whole frame, on the GPU where multiply is free.
+    // (Done on the 2D canvas this same blend forced Chrome off the GPU and
+    // tripled frame times; the look is identical here.)
+    try {
+      const grainTex = await Assets.load<Texture>('/assets/textures/paper-grain-white.jpg');
+      grainTex.source.addressMode = 'repeat';
+      const grain = new TilingSprite({ texture: grainTex, width: VIEW_W * ART, height: VIEW_H * ART });
+      grain.blendMode = 'multiply';
+      grain.alpha = 0.09;
+      s.scene.addChild(grain);
+    } catch {
+      // No texture, no tooth; the game plays on.
+    }
+
     s.scene.addChild(lightLayer);
     for (const gl of s.glowPool) s.scene.addChild(gl);
     // A touch of gouache richness: figures and props carry slightly more
     // chroma than the receding grounds, so the saturation lands where it should.
     const grade = new ColorMatrixFilter();
     grade.saturate(0.08, true);
+    grade.resolution = 1; // pure color math; no need to pay retina cost
     s.scene.filters = [
       grade,
       new AdvancedBloomFilter({ threshold: 0.66, bloomScale: 0.5, brightness: 1, blur: 6, quality: 4 }),

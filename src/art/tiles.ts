@@ -1280,6 +1280,13 @@ export class Tileset {
       for (const k of set.watery ?? []) WATERY.add(k);
       for (const k of set.pathy ?? []) PATHY.add(k);
     }
+
+    // Pre-ink everything at boot. Outlining a 352px building takes a few
+    // milliseconds; done lazily it lands mid-walk as a dropped frame, done
+    // here it hides inside the load.
+    for (const [kind, list] of this.v) {
+      for (const cvs of list) this.inked(cvs, kind);
+    }
   }
 
   private make(

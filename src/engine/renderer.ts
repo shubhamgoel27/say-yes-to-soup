@@ -52,7 +52,17 @@ export class Renderer {
   private emotes: Emote[] = [];
   private puffs: Puff[] = [];
 
-  private grain: CanvasPattern | null = null;
+  /**
+   * Per-frame gradients are the silent frame killer: at 60fps every
+   * createRadialGradient is a small allocation and a shader rebuild. All the
+   * soft blobs below are baked ONCE here and drawn with drawImage + alpha,
+   * which is why the layered look stays and the jank goes.
+   */
+  private shadowBlob: HTMLCanvasElement;
+  private tintPatches: HTMLCanvasElement[] = [];
+  private wallShadeStrip: HTMLCanvasElement;
+  private cloudPuff: HTMLCanvasElement;
+  private fireflyGlow: HTMLCanvasElement;
   /** Sun geometry, driven by the world clock: skew sign is throw direction. */
   private sunSkew = -0.55;
   private sunLen = 1;
@@ -78,13 +88,60 @@ export class Renderer {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     this.atmospheres = buildAtmospheres();
-    // Paper tooth over the whole frame: the world is an illustration in her
-    // journal, and illustrations live on paper. Loads lazily; absent, no harm.
-    const grainImg = new Image();
-    grainImg.onload = () => {
-      this.grain = ctx.createPattern(grainImg, 'repeat');
-    };
-    grainImg.src = '/assets/textures/paper-grain-white.jpg';
+
+    // Bake the soft-blob library.
+    {
+      const sh = surface(128, 128);
+      const g1 = sh.g.createRadialGradient(64, 64, 2, 64, 64, 64);
+      g1.addColorStop(0, 'rgba(38,26,14,1)');
+      g1.addColorStop(0.7, 'rgba(38,26,14,0.4)');
+      g1.addColorStop(1, 'rgba(38,26,14,0)');
+      sh.g.fillStyle = g1;
+      sh.g.fillRect(0, 0, 128, 128);
+      this.shadowBlob = sh.cv;
+
+      const TINTS = [
+        'rgba(96,70,36,0.11)',
+        'rgba(255,236,180,0.10)',
+        'rgba(88,104,60,0.10)',
+        'rgba(140,90,50,0.08)',
+      ];
+      for (const tint of TINTS) {
+        const tp = surface(256, 256);
+        const g2 = tp.g.createRadialGradient(128, 128, 38, 128, 128, 128);
+        g2.addColorStop(0, tint);
+        g2.addColorStop(1, 'rgba(0,0,0,0)');
+        tp.g.fillStyle = g2;
+        tp.g.fillRect(0, 0, 256, 256);
+        this.tintPatches.push(tp.cv);
+      }
+
+      const ws = surface(S, 16);
+      const g3 = ws.g.createLinearGradient(0, 0, 0, 16);
+      g3.addColorStop(0, 'rgba(30,22,14,0.26)');
+      g3.addColorStop(1, 'rgba(30,22,14,0)');
+      ws.g.fillStyle = g3;
+      ws.g.fillRect(0, 0, S, 16);
+      this.wallShadeStrip = ws.cv;
+
+      const cp = surface(256, 256);
+      const g4 = cp.g.createRadialGradient(128, 128, 26, 128, 128, 128);
+      g4.addColorStop(0, 'rgba(30,24,40,0.10)');
+      g4.addColorStop(0.7, 'rgba(30,24,40,0.06)');
+      g4.addColorStop(1, 'rgba(30,24,40,0)');
+      cp.g.fillStyle = g4;
+      cp.g.fillRect(0, 0, 256, 256);
+      this.cloudPuff = cp.cv;
+
+      const ff = surface(16, 16);
+      const g5 = ff.g.createRadialGradient(8, 8, 0, 8, 8, 8);
+      g5.addColorStop(0, 'rgba(232,255,160,0.9)');
+      g5.addColorStop(0.4, 'rgba(210,245,130,0.35)');
+      g5.addColorStop(1, 'rgba(210,245,130,0)');
+      ff.g.fillStyle = g5;
+      ff.g.fillRect(0, 0, 16, 16);
+      this.fireflyGlow = ff.cv;
+    }
   }
 
   /** Chapters bring their own weather. */
@@ -212,11 +269,7 @@ export class Renderer {
         // Anything wall-like above throws soft afternoon shade onto this cell.
         const above = map.object(cx, cy - 1);
         if (above?.solid && above.tall && !map.object(cx, cy)?.solid) {
-          const grad = ctx.createLinearGradient(0, sy, 0, sy + 16);
-          grad.addColorStop(0, 'rgba(30,22,14,0.26)');
-          grad.addColorStop(1, 'rgba(30,22,14,0)');
-          ctx.fillStyle = grad;
-          ctx.fillRect(sx, sy, S, 16);
+          ctx.drawImage(this.wallShadeStrip, sx, sy);
         }
 
         const obj = map.object(cx, cy);
@@ -304,14 +357,7 @@ export class Renderer {
     this.drawWeather(map, cam);
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
-    if (this.grain) {
-      ctx.save();
-      ctx.globalCompositeOperation = 'multiply';
-      ctx.globalAlpha = 0.09;
-      ctx.fillStyle = this.grain;
-      ctx.fillRect(0, 0, W, H);
-      ctx.restore();
-    }
+
   }
 
   /** World-anchored tonal patches, keyed to a coarse grid so they never move. */
@@ -320,10 +366,10 @@ export class Renderer {
     // Two octaves of gouache: broad warm/cool washes the size of a meadow,
     // then the familiar smaller patches. Flat fields stop being flat.
     const TINTS = [
-      'rgba(96,70,36,0.11)', // dry shadowed earth
-      'rgba(255,236,180,0.10)', // sun-bleached
-      'rgba(88,104,60,0.10)', // faint green flush
-      'rgba(140,90,50,0.08)', // iron warmth
+      this.tintPatches[0]!, // dry shadowed earth
+      this.tintPatches[1]!, // sun-bleached
+      this.tintPatches[2]!, // faint green flush
+      this.tintPatches[3]!, // iron warmth
     ];
     const octave = (cell: number, salt: number, rBase: number, rVar: number, boost: number) => {
       const gy0 = Math.floor(y0 / cell) - 1;
@@ -342,19 +388,14 @@ export class Renderer {
           const x = (wx - cam.x) * A;
           const y = (wy - cam.y) * A;
           const r = (rBase + cellHash(gx, gy, salt + 11) * rVar) * TILE * A;
-          const grad = ctx.createRadialGradient(x, y, r * 0.15, x, y, r);
-          grad.addColorStop(0, tint);
-          grad.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.save();
           ctx.globalAlpha = boost;
-          ctx.fillStyle = grad;
-          ctx.fillRect(x - r, y - r, r * 2, r * 2);
-          ctx.restore();
+          ctx.drawImage(tint, x - r, y - r, r * 2, r * 2);
         }
       }
     };
     octave(9, 131, 5.5, 4.5, 1); // the meadow-scale washes
     octave(4, 101, 2.2, 2.4, 0.9); // the close-up dapple
+    ctx.globalAlpha = 1;
   }
 
   private drawWaterLife(
@@ -378,6 +419,7 @@ export class Renderer {
 
         // Glints: two per tile, pulsing out of phase, gone after dark.
         if (dayK > 0.25) {
+          ctx.fillStyle = '#f2f8f4';
           for (let i = 0; i < 2; i++) {
             const h = cellHash(cx, cy, 300 + i * 17);
             const pulse = Math.sin(this.time * (1.1 + h) + h * 40);
@@ -385,14 +427,12 @@ export class Renderer {
             const a = (pulse - 0.55) * 1.6 * dayK * (kind === 'sea' ? 0.55 : 0.4);
             const gx = sx + 8 + h * (S - 16);
             const gy = sy + 8 + cellHash(cx, cy, 350 + i * 13) * (S - 16);
-            ctx.save();
             ctx.globalAlpha = a;
-            ctx.fillStyle = '#f2f8f4';
             ctx.beginPath();
             ctx.ellipse(gx, gy, 4.5, 1.4, 0, 0, Math.PI * 2);
             ctx.fill();
-            ctx.restore();
           }
+          ctx.globalAlpha = 1;
         }
 
         // Foam: only the sea works its shoreline this hard.
@@ -494,16 +534,11 @@ export class Renderer {
     const a = strength * (1 - this.nightK * 0.55);
     if (a < 0.02) return;
     const ww = w * (0.7 + 0.35 * this.sunLen);
-    const grad = ctx.createRadialGradient(sx, sy, 2, sx, sy, ww);
-    grad.addColorStop(0, `rgba(38,26,14,${a})`);
-    grad.addColorStop(0.7, `rgba(38,26,14,${a * 0.4})`);
-    grad.addColorStop(1, 'rgba(38,26,14,0)');
     ctx.save();
     ctx.translate(sx, sy);
     ctx.transform(1, 0, this.sunSkew * this.sunLen, 0.32, 0, 0);
-    ctx.translate(-sx, -sy);
-    ctx.fillStyle = grad;
-    ctx.fillRect(sx - ww, sy - ww, ww * 2, ww * 2);
+    ctx.globalAlpha = a;
+    ctx.drawImage(this.shadowBlob, -ww, -ww, ww * 2, ww * 2);
     ctx.restore();
   }
 
@@ -767,16 +802,10 @@ export class Renderer {
       const x = (wx - cam.x * 0.92) * A;
       const y = (wy - cam.y * 0.92) * A;
       const r = (55 + h1 * 40) * A;
-      const grad = ctx.createRadialGradient(x, y, r * 0.2, x, y, r);
-      grad.addColorStop(0, 'rgba(30,24,40,0.10)');
-      grad.addColorStop(0.7, 'rgba(30,24,40,0.06)');
-      grad.addColorStop(1, 'rgba(30,24,40,0)');
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(1, 0.42);
-      ctx.translate(-x, -y);
-      ctx.fillStyle = grad;
-      ctx.fillRect(x - r, y - r, r * 2, r * 2);
+      ctx.drawImage(this.cloudPuff, -r, -r, r * 2, r * 2);
       ctx.restore();
     }
   }
@@ -798,13 +827,10 @@ export class Renderer {
       const pulse = Math.max(0, Math.sin(this.time * 1.8 + i * 2.6));
       const a = pulse * pulse * strength;
       if (a < 0.05) continue;
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, 8);
-      grad.addColorStop(0, `rgba(232,255,160,${0.9 * a})`);
-      grad.addColorStop(0.4, `rgba(210,245,130,${0.35 * a})`);
-      grad.addColorStop(1, 'rgba(210,245,130,0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(x - 8, y - 8, 16, 16);
+      ctx.globalAlpha = a;
+      ctx.drawImage(this.fireflyGlow, x - 8, y - 8);
     }
+    ctx.globalAlpha = 1;
   }
 
   /** A few leaves forever on their way somewhere else. */
