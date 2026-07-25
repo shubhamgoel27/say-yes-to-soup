@@ -1,4 +1,5 @@
 import type { Dir } from '../engine/input';
+import { makeCoverArt } from '../art/cover';
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -11,6 +12,9 @@ export type TitleChoice = 'new' | 'continue' | 'settings' | 'credits';
 export class TitleScreen {
   private cursor = 0;
   private options: { id: TitleChoice; label: string }[] = [];
+  private hasSave = false;
+  /** "Begin again" over a real save arms first, erases second. */
+  private armNew = false;
 
   constructor(
     private titleEl: HTMLElement,
@@ -25,6 +29,8 @@ export class TitleScreen {
   }
 
   showTitle(hasSave: boolean) {
+    this.hasSave = hasSave;
+    this.armNew = false;
     this.options = hasSave
       ? [
           { id: 'continue', label: 'Continue the journey' },
@@ -80,20 +86,32 @@ export class TitleScreen {
     if (dir === 'up') this.cursor = (this.cursor + n - 1) % n;
     else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
     else return;
+    this.armNew = false; // moving the cursor stands down the warning
     this.render();
   }
 
-  /** Returns the chosen option when the title menu is confirmed. */
-  choose(): TitleChoice {
-    return this.options[this.cursor]?.id ?? 'new';
+  /**
+   * Returns the chosen option when the title menu is confirmed. Choosing
+   * "Begin again" over an existing journal asks twice: the first press arms
+   * a plainly-worded warning, only the second erases. 'none' = nothing yet.
+   */
+  choose(): TitleChoice | 'none' {
+    const id = this.options[this.cursor]?.id ?? 'new';
+    if (id === 'new' && this.hasSave && !this.armNew) {
+      this.armNew = true;
+      this.render();
+      return 'none';
+    }
+    return id;
   }
 
   private render() {
     const menu = this.options
-      .map(
-        (o, i) =>
-          `<div class="t-opt${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${o.label}</div>`,
-      )
+      .map((o, i) => {
+        const label =
+          o.id === 'new' && this.armNew ? 'Erase the journal and begin again? (press again)' : o.label;
+        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${label}</div>`;
+      })
       .join('');
     this.titleEl.innerHTML = `
       <div class="t-card">
@@ -101,9 +119,8 @@ export class TitleScreen {
           <div class="t-band"></div>
           <div class="t-kicker">a journal, half full</div>
           <div class="t-name">SAY YES<br>TO SOUP</div>
-          <div class="t-bowl">
+          <div class="t-art">
             <span class="t-steam s1"></span><span class="t-steam s2"></span><span class="t-steam s3"></span>
-            <div class="bowl"></div>
           </div>
           <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
           <div class="t-menu">${menu}</div>
@@ -114,5 +131,7 @@ export class TitleScreen {
           <span><b>J</b>&nbsp; the journal</span>
         </div>
       </div>`;
+    const art = this.titleEl.querySelector('.t-art');
+    if (art) art.insertBefore(makeCoverArt(), art.firstChild);
   }
 }

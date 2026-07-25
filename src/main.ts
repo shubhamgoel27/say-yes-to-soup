@@ -288,6 +288,11 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     standUp();
     title.showTitle(state.hasSave());
   },
+  onClosed: () => {
+    // Closed over the title: bring the cover back with a fresh cursor, so
+    // the next press does exactly what it looks like it will do.
+    if (mode === 'title') title.showTitle(state.hasSave());
+  },
 });
 
 /** Chapter mini-games: the engine owns one overlay root per panel. */
@@ -1068,9 +1073,15 @@ function update(dt: number) {
       audio.select();
     }
     if (act) {
-      audio.confirm();
       const choice = title.choose();
+      if (choice === 'none') {
+        // The warning armed itself; nothing else happens on this press.
+        audio.denied();
+        return;
+      }
+      audio.confirm();
       if (choice === 'settings' || choice === 'credits') {
+        title.hideTitle();
         pauseMenu.open(choice, true);
         return;
       }

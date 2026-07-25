@@ -118,9 +118,18 @@ export class Input {
    * Start pauses. Polled once per simulation frame; standard mapping only,
    * which covers every pad a cozy player is likely to own.
    */
+  private padAwake = false;
+
   pollGamepad() {
     const pads = navigator.getGamepads?.() ?? [];
-    const pad = pads.find((p) => p && p.connected);
+    const pad = pads.find((p) => p && p.connected && p.mapping === 'standard');
+    // A resting controller with axis drift must not ghost-drive the menus:
+    // ignore every pad until it shows a deliberate press or a hard stick push.
+    if (pad && !this.padAwake) {
+      const deliberate = pad.buttons.some((b) => b.pressed) || pad.axes.some((a) => Math.abs(a) > 0.7);
+      if (!deliberate) return;
+      this.padAwake = true;
+    }
     if (!pad) {
       if (this.padDir) {
         this.dirStack = this.dirStack.filter((d) => d !== this.padDir);

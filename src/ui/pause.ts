@@ -28,6 +28,7 @@ type Screen = 'menu' | 'settings' | 'help' | 'credits';
 type Hooks = {
   onTextSpeed: (cps: number) => void;
   onToTitle: () => void;
+  onClosed?: () => void;
 };
 
 export class PauseMenu {
@@ -59,6 +60,7 @@ export class PauseMenu {
 
   close() {
     this.root.hidden = true;
+    this.hooks.onClosed?.();
   }
 
   private savePrefs() {

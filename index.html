@@ -523,6 +523,25 @@
         text-wrap: balance;
         text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 236, 200, 0.12);
       }
+      /* The cover painting: the whole journey in one gouache. */
+      .t-art {
+        position: relative;
+        margin: 14px 0 10px;
+      }
+      .t-art canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 6px;
+        border: 1.5px solid rgba(43, 33, 24, 0.55);
+        box-shadow: inset 0 0 0 1.5px rgba(232, 220, 196, 0.18), 0 3px 8px rgba(0, 0, 0, 0.35);
+      }
+      .t-art .t-steam { bottom: 30px; }
+      .t-art .t-steam.s1 { left: calc(50% - 9px); }
+      .t-art .t-steam.s2 { left: 50%; }
+      .t-art .t-steam.s3 { left: calc(50% + 9px); }
+      .t-opt.warn { color: #a3542f; font-size: 19px; }
+
       /* The bowl the whole game is named after, steaming patiently. */
       .t-bowl {
         position: relative;
