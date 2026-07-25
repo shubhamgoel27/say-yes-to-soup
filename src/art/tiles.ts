@@ -1,5 +1,5 @@
 import { ART, PAL, TILE } from '../engine/config';
-import { Rng, blob, cellHash, dot, glowSpot, mute, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
+import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
 import { ART_SETS } from './sets';
 
 /**
@@ -19,6 +19,9 @@ export const PATHY = new Set(['path', 'plaza', 'bridge', 'dirt', 'pierdeck']);
 const BUILDINGS = new Set(['house', 'casa']);
 
 export type Conn = (dx: number, dy: number) => boolean;
+
+/** Soft ground decor that should melt into the earth, never be cut out. */
+const NO_INK = new Set(['rug', 'mat', 'petalpath', 'tuft', 'flower', 'gateOpen', 'cuy', 'mwanirow', 'clovemat']);
 
 /** Freestanding tall things that sit on a soft cast shadow. */
 const GROUNDED_TALL = new Set([
@@ -1388,6 +1391,38 @@ export class Tileset {
     g.drawImage(this.variant(kind, cx, cy), sx, sy);
   }
 
+  /**
+   * The cut-paper pass for props: every object gets the same soft ink edge
+   * the characters wear, and buildings additionally take the sun on one side.
+   * Cached per source canvas; costs nothing after the first frame each.
+   */
+  private inkCache = new Map<HTMLCanvasElement, HTMLCanvasElement>();
+  private inked(cvs: HTMLCanvasElement, kind: string): HTMLCanvasElement {
+    if (NO_INK.has(kind)) return cvs;
+    let out = this.inkCache.get(cvs);
+    if (!out) {
+      const building = BUILDINGS.has(kind);
+      out = outlineSheet(cvs, cvs.width, cvs.height, 'rgba(38,26,16,0.5)', building ? 3 : 2);
+      if (building) {
+        // One sun for everyone: shade gathers left, light rests on the right.
+        const g = out.getContext('2d');
+        if (g) {
+          g.save();
+          g.globalCompositeOperation = 'source-atop';
+          const grad = g.createLinearGradient(0, 0, out.width, 0);
+          grad.addColorStop(0, 'rgba(44,30,54,0.12)');
+          grad.addColorStop(0.45, 'rgba(0,0,0,0)');
+          grad.addColorStop(1, 'rgba(255,238,196,0.10)');
+          g.fillStyle = grad;
+          g.fillRect(0, 0, out.width, out.height);
+          g.restore();
+        }
+      }
+      this.inkCache.set(cvs, out);
+    }
+    return out;
+  }
+
   /** Walkable decoration drawn between ground and the depth-sorted pass. */
   drawFlat(
     g: CanvasRenderingContext2D,
@@ -1398,7 +1433,7 @@ export class Tileset {
     cy: number,
     time: number,
   ) {
-    if (kind === 'tuft' || kind === 'flower') {
+    if (kind === 'tuft' || kind === 'flower' || kind === 'papel') {
       const sway = Math.sin(time * 2.1 - cx * 0.45 - cy * 0.18 + cellHash(cx, cy, 9) * 0.9) * 2.5;
       g.save();
       g.translate(sx + S / 2, sy + S);
@@ -1413,7 +1448,7 @@ export class Tileset {
       g.drawImage(this.variant(kind, cx, cy), sx, sy + hop);
       return;
     }
-    g.drawImage(this.variant(kind, cx, cy), sx, sy);
+    g.drawImage(this.inked(this.variant(kind, cx, cy), kind), sx, sy);
     if (kind === 'campfire' || kind === 'qoncha') {
       // A living flame: layered teardrops that flicker.
       const fx = sx + S / 2;
@@ -1439,8 +1474,13 @@ export class Tileset {
     return GROUNDED_TALL.has(ART_ALIAS[kind] ?? kind) || GROUNDED_TALL.has(kind);
   }
 
+  /** Whether a kind is a full building sprite (for the renderer's big shadow). */
+  isBuilding(kind: string): boolean {
+    return BUILDINGS.has(kind);
+  }
+
   drawTall(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
-    const cvs = this.variant(kind, cx, cy);
+    const cvs = this.inked(this.variant(kind, cx, cy), kind);
     const building = BUILDINGS.has(kind);
     const ox = building ? ART * 4 : Math.floor((cvs.width - S) / 2);
     const oy = cvs.height - S;

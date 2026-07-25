@@ -126,7 +126,7 @@ const AMBIENT: Record<string, number> = {
   warm: 0xfdf6ea,
   cool: 0xe4ecf6,
   dusty: 0xffeed6,
-  interior: 0xbfab96,
+  interior: 0xb0a089,
   garua: 0xdfe3e6,
   glare: 0xffffff,
   ...Object.fromEntries(Object.entries(MOODS).map(([k, v]) => [k, v.ambient])),
@@ -1044,15 +1044,17 @@ function render() {
   // Outdoors they wake with the dusk; interior fires carry the room all day.
   const nk = moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
   const outdoorK = moodFor(map.id) === 'interior' ? 1 : 0.25 + 0.75 * Math.min(1, nk * 2);
-  const specs: LightSpec[] = (fireCells[map.id] ?? []).map(([cx, cy, kind]) => {
+  const indoors = moodFor(map.id) === 'interior';
+  const specs: LightSpec[] = (fireCells[map.id] ?? []).flatMap(([cx, cy, kind]) => {
     const def = GLOW_STYLE[kind] ?? { r: 30, color: 0xffb066, flicker: 0.4, lift: 3 };
-    return {
-      x: cx * TILE + TILE / 2 - camera.x,
-      y: cy * TILE + TILE / 2 - def.lift - camera.y,
-      r: def.r * outdoorK,
-      color: def.color,
-      flicker: def.flicker,
-    };
+    const x = cx * TILE + TILE / 2 - camera.x;
+    const y = cy * TILE + TILE / 2 - def.lift - camera.y;
+    const core: LightSpec = { x, y, r: def.r * (indoors ? 1.35 : 1) * outdoorK, color: def.color, flicker: def.flicker };
+    // Indoors, every fire also pools a broad dim warmth across the room, so
+    // the space feels inhabited rather than spot-lit.
+    return indoors
+      ? [core, { x, y: y + 6, r: def.r * 3.2, color: 0x54331c, flicker: 0.08 }]
+      : [core];
   });
   // At dusk the houses light their windows from inside.
   if (nk > 0.3) {

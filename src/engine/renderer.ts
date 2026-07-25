@@ -139,6 +139,10 @@ export class Renderer {
     // breathes without any per-tile seams.
     this.groundTint(map, cam, x0, y0, x1, y1);
 
+    // Pass 1b2: the water is alive. Sun glints ride the swell by day, and a
+    // breathing line of foam works every edge where the sea meets land.
+    this.drawWaterLife(map, cam, x0, y0, x1, y1, kindAt);
+
     // Pass 1c: cast shade and walkable decor.
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
@@ -181,8 +185,9 @@ export class Renderer {
         draw: () => {
           const tx = (t.cx * TILE - cam.x) * A;
           const ty = (t.cy * TILE - cam.y) * A;
-          // Trees and freestanding props cast into the same sun as people.
+          // Trees, props, and whole buildings cast into the same sun as people.
           if (t.kind === 'tree' || t.kind === 'palm') this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
+          else if (this.tiles.isBuilding(t.kind)) this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
           else if (this.tiles.castsSun(t.kind)) this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
           this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
         },
@@ -255,6 +260,92 @@ export class Renderer {
     };
     octave(9, 131, 5.5, 4.5, 1); // the meadow-scale washes
     octave(4, 101, 2.2, 2.4, 0.9); // the close-up dapple
+  }
+
+  private drawWaterLife(
+    _map: TileMap,
+    cam: Camera,
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    kindAt: (x: number, y: number) => string,
+  ) {
+    const ctx = this.ctx;
+    const dayK = 1 - this.nightK;
+    const watery = (k: string) => k === 'sea' || k === 'water';
+    for (let cy = y0; cy <= y1; cy++) {
+      for (let cx = x0; cx <= x1; cx++) {
+        const kind = kindAt(cx, cy);
+        if (!watery(kind)) continue;
+        const sx = (cx * TILE - cam.x) * A;
+        const sy = (cy * TILE - cam.y) * A;
+
+        // Glints: two per tile, pulsing out of phase, gone after dark.
+        if (dayK > 0.25) {
+          for (let i = 0; i < 2; i++) {
+            const h = cellHash(cx, cy, 300 + i * 17);
+            const pulse = Math.sin(this.time * (1.1 + h) + h * 40);
+            if (pulse < 0.55) continue;
+            const a = (pulse - 0.55) * 1.6 * dayK * (kind === 'sea' ? 0.55 : 0.4);
+            const gx = sx + 8 + h * (S - 16);
+            const gy = sy + 8 + cellHash(cx, cy, 350 + i * 13) * (S - 16);
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.fillStyle = '#f2f8f4';
+            ctx.beginPath();
+            ctx.ellipse(gx, gy, 4.5, 1.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        // Foam: only the sea works its shoreline this hard.
+        if (kind !== 'sea') continue;
+        const edges: [number, number, boolean][] = [
+          [0, -1, true], // land to the north: foam along the top edge
+          [-1, 0, false], // land west: along the left edge
+          [1, 0, false], // land east: along the right edge
+        ];
+        for (const [dx, dy, horizontal] of edges) {
+          const nk = kindAt(cx + dx, cy + dy);
+          if (watery(nk) || nk === 'void' || nk === 'scree') continue;
+          const breathe = Math.sin(this.time * 1.4 + cx * 0.7 + cy * 0.4) * 2.2;
+          ctx.save();
+          ctx.strokeStyle = 'rgba(240,248,244,0.5)';
+          ctx.lineWidth = 3;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          if (horizontal) {
+            const fy = sy + 3 + Math.max(0, breathe);
+            ctx.moveTo(sx + 2, fy);
+            ctx.quadraticCurveTo(sx + S * 0.3, fy + 2.5, sx + S * 0.55, fy);
+            ctx.quadraticCurveTo(sx + S * 0.8, fy - 2, sx + S - 2, fy + 1);
+          } else {
+            const fx = dx < 0 ? sx + 3 + Math.max(0, breathe) : sx + S - 3 - Math.max(0, breathe);
+            ctx.moveTo(fx, sy + 2);
+            ctx.quadraticCurveTo(fx + (dx < 0 ? 2.5 : -2.5), sy + S * 0.4, fx, sy + S * 0.7);
+            ctx.quadraticCurveTo(fx + (dx < 0 ? -2 : 2), sy + S * 0.85, fx + 1, sy + S - 2);
+          }
+          ctx.stroke();
+          // A fainter second line, lagging: the last wave still draining.
+          ctx.globalAlpha = 0.3;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          if (horizontal) {
+            const fy2 = sy + 9 + Math.max(0, -breathe);
+            ctx.moveTo(sx + 4, fy2);
+            ctx.quadraticCurveTo(sx + S * 0.5, fy2 + 2, sx + S - 4, fy2 - 1);
+          } else {
+            const fx2 = dx < 0 ? sx + 10 : sx + S - 10;
+            ctx.moveTo(fx2, sy + 6);
+            ctx.quadraticCurveTo(fx2 + (dx < 0 ? 2 : -2), sy + S * 0.5, fx2, sy + S - 6);
+          }
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
   }
 
   /**
