@@ -113,6 +113,28 @@ export const CHAPTER: ChapterDef = {
       noClouds: true,
     },
   },
+  sitLines: {
+    oaxaca: [
+      'Band practice leaks from behind a door: the same eight bars, again, again, each time nearly triumphant.',
+      'Cempasuchil on the air. The scent of the field arrives whole minutes before the field does.',
+      'A cohete goes up for no listed reason. The dogs object; the sky takes it well.',
+      'The portales hold their strip of shade like a promise the plaza made to itself centuries ago.',
+      'Papel picado shivers overhead, telling the wind apart from the stillness one snip at a time.',
+    ],
+    cocina: [
+      'The mole is not done. The mole is nowhere near done. The mole is teaching the whole room how to wait.',
+      'Steam off the comal, smoke to the rafters. The kitchen breathes slower than anywhere else in the village.',
+      'On the altar shelf the veladora flames stand up straight, sit, and stand again.',
+      'The spoon lies at rest across the rim of the pot, which is the kitchen’s way of saying not yet.',
+    ],
+    camposanto: [
+      'The vigil settles in around you, family by family, blanket by blanket. Nobody hurries, and nobody speaks of leaving.',
+      'One by one the candles stop flickering and steady, as if the night had put a hand around each flame.',
+      'Along the wall, names are being read aloud, softly. Each name has a story attached, and each story has a laugh somewhere inside it.',
+      'You are not visiting the graves. You are sitting among the family, and tonight the family is all of them, and it includes you.',
+    ],
+  },
+  sitKinds: ['stool'],
   arrival: { map: 'oaxaca', node: 'c9.arrive', flag: 'c9.arrived' },
   completion: {
     flag: 'c9.complete',

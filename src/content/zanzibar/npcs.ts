@@ -96,6 +96,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c7.met.zuberi'] }, node: 'c7.zuberi.first' },
       { when: { has: ['c7.met.zuberi'], not: ['c7.zuberi.dusk'] }, node: 'c7.zuberi.dusk' },
+      { when: { has: ['page.dishes.urojo'], not: ['c7.cook.done'] }, node: 'c7.zuberi.apron' },
       { node: 'c7.zuberi.idle' },
     ],
   },
@@ -180,6 +181,28 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       { when: { not: ['c7.met.ali'] }, node: 'c7.ali.first' },
       { when: { has: ['c7.complete'] }, node: 'c7.ali.book' },
       { node: 'c7.ali.not' },
+    ],
+  },
+  {
+    // Her look is her look, everywhere; a captain does not change.
+    id: 'riosC7',
+    name: 'Capitana Ríos',
+    map: 'zanzibar',
+    when: { has: ['c7.arrived'], not: ['c7.complete'] },
+    pos: [39, 23],
+    range: 0,
+    look: {
+      skin: '#c98f5e',
+      hair: '#1c1410',
+      cloth: '#2c3e57',
+      stripe: '#e8dcc4',
+      hat: '#2c3e57',
+      hatStyle: 'montera',
+    },
+    entry: [
+      { when: { not: ['c7.rios.met'] }, node: 'c7.rios.hello' },
+      { when: { has: ['c7.rios.met'], not: ['c7.rios.sat'] }, node: 'c7.rios.bench' },
+      { node: 'c7.rios.idle' },
     ],
   },
   {
@@ -594,6 +617,35 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Zuberi', text: 'Come at dusk, mgeni. The day market sells things. The night market sells the day itself, warmed up.' },
     ],
   },
+  'c7.zuberi.apron': {
+    lines: [
+      { text: 'The lunch line thins. Zuberi looks at you, then at the vat, then unties the spare apron from the cart handle.' },
+      { who: 'Zuberi', text: 'You have eaten my urojo and watched me build it. Watching is half of nothing, mgeni. Come behind the pot; the next bowls are yours.' },
+    ],
+    choices: [
+      { text: 'Tie on the apron', goto: 'c7.zuberi.apron.go' },
+      { text: '"Another tide."', goto: 'c7.zuberi.apron.wait' },
+    ],
+  },
+  'c7.zuberi.apron.go': {
+    lines: [
+      { who: 'Zuberi', text: 'Rules of the corner: the customer calls the bowl, you answer it. There are no wrong bowls. There are only bowls I get to describe.' },
+    ],
+    effects: ['set:c7.cook.start'],
+  },
+  'c7.zuberi.apron.wait': {
+    lines: [
+      { who: 'Zuberi', text: 'Haya. The vat and I keep the same hours: until it is finished.' },
+    ],
+  },
+  'c7.cook.finish': {
+    lines: [
+      { text: 'The vat steams down to its last gold inch. Two customers fed, one apron returned, your wrists smelling of lime and turmeric.' },
+      { who: 'Zuberi', text: 'You see what you built? Bhajia from India, mango from the farms, cassava from the mainland, lime off our own trees. One bowl.' },
+      { who: 'Zuberi', text: 'Everything that ever anchored here ended up in the pot, mgeni. Urojo is the island writing its autobiography, and it lets anyone hold the pen.' },
+    ],
+    effects: ['clear:c7.cook.start', 'set:c7.cook.done'],
+  },
 
   // ---------------- Mama Salma, the mwani rows ----------------
   'c7.salma.first': {
@@ -753,6 +805,56 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.ali.wait': {
     lines: [{ who: 'Ali', text: 'Haya. The sea does not run out of north.' }],
+  },
+
+  // ---------------- Capitana Ríos, ashore on her rounds ----------------
+  'c7.rios.hello': {
+    lines: [
+      { text: 'At the jetty root stands a silhouette you know from a bridge wing. Past the reef, riding at anchor, unmistakably: the Yacana.' },
+      { who: 'Capitana Ríos', text: 'The galley hand. Cargo goes where cargo goes, and this week it goes through Zanzibar. Do not look surprised; it undermines my navigation.' },
+      { text: 'She is off watch. She holds her shore leave the way some people hold an unfamiliar baby.' },
+      { who: 'Capitana Ríos', text: 'Well. Report. Did the sea keep teaching you after my deck, or did the land take it all back?' },
+    ],
+    effects: ['set:c7.rios.met'],
+    choices: [
+      { text: '"Still la mar, Capitana. Always."', goto: 'c7.rios.lamar', when: { has: ['page.words.lamar'] } },
+      { text: '"You are talking to a shellback, Capitana."', goto: 'c7.rios.shellback', when: { has: ['c3.shellback'] } },
+      { text: '"Honestly? I have forgotten half of it."', goto: 'c7.rios.honest' },
+    ],
+  },
+  'c7.rios.lamar': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'La mar. Still, and always.' },
+      { who: 'Capitana Ríos', text: 'Ninety-four crossings, and the word finally walked ashore ahead of me. Simón will hear of this, and he will be unbearable.' },
+      { text: 'Something in the dry face moves half a degree. On her, that is a salute.' },
+    ],
+  },
+  'c7.rios.shellback': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'So you are. Neptune’s court does not revoke. Half my paperwork should be as permanent as that soaking.' },
+      { who: 'Capitana Ríos', text: 'Then stand like one. The tide here outranks us both, which frankly is a relief.' },
+    ],
+  },
+  'c7.rios.honest': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Good. A sailor who admits forgetting is a sailor who logs honestly. I would rather ship that than a confident memory.' },
+      { who: 'Capitana Ríos', text: 'So, once more, for the log: la mar, never el mar. She carries us and could decline to; the ones she carries say it her way.' },
+      { who: 'Capitana Ríos', text: 'And you crossed the line on my deck, so you are a shellback whether you recall the soaking or not. Neptune keeps his own ledger.' },
+    ],
+  },
+  'c7.rios.bench': {
+    lines: [
+      { text: 'The Capitana has discovered the barazas. She reports on them the way she reports weather: facts first, feelings never, feelings anyway.' },
+      { who: 'Capitana Ríos', text: 'Load-bearing stone, shaded, full view of the channel traffic. Whoever engineered that bench understood port operations completely.' },
+      { who: 'Capitana Ríos', text: 'I sat on one for an hour this morning. The village calls it sitting; on my bridge we call it keeping watch. Acceptable naval architecture.' },
+      { text: 'An hour, she says, like a logged fact. From a woman who paces whole crossings, an hour of stone is practically a love letter.' },
+    ],
+    effects: ['set:c7.rios.sat'],
+  },
+  'c7.rios.idle': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'The Yacana loads cloves until the tide serves. Until then I am, technically, a tourist. Do not report me.' },
+    ],
   },
 
   // ---------------- Chasca, at the carved door ----------------
@@ -925,4 +1027,5 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
 export const ZANZIBAR_EVENTS = [
   { node: 'c7.arrive' },
   { when: { has: ['c7.sail.start'] }, node: 'c7.sail.done' },
+  { when: { has: ['c7.cook.start'] }, node: 'c7.cook.finish' },
 ];

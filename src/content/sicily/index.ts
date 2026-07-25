@@ -4,7 +4,7 @@ import { SICILY_EVENTS, SICILY_EXAMINES, SICILY_NODES, SICILY_NPCS } from './npc
 import { SICILY_JOURNAL, SICILY_TASKS } from './journal';
 import { CIRCOLO_MAP, SICILY_MAP } from './map';
 import { RECALL } from './recall';
-import { PisciPanel, ScopaPanel } from '../../ui/games/sicily';
+import { CannoloPanel, PisciPanel, ScopaPanel } from '../../ui/games/sicily';
 
 /**
  * Mail waiting at the POSTE window. Pilar's bridge empire has reached the
@@ -65,6 +65,11 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c8.pisci.done',
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
+    {
+      flag: 'c8.cook.start',
+      doneNode: 'c8.cook.finish',
+      make: (root, audio) => new CannoloPanel(root, audio as AudioBus),
+    },
   ],
   recall: RECALL,
   meta: {
@@ -90,6 +95,22 @@ export const CHAPTER: ChapterDef = {
       ambient: 0xffdcae,
     },
   },
+  sitLines: {
+    sicily: [
+      'The passeggiata drifts by in twos and threes, a current with nowhere to get to and all evening to get there.',
+      'Above the roofs, ’a Muntagna smokes her one eternal cigarette and says nothing. She is presiding.',
+      'From the bar comes the small percussion of espresso: cup, saucer, spoon, cup. The town keeps time in porcelain.',
+      'The faraglioni hold perfectly still, the way only thrown things that missed forever can.',
+      'Behind a shutter somewhere, a radio argues football with itself, and loses.',
+    ],
+    circolo: [
+      'Between hands, the cards rest face down on the felt and the arguments carry on without them.',
+      'From this stool the whole room is visible, which is the point of every seat in it.',
+      'The espresso machine exhales like something old and beloved rolling over in its sleep.',
+      'Chalk on the slate: a score in a code no living member remembers agreeing to. Still binding.',
+    ],
+  },
+  sitKinds: ['stool'],
   arrival: { map: 'sicily', node: 'c8.arrive', flag: 'c8.arrived' },
   completion: {
     flag: 'c8.complete',

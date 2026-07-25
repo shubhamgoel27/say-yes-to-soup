@@ -7,6 +7,8 @@ export const RECALL: RecallManifest = {
     'page.words.polepole', // the passeggiata recognizes Zanzibar's pace
     'keepsake.band', // Concetta reads the woven band at the Sunday table
     'pilar.gift.puffer', // Pilar's letter reacts to the museum's weirdest exhibit
+    'c3.cook.done', // Mang Ben, ashore, hears his adobo order recited back
+    'page.dishes.sinigang', // sour soups compared across three coastlines
   ],
   plants: [
     'c8.arrived',
@@ -19,6 +21,8 @@ export const RECALL: RecallManifest = {
     // Knowledge keys have local locksmiths: the no-key branch teaches it anyway.
     'page.customs.sanpedrito': 'c8.saro.rite',
     'page.words.polepole': 'c8.walk.nowhere',
+    'c3.cook.done': 'c8.ben.fed',
+    'page.dishes.sinigang': 'c8.ben.fed',
   },
   rhymes: [
     ['words.amuntagna', 'words.lamar'],

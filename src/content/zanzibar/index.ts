@@ -3,7 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { ZANZIBAR_EVENTS, ZANZIBAR_EXAMINES, ZANZIBAR_NODES, ZANZIBAR_NPCS } from './npcs';
 import { ZANZIBAR_JOURNAL, ZANZIBAR_TASKS } from './journal';
 import { KANGASHOP_MAP, ZANZIBAR_MAP } from './map';
-import { SailPanel } from '../../ui/games/zanzibar';
+import { SailPanel, UrojoPanel } from '../../ui/games/zanzibar';
 
 /** Zanzibar's side of the cross-chapter ledger. */
 const RECALL: RecallManifest = {
@@ -12,6 +12,8 @@ const RECALL: RecallManifest = {
     'page.customs.pallay', // cloth that speaks, woven; names the kanga rhyme
     'page.words.chaya', // Kerala's glass of tea lights up Juma's cardamom
     'page.dishes.sudado', // sour soup as medicine; Zuberi recognizes a believer
+    'page.words.lamar', // Ríos, ashore, hears her word said back to her
+    'c3.shellback', // Neptune's court does not revoke; the Capitana checks
   ],
   plants: [
     'c7.arrived', // hands the task list over once you step off the jahazi
@@ -26,6 +28,8 @@ const RECALL: RecallManifest = {
     'page.customs.pallay': 'c7.amina.speaks',
     'page.words.chaya': 'c7.juma.pods',
     'page.dishes.sudado': 'c7.zuberi.cure',
+    'page.words.lamar': 'c7.rios.honest',
+    'c3.shellback': 'c7.rios.honest',
   },
   rhymes: [
     ['words.polepole', 'people.nani'],
@@ -81,6 +85,11 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c7.sail.done',
       make: (root, audio) => new SailPanel(root, audio as AudioBus),
     },
+    {
+      flag: 'c7.cook.start',
+      doneNode: 'c7.cook.finish',
+      make: (root, audio) => new UrojoPanel(root, audio as AudioBus),
+    },
   ],
   recall: RECALL,
   meta: {
@@ -106,6 +115,22 @@ export const CHAPTER: ChapterDef = {
       ambient: 0xc9a075,
     },
   },
+  sitLines: {
+    zanzibar: [
+      'The tide is still going out. It has somewhere to be, apparently, and it is not hurrying there either.',
+      'Cloves on the wind from the drying mats, arriving in slow, spiced paragraphs.',
+      'Two houses down, a negotiation proceeds at baraza pitch: low, patient, mostly pauses. A coconut may change hands by Friday.',
+      'A cat crosses the lane, audits the jetty, then you. Everything is found adequate, and none of it is her business anymore.',
+      'Out on the flats a figure bends to the mwani rows. The moon runs that farm, and the moon is never late.',
+    ],
+    kangashop: [
+      'The stool has held a hundred bargaining sessions. It knows to keep still at the good parts.',
+      'Folded color to the ceiling: a hundred printed sentences, each waiting for the right neighbor to walk past.',
+      'From the back comes the snip of scissors. Somewhere a gora is becoming two kangas, one to keep, one to give.',
+      'The room is cool the way the reef is cool. The walls remember being sea.',
+    ],
+  },
+  sitKinds: ['stool'],
   arrival: { map: 'zanzibar', node: 'c7.arrive', flag: 'c7.arrived' },
   completion: {
     flag: 'c7.complete',

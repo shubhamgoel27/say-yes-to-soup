@@ -46,6 +46,25 @@ export const CHAPTER: ChapterDef = {
       ambient: 0xe9f2fb,
     },
   },
+  // Bollards are essential deck seating; the galley stools face the pots.
+  sitKinds: ['stool', 'bollard'],
+  sitLines: {
+    ship: [
+      'The wake unrolls astern, a white road that closes itself as fast as the ship can lay it.',
+      'A flying fish bursts out, sprints on air for one silver breath, and hands itself back to the sea.',
+      'The horizon rides at the same distance it kept yesterday. It is not that kind of line.',
+      'Under everything, the engine keeps its patient heartbeat. You feel it in the steel before you hear it.',
+      'An albatross holds station off the stern, adjusting nothing, spending nothing.',
+      'Fourteen knots of west, and la mar files past like she has somewhere to be. She does not. She is the somewhere.',
+    ],
+    galley: [
+      'The stockpot mutters on its hook. It has been becoming something since Callao and will not be hurried.',
+      'Steam writes brief rivers down the white steel wall, and the wall forgets them.',
+      'From this stool the whole ship is a smell: garlic, rice, hot metal, coffee strong enough to stand a watch.',
+      'The tray rack waits by the hatch. In a few hours the village eats again, in shifts, the way it sleeps.',
+      'Ben wipes a counter that is already clean. A tidy galley, he says, is a tidy crossing.',
+    ],
+  },
   arrival: { map: 'ship', node: 'c3.arrive', flag: 'c3.arrived' },
   completion: {
     flag: 'c3.complete',

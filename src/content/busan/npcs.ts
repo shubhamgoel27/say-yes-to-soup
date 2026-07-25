@@ -165,6 +165,29 @@ export const BUSAN_NPCS: NpcDef[] = [
     ],
   },
   {
+    // Hana day-trips over on the Shimonoseki ferry, as she has since cadet
+    // days. Present only while the chapter is live; the evening boat is at six.
+    id: 'hanaC5',
+    name: 'Hana',
+    map: 'busan',
+    when: { has: ['c5.arrived'], not: ['c5.complete'] },
+    pos: [35, 25],
+    range: 1,
+    look: {
+      skin: '#e8c39a',
+      hair: '#241a12',
+      cloth: '#2c3e57',
+      stripe: '#f2e6d0',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c5.met.hana5'] }, node: 'c5.hana.dock' },
+      { when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed'] }, node: 'c5.hana.quiz' },
+      { node: 'c5.hana.idle' },
+    ],
+  },
+  {
     id: 'chascaC5',
     name: 'Chasca',
     map: 'busan',
@@ -518,6 +541,52 @@ export const BUSAN_NODES: NodeMap = {
     ],
   },
 
+  // ---------------- Hana, over on the day boat ----------------
+  'c5.hana.dock': {
+    lines: [
+      { text: 'A familiar figure stands by the ferry office, sea bag on one shoulder, weighing two paper sacks of dried anchovies like a jeweler.' },
+      { who: 'Hana', text: 'You! Of course you. One strait, two mornings, and here you are, smelling of the same harbor as me.' },
+      { who: 'Hana', text: 'Day boat over from Shimonoseki. I have done this run since cadet days; the ferry and I are old colleagues. Still three minutes early.' },
+      { who: 'Hana', text: 'I am buying Obaachan Busan iriko for her dashi. Busan iriko is a controversial opinion at home, so we call it mine and eat it anyway.' },
+    ],
+    effects: ['set:c5.met.hana5'],
+  },
+  'c5.hana.quiz': {
+    lines: [
+      { who: 'Hana', text: 'Before my boat back: an examination. Did Shionoura stick, or did it wash off in the strait? One question, and you choose the question.' },
+    ],
+    effects: ['set:c5.hana.quizzed'],
+    choices: [
+      { text: '"The goldfish uncle acts fierce, but the poi never sinks on a kid."', goto: 'c5.hana.kingyo', when: { has: ['c4.kingyo.done'] } },
+      { text: '"I hung a tanzaku. And no, I am not telling you what it said."', goto: 'c5.hana.wish', when: { has: ['wish.written'] } },
+      { text: '"I respectfully fail. Grade me on eating instead."', goto: 'c5.hana.fail' },
+    ],
+  },
+  'c5.hana.kingyo': {
+    lines: [
+      { who: 'Hana', text: 'Rigged mercy! You found him out. He has bankrupted grown men at that stall and never once let a child walk away empty. Full marks.' },
+      { who: 'Hana', text: 'Taro audits him every festival, for science. The uncle pretends not to know he is being tested. That is the whole town, in one stall.' },
+    ],
+  },
+  'c5.hana.wish': {
+    lines: [
+      { who: 'Hana', text: 'Correct, and you passed a test I did not set. You never say a tanzaku out loud; the paper is small so the wish stays yours.' },
+      { who: 'Hana', text: 'So I will not ask. I will only say the bamboo held a whole town of hopes this year, and one strip of it had your handwriting.' },
+    ],
+  },
+  'c5.hana.fail': {
+    lines: [
+      { who: 'Hana', text: 'Ha! An honest failure. Shionoura accepts eating as a second language, and you were fluent by festival night.' },
+      { who: 'Hana', text: 'The model answer was the goldfish uncle. All that scowling, and the poi never once sinks on a kid. Rigged mercy, our proudest export.' },
+      { who: 'Hana', text: 'Graded on appetite instead: pass, with distinction. Do not tell Obaachan the examiner could be bribed with honesty.' },
+    ],
+  },
+  'c5.hana.idle': {
+    lines: [
+      { who: 'Hana', text: 'The evening boat back is at six, and it will be three minutes early. Some things you can lean your whole life against.' },
+    ],
+  },
+
   // ---------------- Chasca, in the dried-fish alley ----------------
   'c5.chasca.alley': {
     lines: [
@@ -676,6 +745,11 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'A low table, knee height, older than the room. The floor is the chair here; it has always been the honest altitude.' },
     ],
   },
+  'c5.ex.stool': {
+    lines: [
+      { text: 'A low wooden stool, tea-colored where forty years of hands have steadied it. Sitting here is permission for the kettle to take its time.' },
+    ],
+  },
 };
 
 /** Examine arms; shared props keep their coastal words at home via map tags. */
@@ -709,6 +783,7 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   sea: [{ map: 'busan', node: 'c5.ex.sea' }],
   stall: [{ map: 'busan', node: 'c5.ex.gukbap' }],
   table: [{ map: 'teahouse', node: 'c5.ex.teatable' }],
+  stool: [{ map: 'teahouse', node: 'c5.ex.stool' }],
 };
 
 /** Event-triggered nodes, listed with gating so tests can prove them reachable. */

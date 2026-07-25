@@ -220,6 +220,14 @@ export const SICILY_TASKS: TaskDef[] = [
     text: 'The light goes soft around seven and the whole town will be on the lungomare, walking nowhere on purpose. Concetta expects you for it.',
   },
   {
+    when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] },
+    text: 'Alfio wants your hands on the pastry bag: three shells, filled at the moment, never before. The signora in black will be the judge, so, no pressure.',
+  },
+  {
+    when: { has: ['c8.ben.met'], not: ['c8.ben.tin', 'c8.complete'] },
+    text: 'Mang Ben is loose in the pescheria while the Yacana provisions, adopting fish vendors. He had something in his pocket he was too pleased about. Go back.',
+  },
+  {
     when: { has: ['c8.walk.done'], not: ['c8.complete'] },
     text: 'Fed, dealt in, rowed, and walked: the town may be ready to sign you out. Signor Patanè keeps the ledger at the end of the mole.',
   },

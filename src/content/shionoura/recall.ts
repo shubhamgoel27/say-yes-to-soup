@@ -8,6 +8,8 @@ export const RECALL: RecallManifest = {
     'page.words.lamar', // Captain Isao recognizes the sea spoken of as a person
     'c2.casero', // Daisuke salutes a fellow fishmonger's regular; Marisol's letter too
     'c2.gift.sent', // Pilar's museum letter reacts to the weird sea thing you mailed
+    'c3.shellback', // Olena's shore-leave quiz honors the certificate
+    'c3.olena.bread', // and the jar remembers who fed it mid-Pacific
   ],
   plants: [
     'c4.arrived', // the crossing's task list hands over once you are ashore

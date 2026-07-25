@@ -618,6 +618,9 @@ export const CROSSING_NODES: NodeMap = {
   'c3.ex.jackstaff': {
     lines: [{ text: 'The jackstaff at the bow’s very point, flag snapping. Past it: nothing, then more nothing, then Japan.' }],
   },
+  'c3.ex.cat3': {
+    lines: [{ text: 'Landfall eve. The cat rises, stretches fore and aft, and walks the full length of your shin. On purpose. The bosun, passing, salutes you both.' }],
+  },
   'c3.ex.cat2': {
     lines: [{ text: 'The cat licks her fur down flat. Fur licked against the grain means storm, says the bosun. She is saying nothing either way.' }],
   },
@@ -683,6 +686,7 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c3.ex.jackstaff' },
   ],
   shipcat: [
+    { when: { has: ['c3.complete'] }, node: 'c3.ex.cat3' },
     { when: { has: ['c3.shellback'] }, node: 'c3.ex.cat2' },
     { node: 'c3.ex.cat' },
   ],

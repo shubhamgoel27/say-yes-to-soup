@@ -38,6 +38,29 @@ export const KERALA_NPCS: NpcDef[] = [
     ],
   },
   {
+    // Joseph comes home for the chapter's last stretch: his contract paid off
+    // at Kochi once the village had already made you family.
+    id: 'josephC6',
+    name: 'Joseph',
+    map: 'mariamma-veedu',
+    when: { has: ['c6.letter.delivered', 'c6.complete'] },
+    pos: [8, 2],
+    range: 1,
+    look: {
+      skin: '#7a4a2e',
+      hair: '#241a12',
+      cloth: '#3e5a77',
+      stripe: '#f2e6d0',
+      hat: '#2c3e57',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c6.joseph.met'] }, node: 'c6.joseph.home' },
+      { when: { has: ['c6.joseph.met'], not: ['c6.joseph.quizzed'] }, node: 'c6.joseph.quiz' },
+      { node: 'c6.joseph.idle' },
+    ],
+  },
+  {
     id: 'shaji',
     name: 'Shaji',
     map: 'kerala',
@@ -57,6 +80,7 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['met.shaji', 'c6.letter.delivered'], not: ['c6.chaya'] }, node: 'c6.shaji.chaya' },
       { when: { has: ['c6.chaya', 'page.words.chetta'], not: ['c6.chetta'] }, node: 'c6.shaji.chetta' },
       { when: { has: ['c6.rain'], not: ['c6.rainchaya'] }, node: 'c6.shaji.rainstall' },
+      { when: { has: ['page.words.chaya'], not: ['c6.cook.done'] }, node: 'c6.shaji.cookoffer' },
       { node: 'c6.shaji.idle' },
     ],
   },
@@ -394,6 +418,54 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Shaji', text: 'Chaya kudikkam? The kettle has opinions about everyone, but it keeps them at a simmer. Sit; it likes you.' },
     ],
   },
+  'c6.shaji.cookoffer': {
+    lines: [
+      { text: 'Shaji has been watching you drink the way a coach watches footwork. He sets two empty tumblers on the counter like a dare.' },
+      { who: 'Shaji', text: 'Mone, your wrists look ready. You have watched enough chaya; it is time the chaya watched you. Come behind the kettle.' },
+    ],
+    choices: [
+      { text: 'Step behind the kettle', goto: 'c6.shaji.cookgo' },
+      { text: 'Not today; the bench needs me', goto: 'c6.shaji.cooklater' },
+    ],
+  },
+  'c6.shaji.cookgo': {
+    lines: [
+      { who: 'Shaji', text: 'Milk, tea, sugar, patience, height. Five ingredients, and the last two are the recipe. We begin with the boil.' },
+    ],
+    effects: ['set:c6.cook.start'],
+  },
+  'c6.shaji.cooklater': {
+    lines: [
+      { who: 'Shaji', text: 'The kettle takes no offense, mone. It has outlasted braver refusals than yours.' },
+    ],
+  },
+  'c6.cook.finish': {
+    lines: [
+      { text: 'The last glass travels down the counter to a poler who never ordered and was always going to get one. The froth holds its head.' },
+      { who: 'Shaji', text: 'Wrist, height, froth, and no funeral for the spills. Mone, I promote you: customer to nuisance. It is the highest rank I give.' },
+    ],
+    effects: ['clear:c6.cook.start', 'set:c6.cook.done'],
+    choices: [
+      {
+        text: '"In Busan an ajumma tucked my hand under the bag. A thing given is heavier than a thing bought."',
+        goto: 'c6.cook.twohands',
+        when: { has: ['page.customs.twohands'] },
+      },
+      { text: 'Ask why the glass rides with one hand underneath', goto: 'c6.cook.flourish' },
+    ],
+  },
+  'c6.cook.twohands': {
+    lines: [
+      { who: 'Shaji', text: 'Then Busan and this bench are in full agreement, mone. The hand under the glass says: this is given, not merely sold.' },
+      { text: 'He serves the next customer with one hand under the glass, a little more visibly than usual, for your benefit.' },
+    ],
+  },
+  'c6.cook.flourish': {
+    lines: [
+      { who: 'Shaji', text: 'The top hand pours; the bottom hand gives. A glass with a hand under it is offered, mone, not just delivered.' },
+      { who: 'Shaji', text: 'Weight travels with respect. Hold the next one that way and watch the drinker sit a little straighter.' },
+    ],
+  },
 
   // ---------------- Appu, translator of heads ----------------
   'c6.appu.first': {
@@ -563,6 +635,63 @@ export const KERALA_NODES: NodeMap = {
   'c6.varkey.idle': {
     lines: [
       { who: 'Captain Varkey', text: 'Stroke, stroke, STROKE. You cannot say it too many times. You can say it too few; that is called losing.' },
+    ],
+  },
+
+  // ---------------- Joseph, home from the sea ----------------
+  'c6.joseph.home': {
+    lines: [
+      { text: 'A duffel bag hits the kitchen floor with the sound of nine months ending. In the doorway, salt-stained and grinning, stands Joseph.' },
+      { who: 'Mariamma', text: 'Joseph! The pot nearly went over! Come, come here, let me look at all of you at once.' },
+      { text: 'His letter stands folded on the shelf, read soft at the creases. He sees it there and stops, an able seaman suddenly unable.' },
+      { who: 'Joseph', text: 'You beat me home, friend. I told you to take the slow road so I would win the race to my own kitchen, and you still beat me.' },
+      { who: 'Joseph', text: 'Contract paid off at Kochi. Three monsoons of wages in my pocket, and Amma already planning to spend them on feeding me.' },
+    ],
+    effects: ['set:c6.joseph.met'],
+  },
+  'c6.joseph.quiz': {
+    lines: [
+      { who: 'Joseph', text: 'Now. You will report on my ship, since you had my seat at the mess table. Did Ben make you cry with the vinegar? Be honest.' },
+      { text: 'He is laughing before you can answer. Mariamma sets down three glasses; this testimony will be taken with chaya.' },
+    ],
+    choices: [
+      { text: '"I stood Neptune\'s court and rose a shellback. I fear nothing but dry land."', goto: 'c6.joseph.shellback', when: { has: ['c3.shellback'] } },
+      { text: '"You had two helpings of sinigang one homesick night. Ben called it medicine."', goto: 'c6.joseph.sinigang', when: { has: ['page.dishes.sinigang'] } },
+      { text: '"A galley hand does not inform on the galley."', goto: 'c6.joseph.code' },
+    ],
+  },
+  'c6.joseph.shellback': {
+    lines: [
+      { who: 'Joseph', text: 'A shellback! Then the bosun got you too. He kept that Neptune wig in the paint locker like a state secret the whole crew was in on.' },
+      { who: 'Joseph', text: 'Frame the certificate. He is not joking about being famous nowhere else; we checked, from three different oceans.' },
+    ],
+    next: 'c6.joseph.ocean',
+  },
+  'c6.joseph.sinigang': {
+    lines: [
+      { who: 'Joseph', text: 'Two helpings, witnessed. Guilty. Sour soup is the fastest way home that floats, and Ben knew my face was homesick before I did.' },
+      { who: 'Joseph', text: 'Here we sour the fish with kudampuli and call it medicine too. Amma’s pot and Ben’s pot would argue all night and both win.' },
+    ],
+    next: 'c6.joseph.ocean',
+  },
+  'c6.joseph.code': {
+    lines: [
+      { who: 'Joseph', text: 'Ha! The correct answer. The galley protects its own; Ben taught you the constitution, then.' },
+      { who: 'Joseph', text: 'So I will inform on myself: the vinegar got me my first week, and the sinigang cured my worst one. Sour soup is medicine on that ship.' },
+    ],
+    next: 'c6.joseph.ocean',
+  },
+  'c6.joseph.ocean': {
+    lines: [
+      { text: 'He goes quiet for a moment, glass in hand, looking at nothing the way sailors look at nothing.' },
+      { who: 'Joseph', text: 'Some watches I stood the bow and found the Mayu, your star river, running bank to bank. I watched it from the other side of the same ocean.' },
+      { who: 'Joseph', text: 'It made the distance one room. The letter said that badly; I am saying it better with my boots under Amma’s table.' },
+    ],
+    effects: ['set:c6.joseph.quizzed'],
+  },
+  'c6.joseph.idle': {
+    lines: [
+      { who: 'Joseph', text: 'Nine months of watches to sleep off, and Amma wakes me only for meals. It is the correct system; do not tell the sea.' },
     ],
   },
 
@@ -755,6 +884,11 @@ export const KERALA_NODES: NodeMap = {
   'c6.ex.mat': {
     lines: [{ text: 'Woven mats where the sadya guests will sit. The floor is furniture here; it has always been enough.' }],
   },
+  'c6.ex.stool': {
+    lines: [
+      { text: 'A kitchen stool worn smooth by three generations of supervised tasting. Sit, and something will arrive to be judged.' },
+    ],
+  },
 };
 
 /** Examine arms: new kinds get untagged fallbacks, shared kinds speak only on this map. */
@@ -790,6 +924,7 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   wallInt: [{ map: 'mariamma-veedu', node: 'c6.ex.wallint' }],
   shelf: [{ map: 'mariamma-veedu', node: 'c6.ex.shelf' }],
   mat: [{ map: 'mariamma-veedu', node: 'c6.ex.mat' }],
+  stool: [{ map: 'mariamma-veedu', node: 'c6.ex.stool' }],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */
@@ -797,4 +932,5 @@ export const KERALA_EVENTS = [
   { node: 'c6.arrive' },
   { when: { has: ['c6.row.start'] }, node: 'c6.rowed' },
   { when: { has: ['c6.sadya.start'] }, node: 'c6.sadya.served' },
+  { when: { has: ['c6.cook.start'] }, node: 'c6.cook.finish' },
 ];

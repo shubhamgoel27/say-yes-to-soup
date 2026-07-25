@@ -475,3 +475,208 @@ export class PisciPanel {
       </div>`;
   }
 }
+
+// ---------------------------------------------------------------- the cannoli
+
+/**
+ * CannoloPanel: behind Alfio's counter with the pastry bag. Each shell is
+ * filled at the moment, never before: press to pipe, press to stop in the
+ * sweet zone, both ends, then the garnish. Overfilling erupts, and Alfio
+ * eats the evidence for quality. Nothing here can fail; the law is the
+ * lesson, and the law is: a filled shell waiting is a soggy lie.
+ */
+
+type CannoloGarnish = { name: string; line: string };
+
+const GARNISHES: CannoloGarnish[] = [
+  { name: 'Pistachio', line: '"Pistachio: the classicist. Somewhere in the hills, Bronte nods."' },
+  { name: 'Candied orange', line: '"Candied orange: sunshine that learned how to keep. My grandmother\'s vote."' },
+  { name: 'Chocolate', line: '"Chocolate: the modernist. The nonnas complain about it and take two."' },
+];
+
+type CannoloCustomer = { call: string; served: string };
+
+const CUSTOMERS: CannoloCustomer[] = [
+  {
+    call: 'First customer: the signora in black from the fish stall. "One cannolo. I will know if the shell sat," she says, entirely correctly.',
+    served: 'The signora bites, listens to the crack like a jeweler, and nods once. From her, that is a standing ovation.',
+  },
+  {
+    call: 'Next: a rower from the pageant, still damp, sash and all. "Two ends, full honors. I have earned the loud kind."',
+    served: 'The rower eats it in two bites and raises the stub like an oar. The bar applauds the crumbs.',
+  },
+  {
+    call: 'Last customer: Alfio himself, arms folded, off duty for exactly one pastry. "Impress me. I taught you everything you know today."',
+    served: 'Alfio chews with his eyes shut, professionally. "Tsk. Tragic," he says, finishing it. "I have nothing left to teach."',
+  },
+];
+
+type CannoloPhase = 'pipe' | 'burst' | 'garnish' | 'served' | 'done';
+
+export class CannoloPanel {
+  private phase: CannoloPhase = 'pipe';
+  private shell = 0; // 0..2
+  private end = 0; // 0..1, both ends or it is not a cannolo
+  private fill = 0; // 0..1 for the current end
+  private flowing = false;
+  private zoneLo = 0.6;
+  private zoneW = 0.2;
+  private speed = 0.42;
+  private burstT = 0;
+  private gCur = 0;
+  private hint = '';
+  private onDone: (() => void) | null = null;
+
+  constructor(
+    private root: HTMLElement,
+    private audio: AudioBus,
+  ) {}
+
+  get isOpen(): boolean {
+    return !this.root.hidden;
+  }
+
+  open(onDone: () => void) {
+    this.onDone = onDone;
+    this.phase = 'pipe';
+    this.shell = 0;
+    this.end = 0;
+    this.fill = 0;
+    this.flowing = false;
+    this.speed = 0.42;
+    this.zoneLo = 0.6;
+    this.gCur = 0;
+    this.hint = `${CUSTOMERS[0]?.call ?? ''} Space starts the ricotta; Space again stops it in the sweet zone.`;
+    this.root.hidden = false;
+    this.render();
+  }
+
+  tick(dt: number) {
+    if (!this.isOpen) return;
+    if (this.phase === 'pipe' && this.flowing) {
+      this.fill += dt * this.speed;
+      if (this.fill >= 1) {
+        // The eruption. Nobody grieves; the owner performs quality control.
+        this.flowing = false;
+        this.fill = 0;
+        this.end = 0;
+        this.phase = 'burst';
+        this.burstT = 1.6;
+        this.audio.slosh();
+        this.hint = 'The shell ERUPTS ricotta from both ends. Alfio catches it and eats the whole disaster in one bite. "Quality control." A new shell appears.';
+      }
+      this.render();
+    } else if (this.phase === 'burst') {
+      this.burstT -= dt;
+      if (this.burstT <= 0) {
+        this.phase = 'pipe';
+        this.hint = 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
+        this.render();
+      }
+    }
+  }
+
+  onDir(dir: Dir) {
+    if (this.phase !== 'garnish') return;
+    if (dir === 'left' || dir === 'up') this.gCur = (this.gCur + GARNISHES.length - 1) % GARNISHES.length;
+    if (dir === 'right' || dir === 'down') this.gCur = (this.gCur + 1) % GARNISHES.length;
+    this.render();
+  }
+
+  onAction() {
+    if (this.phase === 'pipe') {
+      if (!this.flowing) {
+        this.flowing = true;
+        this.hint = this.end === 0 ? 'The ricotta moves. Watch the meter; stop inside the zone.' : 'Second end filling. The bag is warmer now, and so is your nerve.';
+        this.render();
+        return;
+      }
+      this.flowing = false;
+      if (this.fill < this.zoneLo) {
+        this.hint = 'Alfio squints down the shell. "That end is still hungry, friend. Again, with courage." The flow waits on your thumb.';
+      } else {
+        const generous = this.fill > this.zoneLo + this.zoneW;
+        if (this.end === 0) {
+          this.end = 1;
+          this.fill = 0;
+          this.hint = generous
+            ? 'Generous, but the shell holds. "Now the other end. A cannolo has no back door, friend; both ends or it is a lie with a hole in it."'
+            : 'Clean stop. "Now the other end. A cannolo has no back door, friend. Both ends, always."';
+        } else {
+          this.phase = 'garnish';
+          this.audio.chime();
+          this.hint = generous
+            ? 'Both ends full to the brim and holding. "Now the ends get dressed. Arrows choose the garnish; there is no wrong door on this one."'
+            : 'Both ends, filled at the moment, no sooner. "Now the garnish. Arrows choose; every answer is correct, which is rare in this country."';
+        }
+      }
+      this.render();
+    } else if (this.phase === 'garnish') {
+      const g = GARNISHES[this.gCur];
+      if (!g) return;
+      this.audio.jingle();
+      this.phase = 'served';
+      this.hint = `Both ends dipped. ${g.line} ${CUSTOMERS[this.shell]?.served ?? ''} Space for the next.`;
+      this.render();
+    } else if (this.phase === 'served') {
+      this.shell++;
+      if (this.shell < CUSTOMERS.length) {
+        this.phase = 'pipe';
+        this.end = 0;
+        this.fill = 0;
+        this.speed += 0.12; // the bag warms, the ricotta hurries
+        this.zoneLo = 0.56 + this.shell * 0.05;
+        this.hint = `${CUSTOMERS[this.shell]?.call ?? ''} The ricotta runs faster as the bag warms. Space to pipe.`;
+      } else {
+        this.phase = 'done';
+        this.audio.weaveDone();
+        this.hint = 'Three shells, three moments, zero soggy lies. Alfio holds out his hand for the bag with visible reluctance. Press Space.';
+      }
+      this.render();
+    } else if (this.phase === 'done') {
+      this.root.hidden = true;
+      const done = this.onDone;
+      this.onDone = null;
+      done?.();
+    }
+  }
+
+  private render() {
+    const shellDots = CUSTOMERS.map((_, i) => {
+      const done = i < this.shell || (i === this.shell && (this.phase === 'served' || this.phase === 'done'));
+      return `<span style="display:inline-block;width:13px;height:13px;border-radius:50%;margin:0 3px;
+        border:2px solid #2b2118;background:${done ? '#c99230' : 'transparent'}" title="shell ${i + 1}"></span>`;
+    }).join('');
+    let middle = '';
+    if (this.phase === 'pipe' || this.phase === 'burst') {
+      const zoneLeft = this.zoneLo * 100;
+      const zoneWidth = this.zoneW * 100;
+      const pct = Math.min(100, this.fill * 100);
+      middle = `
+        <div style="font-size:13px;margin-bottom:2px;">end ${this.end + 1} of 2 &nbsp;·&nbsp;
+          <em>${this.phase === 'burst' ? 'erupted' : this.flowing ? 'piping' : 'holding'}</em></div>
+        <div class="c-track">
+          <div class="c-zone" style="left:${zoneLeft}%;width:${zoneWidth}%;"></div>
+          <div class="c-rider" style="left:${Math.min(96, pct)}%;"></div>
+        </div>
+        <div class="c-count">${Math.round(pct)}% of the shell</div>`;
+    } else if (this.phase === 'garnish') {
+      const cells = GARNISHES.map((g, i) => {
+        const cur = i === this.gCur;
+        return `<div style="display:inline-block;padding:7px 10px;margin:2px;border-radius:5px;font-size:13px;
+          border:2px solid ${cur ? '#c1512f' : 'rgba(43,33,24,0.55)'};background:${cur ? '#f7edd6' : 'rgba(242,230,208,0.5)'};
+          ${cur ? 'box-shadow:0 0 0 2px rgba(193,81,47,0.35);' : ''}">${g.name}</div>`;
+      }).join('');
+      middle = `<div style="margin:10px 0;">${cells}</div>`;
+    } else {
+      middle = '<div class="c-count" style="margin:12px 0;">filled at the moment, never before</div>';
+    }
+    this.root.innerHTML = `
+      <div class="w-panel">
+        <div class="w-title">The Pastry Bag</div>
+        <div style="margin:2px 0 8px">${shellDots}</div>
+        ${middle}
+        <div class="w-hint">${this.hint}</div>
+      </div>`;
+  }
+}

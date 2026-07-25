@@ -4,7 +4,7 @@ import { CALETA_EVENTS, CALETA_EXAMINES, CALETA_NODES, CALETA_NPCS } from './npc
 import { CALETA_JOURNAL, CALETA_TASKS } from './journal';
 import { LA_CALETA_MAP, PICANTERIA_MAP } from './map';
 import { RECALL } from './recall';
-import { NetPanel, WavePanel } from '../../ui/coast';
+import { CevichePanel, NetPanel, WavePanel } from '../../ui/coast';
 
 /** Chapter Two: La Caleta, where the desert walks down to the sea. */
 export const CHAPTER: ChapterDef = {
@@ -28,11 +28,35 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.mended',
       make: (root, audio) => new NetPanel(root, audio as AudioBus),
     },
+    {
+      flag: 'c2.cook.start',
+      doneNode: 'mar.cook.finish',
+      make: (root, audio) => new CevichePanel(root, audio as AudioBus),
+    },
   ],
   recall: RECALL,
   meta: {
     'la-caleta': { scene: 'outdoor', mood: 'garua' },
     picanteria: { scene: 'interior', mood: 'interior' },
+  },
+  // Sitting on a fish crate at the pier is correct; the picantería stools too.
+  sitKinds: ['crate', 'stool'],
+  sitLines: {
+    'la-caleta': [
+      'The sea sets the tempo and the malecón keeps it: stroll, pause, greet, stroll. Nobody finishes this walk early.',
+      'The caballitos drip dry on their tails, a fence of horses clocking out.',
+      'The pelican has not moved. As far as anyone can tell, the pelican is winning.',
+      'The garúa hangs low. Somewhere under it, an outboard putters home by memory.',
+      'Every seventh wave reaches a little further up the sand, checking on everyone.',
+      'Around four, Marisol’s voice will cross the whole malecón: the remate, the day’s last arithmetic.',
+    ],
+    picanteria: [
+      'Between rushes, the room exhales. The pots keep talking; Petro answers only the ones that matter.',
+      'The long table holds six strangers and no silence. The ají crosses it twice without being asked.',
+      'Steam writes over the doorway and unwrites itself. Today’s dish is whatever the pots say it is.',
+      'Petro moves between the pots like a captain on a small, delicious ship.',
+      'Someone finishes, sighs, and stays seated. Leaving quickly would be a kind of lie.',
+    ],
   },
   arrival: { map: 'la-caleta', node: 'mar.arrive', flag: 'c2.arrived' },
   completion: {

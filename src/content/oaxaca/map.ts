@@ -217,6 +217,8 @@ function campoObject(x: number, y: number): string {
   const velas = new Set(['4,5', '14,5', '6,8', '16,8', '9,10', '11,10']);
   if (velas.has(`${x},${y}`)) return 'v';
   if ((x === 2 && y === 11) || (x === 17 && y === 11)) return 't';
+  // Benches for the vigil: brought out each year, facing the family rows.
+  if ((x === 4 && y === 12) || (x === 15 && y === 12)) return 'n';
   return ' ';
 }
 
@@ -235,6 +237,7 @@ export const CAMPOSANTO_MAP: MapData = {
     U: { t: 'tumba', solid: true },
     v: { t: 'veladora', solid: true },
     t: { t: 'tree', solid: true, tall: true },
+    n: { t: 'bench', solid: true },
     ' ': { t: 'void' },
   },
   ground: campo.ground,

@@ -139,6 +139,7 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { has: ['c2.ceviche'], not: ['c2.atenoon'] }, node: 'mar.petro.noonmeal' },
       { when: { has: ['c2.atenoon'], not: ['c2.lisa.ask'] }, node: 'mar.petro.lisa' },
       { when: { has: ['c2.lisa'], not: ['c2.lisa.done'] }, node: 'mar.petro.sudado' },
+      { when: { has: ['c2.atenoon'], not: ['c2.cook.done'] }, node: 'mar.petro.teach' },
       { node: 'mar.petro.idle' },
     ],
   },
@@ -185,6 +186,46 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { has: ['c2.complete'] }, node: 'mar.rios.wait' },
       { node: 'mar.rios.not' },
     ],
+  },
+  {
+    id: 'faustinoC',
+    name: 'Faustino',
+    map: 'la-caleta',
+    when: { has: ['c2.arrived'] },
+    pos: [8, 22],
+    range: 1,
+    look: {
+      skin: '#a5744a',
+      hair: '#241a12',
+      cloth: '#5c4a6e',
+      stripe: '#c9a35f',
+      hat: '#3d3226',
+      hatStyle: 'chullu',
+    },
+    entry: [
+      { when: { not: ['c2.faus.met'] }, node: 'mar.faustino.down' },
+      { when: { not: ['c2.faus.quiz'] }, node: 'mar.faustino.quiz' },
+      { when: { not: ['c2.faus.news'] }, node: 'mar.faustino.news' },
+      { node: 'mar.faustino.idle' },
+    ],
+  },
+  {
+    id: 'llama-costa',
+    name: 'Llama',
+    map: 'la-caleta',
+    when: { has: ['c2.arrived'] },
+    pos: [6, 23],
+    range: 1,
+    sprite: 'llamaBrown',
+    look: {
+      skin: '#c98f5f',
+      hair: '#3a2a1c',
+      cloth: '#8a3a2e',
+      stripe: '#f2e6d0',
+      hat: '#c9a35f',
+      hatStyle: 'none',
+    },
+    entry: [{ node: 'mar.llama.train' }],
   },
   {
     id: 'chascaC',
@@ -544,6 +585,38 @@ export const CALETA_NODES: NodeMap = {
     ],
   },
 
+  // ---- the ceviche lesson: eaten first, learned second ----
+  'mar.petro.teach': {
+    lines: [
+      { who: 'Doña Petro', text: 'You have eaten it. Good. Eating is the exam you take before the lesson, hija.' },
+      { who: 'Doña Petro', text: 'Come behind the pots. Nobody stands behind my pots except family, and the ceviche is how you apply.' },
+    ],
+    choices: [
+      { text: 'Step behind the pots', goto: 'mar.cook.begin' },
+      { text: 'Not with these nerves', goto: 'mar.cook.later' },
+    ],
+  },
+  'mar.cook.begin': {
+    lines: [
+      { who: 'Doña Petro', text: 'The lisa swam at dawn, the limes left the tree this morning, the clock says noon. Everything is ready except you.' },
+      { text: 'She hands you the knife handle-first, which in this kitchen is a diploma you have not earned yet.' },
+    ],
+    effects: ['set:c2.cook.start'],
+  },
+  'mar.cook.later': {
+    lines: [
+      { who: 'Doña Petro', text: 'Nerves season nothing, hija. Come back before the clock does its only trick.' },
+    ],
+  },
+  'mar.cook.finish': {
+    lines: [
+      { text: 'The plate goes out to the long table and comes back empty before you have wiped the board.' },
+      { who: 'Doña Petro', text: 'You see? The fish works, the lime works, the clock works. We stay out of the way, politely, with a knife.' },
+      { who: 'Doña Petro', text: 'Now you carry a noon in your hands, hija. Spend it anywhere on earth. It will not stop being noon.' },
+    ],
+    effects: ['clear:c2.cook.start', 'set:c2.cook.done'],
+  },
+
   // ---------------- Don Wili, emolientero ----------------
   'mar.wili.first': {
     lines: [
@@ -591,6 +664,74 @@ export const CALETA_NODES: NodeMap = {
   'mar.rios.wait': {
     lines: [
       { who: 'Capitana Ríos', text: 'Rest. Eat something warm. The Pacific is long and the galley coffee is a punishment from God.' },
+    ],
+  },
+
+  // ---------------- Faustino, down the mountain with the trade ----------------
+  'mar.faustino.down': {
+    lines: [
+      { text: 'At the west end of the malecón: llamas. Actual llamas, regarding the Pacific with deep reservation, panniers full of chuño.' },
+      { who: 'Faustino', text: 'The soup-eater! Ha! The mountain misses you already, it said so. I brought the llamas down to check.' },
+      { who: 'Faustino', text: 'Chuño and wool walk down, dried fish and salt walk up. My family has run this stair since before Peru had the name.' },
+    ],
+    effects: ['set:c2.faus.met'],
+  },
+  'mar.faustino.quiz': {
+    lines: [
+      { who: 'Faustino', text: 'Now, a bet. I say the coast has already washed the mountain out of you. Prove me wrong and I owe you a story.' },
+      { who: 'Faustino', text: 'One thing the road up there taught you. Anything. The llamas are listening and they hate a liar.' },
+    ],
+    choices: [
+      {
+        text: '"The apacheta: you add a stone and leave a worry."',
+        goto: 'mar.faustino.qStone',
+        when: { has: ['page.customs.apacheta'] },
+      },
+      {
+        text: '"Paca only moves for your whistle."',
+        goto: 'mar.faustino.qPaca',
+        when: { has: ['page.people.faustino'] },
+      },
+      { text: '"Honestly, it is all a blur of altitude."', goto: 'mar.faustino.blur' },
+    ],
+  },
+  'mar.faustino.qStone': {
+    lines: [
+      { who: 'Faustino', text: 'Ayayay. The cairn at the pass. You set your stone on fifty years of strangers and walked down lighter.' },
+      { who: 'Faustino', text: 'I lose, and losing to that answer is a pleasure. Your story: the pile is taller than my grandfather knew it. It grows on worries.' },
+    ],
+    effects: ['set:c2.faus.quiz'],
+  },
+  'mar.faustino.qPaca': {
+    lines: [
+      { who: 'Faustino', text: 'HA! One short, one long. She heard it from here, I promise you. Her ears are the best-fed part of her.' },
+      { who: 'Faustino', text: 'I lose, gladly. Your story: Paca inherited that spot on the pass from her mother, who was worse. A dynasty of standing still.' },
+    ],
+    effects: ['set:c2.faus.quiz'],
+  },
+  'mar.faustino.blur': {
+    lines: [
+      { who: 'Faustino', text: 'Correct! That is exactly what the puna is. Thin air, thick sky, and the road doing your thinking for you.' },
+      { who: 'Faustino', text: 'For the record, the blur contains: an apacheta, a stone pile where travelers each leave a worry, and my Paca, who moves for one whistle. Mine.' },
+    ],
+    effects: ['set:c2.faus.quiz'],
+  },
+  'mar.faustino.news': {
+    lines: [
+      { who: 'Faustino', text: 'News from up top, since you are owed some. Rosa invented a soup she claims is for winter. It is for missing you; anyone can see.' },
+      { who: 'Faustino', text: 'And the dog crosses the bridge free now, both directions. Official business, Pilar says. The toll economy is in a golden age.' },
+    ],
+    effects: ['set:c2.faus.news'],
+  },
+  'mar.faustino.idle': {
+    lines: [
+      { who: 'Faustino', text: 'Two days to sell, one to drink the sea with my eyes, then up again before the llamas learn to like fish. A road is ayni with distance.' },
+    ],
+  },
+  'mar.llama.train': {
+    lines: [
+      { text: 'A pack llama of the train, unloaded and unimpressed. The panniers smell of chuño; the llama smells of the whole road down.' },
+      { text: 'It looks at the sea, then at you, then back at the sea, filing the entire ocean under: excessive.' },
     ],
   },
 
@@ -731,4 +872,5 @@ export const CALETA_EVENTS = [
   { node: 'mar.arrive' },
   { when: { has: ['wave.start'] }, node: 'mar.rode' },
   { when: { has: ['net.start'] }, node: 'mar.mended' },
+  { when: { has: ['c2.cook.start'] }, node: 'mar.cook.finish' },
 ];

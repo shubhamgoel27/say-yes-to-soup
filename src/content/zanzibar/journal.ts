@@ -225,6 +225,14 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
     text: 'Come back to the market corner at dusk, when the lamps kindle and the pweza meets the coconut.',
   },
   {
+    when: { has: ['page.dishes.urojo'], not: ['c7.cook.done'] },
+    text: 'Zuberi keeps a spare apron tied to the cart handle, and it has your name on it. Go behind the pot and build bowls to order. There are no wrong bowls.',
+  },
+  {
+    when: { has: ['c7.rios.met'], not: ['c7.rios.sat', 'c7.complete'] },
+    text: 'The Yacana rides past the reef and her Capitana is ashore at the jetty, off watch and slightly at sea about it. She has findings to report. Hear them.',
+  },
+  {
     when: { has: ['c7.arrived'], not: ['letter.read.c7.pilar'] },
     text: 'Mail waits at the shipping counter by the jetty: an envelope in the unmistakable handwriting of local government.',
   },

@@ -277,6 +277,14 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
     text: 'Justina pointed out glinting mounds among the terrace rows. Dig every one; she promises each papa has a name worth hearing.',
   },
   {
+    when: { has: ['watia.start'] },
+    text: 'The watia is half-born among the rows: stack the clods into a little house, feed the fire until they glow, then bring the whole thing down on the papas.',
+  },
+  {
+    when: { has: ['dig.done'], not: ['watia.start', 'watia.done'] },
+    text: 'The harvest is out of the ground and Justina is eyeing the dry clods. She wants to build the watia with you in the terraces, while the papas still remember the soil.',
+  },
+  {
     when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
     text: "Carmen's wichuna, a llama-bone weaving pick, is on loan to Justina in the terraces. Retrieve it.",
   },

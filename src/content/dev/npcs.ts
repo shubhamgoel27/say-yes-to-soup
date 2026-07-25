@@ -101,6 +101,7 @@ export const NPCS: NpcDef[] = [
         when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
         node: 'justina.wichuna',
       },
+      { when: { has: ['dig.done'], not: ['watia.done'] }, node: 'justina.watiaInvite' },
       { when: { not: ['met.justina'] }, node: 'justina.first' },
       { when: { has: ['story.complete'] }, node: 'justina.epilogue' },
       { when: { has: ['bundle.delivered'] }, node: 'justina.after' },
@@ -224,6 +225,7 @@ export const NPCS: NpcDef[] = [
       { when: { not: ['pilar.s1'] }, node: 'pilar.rocks' },
       { when: { not: ['pilar.s2'] }, node: 'pilar.tour' },
       { when: { not: ['pilar.s3'] }, node: 'pilar.mayor' },
+      { when: { has: ['pilar.promoted'], not: ['pilar.s4'] }, node: 'pilar.ships' },
       { node: 'pilar.idle' },
     ],
   },
@@ -811,6 +813,39 @@ export const NODES: NodeMap = {
     effects: ['set:dig.done', 'journal:dishes.llumchuy'],
   },
 
+  // ---------------- the watia, built where it grew ----------------
+  'justina.watiaInvite': {
+    lines: [
+      { who: 'Justina', text: 'Papas with names deserve better than a pot, wawa. Today the field does its own cooking.' },
+      { who: 'Justina', text: 'The watia. Clods for walls, fire for a heart, papas for a reason. I supervise. You stack.' },
+    ],
+    choices: [
+      { text: 'Build the oven', goto: 'justina.watiaStart' },
+      { text: 'Catch your breath first', goto: 'justina.watiaLater' },
+    ],
+  },
+  'justina.watiaStart': {
+    lines: [
+      { text: 'She kicks a heel into the dry row and up comes a clod, hard as bread crust. The field is full of them.' },
+      { who: 'Justina', text: 'Big ones at the bottom, small ones for the roof. A little house for the fire. Haku.' },
+    ],
+    effects: ['set:watia.start'],
+  },
+  'justina.watiaLater': {
+    lines: [
+      { who: 'Justina', text: 'Mm. The field waited all season; it can wait for your lungs. The clods are going nowhere. They are clods.' },
+    ],
+  },
+  'watia.finish': {
+    lines: [
+      { text: 'Earth over embers over papas. Then the waiting, which smells better every minute of it.' },
+      { text: 'Justina rakes one out with a stick, tosses it palm to palm, splits it. Steam climbs out like something set free.' },
+      { who: 'Justina', text: 'First bite is the field\'s fee. Eat. No pot in Peru can do this; the earth cooks its own, and does it best.' },
+      { text: 'It tastes of smoke and rain and the exact ground you are standing on. Every oven after this one will lose the comparison.' },
+    ],
+    effects: ['clear:watia.start', 'set:watia.done'],
+  },
+
   // ---------------- the dog ----------------
   'allqu.first': {
     lines: [
@@ -900,6 +935,13 @@ export const NODES: NodeMap = {
       { text: 'You are now, apparently, in bridge management. The dog is listed as security.' },
     ],
     effects: ['set:pilar.promoted'],
+  },
+  'pilar.ships': {
+    lines: [
+      { who: 'Pilar', text: 'Co-owner briefing. Expansion. The river touches the sea, so the sea is technically bridge water. Follow the logic.' },
+      { who: 'Pilar', text: 'Ships will owe the toll. In principle. The invoices are drafted. The sea has not responded, which legally is agreement.' },
+    ],
+    effects: ['set:pilar.s4'],
   },
   'pilar.epilogue': {
     lines: [
@@ -1355,4 +1397,5 @@ export const EVENT_NODES: EventNode[] = [
   ...DIG_SPOTS.map((s) => ({ when: { has: ['dig.invite'] }, node: s.node })),
   { when: { has: ['dig.1', 'dig.2', 'dig.3', 'dig.4', 'dig.5'] }, node: 'dig.finish' },
   { when: { has: ['weave.start'] }, node: 'carmen.woven' },
+  { when: { has: ['watia.start'] }, node: 'watia.finish' },
 ];

@@ -32,6 +32,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
         node: 'c4.matsuri',
       },
       { when: { has: ['met.fumi'], not: ['c4.hana3'] }, node: 'c4.hana.gran' },
+      { when: { has: ['c4.hana3', 'page.words.tadaima'], not: ['c4.hana.okaeri'] }, node: 'c4.hana.okaeri' },
       { when: { has: ['c4.complete'] }, node: 'c4.hana.after' },
       { node: 'c4.hana.idle' },
     ],
@@ -58,6 +59,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       { when: { has: ['c4.tai.got'], not: ['c4.taisomen'] }, node: 'c4.fumi.taisomen' },
       { when: { has: ['c4.taisomen'], not: ['c4.fumi.nani'] }, node: 'c4.fumi.memory' },
       { when: { has: ['c4.ofuro'], not: ['c4.okaeri'] }, node: 'c4.fumi.okaeri' },
+      { when: { has: ['page.dishes.dashi'], not: ['c4.cook.done'] }, node: 'c4.fumi.cookinvite' },
       { node: 'c4.fumi.idle' },
     ],
   },
@@ -193,6 +195,29 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       { node: 'c4.chasca.idle' },
     ],
   },
+  {
+    // Her look is her look from the Yacana, exactly; an engineer does not change.
+    // Ashore only while the ship unloads: she sails before the festival ends.
+    id: 'olenaC4',
+    name: 'Olena',
+    map: 'shionoura',
+    when: { has: ['c4.arrived'], not: ['c4.complete'] },
+    pos: [35, 23],
+    range: 1,
+    look: {
+      skin: '#dfb08a',
+      hair: '#c98a3f',
+      cloth: '#5c6e77',
+      stripe: '#c9a35f',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c4.met.olena'] }, node: 'c4.olena.shore' },
+      { when: { has: ['c4.met.olena'], not: ['c4.olena.quizzed'] }, node: 'c4.olena.quiz' },
+      { node: 'c4.olena.idle' },
+    ],
+  },
 ];
 
 export const SHIONOURA_NODES: NodeMap = {
@@ -271,6 +296,14 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Hana', text: 'I stay this time. Somebody has to teach the kids what a cadet does. Write to me from wherever the journal takes you.' },
     ],
   },
+  'c4.hana.okaeri': {
+    lines: [
+      { text: 'Evening. You come up the lane as Hana holds the minshuku noren aside, and the word you have been carrying tries itself out: tadaima.' },
+      { who: 'Hana', text: 'Okaeri.' },
+      { who: 'Hana', text: 'No, do not apologize! You said it right, so the door answered. That is the whole machine. Welcome back, to a house not yours. Yet.' },
+    ],
+    effects: ['set:c4.hana.okaeri'],
+  },
   'c4.hana.idle': {
     lines: [
       { who: 'Hana', text: 'Four years away and the ferry is still three minutes early. Some things you can lean your whole life against.' },
@@ -334,6 +367,36 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Fumi', text: 'The forecast argues about the seventh. Rain, stars, rain. Tsuyu is a guest that never learned when to leave.' },
     ],
+  },
+  'c4.fumi.cookinvite': {
+    lines: [
+      { who: 'Fumi', text: 'You keep watching my hands at the pot. Watching is a fine start and a poor finish. So: tomorrow, dawn, before the guests wake.' },
+      { who: 'Fumi', text: 'We make the morning dashi and the breakfast, you and me, while the house still whispers. Guests watch. Hands that help are something else.' },
+    ],
+    choices: [
+      { text: 'Be in the kitchen at dawn', goto: 'c4.fumi.cookstart' },
+      { text: 'Sleep first. Dawn comes early here.', goto: 'c4.fumi.cooklater' },
+    ],
+  },
+  'c4.fumi.cookstart': {
+    lines: [
+      { text: 'Dawn arrives grey-pink through the shoji. The house is all small sounds: water, a knife somewhere, the first ferry clearing its throat.' },
+      { who: 'Fumi', text: 'Quiet hands, quiet pot. I call the steps, you make them. The sea did most of the work already; we only have to ask it politely.' },
+    ],
+    effects: ['set:c4.cook.start'],
+  },
+  'c4.fumi.cooklater': {
+    lines: [
+      { who: 'Fumi', text: 'Mm. Dawn does not wait, but it does repeat. The pot and I will be there whichever morning your feet find first.' },
+    ],
+  },
+  'c4.cook.finish': {
+    lines: [
+      { text: 'Two trays reach the low table: rice, miso blooming in the iriko dashi, pickles, the onigiri packed firm. The guests wake to a ready house.' },
+      { who: 'Fumi', text: 'They will say itadakimasu to this and never know your hands are in it. Good. That is how a kitchen keeps its secrets.' },
+      { who: 'Fumi', text: 'And you should know: a guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
+    ],
+    effects: ['clear:c4.cook.start', 'set:c4.cook.done'],
   },
 
   // ---------------- Daisuke, tai pride ----------------
@@ -639,6 +702,59 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.chasca.idle': {
     lines: [
       { who: 'Chasca', text: 'I develop everything at the end of the journey. Whose journey? Mine, yours. The album keeps its own counsel.' },
+    ],
+  },
+
+  // ---------------- Olena, on shore leave while the Yacana unloads ----------------
+  'c4.olena.shore': {
+    lines: [
+      { text: 'A familiar figure stands at the end of the quay in shore clothes that fit like a disguise, holding a glass jar up toward the green hills.' },
+      { who: 'Olena', text: 'The galley hand. Do not look amazed; the Yacana unloads until tomorrow and I am on shore leave. It is an ancient maritime right.' },
+      { who: 'Olena', text: 'The starter came ashore with me. Six oceans in this jar, and it has never once seen a mountain. Today it sees a mountain. Look at it bubble.' },
+      { who: 'Olena', text: 'That is happiness. I have it on good authority. Mine.' },
+    ],
+    effects: ['set:c4.met.olena'],
+  },
+  'c4.olena.quiz': {
+    lines: [
+      { who: 'Olena', text: 'So. One day on land and the crossing is blurring for you already. It happens to everyone; the sea photographs badly in memory.' },
+      { who: 'Olena', text: 'Prove me wrong. One thing from those thirty-one days that is still sharp. I am grading this.' },
+    ],
+    effects: ['set:c4.olena.quizzed'],
+    choices: [
+      { text: '"I was ducked by Neptune himself and have the certificate."', goto: 'c4.olena.a.neptune', when: { has: ['c3.shellback'] } },
+      { text: '"The river has three names and I found all three."', goto: 'c4.olena.a.river', when: { has: ['page.customs.starriver'] } },
+      { text: '"Your starter bubbled for me. You said that made us family."', goto: 'c4.olena.a.family', when: { has: ['c3.olena.bread'] } },
+      { text: '"The sea is a big wet month, Olena."', goto: 'c4.olena.a.wet' },
+    ],
+  },
+  'c4.olena.a.neptune': {
+    lines: [
+      { who: 'Olena', text: 'Ducked by a bosun in a mop wig, technically. But the certificate is real, and the captain signs very few things twice.' },
+      { who: 'Olena', text: 'Fine. Full marks. Frame the paper before the sea takes the memory back; it does that. Ask any shellback over sixty.' },
+    ],
+  },
+  'c4.olena.a.river': {
+    lines: [
+      { who: 'Olena', text: 'Mayu, Milky Way, Amanogawa. Mm. And tonight this town hangs paper on bamboo for the third name. Convenient timing you have.' },
+      { who: 'Olena', text: 'Full marks. You kept the sky, which is the largest thing we carry. Everything else on that ship is just steel and dinner.' },
+    ],
+  },
+  'c4.olena.a.family': {
+    lines: [
+      { who: 'Olena', text: 'It bubbled immediately, yes. It does not do that for the chief engineer, and he has asked it nicely for two whole contracts.' },
+      { who: 'Olena', text: 'So: family, confirmed on land, which makes it legal. The jar and I expect a letter someday. It reads slowly, so write big.' },
+    ],
+  },
+  'c4.olena.a.wet': {
+    lines: [
+      { who: 'Olena', text: 'The sea is a big wet month. No stars, no certificate, no poetry. Finally, an honest sailor.' },
+      { who: 'Olena', text: 'You would be amazed how many pass this quiz by failing it. Go, enjoy your land. It holds still, mostly. That never stops being funny.' },
+    ],
+  },
+  'c4.olena.idle': {
+    lines: [
+      { who: 'Olena', text: 'We sail before your festival ends, so this is the goodbye watch. I am spending it here, teaching a jar what a mountain is.' },
     ],
   },
 
@@ -1007,4 +1123,5 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
 export const SHIONOURA_EVENTS = [
   { node: 'c4.arrive' },
   { when: { has: ['c4.kingyo.start'] }, node: 'c4.kingyo.won' },
+  { when: { has: ['c4.cook.start'] }, node: 'c4.cook.finish' },
 ];

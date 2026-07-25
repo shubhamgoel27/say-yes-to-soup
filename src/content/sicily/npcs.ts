@@ -75,6 +75,7 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { not: ['met.alfio'] }, node: 'c8.alfio.first' },
       { when: { has: ['c8.granita'], not: ['c8.arancino'] }, node: 'c8.alfio.lunch' },
       { when: { has: ['c8.arancino'], not: ['c8.cannolo'] }, node: 'c8.alfio.cannolo' },
+      { when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] }, node: 'c8.alfio.bag' },
       { node: 'c8.alfio.idle' },
     ],
   },
@@ -177,6 +178,29 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { not: ['met.rosaria'] }, node: 'c8.rosaria.first' },
       { when: { has: ['met.rosaria'], not: ['c8.cunzato'] }, node: 'c8.rosaria.bread' },
       { node: 'c8.rosaria.idle' },
+    ],
+  },
+  {
+    // Ashore while the Yacana works her Mediterranean leg. Cooks come ashore
+    // at provisioning stops, and cooks ashore go where the fish are honest.
+    id: 'mangbenC8',
+    name: 'Mang Ben',
+    map: 'sicily',
+    when: { has: ['c8.arrived'], not: ['c8.complete'] },
+    pos: [29, 16],
+    range: 1,
+    look: {
+      skin: '#a06a42',
+      hair: '#3d362e',
+      cloth: '#e8e4d6',
+      stripe: '#c1512f',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+    },
+    entry: [
+      { when: { not: ['c8.ben.met'] }, node: 'c8.ben.hello' },
+      { when: { has: ['c8.ben.met'], not: ['c8.ben.tin'] }, node: 'c8.ben.anchovies' },
+      { node: 'c8.ben.idle' },
     ],
   },
   {
@@ -517,6 +541,35 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Alfio', text: 'The gelsi is nearly finished for the season. When it goes, it goes like a ferry: no argument, only a smaller horizon.' },
     ],
   },
+  'c8.alfio.bag': {
+    lines: [
+      { text: 'The case has been restocked: a fresh rank of empty shells, and the pastry bag lying beside them like a sleeping housecat.' },
+      { who: 'Alfio', text: 'You know the law now: filled at the moment, never before. But knowing with the head is half. Come around the counter; hold the bag.' },
+    ],
+    choices: [
+      { text: 'Take the pastry bag', goto: 'c8.alfio.bag.go' },
+      { text: '"Later. I respect the bag."', goto: 'c8.alfio.bag.wait' },
+    ],
+  },
+  'c8.alfio.bag.go': {
+    lines: [
+      { who: 'Alfio', text: 'Three shells, three customers, zero mercy from the signora. Pipe, stop in time, both ends, then the garnish. The shell will tell your thumb.' },
+    ],
+    effects: ['set:c8.cook.start'],
+  },
+  'c8.alfio.bag.wait': {
+    lines: [
+      { who: 'Alfio', text: 'Wise to fear it a little. The bag can smell confidence.' },
+    ],
+  },
+  'c8.cook.finish': {
+    lines: [
+      { text: 'Three shells filled at the moment, no sooner. The counter holds no evidence except one barman licking pistachio from his wrist.' },
+      { who: 'Alfio', text: 'Now you see why the case sits empty on purpose. A filled shell waiting is a soggy lie, and this bar has never once lied about dessert.' },
+      { who: 'Alfio', text: 'Cream only when it is asked for; crunch until the last second. If my whole life holds to that standard, friend, I die a happy barman.' },
+    ],
+    effects: ['clear:c8.cook.start', 'set:c8.cook.done'],
+  },
 
   // ---------------- the circolo elders ----------------
   'c8.elders.first': {
@@ -739,6 +792,53 @@ export const SICILY_NODES: NodeMap = {
   'c8.rosaria.idle': {
     lines: [
       { who: 'Rosaria', text: 'When she rumbles we sweep the ash off the leaves and say nothing rude where she can hear. She is the neighbor. You do not move away from her.' },
+    ],
+  },
+
+  // ---------------- Mang Ben, ashore where the fish are honest ----------------
+  'c8.ben.hello': {
+    lines: [
+      { text: 'At the fish stall, a man with a towel over one shoulder is holding up a sardine and congratulating it personally. You know that towel.' },
+      { who: 'Mang Ben', text: 'Pare! You! The Yacana provisions down the coast this week, so of course I came where the fish are honest. Cooks ashore have instincts.' },
+      { who: 'Mang Ben', text: 'And this market SINGS. At home the vendors call; here they perform opera. Turi and I are already family. He does not know it yet.' },
+    ],
+    effects: ['set:c8.ben.met'],
+    choices: [
+      { text: '"Adobo order, go: garlic first, vinegar undisturbed."', goto: 'c8.ben.adobo', when: { has: ['c3.cook.done'] } },
+      { text: '"I told the locals about sinigang. They countered with agrodolce."', goto: 'c8.ben.sour', when: { has: ['page.dishes.sinigang'] } },
+      { text: '"Mostly I remember that you fed me before you knew my name."', goto: 'c8.ben.fed' },
+    ],
+  },
+  'c8.ben.adobo': {
+    lines: [
+      { text: 'He sets the sardine down with ceremony and says nothing for a moment. His eyes shine. He blames onions; the stall has no onions.' },
+      { who: 'Mang Ben', text: 'Garlic first. Vinegar undisturbed. You kept the order across three oceans, pare. Half my own crew stirs early and they have SEEN me cry.' },
+      { who: 'Mang Ben', text: 'One pot, one crossing, and it stayed with you. This is the whole reason cooks feed people. Now I have to hug you. Occupational.' },
+    ],
+  },
+  'c8.ben.sour': {
+    lines: [
+      { who: 'Mang Ben', text: 'Sinigang, urojo, agrodolce: every honest coast keeps one sour pot. I have argued this at four stalls this morning and I am WINNING.' },
+      { who: 'Mang Ben', text: 'Turi says vinegar is for fish already caught. I say sour is how a kitchen tells the truth. We have agreed to argue again tomorrow.' },
+    ],
+  },
+  'c8.ben.fed': {
+    lines: [
+      { who: 'Mang Ben', text: 'House rule one, pare: nobody stands in my doorway hungry. The rule travels. Doorways are everywhere.' },
+      { who: 'Mang Ben', text: 'And if you forget all else, keep this: adobo goes garlic first, vinegar undisturbed. And sinigang, the sour soup, for any homesick face.' },
+    ],
+  },
+  'c8.ben.anchovies': {
+    lines: [
+      { text: 'Ben holds a tin of Sicilian anchovies up to the light like contraband, reading the label with the reverence of a man reading scripture.' },
+      { who: 'Mang Ben', text: 'For research, pare. Strictly professional. If a little research ends up on the crew’s pizza night, that is between me and the tin.' },
+      { who: 'Mang Ben', text: 'A galley is a museum that eats its exhibits. I am only keeping the collection current.' },
+    ],
+    effects: ['set:c8.ben.tin'],
+  },
+  'c8.ben.idle': {
+    lines: [
+      { who: 'Mang Ben', text: 'The ship loads tomatoes tomorrow, and me with them. Find me before we sail or the goodbye keeps until Manila. It keeps, pare, but badly.' },
     ],
   },
 
@@ -1007,4 +1107,5 @@ export const SICILY_EVENTS: EventNode[] = [
   { node: 'c8.arrive' },
   { when: { has: ['c8.scopa.start'] }, node: 'c8.scopa.done' },
   { when: { has: ['c8.pisci.start'] }, node: 'c8.pisci.done' },
+  { when: { has: ['c8.cook.start'] }, node: 'c8.cook.finish' },
 ];

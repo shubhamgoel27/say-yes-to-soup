@@ -4,7 +4,7 @@ import { KERALA_EVENTS, KERALA_EXAMINES, KERALA_NODES, KERALA_NPCS } from './npc
 import { KERALA_JOURNAL, KERALA_TASKS } from './journal';
 import { KERALA_MAP, MARIAMMA_VEEDU_MAP } from './map';
 import { RECALL } from './recall';
-import { RowPanel, SadyaPanel } from '../../ui/games/kerala';
+import { ChayaPanel, RowPanel, SadyaPanel } from '../../ui/games/kerala';
 
 /** Chapter Six: Kaithappuram, where the monsoon is the road. */
 export const CHAPTER: ChapterDef = {
@@ -72,6 +72,11 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c6.sadya.served',
       make: (root, audio) => new SadyaPanel(root, audio as AudioBus),
     },
+    {
+      flag: 'c6.cook.start',
+      doneNode: 'c6.cook.finish',
+      make: (root, audio) => new ChayaPanel(root, audio as AudioBus),
+    },
   ],
   recall: RECALL,
   meta: {
@@ -99,6 +104,22 @@ export const CHAPTER: ChapterDef = {
       ambient: 0xc2cfc8,
       noClouds: true,
     },
+  },
+  sitKinds: ['stool'],
+  sitLines: {
+    kerala: [
+      'The channel runs its slow errands: one poler, one duck convoy, one leaf going somewhere important.',
+      'The rain is rehearsing somewhere out over the lagoon. You can hear it tuning.',
+      'A coconut lets go back in the grove: one drumbeat. The palms wait a decent interval before the next.',
+      'Shaji’s kettle and the frogs split the afternoon between them, steam solo, chorus after.',
+      'The laterite lane glows redder as the clouds stack. Colors here rise before the rain does.',
+    ],
+    'mariamma-veedu': [
+      'The aduppu breathes coconut-husk smoke up into rafters that have smelled it all their lives.',
+      'The curry pot sits with its lid on, thinking. Nobody hurries it; day two outranks day one.',
+      'Joseph looks down from his photograph in merchant navy whites, permanently twenty-two.',
+      'The roof reports the sky in detail: heat ticking the tiles now, rain drumming them soon.',
+    ],
   },
   arrival: { map: 'kerala', node: 'c6.arrive', flag: 'c6.arrived' },
   completion: {

@@ -15,6 +15,7 @@ export const RECALL: RecallManifest = {
     'joseph.letter', // Chapter Six's front door, entrusted mid-Pacific
     'photo.c3.deck', // Chasca's photo: the middle of everything
     'c3.shellback', // a shellback outranks a pollywog forever
+    'c3.olena.bread', // you fed the starter; Olena's shore leave remembers it
     'c3.complete',
     'page.customs.starriver', // rhymes forward into Tanabata
   ],

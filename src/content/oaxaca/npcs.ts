@@ -143,7 +143,9 @@ export const OAXACA_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['met.carver'] }, node: 'c9.carver.first' },
       { when: { has: ['met.carver', 'met.kid'], not: ['c9.carver2'] }, node: 'c9.carver.second' },
-      { node: 'c9.carver.idle' },
+      { when: { not: ['c9.carver.i1'] }, node: 'c9.carver.idle' },
+      { when: { not: ['c9.carver.i2'] }, node: 'c9.carver.idle2' },
+      { node: 'c9.carver.idle3' },
     ],
   },
   {
@@ -656,6 +658,21 @@ export const OAXACA_NODES: NodeMap = {
   'c9.carver.idle': {
     lines: [
       { who: 'Silvino', text: 'The paint decides when it is done. I only hold the brush and outvote it occasionally.' },
+      { text: 'The iguana-trumpet-cat has gained wings since this morning. Small ones, but clearly going somewhere.' },
+    ],
+    effects: ['set:c9.carver.i1'],
+  },
+  'c9.carver.idle2': {
+    lines: [
+      { text: 'The creature now has wings AND eyebrows. The eyebrows appear skeptical about the wings.' },
+      { who: 'Silvino', text: 'It asked for them. Who am I to refuse a commission from the commissioned?' },
+    ],
+    effects: ['set:c9.carver.i2'],
+  },
+  'c9.carver.idle3': {
+    lines: [
+      { who: 'Silvino', text: 'Every time you walk past, it grows a little braver. Keep visiting and I will have to charge it rent.' },
+      { text: 'Today: a third eye, or possibly a polka dot with ambition. Either way, it suits.' },
     ],
   },
 

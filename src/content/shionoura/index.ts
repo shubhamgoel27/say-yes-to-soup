@@ -4,7 +4,7 @@ import { SHIONOURA_EVENTS, SHIONOURA_EXAMINES, SHIONOURA_NODES, SHIONOURA_NPCS }
 import { SHIONOURA_JOURNAL, SHIONOURA_TASKS } from './journal';
 import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
 import { RECALL } from './recall';
-import { KingyoPanel } from '../../ui/games/shionoura';
+import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
 
 /** Chapter Four: Shionoura, where the Inland Sea keeps festival time. */
 export const CHAPTER: ChapterDef = {
@@ -66,6 +66,11 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c4.kingyo.won',
       make: (root, audio) => new KingyoPanel(root, audio as AudioBus),
     },
+    {
+      flag: 'c4.cook.start',
+      doneNode: 'c4.cook.finish',
+      make: (root, audio) => new DashiPanel(root, audio as AudioBus),
+    },
   ],
   recall: RECALL,
   meta: {
@@ -92,6 +97,25 @@ export const CHAPTER: ChapterDef = {
       ambient: 0x9296c2,
       noClouds: true,
     },
+  },
+  // The zabuton at the low table count as seats; the bench idiom, kneeling.
+  sitKinds: ['stool'],
+  sitLines: {
+    shionoura: [
+      'The cicadas saw at the hill in relays, thousands of them, all of them certain.',
+      'The ferry rounds the stone lantern exactly on time. Somewhere behind you a shop clock is corrected anyway.',
+      'Geta clack somewhere up the shotengai, unhurried, practicing for the seventh night.',
+      'The tairyō-bata lift, fill, and settle. The pier spends all day remembering what full felt like.',
+      'Heat lies over the quay like a cat that has chosen it. Nobody argues with either of them.',
+      'An old woman bows slightly to the postbox and mails nothing. The postbox receives it well.',
+    ],
+    minshuku: [
+      'The iron kettle noses up toward a boil and thinks better of it.',
+      'Light comes through the shoji as rumor rather than weather.',
+      'The house creaks in its friendly register, announcing somebody to everybody.',
+      'Cold barley tea sweats in its glass. The cicadas stay outside; the cool stays in.',
+      'Fumi\'s slippers pass the doorway, pause, and pass again. The house is being run.',
+    ],
   },
   arrival: { map: 'shionoura', node: 'c4.arrive', flag: 'c4.arrived' },
   completion: {

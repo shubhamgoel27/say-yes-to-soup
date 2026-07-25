@@ -253,6 +253,14 @@ export const CALETA_TASKS: TaskDef[] = [
     text: 'Petro’s orders: come back at noon, when the fish is hours old instead of a day. The clock is the recipe.',
   },
   {
+    when: { has: ['c2.cook.start'] },
+    text: 'You are behind Petro’s pots with a knife and a clock. Cut, salt, the lime kiss, onion, ají, cancha and camote at the rim, tiger’s milk in its own glass. In that order, pe.',
+  },
+  {
+    when: { has: ['c2.atenoon'], not: ['c2.cook.start', 'c2.cook.done'] },
+    text: 'Doña Petro has decided you have eaten enough ceviche to be trusted near one. Present yourself behind the pots; the lesson keeps noon hours.',
+  },
+  {
     when: { has: ['met.felix'], not: ['c2.ponds'] },
     text: 'Maestro Félix is partway through a boat and a story about ponds. Both halves are worth standing still for.',
   },
