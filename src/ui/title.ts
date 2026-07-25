@@ -91,7 +91,7 @@ export class TitleScreen {
     this.titleEl.innerHTML = `
       <div class="t-card">
         <div class="t-kicker">a journal, half full</div>
-        <div class="t-name">ELSEWHERE</div>
+        <div class="t-name">SAY YES<br>TO SOUP</div>
         <div class="t-rule"></div>
         <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
         <div class="t-menu">${menu}</div>

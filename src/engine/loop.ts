@@ -27,7 +27,7 @@ export function startLoop(update: (dt: number) => void, render: () => void): Loo
       }
       render();
     } catch (err) {
-      console.error('[elsewhere] frame error:', err);
+      console.error('[soup] frame error:', err);
       acc = 0;
     }
     requestAnimationFrame(frame);

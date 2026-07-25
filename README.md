@@ -1,10 +1,38 @@
-# Elsewhere
+# Say Yes to Soup
 
 *a journal, half full*
 
-**Elsewhere** is a cozy, Pokémon-style RPG for the browser about walking through the world's villages and letting culture arrive sideways: through soup, slang, small corrections, and people who disagree with each other. No combat, no timers, no fail states. You can put it down mid-sentence.
+**Say Yes to Soup** is a cozy, Pokémon-style RPG for the browser about walking through the world's villages and letting culture arrive sideways: through soup, slang, small corrections, and people who disagree with each other. No combat, no timers, no fail states. You can put it down mid-sentence.
 
-You inherit your grandmother Nani's half-finished 1974 travel journal and retrace her route. Her faded entries sit above yours on every page you both reach. Sometimes she was wrong. Sometimes the recipe changed.
+You grew up on your grandmother Nani's postcards. Then the postcards stopped. The lawyer's envelope held no money and one journal, half full — her note said the empty half was always yours. So: unpaid leave, one bag, her 1974 route. Her advice from the first letter is the whole game: *say yes to soup, ask about the bread, and if someone corrects you, thank them twice.*
+
+![title](docs/shots/title.png)
+
+## The journey
+
+Ten chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos — and the same road home, upward.
+
+| | |
+|---|---|
+| ![village](docs/shots/village.png) *Ch'aska Pampa, where it starts* | ![night](docs/shots/village-night.png) *the same plaza after dark* |
+| ![caleta](docs/shots/caleta-garua.png) *La Caleta under the garúa* | ![ship](docs/shots/ship.png) *working passage on the MV Yacana* |
+| ![shionoura](docs/shots/shionoura.png) *Shionoura, tairyō-bata flying* | ![kerala](docs/shots/kerala-monsoon.png) *Kaithappuram, and the monsoon actually rains* |
+| ![zanzibar](docs/shots/zanzibar-dusk.png) *Fukoni at lamp-light* | ![sicily](docs/shots/sicily.png) *the passeggiata hour, Etna presiding* |
+| ![oaxaca](docs/shots/oaxaca.png) *the valley, papel picado up* | ![dialogue](docs/shots/dialogue.png) *everything you look at answers* |
+
+## The world rhymes
+
+What you learn uphill changes how every coast treats you. The reciprocity chain — Quechua *ayni*, the coastal *yapa*, Korean *deom*, Mexican *pilón*, and finally the Zapotec *guelaguetza* ledger that explains why Nani stopped writing — is the game's spine. The journal stitches visible threads between rhyming pages, and margin notes in Nani's hand become legible only when you hold both halves.
+
+| | |
+|---|---|
+| ![rhyme](docs/shots/journal-rhyme.png) *yapa, stitched to ayni, with her margin note* | ![dishes](docs/shots/journal-dishes.png) *every dish gets its little painting* |
+
+- **Travelers find you**: Faustino trades his llama train down the mountain and bets you've forgotten the pass; Hana ferries over and pointedly never asks what you wished; Joseph walks into his mother's kitchen past his own letter; the ship's cook makes you recite the adobo order and mists up.
+- **Letters chase you** around the world — including the escalating correspondence of a nine-year-old bridge magnate.
+- **Every village cooks with you** once you've cared enough to learn: a watía earth oven, the lime-kiss timing of ceviche, morning dashi, a meter-long chaya pour, urojo built to a customer's call, cannoli filled at the moment and never before.
+- **You can just sit down.** Any bench, baraza, fish crate, or bollard. The camera settles, the music steps aside for the wind, and the place thinks out loud around you.
+- **You can hear where you are**: nine regional generative music styles (bombo, taiko, janggu, chenda, taarab, tarantella, marimba), speech babble shaped by each language's pitch and gait, footsteps that know steel decks from sand.
 
 ## Playing
 
@@ -18,32 +46,22 @@ Open the printed localhost URL in a modern browser (WebGPU preferred, WebGL fall
 | Key | Action |
 |---|---|
 | Arrows / WASD | walk |
-| Space / Z | talk, touch things |
+| Space / Z | talk, touch things, sit |
 | J | the journal |
 | M | mute |
 
-## What is in the game
-
-- **Chapter One: Ch'aska Pampa**, a fictional Andean highland village. Around 30 journal pages of words, dishes, people, and customs, learned by playing: carry chicha without spilling it, sit at a loom, dig papas, pet the dog well past the recommended dose.
-- **Chapter Two: La Caleta**, a fishing village on the desert coast below. Become somebody's casero, earn the yapa, learn why ceviche is a clock, kneel onto a caballito de totora, mend nets in the evening circle, and earn working passage on a cargo ship.
-- **Chapters Three to Ten, around the world**: the MV Yacana across the Pacific (galley cooking, the star deck, the line-crossing ceremony), a Seto Inland Sea town at Tanabata (omiyage, goldfish scooping), a Busan market lane (the deom, a tea-house riddle), Kerala backwaters at monsoon onset (a letter delivered to a crewman's mother, snake-boat rowing, sadya on a banana leaf), a Zanzibar shore village (pole pole, kanga proverbs, dhow sailing), Sicily under Etna (scopa at the circolo, U pisci a mari, where Nani's handwriting stops mid-sentence), Oaxaca at Día de los Muertos (the guelaguetza ledger that answers why she stopped, an ofrenda built from your whole journey), and the road home.
-- **The world rhymes**: what you learned uphill changes how every coast treats you. The journal stitches threads between rhyming pages (ayni, yapa, deom, pilón, guelaguetza; two star rivers; two saints who go to the sea), Nani's margin notes become legible when you hold both halves, and letters from earlier villages find you at every post office, reacting to things you actually did, including one bridge magnate's escalating correspondence.
-- **Gentle friction**: getting a custom slightly wrong is never punished; the wrong branch is always the warmer scene. Offer coins for soup and you meet ayni instead.
-- **Tasks journal**: every open thread, written like directions from a friend. A test proves no reachable state ever leaves you without one.
-- **A living village**: day/night cycle, window light, fireflies, generative Andean-flavored music, weather moods, one bridge with a self-appointed toll collector (the toll is one interesting fact).
-
 ## How it is built
 
-- Vite + TypeScript, a thin custom engine (fixed-timestep 60 Hz sim, 16 px logical tiles), and PixiJS only for the final composite: screen-space lighting, glow, and bloom over a Canvas2D-painted world.
-- All art is procedural: painterly canvas drawing at 4x resolution, no image assets, no pixel fonts.
-- Content is data: maps are ASCII rows plus a legend; dialogue is a condition-gated node graph; one `effects` array is the entire learning system.
-- The test suite plays the game abstractly: graph integrity, map integrity, a reachability fixpoint proving every journal page earnable, and a stuck detector proving every state has an active task.
+- Vite + TypeScript and a thin custom engine (fixed-timestep 60 Hz sim, 16 px logical tiles); PixiJS handles only the final composite: screen-space lighting, bloom, iris wipes, and shimmer-free zoom over a Canvas2D-painted world.
+- All art is procedural: painterly canvas drawing at 4x resolution, zero image assets. All audio is synthesized WebAudio, zero audio assets.
+- Content is data: maps are ASCII rows plus a legend; dialogue is a condition-gated node graph; one `effects` array is the entire learning system. Each chapter is a self-contained plugin folder (content, art set, minigames, weather moods, recall manifest).
+- The test suite plays the game abstractly: a reachability fixpoint proves all ~200 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, and a recall ledger proves every cross-chapter callback was actually planted before it pays off.
 
-## The road ahead
+## On the cultures
 
-The route follows real connections: down to the coast (La Caleta), a working passage across the Pacific, and onward through Japan, Kerala, Zanzibar, Sicily, Oaxaca. A cross-chapter recall system ("the world rhymes") stitches threads between pages: the coast says yapa, the mountain says ayni, and Nani's margin notes become legible when you hold both halves.
+Every village in this game is fictional; the texture is researched. Each region was written from a sourced content bible (see `docs/*-content-bible.md`) with explicit lists of claims to verify and clichés to refuse — no mafia Sicily, no Halloween Oaxaca, no monolithic anywhere. Getting a custom wrong in-game is never punished; the wrong branch is always the warmer scene, because that is how strangers are actually treated in most kitchens on Earth. Corrections from people who know these places better are welcome — that is rather the point of the game.
 
-Research bibles are written before any region is authored (see `docs/`). Villages are fictional; the texture is sourced.
+An Australia chapter is deliberately deferred until it can be researched with the care First Nations storytelling deserves; in-game, that's a letter you'll receive near the end.
 
 ## License
 

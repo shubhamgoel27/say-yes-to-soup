@@ -9,9 +9,9 @@ export const RETURN_JOURNAL: JournalEntry[] = [
   {
     id: 'words.elsewhere',
     tab: 'words',
-    title: 'Elsewhere',
-    sub: 'Every language on the road had a word for it.',
-    you: 'Every village had a word for somewhere else. This one is mine. It took the whole world to learn I had been carrying it the entire time.',
+    title: 'Say yes to soup',
+    sub: "Her whole instruction, first letter, first line. It took a world to unpack.",
+    you: 'Ayni, yapa, deom, pilón, a ledger in a valley. Ten thousand miles to learn her four words were all of it. Say yes to soup. The rest follows.',
     rhyme: {
       with: 'words.haku',
       note: "Haku, the aunties said. Let's go. Nobody warns you the word works in both directions.",

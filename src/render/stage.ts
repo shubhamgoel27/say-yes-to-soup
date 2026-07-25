@@ -63,7 +63,7 @@ export class PixiStage {
       sharedTicker: false,
       background: '#17120e',
     });
-    console.info(`[elsewhere] renderer: ${app.renderer.name}`);
+    console.info(`[soup] renderer: ${app.renderer.name}`);
     s.app = app;
     app.canvas.id = 'stagegl';
     host.prepend(app.canvas);
