@@ -1001,6 +1001,11 @@ export const DELHI_NODES: NodeMap = {
       { text: 'The chowk\'s redone brick, herringbone and proud. By day it belongs to feet, handcarts, and rickshaws; the cars wait outside like scolded dogs.' },
     ],
   },
+  'c11.ex.wornedge': {
+    lines: [
+      { text: 'Where brick meets dirt, a strip of neither: ground down by wheels, feet, and hooves into the city\'s own alloy. No mason made this. Everyone did.' },
+    ],
+  },
   'c11.ex.mohallawall': {
     lines: [
       { text: 'Plaster over brick over older brick: a civic geology. A film poster, an ad ghost, and a monsoon streak share the wall without friction.' },
@@ -1192,6 +1197,11 @@ export const DELHI_NODES: NodeMap = {
       { text: 'A charpai, rope-woven and sun-bleached, sagging with testimony. Load rating: two gossips, or one philosopher lying down.' },
     ],
   },
+  'c11.ex.chalkpitch': {
+    lines: [
+      { text: 'The chalked crease of the maidan\'s test arena. It is redrawn after every rain and every argument, which arrive on roughly the same schedule.' },
+    ],
+  },
 
   // ---------------- examines: rooftop ----------------
   'c11.ex.kabootarkhana': {
@@ -1249,6 +1259,56 @@ export const DELHI_NODES: NodeMap = {
       { text: 'Lime-washed terrace brick, sun-cured and rain-rinsed. A second city lives up here: tanks, lines, coops, kites, and the sky finally at arm\'s reach.' },
     ],
   },
+  'c11.ex.terracelime': {
+    lines: [
+      { text: 'Fresh chuna underfoot: Yusuf whitewashes his terrace for the birds, not the neighbors. The birds have never once said thank you. He continues.' },
+    ],
+  },
+  'c11.ex.terracerose': {
+    lines: [
+      { text: 'The south terrace wears brick dust like an old shawl, worn to the pavers where the charpai parliament sits. Evening starts here and spreads.' },
+    ],
+  },
+  'c11.ex.tulsipot': {
+    lines: [
+      { text: 'A tulsi in a stepped clay pot, watered before anyone\'s tea. Basil below, pigeons above, and not one leaf goes missing. Some treaties hold.' },
+    ],
+  },
+  'c11.ex.transistor': {
+    lines: [
+      { text: 'A transistor with its aerial spliced by string, relaying the cricket to the entire sky. Scores travel roof to roof faster than the ball does.' },
+    ],
+  },
+  'c11.ex.chaitray': {
+    lines: [
+      { text: 'The chai tray: kettle, kulhads, rusk that stays structural until dipped. Quorum for the roof parliament is two cups and one disagreement.' },
+    ],
+  },
+  'c11.ex.charpaibed': {
+    lines: [
+      { text: 'A charpai made up properly: printed sheet, razai folded at the foot, one pillow that has heard everything. The parapet keeps its back.' },
+    ],
+  },
+  'c11.ex.diyaledge': {
+    lines: [
+      { text: 'Clay diyas on a whitewashed ledge, lit for the dusk flight. The roof keeps its own constellation, maintained nightly, fueled by mustard oil.' },
+    ],
+  },
+  'c11.ex.kitesnag': {
+    lines: [
+      { text: 'A cut kite snagged on a bamboo pole: some other roof\'s victory, this roof\'s flag. Nobody takes it down; that would be admitting things.' },
+    ],
+  },
+  'c11.ex.grainspill': {
+    lines: [
+      { text: 'Bajra by the handful, the flock\'s payroll, audited continuously by beak. One grey feather left on the pile serves as the receipt.' },
+    ],
+  },
+  'c11.ex.stool.roof': {
+    lines: [
+      { text: 'A low stool at charpai altitude, for the visitor whose knees vote against the floor. Up here even the furniture keeps the sky in view.' },
+    ],
+  },
 
   // ---------------- examines: langar hall ----------------
   'c11.ex.degpot': {
@@ -1284,6 +1344,36 @@ export const DELHI_NODES: NodeMap = {
   'c11.ex.shoerack': {
     lines: [
       { text: 'Everyone\'s dusty miles parked at one door: chappals, office shoes, one tiny pair with lights in the heels. The rack holds them without ranking them.' },
+    ],
+  },
+  'c11.ex.doormat': {
+    lines: [
+      { text: 'Coir, honest, worn thin exactly where a thousand feet agreed to be polite. It greets a CEO and a porter with the same rough handshake.' },
+    ],
+  },
+  'c11.ex.waterstation': {
+    lines: [
+      { text: 'Clay matkas sweating on an iron stand, steel tumblers below. Cold water, free, all July: the quietest ministry in the building.' },
+    ],
+  },
+  'c11.ex.hallfan': {
+    lines: [
+      { text: 'The hall fan, cage dented, motor loyal, sweeping the pangat rows in slow forgiveness. Someone tied a ribbon to it to prove the breeze exists.' },
+    ],
+  },
+  'c11.ex.khandapanel': {
+    lines: [
+      { text: 'The khanda over a saffron drape: the kitchen\'s compass. Below this wall everything is level; that is not decor, that is the instruction.' },
+    ],
+  },
+  'c11.ex.ladlestand': {
+    lines: [
+      { text: 'Karchhis racked by wingspan and the brass bucket between rounds. The dal travels the rows two-handed; the ladle never points at anyone.' },
+    ],
+  },
+  'c11.ex.thalistack': {
+    lines: [
+      { text: 'Five hundred steel thalis drying on edge, washed by whichever hands arrived. Tomorrow they will ring like shy bells all the way to the floor.' },
     ],
   },
 
@@ -1325,6 +1415,16 @@ export const DELHI_NODES: NodeMap = {
   'c11.ex.paandaan': {
     lines: [
       { text: 'A brass paandaan, hinged like a small bank vault, which socially it is. Betel leaf, areca, lime, cardamom: a whole diplomacy in one box.' },
+    ],
+  },
+  'c11.ex.lampniche': {
+    lines: [
+      { text: 'A taaq in the wall: one oil lamp, fifty years of soot above it. Still the room\'s best reading light, says the room, and the room would know.' },
+    ],
+  },
+  'c11.ex.couplitter': {
+    lines: [
+      { text: 'Crumpled drafts by the takht, each one a second line that refused to land. The wastebasket lost on points; the floor keeps the evidence.' },
     ],
   },
 
@@ -1385,6 +1485,7 @@ export const DELHI_NODES: NodeMap = {
 export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   galistone: [{ node: 'c11.ex.galistone' }],
   chowkbrick: [{ node: 'c11.ex.chowkbrick' }],
+  wornedge: [{ node: 'c11.ex.wornedge' }],
   terrace: [{ node: 'c11.ex.terrace' }],
   mohallawall: [{ node: 'c11.ex.mohallawall' }],
   haveli: [{ node: 'c11.ex.haveli' }],
@@ -1438,8 +1539,18 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['letter.read.delhi.pilar'], not: ['letter.read.delhi.mariamma'] }, node: 'c11.post.mariamma' },
     { node: 'c11.post.idle' },
   ],
+  chalkpitch: [{ node: 'c11.ex.chalkpitch' }],
   kabootarkhana: [{ node: 'c11.ex.kabootarkhana' }],
   kitestack: [{ node: 'c11.ex.kitestack' }],
+  terracelime: [{ node: 'c11.ex.terracelime' }],
+  terracerose: [{ node: 'c11.ex.terracerose' }],
+  tulsipot: [{ node: 'c11.ex.tulsipot' }],
+  transistor: [{ node: 'c11.ex.transistor' }],
+  chaitray: [{ node: 'c11.ex.chaitray' }],
+  charpaibed: [{ node: 'c11.ex.charpaibed' }],
+  diyaledge: [{ node: 'c11.ex.diyaledge' }],
+  kitesnag: [{ node: 'c11.ex.kitesnag' }],
+  grainspill: [{ node: 'c11.ex.grainspill' }],
   charkhi: [{ node: 'c11.ex.charkhi' }],
   watertank: [{ node: 'c11.ex.watertank' }],
   dhobiline: [{ node: 'c11.ex.dhobiline' }],
@@ -1455,6 +1566,14 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   pangat: [{ node: 'c11.ex.pangat' }],
   rumalbasket: [{ node: 'c11.ex.rumalbasket' }],
   shoerack: [{ node: 'c11.ex.shoerack' }],
+  doormat: [{ node: 'c11.ex.doormat' }],
+  waterstation: [{ node: 'c11.ex.waterstation' }],
+  hallfan: [{ node: 'c11.ex.hallfan' }],
+  khandapanel: [{ node: 'c11.ex.khandapanel' }],
+  ladlestand: [{ node: 'c11.ex.ladlestand' }],
+  thalistack: [{ node: 'c11.ex.thalistack' }],
+  lampniche: [{ node: 'c11.ex.lampniche' }],
+  couplitter: [{ node: 'c11.ex.couplitter' }],
   coupletwall: [
     { when: { has: ['c11.sher.learned'] }, node: 'c11.ex.couplet.again' },
     { node: 'c11.ex.couplet' },
@@ -1466,6 +1585,7 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   paandaan: [{ node: 'c11.ex.paandaan' }],
   doorShut: [{ map: 'delhi', node: 'c11.ex.door' }],
   farol: [{ map: 'delhi', node: 'c11.ex.farol' }],
+  stool: [{ map: 'delhi-rooftop', node: 'c11.ex.stool.roof' }],
   tuft: [{ map: 'delhi', node: 'c11.ex.tuft' }],
   dirt: [{ map: 'delhi', node: 'c11.ex.dirt' }],
   wallInt: [

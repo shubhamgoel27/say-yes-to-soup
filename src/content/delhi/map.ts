@@ -37,9 +37,27 @@ const inLane1 = (y: number) => y >= 6 && y <= 8;
 const inGali = (y: number) => y >= 14 && y <= 15;
 const inLane3 = (y: number) => y >= 21 && y <= 22;
 
+/** Ground, with worn transitions: where two pavings meet, a strip of
+ * scuffed in-between ground runs along the seam, ragged at the edges
+ * (deterministic), the way traffic actually sands a boundary. */
 function groundAt(x: number, y: number): string {
-  if (inPlaza(x, y)) return '=';
-  if (inMaidan(x, y)) return '.';
+  if (inPlaza(x, y)) {
+    // The chowk brick loses its first courses to the through traffic.
+    if (x === 38) return '~';
+    if (x === 39 && cellHash(x, y, 31) < 0.4) return '~';
+    return '=';
+  }
+  if (inMaidan(x, y)) {
+    // The maidan's top edge is beaten to neither-dirt-nor-stone.
+    if (y === 23) return '~';
+    if (y === 24 && cellHash(x, y, 32) < 0.45) return '~';
+    if (x === 37) return '~';
+    if (x === 36 && cellHash(x, y, 32) < 0.4) return '~';
+    return '.';
+  }
+  // The kinari lane's last row wears down toward the maidan.
+  if (y === 22 && x <= 37 && cellHash(x, y, 33) < 0.5) return '~';
+  if (x === 37 && y >= 6 && cellHash(x, y, 34) < 0.45) return '~';
   return '-';
 }
 
@@ -75,11 +93,21 @@ const DECOR: Record<string, string> = {
   '20,21': 't', // a thela of mangoes, langra side up
   '28,21': 'o', // the monkey wire, rush hour at dawn
   '33,21': 's',
-  // The maidan: gully cricket and public water.
+  // The maidan: gully cricket, public water, and the rickshaw depot.
   '8,25': 'W', // the wicket wall, chalked and contested
+  '10,26': '5', // the crease, chalked fresh over six older opinions
   '15,24': 'P', // the hand pump, cold iron, free forever
+  '14,25': '3', // the pump's permanent puddle, pigeon-approved
+  '16,25': 'K', // kulhads that came for water and stayed forever
+  '17,24': '1',
   '22,24': 'q',
+  '19,24': '4', // mango crates staged for the evening thela run
+  '20,26': 't', // the second thela, off shift, still perfuming
   '30,25': 'r', // a rickshaw at rest
+  '33,26': 'r', // the stand proper: Bantu's uncle's fleet, all "the good one"
+  '35,24': '4',
+  '31,23': '1',
+  '29,28': 'q', // the drivers' waiting charpai, occupancy always one nap
   // The chowk: everything faces everything.
   '45,7': 'n', // the nishan sahib, saffron over the whole square
   '44,9': 'v', // the bird ward table, cotton and splints
@@ -170,6 +198,7 @@ export const DELHI_MAP: MapData = {
     '-': { t: 'galistone' },
     '=': { t: 'chowkbrick' },
     '.': { t: 'dirt' },
+    '~': { t: 'wornedge' },
     M: { t: 'mohallawall', solid: true, tall: true },
     H: { t: 'haveli', solid: true, tall: true },
     U: { t: 'gurdwara', solid: true, tall: true },
@@ -206,6 +235,9 @@ export const DELHI_MAP: MapData = {
     i: { t: 'tuft' },
     '1': { t: 'pigeonpeck' },
     '2': { t: 'spicespill' },
+    '3': { t: 'puddle' },
+    '4': { t: 'mangocrate', solid: true },
+    '5': { t: 'chalkpitch' },
   },
   ground,
   objects,
@@ -216,18 +248,75 @@ export const DELHI_MAP: MapData = {
 const RW = 38;
 const RH = 20;
 
-/** Rooftop furniture, each thing where a roof would keep it. */
+/** Rooftop furniture, each thing where a roof would keep it. Six terraces,
+ * one republic: Yusuf's coop roof and the antenna roof up north against the
+ * skyline, the kite decks midfield, the charpai evenings down south. */
 const ROOF_DECOR: Record<string, string> = {
-  '6,3': 'K', // Yusuf's kabootar khana, whitewashed, full of opinions
+  // Yusuf's terrace, north-west: the coop, the birds, the payroll of grain.
   '4,3': 'k', // patangs leaning in a paper rainbow
-  '9,4': 'c', // the charkhi, wound with plain cotton dor
+  '6,3': 'K', // Yusuf's kabootar khana, whitewashed, full of opinions
+  '9,3': 'G', // spilled grain, the flock's payroll office
+  '8,4': '1',
+  '5,4': '1',
+  '9,5': 'c', // the charkhi, wound with plain cotton dor
+  '12,2': 'Q', // Yusuf's charpai, bedding aired against the parapet
+  '10,2': 'T', // the tulsi, watered before the birds, always
   '14,3': 'w', // a water tank doing its quiet civic duty
-  '28,4': 'w',
+  '20,2': 'o', // the monkey wire, upper deck
   '18,6': 'd', // the dhobi line, flying the mohalla's flags
+  '22,4': 'x', // a cut kite from some other roof's victory
+  '2,6': 'S', // last week's chai summit, in shards
+  '21,7': 'D', // diyas on a ledge, lit for the dusk flight
+  // The antenna roof, north-east: television by ambition.
+  '28,4': 'w',
   '32,3': 'a', // an antenna guyed with kite string: jugaad, aerial division
-  '24,2': 'o', // the monkey wire, upper deck
-  '30,15': 'q', // a charpai dragged up for the season
+  '30,6': 'k', // the neighbor kids' kite cache, allegedly hidden
+  '34,5': 'x',
+  '27,2': '1',
+  '35,6': 'c',
+  // Mid-west deck: laundry in bulk, one shaded cot.
+  '8,12': 'd', // a second line; the mohalla launders in bulk
+  '4,10': 'w',
+  '2,12': 'q', // a charpai dragged up for the season
+  '5,9': 'T',
+  '10,10': 'x',
+  // Mid-east deck: the kite school, Chasca's favorite light.
+  '16,10': 'k',
+  '15,12': 'c', // a spare charkhi, mid-rewind
+  '17,12': 'j',
+  '20,12': 'j', // two stools, one argument about wind
+  '20,10': 'F', // the transistor, cricket commentary for the whole sky
+  '26,9': 'N', // a cut kite snagged on a bamboo pole, kept as a trophy
+  '23,13': 'd', // the third dhobi line; the mohalla launders industrially
+  '24,11': 'D',
+  '31,12': 'S',
+  '33,10': 'q',
+  '35,9': 'T',
+  // South-west terrace: the stairhead and the evening parliament.
   '2,17': 'u', // the stairhead back down into the lanes
+  '5,16': 'S',
+  '6,15': 'T',
+  '11,17': 'w',
+  '12,16': 'x',
+  '16,15': 'D', // the ledge diyas, first lit, last out
+  '18,15': 'Q', // the parliament charpai, bedding and all
+  '19,15': 'F', // its transistor, volume set by committee
+  '17,16': 'j',
+  '20,16': 'j',
+  '18,16': 'C', // the chai tray: kettle, kulhads, quorum
+  '21,15': 'T',
+  '24,17': '1',
+  // South-east terrace: quieter, mostly pigeons and one philosopher's cot.
+  '31,16': 'q',
+  '33,17': 'S',
+  '35,15': 'T',
+  '30,17': 'x',
+};
+
+/** Parapet runs that carve the plane into terraces, with walk-through gaps. */
+const ROOF_WALL_GAPS: Record<number, Set<number>> = {
+  8: new Set([6, 7, 19, 20, 31, 32]),
+  14: new Set([3, 4, 16, 17, 27, 28]),
 };
 
 function roofObjectAt(x: number, y: number): string {
@@ -239,10 +328,31 @@ function roofObjectAt(x: number, y: number): string {
   }
   // Parapets: the roof's low honest railings, sittable everywhere.
   if (y === 1 || y === RH - 1 || x === 0 || x === RW - 1) return 'p';
+  // Terrace dividers: parapet runs east-west, gaps where feet insist.
+  const gaps = ROOF_WALL_GAPS[y];
+  if (gaps && !gaps.has(x)) return 'p';
+  // Party walls between neighbors, north and south.
+  if (x === 25 && y >= 2 && y <= 7 && y !== 5) return 'p';
+  if (x === 13 && y >= 9 && y <= 13 && y !== 11) return 'p';
+  if (x === 28 && (y === 15 || y === 16 || y === 18)) return 'p';
   const dec = ROOF_DECOR[`${x},${y}`];
   if (dec) return dec;
-  if (cellHash(x, y, 21) < 0.045) return '1';
+  // Deterministic small life: the coop's pigeons thick near the grain, the
+  // rest of the roof lightly patrolled, paper casualties where duels ended.
+  const nearCoop = x >= 3 && x <= 12 && y >= 2 && y <= 6;
+  if (nearCoop && cellHash(x, y, 22) < 0.14) return '1';
+  if (nearCoop && cellHash(x, y, 23) < 0.06) return 'G';
+  if (cellHash(x, y, 21) < 0.05) return '1';
+  if (cellHash(x, y, 24) < 0.014) return 'x';
   return ' ';
+}
+
+/** Each terrace keeps its own coat of lime: whitewash north, worn tan
+ * midfield, brick-dust rose south. The parapets stitch them together. */
+function roofGroundAt(y: number): string {
+  if (y <= 8) return 'h';
+  if (y <= 14) return '.';
+  return 'v';
 }
 
 function paintRoof(): { ground: string[]; objects: string[] } {
@@ -252,7 +362,7 @@ function paintRoof(): { ground: string[]; objects: string[] } {
     let g = '';
     let o = '';
     for (let x = 0; x < RW; x++) {
-      g += '.';
+      g += roofGroundAt(y);
       o += roofObjectAt(x, y);
     }
     ground.push(g);
@@ -271,6 +381,8 @@ export const DELHI_ROOFTOP_MAP: MapData = {
   triggers: [{ at: [3, 17], type: 'door', to: 'delhi', spawn: [18, 12], facing: 'down' }],
   legend: {
     '.': { t: 'terrace' },
+    h: { t: 'terracelime' },
+    v: { t: 'terracerose' },
     R: { t: 'fortwall', solid: true, tall: true },
     J: { t: 'jamadomes', solid: true, tall: true },
     p: { t: 'parapet', solid: true },
@@ -282,7 +394,17 @@ export const DELHI_ROOFTOP_MAP: MapData = {
     a: { t: 'antennajugaad', solid: true, tall: true },
     o: { t: 'monkeywire', solid: true, tall: true },
     q: { t: 'charpai', solid: true },
+    Q: { t: 'charpaibed', solid: true },
     u: { t: 'stairup', solid: true, tall: true },
+    T: { t: 'tulsipot', solid: true },
+    F: { t: 'transistor', solid: true },
+    C: { t: 'chaitray', solid: true },
+    D: { t: 'diyaledge', solid: true },
+    N: { t: 'kitesnag', solid: true, tall: true },
+    j: { t: 'stool', solid: true },
+    S: { t: 'kulhadshards' },
+    x: { t: 'kitecut' },
+    G: { t: 'grainspill' },
     '1': { t: 'pigeonpeck' },
   },
   ground: roof.ground,
@@ -301,14 +423,20 @@ export const DELHI_LANGAR_MAP: MapData = {
   legend: {
     '.': { t: 'floorEarth' },
     '#': { t: 'wallInt', solid: true, tall: true },
+    N: { t: 'khandapanel', solid: true, tall: true },
     C: { t: 'chulha', solid: true },
     D: { t: 'degpot', solid: true, tall: true },
+    L: { t: 'ladlestand', solid: true, tall: true },
     A: { t: 'attaboard', solid: true },
     r: { t: 'rotistack', solid: true },
+    T: { t: 'thalistack', solid: true },
     S: { t: 'shelf', solid: true, tall: true },
+    W: { t: 'waterstation', solid: true, tall: true },
+    F: { t: 'hallfan', solid: true, tall: true },
     g: { t: 'pangat' },
     s: { t: 'shoerack', solid: true },
     B: { t: 'rumalbasket', solid: true },
+    d: { t: 'doormat' },
     m: { t: 'mat' },
   },
   ground: [
@@ -327,18 +455,18 @@ export const DELHI_LANGAR_MAP: MapData = {
     '....................',
   ],
   objects: [
-    '####################',
-    '#C  D D D    A r S #',
+    '##########N#########',
+    '#CD        A r T S #',
     '#                  #',
+    '#C                F#',
+    '#D gggggg  gggggg  #',
     '#                  #',
+    '#C gggggg  gggggg  #',
+    '#D                L#',
     '#  gggggg  gggggg  #',
-    '#                  #',
-    '#  gggggg  gggggg  #',
-    '#                  #',
-    '#  gggggg  gggggg  #',
-    '#                  #',
-    '#                  #',
-    '#      s     B     #',
+    '#W                 #',
+    '#         d        #',
+    '#      s    BB     #',
     '##########m#########',
   ],
   triggers: [{ at: [10, 12], type: 'door', to: 'delhi', spawn: [42, 6], facing: 'down' }],
@@ -363,6 +491,8 @@ export const DELHI_HAVELI_MAP: MapData = {
     r: { t: 'rug' },
     a: { t: 'paandaan', solid: true },
     M: { t: 'mangocrate', solid: true },
+    L: { t: 'lampniche', solid: true, tall: true },
+    p: { t: 'couplitter' },
     m: { t: 'mat' },
   },
   ground: [
@@ -379,9 +509,9 @@ export const DELHI_HAVELI_MAP: MapData = {
     '................',
   ],
   objects: [
-    '####c####c######',
+    '####c####c##L###',
     '#              #',
-    '# v   t    b   #',
+    '# v   t p  b   #',
     '#              #',
     '#   rrrrrr     #',
     '#   rrrrrr     #',

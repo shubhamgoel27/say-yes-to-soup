@@ -56,14 +56,16 @@ export const CHAPTER: ChapterDef = {
       vig: 0.26,
       ambient: 0xf0dfb4,
     },
-    // The pigeon-wheeling hour: dusk goes rose over the domes, violet in
-    // the lanes, and every roof turns its face west.
+    // The pigeon-wheeling hour: the sky stays lit long after the lanes
+    // give up. Rose-gold afterglow off the domes, a warm west-facing glow,
+    // violet only at the feet. Silhouettes must read; this is the shot.
     pigeonhour: {
-      top: 'rgba(186,120,142,0.22)',
-      mid: 'rgba(206,150,120,0.10)',
-      bottom: 'rgba(92,72,112,0.16)',
-      vig: 0.3,
-      ambient: 0xe2c2c6,
+      top: 'rgba(255,166,110,0.30)',
+      mid: 'rgba(240,170,140,0.16)',
+      bottom: 'rgba(112,86,128,0.14)',
+      vig: 0.2,
+      glow: 'rgba(255,190,120,0.16)',
+      ambient: 0xffdcb8,
     },
     // After the first storm: silver-grey rain ceiling, lanes mirrored,
     // colors rinsed and louder for it. The integrator may switch the
@@ -78,7 +80,7 @@ export const CHAPTER: ChapterDef = {
       noClouds: true,
     },
   },
-  sitKinds: ['charpai', 'parapet', 'pangat', 'divan'],
+  sitKinds: ['charpai', 'charpaibed', 'parapet', 'pangat', 'divan', 'stool'],
   sitLines: {
     delhi: [
       'The gali breathes in rickshaw bells and breathes out ghee. Somewhere a kulhad shatters, musically, on schedule.',

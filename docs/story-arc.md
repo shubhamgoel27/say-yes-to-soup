@@ -30,6 +30,7 @@ what you learned uphill changes how the next coast treats you.
 ## The reciprocity chain (the game's thesis, one bead per region)
 
 ayni (Ch1, Quechua) -> yapa (Ch2, the stall extra) -> deom (Ch5, Korea) ->
+seva (Delhi chapter, the langar: the bead that erases its own ledger) ->
 pilón (Ch9, Mexico) -> guelaguetza (Ch9, the RECORDED reciprocity ledger).
 Chapter 5's tea sage, Old Man Cho, plants the riddle: "Ayni, yapa, deom. You
 collect names for the same weightless thing. Tell me what it weighs when you
@@ -63,8 +64,9 @@ planted c5, consumed c9.)
 C2 La Caleta -> C3 ship MV Yacana (Callao to Japan, ~31 days) -> C4 Shionoura
 (Seto Inland Sea) -> C5 Busan (Shimonoseki ferry) -> C6 Kerala backwaters
 (cargo ship to Kochi; the player carries crewman Joseph's letter and gift to
-his mother: the chapter's front door) -> C7 Zanzibar shore village (ship;
-dhows are local texture) -> C8 Sicily east coast (ship via Suez) -> C9 Oaxaca
+his mother: the chapter's front door) -> Delhi walled city (rail, three days
+north from Kochi) -> C7 Zanzibar shore village (rail down to Bombay, then
+the old sea road west by ship; dhows are local texture) -> C8 Sicily east coast (ship via Suez) -> C9 Oaxaca
 valley village (Atlantic ship to Veracruz, bus up) -> C10 home (ship to
 Callao, then the old road UP through La Bajada, arriving at the east gate).
 
@@ -89,6 +91,34 @@ Callao, then the old road UP through La Bajada, arriving at the east gate).
   door; monsoon arrives mid-chapter (mood shift); vanchipattu rowing
   minigame; sadya-on-banana-leaf serving. Rhymes: dishes.chaya ~
   dishes.emoliente; words.chetta ~ words.causa (family words for strangers).
+- **Delhi (slots between c6 and c7)**: id delhi, flags c11. (numbering is
+  taken through c10; narrative order is unchanged). Fictional mohalla
+  Kucha Aab-o-Daana off Chandni Chowk, Old Delhi; season sawan, the July
+  monsoon the player chases north. In: rail, three days from Kochi (the
+  integrator rewires Kerala's departure to Delhi's arrival node). Out:
+  rail to Bombay, then ship west to Zanzibar; the c7 "monsoon road"
+  arrival stands. The soul is the langar at Sis Ganj Gurdwara: head
+  covered, shoes off, everyone on the floor in pangat; seva repays what
+  money cannot; scripted scene, never a minigame. Seva is the Delhi bead
+  of the reciprocity chain (Cho's riddle collects one more name; its c9
+  answer is unchanged). Verbs: parantha assembly with Kamla Chachi;
+  patangbazi kite duel with Ustad Yusuf on the rooftop level (pigeons
+  wheel; cotton dor only). Frictions: daulat ki chaat refused out of
+  season, winter IOU planted (c11.promise.daulat; Nani holds the same
+  promise from 1974); langar etiquette corrected warmly; the thoda-aur-lo
+  refusal dance. Barrier: Sethji Onkar Nath of the spice market writes no
+  chit for strangers; three vouchers plus a cardamom smell test open the
+  road (consumes Kerala spice knowledge; backfilled locally). Finale: the
+  sawan rooftop kite tournament in the first big storm; Chasca sets
+  photo.c11.kites. Pilar letter: bridge election day, tied four to four,
+  the ninth voter gone fishing (bridges her c6 campaign to the c7
+  landslide). Nani: five entries, monsoon 1974, thoughtful register.
+  Rhymes: customs.langar ~ customs.ayni (flagship: they cook so much
+  kindness they can afford to lose count); words.bhaiya ~ words.chetta;
+  words.abhi ~ words.ahorita. Plants: c11.chit.bombay (consumed on c7
+  arrival), c11.attar.mitti (consumed at c7's clove mats), c11.seva.langar
+  (echoed at c9's ledger), photo.c11.kites. Details in
+  docs/delhi-content-bible.md.
 - **C7 zanzibar**: id c7, baraza elder Mzee Rashid; kanga pair from Bi Amina
   (one worn, one meant for giving: kanga.gift, consumed C10); dhow sail-trim
   minigame; Swahili-time friction. Rhymes: words.polepole ~ people.nani;

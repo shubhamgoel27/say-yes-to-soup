@@ -238,7 +238,7 @@ export const KERALA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c6.complete'] },
-    text: 'Moosa holds a berth on a spice ship going west; the monsoon is the road and the road is open. Until then, Kaithappuram keeps your mornings.',
+    text: 'Moosa has named you a train and a spice street in Delhi: Khari Baoli, three days north. Until then, Kaithappuram keeps your mornings.',
   },
   {
     when: { has: ['c6.arrived'], not: ['c6.complete'] },

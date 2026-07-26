@@ -22,6 +22,7 @@ const LIFE_FAMILY: Record<string, string> = {
   dirt: 'earth', laterite: 'earth',
   sand: 'sand',
   plaza: 'stone', lanepave: 'stone', corallane: 'stone', basalto: 'stone', tataki: 'stone',
+  galistone: 'stone', chowkbrick: 'stone',
 };
 /** Fraction of eligible cells that sprout; hand-tuned per family. */
 const LIFE_DENSITY: Record<string, number> = { green: 0.16, earth: 0.12, sand: 0.12, stone: 0.15 };

@@ -707,17 +707,17 @@ export const KERALA_NODES: NodeMap = {
   'c6.moosa.berth': {
     lines: [
       { who: 'Moosa', text: 'So. The village vouches for you: the mother, the captain, the kettle, even the boy who rates things. That is a full manifest of opinions.' },
-      { who: 'Moosa', text: 'A spice ship leaves Kochi going west; her mate owes me two favors, and you will be one. Pepper went that road to Zanzibar before anyone wrote it down.' },
-      { who: 'Moosa', text: 'The wind that brought your boat in can carry you out. That has been the whole arrangement here for two thousand years.' },
+      { who: 'Moosa', text: 'The west road starts north now. My buyers sit in Khari Baoli, the spice street of Delhi; the seths there hold every berth out of Bombay.' },
+      { who: 'Moosa', text: 'Three days by rail, chasing the same rain that found us. Ask for Sethji Onkar Nath, and do not let his frown fool you into leaving.' },
     ],
     effects: ['set:c6.depart.ready'],
   },
   'c6.moosa.sail': {
     lines: [
-      { who: 'Moosa', text: 'The berth is held, the rain has settled into its rhythm, and the wind is asking. Well, traveler?' },
+      { who: 'Moosa', text: 'The ticket is bought, the rain has settled into its rhythm, and the north is asking. Well, traveler?' },
     ],
     choices: [
-      { text: 'Sail west with the spice ship', goto: 'c6.depart' },
+      { text: 'Take the train north, toward Delhi', goto: 'c6.depart' },
       { text: 'Not yet; the village still has my mornings', goto: 'c6.moosa.wait' },
     ],
   },
@@ -729,10 +729,10 @@ export const KERALA_NODES: NodeMap = {
   'c6.depart': {
     lines: [
       { text: 'Mariamma packs food for four days and advice for forty. The little Japanese umbrella waves from her doorway until the boat turns.' },
-      { text: 'At Kochi the spice ship takes you aboard smelling of pepper and diesel. The wind fills in behind the rain, going west, going old roads.' },
-      { text: 'Zanzibar, the mate says, tasting the word. The monsoon is the road, and the road is open.' },
+      { text: 'At Kochi the northbound train takes you in smelling of rain and iron. Three days of window: paddy, then hills, then wheat, then haze.' },
+      { text: 'Delhi, the conductor says, not tasting the word at all. Somewhere ahead, a walled city is waiting out the heat for the same rain you left.' },
     ],
-    effects: ['travel:zanzibar'],
+    effects: ['travel:delhi,42,26,up'],
   },
   'c6.moosa.idle': {
     lines: [

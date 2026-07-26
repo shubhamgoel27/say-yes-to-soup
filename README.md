@@ -17,6 +17,7 @@ Ten chapters, every hop a real connection: an Andean village, the Peruvian deser
 | ![village](docs/shots/village.png) *Ch'aska Pampa, where it starts* | ![night](docs/shots/village-night.png) *the same plaza after dark* |
 | ![caleta](docs/shots/caleta-garua.png) *La Caleta under the garúa* | ![ship](docs/shots/ship.png) *working passage on the MV Yacana* |
 | ![shionoura](docs/shots/shionoura.png) *Shionoura, tairyō-bata flying* | ![kerala](docs/shots/kerala-monsoon.png) *Kaithappuram, and the monsoon actually rains* |
+| ![delhi](docs/shots/delhi-gali.png) *the walled city: parantha smoke in the gali* | ![rooftop](docs/shots/delhi-rooftop-dusk.png) *pigeon hour over Chandni Chowk* |
 | ![zanzibar](docs/shots/zanzibar-dusk.png) *Fukoni at lamp-light* | ![sicily](docs/shots/sicily.png) *the passeggiata hour, Etna presiding* |
 | ![oaxaca](docs/shots/oaxaca.png) *the valley, papel picado up* | ![dialogue](docs/shots/dialogue.png) *everything you look at answers* |
 

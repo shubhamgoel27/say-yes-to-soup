@@ -20,6 +20,7 @@ import { CHAPTER as CROSSING } from './crossing';
 import { CHAPTER as SHIONOURA } from './shionoura';
 import { CHAPTER as BUSAN } from './busan';
 import { CHAPTER as KERALA } from './kerala';
+import { CHAPTER as DELHI } from './delhi';
 import { CHAPTER as ZANZIBAR } from './zanzibar';
 import { CHAPTER as SICILY } from './sicily';
 import { CHAPTER as OAXACA } from './oaxaca';
@@ -39,6 +40,7 @@ export const CHAPTERS: ChapterDef[] = [
   SHIONOURA,
   BUSAN,
   KERALA,
+  DELHI,
   ZANZIBAR,
   SICILY,
   OAXACA,

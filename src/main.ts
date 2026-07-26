@@ -100,6 +100,8 @@ function moodFor(id: string): string {
   if (id === 'la-caleta') return dayT > 0.25 && dayT < 0.5 ? 'glare' : 'garua';
   // Kerala's monsoon arrives mid-chapter and then it simply rains.
   if (id === 'kerala' && state.has('c6.rain')) return 'monsoon';
+  // Delhi waits out the heat until sawan breaks, then the whole city exhales.
+  if ((id === 'delhi' || id === 'delhi-rooftop') && state.has('c11.rain')) return 'sawanrain';
   const meta = MAP_META[id];
   if (!meta) return 'interior';
   // Evening maps that declared a dusk light get to use it.
@@ -526,7 +528,7 @@ const JOURNEY_IN = 0.7;
 /** The Route stop that describes arriving at a given map, for journey cards. */
 const STOP_BY_MAP: Record<string, string> = {
   'la-caleta': 'la-caleta', ship: 'crossing', shionoura: 'shionoura', busan: 'busan',
-  kerala: 'kerala', zanzibar: 'zanzibar', sicily: 'sicily', oaxaca: 'oaxaca',
+  kerala: 'kerala', delhi: 'delhi', zanzibar: 'zanzibar', sicily: 'sicily', oaxaca: 'oaxaca',
 };
 
 type Warp = {
@@ -828,6 +830,7 @@ const PETALS: Record<string, string[]> = {
   busan: ['#e88c6a', '#f2e6d0', '#d9a441'],
   kerala: ['#7db35a', '#d9a441', '#f2e6d0'],
   zanzibar: ['#d9694a', '#e8d44d', '#f2e6d0'],
+  delhi: ['#e8556a', '#f2a03c', '#8fcbe8'],
   sicily: ['#e8d44d', '#f2e6d0', '#8fcbe8'],
   oaxaca: ['#e8862f', '#d9a441', '#c1512f'],
   velacion: ['#e8862f', '#f2e6d0'],

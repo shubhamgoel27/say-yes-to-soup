@@ -68,9 +68,17 @@ export const ROUTE: RouteStop[] = [
     complete: { has: ['c6.complete'] },
   },
   {
+    id: 'delhi',
+    name: 'the walled city',
+    hop: 'three days north by rail',
+    nani: 'Ride to the moonlight square. Eat past full; the no is a dance step. December owes me a sweet.',
+    arrived: { has: ['c11.arrived'] },
+    complete: { has: ['c11.complete'] },
+  },
+  {
     id: 'zanzibar',
     name: 'Zanzibar',
-    hop: 'the old monsoon road, west',
+    hop: 'down to Bombay, then the old monsoon road west',
     nani: 'Pole pole. A whole coast that knows my trick. I may never leave.',
     arrived: { has: ['c7.arrived'] },
     complete: { has: ['c7.complete'] },
