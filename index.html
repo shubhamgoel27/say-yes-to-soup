@@ -4,6 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Say Yes to Soup</title>
+    <meta name="theme-color" content="#f4ead6" />
+    <meta property="og:title" content="Say Yes to Soup" />
+    <meta
+      property="og:description"
+      content="An unhurried journey through the world's kitchens, finishing the journal your grandmother began."
+    />
+    <meta
+      property="og:image"
+      content="https://raw.githubusercontent.com/shubhamgoel27/say-yes-to-soup/main/docs/shots/delhi-rooftop-dusk.png"
+    />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23f4ead6'/%3E%3Cpath d='M5 18h22c0 5.5-4.5 9-8.5 9h-5c-4 0-8.5-3.5-8.5-9z' fill='%23c1512f'/%3E%3Cellipse cx='16' cy='18' rx='11' ry='2.4' fill='%23d9a441'/%3E%3Cpath d='M11.5 13.5c-1.8-2 1.8-3.6 0-5.6M20.5 13.5c-1.8-2 1.8-3.6 0-5.6M16 12.5c-2.2-2.4 2.2-4.6 0-7' stroke='%232b2118' stroke-width='1.7' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -210,21 +225,21 @@
       }
       #tb-main { position: relative; flex: 1; min-width: 0; padding-top: 4px; }
       #tb-name[hidden], #tb-portrait[hidden] { display: none; }
-      /* Speaker names arrive like a rubber stamp: inked, slightly off-square. */
+      /* The speaker's name: a small ink chip, hand-cut, pressed into sepia. */
       #tb-name {
         display: inline-block;
         margin-bottom: 4px;
-        padding: 1px 9px;
-        border: 1.6px solid rgba(122, 59, 34, 0.85);
-        color: #7a3b22;
-        border-radius: 3px;
+        padding: 1.5px 10px 2.5px;
+        border: 1px solid rgba(87, 69, 47, 0.35);
+        color: #57452f;
+        border-radius: 9px 11px 10px 8px / 10px 8px 11px 9px;
         font-family: var(--display);
-        font-size: 12.5px;
+        font-size: 13.5px;
         font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        transform: rotate(-1deg);
-        background: rgba(193, 81, 47, 0.05);
+        letter-spacing: 0.03em;
+        transform: rotate(-0.6deg);
+        background: rgba(87, 69, 47, 0.13);
+        box-shadow: inset 0 1px 0 rgba(255, 252, 244, 0.4);
       }
       #tb-text {
         font-size: 16.5px;
@@ -232,12 +247,28 @@
         text-wrap: pretty;
       }
       #tb-text.narrator { font-style: italic; color: #4c3d2e; }
+      /* The continue cue: a quill resting its ink on the page, breathing. */
       #tb-arrow {
         position: absolute;
-        right: 2px;
-        bottom: 0;
-        font-size: 14px;
-        animation: bob 0.9s ease-in-out infinite;
+        right: 4px;
+        bottom: 4px;
+        font-size: 0; /* the old glyph retires; the dot below speaks */
+      }
+      #tb-arrow::after {
+        content: '';
+        display: block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50% 50% 50% 44%;
+        background: #7a3b22;
+        animation: quillDot 1.5s ease-in-out infinite;
+      }
+      @keyframes quillDot {
+        0%, 100% { opacity: 0.3; transform: scale(0.8); }
+        50% { opacity: 0.85; transform: scale(1); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #tb-arrow::after { animation: none; opacity: 0.7; }
       }
       @keyframes bob {
         0%, 100% { transform: translateY(0); }
@@ -249,19 +280,29 @@
         gap: 2px;
         margin-top: 4px;
       }
+      /* Choices hang like a list in a margin; a manicule points at yours. */
       .tb-choice {
-        padding: 1px 8px 1px 20px;
+        padding: 1px 8px 1px 26px;
+        text-indent: -8px;
         font-size: 15px;
         position: relative;
       }
       .tb-choice.sel {
-        background: rgba(43, 33, 24, 0.09);
+        background: rgba(43, 33, 24, 0.07);
         border-radius: 2px;
       }
       .tb-choice.sel::before {
-        content: '\25B8';
+        content: '\261E';
         position: absolute;
-        left: 6px;
+        left: 5px;
+        text-indent: 0;
+        color: var(--terracotta);
+      }
+      .tb-choice:hover, .tb-choice.sel {
+        text-decoration: underline;
+        text-decoration-color: rgba(193, 81, 47, 0.55);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 3px;
       }
 
       /* ---- journal overlay ---- */
@@ -604,6 +645,16 @@
         transition: color 0.15s ease, transform 0.15s ease;
       }
       .t-opt.sel { color: #f4e6c8; transform: rotate(-1deg) scale(1.04); }
+      /* Under Continue: where the journey paused, and how far the journal is. */
+      .t-opt-sub {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 11.5px;
+        font-style: italic;
+        letter-spacing: 0.02em;
+        color: #8a7455;
+        margin-top: -3px;
+      }
+      .t-opt.sel .t-opt-sub { color: #c4ac83; }
       .t-controls {
         display: flex;
         gap: 22px;
@@ -615,7 +666,17 @@
       .t-controls b { color: #c8a55b; font-weight: normal; }
 
       /* ---- Nani's letter ---- */
+      /* The clip below eats box-shadow, so the fold wrapper casts it instead,
+         hugging the deckled silhouette. */
+      .letter-fold {
+        width: 78%;
+        max-width: 538px; /* the paper's old 470px content plus its padding */
+        filter: drop-shadow(0 2px 3px rgba(31, 22, 12, 0.35))
+          drop-shadow(0 12px 30px rgba(20, 14, 8, 0.5));
+      }
+      .letter-fold .letter-paper { width: auto; }
       .letter-paper {
+        position: relative;
         width: 78%;
         max-width: 470px;
         background: linear-gradient(#f4ead6, #e9dabb);
@@ -631,6 +692,28 @@
         background-blend-mode: normal, multiply, normal;
         background-position: 0 23px, 0 0, 0 0;
         animation: letterOpen 0.4s ease-out;
+        /* A deckled edge: this sheet was torn from a larger book, gently. */
+        clip-path: polygon(
+          0.4% 0.5%, 8% 0.15%, 17% 0.6%, 27% 0.1%, 38% 0.55%, 49% 0.2%, 60% 0.6%,
+          70% 0.05%, 81% 0.5%, 91% 0.15%, 99.6% 0.55%,
+          99.9% 9%, 99.5% 20%, 99.9% 33%, 99.45% 47%, 99.9% 61%, 99.5% 74%, 99.9% 88%, 99.55% 99.4%,
+          91% 99.9%, 80% 99.5%, 69% 99.9%, 58% 99.45%, 47% 99.9%, 36% 99.5%, 25% 99.9%, 14% 99.55%, 4% 99.9%, 0.35% 99.5%,
+          0.1% 89%, 0.55% 76%, 0.1% 62%, 0.5% 48%, 0.1% 34%, 0.55% 21%, 0.1% 9%
+        );
+      }
+      /* A drop of sealing wax in the corner, pressed with a thumb. */
+      .letter-paper::after {
+        content: '';
+        position: absolute;
+        top: 13px;
+        right: 17px;
+        width: 15px;
+        height: 15px;
+        border-radius: 48% 52% 50% 50% / 53% 47% 52% 48%;
+        background: radial-gradient(circle at 38% 34%, #bf5c3b, #9c3a20 58%, #872e19);
+        box-shadow: inset 0 0 0 2.5px rgba(122, 32, 15, 0.3), inset 1px 2px 2px rgba(255, 226, 190, 0.25),
+          0 1px 2px rgba(31, 22, 12, 0.3);
+        transform: rotate(8deg);
       }
       @keyframes letterOpen {
         from { transform: translateY(16px) rotate(-0.6deg) scale(0.97); opacity: 0; }

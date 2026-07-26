@@ -1,5 +1,7 @@
 import type { Dir } from '../engine/input';
 import { makeCoverArt } from '../art/cover';
+import { ROUTE } from '../content/route';
+import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -9,12 +11,52 @@ import { makeCoverArt } from '../art/cover';
 
 export type TitleChoice = 'new' | 'continue' | 'settings' | 'credits';
 
+/**
+ * One quiet line under Continue: where the journey paused and how far the
+ * journal has come. Read straight from the save on disk (the title renders
+ * before the engine restores state), and any trouble reading it means no
+ * line, never a crash.
+ */
+function welcomeBackLine(): string | null {
+  try {
+    const raw = localStorage.getItem('elsewhere.save');
+    if (!raw) return null;
+    const data = JSON.parse(raw) as {
+      journal?: unknown;
+      place?: { map?: unknown } | null;
+    };
+    const mapId = typeof data.place?.map === 'string' ? data.place.map : '';
+    const mapName = REGION_MAPS[mapId]?.name;
+    const chapter = CHAPTERS.find((c) => c.maps.some((m) => m.id === mapId));
+    const stop = chapter ? ROUTE.find((r) => r.id === chapter.id) : undefined;
+    const where = [...new Set([mapName, stop?.name].filter(Boolean))].join(', ');
+    if (!where) return null;
+    const held = new Set(
+      Array.isArray(data.journal) ? data.journal.filter((p): p is string => typeof p === 'string') : [],
+    );
+    const threads = JOURNAL.filter(
+      (e) => e.rhyme && held.has(e.id) && held.has(e.rhyme.with),
+    ).length;
+    const tally = [
+      `${held.size} page${held.size === 1 ? '' : 's'}`,
+      threads ? `${threads} thread${threads === 1 ? '' : 's'}` : '',
+    ]
+      .filter(Boolean)
+      .join(', ');
+    return `${where} &middot; ${tally}`;
+  } catch {
+    return null;
+  }
+}
+
 export class TitleScreen {
   private cursor = 0;
   private options: { id: TitleChoice; label: string }[] = [];
   private hasSave = false;
   /** "Begin again" over a real save arms first, erases second. */
   private armNew = false;
+  /** The welcome-back line under Continue; null when there is nothing to say. */
+  private welcomeBack: string | null = null;
 
   constructor(
     private titleEl: HTMLElement,
@@ -31,6 +73,7 @@ export class TitleScreen {
   showTitle(hasSave: boolean) {
     this.hasSave = hasSave;
     this.armNew = false;
+    this.welcomeBack = hasSave ? welcomeBackLine() : null;
     this.options = hasSave
       ? [
           { id: 'continue', label: 'Continue the journey' },
@@ -67,12 +110,14 @@ export class TitleScreen {
           <p>Walk slowly. That is the whole trick.</p>`;
     const sign = mail ? mail.from : 'Nani, 1974';
     this.letterEl.innerHTML = `
-      <div class="letter-paper">
-        <div class="letter-body">
-          ${paragraphs}
-          <p class="letter-sign">${sign}</p>
+      <div class="letter-fold">
+        <div class="letter-paper">
+          <div class="letter-body">
+            ${paragraphs}
+            <p class="letter-sign">${sign}</p>
+          </div>
+          <div class="letter-hint">press Space</div>
         </div>
-        <div class="letter-hint">press Space</div>
       </div>`;
   }
 
@@ -110,7 +155,11 @@ export class TitleScreen {
       .map((o, i) => {
         const label =
           o.id === 'new' && this.armNew ? 'Erase the journal and begin again? (press again)' : o.label;
-        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${label}</div>`;
+        const sub =
+          o.id === 'continue' && this.welcomeBack
+            ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
+            : '';
+        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${label}${sub}</div>`;
       })
       .join('');
     this.titleEl.innerHTML = `

@@ -4,7 +4,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, surface } from '../art/pix';
+import { cellHash, outlineSheet, surface } from '../art/pix';
 
 /**
  * The world composer, smooth-art era. Renders the scene at 4x logical
@@ -36,7 +36,36 @@ export type Sprite = {
   sheet: HTMLCanvasElement;
   /** Humans use the 7-column 6-frame rig with breathe/blink; animals the 3-column. */
   rig?: 'human' | 'animal';
+  /** Marks the player for idle-life and NPC-glance logic; index 0 is assumed otherwise. */
+  isPlayer?: boolean;
 };
+
+/** The species of ambient flier a mood invites across its sky. */
+type FlierKind = 'gull' | 'songbird' | 'pigeon' | 'butterfly';
+/** One passing flock: screen-space, timed, gone when it exits. */
+type Flock = {
+  kind: FlierKind;
+  t: number;
+  dur: number;
+  sign: 1 | -1;
+  y0: number;
+  birds: { ox: number; oy: number; ph: number; sc: number }[];
+};
+
+/** Coastal skies get gulls. */
+const GULL_MOODS = new Set([
+  'garua', 'glare', 'openocean', 'setouchi', 'jagalchi', 'tideout', 'dusklamp',
+  'ciclopi', 'passeggiata', 'tanabataNight',
+]);
+/** Delhi's air is pigeons, famously so at pigeon hour. */
+const PIGEON_MOODS = new Set(['brasslight', 'pigeonhour']);
+/** Nothing flies indoors or through real rain. */
+const NO_FLIER_MOODS = new Set(['interior', 'monsoon', 'sawanrain']);
+
+/** Building kinds that plausibly keep a hearth lit morning and evening. */
+const HEARTH_KINDS = new Set([
+  'house', 'casa', 'veedu', 'machiya', 'haveli', 'casona', 'casedda', 'nyumba', 'teahouse',
+]);
 
 /** A brief thought made visible: !, ♥, ♪, ? above someone's head. */
 type Emote = { actor: Actor; kind: string; t: number };
@@ -94,6 +123,33 @@ export class Renderer {
   private speaker: Actor | null = null;
   /** The facing-cell hint: a quiet pulse over whatever would respond. */
   private hint: [number, number] | null = null;
+  /** Last frame's dt, for the few smoothed values updated at draw time. */
+  private frameDt = 1 / 60;
+  /** World clock as last given to setSun; gates hearth smoke by hour. */
+  private dayT = 0.25;
+  /** Per-actor walk lean (radians), eased toward the travel direction. */
+  private leans = new Map<Actor, number>();
+  /** The player's screen position this frame, for NPC glances. */
+  private playerSX = -9999;
+  private playerSY = -9999;
+
+  // -- ambient fliers --------------------------------------------------
+  /** Baked wing frames per species, each facing right. */
+  private flierFrames: Record<FlierKind, HTMLCanvasElement[]>;
+  private flock: Flock | null = null;
+  /** Seconds until the next flock is considered; first one arrives earlyish. */
+  private flockWait = 12;
+  private flockSeq = 1;
+  /** Debug knob (`?fliers=N`): force the between-flock gap to N seconds. */
+  private flierEvery: number | null = null;
+  /** Optional per-map species override; null follows the mood. */
+  private flierKind: FlierKind | null = null;
+
+  // -- hearth smoke ----------------------------------------------------
+  /** Two baked wisp puffs, alternated so no two columns look stamped. */
+  private smokePuffs: HTMLCanvasElement[] = [];
+  /** Chimney anchors per map id, world-logical coords, found once. */
+  private chimneyCache = new Map<string, [number, number][]>();
 
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
@@ -160,6 +216,24 @@ export class Renderer {
     }
 
     this.bakeGroundLife();
+    this.flierFrames = bakeFliers();
+    this.smokePuffs = bakeSmokePuffs();
+
+    // Debug knob: `?fliers=2` makes flocks near-constant for screenshots;
+    // `?fliers=2,gull` also pins the species.
+    try {
+      const q = new URLSearchParams(location.search).get('fliers');
+      if (q !== null) {
+        const [n, kind] = q.split(',');
+        this.flierEvery = Math.max(0.5, Number(n) || 2);
+        this.flockWait = Math.min(this.flockWait, this.flierEvery);
+        if (kind === 'gull' || kind === 'songbird' || kind === 'pigeon' || kind === 'butterfly') {
+          this.flierKind = kind;
+        }
+      }
+    } catch {
+      // No location (tests); the default timers stand.
+    }
   }
 
   /**
@@ -334,6 +408,14 @@ export class Renderer {
     this.mood = mood;
   }
 
+  /**
+   * Force the ambient flier species for the current map, or null to let the
+   * mood decide (gulls on coasts, pigeons in Delhi, songbirds inland).
+   */
+  setFlierKind(kind: 'gull' | 'songbird' | 'pigeon' | 'butterfly' | null) {
+    this.flierKind = kind;
+  }
+
   /** 0 = full day, 1 = deep night; gates the fireflies. */
   setNight(k: number) {
     this.nightK = k;
@@ -345,6 +427,7 @@ export class Renderer {
    * faded, for the lamps to argue with.
    */
   setSun(dayT: number) {
+    this.dayT = dayT;
     const d = Math.max(0, Math.min(1, (dayT - 0.02) / 0.58));
     this.sunSkew = -Math.cos(Math.PI * d) * 0.75;
     this.sunLen = 0.55 + Math.abs(Math.cos(Math.PI * d)) * 0.9 + this.nightK * 0.3;
@@ -358,6 +441,14 @@ export class Renderer {
   /** Advance ambient animation. Called from the fixed-timestep update. */
   tick(dt: number) {
     this.time += dt;
+    this.frameDt = dt;
+    if (this.flock) {
+      this.flock.t += dt;
+      if (this.flock.t > this.flock.dur) this.flock = null;
+    } else {
+      this.flockWait -= dt;
+      if (this.flockWait <= 0) this.trySpawnFlock();
+    }
     for (const e of this.emotes) e.t += dt;
     this.emotes = this.emotes.filter((e) => e.t < EMOTE_DUR);
     for (const p of this.puffs) p.t += dt;
@@ -438,6 +529,101 @@ export class Renderer {
   /** Kick up dust at a tile a foot just left. */
   puffAt(cx: number, cy: number) {
     this.puffs.push({ x: cx * TILE + TILE / 2, y: cy * TILE + TILE - 2, t: 0 });
+  }
+
+  /**
+   * Every so often something crosses the sky: gulls on the coast, pigeons in
+   * Delhi, songbirds inland, butterflies low over daytime grass. Spawning is
+   * deterministic-ish (hashed off a running sequence number); drawing is a
+   * handful of baked frames, so a flock costs six drawImages.
+   */
+  private trySpawnFlock() {
+    const seq = this.flockSeq++;
+    const h = (salt: number) => cellHash(seq, 0, salt);
+    const wait = (this.flierEvery ?? 20 + h(97) * 30);
+    this.flockWait = Math.min(wait, 10); // retry soon if conditions refuse below
+    if (typeof document !== 'undefined' && document.body.classList.contains('reduce-motion')) return;
+    if (NO_FLIER_MOODS.has(this.mood)) return;
+    if (this.nightK > 0.55) return; // deep night skies stay still
+
+    let kind: FlierKind = PIGEON_MOODS.has(this.mood)
+      ? 'pigeon'
+      : GULL_MOODS.has(this.mood)
+        ? 'gull'
+        : this.nightK < 0.15 && h(11) < 0.4
+          ? 'butterfly'
+          : 'songbird';
+    if (this.flierKind) kind = this.flierKind;
+
+    const butterfly = kind === 'butterfly';
+    const n = butterfly ? 2 + Math.floor(h(17) * 2) : 3 + Math.floor(h(17) * 4);
+    const sign: 1 | -1 = h(19) < 0.5 ? 1 : -1;
+    const birds: Flock['birds'] = [];
+    for (let i = 0; i < n; i++) {
+      birds.push({
+        // A loose trailing vee: each bird hangs back and steps outward.
+        ox: -sign * i * (butterfly ? 60 + h(29 + i) * 50 : 30 + h(29 + i) * 26),
+        oy: (i % 2 ? -1 : 1) * Math.ceil(i / 2) * (butterfly ? 26 : 15) + (h(41 + i) - 0.5) * 12,
+        ph: h(53 + i) * Math.PI * 2,
+        sc: 0.82 + h(67 + i) * 0.3,
+      });
+    }
+    this.flock = {
+      kind,
+      t: 0,
+      dur: butterfly ? 17 : kind === 'gull' ? 10.5 : kind === 'pigeon' ? 8.5 : 7.5,
+      sign,
+      y0: butterfly ? H * (0.5 + h(23) * 0.34) : H * (0.09 + h(23) * 0.3),
+      birds,
+    };
+    this.flockWait = wait;
+  }
+
+  /** The current flock, drawn in the sky layer: above world, under the vignette. */
+  private drawFliers() {
+    const f = this.flock;
+    if (!f) return;
+    const ctx = this.ctx;
+    const frames = this.flierFrames[f.kind];
+    if (!frames.length) return;
+    const M = 160;
+    const head = -M + (f.t / f.dur) * (W + 2 * M);
+    const xBase = f.sign > 0 ? head : W - head;
+    const fade = Math.min(1, f.t / 0.8, (f.dur - f.t) / 0.8);
+    const butterfly = f.kind === 'butterfly';
+    const flapHz = f.kind === 'gull' ? 3.4 : f.kind === 'pigeon' ? 6.2 : butterfly ? 0 : 7.6;
+    for (const b of f.birds) {
+      let x = xBase + b.ox;
+      let y = f.y0 + b.oy + Math.sin(this.time * 1.3 + b.ph) * (butterfly ? 10 : 5);
+      let idx: number;
+      if (butterfly) {
+        // Butterflies do not travel so much as get carried.
+        x += Math.sin(this.time * 0.7 + b.ph) * 26;
+        y += Math.sin(this.time * 1.9 + b.ph * 2) * 14;
+        idx = [0, 1, 2, 1][Math.floor(this.time * 8 + b.ph * 4) % 4] ?? 0;
+      } else {
+        // Flap with a glide in it: hold the upstroke, snap through the middle.
+        const s = Math.sin(this.time * flapHz + b.ph * 6);
+        idx = s > 0.35 ? 0 : s < -0.35 ? 2 : 1;
+      }
+      const img = frames[idx];
+      if (!img) continue;
+      if (x < -M || x > W + M) continue;
+      const w = img.width * b.sc;
+      const hh = img.height * b.sc;
+      // A faint shadow trailing below is what says "in the air, not on the
+      // ground"; butterflies fly low, so theirs sits close.
+      const drop = butterfly ? 16 : 46;
+      ctx.globalAlpha = fade * (butterfly ? 0.1 : 0.08);
+      ctx.drawImage(this.shadowBlob, x - w * 0.3 + 5, y + drop, w * 0.6, w * 0.22);
+      ctx.save();
+      ctx.globalAlpha = fade * (butterfly ? 0.95 : 0.9);
+      ctx.translate(x, y);
+      if (f.sign < 0) ctx.scale(-1, 1);
+      ctx.drawImage(img, -w / 2, -hh / 2, w, hh);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
   }
 
   drawWorld(map: TileMap, cam: Camera, sprites: Sprite[]) {
@@ -525,6 +711,13 @@ export class Renderer {
     ]);
 
     const watery = (k: string) => k === 'sea' || k === 'water';
+    // Note where the player stands (screen space) so idle NPCs can notice.
+    const playerS = sprites.find((s) => s.isPlayer) ?? sprites[0];
+    if (playerS) {
+      const [ppx, ppy] = playerS.actor.renderPos();
+      this.playerSX = (ppx - cam.x) * A;
+      this.playerSY = (ppy - cam.y) * A;
+    }
     sprites.forEach((s, i) => {
       const [px, py] = s.actor.renderPos();
       const bx = Math.round(px / TILE);
@@ -587,6 +780,7 @@ export class Renderer {
       if (this.nightK < 0.5 && !this.noClouds.has(this.mood)) this.drawClouds(map, cam);
       this.drawLeaves(map, cam);
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
+      this.drawFliers();
     }
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
@@ -792,7 +986,72 @@ export class Renderer {
     // A directional cast shadow: the figure stands IN the light, not on a dot.
     this.castShadow(sx + S / 2, sy + S - 6, 30, 0.24);
 
-    const row = DIR_ROW[s.actor.dir];
+    // Walk lean: under two degrees into the direction of travel, eased in and
+    // out so it reads as weight, never wobble. The rotation pivots at the feet.
+    const lean = this.updateLean(s.actor);
+    if (lean !== 0) {
+      const fx = sx + S / 2;
+      const fy = sy + S - 2;
+      ctx.save();
+      ctx.translate(fx, fy);
+      ctx.rotate(lean);
+      ctx.translate(-fx, -fy);
+      this.drawSpriteBody(s, sx, sy, index, reflect);
+      ctx.restore();
+    } else {
+      this.drawSpriteBody(s, sx, sy, index, reflect);
+    }
+  }
+
+  /** Ease this actor's lean toward its target; returns radians. */
+  private updateLean(a: Actor): number {
+    const target =
+      a.isMoving && !a.isBumping ? (a.dir === 'left' ? -1 : a.dir === 'right' ? 1 : 0) * 0.03 : 0;
+    let cur = this.leans.get(a) ?? 0;
+    cur += (target - cur) * Math.min(1, this.frameDt * 9);
+    if (target === 0 && Math.abs(cur) < 0.0015) {
+      this.leans.delete(a);
+      return 0;
+    }
+    this.leans.set(a, cur);
+    return cur;
+  }
+
+  private drawSpriteBody(
+    s: Sprite,
+    sx: number,
+    sy: number,
+    index: number,
+    reflect: { x: number; y: number; w: number; h: number } | null,
+  ) {
+    const ctx = this.ctx;
+    const isPlayer = s.isPlayer ?? index === 0;
+    const idle = !s.actor.isMoving;
+
+    // Idle life. After ten quiet seconds the player glances left, then right,
+    // and now and then rolls a small stretch through the shoulders. Idle NPCs
+    // near the player occasionally turn to look: noticed, not tracked.
+    let drawDir = s.actor.dir;
+    let stretch = 0;
+    if (idle && s.rig !== 'animal' && s.actor.pose !== 'sit' && !s.actor.frozen) {
+      if (isPlayer) {
+        const it = s.actor.idleT - 10;
+        if (it > 0) {
+          const cyc = it % 13;
+          if (cyc < 0.7) drawDir = 'left';
+          else if (cyc >= 1.0 && cyc < 1.7) drawDir = 'right';
+          else if (cyc >= 8 && cyc < 8.6) stretch = -Math.sin(((cyc - 8) / 0.6) * Math.PI) * 6;
+        }
+      } else {
+        const ddx = this.playerSX - sx;
+        const ddy = this.playerSY - sy;
+        if (Math.abs(ddx) <= S * 2 && Math.abs(ddy) <= S * 2 && (this.time + index * 3.1) % 11 < 1.5) {
+          drawDir = Math.abs(ddx) > Math.abs(ddy) ? (ddx > 0 ? 'right' : 'left') : ddy > 0 ? 'down' : 'up';
+        }
+      }
+    }
+
+    const row = DIR_ROW[drawDir];
     const dx = sx - Math.floor((AW - S) / 2);
     const dy = sy - (AH - S);
 
@@ -835,11 +1094,11 @@ export class Renderer {
       ctx.drawImage(cv, dx, dy + ddy);
     };
 
-    // Happy hops and speaking bobs ride on top of any pose.
+    // Happy hops, speaking bobs, and idle stretches ride on top of any pose.
     const bounceT = this.bounces.get(s.actor) ?? 0;
     const hop = bounceT > 0 ? -Math.sin((1 - bounceT / 0.45) * Math.PI) * 7 : 0;
     const speakBob = this.speaker === s.actor ? Math.sin(this.time * 9) * 1.6 : 0;
-    const lift = hop + speakBob;
+    const lift = hop + speakBob + stretch;
 
     if (s.rig === 'animal') {
       const col = s.actor.walkFrame();
@@ -850,9 +1109,8 @@ export class Renderer {
 
     // Humans: six-frame walk; at rest, a slow breath and the occasional blink.
     // A seated pose overrides the legs entirely; a wave overrides the arms.
-    const idle = !s.actor.isMoving;
     let col = idle ? 0 : s.actor.walkFrame6();
-    if (idle && s.actor.dir === 'down' && ((this.time + index * 1.37) % 4.1) < 0.14) {
+    if (idle && drawDir === 'down' && ((this.time + index * 1.37) % 4.1) < 0.14) {
       col = 6; // blink
     }
     if (idle && (this.waves.get(s.actor) ?? 0) > 0) col = 8;
@@ -969,28 +1227,74 @@ export class Renderer {
     }
   }
 
-  /** Cookfire smoke drifting up from the chimneys: soft round puffs now. */
-  private drawSmoke(map: TileMap, cam: Camera) {
-    const ctx = this.ctx;
-    map.smoke.forEach(([ex, ey], i) => {
-      const bx = (ex * TILE + TILE / 2 - cam.x) * A;
-      const by = (ey * TILE - cam.y) * A;
-      if (bx < -80 || bx > W + 80 || by < -80 || by > H + 120) return;
-      for (let k = 0; k < 4; k++) {
-        const t = (this.time * 0.3 + k / 4 + i * 0.41) % 1;
-        const x = bx + Math.sin(t * 5 + i * 2 + k) * 12;
-        const y = by - 16 - t * 100;
-        const r = 5 + t * 14;
-        const a = (t < 0.12 ? t / 0.12 : 1 - (t - 0.12) / 0.88) * 0.3;
-        ctx.save();
-        ctx.globalAlpha = a;
-        ctx.fillStyle = '#e6ded0';
-        ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+  /**
+   * Hearth hours: how strongly the chimneys smoke right now. Cooking happens
+   * at dawn and at dusk; midday and deep night the columns die down to zero.
+   */
+  private hearthK(): number {
+    const d = this.dayT;
+    const win = (t: number, a: number, b: number, f: number) =>
+      Math.max(0, Math.min(1, (t - a) / f, (b - t) / f));
+    const dm = d < 0.5 ? d + 1 : d; // unwrap dawn across the midnight seam
+    return Math.max(win(dm, 0.955, 1.21, 0.05), win(d, 0.47, 0.76, 0.06));
+  }
+
+  /**
+   * Where this map's smoke rises from. Authored `smoke` cells win; maps that
+   * never declared any get chimneys derived from their hearth-bearing
+   * buildings, anchored to the real roofline of each sprite. Found once.
+   */
+  private chimneysFor(map: TileMap): [number, number][] {
+    let cells = this.chimneyCache.get(map.id);
+    if (cells) return cells;
+    cells = map.smoke.map(([ex, ey]) => [ex * TILE + TILE / 2, ey * TILE] as [number, number]);
+    if (cells.length === 0) {
+      for (let y = 0; y < map.h; y++) {
+        for (let x = 0; x < map.w; x++) {
+          const o = map.object(x, y);
+          if (!o?.tall || !HEARTH_KINDS.has(o.t)) continue;
+          const img = this.tiles.tallImage(o.t, x, y);
+          if (!img) continue;
+          // A fixed spot on the right shoulder of the roof, just below the ridge.
+          cells.push([
+            x * TILE - img.ox / A + (img.cvs.width / A) * 0.68,
+            (y + 1) * TILE - img.cvs.height / A + 6,
+          ]);
+        }
       }
-    });
+    }
+    this.chimneyCache.set(map.id, cells);
+    return cells;
+  }
+
+  /** Cookfire smoke: baked wisps rising with a sway, morning and evening only. */
+  private drawSmoke(map: TileMap, cam: Camera) {
+    if (this.mood === 'interior') return;
+    const k = this.hearthK();
+    if (k < 0.02) return;
+    const ctx = this.ctx;
+    const chimneys = this.chimneysFor(map);
+    let onScreen = 0;
+    for (let i = 0; i < chimneys.length; i++) {
+      const cell = chimneys[i];
+      if (!cell) continue;
+      const bx = (cell[0] - cam.x) * A;
+      const by = (cell[1] - cam.y) * A;
+      if (bx < -80 || bx > W + 80 || by < -60 || by > H + 160) continue;
+      if (++onScreen > 6) break; // wisp cap: never a screen full of smoke
+      for (let p = 0; p < 3; p++) {
+        const t = (this.time * 0.14 + p / 3 + i * 0.41) % 1;
+        const x = bx + Math.sin(t * 4.2 + i * 2 + p * 1.7) * (5 + t * 15);
+        const y = by - 4 - t * 128;
+        const r = 10 + t * 26;
+        const a = (t < 0.12 ? t / 0.12 : 1 - (t - 0.12) / 0.88) * 0.5 * k;
+        const puff = this.smokePuffs[(i + p) % this.smokePuffs.length];
+        if (!puff || a < 0.01) continue;
+        ctx.globalAlpha = a;
+        ctx.drawImage(puff, x - r, y - r, r * 2, r * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
   }
 
   /** Slow cloud shade drifting across the land. */
@@ -1156,6 +1460,154 @@ export class Renderer {
 }
 
 const NEVER = () => false;
+
+/**
+ * Bake the ambient flier frames once: tiny painted birds (three wing beats,
+ * facing right; the renderer mirrors for the other way) and a butterfly whose
+ * frames fold its wings. Gouache shapes, no outlines; they read at sky size.
+ */
+function bakeFliers(): Record<FlierKind, HTMLCanvasElement[]> {
+  const wing = (
+    g: CanvasRenderingContext2D,
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    w: number,
+    c: string,
+  ) => {
+    const mx = (x0 + x1) / 2;
+    const my = (y0 + y1) / 2;
+    let nx = -(y1 - y0);
+    let ny = x1 - x0;
+    const n = Math.hypot(nx, ny) || 1;
+    nx /= n;
+    ny /= n;
+    g.fillStyle = c;
+    g.beginPath();
+    g.moveTo(x0, y0);
+    g.quadraticCurveTo(mx + nx * w, my + ny * w, x1, y1);
+    g.quadraticCurveTo(mx - nx * w * 0.5, my - ny * w * 0.5, x0, y0 + 1.5);
+    g.closePath();
+    g.fill();
+  };
+
+  const bird = (
+    wCv: number,
+    hCv: number,
+    body: string,
+    belly: string,
+    wingC: string,
+    wingFar: string,
+    beak: string,
+    size: number,
+  ): HTMLCanvasElement[] => {
+    // Three beats: wings up, level, down.
+    const TIPS: [number, number][] = [
+      [-0.5, -0.85],
+      [-1, -0.12],
+      [-0.55, 0.75],
+    ];
+    return TIPS.map(([tx, ty]) => {
+      const { cv, g } = surface(wCv, hCv);
+      const cx = wCv * 0.52;
+      const cy = hCv * 0.56;
+      const L = size;
+      // Far wing: shorter and darker, mostly lost behind the body.
+      wing(g, cx + 3, cy - 2, cx + 3 + tx * L * 0.66, cy - 2 + ty * L * 0.5, L * 0.16, wingFar);
+      // Body: a soft teardrop, tail trailing.
+      g.fillStyle = body;
+      g.beginPath();
+      g.ellipse(cx, cy, L * 0.56, L * 0.28, -0.06, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.moveTo(cx - L * 0.5, cy - L * 0.16);
+      g.lineTo(cx - L * 0.88, cy - L * 0.02);
+      g.lineTo(cx - L * 0.46, cy + L * 0.15);
+      g.closePath();
+      g.fill();
+      // Belly light.
+      g.fillStyle = belly;
+      g.beginPath();
+      g.ellipse(cx + L * 0.08, cy + L * 0.1, L * 0.4, L * 0.15, -0.05, 0, Math.PI);
+      g.fill();
+      // Head and beak.
+      g.fillStyle = body;
+      g.beginPath();
+      g.arc(cx + L * 0.56, cy - L * 0.14, L * 0.2, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = beak;
+      g.beginPath();
+      g.moveTo(cx + L * 0.72, cy - L * 0.19);
+      g.lineTo(cx + L * 0.94, cy - L * 0.1);
+      g.lineTo(cx + L * 0.72, cy - L * 0.05);
+      g.closePath();
+      g.fill();
+      // Near wing, the one that sells the beat.
+      wing(g, cx + 1, cy - L * 0.06, cx + 1 + tx * L, cy - L * 0.06 + ty * L * 0.9, L * 0.22, wingC);
+      // The same soft ink edge every figure in the game wears.
+      return outlineSheet(cv, wCv, hCv, 'rgba(38,26,16,0.4)', 1.4);
+    });
+  };
+
+  const butterfly = (): HTMLCanvasElement[] =>
+    // Three beats: open, half, folded; foreshortened by squeezing the lobes.
+    [1, 0.55, 0.2].map((open) => {
+      const { cv, g } = surface(22, 20);
+      const cx = 11;
+      const cy = 10;
+      for (const sgn of [-1, 1] as const) {
+        g.fillStyle = '#e0a94f';
+        g.beginPath();
+        g.ellipse(cx + sgn * 4.6 * open, cy - 2.4, 4.8 * open, 3.6, sgn * 0.5 * open, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = '#d18f3c';
+        g.beginPath();
+        g.ellipse(cx + sgn * 3.6 * open, cy + 2.6, 3.4 * open, 2.6, sgn * -0.4 * open, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(248,240,220,0.8)';
+        g.beginPath();
+        g.ellipse(cx + sgn * 5.4 * open, cy - 2.8, 1.5 * open, 1.1, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+      g.fillStyle = '#4a3a28';
+      g.beginPath();
+      g.ellipse(cx, cy, 1.1, 3.4, 0, 0, Math.PI * 2);
+      g.fill();
+      return outlineSheet(cv, 22, 20, 'rgba(38,26,16,0.35)', 1.2);
+    });
+
+  return {
+    gull: bird(46, 34, '#f1efe4', '#dcd8ca', '#e9e7db', '#b9b7ac', '#d9a441', 16),
+    songbird: bird(34, 27, '#7d5c38', '#d9a441', '#5c452c', '#4a3826', '#5a4a34', 12),
+    pigeon: bird(36, 27, '#98a0b0', '#c4c8d2', '#7e8698', '#5f6678', '#8a7a6a', 12),
+    butterfly: butterfly(),
+  };
+}
+
+/** Two baked smoke wisps: a round breath and a lumpier curl. */
+function bakeSmokePuffs(): HTMLCanvasElement[] {
+  const puff = (lumpy: boolean): HTMLCanvasElement => {
+    const { cv, g } = surface(64, 64);
+    const blobAt = (x: number, y: number, r: number, a: number) => {
+      const grad = g.createRadialGradient(x, y, 1, x, y, r);
+      grad.addColorStop(0, `rgba(240,238,234,${a})`);
+      grad.addColorStop(0.6, `rgba(232,230,228,${a * 0.55})`);
+      grad.addColorStop(1, 'rgba(232,230,228,0)');
+      g.fillStyle = grad;
+      g.fillRect(x - r, y - r, r * 2, r * 2);
+    };
+    if (lumpy) {
+      blobAt(26, 36, 22, 0.8);
+      blobAt(40, 26, 18, 0.7);
+      blobAt(34, 42, 14, 0.5);
+    } else {
+      blobAt(32, 32, 28, 0.85);
+    }
+    return cv;
+  };
+  return [puff(false), puff(true)];
+}
 
 /** One static light pass at full art resolution. */
 function makeAtmosphere(

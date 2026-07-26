@@ -1,4 +1,4 @@
-import { dot, oval, rr, surface } from './pix';
+import { dot, glowSpot, oval, rr, surface } from './pix';
 
 /**
  * The cover painting: the whole journey in one small gouache. Cordillera to
@@ -154,6 +154,9 @@ export function makeCoverArt(): HTMLCanvasElement {
   g.lineTo(98, 139);
   g.closePath();
   g.fill();
+  // One window already lit, because someone is home.
+  glowSpot(g, 90, 142, 7, '#f7d98c', 0.45);
+  rr(g, 88, 140, 3.6, 3.4, 0.8, '#f2c04e');
   // Torii on the right hill.
   g.strokeStyle = '#c1512f';
   g.lineWidth = 2.4;
@@ -167,6 +170,22 @@ export function makeCoverArt(): HTMLCanvasElement {
   g.moveTo(296, 136);
   g.lineTo(310, 136);
   g.stroke();
+  // A paper kite above the pass: Delhi flies this high.
+  g.save();
+  g.translate(330, 54);
+  g.rotate(0.28);
+  g.fillStyle = '#c1512f';
+  g.beginPath();
+  g.moveTo(0, -6.5); g.lineTo(5, 0); g.lineTo(0, 7.5); g.lineTo(-5, 0);
+  g.closePath();
+  g.fill();
+  g.strokeStyle = 'rgba(70,55,45,0.55)';
+  g.lineWidth = 1;
+  g.beginPath();
+  g.moveTo(0, 7.5);
+  g.quadraticCurveTo(-6, 15, -2, 23);
+  g.stroke();
+  g.restore();
   // Palm by the sea.
   g.strokeStyle = '#7a5636';
   g.lineWidth = 2;
@@ -193,6 +212,29 @@ export function makeCoverArt(): HTMLCanvasElement {
   g.moveTo(232, 166);
   g.lineTo(237, 161);
   g.stroke();
+
+  // The walker, small on the road, bindle over one shoulder. That is you.
+  const wx = 200;
+  const wy = 151;
+  g.save(); // partway up the pass, and a little smaller for it
+  g.translate(203, 147);
+  g.scale(0.78, 0.78);
+  g.translate(-wx, -wy);
+  oval(g, wx, wy + 1, 4, 1.3, 'rgba(31,22,12,0.3)');
+  g.strokeStyle = '#3c2f24';
+  g.lineWidth = 1.4;
+  g.beginPath(); // legs mid-stride
+  g.moveTo(wx - 1.6, wy); g.lineTo(wx, wy - 4);
+  g.moveTo(wx + 1.9, wy); g.lineTo(wx, wy - 4);
+  g.stroke();
+  g.beginPath(); // the bindle stick, back over the shoulder
+  g.moveTo(wx + 0.5, wy - 7.5); g.lineTo(wx + 5.5, wy - 12.5);
+  g.stroke();
+  dot(g, wx + 6, wy - 13, 2.1, '#d9a441'); // the bundle, knotted
+  rr(g, wx - 2.2, wy - 9, 4.4, 5.6, 1.6, '#7a4c38'); // poncho
+  dot(g, wx, wy - 10.8, 1.9, '#c98d5f'); // face
+  oval(g, wx, wy - 12.2, 2.6, 1.1, '#4a3a2e'); // hat brim
+  g.restore();
 
   // The bowl, foreground center: the destination of every road above it.
   const bx = 186;
@@ -223,6 +265,13 @@ export function makeCoverArt(): HTMLCanvasElement {
   vig.addColorStop(1, 'rgba(40,26,16,0.22)');
   g.fillStyle = vig;
   g.fillRect(0, 0, W, H);
+
+  // A faint stitched border: the painting is sewn to the cover, not glued.
+  g.strokeStyle = 'rgba(232,220,196,0.38)';
+  g.lineWidth = 1.2;
+  g.setLineDash([4, 4]);
+  g.strokeRect(5.5, 5.5, W - 11, H - 11);
+  g.setLineDash([]);
 
   cached = cv;
   return cv;

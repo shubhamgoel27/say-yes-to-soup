@@ -181,6 +181,43 @@ export class Input {
     }
   }
 
+  // ------------------------------------------------------------- pointer/touch
+  //
+  // The on-screen touch pad and mouse UI inject through the same edges and
+  // stack the keyboard uses, so everything downstream (menus, panels, held
+  // movement) sees a single input stream and no path is special-cased.
+
+  /** Hold a direction, exactly like a key going down (touch d-pad press). */
+  holdDir(dir: Dir) {
+    this.dirStack = this.dirStack.filter((d) => d !== dir);
+    this.dirStack.push(dir);
+    this.tapDir = dir;
+    this.menuDirEdge = dir;
+  }
+
+  /** Release a held direction (touch d-pad lift). A real key still holding the
+   * same direction keeps it alive, mirroring the WASD/arrow overlap rule. */
+  releaseDir(dir: Dir) {
+    for (const code of this.pressed) if (DIR_KEYS[code] === dir) return;
+    this.dirStack = this.dirStack.filter((d) => d !== dir);
+  }
+
+  /** One action press (touch button, click routed as Space). */
+  injectAction() {
+    this.actionEdge = true;
+  }
+
+  /** One journal press (touch button, same as J). */
+  injectJournal() {
+    this.journalEdge = true;
+  }
+
+  /** One pause press (touch button). Doubles as back, exactly like Escape. */
+  injectPause() {
+    this.pauseEdge = true;
+    this.backEdge = true;
+  }
+
   takePause(): boolean {
     const v = this.pauseEdge;
     this.pauseEdge = false;

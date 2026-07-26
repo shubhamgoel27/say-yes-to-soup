@@ -1,7 +1,7 @@
 import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
 import { Camera } from './engine/camera';
-import { STEP_DUR, TILE, TURN_DELAY } from './engine/config';
+import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { DevBridge } from './engine/devbridge';
 import { TileMap, type TriggerDef } from './engine/grid';
 import { Input, type Dir } from './engine/input';
@@ -307,10 +307,10 @@ function makeOverlayRoot(id: string): HTMLElement {
   $('frame').appendChild(el);
   return el;
 }
-const games = GAMES.map((g) => ({
-  def: g,
-  panel: g.make(makeOverlayRoot(g.flag.replace(/\W+/g, '-')), audio),
-}));
+const games = GAMES.map((g) => {
+  const root = makeOverlayRoot(g.flag.replace(/\W+/g, '-'));
+  return { def: g, root, panel: g.make(root, audio) };
+});
 const anyGameOpen = () => games.some((g) => g.panel.isOpen);
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
@@ -959,6 +959,48 @@ function beginPlay(freshStart: boolean) {
   }
 }
 
+/** Confirm the title menu's current option; shared by Space and click. */
+function titleActivate() {
+  const choice = title.choose();
+  if (choice === 'none') {
+    // The warning armed itself; nothing else happens on this press.
+    audio.denied();
+    return;
+  }
+  audio.confirm();
+  if (choice === 'settings' || choice === 'credits') {
+    title.hideTitle();
+    pauseMenu.open(choice, true);
+    return;
+  }
+  title.hideTitle();
+  if (choice === 'new') {
+    state.reset();
+    for (const tm of Object.values(maps)) tm.clearOverrides();
+    applyGateState();
+    applyDressings();
+    refreshTaskChip();
+    mode = 'letter';
+    title.showLetter();
+  } else {
+    beginPlay(false);
+  }
+}
+
+/** Put down whichever letter is open; shared by Space and click. */
+function letterAdvance() {
+  if (mode === 'letter') {
+    audio.confirm();
+    title.hideLetter();
+    beginPlay(true);
+  } else if (title.letterOpen) {
+    audio.confirm();
+    title.hideLetter();
+    player.frozen = false;
+    takeTravel();
+  }
+}
+
 // ---------------------------------------------------------------- loop
 
 let showDebug = false;
@@ -983,9 +1025,13 @@ function update(dt: number) {
   audio.setWorldAmbience(nightLevel(dayT), moodFor(map.id) === 'monsoon');
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
-  stage.setZoomTarget(
-    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen ? 1.06 : 1,
-  );
+  const zoomT =
+    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen ? 1.06 : 1;
+  stage.setZoomTarget(zoomT);
+  // Mirror the stage's zoom easing so pointer math maps screen to world
+  // without reaching into the presenter's internals.
+  uiZoom += (zoomT - uiZoom) * (1 - Math.exp(-dt * 9));
+  if (Math.abs(uiZoom - zoomT) < 0.001) uiZoom = zoomT;
   // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
   {
     const quiet =
@@ -1054,6 +1100,11 @@ function update(dt: number) {
   const pauseKey = input.takePause();
   const journalKey = input.takeJournal() || dev.takeJournal();
 
+  // Any deliberate input or story freeze cancels a click-to-walk in flight.
+  if (autoGoal && (player.frozen || warp || textbox.isOpen || act || back || pauseKey || journalKey || menuDir)) {
+    cancelAuto();
+  }
+
   // The savor pause: the world keeps breathing, input rests.
   if (celebrateT > 0) {
     celebrateT -= dt;
@@ -1082,46 +1133,12 @@ function update(dt: number) {
       feedKonami(menuDir);
       audio.select();
     }
-    if (act) {
-      const choice = title.choose();
-      if (choice === 'none') {
-        // The warning armed itself; nothing else happens on this press.
-        audio.denied();
-        return;
-      }
-      audio.confirm();
-      if (choice === 'settings' || choice === 'credits') {
-        title.hideTitle();
-        pauseMenu.open(choice, true);
-        return;
-      }
-      title.hideTitle();
-      if (choice === 'new') {
-        state.reset();
-        for (const tm of Object.values(maps)) tm.clearOverrides();
-        applyGateState();
-        applyDressings();
-        refreshTaskChip();
-        mode = 'letter';
-        title.showLetter();
-      } else {
-        beginPlay(false);
-      }
-    }
+    if (act) titleActivate();
   } else if (mode === 'letter') {
-    if (act || back) {
-      audio.confirm();
-      title.hideLetter();
-      beginPlay(true);
-    }
+    if (act || back) letterAdvance();
   } else if (title.letterOpen) {
     // Mail from home, read mid-journey.
-    if (act || back) {
-      audio.confirm();
-      title.hideLetter();
-      player.frozen = false;
-      takeTravel();
-    }
+    if (act || back) letterAdvance();
   } else if (weave.isOpen) {
     if (menuDir) weave.onDir(menuDir);
     if (act) weave.onAction();
@@ -1160,7 +1177,10 @@ function update(dt: number) {
     } else if (act) {
       tryInteract();
     } else {
-      const intent = dev.heldOverride() ?? input.intent();
+      const manual = dev.heldOverride() ?? input.intent();
+      // A held key or stick always outranks a click-to-walk in progress.
+      if (manual && autoGoal) cancelAuto();
+      const intent = manual ?? autoIntent();
       // The camera leans a little into sustained walking, easing home at rest.
       const lead = intent
         ? { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[intent]
@@ -1172,6 +1192,8 @@ function update(dt: number) {
       if (ev?.kind === 'bumped') {
         bumps++;
         audio.bump();
+        // A villager stepped into the planned path; route around them.
+        if (autoGoal) replanAuto();
         // The full caporal does not appreciate walls.
         if (state.has('carry.chicha')) {
           sloshes++;
@@ -1240,6 +1262,7 @@ function update(dt: number) {
     errand: state.errand,
     npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
     bumps,
+    auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
   });
 }
 
@@ -1277,6 +1300,13 @@ function render() {
   stage.setLights(specs);
   stage.render();
 
+  // The walk marker rides the world through the same lens the click used.
+  if (markCell) {
+    const [mx, my] = worldToScreen(markCell[0] * TILE + TILE / 2, markCell[1] * TILE + TILE / 2);
+    markEl.style.left = `${mx}px`;
+    markEl.style.top = `${my}px`;
+  }
+
   if (showDebug) {
     const [fx, fy] = player.facingCell();
     debugEl.textContent = [
@@ -1287,6 +1317,576 @@ function render() {
       `node   ${textbox.currentNode || '-'}  bumps ${bumps}`,
       `step   ${(STEP_DUR * 1000).toFixed(0)}ms  turn ${(TURN_DELAY * 1000).toFixed(0)}ms`,
     ].join('\n');
+  }
+}
+
+// ---------------------------------------------------------------- pointer & touch
+//
+// First-class mouse and touch play. One rule keeps double-fires impossible:
+// game surfaces (canvas, dialogue, minigame panels, d-pad) act on pointerdown;
+// menu rows act on click, with mouseover driving the same cursor the keyboard
+// drives. Every activation goes through the components' existing public
+// methods, so a click is indistinguishable from the key it stands in for.
+
+const glCanvas = $('stagegl') as HTMLCanvasElement;
+const frameEl = $('frame');
+const choicesEl = $('tb-choices');
+
+// The presenter eases its zoom every tick; mirror it (same constant) so
+// screen-to-world stays exact without reaching into the stage's internals.
+let uiZoom = 1;
+
+function viewScale(): number {
+  return Math.max(1, window.innerWidth / VIEW_W, window.innerHeight / VIEW_H) * uiZoom;
+}
+
+function screenToWorld(sx: number, sy: number): [number, number] {
+  const s = viewScale();
+  return [
+    (sx - (window.innerWidth - VIEW_W * s) / 2) / s + camera.x,
+    (sy - (window.innerHeight - VIEW_H * s) / 2) / s + camera.y,
+  ];
+}
+
+function worldToScreen(wx: number, wy: number): [number, number] {
+  const s = viewScale();
+  return [
+    (wx - camera.x) * s + (window.innerWidth - VIEW_W * s) / 2,
+    (wy - camera.y) * s + (window.innerHeight - VIEW_H * s) / 2,
+  ];
+}
+
+// Injected styles: overlays become clickable (the HUD layer is pointer-inert
+// by design), menu rows advertise themselves, and the walk marker + touch
+// pad get their journal-ink dress. index.html stays untouched.
+{
+  const style = document.createElement('style');
+  style.textContent = `
+    #textbox, #journal, #pause, #title, #letter, #weave, .mg-overlay { pointer-events: auto; }
+    #textbox, .tb-choice, .t-opt, .p-opt, .p-row, .j-tab, .j-item, .letter-paper { cursor: pointer; }
+    #stagegl { touch-action: none; }
+    #walkmark {
+      position: absolute;
+      width: 26px; height: 26px;
+      margin: -13px 0 0 -13px;
+      border-radius: 50%;
+      border: 2px solid rgba(242, 230, 208, 0.85);
+      box-shadow: 0 0 10px rgba(217, 164, 65, 0.55), inset 0 0 6px rgba(217, 164, 65, 0.45);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.35s ease;
+    }
+    #walkmark.on { opacity: 1; animation: walkRipple 1s ease-out infinite; }
+    @keyframes walkRipple {
+      0% { transform: scale(0.5); opacity: 0.95; }
+      70% { transform: scale(1); opacity: 0.5; }
+      100% { transform: scale(1.2); opacity: 0.1; }
+    }
+    #vpad { position: absolute; inset: 0; pointer-events: none; }
+    #vpad[hidden] { display: none; }
+    .vp-pad {
+      position: absolute; left: 16px; bottom: 16px;
+      width: 152px; height: 152px;
+      display: grid; gap: 4px;
+      grid-template-areas: '. u .' 'l . r' '. d .';
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+    }
+    .vp-b {
+      pointer-events: auto;
+      touch-action: none;
+      -webkit-user-select: none; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 44px; min-height: 44px; padding: 0;
+      border: 1.5px solid rgba(242, 230, 208, 0.4);
+      border-radius: 9px;
+      background: rgba(43, 33, 24, 0.36);
+      color: rgba(242, 230, 208, 0.85);
+      font-size: 15px;
+      font-family: inherit;
+      line-height: 1;
+    }
+    .vp-b:active { background: rgba(43, 33, 24, 0.62); }
+    .vp-pad [data-dir='up'] { grid-area: u; }
+    .vp-pad [data-dir='left'] { grid-area: l; }
+    .vp-pad [data-dir='right'] { grid-area: r; }
+    .vp-pad [data-dir='down'] { grid-area: d; }
+    .vp-side {
+      position: absolute; right: 16px; bottom: 16px;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+    }
+    .vp-act { width: 64px; height: 64px; border-radius: 50%; font-size: 22px; }
+    .vp-small { width: 44px; height: 44px; border-radius: 50%; opacity: 0.9; }
+  `;
+  document.head.appendChild(style);
+}
+
+// ---- the walk marker: a soft ripple on the clicked tile ----
+
+const markEl = document.createElement('div');
+markEl.id = 'walkmark';
+frameEl.insertBefore(markEl, $('hud'));
+let markCell: [number, number] | null = null;
+
+function showMark(x: number, y: number) {
+  markCell = [x, y];
+  markEl.classList.add('on');
+}
+
+function hideMark() {
+  markEl.classList.remove('on');
+}
+
+// ---- click-to-walk: BFS over the live collision the player actually faces ----
+
+type AutoGoal = { kind: 'walk' | 'interact'; cell: [number, number]; npc?: Villager };
+let autoPath: [number, number][] = [];
+let autoGoal: AutoGoal | null = null;
+
+function cancelAuto() {
+  autoPath = [];
+  autoGoal = null;
+  hideMark();
+}
+
+/**
+ * Shortest path from the player to (tx,ty) — or to any open cell beside it
+ * when `adjacentTo` (for talking to someone rather than standing on them).
+ * Returns the cells to walk, start excluded, or null when unreachable.
+ */
+function findPath(tx: number, ty: number, adjacentTo: boolean): [number, number][] | null {
+  const w = map.w;
+  const blocked = blockedFor(player);
+  // Plan from the cell the player is committed to, not the one being left.
+  const [px, py] = player.occupies();
+  const goals = new Set<number>();
+  if (adjacentTo) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const gx = tx + dx;
+      const gy = ty + dy;
+      if (map.inBounds(gx, gy) && !blocked(gx, gy)) goals.add(gy * w + gx);
+    }
+    if (goals.size === 0) return null;
+    if (goals.has(py * w + px)) return [];
+  } else {
+    if (tx === px && ty === py) return [];
+    goals.add(ty * w + tx);
+  }
+  const prev = new Map<number, number>();
+  const start = py * w + px;
+  const queue = [start];
+  const seen = new Set([start]);
+  for (let head = 0; head < queue.length; head++) {
+    const ci = queue[head] ?? 0;
+    const cx = ci % w;
+    const cy = (ci - cx) / w;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      const ni = ny * w + nx;
+      if (!map.inBounds(nx, ny) || seen.has(ni)) continue;
+      seen.add(ni);
+      if (blocked(nx, ny)) continue;
+      prev.set(ni, ci);
+      if (goals.has(ni)) {
+        const path: [number, number][] = [];
+        for (let at = ni; at !== start; at = prev.get(at) ?? start) {
+          const ax = at % w;
+          path.unshift([ax, (at - ax) / w]);
+        }
+        return path;
+      }
+      queue.push(ni);
+    }
+  }
+  return null;
+}
+
+/** Anything on this cell the action button would engage with. */
+function interactableAt(x: number, y: number): boolean {
+  if (
+    villagersHere().some((v) => {
+      const [ox, oy] = v.actor.occupies();
+      return ox === x && oy === y;
+    })
+  ) {
+    return true;
+  }
+  if (
+    map.id === 'village' &&
+    state.has('dig.invite') &&
+    !state.has('dig.done') &&
+    DIG_SPOTS.some((s) => s.at[0] === x && s.at[1] === y && !state.has(s.flag))
+  ) {
+    return true;
+  }
+  // Only THINGS invite the pointer (props, seats, mounds, people), matching
+  // the curiosity dot: bare ground still answers the button, but a click on
+  // it should simply walk there.
+  const objKind = map.object(x, y)?.t;
+  if (objKind === undefined || objKind === 'blocked') return false;
+  if (SIT_KINDS.has(objKind)) return true;
+  return EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false;
+}
+
+/** Turn toward an adjacent cell and press the same button Space presses. */
+function faceAndInteract(tx: number, ty: number) {
+  const dir: Dir =
+    tx > player.x ? 'right' : tx < player.x ? 'left' : ty > player.y ? 'down' : 'up';
+  player.face(dir);
+  tryInteract();
+}
+
+function requestMove(tx: number, ty: number) {
+  cancelAuto();
+  const npc = villagersHere().find((v) => {
+    const [ox, oy] = v.actor.occupies();
+    return ox === tx && oy === ty;
+  });
+  const d = Math.abs(player.x - tx) + Math.abs(player.y - ty);
+  if (npc || interactableAt(tx, ty)) {
+    if (d === 0) return;
+    if (d === 1) {
+      faceAndInteract(tx, ty);
+      return;
+    }
+    const path = findPath(tx, ty, true);
+    if (!path) return;
+    autoPath = path;
+    autoGoal = { kind: 'interact', cell: [tx, ty], npc };
+    showMark(tx, ty);
+  } else if (!map.solid(tx, ty)) {
+    const path = findPath(tx, ty, false);
+    if (!path || path.length === 0) return;
+    autoPath = path;
+    autoGoal = { kind: 'walk', cell: [tx, ty] };
+    showMark(tx, ty);
+  }
+}
+
+/** Recompute the path to the standing goal (a villager stepped into it). */
+function replanAuto() {
+  const goal = autoGoal;
+  if (!goal) return;
+  const [tx, ty] = goal.npc ? goal.npc.actor.occupies() : goal.cell;
+  const path = findPath(tx, ty, goal.kind === 'interact');
+  if (!path) {
+    cancelAuto();
+    return;
+  }
+  autoPath = path;
+  autoGoal = goal;
+  goal.cell = [tx, ty];
+  showMark(tx, ty);
+}
+
+/**
+ * The direction click-to-walk wants this frame; handles arrival + interact.
+ * Steering is relative to the cell the player is COMMITTED to (occupies()),
+ * not the one being left: when a step lands, the actor immediately starts the
+ * next one with this frame's intent, so mid-step the intent must already be
+ * the upcoming segment or corners overshoot.
+ */
+function autoIntent(): Dir | null {
+  const goal = autoGoal;
+  if (!goal) return null;
+  const [px, py] = player.occupies();
+  while (autoPath.length) {
+    const head = autoPath[0];
+    if (head && head[0] === px && head[1] === py) autoPath.shift();
+    else break;
+  }
+  const next = autoPath[0];
+  if (!next) {
+    if (player.isMoving) return null; // let the last step land first
+    cancelAuto();
+    if (goal.kind === 'interact') {
+      const [tx, ty] = goal.npc ? goal.npc.actor.occupies() : goal.cell;
+      if (Math.abs(player.x - tx) + Math.abs(player.y - ty) === 1) faceAndInteract(tx, ty);
+      else if (goal.npc) {
+        // They wandered off mid-walk; follow up once more.
+        autoGoal = goal;
+        replanAuto();
+      }
+    }
+    return null;
+  }
+  const dx = next[0] - px;
+  const dy = next[1] - py;
+  if (Math.abs(dx) + Math.abs(dy) !== 1) {
+    replanAuto();
+    return null;
+  }
+  return dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
+}
+
+// ---- the canvas: walk, interact, advance dialogue, rise from a bench ----
+
+glCanvas.addEventListener('pointerdown', (e) => {
+  if (e.button !== 0) return;
+  if (textbox.isOpen) {
+    // While choices are on screen a click must land on a row, not fall
+    // through to "pick whatever the cursor happens to be on".
+    if (choicesEl.childElementCount > 0 && !textbox.isTyping) return;
+    textbox.onAction();
+    return;
+  }
+  if (mode !== 'play' || warp || celebrateT > 0) return;
+  if (pauseMenu.isOpen || journalUI.isOpen || weave.isOpen || anyGameOpen() || title.letterOpen) return;
+  if (sitting) {
+    standUp();
+    return;
+  }
+  if (player.frozen) return;
+  const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+  const tx = Math.floor(wx / TILE);
+  const ty = Math.floor(wy / TILE);
+  if (map.inBounds(tx, ty)) requestMove(tx, ty);
+});
+
+// Cursor affordance: a pointer over anything the action button would engage.
+glCanvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'mouse') return;
+  let cursor = 'default';
+  if (textbox.isOpen) {
+    cursor = 'pointer';
+  } else if (
+    mode === 'play' && !player.frozen && !warp &&
+    !pauseMenu.isOpen && !journalUI.isOpen && !weave.isOpen && !anyGameOpen()
+  ) {
+    const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+    const tx = Math.floor(wx / TILE);
+    const ty = Math.floor(wy / TILE);
+    if (map.inBounds(tx, ty) && interactableAt(tx, ty)) cursor = 'pointer';
+  }
+  if (glCanvas.style.cursor !== cursor) glCanvas.style.cursor = cursor;
+});
+
+// ---- menu steering: drive each component's own cursor to the hovered row ----
+
+/**
+ * Move a menu's selection to the given row using its public onDir, reading
+ * the current position straight from the rendered classes ('sel' or 'on').
+ * Returns true when the cursor actually moved.
+ */
+function steerTo(
+  root: HTMLElement,
+  selector: string,
+  targetEl: Element,
+  onDir: (d: Dir) => void,
+  axis: 'v' | 'h' = 'v',
+): boolean {
+  const rows = [...root.querySelectorAll(selector)];
+  const target = rows.indexOf(targetEl);
+  const cur = rows.findIndex((r) => r.classList.contains('sel') || r.classList.contains('on'));
+  if (target < 0 || cur < 0 || target === cur) return false;
+  const n = rows.length;
+  const fwd = (target - cur + n) % n;
+  const [plus, minus]: [Dir, Dir] = axis === 'v' ? ['down', 'up'] : ['right', 'left'];
+  if (fwd <= n - fwd) for (let i = 0; i < fwd; i++) onDir(plus);
+  else for (let i = 0; i < n - fwd; i++) onDir(minus);
+  return true;
+}
+
+// ---- dialogue: click advances, choice rows hover-select and click-confirm ----
+
+const tbRoot = $('textbox');
+tbRoot.addEventListener('pointerdown', (e) => {
+  if (!textbox.isOpen || e.button !== 0) return;
+  e.preventDefault();
+  const row = (e.target as HTMLElement).closest('.tb-choice');
+  if (row) {
+    steerTo(choicesEl, '.tb-choice', row, (d) => textbox.onDir(d));
+    textbox.onAction();
+    return;
+  }
+  if (choicesEl.childElementCount > 0 && !textbox.isTyping) return;
+  textbox.onAction();
+});
+tbRoot.addEventListener('mouseover', (e) => {
+  if (!textbox.isOpen) return;
+  const row = (e.target as HTMLElement).closest('.tb-choice');
+  if (row && steerTo(choicesEl, '.tb-choice', row, (d) => textbox.onDir(d))) audio.select();
+});
+
+// ---- title: hover moves the hand, click chooses ----
+
+const titleRoot = $('title');
+titleRoot.addEventListener('click', (e) => {
+  if (!title.titleOpen) return;
+  const opt = (e.target as HTMLElement).closest('.t-opt');
+  if (!opt) return;
+  steerTo(titleRoot, '.t-opt', opt, (d) => title.onDir(d));
+  titleActivate();
+});
+titleRoot.addEventListener('mouseover', (e) => {
+  if (!title.titleOpen) return;
+  const opt = (e.target as HTMLElement).closest('.t-opt');
+  if (opt && steerTo(titleRoot, '.t-opt', opt, (d) => title.onDir(d))) audio.select();
+});
+
+$('letter').addEventListener('click', () => {
+  if (title.letterOpen) letterAdvance();
+});
+
+// ---- pause: options click, settings rows adjust by clicked half ----
+
+const pauseRoot = $('pause');
+pauseRoot.addEventListener('click', (e) => {
+  if (!pauseMenu.isOpen) return;
+  const t = e.target as HTMLElement;
+  const opt = t.closest('.p-opt');
+  if (opt) {
+    steerTo(pauseRoot, '.p-opt', opt, (d) => pauseMenu.onDir(d));
+    audio.confirm();
+    pauseMenu.onAction();
+    return;
+  }
+  const inSettings = !!pauseRoot.querySelector('.p-settings');
+  const row = t.closest('.p-row');
+  if (inSettings && row) {
+    // Left half of the row nudges down, right half nudges up: the same
+    // gesture the arrow keys make, aimed with the mouse.
+    const r = row.getBoundingClientRect();
+    steerTo(pauseRoot, '.p-row', row, (d) => pauseMenu.onDir(d));
+    pauseMenu.onDir(e.clientX > r.left + r.width / 2 ? 'right' : 'left');
+    audio.select();
+    return;
+  }
+  if (!t.closest('.p-card')) {
+    pauseMenu.onBack();
+    audio.back();
+    return;
+  }
+  if (!pauseRoot.querySelector('.p-menu') && !inSettings) {
+    // Help and credits: any click on the page turns back.
+    pauseMenu.onAction();
+    audio.back();
+  }
+});
+pauseRoot.addEventListener('mouseover', (e) => {
+  if (!pauseMenu.isOpen) return;
+  const t = e.target as HTMLElement;
+  const opt = t.closest('.p-opt');
+  if (opt) {
+    if (steerTo(pauseRoot, '.p-opt', opt, (d) => pauseMenu.onDir(d))) audio.select();
+    return;
+  }
+  const row = t.closest('.p-row');
+  if (row && pauseRoot.querySelector('.p-settings')) {
+    if (steerTo(pauseRoot, '.p-row', row, (d) => pauseMenu.onDir(d))) audio.select();
+  }
+});
+
+// ---- journal: tabs click, entries hover/click, wheel turns pages ----
+
+const journalRoot = $('journal');
+journalRoot.addEventListener('click', (e) => {
+  if (!journalUI.isOpen) return;
+  const t = e.target as HTMLElement;
+  const tab = t.closest('.j-tab');
+  if (tab) {
+    if (steerTo(journalRoot, '.j-tab', tab, (d) => journalUI.onDir(d), 'h')) audio.select();
+    return;
+  }
+  const item = t.closest('.j-item');
+  if (item) {
+    if (steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
+    return;
+  }
+  if (!t.closest('.j-book')) {
+    journalUI.close();
+    audio.pageFlip();
+  }
+});
+journalRoot.addEventListener('mouseover', (e) => {
+  if (!journalUI.isOpen) return;
+  const item = (e.target as HTMLElement).closest('.j-item');
+  if (item && steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
+});
+journalRoot.addEventListener(
+  'wheel',
+  (e) => {
+    if (!journalUI.isOpen) return;
+    const t = e.target as HTMLElement;
+    // The route and task pages scroll natively; entry lists page by cursor.
+    if (t.closest('.j-route') || t.closest('.j-tasks')) return;
+    e.preventDefault();
+    journalUI.onDir(e.deltaY > 0 ? 'down' : 'up');
+  },
+  { passive: false },
+);
+
+// ---- minigame panels: middle third acts, outer thirds steer ----
+
+function attachPanelPointer(
+  root: HTMLElement,
+  panel: { readonly isOpen: boolean; onDir(d: Dir): void; onAction(): void },
+) {
+  root.addEventListener('pointerdown', (e) => {
+    if (!panel.isOpen || e.button !== 0) return;
+    e.preventDefault();
+    const card = root.querySelector('.w-panel') ?? root;
+    const r = card.getBoundingClientRect();
+    if (e.clientX < r.left + r.width / 3) panel.onDir('left');
+    else if (e.clientX > r.right - r.width / 3) panel.onDir('right');
+    else panel.onAction();
+  });
+}
+attachPanelPointer($('weave'), weave);
+for (const g of games) attachPanelPointer(g.root, g.panel);
+
+// ---- the touch pad: held movement + action, only once a finger is seen ----
+
+const vpad = document.createElement('div');
+vpad.id = 'vpad';
+vpad.hidden = true;
+vpad.innerHTML = `
+  <div class="vp-pad">
+    <button class="vp-b" data-dir="up" aria-label="walk up">&#9650;</button>
+    <button class="vp-b" data-dir="left" aria-label="walk left">&#9664;</button>
+    <button class="vp-b" data-dir="right" aria-label="walk right">&#9654;</button>
+    <button class="vp-b" data-dir="down" aria-label="walk down">&#9660;</button>
+  </div>
+  <div class="vp-side">
+    <button class="vp-b vp-small" data-act="journal" aria-label="journal">&#9998;</button>
+    <button class="vp-b vp-small" data-act="pause" aria-label="pause">&#9776;</button>
+    <button class="vp-b vp-act" data-act="action" aria-label="talk / touch">&#10022;</button>
+  </div>`;
+frameEl.appendChild(vpad);
+
+const revealVpad = (e: PointerEvent) => {
+  if (e.pointerType !== 'touch') return;
+  vpad.hidden = false;
+  window.removeEventListener('pointerdown', revealVpad, true);
+};
+window.addEventListener('pointerdown', revealVpad, true);
+
+for (const btn of vpad.querySelectorAll<HTMLElement>('.vp-b')) {
+  const dir = btn.dataset.dir as Dir | undefined;
+  const act = btn.dataset.act;
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); // no focus ring, no synthesized mouse events
+    audio.ensure();
+    if (dir) {
+      try {
+        btn.setPointerCapture(e.pointerId);
+      } catch {
+        // Synthetic events have no active pointer; the hold still works.
+      }
+      input.holdDir(dir);
+    } else if (act === 'action') {
+      input.injectAction();
+    } else if (act === 'journal') {
+      input.injectJournal();
+    } else if (act === 'pause') {
+      input.injectPause();
+    }
+  });
+  if (dir) {
+    const release = () => input.releaseDir(dir);
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
   }
 }
 

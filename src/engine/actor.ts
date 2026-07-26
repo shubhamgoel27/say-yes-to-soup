@@ -35,6 +35,12 @@ export class Actor {
   frozen = false;
   /** Transient body pose: 'sit' folds the legs and settles the figure. */
   pose: 'none' | 'sit' = 'none';
+  /**
+   * Seconds since the last movement or input intent, while free to act.
+   * Feeds the renderer's idle life (glances, the little stretch); anything
+   * that counts as input drops it back to zero.
+   */
+  idleT = 0;
 
   constructor(x: number, y: number, dir: Dir = 'down') {
     this.x = x;
@@ -57,6 +63,11 @@ export class Actor {
   }
 
   update(dt: number, ctx: ActorCtx): ActorEvent {
+    // Idle clock: any motion, any intent, or being frozen (dialogue holds
+    // you present, not absent) snaps it back to zero.
+    if (this.moving || this.frozen || (!this.frozen && ctx.intent)) this.idleT = 0;
+    else this.idleT += dt;
+
     if (this.bump > 0) {
       this.bump -= dt;
       if (this.bump > 0) return null;
@@ -124,6 +135,7 @@ export class Actor {
     this.t = 0;
     this.turn = 0;
     this.bump = 0;
+    this.idleT = 0;
   }
 
   face(dir: Dir) {
