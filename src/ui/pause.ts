@@ -216,6 +216,8 @@ export class PauseMenu {
         and corrections from people who know these places are welcome.</p>
         <p class="p-c-sec">Type set in Fraunces, Literata &amp; Caveat (OFL, Google Fonts).
         Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
+        Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
+        the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0).
         Everything else&thinsp;&mdash;&thinsp;art, music, weather, gulls&thinsp;&mdash;&thinsp;is
         cooked fresh by the game at runtime.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>

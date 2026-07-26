@@ -663,6 +663,10 @@
         background: rgba(23, 18, 14, 0.55);
       }
       #weave[hidden] { display: none; }
+      /* Overlay roots hang off #frame's line-height: 0; panels need real leading. */
+      .w-panel { line-height: 1.45; }
+      .g-stage { margin: 10px 0 8px; }
+      .g-stage canvas { box-shadow: inset 0 0 0 1.5px rgba(43, 33, 24, 0.35); }
       .w-panel {
         width: 62%;
         max-width: 430px;
