@@ -30,26 +30,73 @@ export const ART: ChapterArt = {
     ],
   },
   glows: ['thattukada', 'aduppu', 'nilavilakku'],
-  noInk: ['huskpile', 'hyacinth', 'waterlily', 'anthill', 'fallennut', 'tennisball', 'keralacat'],
+  noInk: ['huskpile', 'hyacinth', 'waterlily', 'anthill', 'fallennut', 'tennisball', 'keralacat', 'chappals'],
 
   paint(make) {
     // ---------------------------------------------------------- grounds
 
     // Pokkali paddy: salt-tolerant rice standing in monsoon water. One field,
     // two harvests; rice now, prawns when the tide is invited in.
+    // Chappals off at the threshold: the plainest sign in the subcontinent
+    // that a house is open and you are meant to walk in. The task says "the
+    // veedu with the open door", and this is that cue, visible by daylight.
+    make('chappals', 3, (g, r) => {
+      // A swept, water-darkened doorstep the slippers sit on.
+      g.fillStyle = 'rgba(92,64,42,0.16)';
+      g.beginPath();
+      g.ellipse(S / 2, S * 0.62, S * 0.42, S * 0.22, 0, 0, Math.PI * 2);
+      g.fill();
+      const pair = (px: number, py: number, c1: string, c2: string, tilt: number) => {
+        for (const dx of [-6, 6]) {
+          g.save();
+          g.translate(px + dx, py);
+          g.rotate(tilt + (dx > 0 ? 0.12 : -0.12));
+          oval(g, 0, 1.5, 5.5, 9, 'rgba(40,28,18,0.22)'); // its own small shadow
+          oval(g, 0, 0, 5, 8.5, c1);
+          oval(g, 0, -2.5, 3.6, 5.2, shade(c1, 0.1));
+          // The toe strap, the part everyone recognises.
+          g.strokeStyle = c2;
+          g.lineWidth = 1.8;
+          g.lineCap = 'round';
+          g.beginPath();
+          g.moveTo(-3.4, -1.5);
+          g.quadraticCurveTo(0, -6.5, 3.4, -1.5);
+          g.stroke();
+          g.restore();
+        }
+      };
+      pair(S * 0.34, S * 0.6, '#8a5a3c', '#d9a441', -0.2 + r.next() * 0.1);
+      pair(S * 0.66, S * 0.68, '#4a6b7c', '#e8dcc4', 0.24 - r.next() * 0.1);
+    });
+
     make('paddy', 4, (g, r) => {
-      const base = '#5f7f4a';
+      // A flooded field, and it has to LOOK flooded: painted the same green
+      // as the walkable grass beside it, this solid ground read as an
+      // invisible wall eight tiles wide. Water first, rice second.
+      const base = '#4d6f62';
       rect(g, 0, 0, S, S, base);
-      // Still water glints between the rows.
-      for (let i = 0; i < 3; i++) {
+      // The sheet of standing water, holding a pale sky.
+      for (let i = 0; i < 5; i++) {
         const yy = r.int(S);
-        vgrad(g, 0, yy, S, 3, 'rgba(210,230,225,0.16)', 'rgba(0,0,0,0)');
+        vgrad(g, 0, yy, S, 5 + r.int(4), 'rgba(206,228,232,0.34)', 'rgba(0,0,0,0)');
+      }
+      // Wind ripple, the giveaway that this is a surface and not a lawn.
+      // Kept sparse and low contrast: three per tile starts reading as
+      // corduroy once the field is eight tiles wide.
+      g.strokeStyle = 'rgba(226,240,240,0.16)';
+      g.lineWidth = 1.1;
+      for (let i = 0; i < 2; i++) {
+        const yy = 10 + r.int(S - 20);
+        g.beginPath();
+        g.moveTo(0, yy);
+        g.bezierCurveTo(S * 0.3, yy - 3.5, S * 0.7, yy + 3.5, S, yy);
+        g.stroke();
       }
       // Young rice in loose rows.
-      for (const row of [12, 34, 54]) {
+      for (const row of [10 + r.int(6), 30 + r.int(8), 52 + r.int(6)]) {
         for (let x = 6 + r.int(6); x < S; x += 12 + r.int(6)) {
           const lean = (r.next() - 0.5) * 5;
-          g.strokeStyle = shade(r.chance(0.5) ? '#7fb35a' : '#8fbf68', (r.next() - 0.5) * 0.08);
+          g.strokeStyle = shade(r.chance(0.5) ? '#6f9e52' : '#7fae5e', (r.next() - 0.5) * 0.1);
           g.lineWidth = 1.8;
           g.lineCap = 'round';
           g.beginPath();

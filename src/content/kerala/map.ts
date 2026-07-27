@@ -97,6 +97,13 @@ function objectAt(x: number, y: number): string {
       return 'x';
     }
   }
+  // Chappals on the step below the one door that opens. They sit outside the
+  // footprint on purpose: anything drawn on the door cell itself is covered
+  // by the house sprite, which is why the open door had no cue at all.
+  for (const [hx, hy] of VEEDUS) {
+    if (OPEN_DOORS.has(`${hx},${hy}`) && x === hx + 2 && y === hy + 5) return 'O';
+  }
+
   const key = `${x},${y}`;
   if (PALMS.has(key)) return 'P';
   if (BANANAS.has(key)) return 'b';
@@ -158,6 +165,8 @@ export const KERALA_MAP: MapData = {
     C: { t: 'veedu', solid: true, tall: true },
     x: { t: 'blocked', solid: true, tall: true },
     D: { t: 'doorShut', solid: true, tall: true },
+    // The one door that opens says so, in chappals.
+    O: { t: 'chappals' },
     P: { t: 'palm', solid: true, tall: true },
     b: { t: 'banana', solid: true, tall: true },
     v: { t: 'vallam', solid: true, tall: true },

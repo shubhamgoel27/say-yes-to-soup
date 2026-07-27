@@ -1049,6 +1049,12 @@ export const KERALA_NODES: NodeMap = {
   'c6.ex.pier': {
     lines: [{ text: 'Jetty planks, silvered by sun and fattened by rain, in strict annual alternation. They give slightly, like a handshake.' }],
   },
+  'c6.ex.chappals': {
+    lines: [
+      { text: 'Two pairs of chappals, kicked off and left where they landed. One pair has walked a great deal further than the other.' },
+      { text: 'A door with shoes outside it is not a closed door. Leave yours beside them and go in.' },
+    ],
+  },
   'c6.ex.door': {
     lines: [
       { text: 'Latched, not locked. The umbrella by the step says everything about the season; the doormat says WELCOME in two scripts.' },
@@ -1152,6 +1158,7 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   water: [{ map: 'kerala', node: 'c6.ex.water' }],
   pierdeck: [{ map: 'kerala', node: 'c6.ex.pier' }],
   doorShut: [{ map: 'kerala', node: 'c6.ex.door' }],
+  chappals: [{ node: 'c6.ex.chappals' }],
   pot: [
     { map: 'kerala', node: 'c6.ex.pot' },
     { map: 'mariamma-veedu', node: 'c6.ex.pot.kitchen' },
