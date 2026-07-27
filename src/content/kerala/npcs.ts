@@ -1100,6 +1100,21 @@ export const KERALA_NODES: NodeMap = {
   'c6.ex.pot.kitchen': {
     lines: [{ text: 'The meen curry pot, resting. Day-two curry outranks day-one curry, and everyone in this kitchen knows the hierarchy.' }],
   },
+  'c6.ex.uri': {
+    lines: [
+      { text: 'The uri: a clay pot slung from the rafters on three ropes, hung there because ants can climb anything except air.' },
+      { text: 'Buttermilk lives in it. Everyone in this house ducks under it in the same place without ever looking up.' },
+    ],
+  },
+  'c6.ex.spicesacks.kitchen': {
+    lines: [{ text: 'Rice sacks folded down to the level the household is at, standing by the door where they were set down and never moved further.' }],
+  },
+  'c6.ex.chappals.kitchen': {
+    lines: [{ text: 'Chappals inside the door rather than outside it, which means rain is expected and everybody has already agreed about it.' }],
+  },
+  'c6.ex.umbrellas.kitchen': {
+    lines: [{ text: 'Three umbrellas stood in the corner, still damp at the tips, dripping a small honest map of the last time anyone went out.' }],
+  },
   'c6.ex.shrub': {
     lines: [{ text: 'Pandanus thicket, spiny and satisfied. It hems the village the way commas hem a long sentence.' }],
   },
@@ -1149,6 +1164,7 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   nilavilakku: [{ node: 'c6.ex.nilavilakku' }],
   umbrellas: [
+    { map: 'mariamma-veedu', node: 'c6.ex.umbrellas.kitchen' },
     { when: { has: ['c6.rain'] }, node: 'c6.ex.umbrellas.rain' },
     { node: 'c6.ex.umbrellas' },
   ],
@@ -1162,9 +1178,11 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   oars: [{ node: 'c6.ex.oars' }],
   spicesacks: [
+    { map: 'mariamma-veedu', node: 'c6.ex.spicesacks.kitchen' },
     { when: { has: ['c6.depart.ready'] }, node: 'c6.ex.spicesacks.manifest' },
     { node: 'c6.ex.spicesacks' },
   ],
+  uri: [{ node: 'c6.ex.uri' }],
   postbox: [
     { when: { has: ['c6.letter.delivered'] }, node: 'c6.ex.postbox.carried' },
     { node: 'c6.ex.postbox' },
@@ -1202,7 +1220,10 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   water: [{ map: 'kerala', node: 'c6.ex.water' }],
   pierdeck: [{ map: 'kerala', node: 'c6.ex.pier' }],
   doorShut: [{ map: 'kerala', node: 'c6.ex.door' }],
-  chappals: [{ node: 'c6.ex.chappals' }],
+  chappals: [
+    { map: 'mariamma-veedu', node: 'c6.ex.chappals.kitchen' },
+    { node: 'c6.ex.chappals' },
+  ],
   pot: [
     { map: 'kerala', node: 'c6.ex.pot' },
     { map: 'mariamma-veedu', node: 'c6.ex.pot.kitchen' },

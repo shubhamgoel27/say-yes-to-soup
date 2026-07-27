@@ -327,6 +327,15 @@ export const COCINA_MAP: MapData = {
     R: { t: 'ristra', solid: true, tall: true },
     j: { t: 'jicaras', solid: true },
     z: { t: 'cazuelas', solid: true },
+    c: { t: 'comal', solid: true },
+    g: { t: 'metate', solid: true },
+    f: { t: 'cempacut', solid: true },
+    k: { t: 'costal', solid: true },
+    n: { t: 'cantaros', solid: true },
+    e: { t: 'escoba', solid: true },
+    W: { t: 'papelstack', solid: true },
+    P: { t: 'papel', tall: true },
+    l: { t: 'gallina' },
     ' ': { t: 'void' },
   },
   ground: [
@@ -341,16 +350,22 @@ export const COCINA_MAP: MapData = {
     '..............',
     '..............',
   ],
+  // One altar, not two: the ofrenda holds the north-east corner and the
+  // candles bank against it, so the eye lands there the moment the door
+  // shuts. The fire, the metate and the cazuelas run down the west wall
+  // where Refugio works, and the table sits east of the door lane instead
+  // of across it, so the walk from the door to the altar is never blocked.
+  // Papel picado crosses the room at head height on the way in.
   objects: [
-    '##S########S##',
-    '#p RvO  O vj #',
-    '#z           #',
-    '#            #',
-    '#            #',
-    '#   sTTTTs   #',
-    '#            #',
-    '#  r         #',
-    '#            #',
+    '##S##R###SS###',
+    '#pc     vOO  #',
+    '#z       fv j#',
+    '#g           #',
+    '#       sTTT #',
+    '#  W     s s #',
+    '#r    PPP    #',
+    '#kk   n   le #',
+    '#k           #',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'oaxaca', spawn: [8, 21], facing: 'down' }],

@@ -711,6 +711,18 @@ export const CROSSING_NODES: NodeMap = {
   'c3.ex.laundry': {
     lines: [{ text: 'Coveralls drying between rails: engine-room orange, deck navy, one pair sized like weather. Nobody asks whose that one is.' }],
   },
+  'c3.ex.hammock.galley': {
+    lines: [{ text: 'A hammock slung in the mess corner, because the mess is cool and the cabins are not. Whoever has it now got it by seniority.' }],
+  },
+  'c3.ex.laundry.galley': {
+    lines: [{ text: 'The drying rack lives in the mess where the stove heat goes, so the off-watch dries its coveralls and the room smells faintly of soap and diesel.' }],
+  },
+  'c3.ex.deckshrine.galley': {
+    lines: [{ text: 'The mess shrine, bolted to the bulkhead above where the food comes out. Battery candle, five currencies, one plastic flower going pale.' }],
+  },
+  'c3.ex.portcrate.galley': {
+    lines: [{ text: 'Stores crates parked inside the door, half unpacked, the manifest still taped to the top one and already out of date.' }],
+  },
   'c3.ex.sternrod': {
     lines: [{ text: 'A fishing rod lashed to the stern rail, trolling since Callao with a bell on its tip. Total catch so far: one clump of kelp, morale high.' }],
   },
@@ -782,6 +794,7 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   funnel: [{ node: 'c3.ex.funnel' }],
   shiphouse: [{ node: 'c3.ex.shiphouse' }],
   hammock: [
+    { map: 'galley', node: 'c3.ex.hammock.galley' },
     { when: { has: ['c3.met.chasca'] }, node: 'c3.ex.hammock2' },
     { node: 'c3.ex.hammock' },
   ],
@@ -810,12 +823,19 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c3.ex.tarp' },
   ],
   portcrate: [
+    { map: 'galley', node: 'c3.ex.portcrate.galley' },
     { when: { has: ['c3.complete'] }, node: 'c3.ex.portcrate2' },
     { node: 'c3.ex.portcrate' },
   ],
   lifering: [{ node: 'c3.ex.lifering' }],
-  deckshrine: [{ node: 'c3.ex.deckshrine' }],
-  laundry: [{ node: 'c3.ex.laundry' }],
+  deckshrine: [
+    { map: 'galley', node: 'c3.ex.deckshrine.galley' },
+    { node: 'c3.ex.deckshrine' },
+  ],
+  laundry: [
+    { map: 'galley', node: 'c3.ex.laundry.galley' },
+    { node: 'c3.ex.laundry' },
+  ],
   sternrod: [{ node: 'c3.ex.sternrod' }],
   menuboard: [
     { when: { has: ['c3.cook.done'] }, node: 'c3.ex.menuboard2' },

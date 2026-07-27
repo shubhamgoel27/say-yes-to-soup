@@ -1526,6 +1526,32 @@ export const NODES: NodeMap = {
       { text: 'The order is not written anywhere. Everyone knows it anyway.' },
     ],
   },
+  'ex.batea.chicheria': {
+    lines: [
+      { text: 'The straining trough, hollowed from one block and stained the colour of every batch that has ever gone through it.' },
+      { text: 'Rosa will not have it scrubbed out. She says the wood remembers how, and she is not entirely joking.' },
+    ],
+  },
+  'ex.cantaros.chicheria': {
+    lines: [
+      { text: 'Cántaros lined up in the corner waiting to be filled, each with a different chip out of its lip so nobody argues about whose is whose.' },
+    ],
+  },
+  'ex.grano.chicheria': {
+    lines: [
+      { text: 'Sprouted maize spread out to dry on a cloth, sweet and faintly sour. This is the part that takes the days; the rest is just waiting.' },
+    ],
+  },
+  'ex.qepi.indoors': {
+    lines: [
+      { text: 'Somebody\u2019s q\u2019epi set down inside the door, knot still tied. It will be picked up on the way out and not a moment before.' },
+    ],
+  },
+  'ex.mantas.carmen': {
+    lines: [
+      { text: 'Finished mantas folded at the foot of the bed, four deep, each one a season. Doña Carmen keeps the newest on the bottom.' },
+    ],
+  },
   'ex.batea': {
     lines: [
       { text: 'A stone trough worn dish-shaped in the middle, half full of grey water with the soap still on it, one red cloth over the lip.' },
@@ -1628,7 +1654,10 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'village', node: 'ex.sacos.stall' },
     { node: 'ex.sacos' },
   ],
-  grano: [{ node: 'ex.grano' }],
+  grano: [
+    { map: 'chicheria', node: 'ex.grano.chicheria' },
+    { node: 'ex.grano' },
+  ],
   chakitaqlla: [{ node: 'ex.chakitaqlla' }],
   tendedero: [
     { when: { has: ['pallay.done'] }, node: 'ex.tendedero.pallay' },
@@ -1645,7 +1674,11 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'ex.kite' },
   ],
   hitchpost: [{ node: 'ex.hitchpost' }],
-  qepi: [{ node: 'ex.qepi' }],
+  qepi: [
+    { map: 'chicheria', node: 'ex.qepi.indoors' },
+    { map: 'casa-carmen', node: 'ex.qepi.indoors' },
+    { node: 'ex.qepi' },
+  ],
   apachetita: [
     { when: { has: ['sea.seen'] }, node: 'ex.apachetita.stone' },
     { node: 'ex.apachetita' },
@@ -1655,9 +1688,16 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   pushka: [{ node: 'ex.pushka' }],
   dyepots: [{ node: 'ex.dyepots' }],
   parva: [{ node: 'ex.parva' }],
-  cantaros: [{ node: 'ex.cantaros' }],
-  batea: [{ node: 'ex.batea' }],
+  cantaros: [
+    { map: 'chicheria', node: 'ex.cantaros.chicheria' },
+    { node: 'ex.cantaros' },
+  ],
+  batea: [
+    { map: 'chicheria', node: 'ex.batea.chicheria' },
+    { node: 'ex.batea' },
+  ],
   mantas: [
+    { map: 'casa-carmen', node: 'ex.mantas.carmen' },
     { when: { has: ['pallay.done'] }, node: 'ex.mantas.woven' },
     { node: 'ex.mantas' },
   ],

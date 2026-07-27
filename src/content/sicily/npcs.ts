@@ -1139,7 +1139,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.rug': {
     lines: [
-      { text: 'A rug the color of old wine, worn to the weave under the card table. Fifty years of dropped aces and spilled coffee live in it.' },
+      { text: 'Two runners the color of old wine, overlapping beside the card table, worn to the weave where the elders stand to argue about a hand.' },
     ],
   },
   'c8.ex.mat': {
@@ -1209,6 +1209,43 @@ export const SICILY_NODES: NodeMap = {
       { text: 'Shelves of the circolo’s estate: dominoes, a barometer set permanently to fair, and coffee cups that are members in their own right.' },
     ],
   },
+  'c8.ex.banco': {
+    lines: [
+      { text: 'The bar: dark wood, a zinc top worn pale where sixty years of elbows have leaned, and a brass rail nobody has polished since the brass was new.' },
+      { text: 'Two cups upended on a folded cloth, a bottle of amaro at the level it is always at, and a saucer of receipts under a lemon.' },
+    ],
+  },
+  'c8.ex.lampadario': {
+    lines: [
+      { text: 'One bulb under a green enamel shade, hung over the card table on a flex that has been shortened twice to get it lower.' },
+      { text: 'Everything else in the room is lit by what this lamp spills. That is not an accident; it is where the cards are.' },
+    ],
+  },
+  'c8.ex.net.circolo': {
+    lines: [
+      { text: 'A net bundled in the corner since spring, brought in to mend and mended in the way things are mended indoors: eventually.' },
+    ],
+  },
+  'c8.ex.lemoncrate.circolo': {
+    lines: [
+      { text: 'The cooperative stores its crates here because the club is dry and the club is never locked. Nobody voted on this.' },
+    ],
+  },
+  'c8.ex.gattu.circolo': {
+    lines: [
+      { text: 'The club cat, asleep on the lemons in the one draught between the door and the fan. Membership was never discussed.' },
+    ],
+  },
+  'c8.ex.nonnachair.circolo': {
+    lines: [
+      { text: 'Mimmo’s chair, carried in from a kitchen forty years ago and angled to the door so he sees who arrives before they see him.' },
+    ],
+  },
+  'c8.ex.ventola.circolo': {
+    lines: [
+      { text: 'The fan stands by the door pointed at nobody in particular, which is the only setting the membership has ever agreed on.' },
+    ],
+  },
 };
 
 /** Sicilian examine arms; shared props keep their words at home via map tags. */
@@ -1229,15 +1266,26 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   vespa: [{ node: 'c8.ex.vespa' }],
   macchina: [{ node: 'c8.ex.macchina' }],
   trofei: [{ node: 'c8.ex.trofei' }],
-  lemoncrate: [{ node: 'c8.ex.lemoncrate' }],
+  banco: [{ node: 'c8.ex.banco' }],
+  lampadario: [{ node: 'c8.ex.lampadario' }],
+  lemoncrate: [
+    { map: 'circolo', node: 'c8.ex.lemoncrate.circolo' },
+    { node: 'c8.ex.lemoncrate' },
+  ],
   testadimoro: [{ node: 'c8.ex.testadimoro' }],
   edicola: [
     { when: { has: ['c8.pisci.won'] }, node: 'c8.ex.edicola2' },
     { node: 'c8.ex.edicola' },
   ],
   fichidindia: [{ node: 'c8.ex.fichidindia' }],
-  nonnachair: [{ node: 'c8.ex.nonnachair' }],
-  gattu: [{ node: 'c8.ex.gattu' }],
+  nonnachair: [
+    { map: 'circolo', node: 'c8.ex.nonnachair.circolo' },
+    { node: 'c8.ex.nonnachair' },
+  ],
+  gattu: [
+    { map: 'circolo', node: 'c8.ex.gattu.circolo' },
+    { node: 'c8.ex.gattu' },
+  ],
   campetto: [{ node: 'c8.ex.campetto' }],
   pomodori: [{ node: 'c8.ex.pomodori' }],
   avvisi: [
@@ -1246,7 +1294,10 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   limoni: [{ node: 'c8.ex.limoni' }],
   lavagna: [{ node: 'c8.ex.lavagna' }],
-  ventola: [{ node: 'c8.ex.ventola' }],
+  ventola: [
+    { map: 'circolo', node: 'c8.ex.ventola.circolo' },
+    { node: 'c8.ex.ventola' },
+  ],
   postsign: [
     { when: { not: ['letter.read.sicily.pilar'] }, node: 'c8.post.pilar' },
     {
@@ -1258,7 +1309,10 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   sea: [{ map: 'sicily', node: 'c8.ex.sea' }],
   stall: [{ map: 'sicily', node: 'c8.ex.stall' }],
   crate: [{ map: 'sicily', node: 'c8.ex.crate' }],
-  net: [{ map: 'sicily', node: 'c8.ex.net' }],
+  net: [
+    { map: 'circolo', node: 'c8.ex.net.circolo' },
+    { map: 'sicily', node: 'c8.ex.net' },
+  ],
   bench: [{ map: 'sicily', node: 'c8.ex.bench' }],
   farol: [{ map: 'sicily', node: 'c8.ex.farol' }],
   grass: [{ map: 'sicily', node: 'c8.ex.grass' }],

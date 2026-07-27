@@ -1258,6 +1258,49 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'Painted jícaras stacked mouth-down to dry, red and black lacquer. Tejate tastes better from a gourd, and the gourds seem to know.' },
     ],
   },
+
+  // ---------------- examines: the cocina, indoors and in its own voice ----------------
+  'c9.ex.comal.cocina': {
+    lines: [
+      { text: 'The kitchen comal, set low against the west wall where the smoke knows the way out. It is the only fire in the room and it is never quite out.' },
+    ],
+  },
+  'c9.ex.metate.cocina': {
+    lines: [
+      { text: 'Refugio’s metate, kept on the floor by the fire because that is where the knees go. The stone leans a little, worn deeper on the near side.' },
+    ],
+  },
+  'c9.ex.escoba.cocina': {
+    lines: [
+      { text: 'The broom parked in the corner by the door, bristles up, so the dust it has already gathered stays gathered.' },
+    ],
+  },
+  'c9.ex.cantaros.cocina': {
+    lines: [
+      { text: 'Two cántaros just inside the door, plates over their mouths, set where anyone coming in from the sun will reach them first.' },
+    ],
+  },
+  'c9.ex.papel.cocina': {
+    lines: [
+      { text: 'Papel picado strung across the kitchen at exactly the height of a tall guest, who will duck, and a short one, who will not.' },
+      { text: 'These are the practice ones, cut early to get the hand back. The good strings go out over the street.' },
+    ],
+  },
+  'c9.ex.costal.cocina': {
+    lines: [
+      { text: 'Costales banked in the corner: corn in one, dried chiles in another, and a third holding nothing at all but its own shape.' },
+    ],
+  },
+  'c9.ex.papelstack.cocina': {
+    lines: [
+      { text: 'A stack of tissue half cut, the scissors resting on it mid-flower. Whoever it is comes back to this between everything else.' },
+    ],
+  },
+  'c9.ex.ristra': {
+    lines: [
+      { text: 'A ristra of chiles hung on the wall to dry, pasilla and guajillo braided in together, going darker and quieter by the week.' },
+    ],
+  },
   'c9.ex.cazuelas': {
     lines: [
       { text: 'Cazuelas stacked by size, each chipped in a different honest place.' },
@@ -1325,14 +1368,21 @@ export const OAXACA_NODES: NodeMap = {
 export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   casona: [{ node: 'c9.ex.casona' }],
   portales: [{ node: 'c9.ex.portales' }],
-  papel: [{ node: 'c9.ex.papel' }],
+  papel: [
+    { map: 'cocina', node: 'c9.ex.papel.cocina' },
+    { node: 'c9.ex.papel' },
+  ],
   cempa: [{ node: 'c9.ex.cempa' }],
   petalpath: [
     { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay' },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.petals2' },
     { node: 'c9.ex.petals1' },
   ],
-  comal: [{ node: 'c9.ex.comal' }],
+  comal: [
+    { map: 'cocina', node: 'c9.ex.comal.cocina' },
+    { node: 'c9.ex.comal' },
+  ],
+  ristra: [{ node: 'c9.ex.ristra' }],
   veladora: [{ node: 'c9.ex.veladora' }],
   panstall: [{ node: 'c9.ex.panstall' }],
   barrostall: [{ node: 'c9.ex.barrostall' }],
@@ -1382,19 +1432,32 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   tuft: [{ map: 'oaxaca', node: 'c9.ex.tuft9' }],
   cempacut: [{ node: 'c9.ex.cempacut' }],
   agavepina: [{ node: 'c9.ex.agave' }],
-  papelstack: [{ node: 'c9.ex.papelstack' }],
+  papelstack: [
+    { map: 'cocina', node: 'c9.ex.papelstack.cocina' },
+    { node: 'c9.ex.papelstack' },
+  ],
   streetdog: [
     { when: { not: ['c9.dog.known'] }, node: 'c9.ex.dog1' },
     { node: 'c9.ex.dog2' },
   ],
   chapulines: [{ node: 'c9.ex.chapulines' }],
-  cantaros: [{ node: 'c9.ex.cantaros' }],
-  metate: [{ node: 'c9.ex.metate' }],
-  escoba: [{ node: 'c9.ex.escoba' }],
+  cantaros: [
+    { map: 'cocina', node: 'c9.ex.cantaros.cocina' },
+    { node: 'c9.ex.cantaros' },
+  ],
+  metate: [
+    { map: 'cocina', node: 'c9.ex.metate.cocina' },
+    { node: 'c9.ex.metate' },
+  ],
+  escoba: [
+    { map: 'cocina', node: 'c9.ex.escoba.cocina' },
+    { node: 'c9.ex.escoba' },
+  ],
   gallina: [{ node: 'c9.ex.gallina' }],
   cohete: [{ node: 'c9.ex.cohete' }],
   cubeta: [{ node: 'c9.ex.cubeta' }],
   costal: [
+    { map: 'cocina', node: 'c9.ex.costal.cocina' },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.costal.empty' },
     { node: 'c9.ex.costal.full' },
   ],

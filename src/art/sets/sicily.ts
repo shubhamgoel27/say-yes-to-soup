@@ -31,6 +31,7 @@ export const ART: ChapterArt = {
     'avvisi',
     'lavagna',
     'ventola',
+    'banco',
   ],
   buildings: ['casedda'],
   windows: {
@@ -39,7 +40,7 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['barlamp', 'edicola'],
+  glows: ['barlamp', 'edicola', 'lampadario'],
   pathy: ['basalto'],
   noInk: ['campetto', 'limoni'],
 
@@ -1201,6 +1202,85 @@ export const ART: ChapterArt = {
       oval(g, 5, -52, 6, 3, 'rgba(154,166,171,0.5)', 0.6);
       dot(g, 0, -48, 3.4, '#6b7378');
       g.restore();
+    }, 64, 96);
+
+    make('banco', 3, (g, _r, i) => {
+      softShadow(g, 32, 92, 26, 6, 0.2);
+      // The circolo's bar: a run of dark wood with a zinc top gone soft with
+      // sixty years of wiping. Three variants so a three-cell counter is one
+      // counter and not the same cell printed three times.
+      const wood = '#5c3f2a';
+      rr(g, 0, 52, 64, 40, 2, wood);
+      vgrad(g, 0, 52, 64, 18, 'rgba(255,236,200,0.10)', 'rgba(0,0,0,0)');
+      // Panelled front, the beading that every bar in Sicily has.
+      g.strokeStyle = 'rgba(28,18,10,0.35)';
+      g.lineWidth = 1.6;
+      for (const px of [12, 32, 52]) {
+        g.beginPath();
+        g.moveTo(px, 60);
+        g.lineTo(px, 88);
+        g.stroke();
+      }
+      // The zinc top, and the brass rail along its lip.
+      rr(g, -2, 44, 68, 11, 3, '#9aa6ab');
+      vgrad(g, -2, 44, 68, 6, 'rgba(255,255,255,0.42)', 'rgba(0,0,0,0)');
+      rr(g, -2, 54, 68, 3, 1.5, '#b08a48');
+      // What is standing on it depends which stretch of counter this is.
+      if (i === 0) {
+        // Cups upended on a folded cloth, waiting to be needed.
+        rr(g, 10, 36, 26, 8, 3, '#d9d3c4');
+        for (const cx of [16, 25, 34]) {
+          rr(g, cx - 4, 30, 8, 7, 2, PAL.cream);
+          oval(g, cx, 30, 4, 1.6, shade(PAL.cream, -0.12));
+        }
+      } else if (i === 1) {
+        // The amaro bottle nobody has bought and everybody has poured from.
+        rr(g, 26, 22, 9, 22, 3, '#3f2a18');
+        rr(g, 28.5, 14, 4, 10, 2, '#3f2a18');
+        rr(g, 26, 30, 9, 7, 1, '#c9a35f');
+        dot(g, 30.5, 13, 2.2, '#8a6a3a');
+        // and one glass of water, the way espresso is properly served.
+        rr(g, 42, 32, 7, 12, 2, 'rgba(214,228,232,0.75)');
+      } else {
+        // The till end: a saucer of receipts, a lemon, a pack of cards.
+        oval(g, 20, 40, 9, 3.4, '#cfc8ba');
+        rr(g, 14, 34, 12, 6, 1, '#efe9dc');
+        dot(g, 40, 38, 6, '#d8c04a');
+        dot(g, 38.5, 36, 1.8, 'rgba(255,255,255,0.5)');
+        rr(g, 48, 34, 10, 8, 1.5, '#b5443a');
+        rr(g, 50, 32, 10, 8, 1.5, PAL.cream);
+      }
+    }, 64, 96);
+
+    make('lampadario', 1, (g) => {
+      // The one bulb over the card table, on a flex that has been shortened
+      // twice. Everything else in the room is lit by whatever it spills.
+      g.strokeStyle = '#3a3430';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(32, 0);
+      g.lineTo(32, 20);
+      g.stroke();
+      // The enamel shade: green outside, white and bounced inside.
+      g.fillStyle = '#4d6b52';
+      g.beginPath();
+      g.moveTo(32, 18);
+      g.lineTo(52, 40);
+      g.lineTo(12, 40);
+      g.closePath();
+      g.fill();
+      g.fillStyle = 'rgba(255,244,214,0.30)';
+      g.beginPath();
+      g.moveTo(32, 24);
+      g.lineTo(46, 39);
+      g.lineTo(18, 39);
+      g.closePath();
+      g.fill();
+      rr(g, 12, 38, 40, 4, 2, shade('#4d6b52', -0.2));
+      // The bulb, and the pool of light it throws onto the cards below.
+      dot(g, 32, 45, 6, '#ffe6ac');
+      glowSpot(g, 32, 46, 30, 'rgba(255,214,138,0.55)', 0.85);
+      glowSpot(g, 32, 74, 26, 'rgba(255,204,128,0.28)', 0.6);
     }, 64, 96);
   },
 };

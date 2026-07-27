@@ -1408,6 +1408,56 @@ export const ART: ChapterArt = {
       dot(g, 20, 42.5, 1, '#a86a6a');
     });
 
+    make('uri', 2, (g, r) => {
+      // The uri: a pot slung from the rafters on three ropes, which is where
+      // buttermilk and anything else the ants want lives. Every kitchen here
+      // has one, and everyone ducks the same way under it without looking.
+      const rope = '#b8a074';
+      g.strokeStyle = rope;
+      g.lineWidth = 2;
+      g.lineCap = 'round';
+      // Three ropes from out of frame down to the ring.
+      for (const [x0, x1] of [[20, 26], [32, 32], [44, 38]] as const) {
+        g.beginPath();
+        g.moveTo(x0, 0);
+        g.quadraticCurveTo((x0 + x1) / 2, 16, x1, 30);
+        g.stroke();
+      }
+      // The ring the ropes are gathered into, and the sling under the pot.
+      g.strokeStyle = shade(rope, -0.18);
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.ellipse(32, 31, 7, 2.6, 0, 0, Math.PI * 2);
+      g.stroke();
+      const clay = r.chance(0.5) ? '#8a5330' : '#7d5836';
+      // The pot, belly out, shoulders in, the way a clay pot is.
+      oval(g, 32, 44, 13, 11, clay);
+      oval(g, 32, 39, 11, 6, shade(clay, 0.1));
+      oval(g, 32, 35, 7, 3, shade(clay, -0.18));
+      oval(g, 32, 34, 5.5, 2.2, '#2f2419');
+      // Light down one shoulder, soot up the other.
+      oval(g, 27, 40, 3.4, 5, 'rgba(255,236,200,0.22)', 0.4);
+      oval(g, 38, 47, 5, 4, 'rgba(30,22,14,0.22)');
+      // Rope crossing under the belly, taking the weight.
+      g.strokeStyle = rope;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(21, 44);
+      g.quadraticCurveTo(32, 58, 43, 44);
+      g.stroke();
+      // A second, smaller pot hung shorter beside it, sometimes.
+      if (r.chance(0.5)) {
+        g.strokeStyle = rope;
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(52, 0);
+        g.lineTo(52, 22);
+        g.stroke();
+        oval(g, 52, 28, 6.5, 5.5, shade(clay, -0.1));
+        oval(g, 52, 23.5, 3.4, 1.8, '#2f2419');
+      }
+    }, 64, 96);
+
     // ---------------------------------------------------------- the veedu
     // 352x256, casa wall geometry so village grids match: tiled roof over
     // Gulf-money paint, deep eaves because the sky here means it.

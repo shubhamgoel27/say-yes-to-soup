@@ -379,6 +379,10 @@ export const PICANTERIA_MAP: MapData = {
     Z: { t: 'pizarra', solid: true, tall: true },
     a: { t: 'laradio', solid: true },
     z: { t: 'gato', solid: true },
+    C: { t: 'chomba', solid: true, tall: true },
+    U: { t: 'bidones', solid: true },
+    t: { t: 'crabtraps', solid: true, tall: true },
+    H: { t: 'picchairs', solid: true, tall: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -393,19 +397,22 @@ export const PICANTERIA_MAP: MapData = {
     '..............',
     '..............',
   ],
-  // The fire and the pots hold one end, and the long table runs at them but
-  // not squarely: the short table sits inboard of it, so the room has an
-  // elbow rather than two parallel bars.
+  // Two parallel tables down the middle is a canteen. This is a picantería:
+  // the fire and the pots take the north-west and Petro stands in that light,
+  // one long communal table runs the whole east wall with its stools bunched
+  // where people actually sit, and the middle of the floor stays clear
+  // because that is the lane the plates travel. The chair stack by the door
+  // is what you walk past on the way in.
   objects: [
-    '##S#S####S####',
-    '#q p pl   Z  #',
-    '#            #',
-    '#  sTTTTTTs  #',
-    '#            #', // the aisle between the tables, where the plates go
-    '#   sTTTT    #',
-    '#            #',
-    '#  zr      a #',
-    '#  r         #',
+    '##SS##S####S##',
+    '#pqp l      U#',
+    '#p   p       #',
+    '#C          T#',
+    '#          sT#',
+    '#a      Z  sT#',
+    '#t          U#',
+    '# rr      s  #',
+    '# zr H       #',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'la-caleta', spawn: [18, 19], facing: 'down' }],

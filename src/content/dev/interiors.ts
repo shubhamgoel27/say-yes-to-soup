@@ -24,6 +24,15 @@ const INTERIOR_LEGEND: MapData['legend'] = {
   c: { t: 'charango', solid: true },
   u: { t: 'pushka', solid: true },
   d: { t: 'dyepots', solid: true },
+  b: { t: 'batea', solid: true },
+  k: { t: 'cantaros', solid: true },
+  g: { t: 'grano' },
+  a: { t: 'ajirack', solid: true, tall: true },
+  n: { t: 'nicho', solid: true, tall: true },
+  Q: { t: 'qepi', solid: true },
+  h: { t: 'gallina' },
+  M: { t: 'mantas' },
+  e: { t: 'tendedero', solid: true, tall: true },
   ' ': { t: 'void' },
 };
 
@@ -45,18 +54,21 @@ export const CHICHERIA_MAP: MapData = {
     '.............',
     '.............',
   ],
-  // The hearth corner holds everything: chomba, fire, pot, sacks. Then a gap,
-  // then Teófilo's table pushed off centre with its stools at odd ends, then
-  // the drying rugs banked into the far corner. Nothing lines up with anything.
+  // The chicha end is one corner and it is the whole point of the room: the
+  // chomba, the fire under it, the straining batea and the sacks, all banked
+  // into the north-west where the light is. Teófilo's table sits west of the
+  // door lane rather than across it. The far corner is the household's, not
+  // the trade's: the ají rack, the jars, the niche with its candle, and a hen
+  // who has opinions. The q'epi by the door is what you come in past.
   objects: [
-    '##S###S##S###',
-    '#Cqp     y c#',
-    '#j          #',
-    '#   sTTs rr #',
-    '#    TT   r #',
-    '#  s      u #',
-    '#y r   p    #',
-    '#   m       #',
+    '##SS####S####',
+    '#Cqp     c  #',
+    '#jb         #',
+    '#  sTT    an#',
+    '#u   T   k  #',
+    '#  s      g #',
+    '#yrr        #',
+    '# r  Q  h   #',
     '######m######',
   ],
   triggers: [{ at: [6, 8], type: 'door', to: 'village', spawn: [12, 26], facing: 'down' }],
@@ -80,18 +92,20 @@ export const CASA_CARMEN_MAP: MapData = {
     '...........',
     '...........',
   ],
-  // The loom and its dye pots take one corner, the bed the other, and the
-  // finished work lies between them in two overlapping stacks rather than a
-  // tidy square. The middle of the floor is where the wool goes, so it is bare.
+  // The loom, the dye pots, the spindle and the brazier make one working
+  // column down the west wall, and that is the side of the room the eye goes
+  // to first. The bed, the folded mantas and the lit niche hold the far
+  // corner, which is the side of the room that sleeps. The rugs step between
+  // them off true, and the table by the door is where the visitor sits.
   objects: [
-    '##S####S###',
-    '#L d    B #',
-    '#  u      #',
-    '#   rr    #',
-    '#    rr   #',
-    '# y     p #',
-    '#   T     #',
-    '#  s      #',
+    '##S#####n##',
+    '#L d     B#',
+    '#u  e   M #',
+    '#q        #',
+    '#  rr    p#',
+    '# rr     j#',
+    '#y    TT  #',
+    '#   Q s   #',
     '#####m#####',
   ],
   triggers: [{ at: [5, 8], type: 'door', to: 'village', spawn: [29, 11], facing: 'down' }],

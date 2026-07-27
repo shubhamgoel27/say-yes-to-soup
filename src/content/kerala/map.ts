@@ -359,6 +359,11 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
     g: { t: 'ammi', solid: true },
     l: { t: 'leafstack', solid: true },
     c: { t: 'keralacat', solid: true },
+    u: { t: 'uri', tall: true },
+    N: { t: 'nilavilakku', solid: true, tall: true },
+    U: { t: 'umbrellas', solid: true },
+    k: { t: 'spicesacks', solid: true, tall: true },
+    O: { t: 'chappals' },
   },
   ground: [
     '..............',
@@ -372,16 +377,21 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
     '..............',
     '..............',
   ],
+  // The fire and the work run down the west wall and stop; the mats where
+  // the sadya is eaten drift across the east floor in a stagger, not a grid.
+  // Nothing stands in the line between the door and Mariamma at her hearth,
+  // which is the one sightline this room has to keep. The uri hangs over the
+  // working end, and the prayer lamp holds the far corner by the door.
   objects: [
-    '###S#SS##S####',
-    '#a  p       g#',
-    '#pp        l #',
-    '#  sTTT      #',
-    '#     Ts     #',
-    '#  mmm       #',
-    '#      mm  c #',
-    '#   r        #',
-    '#         p  #',
+    '#SS##S####S###',
+    '#ap u        #',
+    '#p           #',
+    '#         k  #',
+    '#T g     mm  #',
+    '#Ts    mmmm  #',
+    '# r   m mm l #',
+    '# p      c N #',
+    '#     k O   U#',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'kerala', spawn: [14, 11], facing: 'down' }],

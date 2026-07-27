@@ -190,6 +190,15 @@ export const GALLEY_MAP: MapData = {
     D: { t: 'dartboard', solid: true, tall: true },
     G: { t: 'chessset', solid: true },
     P: { t: 'galleyplant', solid: true, tall: true },
+    V: { t: 'deckshrine', solid: true, tall: true },
+    y: { t: 'laundry', solid: true, tall: true },
+    h: { t: 'hammock', solid: true, tall: true },
+    c: { t: 'shipcat', solid: true },
+    o: { t: 'portcrate', solid: true, tall: true },
+    d: { t: 'oildrum', solid: true },
+    L: { t: 'lifering', solid: true, tall: true },
+    u: { t: 'rustpatch' },
+    R: { t: 'hosereel', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -204,19 +213,22 @@ export const GALLEY_MAP: MapData = {
     '..............',
     '..............',
   ],
-  // One long mess table, one short one set inboard of it, and the chess corner
-  // aft where the light from the door lands. Two parallel bars would be a
-  // canteen; this is a room three watches have argued the furniture into.
+  // The galley end and the mess end are different halves, not a mirrored
+  // pair: stove, pots and trayrack in the north-west where Ben works and
+  // where the only fire in the room is, one bolted mess table west of the
+  // door lane, and the off-watch corner aft with the karaoke, the shrine,
+  // the dartboard and the chess. The crate stack by the door is what you
+  // come in past; the lane from the door to the far bulkhead never closes.
   objects: [
-    '##SMS#S##S#D##',
-    '#q p p      K#',
-    '#            #',
-    '#  sTTTTTTs  #',
-    '#            #',
-    '#   sTTTT    #',
-    '#           P#',
-    '# t      TGs #',
-    '#            #',
+    '##SM##S####D##',
+    '#qp t       K#',
+    '#p          V#',
+    '#     s  R   #',
+    '# TTT       L#',
+    '# ss    u    #',
+    '#y   c   s P #',
+    '#  h     G   #',
+    '#  u    o  d #',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'ship', spawn: [21, 27], facing: 'down' }],

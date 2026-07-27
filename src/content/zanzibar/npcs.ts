@@ -964,6 +964,11 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'Sacks rolled open: pepper, cinnamon bark, nutmeg still in its lace. The corner smells like the hold of a very old ship.' },
     ],
   },
+  'c7.ex.marketlamp.shop': {
+    lines: [
+      { text: 'The lamp stands at the end of the cutting counter, not in the middle of the room. She lights it for the work; the rest of the shop gets what is left.' },
+    ],
+  },
   'c7.ex.marketlamp': {
     lines: [
       { text: 'A hurricane lamp on a pole, waiting for its hour. The night market does not open; it kindles.' },
@@ -1203,7 +1208,10 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   clovemat: [{ node: 'c7.ex.clovemat' }],
   kangarack: [{ node: 'c7.ex.kangarack' }],
   spicesack: [{ node: 'c7.ex.spicesack' }],
-  marketlamp: [{ node: 'c7.ex.marketlamp' }],
+  marketlamp: [
+    { map: 'kangashop', node: 'c7.ex.marketlamp.shop' },
+    { node: 'c7.ex.marketlamp' },
+  ],
   mwanirow: [{ node: 'c7.ex.mwanirow' }],
   corallane: [{ node: 'c7.ex.corallane' }],
   postcounter: [

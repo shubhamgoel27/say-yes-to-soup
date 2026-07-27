@@ -422,6 +422,9 @@ export const TEAHOUSE_MAP: MapData = {
     e: { t: 'shoerow', solid: true },
     g: { t: 'goboard', solid: true },
     y: { t: 'yeontan', solid: true },
+    o: { t: 'onggi', solid: true, tall: true },
+    z: { t: 'steamerstack', solid: true, tall: true },
+    a: { t: 'marketcat', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -435,15 +438,21 @@ export const TEAHOUSE_MAP: MapData = {
     '............',
     '............',
   ],
+  // Two identical table-and-mat blocks side by side is a waiting room. Cho's
+  // counter takes the north-west corner with the kettle, the jar and the
+  // briquettes in a run, and the lamp at the end of it so the light lands on
+  // the work and on him. The tables sit at different distances from it, the
+  // baduk board holds the far corner under the second lamp, and the steamers
+  // by the door are what you step around coming in.
   objects: [
-    '####S##S####',
-    '#h  k    y #',
-    '#          #',
-    '# TTs  TTs #',
-    '# mm   mm  #',
-    '#          #',
-    '# TTs   g  #',
-    '# mm  e   h#',
+    '##SS###S####',
+    '#koy       #',
+    '#h     TTs #',
+    '#      m   #',
+    '# a       o#',
+    '#TTs    s  #',
+    '#mm     g h#',
+    '#   e z    #',
     '#####m######',
   ],
   triggers: [{ at: [5, 8], type: 'door', to: 'busan', spawn: [8, 7], facing: 'down' }],

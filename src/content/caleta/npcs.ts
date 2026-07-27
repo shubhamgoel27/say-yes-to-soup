@@ -901,6 +901,21 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.gato.pic': {
     lines: [{ text: 'The picantería cat, asleep at the warm end of the room. Petro calls it a bad cat, and the full bowl by the qoncha is also Petro’s.' }],
   },
+  'mar.ex.chomba.pic': {
+    lines: [
+      { text: 'A chicha jar as tall as a child, brought down from the sierra by a cousin and never sent back up. It sweats in the corner all afternoon.' },
+      { text: 'Petro serves from it on Sundays only, in a glass that is also older than the arrangement.' },
+    ],
+  },
+  'mar.ex.crabtraps.pic': {
+    lines: [{ text: 'Traps stacked indoors for the winter, out of the salt. Three seasons of repairs on them, all of them somebody else’s knots.' }],
+  },
+  'mar.ex.bidones.pic': {
+    lines: [{ text: 'Drums at the head of the long table, holding water, oil and one that holds nothing and gets sat on when the room is full.' }],
+  },
+  'mar.ex.picchairs.pic': {
+    lines: [{ text: 'The chair stack lives inside the door so it can go out fast. By one o’clock every one of these is on the sand with somebody in it.' }],
+  },
   'mar.ex.gato': {
     lines: [{ text: 'A cat asleep exactly where the fish smell is best. It did nothing to earn this spot except be a cat, which was plenty.' }],
   },
@@ -1036,8 +1051,15 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c2.nets.done'] }, node: 'mar.ex.netpoles2' },
     { node: 'mar.ex.netpoles' },
   ],
-  crabtraps: [{ node: 'mar.ex.crabtraps' }],
-  picchairs: [{ node: 'mar.ex.picchairs' }],
+  crabtraps: [
+    { map: 'picanteria', node: 'mar.ex.crabtraps.pic' },
+    { node: 'mar.ex.crabtraps' },
+  ],
+  picchairs: [
+    { map: 'picanteria', node: 'mar.ex.picchairs.pic' },
+    { node: 'mar.ex.picchairs' },
+  ],
+  chomba: [{ map: 'picanteria', node: 'mar.ex.chomba.pic' }],
   buoywall: [{ node: 'mar.ex.buoywall' }],
   kidmural: [{ node: 'mar.ex.kidmural' }],
   pelicanpost: [{ node: 'mar.ex.pelicanpost' }],
@@ -1048,7 +1070,10 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   mototaxi: [{ node: 'mar.ex.mototaxi' }],
   pizarra: [{ node: 'mar.ex.pizarra' }],
   tendal: [{ node: 'mar.ex.tendal' }],
-  bidones: [{ node: 'mar.ex.bidones' }],
+  bidones: [
+    { map: 'picanteria', node: 'mar.ex.bidones.pic' },
+    { node: 'mar.ex.bidones' },
+  ],
   pintura: [
     { when: { has: ['c2.complete'] }, node: 'mar.ex.pintura2' },
     { node: 'mar.ex.pintura' },

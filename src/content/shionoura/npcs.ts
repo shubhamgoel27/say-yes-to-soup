@@ -1199,6 +1199,21 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'One ear swivels toward your footsteps, weighs the information, and stands down. You have been classified: harmless, carries no snacks.' },
     ],
   },
+  'c4.ex.bathstool': {
+    lines: [
+      { text: 'The bath stool, knee-high and scrubbed pale, standing by the ofuro with the pail upended on it. You wash first; the tub is for after.' },
+    ],
+  },
+  'c4.ex.chochin.in': {
+    lines: [
+      { text: 'A lantern brought in off the quay and stood in the hall, where the wooden floor runs too long for one window to reach the far end.' },
+    ],
+  },
+  'c4.ex.monohoshi.in': {
+    lines: [
+      { text: 'The drying rack, moved indoors when the sky looks like this. Towels for six guests and one apron that has never once been a guest\u2019s.' },
+    ],
+  },
   'c4.ex.kaigara': {
     lines: [
       { text: 'Shells and sea glass, the tide\'s small change. Taro\'s exchange rate: white is common, pink is money, blue glass is beyond price.' },
@@ -1260,7 +1275,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c4.ex.bambooWish' },
   ],
   tairyobata: [{ node: 'c4.ex.tairyobata' }],
-  chochin: [{ node: 'c4.ex.chochin' }],
+  chochin: [
+    { map: 'minshuku', node: 'c4.ex.chochin.in' },
+    { node: 'c4.ex.chochin' },
+  ],
   keitruck: [{ node: 'c4.ex.keitruck' }],
   ebisudo: [{ node: 'c4.ex.ebisudo' }],
   postbox: [
@@ -1289,7 +1307,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   ittokan: [{ node: 'c4.ex.ittokan' }],
   ajisai: [{ node: 'c4.ex.ajisai' }],
   himono: [{ node: 'c4.ex.himono' }],
-  monohoshi: [{ node: 'c4.ex.monohoshi' }],
+  monohoshi: [
+    { map: 'minshuku', node: 'c4.ex.monohoshi.in' },
+    { node: 'c4.ex.monohoshi' },
+  ],
   gyokyo: [
     { when: { has: ['c4.complete'] }, node: 'c4.gyokyo.after' },
     { node: 'c4.ex.gyokyo' },
@@ -1309,6 +1330,7 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c4.ex.neko3b' },
   ],
   kaigara: [{ node: 'c4.ex.kaigara' }],
+  zabuton: [{ node: 'c4.ex.zabuton' }],
   senpuki: [{ node: 'c4.ex.senpuki' }],
   mugicha: [{ node: 'c4.ex.mugicha' }],
   getarow: [{ node: 'c4.ex.getarow' }],
@@ -1343,7 +1365,7 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'shionoura', node: 'c4.pier.notyet' },
   ],
   table: [{ map: 'minshuku', node: 'c4.ex.tablelow' }],
-  stool: [{ map: 'minshuku', node: 'c4.ex.zabuton' }],
+  stool: [{ map: 'minshuku', node: 'c4.ex.bathstool' }],
   pot: [{ map: 'minshuku', node: 'c4.ex.kettle' }],
   shelf: [{ map: 'minshuku', node: 'c4.ex.shelf2' }],
   mat: [{ map: 'minshuku', node: 'c4.ex.mat2' }],

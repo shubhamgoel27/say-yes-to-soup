@@ -404,6 +404,12 @@ export const CIRCOLO_MAP: MapData = {
     E: { t: 'macchina', solid: true, tall: true },
     B: { t: 'lavagna', solid: true, tall: true },
     f: { t: 'ventola', solid: true, tall: true },
+    Y: { t: 'banco', solid: true, tall: true },
+    O: { t: 'lampadario', tall: true },
+    N: { t: 'net', solid: true },
+    k: { t: 'lemoncrate', solid: true },
+    c: { t: 'nonnachair', solid: true },
+    a: { t: 'gattu', solid: true },
     T: { t: 'table', solid: true },
     s: { t: 'stool', solid: true },
     u: { t: 'rug' },
@@ -422,16 +428,21 @@ export const CIRCOLO_MAP: MapData = {
     '..............',
     '..............',
   ],
+  // The club has a serving side and a sitting side, and they are not the
+  // same half of the room. The bar runs along the north-west under the
+  // trophies; the one bulb hangs over the scopa table, which is where the
+  // eye goes and where the argument is; the cooperative's lemon crates and
+  // the fan live down by the door, so you come in past somebody's business.
   objects: [
-    '#RR##SS#B#E###',
-    '#            #',
-    '# sTTs  sTTs #',
-    '# sTTs  sTTs #',
-    '#            #',
-    '#     u      #',
-    '#            #',
-    '#f           #',
-    '#            #',
+    '##RR#S###BS###',
+    '#EYYY        #',
+    '# s  O       #',
+    '#   TT       #',
+    '#  uTT s   c #',
+    '# uus    TTs #',
+    '#         k  #',
+    '#N   f    kk #',
+    '#N       a   #',
     '######m#######',
   ],
   triggers: [{ at: [6, 9], type: 'door', to: 'sicily', spawn: [29, 14], facing: 'down' }],

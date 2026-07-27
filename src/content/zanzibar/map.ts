@@ -376,6 +376,11 @@ export const KANGASHOP_MAP: MapData = {
     R: { t: 'radio', solid: true },
     w: { t: 'sewing', solid: true },
     P: { t: 'paka', solid: true },
+    l: { t: 'marketlamp', solid: true, tall: true },
+    L: { t: 'kangaline', solid: true, tall: true },
+    U: { t: 'hennastool', solid: true },
+    J: { t: 'kahawatray', solid: true },
+    A: { t: 'baoboard', solid: true, tall: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -389,15 +394,21 @@ export const KANGASHOP_MAP: MapData = {
     '.............',
     '.............',
   ],
+  // Racks all the way round the edge is a warehouse. This is a shop with a
+  // side she works on and a side you sit on: the cutting counter, the
+  // machine, the stool and the lamp are banked into the north-west where the
+  // light is, two kangalines stand free in the middle so you have to walk
+  // around cloth to cross the room, and the coffee tray, the henna stool and
+  // the cat hold the far corner where customers end up.
   objects: [
-    '#SS#S#kk#S#S#',
-    '#...........#',
-    '#kk.......k.#',
-    '#.........P.#',
-    '#..tR...r...#',
-    '#..oo....w..#',
-    '#...........#',
-    '#...........#',
+    '#kk#S###SS###',
+    '#ttw      kk#',
+    '#lRo        #',
+    '#        L  #',
+    '#kk     L   #',
+    '#k  r     U #',
+    '#  r     JP #',
+    '#A   k      #',
     '######m######',
   ],
   triggers: [{ at: [6, 8], type: 'door', to: 'zanzibar', spawn: [23, 18], facing: 'down' }],

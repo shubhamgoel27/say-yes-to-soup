@@ -890,6 +890,21 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'Shoes lined at the step, toes pointed out the door, ready before their owners are. Past this line, the warm floor belongs to socks.' },
     ],
   },
+  'c5.ex.steamerstack.tea': {
+    lines: [
+      { text: 'Cho’s steamers stacked inside the door, lid slightly askew on the top one. Rice cakes on the days he decides there are rice cakes.' },
+    ],
+  },
+  'c5.ex.onggi.tea': {
+    lines: [
+      { text: 'A single onggi at the end of the counter, lid weighted with a river stone. Not kimchi: this one holds last spring’s leaves, and he is rationing them.' },
+    ],
+  },
+  'c5.ex.cat.tea': {
+    lines: [
+      { text: 'The tea house cat, laid out flat on the warmest square of the ondol floor, in the exact spot the briquettes are under.' },
+    ],
+  },
   'c5.ex.goboard': {
     lines: [
       { text: 'A baduk board mid-game, abandoned with honor. Black is losing politely, and both players intend to finish some other decade.' },
@@ -945,6 +960,7 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   basinstack: [{ node: 'c5.ex.basinstack' }],
   squidline: [{ node: 'c5.ex.squidline' }],
   onggi: [
+    { map: 'teahouse', node: 'c5.ex.onggi.tea' },
     { when: { not: ['c5.onggi.looked'] }, node: 'c5.ex.onggi1' },
     { node: 'c5.ex.onggi2' },
   ],
@@ -963,9 +979,13 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   pricewall: [{ node: 'c5.ex.pricewall' }],
   hosecoil: [{ node: 'c5.ex.hosecoil' }],
   bootfence: [{ node: 'c5.ex.bootfence' }],
-  steamerstack: [{ node: 'c5.ex.steamerstack' }],
+  steamerstack: [
+    { map: 'teahouse', node: 'c5.ex.steamerstack.tea' },
+    { node: 'c5.ex.steamerstack' },
+  ],
   handrail: [{ node: 'c5.ex.handrail' }],
   marketcat: [
+    { map: 'teahouse', node: 'c5.ex.cat.tea' },
     { when: { not: ['c5.cat.seen'] }, node: 'c5.ex.cat1' },
     { node: 'c5.ex.cat2' },
   ],

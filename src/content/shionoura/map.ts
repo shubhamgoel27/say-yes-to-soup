@@ -382,6 +382,17 @@ export const MINSHUKU_MAP: MapData = {
     f: { t: 'senpuki', solid: true },
     j: { t: 'mugicha', solid: true },
     z: { t: 'getarow' },
+    b: { t: 'zabuton' },
+    c: { t: 'chochin', solid: true, tall: true },
+    n: { t: 'nekoloaf', solid: true },
+    N: { t: 'nekonap', solid: true },
+    k: { t: 'mikanbako', solid: true },
+    d: { t: 'monohoshi', solid: true, tall: true },
+    h: { t: 'himono', solid: true, tall: true },
+    u: { t: 'ukidama', solid: true },
+    F: { t: 'tairyobata', solid: true, tall: true },
+    K: { t: 'kaigara' },
+    B: { t: 'jitensha', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
@@ -398,18 +409,25 @@ export const MINSHUKU_MAP: MapData = {
     'wwwwwwggggwwwwww',
     'wwwwwwggggwwwwww',
   ],
+  // Six empty rows of wooden floor was the whole middle of this house. Now
+  // the irori and its cushions hold the tatami room, the ofuro room behind
+  // its wall is the working side with the bath stool and the pails, and the
+  // hall between them is a minshuku actually lived in: the guests' low table
+  // off the door lane, the drying rack and the mikan crates banked against
+  // the east wall, the big-catch flag on the west, and a lantern standing
+  // where the light is needed. The lane from the genkan north never closes.
   objects: [
     '################',
-    '#S  i   # o   p#',
-    '#       #      #',
-    '# sTTs  #      #',
-    '#f             #',
-    '#              #',
-    '#              #',
-    '#              #',
-    '#             j#',
-    '#              #',
-    '#    m  z      #',
+    '#S  ib  #so  p #',
+    '# bb  j #   p  #',
+    '# TTb   #  K   #',
+    '#f   b   N    d#',
+    '#F    b   c   h#',
+    '#    TT        #',
+    '#  n bb b   u  #',
+    '#          kk j#',
+    '#KK       kkk  #',
+    '#    m  z B    #',
     '####### ########',
   ],
   triggers: [{ at: [7, 11], type: 'door', to: 'shionoura', spawn: [26, 18], facing: 'down' }],

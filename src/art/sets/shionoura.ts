@@ -555,6 +555,34 @@ export const ART: ChapterArt = {
       }
     });
 
+    make('zabuton', 3, (g, r) => {
+      // Floor cushions, thick and slightly sat-out-of-shape. No ink: they
+      // belong to the mat the way a footprint belongs to sand.
+      const cloths = ['#7d3f34', '#33477a', '#5c6e4a'];
+      const c = shade(cloths[r.int(cloths.length)] ?? '#7d3f34', (r.next() - 0.5) * 0.08);
+      const cx = 32 + (r.next() - 0.5) * 6;
+      const cy = 36 + (r.next() - 0.5) * 5;
+      const rot = (r.next() - 0.5) * 0.5;
+      softShadow(g, cx, cy + 10, 20, 6, 0.14);
+      g.save();
+      g.translate(cx, cy);
+      g.rotate(rot);
+      // The pad: a squarish cushion with corners that have given up.
+      rr(g, -21, -14, 42, 28, 9, c);
+      vgrad(g, -21, -14, 42, 12, 'rgba(255,244,220,0.16)', 'rgba(0,0,0,0)');
+      rr(g, -21, 6, 42, 8, 8, shade(c, -0.14));
+      // The seam that runs round the edge, and the tuft at the middle.
+      g.strokeStyle = shade(c, 0.2);
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.roundRect(-17, -10, 34, 20, 7);
+      g.stroke();
+      dot(g, 0, -1, 2.4, shade(c, 0.3));
+      // The dent where somebody sat, off-centre because people are.
+      oval(g, 3 + (r.next() - 0.5) * 5, 0, 11, 6, 'rgba(30,22,14,0.10)');
+      g.restore();
+    });
+
     make('ukidama', 2, (g, r) => {
       // Glass floats in a net bag: bottled sea, retired with honors.
       softShadow(g, 32, 52, 20, 6, 0.18);
@@ -1201,6 +1229,7 @@ export const ART: ChapterArt = {
 
   grounded: [
     'noren', 'torii', 'ishidoro', 'bamboo', 'bambooWish', 'tairyobata', 'hisashi',
+    // (zabuton is floor decor, not a tall prop; it lives in noInk below)
     'chochin', 'postbox', 'yatai', 'keitruck', 'ebisudo',
     'jizo', 'ema', 'jihanki', 'himono', 'monohoshi', 'gyokyo', 'furin',
   ],
@@ -1212,7 +1241,7 @@ export const ART: ChapterArt = {
     ],
   },
   glows: ['ishidoro', 'chochin', 'irori', 'jihanki'],
-  noInk: ['koke', 'kaigara', 'getarow'],
+  noInk: ['koke', 'kaigara', 'getarow', 'zabuton'],
 };
 
 // No side effects here; the integrator registers this set in art/sets/index.ts.
