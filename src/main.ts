@@ -101,13 +101,22 @@ function moodFor(id: string): string {
   if (id === 'la-caleta') return dayT > 0.25 && dayT < 0.5 ? 'glare' : 'garua';
   // Kerala's monsoon arrives mid-chapter and then it simply rains.
   if (id === 'kerala' && state.has('c6.rain')) return 'monsoon';
-  // Delhi waits out the heat until sawan breaks, then the whole city exhales.
-  if ((id === 'delhi' || id === 'delhi-rooftop') && state.has('c11.rain')) return 'sawanrain';
   const meta = MAP_META[id];
   if (!meta) return 'interior';
-  // Evening maps that declared a dusk light get to use it.
+  // Evening maps that declared a dusk light get to use it, rain or not. The
+  // rain is drawn on top of whatever is lit, so pigeon hour still happens in
+  // a storm: the kite tournament flies in exactly that weather.
   if (meta.moodDusk && nightLevel(dayT) > 0.3) return meta.moodDusk;
+  // Delhi waits out the heat until sawan breaks, then the whole city exhales.
+  if ((id === 'delhi' || id === 'delhi-rooftop') && state.has('c11.rain')) return 'sawanrain';
   return meta.mood;
+}
+
+/** Whether the sky over a given map is actually open, independent of light. */
+function rainingOn(id: string): boolean {
+  if (id === 'kerala' && state.has('c6.rain')) return true;
+  if ((id === 'delhi' || id === 'delhi-rooftop') && state.has('c11.rain')) return true;
+  return false;
 }
 
 /** Which musical/linguistic coast each map belongs to. */
@@ -212,6 +221,39 @@ const GLOW_STYLE: Record<string, { r: number; color: number; flicker: number; li
   qoncha: { r: 36, color: 0xffb066, flicker: 0.5, lift: 3 },
   campfire: { r: 34, color: 0xffa858, flicker: 0.55, lift: 3 },
   farol: { r: 26, color: 0xffd28a, flicker: 0.18, lift: 12 },
+
+  // Open fire someone is cooking on: low to the ground, wide, and restless.
+  chulha: { r: 30, color: 0xff9a4d, flicker: 0.55, lift: 2 },
+  aduppu: { r: 28, color: 0xff9a4d, flicker: 0.55, lift: 2 },
+  irori: { r: 30, color: 0xffa860, flicker: 0.5, lift: 1 },
+  comal: { r: 26, color: 0xff9c50, flicker: 0.5, lift: 2 },
+  paranthagriddle: { r: 26, color: 0xffa860, flicker: 0.4, lift: 2 },
+  jalebikadhai: { r: 24, color: 0xffb870, flicker: 0.35, lift: 2 },
+  stove: { r: 22, color: 0xffb070, flicker: 0.3, lift: 4 },
+  hotteokcart: { r: 24, color: 0xffb066, flicker: 0.35, lift: 5 },
+  eomukcart: { r: 24, color: 0xffc07a, flicker: 0.3, lift: 5 },
+  thattukada: { r: 26, color: 0xffc27a, flicker: 0.28, lift: 8 },
+  chaikhana: { r: 26, color: 0xffc98a, flicker: 0.22, lift: 8 },
+
+  // A named flame kept for somebody: small, warm, and easily troubled.
+  diyaledge: { r: 14, color: 0xffc06a, flicker: 0.6, lift: 2 },
+  veladora: { r: 13, color: 0xffcf82, flicker: 0.65, lift: 3 },
+  deckshrine: { r: 13, color: 0xffc98a, flicker: 0.55, lift: 4 },
+  nilavilakku: { r: 15, color: 0xffcf82, flicker: 0.5, lift: 6 },
+  nicho: { r: 15, color: 0xffd08a, flicker: 0.5, lift: 10 },
+  lampniche: { r: 16, color: 0xffd08a, flicker: 0.45, lift: 10 },
+  edicola: { r: 16, color: 0xffd9a0, flicker: 0.12, lift: 10 }, // electric candles
+
+  // Hung light: steady, higher up, and softer at the edge.
+  chochin: { r: 22, color: 0xffd9a8, flicker: 0.15, lift: 12 },
+  hanjilamp: { r: 22, color: 0xffdcb0, flicker: 0.12, lift: 12 },
+  lotusline: { r: 20, color: 0xffc0a0, flicker: 0.14, lift: 14 },
+  ishidoro: { r: 18, color: 0xffd8a0, flicker: 0.2, lift: 10 },
+  marketlamp: { r: 26, color: 0xffd28a, flicker: 0.12, lift: 12 },
+  barlamp: { r: 24, color: 0xffe0b8, flicker: 0.08, lift: 12 },
+
+  // The one cold light in the world, humming to itself on a dark corner.
+  jihanki: { r: 24, color: 0xcfe4ff, flicker: 0.04, lift: 8 },
 };
 const fireCells: Record<string, [number, number, string][]> = {};
 for (const [id, tm] of Object.entries(maps)) {
@@ -1015,6 +1057,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
+  renderer.setRaining(rainingOn(map.id));
   renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
 }
@@ -1371,6 +1414,7 @@ function beginPlay(freshStart: boolean) {
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
+  renderer.setRaining(rainingOn(map.id));
   renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
   if (freshStart) {
@@ -1453,10 +1497,10 @@ function update(dt: number) {
   renderer.setSun(dayT);
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
+  renderer.setRaining(rainingOn(map.id));
   stage.setAmbient(ambientNow());
   audio.setDucked(textbox.isOpen || celebrateT > 0);
-  const moodNow = moodFor(map.id);
-  audio.setWorldAmbience(nightLevel(dayT), moodNow === 'monsoon' || moodNow === 'sawanrain');
+  audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id));
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   const zoomT =

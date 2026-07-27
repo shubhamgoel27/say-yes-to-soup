@@ -91,6 +91,8 @@ export class Renderer {
   private noClouds = new Set<string>(['garua', 'interior']);
   private mood: Mood = 'warm';
   private nightK = 0;
+  /** Rain is weather, not a look: it falls through whatever mood is lit. */
+  private raining = false;
   private emotes: Emote[] = [];
   private puffs: Puff[] = [];
   private party: Party[] = [];
@@ -406,6 +408,11 @@ export class Renderer {
 
   setMood(mood: Mood) {
     this.mood = mood;
+  }
+
+  /** Set by the world when the sky is actually open, whatever the mood. */
+  setRaining(on: boolean) {
+    this.raining = on;
   }
 
   /**
@@ -1305,7 +1312,7 @@ export class Renderer {
   private drawWeather(map: TileMap, cam: Camera) {
     const ctx = this.ctx;
     const mood = this.mood;
-    if (mood === 'monsoon' || mood === 'sawanrain') {
+    if (this.raining || mood === 'monsoon' || mood === 'sawanrain') {
       // Rain: fast slanted streaks in two depths, plus splash rings on the
       // ground that bloom and vanish. Steady, warm, unbothered.
       for (let layer = 0; layer < 2; layer++) {
