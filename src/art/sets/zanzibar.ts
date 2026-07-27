@@ -12,13 +12,16 @@ import { PAL } from '../../engine/config';
 const S = 64;
 
 /** Lime-washed coral rag, plus the rubble showing where the wash lost. */
-const CORAL_WASHES = ['#f0e9d9', '#e9e0cb', '#e3d6bd', '#e6e3d4'];
+const CORAL_WASHES = ['#f0e9d9', '#e9e0cb', '#e3d6bd', '#e6e3d4', '#e9dcbc', '#dee1d6'];
 const KANGA_INKS = ['#c1512f', '#3f7fb0', '#8a4a7d', '#c98a2e', '#4d7440', '#a03a4a'];
 
 export const ART: ChapterArt = {
   buildings: ['nyumba'],
   windows: { nyumba: [[15, -10], [67, -10]] },
-  grounded: ['kangarack', 'marketlamp', 'ngalawa', 'dhow', 'kangaline', 'baoboard', 'madema', 'scaffold', 'sailspar'],
+  grounded: [
+    'kangarack', 'marketlamp', 'ngalawa', 'dhow', 'kangaline', 'baoboard', 'madema', 'scaffold',
+    'sailspar', 'makuti', 'mkokoteni', 'ukuta',
+  ],
   glows: ['marketlamp'],
   aliases: { postcounter: 'signpost' },
   noInk: ['starfish', 'flipflopgoal', 'doormat'],
@@ -106,27 +109,33 @@ export const ART: ChapterArt = {
 
     // A staked mwani line, tufted dark red, drawn to sit on wet sand.
     make('mwanirow', 3, (g, r) => {
-      // Stakes.
-      g.strokeStyle = '#6b5136';
-      g.lineWidth = 3;
-      g.beginPath(); g.moveTo(6, 22); g.lineTo(6, 46); g.stroke();
-      g.beginPath(); g.moveTo(58, 22); g.lineTo(58, 46); g.stroke();
-      // The line, sagging slightly.
-      g.strokeStyle = 'rgba(220,215,195,0.8)';
-      g.lineWidth = 1.6;
-      g.beginPath();
-      g.moveTo(6, 26);
-      g.quadraticCurveTo(32, 32, 58, 26);
-      g.stroke();
-      // Seaweed bunches tied along it.
-      for (let i = 0; i < 6; i++) {
-        const bx = 10 + i * 9 + r.int(3);
-        const by = 28 + Math.sin(i) * 2;
-        oval(g, bx, by + 4, 3.4, 5, i % 2 ? '#7d3b3f' : '#69333d');
-        oval(g, bx + 2, by + 2, 2.2, 3.4, '#8a4a4a');
-      }
-      // A wet glint beneath.
-      oval(g, 32, 44, 22, 3, 'rgba(200,225,230,0.18)');
+      // Two lines, because nobody stakes just one, and the second is always
+      // a little out of true with the first.
+      const line = (y0: number, sag: number, n: number) => {
+        g.strokeStyle = '#6b5136';
+        g.lineWidth = 3.2;
+        g.beginPath(); g.moveTo(2, y0 - 4); g.lineTo(3, y0 + 18); g.stroke();
+        g.beginPath(); g.moveTo(61, y0 - 5); g.lineTo(60, y0 + 17); g.stroke();
+        g.strokeStyle = 'rgba(225,220,200,0.85)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(3, y0);
+        g.quadraticCurveTo(32, y0 + sag, 60, y0 - 1);
+        g.stroke();
+        for (let i = 0; i < n; i++) {
+          const t = (i + 0.5) / n;
+          const bx = 4 + t * 56 + r.int(2);
+          const by = y0 + sag * 4 * t * (1 - t) + 2;
+          oval(g, bx, by + 5, 4.6, 6.5, i % 2 ? '#7d3b3f' : '#66313c');
+          oval(g, bx + 2, by + 2.5, 3, 4.2, '#93504f');
+          oval(g, bx - 2, by + 8, 2.4, 3.4, '#5c2c36');
+        }
+      };
+      line(16, 6, 7);
+      line(38, 5, 6);
+      // The wet glint the whole farm sits in.
+      oval(g, 32, 54, 26, 4, 'rgba(200,225,230,0.2)');
+      oval(g, 20, 30, 16, 3, 'rgba(200,225,230,0.14)');
     });
 
     // Carved door, drawn over a nyumba doorway when latched. The town's
@@ -176,6 +185,149 @@ export const ART: ChapterArt = {
       g.beginPath(); g.moveTo(32, i === 0 ? 10 : 18); g.lineTo(32, 62); g.stroke();
       vgrad(g, 10, 56, 44, 8, 'rgba(0,0,0,0)', 'rgba(15,10,6,0.35)');
       void r;
+    });
+
+    // ------------------------------------------------- the composition pass
+
+    // Ukuta: the coral-rag garden wall, chest high, lime-washed on the street
+    // side and left honest on the other. What turns a patch of sand into
+    // somebody's yard. Drawn edge to edge so a run of them reads as one wall.
+    make('ukuta', 3, (g, r) => {
+      softShadow(g, 32, 90, 34, 7, 0.24);
+      const wash = shade(CORAL_WASHES[r.int(6)] ?? '#e9e0cb', (r.next() - 0.5) * 0.05);
+      // The body: a real slab of wall, top-lit, damp rising at the foot.
+      rect(g, 0, 40, S, 50, shade(wash, -0.05));
+      vgrad(g, 0, 40, S, 16, shade(wash, 0.1), 'rgba(0,0,0,0)');
+      vgrad(g, 0, 70, S, 20, 'rgba(0,0,0,0)', 'rgba(105,88,62,0.4)');
+      // Coursed rag: the reef, quarried, stacked, and mostly forgiven.
+      for (let row = 0; row < 4; row++) {
+        const ry = 46 + row * 11;
+        for (let k = 0; k < 4; k++) {
+          const bx = -8 + k * 18 + (row % 2 ? 9 : 0);
+          oval(g, bx + 9, ry + 4, 8.5, 4.4, shade(wash, (r.next() - 0.5) * 0.11));
+        }
+        g.strokeStyle = 'rgba(120,100,70,0.28)';
+        g.lineWidth = 1.3;
+        g.beginPath(); g.moveTo(0, ry - 1); g.lineTo(S, ry - 1); g.stroke();
+      }
+      // A patch where the wash lost altogether.
+      if (r.chance(0.55)) {
+        rr(g, 4 + r.int(26), 52 + r.int(16), 26, 16, 5, '#c7bb9e');
+        for (let k = 0; k < 5; k++) oval(g, 8 + r.int(44), 56 + r.int(14), 5.5, 3.4, shade('#c7bb9e', -0.09));
+      }
+      // The coping course, the brightest line on the whole street.
+      rect(g, 0, 32, S, 10, shade(wash, 0.16));
+      vgrad(g, 0, 32, S, 4, 'rgba(255,253,244,0.6)', 'rgba(0,0,0,0)');
+      rect(g, 0, 41, S, 2, 'rgba(90,74,50,0.28)');
+      // Bougainvillea over the top, because a wall is a trellis with patience.
+      if (r.chance(0.5)) {
+        const bloom = r.chance(0.5) ? '#b8437a' : '#c1512f';
+        for (let k = 0; k < 8; k++) oval(g, 2 + r.int(60), 22 + r.int(12), 5, 3.4, '#4d7440', r.next());
+        for (let k = 0; k < 16; k++) {
+          dot(g, 2 + r.int(60), 18 + r.int(16), 2.4 + r.next(), shade(bloom, (r.next() - 0.5) * 0.28));
+        }
+      }
+    }, 64, 96);
+
+    // Madafu: green drinking coconuts heaped where somebody will sell them,
+    // one opened, the panga left standing in the pile.
+    make('madafu', 2, (g, r) => {
+      softShadow(g, 32, 56, 26, 7, 0.2);
+      const nuts: [number, number, number][] = [
+        [14, 46, 12], [33, 49, 13], [50, 46, 11.5], [23, 32, 12], [43, 31, 11.5], [32, 18, 11],
+      ];
+      for (const [nx, ny, rad] of nuts) {
+        const green = shade(r.chance(0.4) ? '#7f9a3e' : '#8fae4f', (r.next() - 0.5) * 0.14);
+        oval(g, nx, ny, rad, rad * 0.92, green);
+        oval(g, nx - rad * 0.3, ny - rad * 0.35, rad * 0.42, rad * 0.34, shade(green, 0.22));
+        g.strokeStyle = shade(green, -0.22);
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(nx, ny - rad * 0.9);
+        g.quadraticCurveTo(nx + rad * 0.5, ny, nx, ny + rad * 0.9);
+        g.stroke();
+      }
+      // The one that has been opened, pale and full of afternoon.
+      oval(g, 50, 44, 5.5, 4, '#f2ead8');
+      oval(g, 50, 44, 3.4, 2.4, '#e6dcc2');
+      // The panga, standing in the heap exactly the way it was left.
+      g.strokeStyle = '#4a3320';
+      g.lineWidth = 4;
+      g.beginPath(); g.moveTo(54, 44); g.lineTo(58, 56); g.stroke();
+      g.fillStyle = '#b8bcc0';
+      g.beginPath();
+      g.moveTo(55, 44); g.lineTo(47, 14); g.lineTo(53, 12); g.lineTo(59, 42);
+      g.closePath(); g.fill();
+      vgrad(g, 47, 13, 7, 30, 'rgba(255,255,255,0.5)', 'rgba(0,0,0,0)');
+      void r;
+    });
+
+    // Dagaa on the rack: whitebait spread on a mesh table to dry hard in the
+    // sun, silver on bone. An octopus keeps them company on the line above.
+    make('dagaa', 2, (g, r) => {
+      softShadow(g, 32, 54, 26, 6, 0.16);
+      // The frame: four sticks, a mesh top, and no ambition beyond that.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 3;
+      for (const [lx, ly] of [[10, 36], [54, 36], [18, 40], [46, 40]] as const) {
+        g.beginPath(); g.moveTo(lx, ly); g.lineTo(lx + (lx < 32 ? -1 : 1), 53); g.stroke();
+      }
+      rr(g, 6, 28, 52, 12, 3, '#a58a5c');
+      rr(g, 8, 29, 48, 9, 2, '#d9cfb4');
+      g.strokeStyle = 'rgba(120,95,60,0.35)';
+      g.lineWidth = 1;
+      for (let k = 0; k < 7; k++) {
+        g.beginPath(); g.moveTo(9 + k * 7, 29); g.lineTo(9 + k * 7, 38); g.stroke();
+      }
+      // The catch: a silver drift of it, all facing more or less one way.
+      oval(g, 32, 33, 23, 5, '#c2ccd0');
+      for (let i = 0; i < 44; i++) {
+        const fx = 10 + r.int(46);
+        const fy = 29 + r.int(9);
+        oval(g, fx, fy, 3.6, 1.3, r.chance(0.5) ? '#dae3e6' : '#aeb9be', (r.next() - 0.5) * 0.7);
+        dot(g, fx + 2.6, fy, 0.7, '#4a5054');
+      }
+      // The octopus, hung to dry, arms giving up one at a time.
+      g.strokeStyle = 'rgba(220,215,195,0.8)';
+      g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(4, 20); g.lineTo(60, 17); g.stroke();
+      oval(g, 40, 24, 6, 5, '#a86a58');
+      for (let k = 0; k < 5; k++) {
+        g.strokeStyle = shade('#a86a58', k % 2 ? -0.08 : 0.08);
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(37 + k * 1.6, 28);
+        g.quadraticCurveTo(35 + k * 2.4, 34, 38 + k * 2.2, 39 - (k % 2) * 3);
+        g.stroke();
+      }
+    });
+
+    // Nyavu: a net spread over the sand to dry and be mended, floats along
+    // one edge, the mending needle stuck in where the work stopped.
+    make('nyavu', 3, (g, r) => {
+      oval(g, 32, 42, 27, 15, 'rgba(150,130,95,0.16)');
+      const twine = r.chance(0.5) ? 'rgba(90,110,95,0.75)' : 'rgba(120,110,80,0.75)';
+      g.save();
+      g.beginPath();
+      g.ellipse(32, 42, 26, 14, (r.next() - 0.5) * 0.5, 0, Math.PI * 2);
+      g.clip();
+      g.strokeStyle = twine;
+      g.lineWidth = 1.3;
+      for (let i = -6; i < 10; i++) {
+        g.beginPath(); g.moveTo(i * 8, 24); g.quadraticCurveTo(32, 42, i * 8 + 20, 60); g.stroke();
+        g.beginPath(); g.moveTo(i * 8 + 20, 24); g.quadraticCurveTo(32, 42, i * 8, 60); g.stroke();
+      }
+      g.restore();
+      // Cork floats along the top edge, in the order the sea left them.
+      for (let k = 0; k < 5; k++) {
+        oval(g, 12 + k * 10 + r.int(3), 30 + (k % 2) * 3, 3.2, 2.2, k % 2 ? '#c98a2e' : '#a04a28');
+      }
+      // Stone sinkers on the far edge, and the needle, mid-repair.
+      for (let k = 0; k < 3; k++) dot(g, 18 + k * 13, 53 + (k % 2) * 2, 2.4, '#8b8f94');
+      g.strokeStyle = '#e0c268';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(44, 46); g.lineTo(52, 38); g.stroke();
+      dot(g, 52, 38, 2, '#c9a35f');
     });
 
     // ------------------------------------------------- love-pass flats
@@ -568,6 +720,18 @@ export const ART: ChapterArt = {
       g.strokeStyle = shade(hull, -0.3);
       g.lineWidth = 2.4;
       g.beginPath(); g.moveTo(12, 74); g.quadraticCurveTo(64, 60, 116, 74); g.stroke();
+      // The sheer stripe: every boat on this coast is painted, and no two
+      // owners agree about which colour means good luck.
+      const trim = KANGA_INKS[r.int(6)] ?? '#3f7fb0';
+      g.strokeStyle = trim;
+      g.lineWidth = 3.2;
+      g.beginPath(); g.moveTo(15, 73.5); g.quadraticCurveTo(64, 62, 113, 73.5); g.stroke();
+      g.strokeStyle = '#f2ead8';
+      g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(16, 76.5); g.quadraticCurveTo(64, 65.5, 112, 76.5); g.stroke();
+      // The eye at the bow, so she can see where she is going.
+      dot(g, 108, 71, 3, '#f2ead8');
+      dot(g, 108.5, 71, 1.4, '#2c2018');
       // Mast raked aft, lateen yard stowed with the sail wrapped.
       g.strokeStyle = '#57402c';
       g.lineWidth = 3.6;
@@ -613,6 +777,13 @@ export const ART: ChapterArt = {
       g.strokeStyle = shade(hull, 0.22);
       g.lineWidth = 2;
       g.beginPath(); g.moveTo(30, 82); g.quadraticCurveTo(96, 94, 174, 76); g.stroke();
+      // Painted sheer, the way every jahazi in the channel wears it.
+      g.strokeStyle = '#3f7fb0';
+      g.lineWidth = 5;
+      g.beginPath(); g.moveTo(28, 78); g.quadraticCurveTo(96, 90, 176, 72); g.stroke();
+      g.strokeStyle = '#c1512f';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(28, 82.5); g.quadraticCurveTo(96, 94.5, 176, 76.5); g.stroke();
       // The heart-shaped transom hint at the stern.
       g.fillStyle = shade(hull, 0.3);
       g.beginPath();
@@ -857,13 +1028,131 @@ export const ART: ChapterArt = {
       g.beginPath(); g.arc(48, 84, 2.4, 0, Math.PI * 2); g.stroke();
     }, 128, 96);
 
+    // Makuti: plaited coconut thatch on two mangrove poles, thrown out over
+    // the baraza so the shade arrives before you do.
+    make('makuti', 2, (g, r) => {
+      softShadow(g, 24, 90, 12, 4, 0.2);
+      softShadow(g, 104, 90, 12, 4, 0.2);
+      // The shade it throws, which is the entire point of the thing.
+      oval(g, 64, 76, 52, 16, 'rgba(45,34,20,0.24)');
+      // Poles, planted at a working angle rather than a surveyed one.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 4.6;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(22, 90); g.lineTo(25, 36); g.stroke();
+      g.beginPath(); g.moveTo(106, 88); g.lineTo(102, 36); g.stroke();
+      // The ridge pole, and a cross tie lashed under it.
+      g.strokeStyle = '#8a6a44';
+      g.lineWidth = 3.6;
+      g.beginPath(); g.moveTo(14, 36); g.lineTo(114, 33); g.stroke();
+      g.strokeStyle = 'rgba(210,190,150,0.6)';
+      g.lineWidth = 1.6;
+      for (const jx of [24, 103]) {
+        for (let k = -1; k <= 1; k++) {
+          g.beginPath(); g.moveTo(jx - 5, 36 + k * 3); g.lineTo(jx + 5, 38 + k * 3); g.stroke();
+        }
+      }
+      // The thatch: rows of plaited fronds, each one a little tired.
+      for (let row = 0; row < 5; row++) {
+        const ty = 10 + row * 6;
+        const c = shade(row % 2 ? '#b08b4e' : '#9d7740', (r.next() - 0.5) * 0.1);
+        g.fillStyle = c;
+        g.beginPath();
+        g.moveTo(6, ty + 12);
+        g.quadraticCurveTo(64, ty - 4, 122, ty + 11);
+        g.quadraticCurveTo(64, ty + 8, 6, ty + 12);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(84,60,30,0.42)';
+        g.lineWidth = 1.2;
+        for (let k = 0; k < 16; k++) {
+          const fx = 8 + k * 7.4;
+          g.beginPath();
+          g.moveTo(fx, ty + 10 - Math.abs(k - 7.5) * 0.5);
+          g.lineTo(fx + 3, ty + 3 - Math.abs(k - 7.5) * 0.5);
+          g.stroke();
+        }
+      }
+      // The eave line, and its shadow on whatever is sitting underneath.
+      g.strokeStyle = 'rgba(70,50,26,0.5)';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(6, 42); g.quadraticCurveTo(64, 28, 122, 41); g.stroke();
+      vgrad(g, 10, 42, 108, 16, 'rgba(38,28,16,0.32)', 'rgba(0,0,0,0)');
+      // A hurricane lamp hooked on the ridge, waiting for its hour.
+      if (r.chance(0.6)) {
+        g.strokeStyle = '#4a3a28';
+        g.lineWidth = 1.8;
+        g.beginPath(); g.moveTo(84, 37); g.lineTo(84, 46); g.stroke();
+        oval(g, 84, 52, 5.5, 7, '#c9b48a');
+        oval(g, 84, 52, 3.6, 5, '#f6dfa2');
+      }
+      // A rolled mat leaned against one pole, and a bundle of spare fronds.
+      rr(g, 28, 56, 8, 34, 4, '#c9a86a');
+      g.strokeStyle = 'rgba(120,95,60,0.5)';
+      g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(32, 58); g.lineTo(32, 88); g.stroke();
+      g.strokeStyle = '#8a7a3e';
+      g.lineWidth = 2.6;
+      for (let k = 0; k < 4; k++) {
+        g.beginPath(); g.moveTo(96 + k * 3, 88); g.lineTo(104 + k * 4, 62); g.stroke();
+      }
+    }, 128, 96);
+
+    // Mkokoteni: the two-wheeled handcart, tipped onto its shafts, still
+    // holding whatever it was hauling when the tea happened.
+    make('mkokoteni', 2, (g, r) => {
+      softShadow(g, 34, 90, 26, 6, 0.2);
+      // The shafts, tipped up because nobody unloads a cart they can lean.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(18, 66); g.lineTo(50, 20); g.stroke();
+      g.beginPath(); g.moveTo(26, 70); g.lineTo(57, 26); g.stroke();
+      g.strokeStyle = '#8a6a44';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(49, 22); g.lineTo(56, 28); g.stroke();
+      // The bed: rough planks, one replaced more recently than the others.
+      rr(g, 6, 56, 42, 24, 3, '#8a6a44');
+      vgrad(g, 6, 56, 42, 7, 'rgba(255,245,220,0.28)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(90,70,40,0.5)';
+      g.lineWidth = 1.3;
+      for (const ly of [63, 70, 76]) {
+        g.beginPath(); g.moveTo(7, ly); g.lineTo(47, ly); g.stroke();
+      }
+      rr(g, 6, 63, 42, 6, 1.5, shade('#a58a5c', 0.08));
+      // The wheel, iron-tyred, sunk a finger into the sand.
+      g.strokeStyle = '#2e2a26';
+      g.lineWidth = 3;
+      g.beginPath(); g.arc(30, 78, 12, 0, Math.PI * 2); g.stroke();
+      g.lineWidth = 1.8;
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2;
+        g.beginPath();
+        g.moveTo(30, 78);
+        g.lineTo(30 + Math.cos(a) * 11, 78 + Math.sin(a) * 11);
+        g.stroke();
+      }
+      dot(g, 30, 78, 3.4, '#4a4038');
+      // The load: sacks and one crate of somebody's whole morning.
+      rr(g, 10, 40, 20, 18, 5, '#a58a5c');
+      rr(g, 9, 36, 22, 8, 4, shade('#a58a5c', 0.14));
+      oval(g, 20, 38, 7, 3, r.chance(0.5) ? '#c98a2e' : '#a04a28');
+      rr(g, 30, 44, 16, 14, 2, '#8a6a44');
+      g.strokeStyle = 'rgba(90,70,40,0.5)';
+      g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(30, 50); g.lineTo(46, 50); g.stroke();
+      if (r.chance(0.6)) {
+        for (let k = 0; k < 3; k++) oval(g, 33 + k * 5, 42, 3.4, 2.4, '#8fae4f');
+      }
+    }, 64, 96);
+
     // ------------------------------------------------------------ nyumba
 
     // 352x256, casa-compatible geometry: coral-rag house under lime wash,
     // flat roof and parapet, and a carved door worth a whole examine.
     make('nyumba', 4, (g, r) => {
       const W = 352;
-      const wash = shade(CORAL_WASHES[r.int(4)] ?? '#f0e9d9', (r.next() - 0.5) * 0.04);
+      const wash = shade(CORAL_WASHES[r.int(6)] ?? '#f0e9d9', (r.next() - 0.5) * 0.04);
       const wallTop = 96;
       const wallBot = 252;
 

@@ -21,6 +21,7 @@ export const ART: ChapterArt = {
     'postsign', 'shaapsign', // aliased signpost art keeps its baked shadow
     'nilavilakku', 'jacktree', 'peppervine', 'oars', 'spicesacks', 'postbox',
     'cricketwall', 'posterwall', 'lungiline', 'busstop',
+    'kallupalm', 'vaikkol', 'cheenavala',
   ],
   buildings: ['veedu'],
   windows: {
@@ -164,6 +165,181 @@ export const ART: ChapterArt = {
         dot(g, topX - 4 + i * 4.5, topY + 6 + (i % 2) * 3, 3.4, shade('#7a5a2e', (r.next() - 0.5) * 0.1));
       }
     }, 64, 128);
+
+    // The toddy palm: notched all the way up, a rope loop for the feet, and
+    // a pot lashed at the crown filling itself while everyone sleeps.
+    make('kallupalm', 2, (g, r) => {
+      softShadow(g, 34, 122, 22, 5, 0.22);
+      const lean = (r.next() - 0.5) * 10;
+      const topX = 34 + lean;
+      const topY = 30;
+      g.strokeStyle = '#7f6142';
+      g.lineWidth = 7.5;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(32, 122);
+      g.quadraticCurveTo(30 - lean * 0.6, 76, topX, topY);
+      g.stroke();
+      // The notches: sixty years of somebody's feet, cut two hands apart.
+      g.strokeStyle = 'rgba(48,34,20,0.55)';
+      g.lineWidth = 2.2;
+      for (let t = 0.08; t < 0.94; t += 0.075) {
+        const ix = 32 + (topX - 32) * t + (30 - lean * 0.6 - 32) * 2 * t * (1 - t);
+        const iy = 122 - (122 - topY) * t - 10 * t * (1 - t);
+        g.beginPath();
+        g.moveTo(ix - 5, iy + 1);
+        g.lineTo(ix + 5, iy - 1.5);
+        g.stroke();
+      }
+      // The climbing rope, coiled at the foot where it was dropped.
+      g.strokeStyle = '#b8a06a';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.arc(20, 114, 7, 0, Math.PI * 2); g.stroke();
+      g.beginPath(); g.arc(20, 114, 3.6, 0, Math.PI * 2); g.stroke();
+      // Crown: fewer fronds than a coconut palm, and higher.
+      for (let i = 0; i < 8; i++) {
+        const a = -Math.PI * 0.95 + (i / 7) * Math.PI * 0.95;
+        const fx = topX + Math.cos(a) * 24;
+        const fy = topY + Math.sin(a) * 12 + 9;
+        g.strokeStyle = shade(i % 2 ? '#48693c' : '#587f44', (r.next() - 0.5) * 0.1);
+        g.lineWidth = 3.2;
+        g.beginPath();
+        g.moveTo(topX, topY);
+        g.quadraticCurveTo((topX + fx) / 2, topY - 11, fx, fy + 7);
+        g.stroke();
+      }
+      // The pot, lashed under the cut spathe, filling all night.
+      const px = topX + 12;
+      g.strokeStyle = '#8a7038';
+      g.lineWidth = 1.8;
+      g.beginPath(); g.moveTo(topX + 4, topY + 4); g.lineTo(px, topY + 12); g.stroke();
+      oval(g, px, topY + 20, 8, 9.5, '#8c5a3c');
+      oval(g, px - 2.5, topY + 17, 3, 3.4, shade('#8c5a3c', 0.24));
+      oval(g, px, topY + 12.5, 5.6, 2.6, '#6d4530');
+      oval(g, px, topY + 12, 4, 1.8, '#3b2618');
+    }, 64, 128);
+
+    // Vaikkol: the straw stack. Pokkali stubble twisted round a pole and
+    // combed down, so the first rain runs off it instead of in.
+    make('vaikkol', 3, (g, r) => {
+      softShadow(g, 32, 90, 26, 7, 0.24);
+      const straw = shade('#c9a24e', (r.next() - 0.5) * 0.09);
+      // The body: a fat cone, wider at the shoulder than the foot.
+      g.fillStyle = straw;
+      g.beginPath();
+      g.moveTo(6, 90);
+      g.quadraticCurveTo(2, 56, 32, 20);
+      g.quadraticCurveTo(62, 56, 58, 90);
+      g.closePath();
+      g.fill();
+      vgrad(g, 4, 24, 56, 30, 'rgba(255,244,205,0.35)', 'rgba(0,0,0,0)');
+      vgrad(g, 4, 66, 56, 24, 'rgba(0,0,0,0)', 'rgba(74,54,24,0.34)');
+      // Combed straw, running the way the rain will.
+      g.strokeStyle = 'rgba(122,92,36,0.4)';
+      g.lineWidth = 1.3;
+      for (let k = 0; k < 15; k++) {
+        const sx = 6 + k * 3.4;
+        g.beginPath();
+        g.moveTo(sx, 88);
+        g.quadraticCurveTo(32 + (sx - 32) * 0.5, 48, 32 + (sx - 32) * 0.22, 24);
+        g.stroke();
+      }
+      // The rope belt that keeps a monsoon from unwinding it.
+      g.strokeStyle = '#8a7038';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(9, 68); g.quadraticCurveTo(32, 74, 55, 68); g.stroke();
+      g.beginPath(); g.moveTo(15, 46); g.quadraticCurveTo(32, 51, 49, 46); g.stroke();
+      // The pole coming out of the top, and its rag.
+      g.strokeStyle = '#6f5636';
+      g.lineWidth = 3.4;
+      g.beginPath(); g.moveTo(32, 24); g.lineTo(33, 4); g.stroke();
+      if (r.chance(0.6)) {
+        g.fillStyle = r.chance(0.5) ? '#c1512f' : '#3f7fb0';
+        g.beginPath(); g.moveTo(33, 5); g.lineTo(46, 9); g.lineTo(33, 13); g.closePath(); g.fill();
+      }
+      // Loose straw at the foot, where the stack was fed.
+      for (let k = 0; k < 7; k++) {
+        oval(g, 6 + r.int(52), 86 + r.int(6), 5, 1.6, shade(straw, -0.12), (r.next() - 0.5) * 0.8);
+      }
+    }, 64, 96);
+
+    // The cheena vala: the cantilever net, counterweighted with stones, dipped
+    // and raised by four men and a great deal of shouting. The landmark you
+    // can see from anywhere on this map, and steer home by.
+    make('cheenavala', 2, (g, r) => {
+      softShadow(g, 118, 152, 34, 8, 0.24);
+      softShadow(g, 62, 150, 22, 6, 0.18);
+      const teak = '#6b4a2c';
+      const pole = (x1: number, y1: number, x2: number, y2: number, w: number, c: string) => {
+        g.strokeStyle = c;
+        g.lineWidth = w;
+        g.lineCap = 'round';
+        g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+      };
+      // The net first, so every timber lands on top of it.
+      const NA: [number, number] = [10, 60];
+      const NB: [number, number] = [96, 30];
+      const NC: [number, number] = [104, 108];
+      const ND: [number, number] = [18, 128];
+      g.save();
+      g.beginPath();
+      g.moveTo(NA[0], NA[1]); g.lineTo(NB[0], NB[1]); g.lineTo(NC[0], NC[1]); g.lineTo(ND[0], ND[1]);
+      g.closePath();
+      g.fillStyle = 'rgba(196,208,190,0.16)';
+      g.fill();
+      g.clip();
+      g.strokeStyle = 'rgba(74,96,80,0.75)';
+      g.lineWidth = 1.5;
+      for (let k = -8; k <= 14; k++) {
+        g.beginPath(); g.moveTo(k * 11, 8); g.quadraticCurveTo(52, 78, k * 11 + 34, 148); g.stroke();
+        g.beginPath(); g.moveTo(k * 11 + 34, 8); g.quadraticCurveTo(52, 78, k * 11, 148); g.stroke();
+      }
+      g.restore();
+      // The four spreader arms that hold the net's mouth open.
+      pole(NA[0], NA[1], NB[0], NB[1], 3.4, shade(teak, 0.12));
+      pole(NB[0], NB[1], NC[0], NC[1], 3.4, shade(teak, 0.06));
+      pole(NC[0], NC[1], ND[0], ND[1], 3.4, shade(teak, 0.12));
+      pole(ND[0], ND[1], NA[0], NA[1], 3.4, shade(teak, 0.06));
+      // The cantilever arm, out from the frame over the water.
+      pole(120, 66, 52, 76, 7, teak);
+      g.strokeStyle = 'rgba(200,186,150,0.85)';
+      g.lineWidth = 1.8;
+      for (const [ax, ay] of [NA, NB, NC, ND]) {
+        g.beginPath(); g.moveTo(52, 76); g.lineTo(ax, ay); g.stroke();
+      }
+      // The A-frame: two legs into the mud, a platform between them.
+      pole(104, 152, 122, 62, 8, teak);
+      pole(150, 150, 128, 62, 8, shade(teak, -0.08));
+      pole(108, 116, 146, 112, 5, shade(teak, -0.05));
+      rr(g, 98, 118, 62, 9, 3, shade(teak, 0.16));
+      g.strokeStyle = 'rgba(50,34,18,0.4)';
+      g.lineWidth = 1.4;
+      for (let k = 0; k < 6; k++) {
+        g.beginPath(); g.moveTo(102 + k * 11, 118); g.lineTo(102 + k * 11, 127); g.stroke();
+      }
+      // The counterweight stones, hung at the tail, sized entirely by argument.
+      g.strokeStyle = 'rgba(210,196,160,0.85)';
+      g.lineWidth = 1.6;
+      for (let k = 0; k < 5; k++) {
+        const sx = 132 + k * 9;
+        const sy = 74 + (k % 2) * 8;
+        g.beginPath(); g.moveTo(sx, 64 + k * 2); g.lineTo(sx, sy + 3); g.stroke();
+        oval(g, sx, sy + 12, 7, 8.5, shade('#8c8479', (r.next() - 0.5) * 0.2));
+        oval(g, sx - 2, sy + 9, 2.6, 3, shade('#8c8479', 0.2));
+      }
+      // The hauling rope down to its cleat, worn shiny by forty years of palms.
+      g.strokeStyle = 'rgba(215,200,160,0.9)';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(122, 64); g.quadraticCurveTo(132, 96, 118, 116); g.stroke();
+      // A lamp on the platform post, for the night lifts.
+      oval(g, 152, 104, 6, 7.5, '#c9b48a');
+      oval(g, 152, 104, 4, 5.4, '#f6dfa2');
+      glowSpot(g, 152, 104, 16, '#ffefc0', 0.6);
+      // A basket of the morning's catch, mostly optimism.
+      oval(g, 136, 138, 12, 6, '#a58a5c');
+      oval(g, 136, 135, 10, 4.4, '#8c7448');
+      for (let k = 0; k < 4; k++) oval(g, 131 + k * 3.6, 134, 3.4, 1.4, '#b9c6ca', (r.next() - 0.5) * 0.6);
+    }, 192, 160);
 
     // Banana plant: leaves like green sails, one always torn by yesterday.
     make('banana', 3, (g, r) => {

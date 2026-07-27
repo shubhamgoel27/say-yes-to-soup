@@ -1014,6 +1014,40 @@ export const KERALA_NODES: NodeMap = {
       { text: 'A coconut down since the last big wind. By custom the first to notice it may claim it; you appear to have just noticed it.' },
     ],
   },
+  'c6.ex.kallupalm': {
+    lines: [
+      { text: 'A palm notched all the way up, two hands apart, and a pot lashed under the cut spathe. The rope loop is coiled at the foot, still damp.' },
+      { text: 'Whoever climbed it was up there before you woke. Sweet by breakfast, sour by evening: the same pot tells the time twice.' },
+    ],
+    effects: ['set:c6.seen.tapper'],
+  },
+  'c6.ex.kallupalm.again': {
+    lines: [
+      { text: 'The pot has filled a finger since you looked. Nobody is coming for it until the light goes.' },
+    ],
+  },
+  'c6.ex.vaikkol': {
+    lines: [
+      { text: 'A straw stack twisted round a pole and combed downward, so the first rain runs off it instead of into it. Pokkali stubble, saved by a week.' },
+    ],
+  },
+  'c6.ex.cheenavala': {
+    lines: [
+      { text: 'The cheena vala: a net the size of a room, hung on teak arms and balanced by stones somebody chose by argument.' },
+      { text: 'Four men lean on the rope, the whole thing bows to the water, holds, and comes up with about a bucket. Not efficient. It is the horizon.' },
+    ],
+    effects: ['set:c6.seen.vala'],
+  },
+  'c6.ex.cheenavala.again': {
+    lines: [
+      { text: 'It dips again while you watch. Somebody up on the platform says a number, and somebody below disagrees with it warmly.' },
+    ],
+  },
+  'c6.ex.reeds': {
+    lines: [
+      { text: 'Reeds crowding the bank in ragged handfuls, standing in their own reflection. Something small moves off through them and declines to explain itself.' },
+    ],
+  },
   'c6.ex.ammi': {
     lines: [
       { text: 'The ammikkallu, a grinding stone worn into a shallow smile by three generations of chutney. Mixers exist; the stone is not worried.' },
@@ -1146,6 +1180,16 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   busstop: [{ node: 'c6.ex.busstop' }],
   posterwall: [{ node: 'c6.ex.posterwall' }],
   fallennut: [{ node: 'c6.ex.fallennut' }],
+  kallupalm: [
+    { when: { has: ['c6.seen.tapper'] }, node: 'c6.ex.kallupalm.again' },
+    { node: 'c6.ex.kallupalm' },
+  ],
+  vaikkol: [{ node: 'c6.ex.vaikkol' }],
+  cheenavala: [
+    { when: { has: ['c6.seen.vala'] }, node: 'c6.ex.cheenavala.again' },
+    { node: 'c6.ex.cheenavala' },
+  ],
+  reeds: [{ map: 'kerala', node: 'c6.ex.reeds' }],
   ammi: [{ node: 'c6.ex.ammi' }],
   leafstack: [
     { when: { has: ['c6.sadya.done'] }, node: 'c6.ex.leafstack.after' },

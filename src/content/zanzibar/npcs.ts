@@ -1159,6 +1159,38 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'Scissors, chalk, a tape measure coiled like something tame. This is the table where a gora becomes two kangas: one to keep, one to give.' },
     ],
   },
+  'c7.ex.ukuta': {
+    lines: [
+      { text: 'A low coral wall, limed on the street side and left honest on the other. Waist high, which is the exact height of a conversation.' },
+      { text: 'Bougainvillea has been over the top of it for years. Nobody planted it. Nobody is going to be the one to cut it, either.' },
+    ],
+  },
+  'c7.ex.makuti': {
+    lines: [
+      { text: 'Plaited coconut thatch on two poles, thrown out over the baraza. The shade arrives about a step before you do, and it is always cooler than it looks.' },
+    ],
+  },
+  'c7.ex.madafu': {
+    lines: [
+      { text: 'Green coconuts heaped where the shade falls, panga standing in the pile. One is already open, going warm while its owner argues about something else.' },
+    ],
+  },
+  'c7.ex.dagaa': {
+    lines: [
+      { text: 'Whitebait spread on a mesh rack, drying hard and silver in the sun. An octopus hangs on the line above, giving up its arms one at a time.' },
+      { text: 'It will all be someone else’s stew by Thursday. The rack goes back under the house until the next good haul.' },
+    ],
+  },
+  'c7.ex.nyavu': {
+    lines: [
+      { text: 'A net spread on the sand to dry, corks along one edge, stones along the other. The mending needle is stuck in where the work stopped for tea.' },
+    ],
+  },
+  'c7.ex.mkokoteni': {
+    lines: [
+      { text: 'A handcart tipped onto its shafts, sacks still aboard. Nobody unloads a cart they can lean, and nobody leans a cart they mean to move soon.' },
+    ],
+  },
 };
 
 /** Examine arms; shared kinds stay map-tagged so their words stay home. */
@@ -1218,6 +1250,12 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c7.ex.radio.b' },
   ],
   sewing: [{ node: 'c7.ex.sewing' }],
+  ukuta: [{ node: 'c7.ex.ukuta' }],
+  makuti: [{ node: 'c7.ex.makuti' }],
+  madafu: [{ node: 'c7.ex.madafu' }],
+  dagaa: [{ node: 'c7.ex.dagaa' }],
+  nyavu: [{ node: 'c7.ex.nyavu' }],
+  mkokoteni: [{ node: 'c7.ex.mkokoteni' }],
   sand: [{ map: 'zanzibar', node: 'c7.ex.sand' }],
   sandWet: [{ map: 'zanzibar', node: 'c7.ex.flats' }],
   sea: [{ map: 'zanzibar', node: 'c7.ex.sea' }],
