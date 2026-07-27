@@ -155,6 +155,21 @@ export type GameDef = {
   flag: string;
   /** Narration node run after the panel closes (its effects clear the flag). */
   doneNode: string;
+  /** Card title on the how-to card ("The loom"). Falls back to a soft generic. */
+  title?: string;
+  /**
+   * Two to four short lines for the how-to card, warm second person
+   * ("Space paddles. Time it to the swell's arrival."). Absent = the card
+   * shows only the title and the begin prompt.
+   */
+  howTo?: string[];
+  /**
+   * Whether the game welcomes a return visit (default true). Replays run on
+   * the `replay.mode` convention: a dialogue arm sets `replay.mode` plus the
+   * start flag; completion then clears both, skips the doneNode narration,
+   * and celebrates quietly instead.
+   */
+  replayable?: boolean;
   make: (root: HTMLElement, audio: unknown) => GamePanel;
 };
 

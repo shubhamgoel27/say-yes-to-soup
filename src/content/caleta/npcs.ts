@@ -50,6 +50,7 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { not: ['met.simon'] }, node: 'mar.simon.first' },
       { when: { has: ['met.simon'], not: ['c2.trade'] }, node: 'mar.simon.trade' },
       { when: { has: ['c2.trade', 'c2.ride.done'], not: ['c2.nets.done'] }, node: 'mar.simon.nets' },
+      { when: { has: ['c2.nets.done'] }, node: 'mar.simon.netsAgain' },
       { node: 'mar.simon.idle' },
     ],
   },
@@ -115,6 +116,7 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { has: ['met.felix'], not: ['c2.ponds'] }, node: 'mar.felix.ponds' },
       { when: { has: ['c2.ponds'], not: ['c2.ride.done'] }, node: 'mar.felix.ride' },
       { when: { has: ['c2.ride.done'], not: ['c2.sanpedrito'] }, node: 'mar.felix.fiesta' },
+      { when: { has: ['c2.ride.done'] }, node: 'mar.felix.rideAgain' },
       { node: 'mar.felix.idle' },
     ],
   },
@@ -140,6 +142,7 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { has: ['c2.atenoon'], not: ['c2.lisa.ask'] }, node: 'mar.petro.lisa' },
       { when: { has: ['c2.lisa'], not: ['c2.lisa.done'] }, node: 'mar.petro.sudado' },
       { when: { has: ['c2.atenoon'], not: ['c2.cook.done'] }, node: 'mar.petro.teach' },
+      { when: { has: ['c2.cook.done'] }, node: 'mar.petro.cookAgain' },
       { node: 'mar.petro.idle' },
     ],
   },
@@ -403,6 +406,21 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Don Simón', text: 'No hay horario, hijo. Todo depende de la mar. There is no schedule. There is only her mood.' },
     ],
   },
+  'mar.simon.netsAgain': {
+    lines: [
+      { who: 'Don Simón', text: 'The circle sits every evening, mended or not. Your hands know the knots now. Come tie a few, just to keep them honest.' },
+    ],
+    choices: [
+      { text: 'Join the net circle again', when: { has: ['c2.nets.done'] }, goto: 'mar.simon.netsReplay' },
+      { text: 'Another evening', goto: 'mar.simon.idle' },
+    ],
+  },
+  'mar.simon.netsReplay': {
+    lines: [
+      { who: 'Don Simón', text: 'Bueno. Sit. No knot to prove tonight, only the good quiet of doing it.' },
+    ],
+    effects: ['set:replay.mode', 'set:net.start'],
+  },
 
   // ---------------- Nilda, born of two altitudes ----------------
   'mar.nilda.band': {
@@ -510,6 +528,21 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Maestro Félix', text: 'Always be partway through your next boat. It is good advice for boats and for most other things.' },
     ],
   },
+  'mar.felix.rideAgain': {
+    lines: [
+      { who: 'Maestro Félix', text: 'A caballito dries idle on its tail there, waiting for someone with the timing. You have it now. Want the swell again?' },
+    ],
+    choices: [
+      { text: 'Take a caballito out again', when: { has: ['c2.ride.done'] }, goto: 'mar.felix.rideReplay' },
+      { text: 'Not just now', goto: 'mar.felix.idle' },
+    ],
+  },
+  'mar.felix.rideReplay': {
+    lines: [
+      { who: 'Maestro Félix', text: 'Then go. Meet the wave, do not chase it. This time it is only for the ride.' },
+    ],
+    effects: ['set:replay.mode', 'set:wave.start'],
+  },
   'mar.rode': {
     lines: [
       { text: 'The wave picks up the little horse and simply decides to keep it. The village rushes at you, whooping somewhere behind.' },
@@ -583,6 +616,21 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Doña Petro', text: 'Each weekday its own pot, hija. Come enough times and you will have eaten the whole week. That is the only menu.' },
     ],
+  },
+  'mar.petro.cookAgain': {
+    lines: [
+      { who: 'Doña Petro', text: 'The lisa came in fresh this morning. My knees are not what they were. Get behind the pots again, hija, and I will taste.' },
+    ],
+    choices: [
+      { text: 'Cook the ceviche again', when: { has: ['c2.cook.done'] }, goto: 'mar.petro.cookReplay' },
+      { text: 'Maybe at noon', goto: 'mar.petro.idle' },
+    ],
+  },
+  'mar.petro.cookReplay': {
+    lines: [
+      { who: 'Doña Petro', text: 'Ya. The lime kisses, it does not marry. You remember. Go, no lesson today, only the eating.' },
+    ],
+    effects: ['set:replay.mode', 'set:c2.cook.start'],
   },
 
   // ---- the ceviche lesson: eaten first, learned second ----

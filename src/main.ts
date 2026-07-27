@@ -16,7 +16,6 @@ import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
-import { WeavePanel } from './ui/weave';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
 import { PixiStage, type LightSpec } from './render/stage';
@@ -286,7 +285,6 @@ const textbox = new Textbox(
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'));
 const naming = new NamingCard($('cc-card'));
-const weave = new WeavePanel($('weave'), audio);
 const albumUI = new AlbumUI($('album'), state, audio);
 const pauseMenu = new PauseMenu($('pause'), audio, {
   onTextSpeed: (cps) => textbox.setSpeed(cps),
@@ -316,6 +314,138 @@ const games = GAMES.map((g) => {
   return { def: g, root, panel: g.make(root, audio) };
 });
 const anyGameOpen = () => games.some((g) => g.panel.isOpen);
+type GameEntry = (typeof games)[number];
+
+// ------------------------------------------ the how-to card & the pause strip
+//
+// Two small journal-paper surfaces around every mini-game. The HOW-TO CARD
+// stands between "a dialogue set the start flag" and "the panel opens": title,
+// a few warm lines about the hands, begin or not yet. Declining keeps the
+// flag, so the offer waits patiently; the action key in open air re-offers it.
+// The PAUSE STRIP answers Esc inside a panel: start over, keep at it, or step
+// away (the panel simply hides, unfinished, and the card re-offers later).
+// Completing a panel while `replay.mode` is set skips the story narration:
+// the flags clear, a sparkle, a toast. Some things are done just for the joy.
+
+const howtoEl = document.createElement('div');
+howtoEl.className = 'ht-veil';
+howtoEl.hidden = true;
+$('frame').appendChild(howtoEl);
+const stripEl = document.createElement('div');
+stripEl.className = 'ht-strip';
+stripEl.hidden = true;
+$('frame').appendChild(stripEl);
+
+let howtoFor: GameEntry | null = null;
+let howtoSel = 0;
+let stripFor: GameEntry | null = null;
+let stripSel = 1;
+const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
+
+const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
+
+/** A game whose start flag is raised but whose panel is not yet on screen. */
+function pendingGame(): GameEntry | null {
+  return games.find((g) => state.has(g.def.flag) && !g.panel.isOpen) ?? null;
+}
+
+/** Open a panel and route its completion: story narration, or replay joy. */
+function openPanel(g: GameEntry) {
+  player.frozen = true;
+  g.panel.open(() => {
+    player.frozen = false;
+    if (state.has('replay.mode')) {
+      // A return visit: no narration to repeat, just the doing of the thing.
+      state.clearFlag('replay.mode');
+      state.clearFlag(g.def.flag);
+      toasts.show('Just for the joy of it.');
+      audio.chime();
+      const [px, py] = player.renderPos();
+      renderer.burst(px + TILE / 2, py + 2, 'sparkle', ['#f2e6d0', '#d9a441']);
+      return;
+    }
+    startNarration(g.def.doneNode);
+  });
+}
+
+function renderHowto() {
+  const g = howtoFor;
+  if (!g) return;
+  const lines = (g.def.howTo ?? [])
+    .map((l) => `<div class="ht-line">${l}</div>`)
+    .join('');
+  const replaying = state.has('replay.mode');
+  howtoEl.innerHTML = `
+    <div class="ht-card">
+      <div class="ht-kicker">hands, not homework</div>
+      <div class="ht-title">${g.def.title ?? 'Something to try'}</div>
+      ${replaying ? '<div class="ht-replay">Again, for the joy of it.</div>' : ''}
+      ${lines ? `<div class="ht-lines">${lines}</div>` : ''}
+      <div class="ht-opts">
+        ${['Begin', 'Not yet']
+          .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}</div>`)
+          .join('')}
+      </div>
+      <div class="ht-keys">Space to begin &middot; Esc, not yet</div>
+    </div>`;
+}
+
+function showHowto(g: GameEntry) {
+  howtoFor = g;
+  howtoSel = 0;
+  player.frozen = true;
+  howtoEl.hidden = false;
+  renderHowto();
+  audio.pageFlip();
+}
+
+/** Close the card: into the panel, or back to the world with the flag kept. */
+function closeHowto(begin: boolean) {
+  const g = howtoFor;
+  howtoEl.hidden = true;
+  howtoFor = null;
+  if (!g) return;
+  if (begin) openPanel(g);
+  else player.frozen = false; // the start flag stays; the offer keeps
+}
+
+function renderStrip() {
+  stripEl.innerHTML = `
+    <div class="ht-strip-card">
+      ${STRIP_OPTS.map(
+        (t, i) => `<div class="ht-row${i === stripSel ? ' sel' : ''}" data-ht="${i}">${i === stripSel ? '&#9656;&nbsp;' : ''}${t}</div>`,
+      ).join('')}
+    </div>`;
+}
+
+function showStrip(g: GameEntry) {
+  stripFor = g;
+  stripSel = 1; // "Keep at it" is the default: Esc twice changes nothing
+  stripEl.hidden = false;
+  renderStrip();
+}
+
+function closeStrip() {
+  stripEl.hidden = true;
+  stripFor = null;
+}
+
+function stripActivate() {
+  const g = stripFor;
+  const pick = STRIP_OPTS[stripSel];
+  closeStrip();
+  if (!g) return;
+  if (pick === 'Start over') {
+    // Every panel's open() resets its state; same completion, fresh hands.
+    openPanel(g);
+  } else if (pick === 'Step away') {
+    // Unfinished is allowed. The start flag stays set, so the how-to card
+    // re-offers whenever the player is ready again.
+    g.root.hidden = true;
+    player.frozen = false;
+  }
+  // "Keep at it": the panel is still there, exactly as it was.
+}
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
@@ -988,16 +1118,6 @@ function endDialogue() {
     }
   }
 
-  // One-shot signals raised by dialogue effects, consumed here.
-  if (state.has('weave.start')) {
-    state.clearFlag('weave.start');
-    player.frozen = true;
-    weave.open(() => {
-      player.frozen = false;
-      startNarration('carmen.woven');
-    });
-    return;
-  }
   // Chasca's album unfolds once the conversation has stepped back from it.
   if (state.has('album.open')) {
     state.clearFlag('album.open');
@@ -1018,13 +1138,12 @@ function endDialogue() {
     startNarration('dig.finish');
     return;
   }
-  for (const g of games) {
-    if (state.has(g.def.flag)) {
-      player.frozen = true;
-      g.panel.open(() => {
-        player.frozen = false;
-        startNarration(g.def.doneNode);
-      });
+  {
+    // A conversation raised a game's start flag: the how-to card goes first,
+    // so the hands know what they are about to do (and may decline, kindly).
+    const g = pendingGame();
+    if (g) {
+      showHowto(g);
       return;
     }
   }
@@ -1195,7 +1314,7 @@ function updateSitting(dt: number) {
   }
 }
 
-function tryInteract() {
+function tryInteract(): boolean {
   const [fx, fy] = player.facingCell();
   const v = villagersHere().find((n) => {
     const [ox, oy] = n.actor.occupies();
@@ -1203,7 +1322,7 @@ function tryInteract() {
   });
   if (v) {
     startNpcDialogue(v);
-    return;
+    return true;
   }
   // The dig mounds, while Justina's invitation stands.
   if (map.id === 'village' && state.has('dig.invite') && !state.has('dig.done')) {
@@ -1211,16 +1330,20 @@ function tryInteract() {
     if (spot) {
       audio.dig();
       startNarration(spot.node);
-      return;
+      return true;
     }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
   if (SIT_KINDS.has(kind)) {
     startSitting();
-    return;
+    return true;
   }
   const arm = EXAMINES[kind]?.find((a) => (!a.map || a.map === map.id) && state.check(a.when));
-  if (arm) startNarration(arm.node);
+  if (arm) {
+    startNarration(arm.node);
+    return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------- modes
@@ -1314,7 +1437,6 @@ let bumps = 0;
 function update(dt: number) {
   renderer.tick(dt);
   textbox.tick(dt);
-  weave.tick(dt);
   for (const g of games) g.panel.tick?.(dt);
   audio.tick(dt);
   stage.tick(dt);
@@ -1333,7 +1455,7 @@ function update(dt: number) {
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   const zoomT =
-    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1;
+    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || anyGameOpen() || uiCardOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1;
   stage.setZoomTarget(zoomT);
   // Mirror the stage's zoom easing so pointer math maps screen to world
   // without reaching into the presenter's internals.
@@ -1449,9 +1571,34 @@ function update(dt: number) {
   } else if (title.letterOpen) {
     // Mail from home, read mid-journey.
     if (act || back) letterAdvance();
-  } else if (weave.isOpen) {
-    if (menuDir) weave.onDir(menuDir);
-    if (act) weave.onAction();
+  } else if (!howtoEl.hidden) {
+    // The how-to card: begin, or not yet. Either way, no harm done.
+    if (menuDir === 'up' || menuDir === 'down' || menuDir === 'left' || menuDir === 'right') {
+      howtoSel = 1 - howtoSel;
+      renderHowto();
+      audio.select();
+    }
+    if (act) {
+      audio.confirm();
+      closeHowto(howtoSel === 0);
+    } else if (back || pauseKey) {
+      audio.back();
+      closeHowto(false);
+    }
+  } else if (!stripEl.hidden) {
+    // The in-panel pause strip: start over, keep at it, or step away.
+    if (menuDir === 'up' || menuDir === 'down') {
+      stripSel = (stripSel + (menuDir === 'down' ? 1 : STRIP_OPTS.length - 1)) % STRIP_OPTS.length;
+      renderStrip();
+      audio.select();
+    }
+    if (act) {
+      audio.confirm();
+      stripActivate();
+    } else if (back || pauseKey) {
+      audio.back();
+      closeStrip();
+    }
   } else if (albumUI.isOpen) {
     // Arrows are the album's page-turn keys; drain the walk-tap buffer so the
     // last turn does not spin the player around once the album is handed back.
@@ -1464,8 +1611,13 @@ function update(dt: number) {
   } else if (anyGameOpen()) {
     const g = games.find((x) => x.panel.isOpen);
     if (g) {
-      if (menuDir) g.panel.onDir(menuDir);
-      if (act) g.panel.onAction();
+      if (back || pauseKey) {
+        showStrip(g);
+        audio.pageFlip();
+      } else {
+        if (menuDir) g.panel.onDir(menuDir);
+        if (act) g.panel.onAction();
+      }
     }
   } else if (textbox.isOpen) {
     if (menuDir) {
@@ -1494,7 +1646,12 @@ function update(dt: number) {
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
     } else if (act) {
-      tryInteract();
+      if (!tryInteract()) {
+        // Open air, and a game still waiting on its start flag: the how-to
+        // card offers itself again. Declined lessons are only postponed.
+        const g = pendingGame();
+        if (g) showHowto(g);
+      }
     } else {
       const manual = dev.heldOverride() ?? input.intent();
       // A held key or stick always outranks a click-to-walk in progress.
@@ -1576,7 +1733,9 @@ function update(dt: number) {
     facing: player.facingCell(),
     dialogue: textbox.currentNode,
     journalOpen: journalUI.isOpen,
-    weaveOpen: weave.isOpen,
+    weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
+    howtoOpen: !howtoEl.hidden,
+    stripOpen: !stripEl.hidden,
     pages: state.pageCount(),
     errand: state.errand,
     npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
@@ -1959,7 +2118,7 @@ glCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (mode !== 'play' || warp || celebrateT > 0) return;
-  if (pauseMenu.isOpen || journalUI.isOpen || weave.isOpen || anyGameOpen() || title.letterOpen || albumUI.isOpen) return;
+  if (pauseMenu.isOpen || journalUI.isOpen || anyGameOpen() || uiCardOpen() || title.letterOpen || albumUI.isOpen) return;
   if (sitting) {
     standUp();
     return;
@@ -1979,7 +2138,7 @@ glCanvas.addEventListener('pointermove', (e) => {
     cursor = 'pointer';
   } else if (
     mode === 'play' && !player.frozen && !warp &&
-    !pauseMenu.isOpen && !journalUI.isOpen && !weave.isOpen && !anyGameOpen() && !albumUI.isOpen
+    !pauseMenu.isOpen && !journalUI.isOpen && !anyGameOpen() && !uiCardOpen() && !albumUI.isOpen
   ) {
     const [wx, wy] = screenToWorld(e.clientX, e.clientY);
     const tx = Math.floor(wx / TILE);
@@ -2160,11 +2319,50 @@ function attachPanelPointer(
     else panel.onAction();
   });
 }
-attachPanelPointer($('weave'), weave);
 for (const g of games) attachPanelPointer(g.root, g.panel);
 // The album turns pages by the same thirds; the middle keeps going, and past
 // the last spread it hands the album back.
 attachPanelPointer($('album'), albumUI);
+
+// The how-to card and the pause strip also answer the mouse: hover to hold a
+// row, click to take it. Keyboard and pointer stay in step through the same
+// selection index each render reads.
+howtoEl.addEventListener('pointermove', (e) => {
+  const row = (e.target as HTMLElement).closest('[data-ht]');
+  if (!row) return;
+  const i = Number((row as HTMLElement).dataset.ht);
+  if (i !== howtoSel) {
+    howtoSel = i;
+    renderHowto();
+    audio.select();
+  }
+});
+howtoEl.addEventListener('pointerdown', (e) => {
+  const row = (e.target as HTMLElement).closest('[data-ht]');
+  if (!row) return;
+  e.preventDefault();
+  howtoSel = Number((row as HTMLElement).dataset.ht);
+  audio.confirm();
+  closeHowto(howtoSel === 0);
+});
+stripEl.addEventListener('pointermove', (e) => {
+  const row = (e.target as HTMLElement).closest('[data-ht]');
+  if (!row) return;
+  const i = Number((row as HTMLElement).dataset.ht);
+  if (i !== stripSel) {
+    stripSel = i;
+    renderStrip();
+    audio.select();
+  }
+});
+stripEl.addEventListener('pointerdown', (e) => {
+  const row = (e.target as HTMLElement).closest('[data-ht]');
+  if (!row) return;
+  e.preventDefault();
+  stripSel = Number((row as HTMLElement).dataset.ht);
+  audio.confirm();
+  stripActivate();
+});
 
 // ---- the touch pad: held movement + action, only once a finger is seen ----
 

@@ -1283,6 +1283,122 @@
         background: rgba(23, 18, 14, 0.55);
       }
       .mg-overlay[hidden] { display: none; }
+
+      /* ---- the how-to card & the in-panel pause strip ---- */
+      .ht-veil {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(23, 18, 14, 0.62);
+        z-index: 40;
+      }
+      .ht-veil[hidden] { display: none; }
+      .ht-card {
+        width: min(78%, 440px);
+        background:
+          linear-gradient(rgba(244, 234, 214, 0.82), rgba(244, 234, 214, 0.82)),
+          url('/assets/textures/paper-aged-cream.jpg') repeat,
+          linear-gradient(120deg, var(--paper), var(--paper-dark));
+        background-blend-mode: normal, multiply, normal;
+        background-size: auto, 480px, auto;
+        border: 2px solid var(--ink);
+        border-radius: 4px;
+        box-shadow: var(--shadow-card);
+        color: var(--ink);
+        padding: 18px 22px 16px;
+        line-height: 1.45;
+        animation: bookOpen 0.2s ease-out;
+      }
+      @media (prefers-reduced-motion: reduce) { .ht-card { animation: none !important; } }
+      .ht-kicker {
+        font-family: var(--hand);
+        font-size: 16px;
+        color: #8a7455;
+        transform: rotate(-1deg);
+        margin-bottom: 2px;
+      }
+      .ht-title {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 23px;
+        letter-spacing: 0.01em;
+        margin-bottom: 8px;
+      }
+      .ht-replay {
+        font-family: var(--hand);
+        font-size: 17px;
+        color: var(--terracotta);
+        margin: -2px 0 8px;
+        transform: rotate(-0.5deg);
+      }
+      .ht-lines {
+        border-top: 1.5px solid rgba(43, 33, 24, 0.28);
+        padding-top: 9px;
+        margin-bottom: 10px;
+      }
+      .ht-line {
+        font-size: 15px;
+        color: var(--ink-soft);
+        margin: 4px 0;
+        padding-left: 14px;
+        position: relative;
+      }
+      .ht-line::before {
+        content: '·';
+        position: absolute;
+        left: 2px;
+        color: var(--gold);
+        font-weight: 700;
+      }
+      .ht-opts { margin-top: 6px; }
+      .ht-opt {
+        font-family: var(--display);
+        font-size: 17px;
+        padding: 3px 4px;
+        color: #8a755a;
+        cursor: pointer;
+      }
+      .ht-opt.sel { color: var(--ink); font-weight: 600; }
+      .ht-keys {
+        margin-top: 10px;
+        font-size: 12.5px;
+        font-style: italic;
+        color: #6b5a44;
+      }
+      .ht-strip {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: start center;
+        z-index: 50;
+        pointer-events: none;
+      }
+      .ht-strip[hidden] { display: none; }
+      .ht-strip-card {
+        margin-top: 8%;
+        display: flex;
+        gap: 4px;
+        padding: 7px 9px;
+        background:
+          linear-gradient(rgba(244, 234, 214, 0.9), rgba(244, 234, 214, 0.9)),
+          linear-gradient(120deg, var(--paper), var(--paper-dark));
+        border: 1.5px solid var(--ink);
+        border-radius: 6px;
+        box-shadow: var(--shadow-card);
+        pointer-events: auto;
+      }
+      .ht-row {
+        font-family: var(--display);
+        font-size: 15px;
+        padding: 4px 12px;
+        border-radius: 4px;
+        color: #8a755a;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .ht-row.sel { color: var(--ink); font-weight: 600; background: rgba(200, 165, 91, 0.22); }
+
       .c-track {
         position: relative;
         height: 44px;

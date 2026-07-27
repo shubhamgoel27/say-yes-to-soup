@@ -8,6 +8,7 @@ import { CASA_CARMEN_MAP, CHICHERIA_MAP } from './interiors';
 import { EAST_ROAD_MAP } from './eastroad';
 import { LA_BAJADA_MAP } from './labajada';
 import { WatiaPanel } from '../../ui/games/andes';
+import { WeavePanel } from '../../ui/weave';
 
 /** Chapter One: Ch'aska Pampa, the star plain. */
 export const CHAPTER: ChapterDef = {
@@ -22,8 +23,25 @@ export const CHAPTER: ChapterDef = {
   errands: ERRANDS,
   games: [
     {
+      flag: 'weave.start',
+      doneNode: 'carmen.woven',
+      title: 'The loom',
+      howTo: [
+        'Watch the colors Carmen calls, one row at a time.',
+        'Then call them back with the arrows, in order.',
+        'A slipped thread is nothing. She just calls the row again.',
+      ],
+      make: (root, audio) => new WeavePanel(root, audio as AudioBus),
+    },
+    {
       flag: 'watia.start',
       doneNode: 'watia.finish',
+      title: 'The watia',
+      howTo: [
+        'Big clods hold the base, smaller ones climb the dome.',
+        'Arrows pick a spot; Space sets the clod where a gap waits.',
+        'Close the earthen oven and the papas cook themselves.',
+      ],
       make: (root, audio) => new WatiaPanel(root, audio as AudioBus),
     },
   ],

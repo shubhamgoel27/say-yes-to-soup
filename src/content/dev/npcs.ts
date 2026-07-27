@@ -504,6 +504,16 @@ export const NODES: NodeMap = {
       { who: 'Justina', text: 'There is one called llumchuy waqachi. "Makes the daughter-in-law cry." Knobbly on purpose. Our jokes are long games.' },
     ],
     effects: ['journal:dishes.papa'],
+    choices: [
+      { text: 'Build the watia again', when: { has: ['watia.done'] }, goto: 'justina.watiaAgain' },
+      { text: 'Leave her to the rows', goto: 'justina.idle' },
+    ],
+  },
+  'justina.watiaAgain': {
+    lines: [
+      { who: 'Justina', text: 'The ground is still warm from last time. No reason to waste good heat. Stack me another dome, just for the eating.' },
+    ],
+    effects: ['set:replay.mode', 'set:watia.start'],
   },
   'justina.idle': {
     lines: [
@@ -642,12 +652,22 @@ export const NODES: NodeMap = {
       { who: 'Doña Carmen', text: 'My granddaughter will wear this in Lima and carry a stranger who tried. That is pallay. Nothing written down; everything written in.' },
       { text: 'She knots your practice rows into a narrow band and ties it at your wrist. "So your hands remember the mountain."' },
     ],
-    effects: ['set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay'],
+    effects: ['clear:weave.start', 'set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay'],
   },
   'carmen.after': {
     lines: [
       { who: 'Doña Carmen', text: 'The lliclla grows a row a day. Like the potatoes. Like the wawa it is for. Nothing good hurries.' },
     ],
+    choices: [
+      { text: 'Sit at the loom again', when: { has: ['pallay.done'] }, goto: 'carmen.weaveAgain' },
+      { text: 'Just passing by', goto: 'carmen.idle' },
+    ],
+  },
+  'carmen.weaveAgain': {
+    lines: [
+      { who: 'Doña Carmen', text: 'The loom is free most evenings. No lesson this time, no cloth to keep. Only the pleasure of a straight row. Sit.' },
+    ],
+    effects: ['set:replay.mode', 'set:weave.start'],
   },
   'carmen.epilogue': {
     lines: [

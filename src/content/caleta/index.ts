@@ -21,16 +21,34 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'wave.start',
       doneNode: 'mar.rode',
+      title: 'The caballito',
+      howTo: [
+        'A swell rolls in. Space to paddle right as it reaches you.',
+        'Too eager and it rolls you back; let the horse meet the water.',
+        'Past the break, hold the middle with the arrows and ride it home.',
+      ],
       make: (root, audio) => new WavePanel(root, audio as AudioBus),
     },
     {
       flag: 'net.start',
       doneNode: 'mar.mended',
+      title: 'The net circle',
+      howTo: [
+        'Walk the shuttle along the mesh with the arrows.',
+        'Space ties a hole shut wherever a gap gapes.',
+        'No timer, no losing. The talk mends the evening while you mend the net.',
+      ],
       make: (root, audio) => new NetPanel(root, audio as AudioBus),
     },
     {
       flag: 'c2.cook.start',
       doneNode: 'mar.cook.finish',
+      title: 'Behind the pots',
+      howTo: [
+        'Space walks the dish through: cut, salt, lime, onion, the rest.',
+        'Pull the fish out while the bar burns bright, not a beat later.',
+        'The lime kisses, it does not marry. Overcook and Petro eats the proof.',
+      ],
       make: (root, audio) => new CevichePanel(root, audio as AudioBus),
     },
   ],
