@@ -8,8 +8,9 @@ import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../..
  *
  * HotteokPanel: three discs of dough, one spatula, one moment each. A heat
  * marker slides across the griddle track; press Space inside the golden zone
- * to flip clean. There is no failing: a mistimed press just browns one past
- * gold, and burnt ones are for the cook. Nothing wasted, nobody shamed.
+ * to flip clean. A mistimed press burns that one past gold, which ends the
+ * batch and costs nothing: Mi-ja claims the dark one, hands you fresh dough,
+ * and Space starts the batch over on the spot. Nothing wasted, nobody shamed.
  *
  * Visual layer: a market cart at night. Lantern bokeh in the dark, a real
  * cast-iron griddle with an oil sheen, a dough ball that lands with a squash,
@@ -19,7 +20,7 @@ import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../..
  * arcs over the disc so the eye can be precise about it.
  */
 
-type HotteokPhase = 'press' | 'done';
+type HotteokPhase = 'press' | 'burnt' | 'done';
 
 const ROUNDS = 3;
 
@@ -303,7 +304,6 @@ export class HotteokPanel {
   private phase: HotteokPhase = 'press';
   private round = 0;
   private golden = 0;
-  private burnt = 0;
   private t = 0; // marker position 0..1, ping-ponging
   private dirn = 1;
   private speed = 0.55;
@@ -322,6 +322,7 @@ export class HotteokPanel {
   private ballLandT = 9; // seconds since the ball landed, drives squash
   private steamT = 0;
   private sizzT = 0;
+  private smokeT = 0; // the burnt one's dark curl
   private bite = 0; // done-phase reveal 0..1
   private biteHold = 0;
   private winFired = false;
@@ -340,11 +341,10 @@ export class HotteokPanel {
     this.phase = 'press';
     this.round = 0;
     this.golden = 0;
-    this.burnt = 0;
     this.t = 0;
     this.dirn = 1;
     this.speed = 0.55;
-    this.hint = 'The dough sizzles. Space when the heat sits in the golden middle.';
+    this.hint = 'The dough sizzles. Space presses and flips: catch the heat in the golden middle.';
     this.root.hidden = false;
     this.scene.restart();
     this.setHint = mountScene(this.root, 'The Hotteok Griddle', this.scene).setHint;
@@ -357,6 +357,7 @@ export class HotteokPanel {
     this.anim = -1;
     this.hasBall = false;
     this.ballLandT = 9;
+    this.smokeT = 0;
     this.bite = 0;
     this.biteHold = 0;
     this.winFired = false;
@@ -366,7 +367,10 @@ export class HotteokPanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
-    if (this.phase === 'press') {
+    // The heat only counts while a ball is actually on the iron: the gauge and
+    // the marker appear and move together, so the rhythm is press, flip, wait
+    // for the next dough, press. Nothing sweeps past behind the animation.
+    if (this.phase === 'press' && this.anim < 0 && this.hasBall) {
       this.t += this.dirn * this.speed * dt;
       if (this.t > 1) {
         this.t = 1;
@@ -393,36 +397,43 @@ export class HotteokPanel {
       done?.();
       return;
     }
+    if (this.phase === 'burnt') {
+      // Fresh dough, same hands, no ceremony. The batch simply begins again.
+      const done = this.onDone;
+      if (done) this.open(done);
+      return;
+    }
     // The golden middle of the griddle.
     const inZone = this.t >= 0.38 && this.t <= 0.62;
-    this.round++;
-    if (inZone) {
-      this.golden++;
-      this.audio.slosh();
-      this.hint = [
-        'A clean flip. The seeds stay tucked in the fold.',
-        'Gold both sides. Mi-ja nods without looking.',
-        'The sugar sighs inside. That is the sound of correct.',
-      ][(this.golden - 1) % 3] as string;
-    } else {
-      this.burnt++;
+    if (!inZone) {
+      // One burnt one ends the batch, and costs nothing but another minute.
+      this.phase = 'burnt';
       this.audio.bump();
-      this.hint = 'A beat late. This one browns past gold. "For the cook," says Mi-ja, unbothered.';
+      this.scene.flash('#2a1a10', 0.2);
+      this.hint =
+        'Too late, and it goes past gold. <b>Burnt.</b> "That one is mine, then," says Mi-ja, already rolling the next ball. Space for fresh dough.';
+      this.startFlip(false);
+      return;
     }
+    this.round++;
+    this.golden++;
+    this.audio.slosh();
+    this.hint = [
+      'A clean flip. The seeds stay tucked in the fold.',
+      'Gold both sides. Mi-ja nods without looking.',
+      'The sugar sighs inside. That is the sound of correct.',
+    ][(this.golden - 1) % 3] as string;
     if (this.round >= ROUNDS) {
       this.phase = 'done';
       this.audio.weaveDone();
-      this.hint =
-        this.burnt === 0
-          ? 'Three golden. Dae-ho pretends not to be impressed and fails. Press Space.'
-          : 'The batch is done and every one of them gets eaten. Press Space.';
+      this.hint = 'Three golden. Dae-ho pretends not to be impressed and fails. Press Space.';
     } else {
       this.t = 0;
       this.dirn = 1;
-      this.speed += 0.16;
+      this.speed += 0.12;
       this.hint += ` Next disc: ${ROUNDS - this.round} to go.`;
     }
-    this.startFlip(inZone);
+    this.startFlip(true);
   }
 
   // ------------------------------------------------------------ visual clock
@@ -472,6 +483,7 @@ export class HotteokPanel {
         if (!calm()) s.thump(3.5, 0.03);
         s.burst(DX, DY + 4, { n: calm() ? 3 : 9, speed: 70, color: '#ffe8c0', kind: 'dot', size: 1.8, life: 0.4, grav: 200 });
         if (this.animGold) s.flash('#ffe9b0', 0.16);
+        else s.burst(DX, DY - 6, { n: calm() ? 3 : 9, speed: 40, color: '#4a382c', kind: 'puff', size: 5, life: 1.1, grav: -30 });
         s.waft(DX, DY - 18);
       }
       if (this.anim >= T_SLIDE1) {
@@ -490,6 +502,17 @@ export class HotteokPanel {
       }
       this.biteHold += dt;
       if (this.biteHold > 0.45) this.bite = Math.min(1, this.bite + dt / 0.9);
+    }
+
+    // The burnt one keeps announcing itself: a dark curl off wherever it lies.
+    if (this.phase === 'burnt') {
+      this.smokeT += dt;
+      if (this.smokeT >= (calm() ? 0.5 : 0.2)) {
+        this.smokeT = 0;
+        const [bx, by] = slot(this.results.length - 1);
+        const at: [number, number] = this.anim >= 0 ? [DX, DY - 12] : [bx, by - 12];
+        s.waft(at[0], at[1], 'rgba(58,44,34,0.5)', 9);
+      }
     }
 
     // Steam wafting all through the night; sizzle glints while dough cooks.
@@ -550,26 +573,47 @@ export class HotteokPanel {
   private paintGauge(g: CanvasRenderingContext2D, tm: number) {
     const cx = DX;
     const cy = DY + 8;
-    const R = 88;
+    // Tucked close over the disc: any wider and the hovering press hides the
+    // one thing the player must read, the golden middle.
+    const R = 64;
     const A0 = -2.62;
     const A1 = -0.52;
     const at = (k: number) => A0 + (A1 - A0) * k;
     g.lineCap = 'round';
-    g.strokeStyle = 'rgba(242,230,208,0.32)';
-    g.lineWidth = 5;
+    // A dark backing so the track never dissolves into the night market.
+    g.strokeStyle = 'rgba(16,10,20,0.5)';
+    g.lineWidth = 10;
     g.beginPath();
     g.arc(cx, cy, R, A0, A1);
     g.stroke();
-    g.strokeStyle = 'rgba(217,164,65,0.4)';
-    g.lineWidth = 13;
+    g.strokeStyle = 'rgba(242,230,208,0.34)';
+    g.lineWidth = 4;
+    g.beginPath();
+    g.arc(cx, cy, R, A0, A1);
+    g.stroke();
+    // The golden middle, banded and haloed: the one place worth pressing.
+    g.globalAlpha = 0.45 + 0.12 * wobble(tm, 2.4);
+    g.strokeStyle = 'rgba(230,160,60,0.55)';
+    g.lineWidth = 18;
     g.beginPath();
     g.arc(cx, cy, R, at(0.38), at(0.62));
     g.stroke();
-    g.strokeStyle = 'rgba(240,190,85,1)';
-    g.lineWidth = 5.5;
+    g.globalAlpha = 1;
+    g.strokeStyle = 'rgba(255,214,124,0.95)';
+    g.lineWidth = 9;
     g.beginPath();
     g.arc(cx, cy, R, at(0.38), at(0.62));
     g.stroke();
+    // Two hairline ticks: the exact moment the gold opens and closes.
+    g.strokeStyle = 'rgba(255,240,205,0.75)';
+    g.lineWidth = 2;
+    for (const k of [0.38, 0.62]) {
+      const a = at(k);
+      g.beginPath();
+      g.moveTo(cx + Math.cos(a) * (R - 13), cy + Math.sin(a) * (R - 13));
+      g.lineTo(cx + Math.cos(a) * (R + 13), cy + Math.sin(a) * (R + 13));
+      g.stroke();
+    }
     const ang = at(clamp01(this.t));
     const bx = cx + Math.cos(ang) * R;
     const by = cy + Math.sin(ang) * R;

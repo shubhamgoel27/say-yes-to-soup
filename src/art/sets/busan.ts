@@ -300,47 +300,106 @@ function paint(make: MakeTile) {
     g.stroke();
   }, 64, 96);
 
-  // A container crane at the water: an orange giraffe, grazing.
+  // A container crane at the water: an orange giraffe, grazing. Two tiles
+  // wide and three tall, because a gantry drawn inside one cell reads as a
+  // sawhorse. The portal is left open on purpose: the quay row behind it is
+  // walkable, and you should be able to see whoever is standing under it.
   make('crane', 2, (g, r) => {
     const orange = shade('#d97b2e', (r.next() - 0.5) * 0.06);
-    softShadow(g, 32, 92, 24, 5, 0.16);
-    // Legs and cross-brace.
+    const dark = shade(orange, -0.18);
+    softShadow(g, 64, 212, 50, 9, 0.18);
+    // The sill beam and its bogies, riding the rail along the water.
+    rr(g, 18, 194, 92, 12, 3, '#4f545c');
+    for (const bx of [24, 48, 72, 94]) rr(g, bx, 201, 12, 8, 2, '#3a3f47');
+    for (let i = 0; i < 5; i++) rr(g, 23 + i * 19, 196, 9, 5, 1, 'rgba(240,236,225,0.5)');
+    // Four legs, kept thin so the portal stays a window, not a wall.
+    g.lineCap = 'round';
+    g.strokeStyle = orange;
+    g.lineWidth = 6;
+    g.beginPath();
+    g.moveTo(31, 196);
+    g.lineTo(37, 72);
+    g.moveTo(99, 196);
+    g.lineTo(93, 72);
+    g.stroke();
+    g.strokeStyle = dark;
+    g.lineWidth = 4;
+    g.beginPath();
+    g.moveTo(47, 188);
+    g.lineTo(51, 72);
+    g.moveTo(87, 188);
+    g.lineTo(83, 72);
+    g.stroke();
+    // Bracing low down only, under the walkway, where it hides nobody.
+    g.strokeStyle = shade(orange, -0.06);
+    g.lineWidth = 2.4;
+    g.beginPath();
+    g.moveTo(36, 164);
+    g.lineTo(94, 190);
+    g.moveTo(94, 164);
+    g.lineTo(36, 190);
+    g.stroke();
+    // The portal head, and the upper tower narrowing to the boom.
+    rr(g, 26, 60, 78, 12, 3, orange);
     g.strokeStyle = orange;
     g.lineWidth = 5;
     g.beginPath();
-    g.moveTo(18, 90);
-    g.lineTo(24, 34);
-    g.moveTo(46, 90);
-    g.lineTo(40, 34);
+    g.moveTo(46, 62);
+    g.lineTo(52, 32);
+    g.moveTo(84, 62);
+    g.lineTo(78, 32);
     g.stroke();
-    g.lineWidth = 2.6;
+    // The boom: a long lattice nosing out over the berth.
+    rr(g, 2, 30, 124, 9, 3, orange);
+    g.strokeStyle = shade(orange, -0.16);
+    g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(20, 70);
-    g.lineTo(44, 62);
-    g.moveTo(44, 70);
-    g.lineTo(20, 62);
+    for (let x = 4; x < 122; x += 12) {
+      g.moveTo(x, 39);
+      g.lineTo(x + 9, 30);
+    }
     g.stroke();
-    // The boom, nosing down toward the ships.
-    rr(g, 4, 28, 58, 6, 2, orange);
-    rr(g, 20, 20, 26, 10, 2, shade(orange, -0.12));
-    rr(g, 24, 22, 8, 6, 1.5, '#e8f0f2');
-    // Cables and a hanging container.
-    g.strokeStyle = 'rgba(50,40,32,0.6)';
+    // The A-frame, the machinery house, the stays, and the shipping light.
+    g.strokeStyle = orange;
+    g.lineWidth = 4.5;
+    g.beginPath();
+    g.moveTo(55, 32);
+    g.lineTo(63, 8);
+    g.moveTo(75, 32);
+    g.lineTo(67, 8);
+    g.stroke();
+    rr(g, 86, 12, 30, 19, 3, shade(orange, -0.08));
+    rr(g, 92, 17, 12, 9, 2, '#e8f0f2');
+    g.strokeStyle = 'rgba(58,46,34,0.5)';
+    g.lineWidth = 1.8;
+    g.beginPath();
+    g.moveTo(63, 10);
+    g.lineTo(8, 29);
+    g.moveTo(67, 10);
+    g.lineTo(122, 29);
+    g.stroke();
+    dot(g, 65, 5, 3.4, '#e05a3a');
+    // The cab, and the trolley out over the water with its spreader empty.
+    rr(g, 38, 40, 14, 12, 2, '#dfe8ea');
+    const tx = 10 + r.int(10);
+    rr(g, tx - 8, 22, 17, 9, 2, dark);
+    g.strokeStyle = 'rgba(50,40,32,0.65)';
     g.lineWidth = 1.6;
     g.beginPath();
-    g.moveTo(10, 34);
-    g.lineTo(10, 46);
-    g.moveTo(16, 34);
-    g.lineTo(16, 46);
+    g.moveTo(tx - 5, 31);
+    g.lineTo(tx - 5, 50);
+    g.moveTo(tx + 5, 31);
+    g.lineTo(tx + 5, 50);
     g.stroke();
-    rr(g, 5, 46, 16, 9, 1.5, r.chance(0.5) ? '#5f8781' : '#8a5330');
+    rr(g, tx - 12, 50, 24, 7, 2, dark);
+    // One sunlit edge along the boom, so it does not read as a flat bar.
     g.strokeStyle = 'rgba(255,245,230,0.35)';
-    g.lineWidth = 1.4;
+    g.lineWidth = 1.6;
     g.beginPath();
-    g.moveTo(4, 29.5);
-    g.lineTo(62, 29.5);
+    g.moveTo(3, 31.5);
+    g.lineTo(125, 31.5);
     g.stroke();
-  }, 64, 96);
+  }, 128, 224);
 
   // The post window: a kiosk the size of a biscuit tin.
   make('postwindow', 1, (g) => {

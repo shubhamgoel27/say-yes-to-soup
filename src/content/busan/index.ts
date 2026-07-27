@@ -21,6 +21,12 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c5.hotteok.start',
       doneNode: 'c5.hotteok.flipped',
+      title: 'The hotteok griddle',
+      howTo: [
+        'A ball of dough waits on the iron, and the heat sweeps across the gauge above it.',
+        'Space presses and flips in one motion. Time it to the golden middle, three discs running.',
+        'Burn one and nothing is lost. Mi-ja claims the dark one, hands you fresh dough, and Space begins again.',
+      ],
       make: (root, audio) => new HotteokPanel(root, audio as AudioBus),
     },
   ],

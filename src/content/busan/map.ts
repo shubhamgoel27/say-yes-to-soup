@@ -118,7 +118,8 @@ function objectAt(x: number, y: number): string {
   if (y === 24 && (x === 6 || x === 27)) return 'K';
   if (y === 25 && x === 34) return 'K';
   // Cranes stand in the first water row so the quay can look up at them.
-  if (y === 26 && (x === 5 || x === 11 || x === 36 || x === 41)) return 'R';
+  // They are three tiles tall now, so they keep clear of where people stand.
+  if (y === 26 && (x === 5 || x === 11 || x === 32 || x === 41)) return 'R';
   const poi = POIS[`${x},${y}`];
   if (poi) return poi;
   // Weeds in the yard corners, deterministic so the map never crawls.
@@ -198,7 +199,11 @@ export const BUSAN_MAP: MapData = {
   objects,
 };
 
-/** Old Man Cho's tea house: shoes off, low tables, a kettle allowed to hurry. */
+/**
+ * Old Man Cho's tea house: shoes off, low tables, a kettle allowed to hurry.
+ * The near table group sits one column west of the door so the tile you face
+ * when you arrive is floor, not a stool hidden under your own sprite.
+ */
 export const TEAHOUSE_MAP: MapData = {
   id: 'teahouse',
   name: 'The Tea House',
@@ -236,8 +241,8 @@ export const TEAHOUSE_MAP: MapData = {
     '# TTs  TTs #',
     '# mm   mm  #',
     '#          #',
-    '#  TTs  g  #',
-    '#  mm e   h#',
+    '# TTs   g  #',
+    '# mm  e   h#',
     '#####m######',
   ],
   triggers: [{ at: [5, 8], type: 'door', to: 'busan', spawn: [8, 7], facing: 'down' }],

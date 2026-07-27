@@ -91,9 +91,9 @@ function objectAt(x: number, y: number): string {
   // Tomatoes drying beside Nonna Concetta's lane; prickly pear on the lava.
   if (x === 7 && y === 16) return 'P';
   if ((x === 33 && y === 12) || (x === 34 && y === 27)) return 'f';
-  // The cooperative's lemon crates: terrace edge, granita bar, mole-side
-  // stack waiting for Patanè's ship.
-  if ((x === 7 && y === 12) || (x === 12 && y === 14) || (x === 33 && y === 19)) return 'k';
+  // The cooperative's lemon crates: terrace edge, granita bar, and a stack
+  // waiting for Patanè's ship on the rock beside the mole, out of its mouth.
+  if ((x === 7 && y === 12) || (x === 12 && y === 14) || (x === 33 && y === 21)) return 'k';
   // Lemon trees on both terraces.
   if ((x === 3 && y === 9) || (x === 5 && y === 11) || (x === 3 && y === 13) || (x === 6 && y === 9)) return 'T';
   if ((x === 15 && y === 2) || (x === 18 && y === 3) || (x === 21 && y === 2) || (x === 24 && y === 3)) return 'T';

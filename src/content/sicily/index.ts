@@ -58,16 +58,35 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c8.scopa.start',
       doneNode: 'c8.scopa.done',
+      title: 'Scopa at the circolo',
+      howTo: [
+        'Left and right choose a card from your hand. Space plays it onto the wood.',
+        'Take a table card of the same number, or several that add up to yours.',
+        'Clear the table and it is a scopa, and you shout, and the shouting is not optional.',
+        'You are allowed to lose. He shows you the hand you missed, then deals again.',
+      ],
       make: (root, audio) => new ScopaPanel(root, audio as AudioBus),
     },
     {
       flag: 'c8.pisci.start',
       doneNode: 'c8.pisci.done',
+      title: 'U pisci a mari',
+      howTo: [
+        'The rais lifts his arm and his call rolls across the water toward the boat.',
+        'Space pulls the oar the moment it arrives. Three good strokes close each pass.',
+        'Rush it and the stroke breaks, which delights the whole harbor. He calls again.',
+      ],
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
     {
       flag: 'c8.cook.start',
       doneNode: 'c8.cook.finish',
+      title: 'The pastry bag',
+      howTo: [
+        'Space starts the ricotta, Space again stops it. The gauge shows the sweet zone.',
+        'Both ends, always. Then the arrows pick a garnish, and every garnish is correct.',
+        'Overfill and the shell splits. Alfio eats the evidence and hands you a fresh one.',
+      ],
       make: (root, audio) => new CannoloPanel(root, audio as AudioBus),
     },
   ],

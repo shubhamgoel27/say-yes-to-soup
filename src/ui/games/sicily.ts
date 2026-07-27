@@ -422,7 +422,19 @@ const PILE_OPP = { x: 46, y: 32 };
 
 type Spr = { card: Card; x: number; y: number; rot: number; sc: number; up: boolean; layer: number; rl: number; dead: boolean };
 
-type ScopaPhase = 'play' | 'wait' | 'between' | 'done';
+type ScopaPhase = 'play' | 'wait' | 'between' | 'lost' | 'done';
+
+/**
+ * What the elder says when he wins, which he is allowed to do. Losing is a
+ * real outcome here: a card game you cannot lose is not a card game. The
+ * story flag only ever comes from a win, and a loss costs nothing but the
+ * afternoon, which is what the afternoon is for.
+ */
+const CONSOLATIONS = [
+  'You played fast and honest. Fast is worth two points; honest is worth the chair. Keep the second one.',
+  'Ha! Do not make that face. I have been losing at this table since before your country had that flag.',
+  'The cards were his tonight, not yours. Next deal they change sides, they always do. That is why we deal again.',
+] as const;
 
 export class ScopaPanel {
   private deck: Card[] = [];
@@ -444,6 +456,8 @@ export class ScopaPanel {
   private target = 6;
   private lastCapMine = false;
   private coachI = 0;
+  private lesson = '';
+  private consolI = 0;
   private hint = '';
   private flourish = '';
   private onDone: (() => void) | null = null;
@@ -471,6 +485,7 @@ export class ScopaPanel {
     this.oppPts = 0;
     this.target = 6;
     this.coachI = 0;
+    this.lesson = '';
     this.scene ??= new Scene();
     this.scene.restart();
     this.setHint = mountScene(this.root, 'Scopa at the Circolo', this.scene).setHint;
@@ -640,6 +655,44 @@ export class ScopaPanel {
       }
       this.flourishAt = sc.time;
     });
+  }
+
+  /** What `card` would take off the table right now, or null for nothing. */
+  private wouldTake(card: Card): Card[] | null {
+    const single = this.table.find((t) => t.v === card.v);
+    if (single) return [single];
+    const idx = findSum(this.table, card.v);
+    if (!idx) return null;
+    return idx.map((i) => this.table[i]).filter((c): c is Card => !!c);
+  }
+
+  /**
+   * The elder watches every card you do not play. When he wins he says one
+   * true thing about the hand, which is the entire reason to lose to him.
+   */
+  private noteLesson(played: Card) {
+    const sette = (cs: Card[]) => cs.some((c) => c.v === 7 && c.s === 0);
+    const took = this.wouldTake(played);
+    const rest = this.hand.filter((c) => c !== played);
+    if (this.table.some((t) => t.v === 7 && t.s === 0) && !(took && sette(took))) {
+      const saver = rest.find((c) => {
+        const t = this.wouldTake(c);
+        return !!t && sette(t);
+      });
+      if (saver) {
+        this.lesson = `The settebello was lying there in the sun and your ${saver.v} was in your hand. She is a whole point, bedda. Her first, always.`;
+        return;
+      }
+    }
+    if (took) return;
+    const alt = rest.find((c) => !!this.wouldTake(c));
+    if (alt) {
+      const got = this.wouldTake(alt) ?? [];
+      this.lesson =
+        got.length === 1
+          ? `You held the ${alt.v} and its twin was lying right there on the wood, in the sun, waiting. Talìa before you play, picciriddu.`
+          : `You held the ${alt.v}, and the wood was showing ${got.map((c) => c.v).join(' and ')}. Arithmetic, picciriddu. Arithmetic is also fishing.`;
+    }
   }
 
   /** Play `card`: capture by exact match first, else by sum, else it stays. */
@@ -829,6 +882,9 @@ export class ScopaPanel {
   onAction() {
     if (this.phase === 'play') {
       if (this.cursor >= this.hand.length) this.cursor = Math.max(0, this.hand.length - 1);
+      const chosen = this.hand[this.cursor];
+      if (!chosen) return;
+      this.noteLesson(chosen);
       const played = this.hand.splice(this.cursor, 1)[0];
       if (!played) return;
       this.hint = this.resolve(played, true);
@@ -836,7 +892,8 @@ export class ScopaPanel {
       this.phase = 'wait';
       this.waitT = 0.8;
     } else if (this.phase === 'between') {
-      if (this.myPts >= this.target) {
+      const over = this.myPts >= this.target || this.oppPts >= this.target;
+      if (over && this.myPts > this.oppPts) {
         this.phase = 'done';
         this.flourish = '';
         this.hint = `${this.myPts} to ${this.oppPts}. The table thumps; the chair is yours now, officially. Press Space.`;
@@ -847,14 +904,32 @@ export class ScopaPanel {
           if (!calm()) sc.thump(5, 0.05);
           sc.burst(320, 150, { n: calm() ? 8 : 24, color: '#e8c86a', speed: 160, life: 0.9, size: 3, grav: 160 });
         }
-      } else if (this.oppPts >= this.target) {
-        this.target += 2;
-        this.startRound();
-        this.hint = `He reaches ${this.oppPts} and waves it away: "Warm-up. We play to ${this.target} now." The cards come around again.`;
+      } else if (over && this.oppPts > this.myPts) {
+        // He wins one. Nothing is lost except the game, and the game was
+        // never the point: the rematch is, and so is what he says next.
+        this.phase = 'lost';
+        this.flourish = '';
+        this.audio.bump();
+        const sc = this.scene;
+        if (sc) {
+          sc.flash('#e8dcc4', 0.14);
+          if (!calm()) sc.thump(2, 0.03);
+        }
+        const said = this.lesson || CONSOLATIONS[this.consolI % CONSOLATIONS.length] || '';
+        this.consolI++;
+        this.lesson = '';
+        this.hint =
+          `${this.oppPts} to ${this.myPts}, his. He gathers the cards without hurrying and taps them square. ` +
+          `"${said}" Nobody has ever left this table after one game. Space, and he deals again.`;
       } else {
         this.startRound();
         this.hint = `${this.myPts} to ${this.oppPts}, playing to ${this.target}. The deal passes; the fan takes a turn too.`;
       }
+    } else if (this.phase === 'lost') {
+      this.myPts = 0;
+      this.oppPts = 0;
+      this.startRound();
+      this.hint = 'Fresh deal, nothing owed, the espresso going cold in exactly the same place. "Now. The sevens, then everything else."';
     } else if (this.phase === 'done') {
       this.root.hidden = true;
       const done = this.onDone;
@@ -960,6 +1035,14 @@ export class ScopaPanel {
       g.fillStyle = '#ffe1a0';
       g.fillText(this.flourish, 0, 0);
       g.restore();
+    }
+    if (this.phase === 'lost') {
+      inkText(g, 'he shuffles without being asked', 320, 152, {
+        size: 13,
+        italic: true,
+        color: 'rgba(244,236,214,0.85)',
+        align: 'center',
+      });
     }
     if (this.phase === 'done' && sc.time - this.sparkleAt > 0.7) {
       this.sparkleAt = sc.time;
@@ -1169,11 +1252,12 @@ function pisciFish(): HTMLCanvasElement {
   return cv;
 }
 
-type PisciPhase = 'row' | 'leap' | 'done';
+type PisciPhase = 'row' | 'leap' | 'lost' | 'done';
 
 export class PisciPanel {
   private phase: PisciPhase = 'row';
   private strokes = 0; // good strokes this leg
+  private broke = 0; // mistimed pulls this pass; three and the stroke breaks
   private leg = 0; // 0..2; the fish escapes after legs 0 and 1
   private x = 1; // the rais's call rolling toward the boat
   private speed = 0.5;
@@ -1204,6 +1288,7 @@ export class PisciPanel {
     this.onDone = onDone;
     this.phase = 'row';
     this.strokes = 0;
+    this.broke = 0;
     this.leg = 0;
     this.x = 1;
     this.speed = 0.5;
@@ -1227,9 +1312,9 @@ export class PisciPanel {
       if (this.x < -0.08) {
         this.audio.slosh();
         this.x = 1;
-        this.hint = 'The call goes by unpulled. The rais forgives you at the top of his voice. Again.';
         this.scene?.burst(BOAT_AT.x - 60, 198, { n: calm() ? 2 : 6, color: 'rgba(235,248,250,0.85)', size: 2, speed: 60, life: 0.5, grav: 220 });
         this.rockT = 0;
+        this.stumble('The call goes by unpulled. The rais forgives you at the top of his voice. Again.');
       }
     } else if (this.phase === 'leap') {
       this.leapT -= dt;
@@ -1247,6 +1332,7 @@ export class PisciPanel {
       if (this.leapT <= 0) {
         this.phase = 'row';
         this.x = 1;
+        this.broke = 0; // a new pass, and the rhythm starts forgiven
         this.speed += 0.14;
         this.hint = 'The boat comes about. The rais calls faster now; the fish has made it personal.';
       }
@@ -1263,8 +1349,42 @@ export class PisciPanel {
     void dir;
   }
 
+  /**
+   * One oar out of time. Three in the same pass and the boat stops being a
+   * boat, which is the fail: loud, wet, and instantly repeatable. The fish is
+   * never lost, only postponed until everyone stops laughing.
+   */
+  private stumble(msg: string) {
+    this.broke++;
+    if (this.broke < 3) {
+      this.hint = msg;
+      return;
+    }
+    this.phase = 'lost';
+    this.audio.bump();
+    const sc = this.scene;
+    if (sc) {
+      sc.flash('#eaf6fa', 0.16);
+      if (!calm()) sc.thump(4, 0.05);
+      sc.burst(BOAT_AT.x, 200, { n: calm() ? 6 : 18, color: 'rgba(235,248,250,0.9)', size: 2.8, speed: 120, life: 0.7, grav: 300 });
+    }
+    this.hint =
+      'The stroke breaks. Four oars, four opinions, and the boat sits down in the water like a tired dog. ' +
+      'The rais laughs until he has to hold the gunwale. "Amunì, from the top." Space to take it again.';
+  }
+
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'lost') {
+      this.phase = 'row';
+      this.strokes = 0;
+      this.broke = 0;
+      this.leg = 0;
+      this.x = 1;
+      this.speed = 0.5;
+      this.hint = 'He wipes his eyes and lifts his arm again. Space to pull as the call reaches the boat.';
+      return;
+    }
     if (this.phase === 'row') {
       if (this.x <= 0.24 && this.x >= -0.08) {
         this.strokes++;
@@ -1313,7 +1433,7 @@ export class PisciPanel {
         this.audio.bump();
         this.rockT = 0;
         sc?.burst(BOAT_AT.x + 40, 196, { n: 2, color: 'rgba(235,248,250,0.7)', size: 1.8, speed: 40, life: 0.4, grav: 180 });
-        this.hint = 'Early. Wait for the call to reach the boat; the sea keeps the tempo, not you.';
+        this.stumble('Early. The blade slaps air. Wait for the call to reach the boat; the sea keeps the tempo, not you.');
       }
     } else if (this.phase === 'done') {
       this.root.hidden = true;
@@ -1459,6 +1579,28 @@ export class PisciPanel {
     }
     const chase = this.phase === 'done' ? 'caught' : ['first pass', 'second pass', 'the taking'][this.leg] ?? '';
     inkText(g, chase, 92, 315, { size: 12, color: 'rgba(242,230,208,0.9)', italic: true });
+    // The rhythm plank: three oars in time, and how many are not.
+    rr(g, 192, 300, 138, 30, 5, 'rgba(58,42,26,0.78)');
+    g.lineCap = 'round';
+    for (let i = 0; i < 3; i++) {
+      const gone = i < this.broke || this.phase === 'lost';
+      g.strokeStyle = gone ? '#c1512f' : 'rgba(242,230,208,0.7)';
+      g.lineWidth = 2.6;
+      const x0 = 204 + i * 15;
+      g.beginPath();
+      g.moveTo(x0, gone ? 320 : 322);
+      g.lineTo(x0 + (gone ? 9 : 7), gone ? 310 : 308);
+      g.stroke();
+    }
+    inkText(g, 'the stroke', 252, 315, { size: 12, color: 'rgba(242,230,208,0.9)', italic: true });
+    if (this.phase === 'lost') {
+      inkText(g, 'the rais is still laughing', 344, 70, {
+        size: 14,
+        italic: true,
+        color: 'rgba(40,52,72,0.75)',
+        align: 'center',
+      });
+    }
   }
 }
 
@@ -1467,9 +1609,10 @@ export class PisciPanel {
 /**
  * CannoloPanel: behind Alfio's counter with the pastry bag. Each shell is
  * filled at the moment, never before: press to pipe, press to stop in the
- * sweet zone, both ends, then the garnish. Overfilling erupts, and Alfio
- * eats the evidence for quality. Nothing here can fail; the law is the
- * lesson, and the law is: a filled shell waiting is a soggy lie.
+ * sweet zone, both ends, then the garnish. The one real failure is greed:
+ * overfill and the shell splits, Alfio eats the evidence, and a blameless
+ * new shell is on the board before you can apologize. Nothing is lost but
+ * the shell. The law is the lesson: a filled shell waiting is a soggy lie.
  */
 
 type CannoloGarnish = { name: string; line: string };
@@ -1743,17 +1886,14 @@ export class CannoloPanel {
           }));
         }
         this.creamDone0 = 0;
+        this.creamDone1 = 0;
         this.hint =
-          'The shell ERUPTS ricotta from both ends. Alfio catches it and eats the whole disaster in one bite. ' +
-          '"Quality control." A new shell appears.';
+          'Too much. The shell splits along its seam and lets go from both ends at once. Alfio catches the wreck and eats it in one bite. ' +
+          '"Quality control." Another shell is already on the board. Space, or wait for him to chew.';
       }
     } else if (this.phase === 'burst') {
       this.burstT -= dt;
-      if (this.burstT <= 0) {
-        this.phase = 'pipe';
-        this.splats = [];
-        this.hint = 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
-      }
+      if (this.burstT <= 0) this.freshShell();
     }
     this.bagEase += ((this.flowing ? 1 : 0) - this.bagEase) * Math.min(1, dt * 8);
     this.servedT += dt;
@@ -1764,6 +1904,18 @@ export class CannoloPanel {
     this.setHint(this.hint);
   }
 
+  /** Same customer, same order, no scolding. The split shell costs nothing. */
+  private freshShell() {
+    this.phase = 'pipe';
+    this.splats = [];
+    this.burstT = 0;
+    this.end = 0;
+    this.fill = 0;
+    this.creamDone0 = 0;
+    this.creamDone1 = 0;
+    this.hint = 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
+  }
+
   onDir(dir: Dir) {
     if (this.phase !== 'garnish') return;
     if (dir === 'left' || dir === 'up') this.gCur = (this.gCur + GARNISHES.length - 1) % GARNISHES.length;
@@ -1772,6 +1924,10 @@ export class CannoloPanel {
 
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'burst') {
+      this.freshShell();
+      return;
+    }
     if (this.phase === 'pipe') {
       if (!this.flowing) {
         this.flowing = true;

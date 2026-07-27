@@ -111,11 +111,14 @@ export const CHAPTER: ChapterDef = {
   moods: {
     // White-light low-tide noon: bleached, pale, the shadows short and honest.
     tideout: {
-      top: 'rgba(190,205,215,0.14)',
-      mid: 'rgba(235,232,220,0.05)',
-      bottom: 'rgba(170,185,190,0.10)',
-      vig: 0.26,
-      ambient: 0xefe4cf,
+      // Coral lime is already near white, so a bright ambient on top of it
+      // blew the lanes out and set the bloom halos bleeding across the sand.
+      // The light is still hard noon; it just has somewhere left to go.
+      top: 'rgba(150,178,198,0.20)',
+      mid: 'rgba(228,220,198,0.06)',
+      bottom: 'rgba(148,168,176,0.16)',
+      vig: 0.34,
+      ambient: 0xe2d4b8,
     },
     // The market corner at dusk: lamp-warm, the sky giving up its blue gently.
     dusklamp: {

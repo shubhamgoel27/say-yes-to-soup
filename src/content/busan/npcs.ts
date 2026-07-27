@@ -69,6 +69,7 @@ export const BUSAN_NPCS: NpcDef[] = [
       { when: { not: ['c5.met.mija'] }, node: 'c5.mija.first' },
       { when: { has: ['c5.met.mija'], not: ['c5.hotteok.done'] }, node: 'c5.mija.offer' },
       { when: { has: ['c5.hotteok.done'], not: ['c5.mija2'] }, node: 'c5.mija.after' },
+      { when: { has: ['c5.hotteok.done'] }, node: 'c5.mija.again' },
       { node: 'c5.mija.idle' },
     ],
   },
@@ -188,10 +189,12 @@ export const BUSAN_NPCS: NpcDef[] = [
     ],
   },
   {
+    // At the alley's north corner, not in it: the corridor is two tiles wide
+    // and she needs it empty to shoot down it anyway.
     id: 'chascaC5',
     name: 'Chasca',
     map: 'busan',
-    pos: [30, 19],
+    pos: [29, 15],
     range: 0,
     look: {
       skin: '#c98f5e',
@@ -382,6 +385,21 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Dae-ho', text: 'It has never liked me. Thirty years.' },
     ],
     effects: ['set:c5.mija2'],
+  },
+  'c5.mija.again': {
+    lines: [
+      { who: 'Mi-ja', text: 'The line is thinning and the iron is still hot. Hands like yours should not stand around holding a paper cup.' },
+    ],
+    choices: [
+      { text: 'Take the spatula again', when: { has: ['c5.hotteok.done'] }, goto: 'c5.mija.hotteokReplay' },
+      { text: 'Just here for the eating today', goto: 'c5.mija.idle' },
+    ],
+  },
+  'c5.mija.hotteokReplay': {
+    lines: [
+      { who: 'Mi-ja', text: 'Go on. Nothing to prove tonight. Press, gold, flip, and if one goes dark it is mine, same as always.' },
+    ],
+    effects: ['set:replay.mode', 'set:c5.hotteok.start'],
   },
   'c5.mija.idle': {
     lines: [{ who: 'Mi-ja', text: 'One more? The line forms behind the smell.' }],

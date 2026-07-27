@@ -76,6 +76,7 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { has: ['c8.granita'], not: ['c8.arancino'] }, node: 'c8.alfio.lunch' },
       { when: { has: ['c8.arancino'], not: ['c8.cannolo'] }, node: 'c8.alfio.cannolo' },
       { when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] }, node: 'c8.alfio.bag' },
+      { when: { has: ['c8.cook.done'] }, node: 'c8.alfio.again' },
       { node: 'c8.alfio.idle' },
     ],
   },
@@ -98,6 +99,7 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { has: ['met.elders', 'c8.pranzo'], not: ['c8.scopa.won'] }, node: 'c8.elders.wave' },
       { when: { has: ['met.elders'], not: ['c8.pranzo'] }, node: 'c8.elders.notyet' },
       { when: { has: ['c8.scopa.won'], not: ['c8.elders.after'] }, node: 'c8.elders.post' },
+      { when: { has: ['c8.scopa.won'] }, node: 'c8.elders.again' },
       { node: 'c8.elders.idle' },
     ],
   },
@@ -135,15 +137,18 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { not: ['met.saro'] }, node: 'c8.saro.first' },
       { when: { has: ['met.saro', 'c8.pranzo'], not: ['c8.pisci.won'] }, node: 'c8.saro.recruit' },
       { when: { has: ['c8.pisci.won'], not: ['c8.saro.blessed'] }, node: 'c8.saro.post' },
+      { when: { has: ['c8.pisci.won'] }, node: 'c8.saro.again' },
       { node: 'c8.saro.idle' },
     ],
   },
   {
+    // Mending his net on the mole's north row, so the row you land on stays
+    // open all the way ashore. The mole is two tiles wide: he stays put.
     id: 'nino',
     name: 'Nino',
     map: 'sicily',
-    pos: [38, 20],
-    range: 1,
+    pos: [38, 19],
+    range: 0,
     look: {
       skin: '#b97f52',
       hair: '#1c1410',
@@ -224,10 +229,12 @@ export const SICILY_NPCS: NpcDef[] = [
     ],
   },
   {
+    // The folding table is at the mole's very end, in the corner, where it
+    // leaves both rows of the walk clear behind him.
     id: 'patane',
     name: 'Signor Patanè',
     map: 'sicily',
-    pos: [41, 19],
+    pos: [42, 19],
     range: 0,
     look: {
       skin: '#a06a42',
@@ -536,6 +543,21 @@ export const SICILY_NODES: NodeMap = {
     ],
     effects: ['set:c8.cannolo', 'journal:dishes.cannolo'],
   },
+  'c8.alfio.again': {
+    lines: [
+      { who: 'Alfio', text: 'The shells came out of the fryer blistered and rude, exactly right. Three of them, no customers waiting. Purely for the hands.' },
+    ],
+    choices: [
+      { text: 'Take the pastry bag again', when: { has: ['c8.cook.done'] }, goto: 'c8.alfio.cookReplay' },
+      { text: 'Stay on this side of the counter', goto: 'c8.alfio.idle' },
+    ],
+  },
+  'c8.alfio.cookReplay': {
+    lines: [
+      { who: 'Alfio', text: 'No lesson today, friend. Fill them, dress them, and we eat the mistakes ourselves. That is the good half of this trade.' },
+    ],
+    effects: ['set:replay.mode', 'set:c8.cook.start'],
+  },
   'c8.alfio.idle': {
     lines: [
       { who: 'Alfio', text: 'The gelsi is nearly finished for the season. When it goes, it goes like a ferry: no argument, only a smaller horizon.' },
@@ -627,6 +649,21 @@ export const SICILY_NODES: NodeMap = {
     ],
     effects: ['set:c8.elders.after'],
   },
+  'c8.elders.again': {
+    lines: [
+      { who: 'The Elders', text: 'The chair is warm and the deck is shuffled. We promised you a hundred losses, picciriddu, and so far you have collected almost none.' },
+    ],
+    choices: [
+      { text: 'Take the chair again', when: { has: ['c8.scopa.won'] }, goto: 'c8.elders.scopaReplay' },
+      { text: 'Let them keep the afternoon', goto: 'c8.elders.idle' },
+    ],
+  },
+  'c8.elders.scopaReplay': {
+    lines: [
+      { who: 'The Elders', text: 'Bravo. Nothing at stake today except the sevens, and the sevens are always at stake. Cut the deck. Amunì.' },
+    ],
+    effects: ['set:replay.mode', 'set:c8.scopa.start'],
+  },
   'c8.elders.idle': {
     lines: [
       { who: 'The Elders', text: 'Cards, coffee, the fan when the fan agrees to work. Membership is for life, and the life is this exact afternoon, forever.' },
@@ -710,6 +747,21 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Don Saro', text: 'You stood in the boat, so you are in the story now. In fifty years some picciriddu will row your oar and not know your name. Perfect.' },
     ],
     effects: ['set:c8.saro.blessed'],
+  },
+  'c8.saro.again': {
+    lines: [
+      { who: 'Don Saro', text: 'The rais takes the boat out most evenings to keep the young ones honest. Your bench is free, and your sash has not dried anyway.' },
+    ],
+    choices: [
+      { text: 'Take the oar again', when: { has: ['c8.pisci.won'] }, goto: 'c8.saro.pisciReplay' },
+      { text: 'Leave the sea to itself tonight', goto: 'c8.saro.idle' },
+    ],
+  },
+  'c8.saro.pisciReplay': {
+    lines: [
+      { who: 'Don Saro', text: 'Go on, no saint watching this time, only the rais and his lungs. Listen for the call and pull with it. That is all rowing has ever been.' },
+    ],
+    effects: ['set:replay.mode', 'set:c8.pisci.start'],
   },
   'c8.saro.idle': {
     lines: [
