@@ -1792,6 +1792,25 @@ export class Tileset {
     return h;
   }
 
+  /**
+   * How much of its cell a thing actually stands on, as a fraction of a tile.
+   * The caster grid is made of squares, so a signpost swept along the sun
+   * throws a plank and a lamp throws a slab: grey rectangles lying on pale
+   * paving, which is what they read as. Anything whose art is no wider than
+   * its own cell is a post on a base, and gets a base-sized shadow.
+   */
+  private footprints = new Map<string, number>();
+  castFootprint(kind: string): number {
+    let f = this.footprints.get(kind);
+    if (f === undefined) {
+      const art = ART_ALIAS[kind] ?? kind;
+      const first = this.v.get(art)?.[0];
+      f = first && GROUNDED_TALL.has(art) && first.width / S <= 1.25 ? 0.44 : 1;
+      this.footprints.set(kind, f);
+    }
+    return f;
+  }
+
   /** Freestanding props whose sun shadow the renderer casts directionally. */
   castsSun(kind: string): boolean {
     return GROUNDED_TALL.has(ART_ALIAS[kind] ?? kind) || GROUNDED_TALL.has(kind);

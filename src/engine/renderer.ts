@@ -21,7 +21,10 @@ const LIFE_FAMILY: Record<string, string> = {
   grass: 'green', puna: 'green',
   dirt: 'earth', laterite: 'earth',
   sand: 'sand',
-  plaza: 'stone', lanepave: 'stone', corallane: 'stone', basalto: 'stone', tataki: 'stone',
+  // A coral lane is crushed shell, not paving with weeds in it: green sprigs
+  // at even spacing across it read as litter dropped on clean sand.
+  corallane: 'sand',
+  plaza: 'stone', lanepave: 'stone', basalto: 'stone', tataki: 'stone',
   galistone: 'stone', chowkbrick: 'stone',
 };
 /**
@@ -47,6 +50,13 @@ const SHH = Math.ceil(H / SH_DIV);
 /** How far past the view a caster can stand and still throw into it. */
 const SH_MX = 12;
 const SH_MY = 9;
+
+/**
+ * How tall a person is, in tiles, for the sun. Not the height of the sprite,
+ * which includes the headroom the art is drawn in, but the height a figure has
+ * to stand next to a house whose castHeight is three and a half.
+ */
+const ACTOR_H = 1.15;
 
 /** Depth into the cell each boundary-feather mask reaches, as a fraction. */
 const SPILL_DEPTHS = [0.12, 0.2, 0.3, 0.42, 0.58];
@@ -144,6 +154,12 @@ export class Renderer {
   private sunLen = 1;
   /** Where the sun is in its arc, 0 dawn to 1 dusk; kept for setNight. */
   private sunD = 0.5;
+  /**
+   * How much sun is still above the horizon, 1 to 0 across the sunset. Every
+   * direct-light cue is multiplied by it, so when it reaches zero the world is
+   * lit by lamps and nothing else throws.
+   */
+  private sunUp = 1;
   /** The cast-shadow throw for one tile of object height, in tiles. */
   private castX = 0;
   private castY = 0.2;
@@ -152,7 +168,7 @@ export class Renderer {
   /** Low-res composition buffer for the whole screen's cast shadows. */
   private shadowBuf = surface(SHW, SHH);
   /** Per-map caster heights in tiles, spread across each footprint. Once. */
-  private casterCache = new Map<string, Float32Array>();
+  private casterCache = new Map<string, { h: Float32Array; foot: Float32Array }>();
   /** The visible window's fields: distance to solid, to water, seam flag. */
   private fx0 = 0;
   private fy0 = 0;
@@ -167,6 +183,8 @@ export class Renderer {
   private fireScreen: [number, number][] = [];
   /** Scratch cell for per-sprite compositing (fire rim). */
   private scratch = surface(AW, AH);
+  /** This frame's sprite world positions, x,y interleaved. Grown, never rebuilt. */
+  private spriteXY = new Float64Array(64);
   /** Greeting waves and happy hops, keyed by actor, counted down in tick. */
   private waves = new Map<Actor, number>();
   private bounces = new Map<Actor, number>();
@@ -601,12 +619,16 @@ export class Renderer {
 
   /**
    * The sun crosses the sky. Morning throws shadows one way, noon pulls them
-   * short, evening throws them the other; night holds the last dusk angle,
-   * faded, for the lamps to argue with.
+   * short, evening throws them the other, and then it sets. Between 0.60 and
+   * 0.72 the last of the direct light leaves the world; after that the only
+   * light with a direction is the one coming out of somebody's window, and a
+   * night frame belongs entirely to its lamps.
    */
   setSun(dayT: number) {
     this.dayT = dayT;
     this.sunD = Math.max(0, Math.min(1, (dayT - 0.02) / 0.58));
+    const k = Math.max(0, Math.min(1, (dayT - 0.6) / 0.12));
+    this.sunUp = 1 - k * k * (3 - 2 * k); // smoothstep out, no kink at either end
     this.refreshSun();
   }
 
@@ -626,7 +648,10 @@ export class Renderer {
     // The clock ticks every frame and the light barely moves: quantise, so the
     // one string this builds is built a few hundred times a day, not 60 times
     // a second. Nothing in the draw path allocates.
-    const q = Math.round(this.sunD * 512) * 1024 + Math.round(this.nightK * 64);
+    const q =
+      Math.round(this.sunD * 400) * 4096 +
+      Math.round(this.sunUp * 63) * 64 +
+      Math.round(this.nightK * 63);
     if (q === this.sunQ) return;
     this.sunQ = q;
     const d = this.sunD;
@@ -648,9 +673,24 @@ export class Renderer {
     const g = mix(43, 42);
     const b = mix(28, 76);
     this.shadowRGB = `rgb(${r},${g},${b})`;
-    // Long shadows are more penumbra than umbra, and the night keeps only a
-    // memory of the last angle.
-    this.shadowA = 0.3 * (1 - Math.min(0.32, (len - 0.45) * 0.16)) * (1 - this.nightK * 0.62);
+    // Long shadows are more penumbra than umbra; and once the sun is down
+    // there is nothing left to throw one, so the whole pass goes out with it
+    // rather than leaving grey wedges lying across the lamplight all night.
+    this.shadowA =
+      0.3 * (1 - Math.min(0.32, (len - 0.45) * 0.16)) * (1 - this.nightK * 0.62) * this.sunUp;
+  }
+
+  /**
+   * True when the sun's own pass is running: outdoors, with the sun still up.
+   * When it is not, every sprite's little contact shadow goes back to being
+   * the whole of its shadow, at the weight it carried before the pass existed.
+   */
+  private get sunPassOn(): boolean {
+    return this.shadowA >= 0.02 && this.mood !== 'interior';
+  }
+
+  private contactA(lit: number, unlit: number): number {
+    return this.sunPassOn ? lit : unlit;
   }
 
   /** The current map's fires, for warming the near side of whoever stands close. */
@@ -860,6 +900,18 @@ export class Renderer {
 
     this.buildFields(map, x0, y0, x1, y1);
 
+    // Where everybody is, worked out once. Two passes want it now: the sun
+    // lays their shadows down with the buildings' before the ground is
+    // finished, then the depth sort draws them, and `renderPos` hands back a
+    // fresh pair every time it is asked.
+    const need = sprites.length * 2;
+    if (this.spriteXY.length < need) this.spriteXY = new Float64Array(need + 32);
+    for (let i = 0; i < sprites.length; i++) {
+      const [px, py] = sprites[i]!.actor.renderPos();
+      this.spriteXY[i * 2] = px;
+      this.spriteXY[i * 2 + 1] = py;
+    }
+
     // Pass 1a: seamless ground, then the seams between materials broken.
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
@@ -947,8 +999,12 @@ export class Renderer {
     }
     ctx.globalAlpha = 1;
 
-    // Pass 1b4: and then the sun lays every standing thing across all of it.
-    this.drawCastShadows(map, cam, x0, y0, x1, y1);
+    // Pass 1b3b: and a ceiling on the ones that blow out.
+    this.capGround();
+
+    // Pass 1b4: and then the sun lays every standing thing across all of it,
+    // the people included.
+    this.drawCastShadows(map, cam, x0, y0, x1, y1, sprites);
 
     // Pass 1c: contact shade and walkable decor.
     for (let cy = y0; cy <= y1; cy++) {
@@ -990,14 +1046,15 @@ export class Renderer {
 
     const watery = (k: string) => k === 'sea' || k === 'water';
     // Note where the player stands (screen space) so idle NPCs can notice.
-    const playerS = sprites.find((s) => s.isPlayer) ?? sprites[0];
-    if (playerS) {
-      const [ppx, ppy] = playerS.actor.renderPos();
-      this.playerSX = (ppx - cam.x) * A;
-      this.playerSY = (ppy - cam.y) * A;
+    let pi = sprites.findIndex((s) => s.isPlayer);
+    if (pi < 0 && sprites.length) pi = 0;
+    if (pi >= 0) {
+      this.playerSX = (this.spriteXY[pi * 2]! - cam.x) * A;
+      this.playerSY = (this.spriteXY[pi * 2 + 1]! - cam.y) * A;
     }
     sprites.forEach((s, i) => {
-      const [px, py] = s.actor.renderPos();
+      const px = this.spriteXY[i * 2]!;
+      const py = this.spriteXY[i * 2 + 1]!;
       const bx = Math.round(px / TILE);
       const by = Math.round(py / TILE);
       // Standing at the water's edge, you are in the water too, upside down.
@@ -1017,11 +1074,14 @@ export class Renderer {
           const ty = (t.cy * TILE - cam.y) * A;
           // The sun's own throw is laid down by drawCastShadows; what is left
           // for each sprite here is the contact darkness at its own feet.
+          // Where that pass does not run, indoors and after the sun is down,
+          // this pool is the whole shadow again, at its old weight, because a
+          // teahouse floor with nothing on it is flatter than one with.
           if (t.kind === 'tree' || t.kind === 'palm') {
-            this.castShadow(tx + S / 2, ty + S - 8, 44, 0.13);
+            this.castShadow(tx + S / 2, ty + S - 8, 44, this.contactA(0.13, 0.2));
             this.drawDapple(tx + S / 2, ty + S - 8, t.cx, t.cy);
           } else if (this.tiles.isBuilding(t.kind)) {
-            this.castShadow(tx + S * 2.2, ty + S - 4, 108, 0.1);
+            this.castShadow(tx + S * 2.2, ty + S - 4, 108, this.contactA(0.1, 0.16));
             // A house sprite is four tiles of art on a five-tile footprint, so
             // the row above it is solid with nothing painted on it and reads
             // as open street. Where the map agrees that row is solid, give it
@@ -1030,7 +1090,7 @@ export class Renderer {
               this.tiles.drawBuildingCap(ctx, t.kind, tx, ty, t.cx, t.cy);
             }
           } else if (this.tiles.castsSun(t.kind)) {
-            this.castShadow(tx + S / 2, ty + S - 6, 30, 0.12);
+            this.castShadow(tx + S / 2, ty + S - 6, 30, this.contactA(0.12, 0.18));
           }
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
@@ -1165,10 +1225,11 @@ export class Renderer {
    * footprints so a five-by-five house throws one shadow and not one from the
    * single cell that happens to carry its sprite. Worked out once per map.
    */
-  private casterHeights(map: TileMap): Float32Array {
-    let grid = this.casterCache.get(map.id);
-    if (grid) return grid;
-    grid = new Float32Array(map.w * map.h);
+  private casterHeights(map: TileMap): { h: Float32Array; foot: Float32Array } {
+    const hit = this.casterCache.get(map.id);
+    if (hit) return hit;
+    const grid = new Float32Array(map.w * map.h);
+    const foot = new Float32Array(map.w * map.h).fill(1);
     const tallHere: boolean[] = new Array(map.w * map.h).fill(false);
     for (let y = 0; y < map.h; y++) {
       for (let x = 0; x < map.w; x++) {
@@ -1177,6 +1238,7 @@ export class Renderer {
         const k = y * map.w + x;
         tallHere[k] = true;
         grid[k] = this.tiles.castHeight(o.t);
+        foot[k] = this.tiles.castFootprint(o.t);
       }
     }
     // The invisible collision cells of a building carry no art and so no
@@ -1200,8 +1262,38 @@ export class Renderer {
       }
       if (!moved) break;
     }
-    this.casterCache.set(map.id, grid);
-    return grid;
+    const out = { h: grid, foot };
+    this.casterCache.set(map.id, out);
+    return out;
+  }
+
+  /**
+   * A ceiling on the ground.
+   *
+   * A hard coastal noon is meant to be bright, but La Caleta was putting a
+   * sixth of the frame at pure white: sand near the top of the range, a pale
+   * wear wash over it, then an ambient of 0xffffff and the bloom on top, and
+   * everything above the ceiling is the same colour: a hole in the picture
+   * where the drawing should be. One `darken` fill per frame, in the one mood
+   * that reaches it, holds the ground under the ceiling in a warm tone, so the
+   * light keeps its temperature and the cloud-break silhouette comes back.
+   * Nothing dimmer than the cap is touched at all: measured on
+   * `caleta-mid-day`, pixels at a saturated channel go 23.6% to 2.5% while
+   * the mean only moves 165 to 151, because what it takes away is the part
+   * that had stopped being a drawing.
+   */
+  private static readonly GROUND_CEILING: Record<string, string> = {
+    glare: 'rgb(192,183,165)',
+  };
+
+  private capGround() {
+    const cap = Renderer.GROUND_CEILING[this.mood];
+    if (!cap || this.nightK > 0.3) return;
+    const ctx = this.ctx;
+    ctx.globalCompositeOperation = 'darken';
+    ctx.fillStyle = cap;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   /**
@@ -1216,17 +1308,54 @@ export class Renderer {
    * It composes into a fifth-scale buffer and blows it back up, which is one
    * screen composite for the whole frame's shadows and gives the soft edge the
    * painterly idiom needs without a blur or a per-frame gradient anywhere.
+   *
+   * People are in it too. A figure standing in a lit street with nothing but a
+   * dot under her is the one thing in the frame disobeying the light, and the
+   * dot sits on her shoes rather than on the ground she is standing on, which
+   * is exactly what made her read as floating over a roofline. She goes into
+   * the same union as the houses, agreeing with them in direction, length and
+   * colour, and her shadow lands where her feet are.
    */
-  private drawCastShadows(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
+  private drawCastShadows(
+    map: TileMap,
+    cam: Camera,
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    sprites: Sprite[],
+  ) {
     // No sun reaches a room; indoors the lamps and the wall shade do the work.
-    if (this.shadowA < 0.02 || this.mood === 'interior') return;
-    const grid = this.casterHeights(map);
+    if (!this.sunPassOn) return;
+    const { h: grid, foot } = this.casterHeights(map);
     const { cv, g } = this.shadowBuf;
     const k = A / SH_DIV;
     const s = TILE * k;
     g.clearRect(0, 0, SHW, SHH);
     g.beginPath();
     let any = false;
+    // The convex hull of a base rectangle and its translate: the exact shape a
+    // footprint sweeps along the sun. One subpath per caster, all into the same
+    // path, so overlapping casters can never double darken.
+    const sweep = (bx: number, by: number, w: number, hgt: number, dx: number, dy: number) => {
+      if (by + dy + hgt < 0 || by > SHH) return;
+      if (bx + Math.min(0, dx) > SHW || bx + w + Math.max(0, dx) < 0) return;
+      g.moveTo(bx, by);
+      g.lineTo(bx + w, by);
+      if (dx >= 0) {
+        g.lineTo(bx + w + dx, by + dy);
+        g.lineTo(bx + w + dx, by + dy + hgt);
+        g.lineTo(bx + dx, by + dy + hgt);
+        g.lineTo(bx, by + hgt);
+      } else {
+        g.lineTo(bx + w, by + hgt);
+        g.lineTo(bx + w + dx, by + dy + hgt);
+        g.lineTo(bx + dx, by + dy + hgt);
+        g.lineTo(bx + dx, by + dy);
+      }
+      g.closePath();
+      any = true;
+    };
     for (let cy = y0 - SH_MY; cy <= y1; cy++) {
       if (cy < 0 || cy >= map.h) continue;
       const row = cy * map.w;
@@ -1241,26 +1370,24 @@ export class Renderer {
         const wob = TILE * k * 0.34;
         const dx = this.castX * hh * TILE * k + (cellHash(cx, cy, 181) - 0.5) * wob;
         const dy = Math.max(0, this.castY * hh * TILE * k + (cellHash(cx, cy, 191) - 0.5) * wob * 0.7);
-        if (by + dy + s < 0 || by > SHH) continue;
-        const bx = (cx * TILE - cam.x) * k;
-        if (bx + Math.min(0, dx) > SHW || bx + s + Math.max(0, dx) < 0) continue;
-        // The convex hull of a square and its translate: the exact swept shape.
-        g.moveTo(bx, by);
-        g.lineTo(bx + s, by);
-        if (dx >= 0) {
-          g.lineTo(bx + s + dx, by + dy);
-          g.lineTo(bx + s + dx, by + dy + s);
-          g.lineTo(bx + dx, by + dy + s);
-          g.lineTo(bx, by + s);
-        } else {
-          g.lineTo(bx + s, by + s);
-          g.lineTo(bx + s + dx, by + dy + s);
-          g.lineTo(bx + dx, by + dy + s);
-          g.lineTo(bx + dx, by + dy);
-        }
-        g.closePath();
-        any = true;
+        // A post stands on a base, not on the whole cell it occupies.
+        const fp = foot[row + cx]!;
+        const w = s * fp;
+        const inset = (s - w) / 2;
+        sweep((cx * TILE - cam.x) * k + inset, by + inset, w, w, dx, dy);
       }
+    }
+    // And the people. Their base is a shoe's width of ground at their feet,
+    // and they are as tall as a person is next to a house.
+    for (let i = 0; i < sprites.length; i++) {
+      const sp = sprites[i]!;
+      const hh =
+        sp.rig === 'animal' ? ACTOR_H * 0.42 : sp.actor.pose === 'sit' ? ACTOR_H * 0.62 : ACTOR_H;
+      const fx = (this.spriteXY[i * 2]! + TILE / 2 - cam.x) * k;
+      const fy = (this.spriteXY[i * 2 + 1]! + TILE - 2 - cam.y) * k;
+      const w = TILE * k * 0.68;
+      const d = TILE * k * 0.48;
+      sweep(fx - w / 2, fy - d / 2, w, d, this.castX * hh * TILE * k, this.castY * hh * TILE * k);
     }
     if (!any) return;
     g.fillStyle = this.shadowRGB;
@@ -1322,6 +1449,12 @@ export class Renderer {
       }
     };
     octave(9, 131, 5.5, 4.5, 1); // the meadow-scale washes
+    // A room's floor is swept. Outdoors the close-up octave was replaced by
+    // `groundWear`, which knows about tide damp, grime banked against a wall
+    // and lanes worn by feet, none of which is true of a tea house, where it
+    // only ever put a dark rim around the room and took the contrast out of
+    // the floor. Indoors, the old dapple stays.
+    if (this.mood === 'interior') octave(4, 101, 2.2, 2.4, 0.9);
     ctx.globalAlpha = 1;
   }
 
@@ -1337,6 +1470,7 @@ export class Renderer {
    * never going to fill it.
    */
   private groundWear(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
+    if (this.mood === 'interior') return; // a floor is not a street
     const ctx = this.ctx;
     const damp = this.wearBlobs[0];
     const worn = this.wearBlobs[1];
@@ -1358,6 +1492,11 @@ export class Renderer {
 
         let img = worn;
         let a = 0;
+        // The sea is not a damp bank. Its own cells were scoring dw = 0 and
+        // taking the tideline wash at full strength, which laid a flat navy
+        // sheet over every water tile in the game: half of Sicily's frame,
+        // ten grey levels of contrast, and the glints under it.
+        if (dw === 0) continue;
         if (dw <= 3) {
           // The tideline and the bank stay dark long after the water leaves.
           img = damp;
@@ -1551,10 +1690,14 @@ export class Renderer {
     const ctx = this.ctx;
     const a = strength * (1 - this.nightK * 0.55);
     if (a < 0.02) return;
-    const ww = w * (0.7 + 0.35 * this.sunLen);
+    // A room's lamps never set; outdoors the lean of this pool goes out with
+    // the sun, so after dark it is a contact shadow and not a leftover angle.
+    const lean = this.mood === 'interior' ? 1 : this.sunUp;
+    const len = 1 + (this.sunLen - 1) * lean;
+    const ww = w * (0.7 + 0.35 * len);
     ctx.save();
     ctx.translate(sx, sy);
-    ctx.transform(1, 0, this.sunSkew * this.sunLen, 0.32, 0, 0);
+    ctx.transform(1, 0, this.sunSkew * len * lean, 0.32, 0, 0);
     ctx.globalAlpha = a;
     ctx.drawImage(this.shadowBlob, -ww, -ww, ww * 2, ww * 2);
     ctx.restore();
@@ -1572,8 +1715,10 @@ export class Renderer {
     // of ticking against it.
     const sx = sxf;
     const sy = syf;
-    // A directional cast shadow: the figure stands IN the light, not on a dot.
-    this.castShadow(sx + S / 2, sy + S - 6, 30, 0.24);
+    // The figure's own throw is in the sun pass with everything else's; this
+    // is only the darkness where her feet meet the ground. With no sun up it
+    // is the whole of her shadow, so it goes back to its old weight.
+    this.castShadow(sx + S / 2, sy + S - 6, 26, this.contactA(0.13, 0.24));
 
     // Walk lean: under two degrees into the direction of travel, eased in and
     // out so it reads as weight, never wobble. The rotation pivots at the feet.
