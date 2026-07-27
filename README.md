@@ -8,6 +8,10 @@ You grew up on your grandmother Nani's postcards. Then the postcards stopped. Th
 
 ![title](docs/shots/title.png)
 
+![a walk through Ch'aska Pampa](docs/shots/walk.gif)
+
+*Ch'aska Pampa on an ordinary afternoon: this is the pace of the whole game.*
+
 ## The journey
 
 Ten chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos — and the same road home, upward.
