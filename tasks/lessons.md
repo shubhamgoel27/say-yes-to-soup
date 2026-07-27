@@ -99,3 +99,53 @@ texSubImage2D and the game visibly stuttered. Rule: any whole-frame blend
 or pattern pass goes on the Pixi stage (native GPU blending); the 2D
 canvas stays drawImage/fill only. And every visual pass ships with a
 before/after frame-time probe, not just a screenshot.
+
+## Check the news before denying it exists (2026-07-26)
+The user said Opus 5 had shipped two days earlier. It was past my training
+cutoff, so I told them confidently that no such model existed, twice, and
+only searched when they pushed back a second time. It had launched on
+2026-07-24. Rule: when a user reports a fact about the world that postdates
+my knowledge, the first move is a search, not a correction. A cutoff is a
+reason to check, never a reason to contradict someone about their own
+present. Cost: two wasted turns and a hit to my credibility on everything
+else I asserted that session.
+
+## Tests prove traversal; only playing proves a road (2026-07-26)
+The east road out of chapter 1 shipped one tile wide, ending in a one-tile
+gap, with an NPC standing on the only through square. Every automated test
+passed, because the map was technically connected, and each authoring agent
+reviewed its own screenshots and saw nothing wrong. The player hated it
+immediately. A read-only QA sweep that actually walked every map then found
+the same class of defect in roughly ten more places: a main street severed
+in the middle, an invisible wall of paddy painted the same green as the
+grass, a two-plank pier with one working plank, and an arrival that walks
+you into a person on the first keypress. Rule: for anything spatial, hold
+one direction and see where you end up. Reachability is not walkability, and
+an author's screenshot is not a playthrough. Budget a play pass per chapter,
+separate from the agent that authored it.
+
+## Global registries leak across chapters (2026-07-26)
+Four separate bugs in one day shared a single root cause: chapter data merged
+into one global bucket with no provenance.
+- `GLOW_STYLE` defined 3 lights while chapters registered 25, so every candle,
+  griddle and vending machine fell back to one orange blob wider than a street lamp.
+- `SIT_KINDS` was a union, so La Caleta declaring a crate sittable turned the
+  cargo ship's hatch beams into furniture and stole their examine line.
+- `TASKS` merged every chapter's guidance, so the endgame listed 20 stale
+  threads including chapter 1's "meet the village", ten villages later.
+- `refreshTaskChip()` only ran on errand events, so the chip froze mid chapter.
+Rule: when merging per-chapter data into a world-level structure, carry the
+owning chapter with each entry and scope lookups by it. Ask of every new
+registry: what happens when two chapters disagree about the same key?
+
+## An ending has to be authored, not just reached (2026-07-26)
+`story.end` fired the same plate, toasts and confetti as any ordinary chapter
+completion, over a task chip still telling the player to do what they had just
+done, with credits that were a font licence card still subtitled "a journal,
+half full" after the journal was full. A QA critic's verdict: "it stops, it
+does not end." Worse, the final scene could be permanently lost, because its
+dialogue arm sat below the `story.end` arms while the only task pointing at it
+fired after `story.end`, so natural play shadowed it forever while the game
+still announced the journal was complete. Rule: the last five minutes need the
+same deliberate authoring as the first five, and any content gated on an
+endgame flag must be checked in the order a real player will reach it.
