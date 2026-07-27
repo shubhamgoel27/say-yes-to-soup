@@ -4,7 +4,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, outlineSheet, surface } from '../art/pix';
+import { Rng, cellHash, outlineSheet, surface } from '../art/pix';
 
 /**
  * The world composer, smooth-art era. Renders the scene at 4x logical
@@ -24,12 +24,32 @@ const LIFE_FAMILY: Record<string, string> = {
   plaza: 'stone', lanepave: 'stone', corallane: 'stone', basalto: 'stone', tataki: 'stone',
   galistone: 'stone', chowkbrick: 'stone',
 };
-/** Fraction of eligible cells that sprout; hand-tuned per family. */
-const LIFE_DENSITY: Record<string, number> = { green: 0.16, earth: 0.12, sand: 0.12, stone: 0.15 };
+/**
+ * Base fraction of eligible cells that sprout, before the density field has
+ * its say. Ground life is not weather: it gathers where feet do not go, so
+ * this number is a ceiling that only wall bases, seams and shorelines reach.
+ */
+const LIFE_DENSITY: Record<string, number> = { green: 0.19, earth: 0.15, sand: 0.15, stone: 0.18 };
 const AW = CHAR_W * A;
 const AH = CHAR_H * A;
 const W = VIEW_W * A;
 const H = VIEW_H * A;
+
+/**
+ * The sun's shadows are composed in a small buffer and blown back up to the
+ * screen: one composite instead of hundreds, and the upscale is where the
+ * soft painterly edge comes from, for free.
+ */
+const SH_DIV = 7;
+const SHW = Math.ceil(W / SH_DIV);
+const SHH = Math.ceil(H / SH_DIV);
+
+/** How far past the view a caster can stand and still throw into it. */
+const SH_MX = 12;
+const SH_MY = 9;
+
+/** Depth into the cell each boundary-feather mask reaches, as a fraction. */
+const SPILL_DEPTHS = [0.12, 0.2, 0.3, 0.42, 0.58];
 
 export type Sprite = {
   actor: Actor;
@@ -108,11 +128,40 @@ export class Renderer {
   /** Baked walkable micro-decor per ground family; see groundLifePass. */
   private groundLife = new Map<string, HTMLCanvasElement[]>();
   private wallShadeStrip: HTMLCanvasElement;
+  /** The ground's own darkening where it runs up against a tall thing's back. */
+  private northContact: HTMLCanvasElement;
   private cloudPuff: HTMLCanvasElement;
   private fireflyGlow: HTMLCanvasElement;
+  /** Surface history: damp, worn-pale, grime, and the pale standing-print. */
+  private wearBlobs: HTMLCanvasElement[] = [];
+  private standPrint: HTMLCanvasElement;
+  /** Feather masks for ground-kind seams: [direction][variant]. */
+  private spillMasks: HTMLCanvasElement[][] = [];
+  /** Ground fragments already cut to a mask, keyed kind|dir|mask|variant. */
+  private spillCache = new Map<string, HTMLCanvasElement | null>();
   /** Sun geometry, driven by the world clock: skew sign is throw direction. */
   private sunSkew = -0.55;
   private sunLen = 1;
+  /** Where the sun is in its arc, 0 dawn to 1 dusk; kept for setNight. */
+  private sunD = 0.5;
+  /** The cast-shadow throw for one tile of object height, in tiles. */
+  private castX = 0;
+  private castY = 0.2;
+  private shadowRGB = '#2e2840';
+  private shadowA = 0.26;
+  /** Low-res composition buffer for the whole screen's cast shadows. */
+  private shadowBuf = surface(SHW, SHH);
+  /** Per-map caster heights in tiles, spread across each footprint. Once. */
+  private casterCache = new Map<string, Float32Array>();
+  /** The visible window's fields: distance to solid, to water, seam flag. */
+  private fx0 = 0;
+  private fy0 = 0;
+  private fw = 0;
+  private fh = 0;
+  private dSolid = new Uint8Array(0);
+  private dWater = new Uint8Array(0);
+  private fSeam = new Uint8Array(0);
+  private fKind: string[] = [];
   /** Fires on the current map (tile coords), for the warm-side sprite pass. */
   private fires: [number, number][] = [];
   private fireScreen: [number, number][] = [];
@@ -198,6 +247,19 @@ export class Renderer {
       ws.g.fillRect(0, 0, S, 16);
       this.wallShadeStrip = ws.cv;
 
+      // The far side. Where walkable ground runs into the back of a wall or
+      // the eave of a roof, the ground goes dark before it gets there: it is
+      // the only cue that says the plane beyond is lower and further away,
+      // and without it a player standing on that row stands on the roof.
+      const nc = surface(S, 26);
+      const g3b = nc.g.createLinearGradient(0, 0, 0, 26);
+      g3b.addColorStop(0, 'rgba(26,19,13,0)');
+      g3b.addColorStop(0.55, 'rgba(26,19,13,0.13)');
+      g3b.addColorStop(1, 'rgba(26,19,13,0.36)');
+      nc.g.fillStyle = g3b;
+      nc.g.fillRect(0, 0, S, 26);
+      this.northContact = nc.cv;
+
       const cp = surface(256, 256);
       const g4 = cp.g.createRadialGradient(128, 128, 26, 128, 128, 128);
       g4.addColorStop(0, 'rgba(30,24,40,0.10)');
@@ -215,9 +277,43 @@ export class Renderer {
       ff.g.fillStyle = g5;
       ff.g.fillRect(0, 0, 16, 16);
       this.fireflyGlow = ff.cv;
+
+      // Surface history. Four washes at the scale a place actually wears at:
+      // damp where the water reaches, pale where feet keep it swept, grime
+      // banked against the walls, and the bleached print of something that
+      // has stood in one spot for years.
+      const WEAR: [string, string][] = [
+        ['rgba(34,46,56,0.19)', 'rgba(34,46,56,0.11)'], // damp
+        ['rgba(228,212,174,0.18)', 'rgba(228,212,174,0.11)'], // worn pale, desire path
+        ['rgba(50,38,24,0.15)', 'rgba(50,38,24,0.09)'], // grime banked at a wall
+      ];
+      for (const [core, mid] of WEAR) {
+        const wp = surface(256, 256);
+        const gw = wp.g.createRadialGradient(128, 128, 20, 128, 128, 128);
+        gw.addColorStop(0, core);
+        gw.addColorStop(0.55, mid);
+        gw.addColorStop(1, 'rgba(0,0,0,0)');
+        wp.g.fillStyle = gw;
+        wp.g.fillRect(0, 0, 256, 256);
+        this.wearBlobs.push(wp.cv);
+      }
+      const sp = surface(256, 192);
+      const gsp = sp.g.createRadialGradient(128, 96, 24, 128, 96, 118);
+      gsp.addColorStop(0, 'rgba(236,226,198,0.19)');
+      gsp.addColorStop(0.62, 'rgba(236,226,198,0.11)');
+      gsp.addColorStop(1, 'rgba(236,226,198,0)');
+      sp.g.save();
+      sp.g.translate(128, 96);
+      sp.g.scale(1, 0.62);
+      sp.g.translate(-128, -96);
+      sp.g.fillStyle = gsp;
+      sp.g.fillRect(0, 0, 256, 192);
+      sp.g.restore();
+      this.standPrint = sp.cv;
     }
 
     this.bakeGroundLife();
+    this.bakeSpillMasks();
     this.flierFrames = bakeFliers();
     this.smokePuffs = bakeSmokePuffs();
 
@@ -398,6 +494,80 @@ export class Renderer {
     ]);
   }
 
+  /**
+   * Boundary feathering, part one: the masks.
+   *
+   * Every map paints its ground by rule — `y >= 26 is sand` — so every seam
+   * between two materials is a ruled full-width line, and a frame full of
+   * them reads as a bar chart. These masks are the cure: a soft ragged tongue
+   * reaching in from one edge of a cell, five depths deep, four directions.
+   * Cut a neighbouring material to one of them and the seam grows fingers.
+   * Baked once; the choice per cell is hashed, so the coastline never moves.
+   */
+  private bakeSpillMasks() {
+    for (let dir = 0; dir < 4; dir++) {
+      const set: HTMLCanvasElement[] = [];
+      for (let v = 0; v < SPILL_DEPTHS.length; v++) {
+        const { cv, g } = surface(S, S);
+        const depth = (SPILL_DEPTHS[v] ?? 0.5) * S;
+        const r = new Rng(v * 9176 + dir * 613 + 29);
+        g.save();
+        g.translate(S / 2, S / 2);
+        g.rotate((dir * Math.PI) / 2);
+        g.translate(-S / 2, -S / 2);
+        // A sliver along the whole edge, so however deep two neighbours reach
+        // the seam itself never breaks into dashes.
+        const grad = g.createLinearGradient(0, 0, 0, 8);
+        grad.addColorStop(0, 'rgba(255,255,255,0.85)');
+        grad.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = grad;
+        g.fillRect(0, 0, S, 9);
+        // Then lobes, not a band. A band gives every cell the same square
+        // shoulders and the seam comes out as brickwork; a lobe tapers to
+        // nothing at the cell's own sides, so a deep cell beside a shallow one
+        // reads as two bulges of a wandering edge rather than as a step.
+        const lobe = (x: number, reach: number, soft: number) => {
+          const rad = Math.max(6, reach * 1.15);
+          const cyc = -reach * 0.22;
+          const lg = g.createRadialGradient(x, cyc, rad * 0.12, x, cyc, rad);
+          lg.addColorStop(0, 'rgba(255,255,255,1)');
+          lg.addColorStop(soft, 'rgba(255,255,255,0.9)');
+          lg.addColorStop(1, 'rgba(255,255,255,0)');
+          g.fillStyle = lg;
+          g.fillRect(x - rad, cyc - rad, rad * 2, rad * 2);
+        };
+        lobe(S * (0.28 + r.next() * 0.44), depth, 0.42 + r.next() * 0.2);
+        lobe(S * (r.next() * 0.5 - 0.1), depth * (0.25 + r.next() * 0.4), 0.38);
+        lobe(S * (0.6 + r.next() * 0.5), depth * (0.25 + r.next() * 0.4), 0.38);
+        g.restore();
+        set.push(cv);
+      }
+      this.spillMasks.push(set);
+    }
+  }
+
+  /**
+   * Boundary feathering, part two: one neighbouring material, already cut to
+   * one mask. Composed on demand and kept, so a seam costs one drawImage.
+   */
+  private spillTile(kind: string, dir: number, mask: number, variant: number): HTMLCanvasElement | null {
+    const key = `${kind}|${dir}|${mask}|${variant}`;
+    const hit = this.spillCache.get(key);
+    if (hit !== undefined) return hit;
+    const src = this.tiles.groundImage(kind, variant);
+    const m = this.spillMasks[dir]?.[mask];
+    let out: HTMLCanvasElement | null = null;
+    if (src && m) {
+      const { cv, g } = surface(S, S);
+      g.drawImage(src, 0, 0);
+      g.globalCompositeOperation = 'destination-in';
+      g.drawImage(m, 0, 0);
+      out = cv;
+    }
+    this.spillCache.set(key, out);
+    return out;
+  }
+
   /** Chapters bring their own weather. */
   registerMoods(specs: Record<string, MoodPaint>) {
     for (const [name, s] of Object.entries(specs)) {
@@ -426,6 +596,7 @@ export class Renderer {
   /** 0 = full day, 1 = deep night; gates the fireflies. */
   setNight(k: number) {
     this.nightK = k;
+    this.refreshSun();
   }
 
   /**
@@ -435,9 +606,51 @@ export class Renderer {
    */
   setSun(dayT: number) {
     this.dayT = dayT;
-    const d = Math.max(0, Math.min(1, (dayT - 0.02) / 0.58));
-    this.sunSkew = -Math.cos(Math.PI * d) * 0.75;
-    this.sunLen = 0.55 + Math.abs(Math.cos(Math.PI * d)) * 0.9 + this.nightK * 0.3;
+    this.sunD = Math.max(0, Math.min(1, (dayT - 0.02) / 0.58));
+    this.refreshSun();
+  }
+
+  /**
+   * Everything the hour decides about light, worked out once when the clock
+   * moves rather than once a frame: nothing below allocates, and no gradient
+   * is built after boot.
+   *
+   * The throw is cot(altitude), not a ramp — that is what makes a low sun run
+   * five times noon rather than one and a half, and it is the difference
+   * between golden hour reading as a direction and reading as a filter. The
+   * colour goes with it: high sun casts a near-neutral shadow, low sun casts a
+   * cold one, because the only light left in it is the sky's.
+   */
+  private sunQ = -1;
+  private refreshSun() {
+    // The clock ticks every frame and the light barely moves: quantise, so the
+    // one string this builds is built a few hundred times a day, not 60 times
+    // a second. Nothing in the draw path allocates.
+    const q = Math.round(this.sunD * 512) * 1024 + Math.round(this.nightK * 64);
+    if (q === this.sunQ) return;
+    this.sunQ = q;
+    const d = this.sunD;
+    const c = Math.cos(Math.PI * d);
+    this.sunSkew = -c * 0.75;
+    this.sunLen = 0.55 + Math.abs(c) * 0.9 + this.nightK * 0.3;
+
+    const alt = Math.max(0.06, Math.sin(Math.PI * d));
+    const ang = ((10 + alt * 68) * Math.PI) / 180;
+    const len = Math.max(0.45, Math.min(2.6, 0.9 / Math.tan(ang)));
+    // Away from the sun: swinging east to west across the day, always leaning
+    // a little down-screen so the shadow lands on ground the player can read.
+    this.castX = this.sunSkew * len * 1.05;
+    this.castY = 0.2 * len + 0.1;
+
+    const cool = Math.max(0, Math.min(1, 0.34 + (1 - alt) * 0.56));
+    const mix = (warm: number, cold: number) => Math.round(warm + (cold - warm) * cool);
+    const r = mix(56, 40);
+    const g = mix(43, 42);
+    const b = mix(28, 76);
+    this.shadowRGB = `rgb(${r},${g},${b})`;
+    // Long shadows are more penumbra than umbra, and the night keeps only a
+    // memory of the last angle.
+    this.shadowA = 0.3 * (1 - Math.min(0.32, (len - 0.45) * 0.16)) * (1 - this.nightK * 0.62);
   }
 
   /** The current map's fires, for warming the near side of whoever stands close. */
@@ -645,7 +858,9 @@ export class Renderer {
     type TallEntry = { cx: number; cy: number; kind: string };
     const tall: TallEntry[] = [];
 
-    // Pass 1a: seamless ground.
+    this.buildFields(map, x0, y0, x1, y1);
+
+    // Pass 1a: seamless ground, then the seams between materials broken.
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
         const sx = (cx * TILE - cam.x) * A;
@@ -656,26 +871,71 @@ export class Renderer {
           ? (dx: number, dy: number) => group.has(kindAt(cx + dx, cy + dy))
           : NEVER;
         this.tiles.drawGround(ctx, kind, sx, sy, cx, cy, conn, this.time);
+
+        // Where two materials meet, each reaches into the other. Depth and
+        // reach are hashed per cell and per side, so a straight generated
+        // boundary comes out interlocked and no two cells agree on where it is.
+        const fk = this.fi(cx, cy);
+        // A path may be encroached on but never spills (it draws its own
+        // rounded core); water and the outside of the world take part in
+        // neither direction.
+        if (fk < 0 || !this.fSeam[fk] || WATERY.has(kind) || kind === 'void' || kind === 'scree') {
+          continue;
+        }
+        for (let d = 0; d < 4; d++) {
+          const nx = cx + (d === 1 ? 1 : d === 3 ? -1 : 0);
+          const ny = cy + (d === 0 ? -1 : d === 2 ? 1 : 0);
+          const nk = this.fi(nx, ny);
+          const other = nk >= 0 ? this.fKind[nk]! : kindAt(nx, ny);
+          if (other === kind) continue;
+          const pick = cellHash(cx, cy, 201 + d * 13);
+          if (pick > 0.88) continue; // a few cells hold their line
+          const img = this.spillTile(
+            other,
+            d,
+            Math.floor(pick * 1.14 * SPILL_DEPTHS.length) % SPILL_DEPTHS.length,
+            cellHash(cx, cy, 251 + d * 7) < 0.5 ? 0 : 1,
+          );
+          if (!img) continue;
+          // Never at full strength: a seam is two materials arguing, not one
+          // replacing the other tile by tile.
+          ctx.globalAlpha = 0.82;
+          ctx.drawImage(img, sx, sy);
+          ctx.globalAlpha = 1;
+        }
       }
     }
 
     // Pass 1b: large soft tonal patches spanning many tiles, so the land
-    // breathes without any per-tile seams.
+    // breathes without any per-tile seams, and under them the record of use.
     this.groundTint(map, cam, x0, y0, x1, y1);
+    this.groundWear(map, cam, x0, y0, x1, y1);
 
     // Pass 1b2: the water is alive. Sun glints ride the swell by day, and a
     // breathing line of foam works every edge where the sea meets land.
     this.drawWaterLife(map, cam, x0, y0, x1, y1, kindAt);
 
-    // Pass 1b3: ground life. Open walkable ground grows sprigs, pebbles,
-    // shells, and joint-weeds so no screenful of land reads unfinished.
+    // Pass 1b3: ground life, clustered. A uniform probability makes static,
+    // and static is invisible; growth gathers at wall bases, in the joints of
+    // a seam and along a tide line, and the middle of a thoroughfare stays
+    // bare because feet keep it bare.
+    ctx.globalAlpha = 1 - this.nightK * 0.6;
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
         if (!map.inBounds(cx, cy) || map.object(cx, cy)) continue;
         const family = LIFE_FAMILY[kindAt(cx, cy)];
         if (!family) continue;
-        const h = cellHash(cx, cy, 131);
-        if (h >= (LIFE_DENSITY[family] ?? 0)) continue;
+        const fk = this.fi(cx, cy);
+        if (fk < 0) continue;
+        const ds = this.dSolid[fk]!;
+        if (ds === 0) continue;
+        const dw = this.dWater[fk]!;
+        let dens = LIFE_DENSITY[family] ?? 0;
+        dens *= ds === 1 ? 2.8 : ds === 2 ? 1.3 : ds === 3 ? 0.55 : 0.16;
+        if (this.fSeam[fk]) dens *= 2.0;
+        if (dw <= 1) dens *= family === 'sand' ? 3.0 : 1.5;
+        else if (dw === 2) dens *= 1.3;
+        if (cellHash(cx, cy, 131) >= dens) continue;
         const stamps = this.groundLife.get(family);
         if (!stamps?.length) continue;
         const pick = stamps[Math.floor(cellHash(cx, cy, 137) * stamps.length)];
@@ -685,21 +945,32 @@ export class Renderer {
         ctx.drawImage(pick, (cx * TILE - cam.x) * A + jx, (cy * TILE - cam.y) * A + jy);
       }
     }
+    ctx.globalAlpha = 1;
 
-    // Pass 1c: cast shade and walkable decor.
+    // Pass 1b4: and then the sun lays every standing thing across all of it.
+    this.drawCastShadows(map, cam, x0, y0, x1, y1);
+
+    // Pass 1c: contact shade and walkable decor.
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
         const sx = (cx * TILE - cam.x) * A;
         const sy = (cy * TILE - cam.y) * A;
         if (!map.inBounds(cx, cy)) continue;
 
-        // Anything wall-like above throws soft afternoon shade onto this cell.
-        const above = map.object(cx, cy - 1);
-        if (above?.solid && above.tall && !map.object(cx, cy)?.solid) {
-          ctx.drawImage(this.wallShadeStrip, sx, sy);
+        const self = map.object(cx, cy);
+        if (!self?.solid) {
+          // Anything wall-like above shades the foot of its own near side.
+          const above = map.object(cx, cy - 1);
+          if (above?.solid && above.tall) ctx.drawImage(this.wallShadeStrip, sx, sy);
+          // And the ground running into its far side goes dark before it gets
+          // there. This is the whole depth cue for a roof that reaches the row
+          // below you: without it the ridge lands at your feet and you read as
+          // standing on the thatch.
+          const below = map.object(cx, cy + 1);
+          if (below?.solid && below.tall) ctx.drawImage(this.northContact, sx, sy + S - 26);
         }
 
-        const obj = map.object(cx, cy);
+        const obj = self;
         if (!obj) continue;
         if (obj.t === 'blocked') continue;
         if (obj.tall) tall.push({ cx, cy, kind: obj.t });
@@ -744,12 +1015,13 @@ export class Renderer {
         draw: () => {
           const tx = (t.cx * TILE - cam.x) * A;
           const ty = (t.cy * TILE - cam.y) * A;
-          // Trees, props, and whole buildings cast into the same sun as people.
+          // The sun's own throw is laid down by drawCastShadows; what is left
+          // for each sprite here is the contact darkness at its own feet.
           if (t.kind === 'tree' || t.kind === 'palm') {
-            this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
+            this.castShadow(tx + S / 2, ty + S - 8, 44, 0.13);
             this.drawDapple(tx + S / 2, ty + S - 8, t.cx, t.cy);
           } else if (this.tiles.isBuilding(t.kind)) {
-            this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
+            this.castShadow(tx + S * 2.2, ty + S - 4, 108, 0.1);
             // A house sprite is four tiles of art on a five-tile footprint, so
             // the row above it is solid with nothing painted on it and reads
             // as open street. Where the map agrees that row is solid, give it
@@ -758,7 +1030,7 @@ export class Renderer {
               this.tiles.drawBuildingCap(ctx, t.kind, tx, ty, t.cx, t.cy);
             }
           } else if (this.tiles.castsSun(t.kind)) {
-            this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
+            this.castShadow(tx + S / 2, ty + S - 6, 30, 0.12);
           }
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
@@ -804,6 +1076,199 @@ export class Renderer {
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
 
+  }
+
+  /**
+   * The visible window's three fields, rebuilt once a frame and read by every
+   * pass that needs to know what a cell is *near*: how far to the nearest
+   * solid thing, how far to water, and whether a ground seam runs through it.
+   *
+   * This is what turns a flat probability into a place. Weeds want wall bases
+   * and seams; shells want the tide line; the middle of a thoroughfare wants
+   * to stay bare, because feet keep it bare. Two chamfer sweeps over some six
+   * hundred cells, into arrays allocated once.
+   */
+  private buildFields(map: TileMap, x0: number, y0: number, x1: number, y1: number) {
+    const w = x1 - x0 + 1;
+    const h = y1 - y0 + 1;
+    const n = w * h;
+    if (this.dSolid.length < n) {
+      this.dSolid = new Uint8Array(n);
+      this.dWater = new Uint8Array(n);
+      this.fSeam = new Uint8Array(n);
+      this.fKind = new Array<string>(n).fill('void');
+    }
+    this.fx0 = x0;
+    this.fy0 = y0;
+    this.fw = w;
+    this.fh = h;
+    const CAP = 9;
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const cx = x0 + i;
+        const cy = y0 + j;
+        const k = j * w + i;
+        const inb = map.inBounds(cx, cy);
+        const g = inb ? map.ground(cx, cy) : null;
+        const kind = g ? g.t : 'void';
+        this.fKind[k] = kind;
+        const solid = !inb || g?.solid === true || map.object(cx, cy)?.solid === true;
+        this.dSolid[k] = solid ? 0 : CAP;
+        this.dWater[k] = WATERY.has(kind) ? 0 : CAP;
+        this.fSeam[k] = 0;
+      }
+    }
+    // Chamfer, both ways. Four-neighbour distance is close enough for a field
+    // nobody measures and half the cost of the eight-neighbour one.
+    for (let j = 0; j < h; j++) {
+      for (let i = 0; i < w; i++) {
+        const k = j * w + i;
+        const up = j > 0 ? k - w : -1;
+        const lf = i > 0 ? k - 1 : -1;
+        let s = this.dSolid[k]!;
+        let a = this.dWater[k]!;
+        if (up >= 0) { s = Math.min(s, this.dSolid[up]! + 1); a = Math.min(a, this.dWater[up]! + 1); }
+        if (lf >= 0) { s = Math.min(s, this.dSolid[lf]! + 1); a = Math.min(a, this.dWater[lf]! + 1); }
+        this.dSolid[k] = s;
+        this.dWater[k] = a;
+      }
+    }
+    for (let j = h - 1; j >= 0; j--) {
+      for (let i = w - 1; i >= 0; i--) {
+        const k = j * w + i;
+        const dn = j < h - 1 ? k + w : -1;
+        const rt = i < w - 1 ? k + 1 : -1;
+        let s = this.dSolid[k]!;
+        let a = this.dWater[k]!;
+        if (dn >= 0) { s = Math.min(s, this.dSolid[dn]! + 1); a = Math.min(a, this.dWater[dn]! + 1); }
+        if (rt >= 0) { s = Math.min(s, this.dSolid[rt]! + 1); a = Math.min(a, this.dWater[rt]! + 1); }
+        this.dSolid[k] = s;
+        this.dWater[k] = a;
+        // Seams, marked on both sides at once.
+        const kind = this.fKind[k];
+        if (rt >= 0 && this.fKind[rt] !== kind) { this.fSeam[k] = 1; this.fSeam[rt] = 1; }
+        if (dn >= 0 && this.fKind[dn] !== kind) { this.fSeam[k] = 1; this.fSeam[dn] = 1; }
+      }
+    }
+  }
+
+  /** Field index for a world cell, or -1 outside this frame's window. */
+  private fi(cx: number, cy: number): number {
+    const i = cx - this.fx0;
+    const j = cy - this.fy0;
+    if (i < 0 || j < 0 || i >= this.fw || j >= this.fh) return -1;
+    return j * this.fw + i;
+  }
+
+  /**
+   * How tall every cell of this map stands, in tiles, spread across whole
+   * footprints so a five-by-five house throws one shadow and not one from the
+   * single cell that happens to carry its sprite. Worked out once per map.
+   */
+  private casterHeights(map: TileMap): Float32Array {
+    let grid = this.casterCache.get(map.id);
+    if (grid) return grid;
+    grid = new Float32Array(map.w * map.h);
+    const tallHere: boolean[] = new Array(map.w * map.h).fill(false);
+    for (let y = 0; y < map.h; y++) {
+      for (let x = 0; x < map.w; x++) {
+        const o = map.object(x, y);
+        if (!o?.tall || o.solid !== true) continue;
+        const k = y * map.w + x;
+        tallHere[k] = true;
+        grid[k] = this.tiles.castHeight(o.t);
+      }
+    }
+    // The invisible collision cells of a building carry no art and so no
+    // height; four dilations hand them their neighbour's roofline.
+    for (let pass = 0; pass < 6; pass++) {
+      let moved = false;
+      for (let y = 0; y < map.h; y++) {
+        for (let x = 0; x < map.w; x++) {
+          const k = y * map.w + x;
+          // Only cells with no art of their own inherit: a garden wall that
+          // happens to touch a house is a garden wall, and must not be handed
+          // the house's roofline and throw a three-storey shadow.
+          if (!tallHere[k] || grid[k]! > 0) continue;
+          let best = 0;
+          if (x > 0 && tallHere[k - 1]) best = Math.max(best, grid[k - 1]! - 0.02);
+          if (x < map.w - 1 && tallHere[k + 1]) best = Math.max(best, grid[k + 1]! - 0.02);
+          if (y > 0 && tallHere[k - map.w]) best = Math.max(best, grid[k - map.w]! - 0.02);
+          if (y < map.h - 1 && tallHere[k + map.w]) best = Math.max(best, grid[k + map.w]! - 0.02);
+          if (best > grid[k]!) { grid[k] = best; moved = true; }
+        }
+      }
+      if (!moved) break;
+    }
+    this.casterCache.set(map.id, grid);
+    return grid;
+  }
+
+  /**
+   * The sun lays every standing thing on the ground.
+   *
+   * The old model was a sixteen-pixel strip under any wall, always straight
+   * down, always the same length, whatever the hour. This one projects each
+   * footprint cell along the sun's own throw and unions the lot: a building's
+   * five-by-five plan swept along one vector is exactly its shadow, and the
+   * union means no two cells double-darken their overlap.
+   *
+   * It composes into a fifth-scale buffer and blows it back up, which is one
+   * screen composite for the whole frame's shadows and gives the soft edge the
+   * painterly idiom needs without a blur or a per-frame gradient anywhere.
+   */
+  private drawCastShadows(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
+    // No sun reaches a room; indoors the lamps and the wall shade do the work.
+    if (this.shadowA < 0.02 || this.mood === 'interior') return;
+    const grid = this.casterHeights(map);
+    const { cv, g } = this.shadowBuf;
+    const k = A / SH_DIV;
+    const s = TILE * k;
+    g.clearRect(0, 0, SHW, SHH);
+    g.beginPath();
+    let any = false;
+    for (let cy = y0 - SH_MY; cy <= y1; cy++) {
+      if (cy < 0 || cy >= map.h) continue;
+      const row = cy * map.w;
+      const by = (cy * TILE - cam.y) * k;
+      for (let cx = x0 - SH_MX; cx <= x1 + SH_MX; cx++) {
+        if (cx < 0 || cx >= map.w) continue;
+        const hh = grid[row + cx];
+        if (!hh) continue;
+        // The far end of each cell's throw wanders a little. Nothing else in
+        // the union shows, so this is the whole cost of an edge that reads as
+        // painted rather than ruled.
+        const wob = TILE * k * 0.34;
+        const dx = this.castX * hh * TILE * k + (cellHash(cx, cy, 181) - 0.5) * wob;
+        const dy = Math.max(0, this.castY * hh * TILE * k + (cellHash(cx, cy, 191) - 0.5) * wob * 0.7);
+        if (by + dy + s < 0 || by > SHH) continue;
+        const bx = (cx * TILE - cam.x) * k;
+        if (bx + Math.min(0, dx) > SHW || bx + s + Math.max(0, dx) < 0) continue;
+        // The convex hull of a square and its translate: the exact swept shape.
+        g.moveTo(bx, by);
+        g.lineTo(bx + s, by);
+        if (dx >= 0) {
+          g.lineTo(bx + s + dx, by + dy);
+          g.lineTo(bx + s + dx, by + dy + s);
+          g.lineTo(bx + dx, by + dy + s);
+          g.lineTo(bx, by + s);
+        } else {
+          g.lineTo(bx + s, by + s);
+          g.lineTo(bx + s + dx, by + dy + s);
+          g.lineTo(bx + dx, by + dy + s);
+          g.lineTo(bx + dx, by + dy);
+        }
+        g.closePath();
+        any = true;
+      }
+    }
+    if (!any) return;
+    g.fillStyle = this.shadowRGB;
+    g.fill();
+    const ctx = this.ctx;
+    ctx.globalAlpha = this.shadowA;
+    ctx.drawImage(cv, 0, 0, SHW, SHH, 0, 0, W, H);
+    ctx.globalAlpha = 1;
   }
 
   /**
@@ -857,7 +1322,97 @@ export class Renderer {
       }
     };
     octave(9, 131, 5.5, 4.5, 1); // the meadow-scale washes
-    octave(4, 101, 2.2, 2.4, 0.9); // the close-up dapple
+    ctx.globalAlpha = 1;
+  }
+
+  /**
+   * What has happened here.
+   *
+   * The close-up octave of `groundTint` used to be pure hash: the same amount
+   * of information everywhere, which is the same as none. This replaces it at
+   * the same cost with a field that knows the map — damp within reach of the
+   * water, grime banked against the walls, and the pale worn lanes where feet
+   * have crossed a square for years. Five to fifteen tiles across, which is
+   * the scale a two-hundred-tile piazza is empty at; twelve-pixel sprigs were
+   * never going to fill it.
+   */
+  private groundWear(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
+    const ctx = this.ctx;
+    const damp = this.wearBlobs[0];
+    const worn = this.wearBlobs[1];
+    const grime = this.wearBlobs[2];
+    if (!damp || !worn || !grime) return;
+    const cell = 4;
+    for (let gy = Math.floor(y0 / cell) - 1; gy <= Math.floor(y1 / cell) + 1; gy++) {
+      for (let gx = Math.floor(x0 / cell) - 1; gx <= Math.floor(x1 / cell) + 1; gx++) {
+        const h = cellHash(gx, gy, 101);
+        const wx = gx * cell + cell / 2 + (cellHash(gx, gy, 104) - 0.5) * cell;
+        const wy = gy * cell + cell / 2 + (cellHash(gx, gy, 108) - 0.5) * cell;
+        const cx = Math.floor(wx);
+        const cy = Math.floor(wy);
+        if (!map.inBounds(cx, cy)) continue;
+        const fk = this.fi(cx, cy);
+        if (fk < 0) continue;
+        const ds = this.dSolid[fk]!;
+        const dw = this.dWater[fk]!;
+
+        let img = worn;
+        let a = 0;
+        if (dw <= 3) {
+          // The tideline and the bank stay dark long after the water leaves.
+          img = damp;
+          a = (1 - (dw - 1) / 3) * 0.95;
+        } else if (ds <= 1) {
+          // Grit, splash and soot bank up wherever a wall stops a broom.
+          img = grime;
+          a = 0.8;
+        } else {
+          // Desire paths: two long-wavelength fields, one stretched along each
+          // axis, so the worn ground runs in lanes the way walking wears it,
+          // and the untrodden middle of a square keeps its colour.
+          const lanes = Math.max(
+            cellHash(Math.floor(wx / 7), Math.floor(wy / 2.4), 83),
+            cellHash(Math.floor(wx / 2.4), Math.floor(wy / 7), 89),
+          );
+          if (lanes > 0.54) {
+            a = (lanes - 0.54) * 2.6 * (ds >= 3 ? 1 : 0.6);
+          } else if (lanes < 0.3) {
+            // And between the lanes, where nobody walks, everything settles.
+            img = grime;
+            a = (0.3 - lanes) * 2.1;
+          }
+        }
+        if (a < 0.06) continue;
+        const r = (2.1 + h * 2.6) * TILE * A;
+        ctx.globalAlpha = Math.min(1, a);
+        ctx.drawImage(img, (wx * TILE - cam.x) * A - r, (wy * TILE - cam.y) * A - r, r * 2, r * 2);
+      }
+    }
+
+    // And the pale rectangle where something has stood so long the sun went
+    // round it: a charpai, a crate stack, a boat pulled up every winter.
+    const big = 13;
+    for (let gy = Math.floor(y0 / big) - 1; gy <= Math.floor(y1 / big); gy++) {
+      for (let gx = Math.floor(x0 / big) - 1; gx <= Math.floor(x1 / big); gx++) {
+        if (cellHash(gx, gy, 97) > 0.45) continue;
+        const wx = gx * big + 1 + cellHash(gx, gy, 111) * (big - 2);
+        const wy = gy * big + 1 + cellHash(gx, gy, 117) * (big - 2);
+        const fk = this.fi(Math.floor(wx), Math.floor(wy));
+        if (fk < 0) continue;
+        const ds = this.dSolid[fk]!;
+        if (ds < 1 || ds > 3 || this.dWater[fk]! < 3) continue;
+        const rw = (2.2 + cellHash(gx, gy, 123) * 1.6) * TILE * A;
+        const rh = rw * 0.66;
+        ctx.globalAlpha = 1;
+        ctx.drawImage(
+          this.standPrint,
+          (wx * TILE - cam.x) * A - rw,
+          (wy * TILE - cam.y) * A - rh,
+          rw * 2,
+          rh * 2,
+        );
+      }
+    }
     ctx.globalAlpha = 1;
   }
 

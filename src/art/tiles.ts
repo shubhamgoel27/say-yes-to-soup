@@ -42,8 +42,17 @@ const ART_ALIAS: Record<string, string> = {
 /**
  * How far the roof cap's contact shade reaches onto the street beyond the
  * building's far edge. Small: it grounds the roof, it does not stain the lane.
+ * Deep enough to read as the ground meeting a roof edge, shallow enough that
+ * it never climbs onto the shoes of whoever is standing there.
  */
-const CAP_LIP = 10;
+const CAP_LIP = 14;
+
+/**
+ * Ground kinds the boundary-feathering pass must leave alone: water and its
+ * banks autotile themselves, paths clip their own rounded core, and void and
+ * scree are the outside of the world.
+ */
+const NO_SPILL = new Set(['void', 'scree', 'path', 'bridge', 'water', 'sea']);
 
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
@@ -1451,14 +1460,17 @@ export class Tileset {
     outline(g);
     g.clip();
     g.translate(0, CAP_LIP);
-    vgrad(g, 0, 0, capW, CAP_LIP + 6, 'rgba(24,17,10,0)', 'rgba(24,17,10,0.2)');
+    vgrad(g, 0, 0, capW, CAP_LIP + 6, 'rgba(24,17,10,0)', 'rgba(24,17,10,0.34)');
     g.restore();
 
     // The roof plane itself.
     g.save();
     outline(g);
     g.clip();
-    rect(g, 0, 0, capW, capH, shade(roof, -0.03));
+    // A shade under the sprite's own roof: this plane is further away and
+    // tipped further from the light, and the value step is what stops it
+    // reading as more of the street.
+    rect(g, 0, 0, capW, capH, shade(roof, -0.08));
     // Shade gathers where the plane meets the ridge below it, and the whole
     // surface leans a little toward the light as it comes forward.
     vgrad(g, 0, CAP_LIP, capW, plane, 'rgba(38,28,18,0.12)', 'rgba(38,28,18,0)');
@@ -1515,19 +1527,21 @@ export class Tileset {
       traceTop(g);
     };
     g.save();
-    g.translate(0, 13);
+    g.translate(0, 15);
     edgePath();
-    g.strokeStyle = 'rgba(40,30,20,0.16)';
-    g.lineWidth = 9;
+    g.strokeStyle = 'rgba(40,30,20,0.26)';
+    g.lineWidth = 12;
     g.stroke();
     g.restore();
     edgePath();
     g.strokeStyle = shade(roof, 0.1);
     g.lineWidth = 22;
     g.stroke();
+    // The lit top of the coping: the one hard-won value step that says this
+    // plane ends here and the ground beyond it is somewhere else.
     edgePath();
-    g.strokeStyle = shade(roof, 0.26);
-    g.lineWidth = 8;
+    g.strokeStyle = shade(roof, 0.34);
+    g.lineWidth = 7;
     g.stroke();
     g.restore();
 
@@ -1745,6 +1759,37 @@ export class Tileset {
       flame(10 + k * 4, 5.4, '#ffb54d');
       flame(5.5 + k * 2.4, 3, '#ffe9ad');
     }
+  }
+
+  /**
+   * A plain ground tile, for the renderer's boundary-feathering pass to spill
+   * across a seam. Null for the kinds that paint themselves (water banks,
+   * path cores) and for anything that isn't ground at all.
+   */
+  groundImage(kind: string, variant: number): HTMLCanvasElement | null {
+    if (NO_SPILL.has(kind) || WATERY.has(kind)) return null;
+    const list = this.v.get(ART_ALIAS[kind] ?? kind);
+    if (!list || list.length === 0) return null;
+    const cvs = list[variant % list.length];
+    if (!cvs || cvs.width !== S || cvs.height !== S) return null;
+    return cvs;
+  }
+
+  /**
+   * How tall a thing stands, in tiles, for the sun to lay it on the ground.
+   * Read off its own art: a house is four tiles of sprite, a tree about two,
+   * a parapet under one. The little bite off the top is the roof's slope and
+   * the canopy's air; a shadow measured to the topmost pixel is always long.
+   */
+  private heights = new Map<string, number>();
+  castHeight(kind: string): number {
+    let h = this.heights.get(kind);
+    if (h === undefined) {
+      const first = this.v.get(ART_ALIAS[kind] ?? kind)?.[0];
+      h = first ? Math.max(0.5, Math.min(3.4, first.height / S - 0.5)) : 0;
+      this.heights.set(kind, h);
+    }
+    return h;
   }
 
   /** Freestanding props whose sun shadow the renderer casts directionally. */
