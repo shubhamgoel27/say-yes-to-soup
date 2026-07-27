@@ -12,6 +12,7 @@ export const ART: ChapterArt = {
   grounded: [
     'saltrack', 'dryreeds', 'netpoles', 'crabtraps', 'buoywall', 'kidmural',
     'pelicanpost', 'gallinazos', 'mototaxi', 'picchairs', 'pizarra',
+    'tendal', 'pintura',
   ],
   noInk: ['seaweed', 'jellyfish'],
 
@@ -798,5 +799,169 @@ export const ART: ChapterArt = {
       dot(g, 66, 74, 1.6, 'rgba(120,60,36,0.7)');
       g.restore();
     }, 128, 96);
+
+    // ------------------------------------------------- the colour on the sand
+
+    /**
+     * The tendal: a blue tarpaulin lashed to four eucalyptus poles over the
+     * table where the catch gets cleaned. It is the one big flat colour on the
+     * beach, it is head height, and you walk under it, which is the point.
+     */
+    make('tendal', 1, (g) => {
+      softShadow(g, 64, 118, 50, 10, 0.2);
+      // Back poles first, so the sheet hangs in front of them.
+      for (const px2 of [16, 112]) {
+        rr(g, px2 - 2.5, 40, 5, 76, 2, '#8a6b46');
+        rr(g, px2 - 2.5, 40, 2, 76, 1, 'rgba(255,240,210,0.28)');
+      }
+      // The cleaning table underneath, scaled and wet.
+      rr(g, 34, 92, 60, 16, 3, '#a08a6c');
+      vgrad(g, 34, 92, 60, 5, 'rgba(255,246,224,0.32)', 'rgba(0,0,0,0)');
+      for (const bx of [40, 86]) rr(g, bx, 106, 5, 14, 2, '#7a6448');
+      dot(g, 56, 98, 3.4, 'rgba(190,215,225,0.7)');
+      dot(g, 72, 100, 2.6, 'rgba(190,215,225,0.6)');
+      // The sheet: sagging between the poles, patched, sun-eaten at the hem.
+      const cloth = '#2f6d8e';
+      g.fillStyle = cloth;
+      g.beginPath();
+      g.moveTo(8, 44);
+      g.quadraticCurveTo(64, 30, 120, 44);
+      g.quadraticCurveTo(64, 66, 8, 44);
+      g.closePath();
+      g.fill();
+      g.fillStyle = shade(cloth, 0.22);
+      g.beginPath();
+      g.moveTo(8, 44);
+      g.quadraticCurveTo(64, 30, 120, 44);
+      g.quadraticCurveTo(64, 48, 8, 44);
+      g.closePath();
+      g.fill();
+      // A hem of shadow under the sag, and one patch of another blue entirely.
+      g.fillStyle = 'rgba(20,40,56,0.3)';
+      g.beginPath();
+      g.moveTo(14, 48);
+      g.quadraticCurveTo(64, 64, 114, 48);
+      g.quadraticCurveTo(64, 58, 14, 48);
+      g.closePath();
+      g.fill();
+      rr(g, 78, 42, 18, 11, 2, '#4f8fa8');
+      rr(g, 30, 40, 12, 8, 2, shade(cloth, -0.18));
+      // Front poles and the ties that hold the corners down.
+      for (const px2 of [26, 102]) {
+        rr(g, px2 - 3, 46, 6, 74, 2, '#96754c');
+        rr(g, px2 - 3, 46, 2.4, 74, 1, 'rgba(255,240,210,0.3)');
+        g.strokeStyle = 'rgba(230,220,196,0.7)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(px2, 50);
+        g.lineTo(px2 + (px2 < 64 ? -14 : 14), 62);
+        g.stroke();
+      }
+    }, 128, 128);
+
+    /**
+     * Bidones: fuel drums and fish boxes stacked against a wall, repainted
+     * every few years in whatever the boats had left over. Low, loud, and the
+     * reason the promenade has a warm note in it at noon.
+     */
+    make('bidones', 2, (g, r) => {
+      softShadow(g, 32, 56, 28, 6, 0.22);
+      const drum = (x: number, y: number, w: number, h: number, c: string) => {
+        rr(g, x, y - h, w, h, 3, c);
+        vgrad(g, x, y - h, w, h * 0.4, 'rgba(255,246,224,0.26)', 'rgba(0,0,0,0)');
+        oval(g, x + w / 2, y - h, w / 2, 3, shade(c, 0.24));
+        // Two hoops and the rust that always wins in the end.
+        for (const hy of [y - h * 0.66, y - h * 0.3]) {
+          rect(g, x, hy, w, 2.2, shade(c, -0.22));
+        }
+        dot(g, x + 2 + r.int(w - 4), y - 3 - r.int(h - 6), 2, 'rgba(140,72,42,0.55)');
+      };
+      // Two drums standing, a crate on top of them, one drum on its side.
+      drum(6, 54, 16, 30, '#2f6d8e');
+      drum(24, 56, 17, 34, '#d8a52f');
+      rr(g, 5, 20, 20, 12, 2, '#b8482f');
+      vgrad(g, 5, 20, 20, 4, 'rgba(255,246,224,0.3)', 'rgba(0,0,0,0)');
+      for (let i = 0; i < 3; i++) rect(g, 7 + i * 6, 22, 2, 8, 'rgba(60,30,20,0.3)');
+      g.save();
+      g.translate(50, 46);
+      g.rotate(1.57);
+      rr(g, -13, -8, 26, 16, 3, '#3f7a5a');
+      oval(g, -13, 0, 3, 8, shade('#3f7a5a', 0.22));
+      rect(g, -6, -8, 2.2, 16, shade('#3f7a5a', -0.22));
+      g.restore();
+      dot(g, 46, 54, 2, 'rgba(140,72,42,0.5)');
+    });
+
+    /**
+     * A caballito hull up on trestles being made beautiful again: half of it
+     * still salt-grey, half of it the turquoise the owner's father used, and
+     * the tins open on the sand beside it. The brightest thing on the beach.
+     */
+    make('pintura', 1, (g) => {
+      softShadow(g, 62, 112, 46, 9, 0.22);
+      // Trestles.
+      for (const tx of [34, 88]) {
+        rr(g, tx - 12, 82, 24, 5, 2, '#8a6b46');
+        rr(g, tx - 10, 86, 4, 24, 2, '#7a5c3c');
+        rr(g, tx + 6, 86, 4, 24, 2, '#7a5c3c');
+      }
+      // The hull, keel up, a long soft wedge.
+      const grey = '#b6ada0';
+      const paint = '#2fa3a8';
+      g.fillStyle = grey;
+      g.beginPath();
+      g.moveTo(10, 74);
+      g.quadraticCurveTo(62, 34, 116, 66);
+      g.quadraticCurveTo(64, 92, 10, 74);
+      g.closePath();
+      g.fill();
+      // The painted half, stopped exactly where the coffee arrived.
+      g.save();
+      g.beginPath();
+      g.rect(10, 30, 56, 70);
+      g.clip();
+      g.fillStyle = paint;
+      g.beginPath();
+      g.moveTo(10, 74);
+      g.quadraticCurveTo(62, 34, 116, 66);
+      g.quadraticCurveTo(64, 92, 10, 74);
+      g.closePath();
+      g.fill();
+      g.fillStyle = 'rgba(255,255,255,0.22)';
+      g.beginPath();
+      g.moveTo(12, 70);
+      g.quadraticCurveTo(50, 44, 66, 44);
+      g.quadraticCurveTo(50, 58, 14, 74);
+      g.closePath();
+      g.fill();
+      g.restore();
+      // The wet edge where the new paint stops, and the keel line.
+      g.strokeStyle = 'rgba(20,80,86,0.7)';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(64, 40);
+      g.lineTo(68, 88);
+      g.stroke();
+      g.strokeStyle = 'rgba(60,50,40,0.35)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(14, 72);
+      g.quadraticCurveTo(64, 44, 114, 65);
+      g.stroke();
+      // Tins, a brush across one of them, and the drips that got away.
+      rr(g, 92, 96, 15, 16, 2, '#c8c2b4');
+      rr(g, 93, 94, 13, 5, 2, shade(paint, -0.1));
+      rr(g, 110, 100, 12, 12, 2, '#c8c2b4');
+      rr(g, 111, 98, 10, 4, 2, '#b8482f');
+      g.strokeStyle = '#8a6b46';
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(98, 92);
+      g.lineTo(112, 84);
+      g.stroke();
+      dot(g, 100, 116, 3, shade(paint, -0.06));
+      dot(g, 88, 118, 2, shade(paint, -0.1));
+    }, 128, 128);
   },
 };
