@@ -256,7 +256,14 @@ const GLOW_STYLE: Record<string, { r: number; color: number; flicker: number; li
   jihanki: { r: 24, color: 0xcfe4ff, flicker: 0.04, lift: 8 },
 };
 const fireCells: Record<string, [number, number, string][]> = {};
-for (const [id, tm] of Object.entries(maps)) {
+/**
+ * Find every light on a map. Dressings light candles that were not there at
+ * boot (the ofrenda's veladoras, a festival's lamps), so this has to be
+ * rerunnable, not a snapshot: those candles used to stay dark grey forever.
+ */
+function scanFires(id: string) {
+  const tm = maps[id];
+  if (!tm) return;
   const cells: [number, number, string][] = [];
   for (let y = 0; y < tm.h; y++) {
     for (let x = 0; x < tm.w; x++) {
@@ -266,6 +273,7 @@ for (const [id, tm] of Object.entries(maps)) {
   }
   fireCells[id] = cells;
 }
+for (const id of Object.keys(maps)) scanFires(id);
 
 /**
  * Once the chapter is done, the east gate is simply open: leaves folded back,
@@ -289,6 +297,7 @@ applyGateState();
  * runs at boot and whenever flags change.
  */
 function applyDressings() {
+  const touched = new Set<string>();
   for (const d of DRESSINGS) {
     if (!state.check(d.when)) continue;
     const tm = maps[d.map];
@@ -301,6 +310,13 @@ function applyDressings() {
       }
     }
     for (const [x, y, def] of d.cells ?? []) tm.setObject(x, y, def);
+    // A dressing can add or remove light, so this map's lights are restated.
+    scanFires(d.map);
+    touched.add(d.map);
+  }
+  // If the map underfoot just gained candles, they should be lit now.
+  if (touched.has(map.id)) {
+    renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   }
 }
 applyDressings();
@@ -1215,6 +1231,7 @@ function endDialogue() {
  * runs at boot and whenever flags change.
  */
 function applyDressings() {
+  const touched = new Set<string>();
   for (const d of DRESSINGS) {
     if (!state.check(d.when)) continue;
     const tm = maps[d.map];
@@ -1227,6 +1244,13 @@ function applyDressings() {
       }
     }
     for (const [x, y, def] of d.cells ?? []) tm.setObject(x, y, def);
+    // A dressing can add or remove light, so this map's lights are restated.
+    scanFires(d.map);
+    touched.add(d.map);
+  }
+  // If the map underfoot just gained candles, they should be lit now.
+  if (touched.has(map.id)) {
+    renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   }
 }
 applyDressings();
