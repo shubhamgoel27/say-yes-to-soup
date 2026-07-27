@@ -74,6 +74,10 @@ export const RETURN_TASKS: TaskDef[] = [
     text: 'Chasca is back on La Bajada, where she first stopped you. The album is finished, and it starts with you. Sit on the rock.',
   },
   {
+    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch'] },
+    text: 'Someone new is at the east gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
+  },
+  {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
     text: 'One page left. The well, where the water is, where it started. Write the last line; the page was never blank, it was waiting.',
   },

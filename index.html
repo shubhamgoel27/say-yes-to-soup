@@ -317,6 +317,11 @@
         width: 82%;
         max-width: 620px;
         height: 78%;
+        /* A grid item's implicit min-height: auto lets tall content push the
+         * book past the viewport, taking the end of the Route tab with it. */
+        min-height: 0;
+        max-height: 92vh;
+        overflow: hidden;
         display: flex;
         flex-direction: column;
         background:
@@ -368,7 +373,7 @@
         transform: translateY(1.5px) scale(1.04);
       }
       .j-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
-      .j-list { flex: 0 0 38%; overflow: hidden; font-size: 14.5px; }
+      .j-list { flex: 0 0 38%; overflow-y: auto; min-height: 0; font-size: 14.5px; }
       .j-item { padding: 2px 6px; color: #57452f; }
       .j-item.sel {
         background: rgba(43, 33, 24, 0.09);
@@ -376,7 +381,7 @@
         color: var(--ink);
       }
       .j-locked { margin-top: 8px; font-size: 12.5px; font-style: italic; color: #a08c6b; }
-      .j-detail { flex: 1; min-width: 0; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; overflow: hidden; }
+      .j-detail { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; overflow: hidden; }
       .j-title { font-family: var(--display); font-weight: 600; font-size: 19px; text-wrap: balance; }
       .j-sub { font-size: 13px; font-style: italic; color: #6b5a44; margin-bottom: 8px; }
       .j-nani, .j-you { font-size: 14px; margin-top: 8px; }
@@ -470,7 +475,11 @@
       .j-ph-grid {
         flex: 0 0 46%;
         min-width: 0;
+        /* Without min-height a flex child refuses to shrink, so the pane
+         * grew instead of scrolling and ran off the bottom of the window. */
+        min-height: 0;
         overflow-y: auto;
+        padding-right: 6px;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
         gap: 16px 12px;

@@ -27,9 +27,14 @@ export const RETURN_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c10.arrived'] }, node: 'c10.traveler.pre' },
+      // The torch passes before anything else this traveler has to offer.
+      // It used to sit below the story.end arms, which meant the natural
+      // play order (well, last page, east gate) shadowed it forever: the
+      // scene never happened and its journal page could never be filled,
+      // while the game still announced that the journal was full.
+      { when: { has: ['c10.arrived'], not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { when: { has: ['story.end'], not: ['c10.traveler.mail'] }, node: 'c10.traveler.mail' },
       { when: { has: ['story.end'] }, node: 'c10.traveler.after' },
-      { when: { not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { node: 'c10.traveler.idle' },
     ],
   },
