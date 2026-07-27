@@ -200,8 +200,8 @@ export class PauseMenu {
         <div class="p-hint-line">&#8592;&#8594; adjust &nbsp; Esc back</div></div>`;
     } else if (this.screen === 'help') {
       body = `<div class="p-help">
-        <div class="p-row"><span class="p-label">Walk</span><span class="p-value">arrows / WASD / stick</span></div>
-        <div class="p-row"><span class="p-label">Talk, touch, sit</span><span class="p-value">Space / Z / A</span></div>
+        <div class="p-row"><span class="p-label">Walk</span><span class="p-value">arrows / WASD / stick / click a spot</span></div>
+        <div class="p-row"><span class="p-label">Talk, touch, sit</span><span class="p-value">Space / Z / A / click it</span></div>
         <div class="p-row"><span class="p-label">The journal</span><span class="p-value">J / Tab / Y</span></div>
         <div class="p-row"><span class="p-label">Pause</span><span class="p-value">Esc / Start</span></div>
         <div class="p-row"><span class="p-label">Mute</span><span class="p-value">M</span></div>

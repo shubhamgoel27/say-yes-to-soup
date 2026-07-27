@@ -175,8 +175,8 @@ export class TitleScreen {
           <div class="t-menu">${menu}</div>
         </div>
         <div class="t-controls">
-          <span><b>&#8592;&#8593;&#8595;&#8594;</b> / WASD&nbsp; walk</span>
-          <span><b>Space</b> / Z&nbsp; talk &amp; touch things</span>
+          <span><b>&#8592;&#8593;&#8595;&#8594;</b> / WASD / click&nbsp; walk</span>
+          <span><b>Space</b> / Z / click&nbsp; talk &amp; touch things</span>
           <span><b>J</b>&nbsp; the journal</span>
         </div>
       </div>`;

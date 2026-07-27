@@ -55,12 +55,16 @@ npm run dev
 
 Open the printed localhost URL in a modern browser (WebGPU preferred, WebGL fallback).
 
-| Key | Action |
+| Input | Action |
 |---|---|
-| Arrows / WASD | walk |
-| Space / Z | talk, touch things, sit |
+| Arrows / WASD / gamepad / click or tap a spot | walk |
+| Space / Z / click or tap a person or thing | talk, touch things, sit |
 | J | the journal |
+| Esc | pause, settings |
 | M | mute |
+
+Mouse and touch are first class: click to walk, click people to talk,
+hover the menus; on touch devices a quiet pad appears.
 
 ## How it is built
 
