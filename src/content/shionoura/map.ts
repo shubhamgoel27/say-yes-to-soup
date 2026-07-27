@@ -33,14 +33,19 @@ function groundAt(x: number, y: number): string {
   if (y >= 28) return 'S';
   if (y === 27) return 'u';
   if (y >= 24) return 's';
-  // The quay: fitted stone from the old herring years.
-  if ((y === 22 || y === 23) && x >= 6 && x <= 38) return 'P';
+  // The quay: fitted stone from the old herring years. Three rows deep, so
+  // the harbor front can keep its furniture along the town side and still
+  // hand you two clear lanes in front of the water.
+  if (y >= 21 && y <= 23 && x >= 6 && x <= 32) return 'P';
+  if ((y === 22 || y === 23) && x >= 33 && x <= 38) return 'P';
   if (y === 22 || y === 23) return 's';
-  // The shotengai, half a town long.
-  if ((y === 10 || y === 11) && x >= 2 && x <= 31) return 'P';
-  // The shrine plateau and its stone steps.
+  // The shotengai, half a town long: three paved rows, shop side, walking
+  // row, kerb side, and an arm that carries the pavement east to the steps.
+  if (y >= 10 && y <= 12 && x >= 2 && x <= 31) return 'P';
+  if ((y === 10 || y === 11) && x >= 32 && x <= 37) return 'P';
+  // The shrine plateau and its stone steps, wide enough to climb two abreast.
   if (y >= 1 && y <= 4 && x >= 31 && x <= 44) return 'd';
-  if (x === 36 && y >= 5 && y <= 9) return '-';
+  if ((x === 35 || x === 36) && y >= 5 && y <= 9) return '-';
   // Lanes: shotengai down to the quay, and the minshuku's own path.
   if ((x === 16 || x === 17) && y >= 12 && y <= 21) return '-';
   if (x === 26 && y >= 18 && y <= 21) return '-';
@@ -57,11 +62,14 @@ function objectAt(x: number, y: number): string {
   // Dense cedar band above the shop row.
   if ((y === 1 || y === 2) && x >= 1 && x <= 30) return 'F';
   // The shrine hill's wooded slope; only the steps pass through.
-  if (y >= 5 && y <= 8 && x >= 31 && x <= 44 && x !== 36) return 'F';
+  if (y >= 5 && y <= 8 && x >= 31 && x <= 44 && x !== 35 && x !== 36) return 'F';
   // The torii stands over the steps; you walk under it.
   if (x === 36 && y === 7) return 'T';
-  // Moss owns the step edges; feet keep only the middle bare.
-  if (x === 36 && (y === 8 || y === 9)) return 'm';
+  // Moss owns the shaded west step; feet keep the torii's own line bare.
+  if (x === 35 && y >= 6 && y <= 9) return 'm';
+  // Stone lanterns mark the foot of the climb, one either side, so the way
+  // up reads as a way up from the far end of the shotengai.
+  if ((x === 34 || x === 37) && y === 10) return 'I';
   // Shrine yard: the Ebisu hall, stone lanterns, bamboo, the ema rack.
   if (x === 37 && y === 1) return 'E';
   if ((x === 35 || x === 39) && y === 2) return 'I';
@@ -81,15 +89,17 @@ function objectAt(x: number, y: number): string {
   if ((x === 8 || x === 15 || x === 22) && y === 9) return 'B';
   if (x === 29 && y === 9) return 'b';
   if (x === 34 && y === 9) return 'B';
-  // Shotengai furniture.
-  if (x === 12 && y === 11) return 'L'; // Sachiko's omiyage counter
-  if ((x === 2 || x === 30) && y === 11) return 'n';
-  if ((x === 4 || x === 13 || x === 27) && y === 12) return 'c';
-  // Life gathers at the shop doors: a bike, crates, flowers at a shut door.
+  // Shotengai furniture. The middle row is for walking, always; everything
+  // that stands still stands on a shoulder, shop side or kerb side.
+  if (x === 12 && y === 10) return 'L'; // Sachiko's omiyage counter, at her door
   if (x === 10 && y === 10) return 'y'; // the granny bike outside Kadoya
   if (x === 14 && y === 10) return 'M'; // Setoda crates on summer duty
+  if (x === 8 && y === 10) return 'q'; // the fish shop waters its can, daily
+  if (x === 19 && y === 10) return 'y'; // the tofu shop's bike, also unlocked
   if (x === 27 && y === 10) return 'q'; // still watered, though the shop sleeps
-  if (x === 29 && y === 11) return '3'; // the bench's afternoon shift
+  if ((x === 2 || x === 30) && y === 12) return 'n';
+  if ((x === 4 || x === 13 || x === 27) && y === 12) return 'c';
+  if (x === 29 && y === 12) return '3'; // the bench's afternoon shift
   if (x === 31 && y === 12) return 'V'; // the vending machine on the corner
   // The minshuku's dooryard: wind chime, planter, hydrangeas, laundry.
   if (x === 24 && y === 18) return 'z';
@@ -97,22 +107,24 @@ function objectAt(x: number, y: number): string {
   if (x === 28 && y === 19) return 'H';
   if (x === 15 && y === 13) return 'H';
   if (x === 30 && y === 16) return 'l';
-  // The quay.
-  if (x === 7 && y === 22) return 'f';
-  if (x === 9 && y === 22) return 'o'; // glass floats, retired with honors
-  if (x === 14 && y === 22) return 'L'; // Daisuke's morning stall
-  if (x === 15 && y === 22) return 'h';
-  if (x === 16 && y === 22) return '2'; // Kacho, the section chief
-  if (x === 18 && y === 22) return 'G'; // the town sign
-  if (x === 20 && y === 22) return '1'; // the quay supervisor, loafed
-  if ((x === 25 || x === 29) && y === 22) return 'c';
-  if (x === 27 && y === 22) return 'Y'; // the kingyo-sukui stall
-  if (x === 30 && y === 22) return 'y'; // a bike leaned by the postbox
-  if (x === 31 && y === 22) return 'X'; // the red postbox
+  // The quay. Stalls, boards and sleeping cats keep to the town-side row;
+  // the two rows facing the water belong to whoever is walking them.
+  if (x === 7 && y === 21) return 'f';
+  if (x === 9 && y === 21) return 'o'; // glass floats, retired with honors
+  if (x === 14 && y === 21) return 'L'; // Daisuke's morning stall
+  if (x === 15 && y === 21) return 'h';
+  if (x === 18 && y === 21) return 'G'; // the town sign
+  if (x === 19 && y === 21) return '2'; // Kacho, the section chief
+  if (x === 20 && y === 21) return '1'; // the quay supervisor, loafed
+  if ((x === 25 || x === 29) && y === 21) return 'c';
+  if (x === 27 && y === 21) return 'Y'; // the kingyo-sukui stall
+  if (x === 30 && y === 21) return 'y'; // a bike leaned by the postbox
+  if (x === 31 && y === 21) return 'X'; // the red postbox
   if (x === 34 && y === 22) return 'Q'; // the fishing co-op notice board
   if (x === 37 && y === 22) return 'p'; // the ferry timetable board
-  // The pier: big-catch flags up for Tanabata, a stone lantern at the mouth.
-  if (x === 21 && (y === 24 || y === 27)) return 'f';
+  // The pier: big-catch flags flank its head like gateposts, planted in the
+  // sand where a banner belongs, and a stone lantern at the seaward tip.
+  if ((x === 20 || x === 23) && y === 24) return 'f';
   if (x === 21 && y === 30) return 'I';
   // The beach: boats, the kei truck backed onto the sand, drying nets.
   if (x === 11 && y === 24) return 'K';

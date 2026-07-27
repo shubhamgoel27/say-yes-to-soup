@@ -64,11 +64,24 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c4.kingyo.start',
       doneNode: 'c4.kingyo.won',
+      title: 'The paper scoop',
+      howTo: [
+        'Arrows drift the poi across the tub. Space dips it under a goldfish.',
+        'The shallow ones can be lifted. The deep ones have done this before.',
+        'Paper always loses to water in the end. When it tears, the uncle just hands you another.',
+      ],
       make: (root, audio) => new KingyoPanel(root, audio as AudioBus),
     },
     {
       flag: 'c4.cook.start',
       doneNode: 'c4.cook.finish',
+      title: 'The dawn kitchen',
+      howTo: [
+        'Space slides the kombu into cold water, and then you wait. The waiting is the step.',
+        'Lift it one breath before the boil, while the meter sits in the pale band.',
+        'Then arrows and Space to skim the grey foam, and press two onigiri.',
+        'Fumi corrects the way she was corrected: once, warmly, and the pot goes back on.',
+      ],
       make: (root, audio) => new DashiPanel(root, audio as AudioBus),
     },
   ],

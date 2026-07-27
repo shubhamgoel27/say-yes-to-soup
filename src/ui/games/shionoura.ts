@@ -23,8 +23,10 @@ function fixHint(root: HTMLElement) {
  *
  * A paper poi, a tub of goldfish, and physics that forgive. Each dip soaks
  * the paper whether you catch or not; when the poi finally gives way the
- * game ends warmly. There is no fail state: scoop nothing at all and the
- * stall uncle scoops one himself and hands you the bag anyway.
+ * round is over. Catch even one and it ends warmly, bagged with ceremony.
+ * Catch none and the paper tears through with nothing in it, which is the
+ * festival's own beloved fail: the uncle simply hands you another poi and
+ * Space starts a fresh round. Nothing is lost but paper.
  */
 
 type Fish = { x: number; v: number; deep: boolean; ph: number; ly: number; hv: number; dd: number };
@@ -40,7 +42,7 @@ export class KingyoPanel {
   private cx = 0.5; // the poi's position over the tub, 0..1
   private soak = 0; // 0..100; at 100 the paper gives way
   private caught = 0;
-  private phase: 'scoop' | 'done' = 'scoop';
+  private phase: 'scoop' | 'torn' | 'done' = 'scoop';
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -105,16 +107,22 @@ export class KingyoPanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
-    if (this.phase === 'scoop') {
+    if (this.phase === 'scoop' || this.phase === 'torn') {
+      // The tub goes on living through the torn beat, so the escape reads.
       for (const f of this.fish) {
         f.x += f.v * dt * 0.35;
         if (f.x < 0.04 || f.x > 0.96) f.v = -f.v;
         if (Math.random() < dt * 0.4) f.v = (Math.random() - 0.5) * 0.6;
         if (Math.random() < dt * 0.25) f.deep = !f.deep;
       }
+    }
+    if (this.phase === 'scoop') {
       // Paper soaks just by hovering near the water. It was always going to.
       this.soak = Math.min(100, this.soak + dt * 3);
-      if (this.soak >= 100) this.finish();
+      if (this.soak >= 100) {
+        if (this.caught === 0) this.tear();
+        else this.finish();
+      }
     }
     this.scene.frame(dt, (g) => this.paint(g, dt));
     this.setHint(this.hint);
@@ -132,6 +140,12 @@ export class KingyoPanel {
       const done = this.onDone;
       this.onDone = null;
       done?.();
+      return;
+    }
+    if (this.phase === 'torn') {
+      // A fresh sheet of paper, and the tub has not held a grudge in its life.
+      const again = this.onDone;
+      if (again) this.open(again);
       return;
     }
     // The dip. Shallow fish near the poi come up; deep ones just watch.
@@ -174,6 +188,15 @@ export class KingyoPanel {
     }
   }
 
+  /** The paper lets go. Four soggy scraps drift where the disc used to be. */
+  private scatterShreds() {
+    const rng = new Rng(31);
+    this.shreds = [];
+    for (let i = 0; i < 4; i++) {
+      this.shreds.push({ x: this.fishX(this.poiX) + rng.range(-30, 30), y: 168 + rng.range(-14, 14), ph: rng.next() * 6 });
+    }
+  }
+
   private finish() {
     this.phase = 'done';
     this.audio.weaveDone();
@@ -184,17 +207,36 @@ export class KingyoPanel {
     this.scene.tween(0, 1, 0.7, easeOutBack, (v) => {
       this.bagT = v;
     });
-    const rng = new Rng(31);
-    this.shreds = [];
-    for (let i = 0; i < 4; i++) {
-      this.shreds.push({ x: this.fishX(this.poiX) + rng.range(-30, 30), y: 168 + rng.range(-14, 14), ph: rng.next() * 6 });
-    }
+    this.scatterShreds();
     this.hint =
-      this.caught === 0
-        ? 'The poi gives way. The uncle laughs, scoops one himself, and hands you the bag anyway. Space.'
-        : this.caught === 1
-          ? 'The paper sighs and lets go. One goldfish, bagged with ceremony. Space.'
-          : `The paper sighs and lets go. ${this.caught} goldfish, bagged with ceremony. Space.`;
+      this.caught === 1
+        ? 'The paper sighs and lets go. One goldfish, bagged with ceremony. Space.'
+        : `The paper sighs and lets go. ${this.caught} goldfish, bagged with ceremony. Space.`;
+  }
+
+  /**
+   * The festival's own fail: the poi tears through with nothing in it. No
+   * loss, no scolding, no story held back. A fresh paper and Space go again.
+   */
+  private tear() {
+    this.phase = 'torn';
+    this.audio.slosh();
+    this.scene.flash('#cfe8ef', 0.18);
+    if (!calm()) this.scene.thump(3, 0.04);
+    this.scene.burst(this.fishX(this.poiX), 168, {
+      n: calm() ? 5 : 12, color: '#efe4cc', size: 2.4, speed: 80, grav: 210, life: 0.6,
+    });
+    this.scatterShreds();
+    // One goldfish makes a point of swimming through the hole.
+    const near = this.fish.reduce(
+      (best, f) => (Math.abs(f.x - this.cx) < Math.abs(best.x - this.cx) ? f : best),
+      this.fish[0] as Fish,
+    );
+    if (near) {
+      near.deep = false;
+      near.v = (near.x < this.cx ? -1 : 1) * 0.9;
+    }
+    this.hint = 'The paper tears clean through and the goldfish goes home the way it came. The uncle is already holding out another poi. Space.';
   }
 
   private fishX(u: number): number {
@@ -457,7 +499,7 @@ export class KingyoPanel {
       g.stroke();
     }
     for (const f of shallowFish) this.drawFish(g, f, t);
-    if (this.phase === 'done') {
+    if (this.phase !== 'scoop') {
       for (const sh of this.shreds) {
         g.save();
         g.translate(sh.x + wobble(t, 0.5, sh.ph) * 5, sh.y + wobble(t, 0.4, sh.ph + 2) * 3);
@@ -496,6 +538,33 @@ export class KingyoPanel {
       g.beginPath();
       g.arc(0, 0, 28.5, -2.4, -0.6);
       g.stroke();
+      g.restore();
+    }
+    // Torn: the hoop lifts out of the water empty, an honest red circle of nothing.
+    if (this.phase === 'torn') {
+      const px = this.fishX(this.poiX);
+      const py = 132 + wobble(t, 1.4) * 4;
+      g.save();
+      g.translate(px, py);
+      g.rotate(0.18 + wobble(t, 0.9) * 0.07);
+      g.save();
+      g.rotate(0.5);
+      rr(g, -4, 24, 8, 200, 4, '#b0452a');
+      rr(g, -4, 24, 3, 200, 2, 'rgba(255,220,190,0.25)');
+      g.restore();
+      g.strokeStyle = '#c1512f';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.arc(0, 0, 27, 0, Math.PI * 2);
+      g.stroke();
+      // A last ragged collar of paper still clinging to the ring.
+      g.strokeStyle = 'rgba(238,228,204,0.5)';
+      g.lineWidth = 3;
+      for (const [a0, a1] of [[-2.5, -1.7], [-0.4, 0.5], [1.6, 2.2]] as const) {
+        g.beginPath();
+        g.arc(0, 0, 23, a0, a1);
+        g.stroke();
+      }
       g.restore();
     }
     // A caught one arcs through the lantern light into the bowl.
@@ -612,11 +681,16 @@ export class KingyoPanel {
  * DashiPanel: the morning dashi and breakfast with Fumi, before the guests
  * wake. Four quiet movements: kombu into cold water and then WAIT (patience
  * is the ingredient), pull the kombu just before the boil, skim the iriko
- * foam, and press two onigiri firm but not angry. There is no fail state;
- * Fumi corrects the way her mother-in-law corrected her, once and warmly.
+ * foam, and press two onigiri firm but not angry.
+ *
+ * One thing here can actually be spoiled, and it is the one the fiction
+ * insists on: kombu left to boil turns the whole pot bitter. Fumi tips it
+ * out with no blame in it and the cold water goes back on, which is exactly
+ * how her mother-in-law taught her. Everything else is corrected in place,
+ * once and warmly, without costing the morning.
  */
 
-type DashiPhase = 'steep' | 'pull' | 'skim' | 'onigiri' | 'done';
+type DashiPhase = 'steep' | 'pull' | 'ruined' | 'skim' | 'onigiri' | 'done';
 
 const STEEP_NEED = 7; // seconds the cold water gets before the flame
 const PULL_LO = 72; // the sweet zone: kombu out JUST before the boil
@@ -747,14 +821,7 @@ export class DashiPanel {
       }
     } else if (this.phase === 'pull') {
       this.heat = Math.min(100, this.heat + dt * 13);
-      if (this.heat >= 100) {
-        // No failing in this kitchen. Her chopsticks were always nearby.
-        this.audio.slosh();
-        this.hint =
-          'Her chopsticks flick the kombu out at the first true bubble. "Boiled kombu sulks and turns bitter. Near misses also teach." The iriko simmer on.';
-        this.liftKombu();
-        this.startSkim();
-      }
+      if (this.heat >= 100) this.boilOver();
     } else if (this.phase === 'skim') {
       for (const f of this.foam) {
         f.x += f.v * dt * 0.12;
@@ -789,6 +856,12 @@ export class DashiPanel {
       const done = this.onDone;
       this.onDone = null;
       done?.();
+      return;
+    }
+    if (this.phase === 'ruined') {
+      // A rinsed pot, cold water, and a morning that has plenty of dawn left.
+      const again = this.onDone;
+      if (again) this.open(again);
       return;
     }
     if (this.phase === 'steep') {
@@ -887,6 +960,21 @@ export class DashiPanel {
         }
       }
     }
+  }
+
+  /**
+   * The one real fail in this kitchen: the kombu boiled. Bitter, and no
+   * amount of skimming saves it. Fumi tips the pot, refills it cold, and
+   * says the thing her mother-in-law said. Space begins the dawn again.
+   */
+  private boilOver() {
+    this.phase = 'ruined';
+    this.audio.slosh();
+    this.scene.flash('#dfe6e2', 0.22);
+    if (!calm()) this.scene.thump(4, 0.05);
+    this.scene.burst(POT.cx, POT.sy - 6, { n: calm() ? 4 : 10, color: '#e2e6df', size: 2.8, speed: 60, grav: 60, life: 0.7, kind: 'puff' });
+    this.hint =
+      'The kombu rolls in the boil and the pot goes cloudy and bitter. Fumi tips it out with no blame in it and fills it cold again. "So did I, once. Space."';
   }
 
   private startSkim() {
@@ -1139,12 +1227,14 @@ export class DashiPanel {
     const t = this.scene.time;
     g.drawImage(this.bake().cv, 0, 0);
     const boiling = this.phase === 'pull';
+    // A ruined pot keeps its flame and its rolling boil until the player restarts.
+    const hot = boiling || this.phase === 'ruined';
     // Eased tints: heat carries the water blue to warm; gold arrives with the iriko broth.
     this.heatT += ((boiling || this.heat > 0 ? this.heat / 100 : 0) - this.heatT) * Math.min(1, dt * 2);
     const goldTarget = this.phase === 'skim' ? 0.6 : this.phase === 'onigiri' || this.phase === 'done' ? 1 : 0;
     this.goldT += (goldTarget - this.goldT) * Math.min(1, dt * 0.9);
     // The flame, only while the pull is on.
-    if (boiling) {
+    if (hot) {
       g.globalAlpha = 0.4 + wobble(t, 9) * 0.1;
       g.drawImage(this.glowSprite().cv, POT.cx - 55, 250, 110, 66);
       g.globalAlpha = 1;
@@ -1161,7 +1251,9 @@ export class DashiPanel {
     }
     // Water, clipped to the pot mouth.
     const cold = mix('#b9d3da', '#9fc3cf', this.heatT);
-    const surf = mix(cold, '#c9a35f', this.goldT);
+    const surf = this.phase === 'ruined'
+      ? mix(mix(cold, '#c9a35f', this.goldT), '#8e9a94', 0.55)
+      : mix(cold, '#c9a35f', this.goldT);
     g.save();
     g.beginPath();
     g.ellipse(POT.cx, POT.sy, POT.rx - 6, POT.ry - 4, 0, 0, Math.PI * 2);
@@ -1184,7 +1276,7 @@ export class DashiPanel {
       g.restore();
     }
     // Roe-small bubbles climbing as the heat rises.
-    if (boiling) {
+    if (hot) {
       const rate = this.heatT * 26;
       if (Math.random() < dt * rate) {
         this.bubbles.push({ x: POT.cx - 70 + Math.random() * 140, y: POT.sy + POT.ry - 8, r: 1 + Math.random() * 1.6 + this.heatT, vy: 12 + Math.random() * 16 });
@@ -1242,7 +1334,7 @@ export class DashiPanel {
     }
     // Steam, by mood: none in cold water, a thread near the boil, plenty over broth.
     this.steamAcc += dt;
-    const steamEvery = boiling ? 0.34 - this.heatT * 0.2 : this.goldT > 0.2 ? 0.22 : 99;
+    const steamEvery = hot ? 0.34 - this.heatT * 0.2 : this.goldT > 0.2 ? 0.22 : 99;
     if (this.steamAcc > steamEvery && !calm()) {
       this.steamAcc = 0;
       this.scene.waft(POT.cx - 60 + Math.random() * 120, POT.sy - 8, 'rgba(255,252,244,0.3)', 8);
@@ -1370,6 +1462,8 @@ export class DashiPanel {
       this.meter(g, 40, 320, 260, w / 100, 'cold water, resting', undefined, '#7fa8b5');
     } else if (boiling) {
       this.meter(g, 40, 320, 260, this.heat / 100, 'toward the boil (the pale band is your moment)', [PULL_LO, PULL_HI]);
+    } else if (this.phase === 'ruined') {
+      this.meter(g, 40, 320, 260, 1, 'boiled through. Space fills the pot cold again', undefined, '#7f8a84');
     } else if (this.phase === 'skim') {
       g.font = '13px Georgia, serif';
       g.fillStyle = 'rgba(244,238,224,0.88)';

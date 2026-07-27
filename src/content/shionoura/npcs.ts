@@ -11,8 +11,10 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'hana',
     name: 'Hana',
     map: 'shionoura',
-    pos: [22, 22],
-    range: 2,
+    // At the head of the pier, a row back from the walking rows, looking at
+    // her town. Her leash stays on the town side of the quay.
+    pos: [22, 21],
+    range: 1,
     look: {
       skin: '#e8c39a',
       hair: '#241a12',
@@ -60,6 +62,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       { when: { has: ['c4.taisomen'], not: ['c4.fumi.nani'] }, node: 'c4.fumi.memory' },
       { when: { has: ['c4.ofuro'], not: ['c4.okaeri'] }, node: 'c4.fumi.okaeri' },
       { when: { has: ['page.dishes.dashi'], not: ['c4.cook.done'] }, node: 'c4.fumi.cookinvite' },
+      { when: { has: ['c4.cook.done'] }, node: 'c4.fumi.cookagain' },
       { node: 'c4.fumi.idle' },
     ],
   },
@@ -67,7 +70,8 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'daisuke',
     name: 'Daisuke',
     map: 'shionoura',
-    pos: [14, 23],
+    // Beside his own stall on the town-side row, not in front of it.
+    pos: [13, 21],
     range: 1,
     look: {
       skin: '#c99a6b',
@@ -89,8 +93,10 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'sachiko',
     name: 'Sachiko',
     map: 'shionoura',
-    pos: [12, 10],
-    range: 1,
+    // Behind her counter, framed by it and the mikan crates. A shopkeeper
+    // minding her wares does not wander into the middle of her own street.
+    pos: [13, 10],
+    range: 0,
     look: {
       skin: '#e3b58c',
       hair: '#3a2e24',
@@ -136,8 +142,9 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'taro',
     name: 'Taro',
     map: 'shionoura',
-    pos: [35, 10],
-    range: 2,
+    // Under the wish bamboo by the shrine steps, off the approach itself.
+    pos: [33, 9],
+    range: 1,
     look: {
       skin: '#e8c39a',
       hair: '#241a12',
@@ -158,7 +165,8 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'isao',
     name: 'Captain Isao',
     map: 'shionoura',
-    pos: [33, 22],
+    // At the corner of the ferry office, on the town-side row.
+    pos: [32, 21],
     range: 1,
     look: {
       skin: '#c08b5e',
@@ -178,7 +186,8 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'chascaC4',
     name: 'Chasca',
     map: 'shionoura',
-    pos: [20, 11],
+    // On the kerb side, shooting the shopfronts across the walking row.
+    pos: [20, 12],
     range: 0,
     look: {
       skin: '#c98f5e',
@@ -202,8 +211,10 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     name: 'Olena',
     map: 'shionoura',
     when: { has: ['c4.arrived'], not: ['c4.complete'] },
-    pos: [35, 23],
-    range: 1,
+    // Ashore against the ferry office wall while the ship works, out of the
+    // way of the quay's two lanes.
+    pos: [35, 22],
+    range: 0,
     look: {
       skin: '#dfb08a',
       hair: '#c98a3f',
@@ -397,6 +408,21 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'And you should know: a guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
     ],
     effects: ['clear:c4.cook.start', 'set:c4.cook.done'],
+  },
+  'c4.fumi.cookagain': {
+    lines: [
+      { who: 'Fumi', text: 'Dawn happens again tomorrow. It is very reliable that way. The pot does not count how many times you have made it, and neither do I.' },
+    ],
+    choices: [
+      { text: 'Be in the kitchen at dawn again', when: { has: ['c4.cook.done'] }, goto: 'c4.fumi.cookreplay' },
+      { text: 'Let the house sleep in', goto: 'c4.fumi.idle' },
+    ],
+  },
+  'c4.fumi.cookreplay': {
+    lines: [
+      { who: 'Fumi', text: 'Mm. No calling the steps this morning. Your hands know where the kombu goes, and the kombu knows your hands.' },
+    ],
+    effects: ['set:replay.mode', 'set:c4.cook.start'],
   },
 
   // ---------------- Daisuke, tai pride ----------------
@@ -904,6 +930,22 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.ex.yatai.after': {
     lines: [
       { text: 'The goldfish tub ripples with survivors and celebrities. The uncle nods at you: a colleague now, in the paper-scoop trade.' },
+      { text: 'He taps a fresh poi twice against the rim and leaves it lying there, which is how a stall keeper asks a question.' },
+    ],
+    choices: [
+      { text: 'Take the fresh poi', when: { has: ['c4.kingyo.done'] }, goto: 'c4.kingyo.replay' },
+      { text: 'Give the goldfish the evening off', goto: 'c4.ex.yatai.watch' },
+    ],
+  },
+  'c4.kingyo.replay': {
+    lines: [
+      { text: 'No ceremony this time, no lecture about one dip being honest. Just paper, water, and the small orange chance of a fish.' },
+    ],
+    effects: ['set:replay.mode', 'set:c4.kingyo.start'],
+  },
+  'c4.ex.yatai.watch': {
+    lines: [
+      { text: 'You stand and watch instead. A boy in a yukata tears through three poi in a row and is radiantly, completely happy about it.' },
     ],
   },
   'c4.ex.tatami': {
