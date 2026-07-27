@@ -24,7 +24,11 @@ export const ART: ChapterArt = {
     'stairup', 'kabootarkhana', 'kitestack', 'watertank', 'dhobiline',
     'antennajugaad', 'fortwall', 'jamadomes', 'degpot', 'coupletwall',
     'mohallawall', 'kitesnag', 'waterstation', 'hallfan', 'khandapanel',
-    'ladlestand', 'lampniche',
+    'ladlestand', 'lampniche', 'jaalipanel',
+    // The big shapes. Overhead spans are deliberately absent: they have no
+    // feet, so they get no contact pool and cast nothing on the lane floor.
+    'tanktrio', 'dishantenna', 'mumty', 'neemtub', 'kitemast', 'shopspill',
+    'signjut',
   ],
   buildings: ['haveli', 'gurdwara'],
   windows: {
@@ -40,7 +44,8 @@ export const ART: ChapterArt = {
   glows: ['paranthagriddle', 'jalebikadhai', 'chaikhana', 'chulha', 'diyaledge', 'lampniche'],
   noInk: [
     'pigeonpeck', 'marigoldheap', 'spicespill', 'puddle', 'kulhadshards', 'kitecut', 'pangat',
-    'grainspill', 'chalkpitch', 'doormat', 'couplitter',
+    'grainspill', 'chalkpitch', 'doormat', 'couplitter', 'dryingcloth',
+    'pigeonflock',
   ],
 
   paint(make) {
@@ -113,7 +118,10 @@ export const ART: ChapterArt = {
 
     // Rooftop terrace: lime-washed brick, sun-cured, rain-rinsed.
     make('terrace', 4, (g, r) => {
-      const base = '#b8a98e';
+      // The three terrace coats are a value ladder, not three names for one
+      // tan: lime pale at the top of the map, worn tan across the middle,
+      // brick dust darkest down south. That is what makes the steps read.
+      const base = '#b3a082';
       rect(g, 0, 0, S, S, shade(base, 0.02));
       g.strokeStyle = 'rgba(90,75,55,0.18)';
       g.lineWidth = 1.2;
@@ -137,7 +145,7 @@ export const ART: ChapterArt = {
     // Yusuf's terrace: freshly lime-washed for the birds, a shade brighter,
     // the coop's whole neighborhood smelling faintly of chuna.
     make('terracelime', 4, (g, r) => {
-      const base = '#c4b69c';
+      const base = '#ccc1a6';
       rect(g, 0, 0, S, S, shade(base, 0.02));
       g.strokeStyle = 'rgba(95,80,60,0.15)';
       g.lineWidth = 1.2;
@@ -156,7 +164,7 @@ export const ART: ChapterArt = {
     // The south terrace: brick dust and evening, a rose-tan coat worn to
     // the pavers where the charpai parliament convenes.
     make('terracerose', 4, (g, r) => {
-      const base = '#b4a08a';
+      const base = '#a98a74';
       rect(g, 0, 0, S, S, shade(base, 0.01));
       g.strokeStyle = 'rgba(95,72,55,0.2)';
       g.lineWidth = 1.2;
@@ -837,6 +845,13 @@ export const ART: ChapterArt = {
     // The peepal at the chowk: older than the paving and most of the
     // opinions, with a small shrine and a thread-tied trunk.
     make('peepal', 2, (g, r) => {
+      // Drawn at the old scale and then grown: a peepal that reads as a
+      // potted plant is not a peepal. Three tiles of crown, so the maidan
+      // and the chowk each get one thing the eye can find from anywhere.
+      g.save();
+      g.translate(32, 4);
+      g.scale(1.5, 1.5);
+
       softShadow(g, 32, 122, 28, 6, 0.24);
       // The built-up chabutra: a two-step masonry platform ringing the
       // trunk, seat of the maidan's standing committee on everything.
@@ -897,7 +912,8 @@ export const ART: ChapterArt = {
       glowSpot(g, 47, 114, 6, '#ffca6a', 0.5);
       dot(g, 42, 119, 2, '#e8952c');
       dot(g, 52, 119, 2, '#e8952c');
-    }, 64, 128);
+      g.restore();
+    }, 160, 192);
 
     // The hand pump: cast iron, public, undefeated. Water for porters,
     // pigeons, and anyone whose kulhad survived the chai.
@@ -1050,48 +1066,75 @@ export const ART: ChapterArt = {
     // The kabootar khana: Yusuf's whitewashed coop, wire fronts, named
     // tenants. The perch rail is the throne room.
     make('kabootarkhana', 1, (g) => {
-      softShadow(g, 32, 90, 26, 6, 0.22);
-      // The coop box on legs.
-      rr(g, 10, 78, 5, 10, 2, '#6f5238');
-      rr(g, 49, 78, 5, 10, 2, '#6f5238');
-      rr(g, 6, 36, 52, 44, 3, '#e8e0d0');
-      vgrad(g, 6, 36, 52, 8, 'rgba(255,255,255,0.4)', 'rgba(0,0,0,0)');
-      // Sloped tin lid.
+      softShadow(g, 56, 152, 44, 9, 0.24);
+      // The legs, and the landing board every bird lands on but one.
+      rr(g, 18, 128, 7, 24, 2, '#6f5238');
+      rr(g, 88, 128, 7, 24, 2, '#6f5238');
+      rr(g, 4, 128, 104, 7, 2, '#7d5e3c');
+      // The box itself: two storeys, whitewashed every spring by decree.
+      rr(g, 10, 46, 92, 84, 4, '#e8e0d0');
+      vgrad(g, 10, 46, 92, 16, 'rgba(255,255,255,0.42)', 'rgba(0,0,0,0)');
+      vgrad(g, 10, 108, 92, 22, 'rgba(0,0,0,0)', 'rgba(120,100,74,0.2)');
+      // The sloped tin lid, overhanging on the weather side.
       g.beginPath();
-      g.moveTo(2, 38);
-      g.lineTo(62, 38);
-      g.lineTo(56, 26);
-      g.lineTo(8, 26);
+      g.moveTo(2, 50);
+      g.lineTo(110, 50);
+      g.lineTo(100, 28);
+      g.lineTo(12, 28);
       g.closePath();
       g.fillStyle = '#8a8478';
       g.fill();
-      // Wire-front compartments.
-      for (const [cx, cy] of [[16, 48], [32, 48], [48, 48], [16, 66], [32, 66], [48, 66]] as const) {
-        rr(g, cx - 7, cy - 8, 14, 16, 2, '#4a4034');
-        g.strokeStyle = 'rgba(220,225,230,0.4)';
-        g.lineWidth = 0.8;
-        for (let k = -6; k <= 6; k += 3) {
-          g.beginPath();
-          g.moveTo(cx + k, cy - 8);
-          g.lineTo(cx + k, cy + 8);
-          g.stroke();
+      g.strokeStyle = 'rgba(255,250,230,0.16)';
+      g.lineWidth = 2;
+      for (let k = 0; k < 10; k++) {
+        g.beginPath();
+        g.moveTo(14 + k * 10, 28);
+        g.lineTo(8 + k * 10, 50);
+        g.stroke();
+      }
+      // Wire-front compartments, three across, two down, all fully let.
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 3; col++) {
+          const cx = 28 + col * 28;
+          const cy = 68 + row * 34;
+          rr(g, cx - 12, cy - 14, 24, 28, 2, '#463c30');
+          g.strokeStyle = 'rgba(220,225,230,0.42)';
+          g.lineWidth = 0.9;
+          for (let k = -10; k <= 10; k += 4) {
+            g.beginPath();
+            g.moveTo(cx + k, cy - 14);
+            g.lineTo(cx + k, cy + 14);
+            g.stroke();
+          }
+          g.strokeStyle = 'rgba(220,225,230,0.28)';
+          for (const yy of [cy - 6, cy + 4]) {
+            g.beginPath();
+            g.moveTo(cx - 12, yy);
+            g.lineTo(cx + 12, yy);
+            g.stroke();
+          }
         }
       }
-      // Tenants at the doors and one on the ridge, clearly management.
-      for (const [px2, py] of [[16, 46], [48, 64]] as const) {
-        oval(g, px2, py, 3.4, 2.6, '#a8a6b0');
-        dot(g, px2 + 3, py - 1.6, 1.8, '#8c8a94');
+      // Named tenants: two at their doors, one on the ridge, clearly management.
+      for (const [px2, py, c] of [[26, 64, '#a8a6b0'], [84, 98, '#b6aca0'], [56, 130, '#9c9aa6']] as const) {
+        oval(g, px2, py, 6, 4.6, c);
+        dot(g, px2 + 5, py - 3, 3.2, shade(c, -0.12));
+        dot(g, px2 + 7.4, py - 3.4, 0.9, '#2b2620');
       }
-      oval(g, 30, 23, 4, 3, '#e8e4dc');
-      dot(g, 34, 21, 2, '#d0ccc4');
-      // The perch rail out front.
-      g.strokeStyle = '#6f5238';
-      g.lineWidth = 2.4;
-      g.beginPath();
-      g.moveTo(4, 84);
-      g.lineTo(60, 84);
-      g.stroke();
-    }, 64, 96);
+      oval(g, 52, 24, 7, 5, '#e8e4dc');
+      dot(g, 58, 21, 3.4, '#d0ccc4');
+      dot(g, 60.6, 20.4, 0.9, '#2b2620');
+      // The chalked roll of names beside the door, updated by argument.
+      rr(g, 92, 66, 12, 26, 1.5, '#3a3630');
+      g.strokeStyle = 'rgba(232,224,200,0.7)';
+      g.lineWidth = 1;
+      for (let k = 0; k < 5; k++) {
+        g.beginPath();
+        g.moveTo(94, 70 + k * 4.4);
+        g.lineTo(102, 70 + k * 4.4);
+        g.stroke();
+      }
+    }, 112, 160);
 
     // Patangs leaning in a paper rainbow: fighters, all of them, tissue and
     // bamboo, waiting for the wind to open negotiations.
@@ -1419,6 +1462,24 @@ export const ART: ChapterArt = {
       if (r.chance(0.2)) rr(g, 6 + r.int(48), 30, 7, 4, 1, 'rgba(90,55,40,0.4)');
     });
 
+    // The same wall seen end-on, for the party walls that run north to
+    // south. Its band fills the tile top to bottom so a run of them joins
+    // up, and it overlaps the horizontal band's height where the two meet.
+    make('parapetside', 3, (g, r) => {
+      vgrad(g, 14, 0, 34, 64, shade('#b08968', 0.02), shade('#b08968', -0.06));
+      g.fillStyle = 'rgba(60,45,35,0.38)';
+      for (let y = 4; y < 64; y += 12) {
+        rr(g, 26, y, 10, 6, 2, 'rgba(60,45,35,0.38)');
+      }
+      // Cap course down the sun side, continuous.
+      rr(g, 14, 0, 7, 64, 0, '#c1a58c');
+      vgrad(g, 14, 0, 3, 64, 'rgba(255,250,235,0.3)', 'rgba(255,250,235,0.05)');
+      vgrad(g, 44, 0, 4, 64, 'rgba(0,0,0,0)', 'rgba(0,0,0,0)');
+      rect(g, 44, 0, 4, 64, 'rgba(70,50,38,0.14)');
+      if (r.chance(0.5)) oval(g, 32, 6 + r.int(48), 3, 7, 'rgba(240,235,220,0.28)');
+      if (r.chance(0.2)) rr(g, 22, 6 + r.int(48), 4, 7, 1, 'rgba(90,55,40,0.4)');
+    });
+
     // The tulsi: holy basil in a stepped clay pot, watered before anyone's
     // tea, the roof's one non-negotiable resident.
     make('tulsipot', 2, (g, r) => {
@@ -1646,26 +1707,30 @@ export const ART: ChapterArt = {
     // Pigeons at ground level, employed full-time by spilled grain.
     make('pigeonpeck', 3, (g, r) => {
       const bird = (bx: number, by: number, pecking: boolean) => {
-        const grey = r.chance(0.25) ? '#b8a6a0' : '#a8a6b0';
-        oval(g, bx, by, 4.2, 3.2, grey);
+        const grey = r.chance(0.25) ? '#9c8e8a' : '#8e8ea4';
+        // A bird on tan ground has to earn its contrast: pale back, dark
+        // shadow under it, or a flock of them reads as dust on the lens.
+        oval(g, bx, by + 3.4, 5, 1.6, 'rgba(40,30,22,0.16)');
+        oval(g, bx, by, 5, 3.8, grey);
+        oval(g, bx - 1.4, by + 1.4, 4, 2.2, shade(grey, -0.14));
         if (pecking) {
-          dot(g, bx + 4, by + 1.6, 2.2, shade(grey, -0.06));
+          dot(g, bx + 4.6, by + 1.8, 2.6, shade(grey, -0.04));
           g.strokeStyle = '#c9822c';
-          g.lineWidth = 1;
+          g.lineWidth = 1.2;
           g.beginPath();
-          g.moveTo(bx + 6, by + 2.6);
-          g.lineTo(bx + 7.4, by + 3.6);
+          g.moveTo(bx + 6.8, by + 3);
+          g.lineTo(bx + 8.4, by + 4.2);
           g.stroke();
         } else {
-          dot(g, bx + 3.6, by - 2.6, 2.2, shade(grey, -0.06));
+          dot(g, bx + 4.2, by - 3, 2.6, shade(grey, -0.04));
           // The iridescent collar, briefly wealthy in the light.
-          g.strokeStyle = 'rgba(90,140,110,0.6)';
-          g.lineWidth = 1;
+          g.strokeStyle = 'rgba(90,140,110,0.65)';
+          g.lineWidth = 1.2;
           g.beginPath();
-          g.arc(bx + 3, by - 1.4, 2, -0.5, 1.2);
+          g.arc(bx + 3.4, by - 1.6, 2.4, -0.5, 1.2);
           g.stroke();
         }
-        oval(g, bx - 1, by - 0.6, 2.6, 1.8, shade(grey, 0.12), -0.4);
+        oval(g, bx - 1.2, by - 1, 3, 2, shade(grey, 0.24), -0.4);
       };
       const n = 2 + r.int(2);
       for (let i = 0; i < n; i++) {
@@ -1676,6 +1741,42 @@ export const ART: ChapterArt = {
     });
 
     // A marigold heap: the garland trade's loose change.
+    // The flock, as one thing. Where the grain goes down the birds are not
+    // three specks on a floor, they are a moving grey carpet with a shape,
+    // and a shape is what an empty terrace needs standing on it.
+    make('pigeonflock', 3, (g, r) => {
+      const birds: [number, number][] = [];
+      for (let i = 0; i < 9; i++) birds.push([5 + r.int(54), 10 + r.int(46)]);
+      birds.sort((a, b) => a[1] - b[1]);
+      for (const [bx, by] of birds) {
+        const grey = r.chance(0.3) ? '#9c8e8a' : r.chance(0.4) ? '#7d7d94' : '#8e8ea4';
+        oval(g, bx, by + 3.6, 5.4, 1.7, 'rgba(40,30,22,0.18)');
+        oval(g, bx, by, 5.2, 4, grey);
+        oval(g, bx - 1.4, by + 1.4, 4.2, 2.4, shade(grey, -0.14));
+        oval(g, bx - 1.2, by - 1.2, 3.2, 2.1, shade(grey, 0.24), -0.4);
+        const up = r.chance(0.45);
+        dot(g, bx + 4.4, by + (up ? -3.2 : 1.8), 2.7, shade(grey, -0.02));
+        dot(g, bx + 5.6, by + (up ? -3.8 : 1.4), 0.8, '#2b2620');
+        if (up) {
+          g.strokeStyle = 'rgba(90,140,110,0.6)';
+          g.lineWidth = 1.2;
+          g.beginPath();
+          g.arc(bx + 3.4, by - 1.8, 2.4, -0.5, 1.2);
+          g.stroke();
+        } else {
+          g.strokeStyle = '#c9822c';
+          g.lineWidth = 1.2;
+          g.beginPath();
+          g.moveTo(bx + 7, by + 3.2);
+          g.lineTo(bx + 8.6, by + 4.4);
+          g.stroke();
+        }
+      }
+      // Grain going fast, and one feather nobody will claim.
+      for (let i = 0; i < 8; i++) dot(g, 10 + r.int(44), 18 + r.int(38), 0.9, '#d9c088');
+      oval(g, 12 + r.int(40), 58, 4, 1.2, 'rgba(230,228,224,0.5)', -0.4);
+    });
+
     make('marigoldheap', 2, (g, r) => {
       oval(g, 32, 46, 16, 5, 'rgba(30,24,16,0.15)');
       for (let i = 0; i < 12; i++) {
@@ -1790,6 +1891,582 @@ export const ART: ChapterArt = {
       g.quadraticCurveTo(44, 26, 56, 28);
       g.stroke();
     });
+
+    // --------------------------------------------- the big shapes
+    //
+    // A roof or a gali is not a list of small objects, it is three or four
+    // large silhouettes with air between them. These are those: tall enough
+    // to break a skyline, wide enough to hold a corner of the frame, and
+    // painted so the eye lands on one of them first.
+
+    // The tank stack: a black Sintex up a welded frame and a blue drum at
+    // its foot, the roof's whole plumbing argument in one silhouette.
+    make('tanktrio', 2, (g, r) => {
+      softShadow(g, 56, 184, 40, 9, 0.24);
+      // The frame: angle iron, welded by eye, painted once in 1974.
+      const leg = (x1: number, x2: number) => {
+        g.strokeStyle = '#6b6058';
+        g.lineWidth = 4.4;
+        g.beginPath();
+        g.moveTo(x1, 184);
+        g.lineTo(x2, 92);
+        g.stroke();
+      };
+      leg(50, 54);
+      leg(104, 98);
+      leg(62, 62);
+      leg(94, 90);
+      g.strokeStyle = 'rgba(90,80,70,0.8)';
+      g.lineWidth = 2.4;
+      for (const [ax, ay, bx, by] of [[52, 150, 100, 138], [100, 150, 52, 138], [55, 118, 97, 110]] as const) {
+        g.beginPath();
+        g.moveTo(ax, ay);
+        g.lineTo(bx, by);
+        g.stroke();
+      }
+      rect(g, 42, 86, 68, 8, '#5c5650');
+      // The tank itself: black, ribbed, hot enough to argue with by noon.
+      rr(g, 42, 14, 68, 74, 13, '#33302c');
+      vgrad(g, 42, 14, 68, 24, 'rgba(255,255,255,0.13)', 'rgba(0,0,0,0)');
+      oval(g, 76, 14, 34, 9, '#413d38');
+      oval(g, 68, 10, 12, 4.2, '#4f4a44');
+      g.strokeStyle = 'rgba(255,255,255,0.09)';
+      g.lineWidth = 2.6;
+      for (const y of [32, 50, 68]) {
+        g.beginPath();
+        g.moveTo(44, y);
+        g.lineTo(108, y);
+        g.stroke();
+      }
+      // The ladder somebody welded on and everybody uses.
+      g.strokeStyle = '#7a6a58';
+      g.lineWidth = 2.6;
+      g.beginPath();
+      g.moveTo(40, 182);
+      g.lineTo(46, 50);
+      g.moveTo(50, 182);
+      g.lineTo(56, 50);
+      g.stroke();
+      g.lineWidth = 2;
+      for (let k = 0; k < 10; k++) {
+        const yy = 62 + k * 12;
+        g.beginPath();
+        g.moveTo(42 + (182 - yy) * 0.05, yy);
+        g.lineTo(52 + (182 - yy) * 0.05, yy);
+        g.stroke();
+      }
+      // The blue drum at the foot: monsoon storage, algae optional.
+      const blue = shade('#3a6f9a', (r.next() - 0.5) * 0.06);
+      rr(g, 6, 116, 40, 66, 5, blue);
+      vgrad(g, 6, 116, 40, 20, 'rgba(255,255,255,0.16)', 'rgba(0,0,0,0)');
+      oval(g, 26, 116, 20, 6, shade(blue, 0.14));
+      oval(g, 26, 116, 15, 4, shade(blue, -0.1));
+      g.strokeStyle = 'rgba(255,255,255,0.12)';
+      g.lineWidth = 2;
+      for (const y of [136, 158]) {
+        g.beginPath();
+        g.moveTo(8, y);
+        g.lineTo(44, y);
+        g.stroke();
+      }
+      // The supply pipe, and one pigeon auditing the lid.
+      g.strokeStyle = '#7d7469';
+      g.lineWidth = 2.6;
+      g.beginPath();
+      g.moveTo(102, 88);
+      g.lineTo(102, 148);
+      g.lineTo(82, 176);
+      g.stroke();
+      oval(g, 90, 8, 4.4, 3.4, '#a8a6b0');
+      dot(g, 93.6, 5.6, 2.3, '#8c8a94');
+    }, 112, 192);
+
+    // The dish: a pale saucer aimed at a satellite the whole lane has
+    // opinions about. Brought two hundred channels and one long argument.
+    make('dishantenna', 1, (g) => {
+      softShadow(g, 48, 168, 22, 6, 0.2);
+      // Bricks holding the foot down, because bolts are for other people.
+      rr(g, 26, 156, 20, 9, 1.5, '#9d5f4a');
+      rr(g, 52, 158, 20, 9, 1.5, '#8a5340');
+      // The mast.
+      g.strokeStyle = '#6b655c';
+      g.lineWidth = 6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(48, 162);
+      g.lineTo(48, 74);
+      g.stroke();
+      // Guy strings, kite dor because it was to hand.
+      g.strokeStyle = 'rgba(235,228,206,0.55)';
+      g.lineWidth = 1;
+      for (const gx of [12, 84, 60]) {
+        g.beginPath();
+        g.moveTo(48, 80);
+        g.lineTo(gx, 166);
+        g.stroke();
+      }
+      // The dish, tilted up at the sky's slow post.
+      g.save();
+      g.translate(46, 50);
+      g.rotate(-0.32);
+      oval(g, 0, 0, 36, 28, '#cfcabb');
+      oval(g, 2, 2, 31, 23, '#ded9ca');
+      oval(g, 5, 5, 22, 15, '#c6c0af');
+      g.strokeStyle = 'rgba(120,112,96,0.4)';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.ellipse(0, 0, 36, 28, 0, 0, Math.PI * 2);
+      g.stroke();
+      g.restore();
+      // The LNB on its arm, squinting back at the dish.
+      g.strokeStyle = '#8a8276';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(46, 50);
+      g.lineTo(84, 74);
+      g.stroke();
+      rr(g, 78, 68, 14, 12, 3, '#4a4640');
+      // The feed cable, stapled down the mast and off to somebody's TV.
+      g.strokeStyle = 'rgba(50,46,40,0.85)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(84, 78);
+      g.quadraticCurveTo(52, 110, 50, 160);
+      g.stroke();
+    }, 96, 176);
+
+    // The mumty: the stair hut, a brick room the size of an argument, with
+    // a tin hat and a door the colour of every door in the mohalla.
+    make('mumty', 3, (g, r) => {
+      softShadow(g, 48, 186, 44, 10, 0.26);
+      // No two houses painted theirs the same year, or the same colour.
+      const v = r.int(3);
+      const wash = ['#d2c4a6', '#b5766a', '#93a7a4'][v] ?? '#d2c4a6';
+      const doorC = ['#3d6b58', '#2c3e57', '#8a3428'][v] ?? '#3d6b58';
+      // The body, lime over brick, its lower course gone back to brick.
+      rr(g, 8, 52, 80, 136, 3, wash);
+      vgrad(g, 8, 52, 80, 56, 'rgba(255,250,232,0.32)', 'rgba(0,0,0,0)');
+      rect(g, 8, 156, 80, 32, shade('#9d7a6c', 0.02));
+      g.strokeStyle = 'rgba(80,54,44,0.22)';
+      g.lineWidth = 1.2;
+      for (const y of [164, 174, 184]) {
+        g.beginPath();
+        g.moveTo(8, y);
+        g.lineTo(88, y);
+        g.stroke();
+      }
+      // Weather: rain streaks off the roofline, one damp corner.
+      for (let k = 0; k < 5; k++) {
+        const x = 12 + k * 16 + r.int(4);
+        vgrad(g, x, 56, 5, 46 + r.int(26), 'rgba(120,104,80,0.18)', 'rgba(0,0,0,0)');
+      }
+      // The door: bottle green, hasp and a lock the size of a fist.
+      rr(g, 30, 96, 36, 92, 2, doorC);
+      vgrad(g, 30, 96, 36, 12, 'rgba(255,255,255,0.14)', 'rgba(0,0,0,0)');
+      for (const [dy, h] of [[104, 34], [144, 38]] as const) {
+        rect(g, 34, dy, 12, h, shade(doorC, -0.1));
+        rect(g, 50, dy, 12, h, shade(doorC, -0.1));
+      }
+      dot(g, 63, 142, 2.4, '#c9a23c');
+      rr(g, 58, 136, 9, 12, 2, '#8a8276');
+      // A ventilator brick above the door, and the tin hat over everything.
+      rect(g, 38, 76, 20, 11, 'rgba(40,34,26,0.5)');
+      g.strokeStyle = 'rgba(210,196,166,0.6)';
+      g.lineWidth = 1.6;
+      for (let k = 0; k < 3; k++) {
+        g.beginPath();
+        g.moveTo(38 + k * 7, 76);
+        g.lineTo(38 + k * 7, 87);
+        g.stroke();
+      }
+      g.save();
+      g.beginPath();
+      g.moveTo(0, 50);
+      g.lineTo(96, 30);
+      g.lineTo(96, 50);
+      g.lineTo(0, 70);
+      g.closePath();
+      g.fillStyle = '#8a7d6c';
+      g.fill();
+      g.clip();
+      g.strokeStyle = 'rgba(255,245,220,0.18)';
+      g.lineWidth = 2;
+      for (let k = 0; k < 13; k++) {
+        g.beginPath();
+        g.moveTo(2 + k * 8, 24);
+        g.lineTo(-4 + k * 8, 76);
+        g.stroke();
+      }
+      g.restore();
+      // Two bricks holding the tin down against sawan's opinions.
+      rr(g, 16, 46, 22, 9, 1.5, '#9d5f4a');
+      rr(g, 60, 36, 22, 9, 1.5, '#8a5340');
+      // A pigeon on the ridge, because of course.
+      oval(g, 78, 30, 5, 3.6, '#a8a6b0');
+      dot(g, 82.4, 27.6, 2.4, '#8c8a94');
+    }, 96, 208);
+
+    // A neem in a cut oil drum: the roof's one shade, the lane's one green,
+    // and free toothbrushes for anyone who asks the aunty first.
+    make('neemtub', 2, (g, r) => {
+      softShadow(g, 32, 122, 18, 5, 0.22);
+      // The drum, cut at the waist and repainted the colour of a bus.
+      rr(g, 15, 88, 34, 34, 3, '#3a6f9a');
+      vgrad(g, 15, 88, 34, 12, 'rgba(255,255,255,0.18)', 'rgba(0,0,0,0)');
+      oval(g, 32, 88, 17, 5.5, '#2f5d84');
+      oval(g, 32, 88, 13, 4, '#4a3a2a');
+      // The trunk, thin and determined.
+      g.strokeStyle = '#7d5e3c';
+      g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(32, 88);
+      g.lineTo(30, 56);
+      g.stroke();
+      // Foliage: three masses, not one ball. Neem hangs, it does not puff.
+      blob(g, 30, 40, 18, '#456e42', r, 0.3);
+      blob(g, 15, 52, 12, '#3d6238', r, 0.32);
+      blob(g, 46, 50, 13, '#4f7a49', r, 0.3);
+      blob(g, 34, 30, 12, '#5c8a4e', r, 0.28);
+      // Leaf glints on the sun side.
+      for (let k = 0; k < 7; k++) {
+        oval(g, 24 + r.int(24), 26 + r.int(26), 3.4, 1.3, 'rgba(150,190,120,0.4)', -0.5 + r.next());
+      }
+    }, 64, 128);
+
+    // The kite mast: a bamboo the length of two men, lashed to the parapet,
+    // flying whatever the roof is currently declaring.
+    make('kitemast', 2, (g, r) => {
+      softShadow(g, 48, 198, 18, 5, 0.2);
+      // The bricks and the lashing that hold it upright, mostly.
+      rr(g, 30, 184, 22, 10, 1.5, '#9d5f4a');
+      rr(g, 50, 188, 20, 9, 1.5, '#8a5340');
+      // The bamboo, two poles spliced, the splice wrapped in jute.
+      g.strokeStyle = '#a8895e';
+      g.lineWidth = 5;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(48, 192);
+      g.lineTo(44, 18);
+      g.stroke();
+      for (const y of [150, 108, 66]) {
+        rect(g, 43, y, 6, 3.4, 'rgba(90,70,44,0.45)');
+      }
+      rr(g, 41, 96, 9, 14, 3, '#8a6a44');
+      // The pennant: saffron or green, sun-bleached, older than the flat below.
+      const c = shade(r.chance(0.5) ? '#c9822c' : '#3d6b58', (r.next() - 0.5) * 0.06);
+      g.fillStyle = c;
+      g.beginPath();
+      g.moveTo(44, 16);
+      g.lineTo(94, 42);
+      g.quadraticCurveTo(70, 50, 44, 64);
+      g.closePath();
+      g.fill();
+      g.fillStyle = shade(c, -0.15);
+      g.beginPath();
+      g.moveTo(44, 42);
+      g.quadraticCurveTo(70, 48, 94, 42);
+      g.quadraticCurveTo(70, 50, 44, 64);
+      g.closePath();
+      g.fill();
+      vgrad(g, 44, 16, 22, 40, 'rgba(255,250,230,0.24)', 'rgba(0,0,0,0)');
+      // The dor running off to somebody's charkhi, and last week's trophy.
+      g.strokeStyle = 'rgba(240,236,220,0.75)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(45, 52);
+      g.quadraticCurveTo(20, 72, 0, 66);
+      g.stroke();
+      g.beginPath();
+      g.moveTo(45, 78);
+      g.quadraticCurveTo(70, 94, 96, 88);
+      g.stroke();
+      // A cut kite tied on at shoulder height, kept as a receipt.
+      g.save();
+      g.translate(46, 128);
+      g.rotate(0.5);
+      g.fillStyle = '#c04858';
+      g.beginPath();
+      g.moveTo(0, -14);
+      g.lineTo(11, 0);
+      g.lineTo(0, 12);
+      g.lineTo(-11, 0);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = 'rgba(60,44,26,0.45)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(0, -14);
+      g.lineTo(0, 12);
+      g.moveTo(-11, 0);
+      g.quadraticCurveTo(0, -4, 11, 0);
+      g.stroke();
+      g.restore();
+    }, 96, 208);
+
+    // The wire span: the mohalla's whole subscription history crossing the
+    // gali overhead at whatever height the last electrician could reach.
+    // Walk under it; it is not solid, it is only fate.
+    make('wirespan', 3, (g, r) => {
+      const top = 18 + r.int(3) * 14;
+      // The brackets, bolted into two facades at two different heights.
+      rr(g, 0, top + 6, 14, 8, 2, '#4a4640');
+      rr(g, 114, top - 6, 14, 8, 2, '#4a4640');
+      // The bundle: eleven cables, none of them the same age, crossing
+      // nearly level because a sagging span gets tied up by somebody.
+      for (let i = 0; i < 11; i++) {
+        g.strokeStyle = i % 3 === 0 ? 'rgba(26,22,18,0.92)' : i % 3 === 1 ? 'rgba(54,48,40,0.88)' : 'rgba(74,66,54,0.75)';
+        g.lineWidth = 1.6 + (i % 3) * 0.6;
+        g.beginPath();
+        g.moveTo(0, top + 8 + i * 1.9);
+        g.quadraticCurveTo(64, top + 20 + i * 2.4, 128, top - 4 + i * 1.9);
+        g.stroke();
+      }
+      // The knot: where four streets agreed to disagree, up by the bracket.
+      blob(g, 22, top + 16, 12, '#2e2a26', r, 0.35);
+      blob(g, 14, top + 23, 8, '#3a3630', r, 0.3);
+      blob(g, 31, top + 22, 6.5, '#26221e', r, 0.3);
+      // Drop lines down into somebody's meter box, and a meter box.
+      g.strokeStyle = 'rgba(40,36,32,0.85)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(22, top + 26);
+      g.quadraticCurveTo(28, top + 80, 26, 176);
+      g.moveTo(98, top + 16);
+      g.quadraticCurveTo(104, top + 74, 102, 176);
+      g.stroke();
+      rr(g, 94, top + 66, 16, 20, 2, '#5c5650');
+      rect(g, 97, top + 71, 10, 7, '#8f9aa0');
+      // A kite that lost an argument with the grid, retired in place.
+      g.save();
+      g.translate(74, top + 30);
+      g.rotate(0.7);
+      g.fillStyle = r.pick(['#c04858', '#54708a', '#c9822c', '#8a4a7d'] as const);
+      g.beginPath();
+      g.moveTo(0, -13);
+      g.lineTo(10, 0);
+      g.lineTo(0, 11);
+      g.lineTo(-10, 0);
+      g.closePath();
+      g.fill();
+      g.restore();
+      g.strokeStyle = 'rgba(240,236,220,0.6)';
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(74, top + 40);
+      g.quadraticCurveTo(66, top + 62, 78, top + 72);
+      g.stroke();
+      // One hopeful loop of slack, coiled by an optimist.
+      g.strokeStyle = 'rgba(40,36,32,0.8)';
+      g.lineWidth = 1.8;
+      g.beginPath();
+      g.arc(52, top + 30, 9, -0.4, Math.PI * 1.2);
+      g.stroke();
+      // A shoe somebody sacrificed to the wires, years ago, on purpose.
+      if (r.chance(0.4)) {
+        oval(g, 112, top + 30, 4.4, 2.4, '#6b5a44', 0.5);
+        g.strokeStyle = 'rgba(40,36,32,0.7)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(112, top + 12);
+        g.lineTo(112, top + 28);
+        g.stroke();
+      }
+    }, 128, 176);
+
+    // Cloth strung balcony to balcony across the lane: the mohalla's
+    // laundry hung over its own head, and the gali's only real colour.
+    make('clothspan', 3, (g, r) => {
+      const top = 34 + r.int(3) * 12;
+      rr(g, 3, top, 10, 6, 2, '#6f5238');
+      rr(g, 115, top + 8, 10, 6, 2, '#6f5238');
+      g.strokeStyle = '#4a4034';
+      g.lineWidth = 1.8;
+      g.beginPath();
+      g.moveTo(6, top + 3);
+      g.quadraticCurveTo(64, top + 26, 122, top + 11);
+      g.stroke();
+      // Five lengths, five different jobs, five different drying times.
+      const cloths: [string, number, number][] = [
+        ['#c04858', 16, 74], ['#e8e0cc', 30, 52], ['#3a6f9a', 46, 86],
+        ['#c9822c', 68, 44], ['#3d6b58', 84, 66], ['#8a4a7d', 100, 58],
+      ];
+      for (const [c, cx, h] of cloths) {
+        const t = top + 3 + (1 - Math.abs(cx - 64) / 64) * 22 + (cx / 128) * 8;
+        const w = 15 + r.int(5);
+        g.fillStyle = shade(c, (r.next() - 0.5) * 0.06);
+        g.beginPath();
+        g.moveTo(cx, t);
+        g.lineTo(cx + w, t + 2);
+        g.lineTo(cx + w - 2, t + h);
+        g.quadraticCurveTo(cx + w / 2, t + h + 7, cx + 1, t + h - 2);
+        g.closePath();
+        g.fill();
+        vgrad(g, cx + 2, t + 3, w - 5, h - 6, 'rgba(255,250,235,0.22)', 'rgba(0,0,0,0)');
+        dot(g, cx + 2, t, 1.5, '#8a6a44');
+        dot(g, cx + w - 2, t + 2, 1.5, '#8a6a44');
+      }
+    }, 128, 160);
+
+    // A shop that ran out of shop: steel and plastic stacked one tile into
+    // the lane, which is where the lane keeps its shops anyway.
+    make('shopspill', 3, (g, r) => {
+      softShadow(g, 32, 90, 22, 6, 0.22);
+      const v = r.int(3);
+      if (v === 0) {
+        // Steel: degchis and tiffins, nested, blinding at noon.
+        for (let k = 0; k < 4; k++) {
+          const y = 84 - k * 13;
+          const w = 40 - k * 5;
+          rr(g, 32 - w / 2, y - 12, w, 13, 3, '#b8bcc0');
+          oval(g, 32, y - 12, w / 2, 4, '#d4d8da');
+          oval(g, 32, y - 12, w / 2 - 5, 2.6, '#9aa0a4');
+          vgrad(g, 32 - w / 2 + 2, y - 11, 5, 11, 'rgba(255,255,255,0.5)', 'rgba(255,255,255,0.1)');
+        }
+        // A tower of tiffin carriers leaning beside them.
+        for (let k = 0; k < 3; k++) rr(g, 44, 78 - k * 11, 16, 10, 2, '#c2c6c8');
+      } else if (v === 1) {
+        // Plastic: buckets and mugs in the three loudest colours available.
+        const cols = ['#c04858', '#3a6f9a', '#c9822c', '#3d6b58'];
+        for (let k = 0; k < 4; k++) {
+          const y = 86 - k * 15;
+          const c = cols[(k + r.int(2)) % 4] ?? '#c04858';
+          rr(g, 14 + (k % 2) * 4, y - 16, 34, 17, 3, c);
+          oval(g, 31 + (k % 2) * 4, y - 16, 17, 4.4, shade(c, 0.16));
+          g.strokeStyle = 'rgba(255,255,255,0.3)';
+          g.lineWidth = 1.4;
+          g.beginPath();
+          g.arc(31 + (k % 2) * 4, y - 16, 14, Math.PI * 1.15, Math.PI * 1.85);
+          g.stroke();
+        }
+      } else {
+        // Jute, jhadu and rope, hung off a nail and sold by the armful.
+        rr(g, 12, 60, 40, 30, 3, '#a8895e');
+        oval(g, 32, 60, 20, 6, '#c2a271');
+        for (let k = 0; k < 9; k++) {
+          g.strokeStyle = k % 2 ? 'rgba(180,148,88,0.9)' : 'rgba(150,120,70,0.9)';
+          g.lineWidth = 2;
+          g.beginPath();
+          g.moveTo(14 + k * 4.4, 58);
+          g.quadraticCurveTo(12 + k * 4.4, 40, 16 + k * 4.4, 24);
+          g.stroke();
+        }
+        rr(g, 20, 20, 26, 7, 3, '#8a6a44');
+        // Coils of rope on top, because rope sells itself.
+        for (let k = 0; k < 3; k++) {
+          g.strokeStyle = 'rgba(200,176,128,0.85)';
+          g.lineWidth = 2.4;
+          g.beginPath();
+          g.ellipse(46, 82 - k * 5, 12, 4.5, 0.1, 0, Math.PI * 2);
+          g.stroke();
+        }
+      }
+    }, 64, 96);
+
+    // The jutting board: a shop's name high on a pole in three scripts,
+    // with a tube light over it that has been failing politely since 1987.
+    make('signjut', 3, (g, r) => {
+      softShadow(g, 32, 138, 15, 4, 0.2);
+      // The pole and its guy rod back to the wall.
+      rr(g, 29, 40, 6, 100, 2, '#5c4630');
+      g.strokeStyle = '#5c4630';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(31, 58);
+      g.lineTo(6, 44);
+      g.stroke();
+      // The big painted board, up where a first floor would read it.
+      const c = r.pick(['#8a3428', '#25443c', '#2c3e57', '#7d5320'] as const);
+      g.save();
+      g.translate(32, 34);
+      g.rotate((r.next() - 0.5) * 0.1);
+      rr(g, -30, -16, 60, 32, 2, shade(c, 0.02));
+      rect(g, -30, -16, 60, 3, shade(c, 0.14));
+      // Three scripts, one shop, sixty years of repainting.
+      g.fillStyle = '#e8d9a8';
+      g.fillRect(-24, -9, 30, 2);
+      for (let k = 0; k < 5; k++) g.fillRect(-24 + k * 6.4, -9, 1.6, 5);
+      g.strokeStyle = '#e8d9a8';
+      g.lineWidth = 1.3;
+      g.beginPath();
+      g.moveTo(10, -4);
+      g.quadraticCurveTo(18, 1, 26, -5);
+      g.stroke();
+      for (let k = 0; k < 7; k++) g.fillRect(-24 + k * 6.2, 4, 4.6, 1.8);
+      g.restore();
+      // The tube light on its bracket, and the wire that feeds it.
+      rr(g, -2, 12, 44, 5, 2.5, '#d8d4c4');
+      rr(g, -4, 11, 6, 7, 2, '#5c5650');
+      rr(g, 40, 11, 6, 7, 2, '#5c5650');
+      g.strokeStyle = 'rgba(40,36,32,0.8)';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(42, 15);
+      g.quadraticCurveTo(56, 30, 62, 26);
+      g.stroke();
+      // A smaller board bolted below, in a fourth opinion.
+      g.save();
+      g.translate(34, 66);
+      g.rotate(-0.06);
+      rr(g, -21, -9, 42, 18, 2, '#c9822c');
+      g.fillStyle = '#3a2c1c';
+      g.fillRect(-16, -4, 22, 1.6);
+      for (let k = 0; k < 4; k++) g.fillRect(-16 + k * 6, -4, 1.4, 4.4);
+      for (let k = 0; k < 5; k++) g.fillRect(-16 + k * 5.4, 3, 3.6, 1.5);
+      g.restore();
+    }, 64, 144);
+
+    // The jaali: a carved sandstone screen standing in the middle of a
+    // cool room, doing the two jobs it has always done, which are cutting
+    // the glare and turning it into a hundred small coins on the floor.
+    make('jaalipanel', 2, (g, r) => {
+      softShadow(g, 48, 152, 34, 8, 0.24);
+      // The base and the two posts.
+      rr(g, 8, 138, 80, 16, 2, '#a0665a');
+      vgrad(g, 8, 138, 80, 5, 'rgba(255,240,220,0.24)', 'rgba(0,0,0,0)');
+      rr(g, 10, 26, 12, 114, 2, '#b5766a');
+      rr(g, 74, 26, 12, 114, 2, '#ad6f63');
+      // The screen field, and the arch cut into its head.
+      rr(g, 20, 34, 56, 106, 2, '#9d5f4a');
+      g.save();
+      g.beginPath();
+      g.moveTo(22, 138);
+      g.lineTo(22, 66);
+      g.quadraticCurveTo(48, 30, 74, 66);
+      g.lineTo(74, 138);
+      g.closePath();
+      g.fillStyle = '#8a5340';
+      g.fill();
+      g.clip();
+      // The lattice, and the light standing behind it.
+      g.fillStyle = 'rgba(255,240,205,0.5)';
+      for (let row = 0; row < 9; row++) {
+        for (let col = 0; col < 6; col++) {
+          const cx = 26 + col * 9 + (row % 2) * 4.5;
+          const cy = 44 + row * 11;
+          g.save();
+          g.translate(cx, cy);
+          g.rotate(Math.PI / 4);
+          g.fillRect(-3, -3, 6, 6);
+          g.restore();
+          if (r.chance(0.25)) dot(g, cx, cy, 1.4, 'rgba(255,250,225,0.8)');
+        }
+      }
+      g.restore();
+      // The carved border, worn where four generations leaned on it.
+      g.strokeStyle = 'rgba(70,40,30,0.35)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(22, 138);
+      g.lineTo(22, 66);
+      g.quadraticCurveTo(48, 30, 74, 66);
+      g.lineTo(74, 138);
+      g.stroke();
+      // The finial, and a copper bowl left on the base, half of a pair.
+      rr(g, 44, 20, 8, 12, 3, '#b5766a');
+      dot(g, 48, 18, 3.4, '#c9a23c');
+      oval(g, 66, 138, 8, 3.4, '#a8763c');
+      oval(g, 66, 136, 6.4, 2.6, '#c9a23c');
+    }, 96, 160);
 
     // ------------------------------------------------- interiors
 
@@ -2187,6 +2864,42 @@ export const ART: ChapterArt = {
 
     // Couplet drafts: paper on the floor by the takht, each crumple a
     // second line that refused to land. The wastebasket lost on points.
+    // The dhobis' drying ground: lengths of cloth spread flat on the dust
+    // with a stone at each corner, which is what the empty middle of a
+    // maidan is actually for on a dry afternoon in sawan.
+    make('dryingcloth', 4, (g, r, i) => {
+      const sets: [string, string][] = [
+        ['#b5382e', '#e8d9a8'], ['#3a6f9a', '#e8e0cc'], ['#3d6b58', '#c9a23c'], ['#c9822c', '#8a3428'],
+      ];
+      const pair = sets[i % 4] ?? sets[0]!;
+      const a = pair[0];
+      const b = pair[1];
+      g.save();
+      g.translate(32, 34);
+      g.rotate((r.next() - 0.5) * 0.6);
+      rr(g, -31, -24, 62, 48, 2, shade(a, (r.next() - 0.5) * 0.05));
+      // The border stripe every length of cloth in this country has.
+      rect(g, -31, -24, 62, 7, b);
+      rect(g, -31, 17, 62, 7, b);
+      // Weave sheen, and the wrinkles the wind put in it.
+      vgrad(g, -31, -17, 62, 18, 'rgba(255,250,235,0.22)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(40,30,22,0.14)';
+      g.lineWidth = 1.8;
+      for (const yy of [-8, 4]) {
+        g.beginPath();
+        g.moveTo(-27, yy);
+        g.quadraticCurveTo(0, yy + 6, 27, yy - 2);
+        g.stroke();
+      }
+      g.restore();
+      // A stone on each corner, because sawan has opinions about laundry.
+      for (const [sx, sy] of [[4, 10], [58, 14], [6, 58], [57, 55]] as const) {
+        oval(g, sx, sy + 2, 5, 2, 'rgba(30,24,16,0.16)');
+        oval(g, sx, sy, 4.6, 3.2, '#9a8d7c');
+        oval(g, sx - 1, sy - 1, 3, 1.8, '#b0a696');
+      }
+    });
+
     make('couplitter', 2, (g, r) => {
       for (let i = 0; i < 3; i++) {
         const px = 20 + r.int(22);
@@ -2228,26 +2941,33 @@ export const ART: ChapterArt = {
     // The chalk crease: gully cricket's legal system, redrawn after every
     // rain and every argument, which are equally frequent.
     make('chalkpitch', 2, (g, r) => {
-      g.strokeStyle = 'rgba(250,248,240,0.55)';
-      g.lineWidth = 2;
-      // The crease lines, hand-straight, which is to say not.
+      // Drawn edge to edge, so six tiles of it read as one pitch and not as
+      // six chalk doodles. The strip is the scuff; the lines are the argument.
+      oval(g, 32, 40, 42, 13, 'rgba(186,156,116,0.4)');
+      oval(g, 32, 40, 36, 9, 'rgba(206,178,136,0.34)');
+      g.strokeStyle = 'rgba(252,250,244,0.8)';
+      g.lineWidth = 2.2;
+      const y0 = 30 + r.int(3);
+      const y1 = 51 - r.int(3);
       g.beginPath();
-      g.moveTo(14, 40 + r.int(3));
-      g.lineTo(50, 39 + r.int(3));
+      g.moveTo(0, y0);
+      g.lineTo(64, y0 + r.int(3) - 1);
+      g.moveTo(0, y1);
+      g.lineTo(64, y1 + r.int(3) - 1);
       g.stroke();
-      g.lineWidth = 1.4;
-      g.beginPath();
-      g.moveTo(20, 34);
-      g.lineTo(20, 47);
-      g.moveTo(44, 34);
-      g.lineTo(44, 47);
-      g.stroke();
+      if (r.chance(0.5)) {
+        // A crease across the strip, redrawn every time somebody objects.
+        g.lineWidth = 1.8;
+        g.beginPath();
+        g.moveTo(30, 26);
+        g.lineTo(32, 55);
+        g.stroke();
+      }
       // Scuffed-out patch where the last verdict was contested.
-      oval(g, 32, 42, 6, 2.6, 'rgba(150,120,90,0.3)');
-      // The chalk stub itself, retired mid-word.
-      rr(g, 48, 46, 4, 2, 1, '#f2ecdc');
-      // A tennis ball print, seam and all.
-      dot(g, 26, 36, 2.2, 'rgba(150,140,80,0.4)');
+      oval(g, 20 + r.int(24), 41, 7, 3, 'rgba(150,120,90,0.3)');
+      // The chalk stub, retired mid-word, and a tennis ball print.
+      if (r.chance(0.4)) rr(g, 46, 46, 5, 2.4, 1, '#f2ecdc');
+      dot(g, 14 + r.int(36), 36, 2.4, 'rgba(150,140,80,0.4)');
     });
 
     // The couplet wall: Ghalib in nastaliq on a whitewashed panel, ink

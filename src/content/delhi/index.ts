@@ -139,7 +139,7 @@ export const CHAPTER: ChapterDef = {
       when: { has: ['c11.rain'] },
       cells: [
         [21, 15, { t: 'puddle' }],
-        [9, 14, { t: 'puddle' }],
+        [10, 15, { t: 'puddle' }],
         [30, 22, { t: 'puddle' }],
         [14, 24, { t: 'puddle' }],
         [40, 18, { t: 'puddle' }],
@@ -155,7 +155,7 @@ export const CHAPTER: ChapterDef = {
       cells: [
         [15, 9, { t: 'kitecut' }],
         [26, 13, { t: 'kitecut' }],
-        [10, 16, { t: 'kitecut' }],
+        [12, 15, { t: 'kitecut' }],
       ],
     },
   ],

@@ -1288,6 +1288,29 @@ export const DELHI_NODES: NodeMap = {
       { text: 'The parapet: brick lace at knee height, the correct place for elbows and evenings. The whole mohalla is down there, being audible.' },
     ],
   },
+  'c11.ex.pigeonflock': {
+    lines: [
+      { text: 'The whole flock down at once on the swept lime, a grey carpet with opinions. Walk into it and it becomes weather for four seconds, then floor again.' },
+      { text: 'Yusuf knows perhaps forty of them by name. He will tell you all forty if you stand still, and you will stand still.' },
+    ],
+  },
+  'c11.ex.jaalipanel': {
+    lines: [
+      { text: 'A sandstone jaali standing free in the room, carved into a hundred small stars. The afternoon comes through it as coins and moves across the floor.' },
+      { text: 'Cool on the palm even in June. The stone was cut so the wind can pass and the sun cannot. Somebody solved this a very long time ago.' },
+    ],
+  },
+  'c11.ex.dryingcloth': {
+    lines: [
+      { text: 'Four lengths of cloth spread flat on the maidan dust, a stone on each corner. Red, indigo, one green with a gold border showing off.' },
+      { text: 'The dhobi will be back before the rain. He always is. Sawan and he have an understanding neither of them has ever explained.' },
+    ],
+  },
+  'c11.ex.parapetside': {
+    lines: [
+      { text: 'A party wall running north to south, knee high and a century old. On one side of it Yusuf\'s birds, on the other side the television. Peace holds.' },
+    ],
+  },
   'c11.ex.kitecut': {
     lines: [
       { text: 'A cut kite come to rest, someone\'s woh kata, now the roof\'s souvenir. Its severed line trails off the tile, still pointing at the fight it lost.' },
@@ -1296,6 +1319,57 @@ export const DELHI_NODES: NodeMap = {
   'c11.ex.terrace': {
     lines: [
       { text: 'Lime-washed terrace brick, sun-cured and rain-rinsed. A second city lives up here: tanks, lines, coops, kites, and the sky finally at arm\'s reach.' },
+    ],
+  },
+  'c11.ex.tanktrio': {
+    lines: [
+      { text: 'A black tank up a welded frame with a blue drum sulking at its foot. The whole mohalla\'s water lives three storeys up and comes down grudgingly.' },
+      { text: 'By four in the afternoon it is hot enough to make tea in. By four in the morning it is the coldest thing in Delhi. Nobody has solved this.' },
+    ],
+  },
+  'c11.ex.dishantenna': {
+    lines: [
+      { text: 'A pale dish weighted down with two bricks, aimed at a satellite nobody has met. It brought two hundred channels and one permanent argument.' },
+      { text: 'When it rains hard the picture goes, and the whole lane agrees the rain is at fault. When it clears, credit stays with the bricks.' },
+    ],
+  },
+  'c11.ex.mumty': {
+    lines: [
+      { text: 'The mumty: a brick room the size of an argument, with a tin hat held down by two bricks and a bottle-green door that has never once been locked.' },
+      { text: 'Twelve steps inside it, and then this. Every roof in the mohalla begins with a small dark room and ends with the whole sky.' },
+    ],
+  },
+  'c11.ex.neemtub': {
+    lines: [
+      { text: 'A neem growing out of a cut oil drum, painted the blue of a bus. It gives the roof its only shade and the lane its only free toothbrushes.' },
+    ],
+  },
+  'c11.ex.kitemast': {
+    lines: [
+      { text: 'A bamboo the length of two men, lashed to the parapet, flying whatever the roof currently declares. Last week it declared a shirt.' },
+      { text: 'A cut kite is tied on at shoulder height. Not decoration. A receipt.' },
+    ],
+  },
+  'c11.ex.wirespan': {
+    lines: [
+      { text: 'Nine cables crossing the gali at whatever height the last electrician could reach. One kite hangs in them, retired, out of everybody\'s jurisdiction.' },
+      { text: 'Nobody knows which wire does what. Everybody knows whom to shout for. The system works, in the way most systems here work.' },
+    ],
+  },
+  'c11.ex.clothspan': {
+    lines: [
+      { text: 'Cloth strung balcony to balcony over the lane: a red dupatta, a blue lungi, a white kurta with the sun straight through it. The gali\'s only colour.' },
+      { text: 'Walk under it in sawan and it drips on you. Walk under it in June and it is the coolest twelve feet in Delhi.' },
+    ],
+  },
+  'c11.ex.shopspill': {
+    lines: [
+      { text: 'A shop that ran out of shop: steel and plastic stacked one tile into the lane. The lane has always kept its shops in the lane. Nobody complains twice.' },
+    ],
+  },
+  'c11.ex.signjut': {
+    lines: [
+      { text: 'A painted board on a pole, three scripts deep, with a tube light over it that has been failing politely since 1987. The shop below has moved twice.' },
     ],
   },
   'c11.ex.terracelime': {
@@ -1581,6 +1655,15 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   chalkpitch: [{ node: 'c11.ex.chalkpitch' }],
   kabootarkhana: [{ node: 'c11.ex.kabootarkhana' }],
   kitestack: [{ node: 'c11.ex.kitestack' }],
+  tanktrio: [{ node: 'c11.ex.tanktrio' }],
+  dishantenna: [{ node: 'c11.ex.dishantenna' }],
+  mumty: [{ node: 'c11.ex.mumty' }],
+  neemtub: [{ node: 'c11.ex.neemtub' }],
+  kitemast: [{ node: 'c11.ex.kitemast' }],
+  wirespan: [{ node: 'c11.ex.wirespan' }],
+  clothspan: [{ node: 'c11.ex.clothspan' }],
+  shopspill: [{ node: 'c11.ex.shopspill' }],
+  signjut: [{ node: 'c11.ex.signjut' }],
   terracelime: [{ node: 'c11.ex.terracelime' }],
   terracerose: [{ node: 'c11.ex.terracerose' }],
   tulsipot: [{ node: 'c11.ex.tulsipot' }],
@@ -1597,6 +1680,10 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   fortwall: [{ node: 'c11.ex.fortwall' }],
   jamadomes: [{ node: 'c11.ex.jamadomes' }],
   parapet: [{ node: 'c11.ex.parapet' }],
+  parapetside: [{ node: 'c11.ex.parapetside' }],
+  dryingcloth: [{ node: 'c11.ex.dryingcloth' }],
+  jaalipanel: [{ node: 'c11.ex.jaalipanel' }],
+  pigeonflock: [{ node: 'c11.ex.pigeonflock' }],
   kitecut: [{ node: 'c11.ex.kitecut' }],
   degpot: [{ node: 'c11.ex.degpot' }],
   chulha: [{ node: 'c11.ex.chulha' }],
