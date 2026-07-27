@@ -21,6 +21,17 @@ Ten chapters, every hop a real connection: an Andean village, the Peruvian deser
 | ![zanzibar](docs/shots/zanzibar-dusk.png) *Fukoni at lamp-light* | ![sicily](docs/shots/sicily.png) *the passeggiata hour, Etna presiding* |
 | ![oaxaca](docs/shots/oaxaca.png) *the valley, papel picado up* | ![dialogue](docs/shots/dialogue.png) *everything you look at answers* |
 
+## The little paintings
+
+Every hands-on moment is a small illustrated scene: cooking on real
+griddles, kite duels at pigeon hour, scopa with a hand-painted Sicilian
+deck, and star-spotting over an 1825 chart of Nani's.
+
+| | |
+|---|---|
+| ![stars](docs/shots/mg-stars.png) *the star deck, with Nani's 1825 chart taped in* | ![patang](docs/shots/mg-patang.png) *bo kata! over Chandni Chowk* |
+| ![scopa](docs/shots/mg-scopa.png) *scopa at the circolo* | ![album](docs/shots/album.png) *Chasca's album, the journey in prints* |
+
 ## The world rhymes
 
 What you learn uphill changes how every coast treats you. The reciprocity chain — Quechua *ayni*, the coastal *yapa*, Korean *deom*, Mexican *pilón*, and finally the Zapotec *guelaguetza* ledger that explains why Nani stopped writing — is the game's spine. The journal stitches visible threads between rhyming pages, and margin notes in Nani's hand become legible only when you hold both halves.
