@@ -195,6 +195,49 @@ describe('map integrity', () => {
     }
   });
 
+  /**
+   * The bug this catches shipped once and was found three more times the same
+   * day: ground a player can see, drawn as walkable, that nothing connects to.
+   * A map being "technically traversable" is not the same as every part of it
+   * being reachable, and only a flood fill tells the difference.
+   */
+  it('every walkable tile is reachable from the spawn or a door', () => {
+    for (const m of Object.values(REGION_MAPS)) {
+      const H = m.ground.length;
+      const W = m.ground[0]?.length ?? 0;
+      const seen = new Set<string>();
+      const queue: [number, number][] = [];
+      const enter = (x: number, y: number) => {
+        if (x < 0 || y < 0 || x >= W || y >= H) return;
+        const k = `${x},${y}`;
+        if (seen.has(k) || solidAt(m, x, y)) return;
+        seen.add(k);
+        queue.push([x, y]);
+      };
+      // A player can begin at the spawn or step in through any trigger.
+      enter(m.spawn[0], m.spawn[1]);
+      for (const t of m.triggers ?? []) enter(t.at[0], t.at[1]);
+      while (queue.length) {
+        const [x, y] = queue.shift() as [number, number];
+        enter(x + 1, y);
+        enter(x - 1, y);
+        enter(x, y + 1);
+        enter(x, y - 1);
+      }
+      const orphans: string[] = [];
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          if (!solidAt(m, x, y) && !seen.has(`${x},${y}`)) orphans.push(`${x},${y}`);
+        }
+      }
+      assert.equal(
+        orphans.length,
+        0,
+        `${m.id}: ${orphans.length} walkable tile(s) nobody can reach: ${orphans.slice(0, 8).join(' ')}`,
+      );
+    }
+  });
+
   it('spawns and NPC homes are on walkable ground', () => {
     for (const m of Object.values(REGION_MAPS)) {
       assert.ok(!solidAt(m, ...m.spawn), `${m.id} spawn is inside something solid`);
