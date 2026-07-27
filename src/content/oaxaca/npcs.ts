@@ -13,6 +13,9 @@ export const OAXACA_NPCS: NpcDef[] = [
     id: 'refugio',
     name: 'Doña Refugio',
     map: 'cocina',
+    // The night the ofrenda is finished she is not in her kitchen, because
+    // nobody in this village is. She is at the camposanto wall (below).
+    when: { not: ['c9.ofrenda.done'] },
     pos: [4, 3],
     range: 1,
     look: {
@@ -33,8 +36,6 @@ export const OAXACA_NPCS: NpcDef[] = [
         node: 'c9.refugio.family',
       },
       { when: { has: ['c9.family.done'], not: ['c9.ofrenda.done'] }, node: 'c9.refugio.again' },
-      { when: { has: ['c9.ofrenda.done'], not: ['c9.complete'] }, node: 'c9.refugio.tonight' },
-      { when: { has: ['c9.complete'] }, node: 'c9.refugio.after' },
       { node: 'c9.refugio.idle' },
     ],
   },
@@ -81,6 +82,7 @@ export const OAXACA_NPCS: NpcDef[] = [
       { when: { has: ['c9.choco'], not: ['c9.choco.done'] }, node: 'c9.chela.choco' },
       { when: { has: ['c9.choco.done'], not: ['c9.mole.done'] }, node: 'c9.chela.again' },
       { when: { has: ['c9.mole.done'], not: ['c9.complete'] }, node: 'c9.chela.rest' },
+      { when: { has: ['c9.mole.done'] }, node: 'c9.chela.moleAgain' },
       { node: 'c9.chela.idle' },
     ],
   },
@@ -191,6 +193,118 @@ export const OAXACA_NPCS: NpcDef[] = [
       { when: { has: ['c9.complete'] }, node: 'c9.care.after' },
       { node: 'c9.care.idle' },
     ],
+  },
+  // ---- the vigil. Present only on the night the ofrenda is finished, which
+  // is the night the chapter has been walking toward. Before that the yard is
+  // Melitón, a broom and a lot of swept dirt; after it, this. ----
+  {
+    id: 'refugioVigil',
+    name: 'Doña Refugio',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [11, 11],
+    range: 0,
+    look: {
+      skin: '#a06a42',
+      hair: '#b8b2a6',
+      cloth: '#e8dcc4',
+      stripe: '#a02335',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#4a3a4e',
+    },
+    entry: [
+      { when: { has: ['c9.complete'] }, node: 'c9.refugio.after' },
+      { node: 'c9.refugio.tonight' },
+    ],
+  },
+  {
+    id: 'epifania',
+    name: 'Doña Epifania',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [6, 5],
+    range: 0,
+    look: {
+      skin: '#b97f52',
+      hair: '#d6d0c4',
+      cloth: '#5c3a5e',
+      stripe: '#e8dcc4',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#2f3a52',
+    },
+    entry: [{ node: 'c9.vigil.epifania' }],
+  },
+  {
+    id: 'bernardo',
+    name: 'Bernardo',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [16, 5],
+    range: 0,
+    look: {
+      skin: '#8f5c38',
+      hair: '#241a12',
+      cloth: '#3a4668',
+      stripe: '#c9a35f',
+      hat: '#d0b276',
+      hatStyle: 'montera',
+    },
+    entry: [{ node: 'c9.vigil.bernardo' }],
+  },
+  {
+    id: 'luz',
+    name: 'Luz',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [12, 6],
+    range: 2,
+    look: {
+      skin: '#c98f5e',
+      hair: '#2e2018',
+      cloth: '#c1512f',
+      stripe: '#f2e6d0',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#3c5a50',
+    },
+    entry: [{ node: 'c9.vigil.luz' }],
+  },
+  {
+    id: 'serafin',
+    name: 'Serafín',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [8, 9],
+    range: 0,
+    look: {
+      skin: '#a06a42',
+      hair: '#6b655c',
+      cloth: '#5c6e77',
+      stripe: '#a02335',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+    },
+    entry: [{ node: 'c9.vigil.serafin' }],
+  },
+  {
+    id: 'chuy',
+    name: 'Chuy',
+    map: 'camposanto',
+    when: { has: ['c9.ofrenda.done'] },
+    pos: [12, 9],
+    range: 2,
+    look: {
+      skin: '#b97f52',
+      hair: '#1c1410',
+      cloth: '#5fb0a5',
+      stripe: '#d9a441',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      kid: true,
+    },
+    entry: [{ node: 'c9.vigil.chuy' }],
   },
   {
     id: 'chascaC9',
@@ -411,10 +525,12 @@ export const OAXACA_NODES: NodeMap = {
     ],
     next: 'c9.altar.hub',
   },
+  // At the wall, at the vigil, with her family's row behind her.
   'c9.refugio.tonight': {
     lines: [
-      { who: 'Doña Refugio', text: 'Tonight, the camposanto. Don Melitón swears the night is a party, and he has never once been wrong about his own cemetery.' },
-      { who: 'Doña Refugio', text: 'The petals know the way. You laid them yourself.' },
+      { text: 'She has claimed a piece of the south wall with a blanket, a basket, and one candle set well apart from her family’s row.' },
+      { who: 'Doña Refugio', text: 'That one is not ours. That one faces out, toward the road. A light is set that way for somebody who is still walking.' },
+      { who: 'Doña Refugio', text: 'Sit. Melitón will tell you these graves are his. Do not believe a word of it; he only sweeps them.' },
     ],
   },
   'c9.refugio.after': {
@@ -558,6 +674,22 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Abuela Chela', text: 'The mole rests until the fiesta, and so should you. Here, a spoonful over rice, for quality control. You are the control.' },
       { text: 'A neighbor leans on the gate, eating a memela. You say ¡provecho! before you can think about it. She grins: gracias, igualmente.' },
     ],
+    next: 'c9.chela.moleAgain',
+  },
+  'c9.chela.moleAgain': {
+    lines: [
+      { who: 'Abuela Chela', text: 'There is always another pot, hija. This valley eats mole faster than one shoulder can stir it.' },
+    ],
+    choices: [
+      { text: 'Take the spoon again', when: { has: ['c9.mole.done'] }, goto: 'c9.chela.moleReplay' },
+      { text: 'Let the pot rest', goto: 'c9.chela.idle' },
+    ],
+  },
+  'c9.chela.moleReplay': {
+    lines: [
+      { who: 'Abuela Chela', text: 'Bueno. Nothing to prove tonight. Only the circles, the smoke to keep an ear on, and me talking at your elbow.' },
+    ],
+    effects: ['set:replay.mode', 'set:c9.mole.start'],
   },
   'c9.chela.idle': {
     lines: [
@@ -746,7 +878,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.vigil2': {
     lines: [
-      { text: 'Refugio arrives with her family and one extra candle. She sets it on the wall facing south, the way a light is set for a traveler.' },
+      { text: 'On the south wall, apart from her family’s row, Refugio has set one extra candle facing out, the way a light is set for a traveler.' },
       { who: 'Doña Refugio', text: 'For Amara, called Nani. She has an altar in my kitchen and a place on my wall. Fifty years owed, both directions, and paid.' },
       { text: 'The petals you laid run gate to lane to doorway. If she is coming, she will not miss the turn.' },
     ],
@@ -762,13 +894,45 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.care.after': {
     lines: [
-      { who: 'Don Melitón', text: 'The candles burned honest and the night went well. The village will talk about it until roughly forever.' },
+      { who: 'Don Melitón', text: 'The candles are low and nobody has gone home. That is the whole review; the village will repeat it until roughly forever.' },
       { who: 'Don Melitón', text: 'Doors stay open for you here, señorita. That is not a saying. I mean the doors.' },
     ],
   },
   'c9.care.idle': {
     lines: [
       { who: 'Don Melitón', text: 'Sweep, wash, whitewash, flowers. A camposanto is a garden where the flowers are people. It wants the same daily attention.' },
+    ],
+  },
+
+  // ---------------- the families at the vigil ----------------
+  'c9.vigil.epifania': {
+    lines: [
+      { text: 'An old woman sits on a folded blanket with her back against a headstone somebody washed white this morning.' },
+      { who: 'Doña Epifania', text: 'My mother. She hated to be cold, so I bring one blanket, for me, and I sit close, and we both get the good of it.' },
+    ],
+  },
+  'c9.vigil.bernardo': {
+    lines: [
+      { who: 'Bernardo', text: 'Mezcal? It is for my father, but he never once finished a glass without help. A family tradition, on both sides of the stone.' },
+      { text: 'He tips a splash onto the earth before he drinks. Your own hand moves to do the same before you decide anything about it.' },
+    ],
+  },
+  'c9.vigil.luz': {
+    lines: [
+      { who: 'Luz', text: 'Tamal. Take it. Do not look at the basket; the basket is not in charge of this night, I am.' },
+      { text: 'She is two graves along before you finish thanking her, delivering the same instruction in the same unarguable tone.' },
+    ],
+  },
+  'c9.vigil.serafin': {
+    lines: [
+      { text: 'A man plays quietly three graves along: the same song around and around, with a different mistake each time.' },
+      { who: 'Serafín', text: 'She only ever liked the one song. Fifty-one years of it. I have gotten worse at the middle part on purpose; she laughed at that part.' },
+    ],
+  },
+  'c9.vigil.chuy': {
+    lines: [
+      { who: 'Chuy', text: 'Look. Wax. If you catch it coming off the candle it goes hard in your hand and then you have a little planet.' },
+      { text: 'He has eleven little planets. He is willing, with visible effort, to part with the smallest and least round of them.' },
     ],
   },
 

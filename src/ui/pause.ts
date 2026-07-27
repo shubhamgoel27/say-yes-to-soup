@@ -5,8 +5,30 @@ import type { AudioBus } from '../engine/audio';
  * The pause menu: a page torn from the journal, because every surface here is.
  * Esc or Start breathes the game out; Resume breathes it back in. Settings are
  * the cozy-canon set: three volume sliders, text speed, reduce motion,
- * fullscreen. Credits are part of the game, not a chore.
+ * fullscreen. Credits are part of the game, not a chore, and once the journal
+ * is full they stop being a licence card and become the end of a journey.
  */
+
+/** Just enough of the GameState to ask one question. */
+type FlagSource = { has(flag: string): boolean };
+let flags: FlagSource | null = null;
+let live: PauseMenu | null = null;
+
+/**
+ * The engine constructs this menu without a GameState. The album is built one
+ * line earlier and does have one, so it lends it here at boot; that is the
+ * whole reason the credits can tell a half-filled journal from a full one.
+ */
+export function lendFlags(src: FlagSource) {
+  flags = src;
+}
+
+/** The closing book hands the player here when the last page turns. */
+export function openCredits() {
+  live?.open('credits');
+}
+
+const journeyDone = () => flags?.has('story.end') ?? false;
 
 type Prefs = { textSpeed: 'cozy' | 'brisk' | 'instant'; reduceMotion: boolean };
 const PREFS_KEY = 'soup.prefs';
@@ -44,6 +66,7 @@ export class PauseMenu {
     private hooks: Hooks,
   ) {
     this.applyPrefs();
+    live = this;
   }
 
   get isOpen(): boolean {
@@ -84,7 +107,9 @@ export class PauseMenu {
       { label: this.fromTitle ? 'Back' : 'Keep walking', act: () => this.close() },
       { label: 'Settings', act: () => this.goto('settings') },
       { label: 'How to play', act: () => this.goto('help') },
-      { label: 'Credits', act: () => this.goto('credits') },
+      // Once the journal is full this stops being a licence card, and the menu
+      // says so, because otherwise nothing in the game ever points here.
+      { label: journeyDone() ? 'The end of it' : 'Credits', act: () => this.goto('credits') },
     ];
     if (!this.fromTitle) {
       items.push({ label: 'Rest here (back to title)', act: () => { this.close(); this.hooks.onToTitle(); } });
@@ -209,22 +234,41 @@ export class PauseMenu {
         and if someone corrects you, thank them twice. Walk slowly. That is the whole trick.</div>
       </div>`;
     } else {
+      // The subtitle is the one line here that is allowed to change, because
+      // it is the only line that was ever a fact about the player.
+      const done = journeyDone();
       body = `<div class="p-credits">
         <p class="p-c-head">Say Yes to Soup</p>
-        <p>a journal, half full</p>
+        <p>${done ? 'a journal, full' : 'a journal, half full'}</p>
+        ${
+          done
+            ? `<p class="end-envoi">Eleven villages, one grandmother, one book she left half written and you did not.
+               Nobody hurried you and you did not hurry. That was the whole assignment.</p>`
+            : ''
+        }
         <p class="p-c-sec">Every village in this game is fictional; the texture is researched,
         and corrections from people who know these places are welcome.</p>
         <p class="p-c-sec">Type set in Fraunces, Literata &amp; Caveat (OFL, Google Fonts).
         Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
         Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
-        the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0).
-        Everything else&thinsp;&mdash;&thinsp;art, music, weather, gulls&thinsp;&mdash;&thinsp;is
-        cooked fresh by the game at runtime.</p>
+        the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0);
+        the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).
+        Everything else, the art, the music, the weather and the gulls, is cooked
+        fresh by the game at runtime.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>
+        ${done ? '<p class="end-envoi end-last-word">The pot is still on. It is always on. Come back whenever.</p>' : ''}
       </div>`;
     }
     const title =
-      this.screen === 'menu' ? 'A rest' : this.screen === 'settings' ? 'Settings' : this.screen === 'help' ? 'How to play' : 'Credits';
+      this.screen === 'menu'
+        ? 'A rest'
+        : this.screen === 'settings'
+          ? 'Settings'
+          : this.screen === 'help'
+            ? 'How to play'
+            : journeyDone()
+              ? 'The end of it'
+              : 'Credits';
     this.root.innerHTML = `
       <div class="p-card">
         <div class="p-title">${title}</div>

@@ -53,9 +53,13 @@ export const CHAPTER: ChapterDef = {
     flag: 'c10.arrived',
     when: { has: ['c9.complete'] },
   },
-  completion: {
-    flag: 'story.end',
-    plate: 'ELSEWHERE',
-    toasts: ['✦ the journal is full', 'thank you for walking slowly'],
-  },
+  /**
+   * No `completion` block, deliberately. A completion is the engine's
+   * chapter-card beat: a plate, two toasts and a burst of petals, the same
+   * instrument that fires for winning a mini-game. This chapter does not
+   * complete, it ends. The last line at the well runs straight into
+   * `c10.end.hold`, which opens the closing book (see src/ui/album.ts), and
+   * the closing book hands the player to the credits. Nothing here should
+   * confetti over the last page of a dead woman's journal.
+   */
 };

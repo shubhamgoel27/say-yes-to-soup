@@ -232,17 +232,50 @@ export const RETURN_NODES: NodeMap = {
     // when the player hands it back (see the RETURN_EVENTS ledger entry).
     effects: ['set:album.open'],
   },
+  /**
+   * Handing it back. The overlay tallies what it actually showed and raises
+   * exactly one of album.full / album.most / album.few first, so her closing
+   * words are about the book in her hands and not about a book she assumed.
+   * The arms carry the same prompt on purpose: the branch is hers, not yours.
+   * `next` repeats the sparse arm for any path that never opened the pages.
+   */
   'c10.album.close': {
     lines: [
-      { who: 'Chasca', text: 'There. One journey, in order, with your face aging politely through it.' },
-      { who: 'Chasca', text: 'I photograph the roads because somebody should keep the evidence. You are the evidence. Case closed.' },
-      { text: 'She closes the album the way you close a door on a sleeping child.' },
+      { text: 'She takes it back with both hands and does not close it yet. The last page has nothing on it, and she looks at that page longest.' },
+      { who: 'Chasca', text: 'I always leave one empty. A roll of film ends. A road does not, and I will not let the book take sides.' },
     ],
     effects: ['set:c10.album.seen', 'journal:customs.album'],
+    choices: [
+      { text: 'Let her close it', goto: 'c10.album.full', when: { has: ['album.full'] } },
+      { text: 'Let her close it', goto: 'c10.album.most', when: { has: ['album.most'] } },
+      { text: 'Let her close it', goto: 'c10.album.few', when: { has: ['album.few'] } },
+    ],
+    next: 'c10.album.few',
+  },
+  'c10.album.full': {
+    lines: [
+      { who: 'Chasca', text: 'Every frame I ever shouted for, you stood still for. Ten out of ten, and not one of them a pose.' },
+      { who: 'Chasca', text: 'The whole road, in order, with your face getting older and never once less astonished. I am keeping these negatives forever.' },
+      { text: 'She closes the album the way you close a door on a sleeping child.' },
+    ],
+  },
+  'c10.album.most': {
+    lines: [
+      { who: 'Chasca', text: 'Most of it. The gaps are the days you got ahead of me, which is the correct direction for a person to get.' },
+      { who: 'Chasca', text: 'I keep the empty corners anyway. A road you walked without me is still a road. It just belongs to you and not to the book.' },
+      { text: 'She closes the album the way you close a door on a sleeping child.' },
+    ],
+  },
+  'c10.album.few': {
+    lines: [
+      { who: 'Chasca', text: 'Mostly corners. Mostly the ones I did not take, and you are about to apologize, and I am telling you not to.' },
+      { who: 'Chasca', text: 'Those blanks are the roads that got away from me. I have never stopped following them. You just made the job a long one.' },
+      { text: 'She closes it gently, on all that kept paper, the way you close a door on a sleeping child.' },
+    ],
   },
   'c10.chasca.after': {
     lines: [
-      { who: 'Chasca', text: 'The album sleeps in my bag, finished. Tomorrow I start the next one. Roads keep happening; somebody has to keep up.' },
+      { who: 'Chasca', text: 'The album sleeps in my bag with one page still empty. Tomorrow I start the next one; roads keep happening, somebody has to keep up.' },
     ],
     choices: [
       { text: 'Look through it again', goto: 'c10.chasca.again' },
@@ -251,7 +284,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.chasca.again': {
     lines: [
-      { who: 'Chasca', text: 'Always. It starts with you and ends in marigolds. The middle is the good part; middles always are.' },
+      { who: 'Chasca', text: 'Always. It starts with you and ends on a page I have not earned yet. The middle is the good part; middles always are.' },
     ],
     effects: ['set:album.open'],
   },
@@ -576,6 +609,7 @@ export const RETURN_NODES: NodeMap = {
       { text: 'The journal is full. You close it the way Aurelio closes an afternoon: without hurry, without doubt.' },
     ],
     effects: ['set:c10.lastline.word', 'journal:customs.home', 'set:story.end'],
+    next: 'c10.end.hold',
   },
   'c10.lastline.trick': {
     lines: [
@@ -583,6 +617,7 @@ export const RETURN_NODES: NodeMap = {
       { text: 'The journal is full. The village hums on around you, unaware it has been finished. It has not, of course. Books end; villages continue.' },
     ],
     effects: ['set:c10.lastline.trick', 'journal:customs.home', 'set:story.end'],
+    next: 'c10.end.hold',
   },
   'c10.lastline.begun': {
     lines: [
@@ -590,6 +625,23 @@ export const RETURN_NODES: NodeMap = {
       { text: 'The journal is full. Tomorrow there will be a new journal; Rosa has been explicit about what goes on its first page.' },
     ],
     effects: ['set:c10.lastline.begun', 'journal:customs.home', 'set:story.end'],
+    next: 'c10.end.hold',
+  },
+
+  /**
+   * The landing. Whichever last line was written, the thought finishes here:
+   * the pen goes down, nobody arrives, and the well keeps doing what a well
+   * does. The final two effects hand the moment to the closing book, which is
+   * the journal's own last spreads and the door to the credits after them.
+   */
+  'c10.end.hold': {
+    lines: [
+      { text: 'You cap the pen. The journal shuts on itself with the sound a full book makes, which is a different sound from an empty one.' },
+      { text: 'Nobody comes. The rope creaks. Behind you a bowl goes down on a table, and somebody laughs at a joke you were not told.' },
+      { text: 'Fifty years ago a woman sat on this stone with this same book half written, and got up, and went. You got up, and came back.' },
+      { text: 'You stay a while. The smoke goes straight up. There is nowhere else you are meant to be, and that turns out to be the finding.' },
+    ],
+    effects: ['set:end.book', 'set:album.open'],
   },
   'c10.well.after': {
     lines: [

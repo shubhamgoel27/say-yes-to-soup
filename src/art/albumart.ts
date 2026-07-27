@@ -966,6 +966,181 @@ function field(g: CanvasRenderingContext2D) {
   birds(g, [[196, 30, 4.4], [212, 38, 3.6]]);
 }
 
+/**
+ * The eleventh frame, which is not Chasca's. Ch'aska Pampa after dark, seen
+ * from the well: four kitchens, one red flag, the pass a blue notch above.
+ * Nobody photographed this one, so it is painted the way you remember a place
+ * you are standing in. The closing book ends here; the album does not.
+ */
+function home(g: CanvasRenderingContext2D) {
+  const sky = g.createLinearGradient(0, 0, 0, 100);
+  sky.addColorStop(0, '#1d2c52');
+  sky.addColorStop(0.58, '#3e4470');
+  sky.addColorStop(1, '#8a6a72');
+  g.fillStyle = sky;
+  g.fillRect(0, 0, W, 100);
+  // The high sky the whole journey happened under, and its grazing stars.
+  const rs = new Rng(1974);
+  for (let i = 0; i < 110; i++) {
+    const x = rs.next() * W;
+    const y = rs.next() * 80;
+    dot(g, x, y, rs.chance(0.1) ? 1.6 : 0.85, rs.chance(0.28) ? '#fff0c8' : 'rgba(240,234,216,0.75)');
+  }
+  // The cordillera, soft-shouldered, with the notch you came home through.
+  g.fillStyle = 'rgba(88,86,128,0.92)';
+  g.beginPath();
+  g.moveTo(0, 100);
+  g.lineTo(0, 66);
+  g.quadraticCurveTo(26, 40, 52, 62);
+  g.quadraticCurveTo(72, 76, 92, 52);
+  g.quadraticCurveTo(112, 32, 134, 60);
+  g.quadraticCurveTo(152, 78, 172, 54);
+  g.quadraticCurveTo(200, 30, 240, 62);
+  g.lineTo(240, 100);
+  g.closePath();
+  g.fill();
+  g.fillStyle = 'rgba(58,54,88,0.92)';
+  g.beginPath();
+  g.moveTo(0, 100);
+  g.lineTo(0, 88);
+  g.quadraticCurveTo(58, 74, 118, 90);
+  g.quadraticCurveTo(184, 104, 240, 84);
+  g.lineTo(240, 100);
+  g.closePath();
+  g.fill();
+  // The puna floor the village stands on: cold, wide, and quietly grazed.
+  const ground = g.createLinearGradient(0, 96, 0, H);
+  ground.addColorStop(0, '#5d5560');
+  ground.addColorStop(0.55, '#494150');
+  ground.addColorStop(1, '#332c34');
+  g.fillStyle = ground;
+  g.fillRect(0, 96, W, H - 96);
+  // A little grazed texture so the floor is a place and not a fill.
+  const rg = new Rng(77);
+  for (let i = 0; i < 80; i++) {
+    const t = rg.next();
+    dot(g, rg.next() * W, 100 + t * t * 58, 0.9 + t * 1.4, 'rgba(126,116,110,0.35)');
+  }
+
+  /** One low adobe house with a thatch cap, and its smoke going straight up. */
+  const house = (hx: number, hy: number, s: number, lit: boolean) => {
+    rr(g, hx - 17 * s, hy - 18 * s, 34 * s, 19 * s, 1.8 * s, '#8a6f55');
+    g.fillStyle = 'rgba(40,30,22,0.34)';
+    g.fillRect(hx - 17 * s, hy - 3 * s, 34 * s, 4 * s);
+    // Thatch, overhanging, the way every roof in this village overhangs.
+    g.fillStyle = '#6b533c';
+    g.beginPath();
+    g.moveTo(hx - 22 * s, hy - 16 * s);
+    g.quadraticCurveTo(hx, hy - 34 * s, hx + 22 * s, hy - 16 * s);
+    g.closePath();
+    g.fill();
+    g.fillStyle = 'rgba(28,20,14,0.22)';
+    g.beginPath();
+    g.moveTo(hx - 22 * s, hy - 16 * s);
+    g.quadraticCurveTo(hx, hy - 22 * s, hx + 22 * s, hy - 16 * s);
+    g.lineTo(hx + 22 * s, hy - 14 * s);
+    g.lineTo(hx - 22 * s, hy - 14 * s);
+    g.closePath();
+    g.fill();
+    if (lit) {
+      // A doorway with a kitchen behind it: the whole thesis, in one rectangle.
+      g.fillStyle = '#f7bd68';
+      g.fillRect(hx - 4 * s, hy - 12 * s, 8 * s, 13 * s);
+      g.fillStyle = 'rgba(247,189,104,0.22)';
+      g.beginPath();
+      g.moveTo(hx - 4 * s, hy + 1 * s);
+      g.lineTo(hx + 4 * s, hy + 1 * s);
+      g.lineTo(hx + 16 * s, hy + 17 * s);
+      g.lineTo(hx - 16 * s, hy + 17 * s);
+      g.closePath();
+      g.fill();
+    } else {
+      g.fillStyle = '#eda94e';
+      g.fillRect(hx - 3.2 * s, hy - 11 * s, 6 * s, 5 * s);
+      dot(g, hx, hy - 8.5 * s, 5 * s, 'rgba(237,169,78,0.16)');
+    }
+    // Smoke, straight as loom threads, because there is no wind tonight.
+    g.lineCap = 'round';
+    for (const [w, a] of [[7 * s, 0.085], [2.6 * s, 0.2]] as const) {
+      g.strokeStyle = `rgba(226,218,206,${a})`;
+      g.lineWidth = w;
+      g.beginPath();
+      g.moveTo(hx + 10 * s, hy - 24 * s);
+      g.quadraticCurveTo(hx + 7 * s, hy - 48 * s, hx + 11 * s, hy - 72 * s);
+      g.stroke();
+    }
+  };
+  house(36, 120, 0.95, false);
+  house(98, 134, 1.3, true);
+  house(162, 122, 1.05, false);
+  house(216, 136, 0.9, false);
+
+  // Rosa's flag, up, because the flag is always up by the time you get there.
+  g.strokeStyle = '#4a3a2c';
+  g.lineWidth = 1.8;
+  g.beginPath();
+  g.moveTo(134, 122);
+  g.lineTo(134, 88);
+  g.stroke();
+  g.fillStyle = '#c94f2c';
+  g.beginPath();
+  g.moveTo(134, 88);
+  g.lineTo(155, 96);
+  g.lineTo(134, 104);
+  g.closePath();
+  g.fill();
+
+  // The well rim across the bottom edge, close enough that you are sitting on
+  // it. Older than the church; the water is older than everything.
+  g.fillStyle = '#7a7168';
+  g.beginPath();
+  g.moveTo(-6, H);
+  g.lineTo(-6, 160);
+  g.quadraticCurveTo(120, 138, 246, 160);
+  g.lineTo(246, H);
+  g.closePath();
+  g.fill();
+  g.fillStyle = 'rgba(46,40,34,0.4)';
+  g.beginPath();
+  g.moveTo(-6, 170);
+  g.quadraticCurveTo(120, 149, 246, 170);
+  g.lineTo(246, 176);
+  g.lineTo(-6, 176);
+  g.closePath();
+  g.fill();
+  // The lit edge of the rim, because a kitchen door is open behind you.
+  g.strokeStyle = 'rgba(246,214,164,0.35)';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(-6, 160);
+  g.quadraticCurveTo(120, 138, 246, 160);
+  g.stroke();
+  g.strokeStyle = 'rgba(238,228,206,0.16)';
+  g.lineWidth = 1.1;
+  for (const bx of [16, 52, 92, 148, 190, 224]) {
+    g.beginPath();
+    g.moveTo(bx, 152 + Math.abs(bx - 120) * 0.055);
+    g.lineTo(bx, H);
+    g.stroke();
+  }
+  // The journal, closed, set on the stone where she once set hers.
+  g.save();
+  g.translate(44, 148);
+  g.rotate(-0.13);
+  oval(g, 2, 16, 26, 4, 'rgba(24,18,14,0.35)');
+  rr(g, -23, -15, 46, 29, 2.4, '#b07a3c');
+  rr(g, -23, -15, 7, 29, 2.4, '#7d4f24');
+  rr(g, 16, -12, 6, 23, 1.2, '#efe3ca');
+  g.strokeStyle = 'rgba(250,236,206,0.55)';
+  g.lineWidth = 1.2;
+  g.beginPath();
+  g.moveTo(-4, -15);
+  g.lineTo(-4, 14);
+  g.stroke();
+  g.restore();
+  birds(g, [[196, 40, 3.6], [212, 48, 3]], 'rgba(226,218,204,0.45)');
+}
+
 // ---------------------------------------------------------------- the roll
 
 const PAINTERS: Record<string, (g: CanvasRenderingContext2D) => void> = {
@@ -979,6 +1154,7 @@ const PAINTERS: Record<string, (g: CanvasRenderingContext2D) => void> = {
   door,
   stones,
   field,
+  home,
 };
 
 /** Paints (once) and returns the developed print for an album frame key. */

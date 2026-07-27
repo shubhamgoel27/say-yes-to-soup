@@ -79,11 +79,28 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c9.mole.start',
       doneNode: 'c9.mole.stirred',
+      title: 'The hour of stirring',
+      howTo: [
+        'The spoon stands up in the pot by itself. Walk it in circles: up, right, down, left.',
+        'With the pot, never against it. The wrong way only sloshes and Chela pretends not to see.',
+        'Chiles toast on the comal beside you. When they start to smoke, Space sweeps them off the heat.',
+        'Burn them and the pot goes bitter. Chela has done it twice herself. You wash the pot and begin again.',
+      ],
       make: (root, audio) => new MolePanel(root, audio as AudioBus),
     },
     {
       flag: 'c9.ofrenda.start',
       doneNode: 'c9.ofrenda.built',
+      title: 'Her ofrenda',
+      howTo: [
+        'Her things come into your hands one at a time, in the order the road gave them to you.',
+        'Up and down chooses a level: what guides her, what feeds her, what walks beside her.',
+        'Space sets a thing down. No shelf is wrong here, and nobody in this room will correct you.',
+        'Take all the time you want. The candles are patient, and the village is in no hurry at all.',
+      ],
+      // Built once, for one person, out of what this particular road carried
+      // here. Offering to do it again would turn a remembering into a task.
+      replayable: false,
       make: (root, audio) => new OfrendaPanel(root, audio as AudioBus),
     },
   ],
@@ -91,7 +108,10 @@ export const CHAPTER: ChapterDef = {
   meta: {
     oaxaca: { scene: 'outdoor', mood: 'cempaluz' },
     cocina: { scene: 'interior', mood: 'interior' },
-    camposanto: { scene: 'outdoor', mood: 'velacion' },
+    // The camposanto used to be hardcoded to the vigil, so a first scouting
+    // visit at noon arrived in deep-blue candle night. It is a graveyard being
+    // swept in the afternoon until the day actually ends; then it is velacion.
+    camposanto: { scene: 'outdoor', mood: 'campodia', moodDusk: 'velacion' },
   },
   moods: {
     // Marigold afternoon: high dry valley light with an orange undertone.
@@ -101,6 +121,14 @@ export const CHAPTER: ChapterDef = {
       bottom: 'rgba(190,110,150,0.07)',
       vig: 0.26,
       ambient: 0xffe8c2,
+    },
+    // The camposanto by day: whitewash, dust, and a lot of open sky.
+    campodia: {
+      top: 'rgba(224,232,240,0.10)',
+      mid: 'rgba(255,240,206,0.05)',
+      bottom: 'rgba(198,162,124,0.06)',
+      vig: 0.18,
+      ambient: 0xfff2d8,
     },
     // The candle-lit camposanto: deep blue night held back by warm glass.
     velacion: {
@@ -135,8 +163,39 @@ export const CHAPTER: ChapterDef = {
     ],
   },
   sitKinds: ['stool'],
-  // The night before the vigil, candles line the marigold path to the gate.
+  // The night before the vigil, candles line the marigold path to the gate,
+  // and the camposanto itself stops being an empty swept yard: a candle at the
+  // foot of every grave, and one on the south wall that belongs to nobody
+  // buried here. The vigil families arrive on the same flag (see the `when`
+  // clauses on the camposanto villagers in npcs.ts).
   dressings: [
+    {
+      map: 'camposanto',
+      when: { has: ['c9.ofrenda.done'] },
+      cells: [
+        // The upper row of graves, lit at the foot.
+        [3, 5, { t: 'veladora', solid: true }],
+        [5, 5, { t: 'veladora', solid: true }],
+        [7, 5, { t: 'veladora', solid: true }],
+        [13, 5, { t: 'veladora', solid: true }],
+        [15, 5, { t: 'veladora', solid: true }],
+        [17, 5, { t: 'veladora', solid: true }],
+        // The middle row.
+        [3, 8, { t: 'veladora', solid: true }],
+        [5, 8, { t: 'veladora', solid: true }],
+        [7, 8, { t: 'veladora', solid: true }],
+        [13, 8, { t: 'veladora', solid: true }],
+        [15, 8, { t: 'veladora', solid: true }],
+        [17, 8, { t: 'veladora', solid: true }],
+        // The near row, closest to the gate you come in by.
+        [4, 11, { t: 'veladora', solid: true }],
+        [6, 11, { t: 'veladora', solid: true }],
+        [14, 11, { t: 'veladora', solid: true }],
+        [16, 11, { t: 'veladora', solid: true }],
+        // Refugio's extra one, on the wall, turned to face the road out.
+        [11, 12, { t: 'veladora', solid: true }],
+      ],
+    },
     {
       map: 'oaxaca',
       when: { has: ['c9.ofrenda.done'] },
