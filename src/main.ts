@@ -34,7 +34,7 @@ import {
   NODES,
   NPCS,
   REGION_MAPS,
-  SIT_KINDS,
+  sitKindsOn,
   SIT_LINES,
   TASKS,
 } from './content/world';
@@ -667,7 +667,7 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
     const seats: [number, number][] = [];
     for (let y = 0; y < tm.h; y++) {
       for (let x = 0; x < tm.w; x++) {
-        if (SIT_KINDS.has(tm.object(x, y)?.t ?? '')) seats.push([x, y]);
+        if (sitKindsOn(mid).has(tm.object(x, y)?.t ?? '')) seats.push([x, y]);
       }
     }
     const sitters = villagers.filter(
@@ -1382,7 +1382,7 @@ function tryInteract(): boolean {
     }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
-  if (SIT_KINDS.has(kind)) {
+  if (sitKindsOn(map.id).has(kind)) {
     startSitting();
     return true;
   }
@@ -1542,7 +1542,7 @@ function update(dt: number) {
       digThere ||
       (objKind !== undefined &&
         objKind !== 'blocked' &&
-        (SIT_KINDS.has(objKind) ||
+        (sitKindsOn(map.id).has(objKind) ||
           (EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false)));
     renderer.setHint(npcThere || examThere ? [fx, fy] : null);
   } else {
@@ -2060,7 +2060,7 @@ function interactableAt(x: number, y: number): boolean {
   // it should simply walk there.
   const objKind = map.object(x, y)?.t;
   if (objKind === undefined || objKind === 'blocked') return false;
-  if (SIT_KINDS.has(objKind)) return true;
+  if (sitKindsOn(map.id).has(objKind)) return true;
   return EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false;
 }
 

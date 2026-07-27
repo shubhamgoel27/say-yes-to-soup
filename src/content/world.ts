@@ -118,6 +118,25 @@ export const SIT_KINDS = new Set<string>([
   ...CHAPTERS.flatMap((c) => c.sitKinds ?? []),
 ]);
 
+/** Seats a chapter never had to declare: these read as seats anywhere. */
+const SIT_EVERYWHERE: ReadonlySet<string> = new Set(['bench', 'baraza']);
+
+/**
+ * Sitting is per chapter. A crate is a seat on the Peruvian coast and cargo
+ * on a ship, so one chapter offering a kind must not quietly turn it into
+ * furniture in every other chapter, stealing its examine.
+ */
+const SIT_BY_MAP: Record<string, ReadonlySet<string>> = {};
+for (const c of CHAPTERS) {
+  const kinds: ReadonlySet<string> = new Set(['bench', 'baraza', ...(c.sitKinds ?? [])]);
+  for (const mapId of Object.keys(c.meta)) SIT_BY_MAP[mapId] = kinds;
+}
+
+/** Which kinds invite you to sit on a given map. */
+export function sitKindsOn(mapId: string): ReadonlySet<string> {
+  return SIT_BY_MAP[mapId] ?? SIT_EVERYWHERE;
+}
+
 /** Chapter manifests in play order; tests hold the ledger honest. */
 export const RECALLS: { chapter: string; recall: RecallManifest }[] = CHAPTERS.map((c) => ({
   chapter: c.id,
