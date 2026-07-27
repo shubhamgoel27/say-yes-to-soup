@@ -9,6 +9,9 @@ import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
  * GalleyPanel: Ben calls the pot, you feed it, in order. A wrong pick cannot
  * fail anything: Ben chuckles and hands you the right thing, exactly the way
  * his aunties taught him. The adobo gets made either way; you get made too.
+ * The one thing that can go wrong is the one thing adobo is actually about:
+ * after the lid, the sauce reduces, and a pot left on the fire too long
+ * catches. Ben is unbothered by that too. One press and the garlic starts over.
  *
  * StarPanel: the dark bow after lights-out. One river of stars, three names.
  * Walk a reticle across the sky and find each reading; a miss only nudges
@@ -82,6 +85,19 @@ const CHUCKLES = [
 ];
 
 const COLS = 4;
+
+/** Seconds the covered pot takes to go from all-vinegar to catching. */
+const SIMMER_DUR = 11;
+const SIMMER_CALM = 15;
+/** Below this the sauce is still sharp; past the edge it is a near thing. */
+const SIMMER_READY = 0.6;
+const SIMMER_EDGE = 0.86;
+
+/**
+ * Esc raises the engine's own strip over an open panel. The pot has the
+ * decency to wait while it is up: nothing burns behind a menu.
+ */
+const stripUp = () => (document.querySelector('.ht-strip') as HTMLElement | null)?.hidden === false;
 
 // Shelf geometry: two wooden shelves of four slots on the galley's right wall.
 const SLOT_X0 = 432;
@@ -313,7 +329,11 @@ export class GalleyPanel {
   private wobT = 1;
   private lidT = 0;
   private lidGoing = false;
+  private lidding = false;
   private steamAcc = 0;
+  /** -1 while the pot is still being fed; 0..1 once the lid is on. */
+  private simmer = -1;
+  private burnt = false;
 
   constructor(
     private root: HTMLElement,
@@ -322,6 +342,11 @@ export class GalleyPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /** True only while the pantry is live: not simmering, not burnt, not finished. */
+  private get feeding(): boolean {
+    return !this.done && !this.burnt && this.simmer < 0;
   }
 
   open(onDone: () => void) {
@@ -337,6 +362,9 @@ export class GalleyPanel {
     this.wobT = 1;
     this.lidT = 0;
     this.lidGoing = false;
+    this.lidding = false;
+    this.simmer = -1;
+    this.burnt = false;
     this.steamAcc = 0;
     this.hint = 'Ben ties your apron. "First: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
     makeGalleyBg();
@@ -351,7 +379,7 @@ export class GalleyPanel {
   }
 
   onDir(dir: Dir) {
-    if (this.done) return;
+    if (!this.feeding) return;
     const x = this.cur % COLS;
     const y = Math.floor(this.cur / COLS);
     const rows = Math.ceil(PANTRY.length / COLS);
@@ -361,11 +389,21 @@ export class GalleyPanel {
   }
 
   onAction() {
+    if (this.burnt) {
+      // Scrub the pot, start the garlic again. Nothing was lost but one dinner.
+      const again = this.onDone;
+      if (again) this.open(again);
+      return;
+    }
     if (this.done) {
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
       done?.();
+      return;
+    }
+    if (this.simmer >= 0) {
+      this.liftOff();
       return;
     }
     const want = STEPS[this.step];
@@ -385,20 +423,73 @@ export class GalleyPanel {
     }
     this.step++;
     if (this.step >= STEPS.length) {
-      this.done = true;
-      this.audio.weaveDone();
-      this.hint =
-        this.misses === 0
-          ? 'The lid goes on. Ben looks at you with suspicion: "You have aunties, pare?" Press Space.'
-          : 'The lid goes on. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
+      this.lidding = true;
+      this.hint = 'Six things and no more. Ben slides the lid over. "Now she argues with herself, pare. Watch the sauce go down."';
     }
+  }
+
+  /** Lid on: the only part of adobo that cannot be hurried begins. */
+  private startSimmer() {
+    this.simmer = 0;
+    this.hint = 'The sarsa starts going down under the lid. Ben: "When the smell turns sweet and dark, off the heat." Space lifts the pot.';
+  }
+
+  /** Space during the simmer. Too early is only a shake of the head. */
+  private liftOff() {
+    if (this.simmer < SIMMER_READY) {
+      this.audio.blip();
+      this.hint = 'Ben leans over and sniffs. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
+      return;
+    }
+    this.done = true;
+    this.audio.weaveDone();
+    this.sc.flash('#ffe2b0', 0.3);
+    this.sc.tween(1, 0.58, 0.45, easeOutCubic, (v) => {
+      this.lidT = v;
+    });
+    this.sc.waft(POT_X - 32, POT_MOUTH_Y, 'rgba(255,252,244,0.4)', 9);
+    this.sc.waft(POT_X + 32, POT_MOUTH_Y, 'rgba(255,252,244,0.4)', 9);
+    this.hint =
+      this.misses === 0
+        ? 'Off the heat on exactly the right breath, dark and glossy. Ben looks at you with suspicion: "You have aunties, pare?" Press Space.'
+        : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
+  }
+
+  /** The pot catches. Ben has burnt more dinners than you will ever cook. */
+  private burn() {
+    this.burnt = true;
+    this.simmer = 1;
+    this.audio.blip();
+    this.sc.flash('#3a2410', 0.4);
+    if (!calm()) this.sc.thump(5, 0.05);
+    this.sc.tween(1, 0.55, 0.4, easeOutCubic, (v) => {
+      this.lidT = v;
+    });
+    for (let i = 0; i < (calm() ? 3 : 7); i++) {
+      this.sc.waft(POT_X + (Math.random() - 0.5) * 74, POT_MOUTH_Y - 4, 'rgba(46,38,30,0.55)', 11);
+    }
+    this.hint =
+      'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, pare. Every cook owes the pot a few." Press Space and the garlic goes back in.';
   }
 
   tick(dt: number) {
     if (!this.isOpen) return;
     const simDt = this.sc.frame(dt, (g) => this.paint(g));
+    // The reduction runs on its own clock, and only while the pot is unattended
+    // by menus. Ben calls it twice before it ever catches.
+    if (this.simmer >= 0 && !this.done && !this.burnt && !stripUp()) {
+      const was = this.simmer;
+      this.simmer = Math.min(1, this.simmer + simDt / (calm() ? SIMMER_CALM : SIMMER_DUR));
+      if (was < SIMMER_READY && this.simmer >= SIMMER_READY) {
+        this.audio.chime();
+        this.hint = 'The whole galley goes sweet and dark at once. Ben, not looking up: "Ngayon na. Now, pare." Space lifts the pot off.';
+      } else if (was < SIMMER_EDGE && this.simmer >= SIMMER_EDGE) {
+        this.hint = 'A thin sharp note arrives under the sweet. Ben stops wiping the counter. "Ay. Now now now." Space, off the heat.';
+      }
+      if (this.simmer >= 1) this.burn();
+    }
     // Steam keeps pace with the pot: more in it, more of it.
-    if (this.landed >= 2) {
+    if (this.landed >= 2 && !this.burnt) {
       this.steamAcc += simDt;
       const every = (calm() ? 0.6 : 0.3) / Math.min(2, 0.6 + this.landed * 0.25);
       if (this.steamAcc > every) {
@@ -444,15 +535,15 @@ export class GalleyPanel {
     const splash = this.landed >= 3 ? '#6b4522' : '#c9a06a';
     this.sc.burst(POT_X, POT_MOUTH_Y + 2, { n: calm() ? 4 : 10, color: splash, speed: 75, size: 2.6, life: 0.5, grav: 260 });
     this.sc.waft(POT_X, POT_MOUTH_Y - 4, 'rgba(255,252,244,0.4)', 9);
-    if (this.done && this.landed >= STEPS.length && !this.lidGoing) {
+    if (this.lidding && this.landed >= STEPS.length && !this.lidGoing) {
       this.lidGoing = true;
       this.sc.tween(0, 1, 0.55, easeOutBack, (v) => {
         this.lidT = v;
       }, () => {
-        this.sc.flash('#ffe2b0', 0.3);
         if (!calm()) this.sc.thump(4, 0.04);
         this.sc.waft(POT_X - 40, POT_MOUTH_Y, 'rgba(255,252,244,0.35)', 7);
         this.sc.waft(POT_X + 40, POT_MOUTH_Y, 'rgba(255,252,244,0.35)', 7);
+        this.startSimmer();
       });
     }
   }
@@ -473,6 +564,7 @@ export class GalleyPanel {
     this.utensils(g, roll, t);
     this.chalkTicks(g);
     this.stovePot(g, roll, t);
+    this.simmerGauge(g, t);
     this.pantryShelf(g, t);
     this.flyDraw(g);
     g.restore();
@@ -558,15 +650,16 @@ export class GalleyPanel {
 
   /** The pot itself: rocking on the burner, contents assembling step by step. */
   private stovePot(g: CanvasRenderingContext2D, roll: number, t: number) {
-    // Flames first, licking under the pot rim.
+    // Flames first, licking under the pot rim. Burnt or plated, the fire is out.
+    const heat = this.burnt || this.done ? 0.22 : 1;
     if (flameGlow) {
-      g.globalAlpha = 0.4 + wobble(t, 11) * 0.08;
+      g.globalAlpha = (0.4 + wobble(t, 11) * 0.08) * heat;
       g.drawImage(flameGlow, POT_X - 78, POT_BASE_Y - 52, 156, 110);
       g.globalAlpha = 1;
     }
     for (let i = 0; i < 6; i++) {
       const fx = POT_X - 30 + i * 12;
-      const fh = 7 + Math.sin(t * 12 + i * 2.1) * 3.5;
+      const fh = (7 + Math.sin(t * 12 + i * 2.1) * 3.5) * heat;
       oval(g, fx, POT_BASE_Y + 3, 4, fh, i % 2 ? '#e08a2e' : '#f4c25f');
     }
     const rot = roll * 0.055 + (this.landed > 0 ? Math.sin(t * 8.5) * 0.004 : 0);
@@ -627,6 +720,12 @@ export class GalleyPanel {
     const cx = POT_X;
     const cy = POT_MOUTH_Y + 1;
     const n = this.landed;
+    if (this.burnt) {
+      // Black, dry, and stuck to the bottom. It happens to every galley.
+      oval(g, cx, cy, 55, 10.5, '#2a1c10');
+      for (let i = 0; i < 8; i++) dot(g, cx - 36 + i * 10, cy + Math.sin(i * 1.7) * 3.5, 2.6, '#150e07');
+      return;
+    }
     if (n === 0) {
       oval(g, cx - 16, cy - 2, 14, 3, 'rgba(220,226,228,0.14)');
       return;
@@ -667,6 +766,36 @@ export class GalleyPanel {
     }
   }
 
+  /**
+   * The reduction gauge, mounted on the stove front: how far down the sauce
+   * has gone. The gold band is the window where the pot should come off.
+   */
+  private simmerGauge(g: CanvasRenderingContext2D, t: number) {
+    if (this.simmer < 0) return;
+    const x = 62;
+    const y = 314;
+    const w = 240;
+    const h = 14;
+    const bx = x + w * SIMMER_READY;
+    rr(g, x - 3, y - 3, w + 6, h + 6, 4, '#8a6a44');
+    rr(g, x - 1.5, y - 1.5, w + 3, h + 3, 3, '#c9a35f');
+    rr(g, x, y, w, h, 3, '#241a12');
+    rect(g, bx, y, w * (1 - SIMMER_READY), h, 'rgba(232,192,99,0.24)');
+    const k = Math.min(1, this.simmer);
+    const col = this.burnt ? '#3a2a1c' : k >= SIMMER_EDGE ? '#c1512f' : k >= SIMMER_READY ? '#e8c063' : '#a8703a';
+    rr(g, x, y, Math.max(4, w * k), h, 3, col);
+    if (!this.burnt && !this.done && k >= SIMMER_READY) {
+      g.globalAlpha = 0.3 + Math.sin(t * 7) * 0.22;
+      rr(g, bx, y - 1.5, w * (1 - SIMMER_READY), h + 3, 3, '#ffe2b0');
+      g.globalAlpha = 1;
+    }
+    rect(g, bx - 1, y - 5, 2, h + 10, 'rgba(238,234,220,0.85)');
+    g.font = "18px Caveat, 'Segoe Script', cursive";
+    g.textAlign = 'left';
+    g.fillStyle = this.burnt ? '#d98a6a' : 'rgba(238,234,220,0.9)';
+    g.fillText(this.burnt ? 'nasunog' : this.done ? 'tapos na' : 'sarsa', x, y - 8);
+  }
+
   /** The pantry: eight painted things on two boards, one warmed by choice. */
   private pantryShelf(g: CanvasRenderingContext2D, t: number) {
     const sheet = makePantrySheet();
@@ -674,7 +803,7 @@ export class GalleyPanel {
       const flying = this.fly !== null && PANTRY[this.fly.icon] === PANTRY[i] && !this.used.has(PANTRY[i] ?? '');
       if (flying) continue;
       const [sx, sy] = slotPos(i);
-      const isCur = i === this.cur && !this.done;
+      const isCur = i === this.cur && this.feeding;
       const used = this.used.has(PANTRY[i] ?? '');
       let ox = 0;
       if (i === this.wobIdx) ox = Math.sin(this.wobT * 26) * 3.5 * (1 - this.wobT);
@@ -699,7 +828,7 @@ export class GalleyPanel {
       }
     }
     // The chalk name plate reads out whatever your hand is hovering over.
-    if (!this.done) {
+    if (this.feeding) {
       g.font = "600 20px Caveat, 'Segoe Script', cursive";
       g.textAlign = 'center';
       g.fillStyle = 'rgba(238,234,220,0.95)';

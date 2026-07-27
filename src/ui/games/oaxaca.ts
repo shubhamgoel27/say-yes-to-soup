@@ -6,9 +6,11 @@ import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot
 /**
  * Chapter Nine's two hands-on verbs.
  *
- * MolePanel: the hour of stirring. Mole negro cannot be hurried and cannot be
- * failed; you walk the wooden spoon in circles while Abuela Chela narrates
- * thirty ingredients' worth of memory. Wrong directions just slosh.
+ * MolePanel: the hour of stirring. You walk the wooden spoon in circles while
+ * Abuela Chela narrates thirty ingredients' worth of memory. Wrong directions
+ * just slosh. The one real danger is the comal at your elbow: let the chiles
+ * catch and the whole pot goes bitter, which is the only thing a mole cook is
+ * actually afraid of. Chela has done it herself, so the pot simply starts over.
  *
  * OfrendaPanel: building Nani's ofrenda, three levels, no wrong answers.
  * Every placement echoes a chapter of the journey; the altar is the journal
@@ -84,6 +86,20 @@ const STIR_LINES = [
 
 /** The mole's hour, as color: raw chile red down to polished-olla black. */
 const MOLE_RAMP = ['#a83a26', '#7c2e1c', '#54211a', '#33170f', '#1c0f0a'];
+
+// The comal keeps its own clock. Now and then the chiles start to catch and
+// you have this many seconds to sweep them off before the pot turns bitter.
+const SMOKE_GRACE = 5;
+const SMOKE_FIRST = 9;
+const SMOKE_GAP = 11;
+const SMOKE_WARN =
+  '<b>Smoke off the comal.</b> The chiles are catching. Space, now, sweep them off the heat.';
+const SMOKE_SAVED = 'Off the heat in time. Chela, without turning around: good ears. That is most of cooking.';
+const SCORCHED =
+  'The chiles go to carbon and the smoke turns bitter. Chela lifts the whole pot off the fire, saying nothing unkind.<br>' +
+  '<b>Chela:</b> I have burnt this mole twice, hija, and once with my mother watching. Space, and we begin the pot again.';
+const SECOND_POT = 'Fresh chiles, a washed pot, the same hour ahead. The second one is always better. She would know.';
+const OPENING = 'The spoon stands up in the pot by itself. Stir in circles: up, right, down, left.';
 
 const POT_X = 300;
 const POT_Y = 184;
@@ -186,8 +202,14 @@ export class MolePanel {
   private step = 0;
   private rounds = 0;
   private done = false;
+  private failed = false;
   private hint = '';
   private onDone: (() => void) | null = null;
+  /** Set when the pot is started over after a scorch, so Chela can say so. */
+  private againHint = '';
+  /** Seconds until the chiles next catch; -1 while they already are. */
+  private comalT = SMOKE_FIRST;
+  private smoke = -1;
 
   private scene: Scene | null = null;
   private setHint: ((h: string) => void) | null = null;
@@ -215,7 +237,11 @@ export class MolePanel {
     this.step = 0;
     this.rounds = 0;
     this.done = false;
-    this.hint = 'The spoon stands up in the pot by itself. Stir in circles: up, right, down, left.';
+    this.failed = false;
+    this.comalT = SMOKE_FIRST;
+    this.smoke = -1;
+    this.hint = this.againHint || OPENING;
+    this.againHint = '';
     this.spoonA = this.spoonTarget = -Math.PI / 2;
     this.swirl = 0;
     this.trail = [];
@@ -234,7 +260,7 @@ export class MolePanel {
   }
 
   onDir(dir: Dir) {
-    if (this.done) return;
+    if (this.done || this.failed) return;
     const sc = this.scene;
     if (dir === STIR_ORDER[this.step]) {
       this.step = (this.step + 1) % 4;
@@ -265,6 +291,15 @@ export class MolePanel {
   }
 
   onAction() {
+    if (this.failed) {
+      // A burnt pot is not the end of the evening, only of this pot. Same
+      // hands, same hour, second try, and the story flag is still unset.
+      const done = this.onDone;
+      this.onDone = null;
+      this.againHint = SECOND_POT;
+      if (done) this.open(done);
+      return;
+    }
     if (this.done) {
       this.root.hidden = true;
       const done = this.onDone;
@@ -272,9 +307,33 @@ export class MolePanel {
       done?.();
       return;
     }
+    if (this.smoke >= 0) {
+      // The save: bare fingers, one sweep, the chiles land on the cloth.
+      this.smoke = -1;
+      this.comalT = SMOKE_GAP + Math.random() * 3;
+      this.audio.blip();
+      this.scene?.burst(505, 236, { n: reduceMotion() ? 3 : 8, color: '#7c2e1c', speed: 96, grav: 300, life: 0.5, size: 2.6 });
+      this.scene?.waft(505, 228, 'rgba(240,232,220,0.3)', 7);
+      this.hint = SMOKE_SAVED;
+      return;
+    }
     this.audio.blip();
     this.scene?.waft(POT_X, POT_Y - 10, 'rgba(250,244,232,0.4)', 10);
     this.hint = 'No shortcuts. The hour is an ingredient. Keep the spoon walking.';
+  }
+
+  /** The chiles win. Bitter all the way down, and nobody in the room minds. */
+  private scorch() {
+    this.failed = true;
+    this.smoke = -1;
+    this.hint = SCORCHED;
+    this.audio.denied();
+    const sc = this.scene;
+    if (sc) {
+      sc.flash('#2a1710', 0.35);
+      if (!reduceMotion()) sc.thump(4, 0.05);
+      for (let i = 0; i < 3; i++) sc.waft(485 + i * 20, 232, 'rgba(38,30,26,0.55)', 12);
+    }
   }
 
   tick(dt: number) {
@@ -301,6 +360,29 @@ export class MolePanel {
     }
     if (this.done && this.restT < 1) this.restT = Math.min(1, this.restT + dt / 0.8);
 
+    // The comal's own clock: the chiles catch, you get five seconds of smoke
+    // and a growing complaint before the pot turns bitter.
+    if (!this.done && !this.failed) {
+      if (this.smoke < 0) {
+        this.comalT -= dt;
+        if (this.comalT <= 0) {
+          this.smoke = 0;
+          this.audio.bump();
+          sc.waft(505, 230, 'rgba(60,48,40,0.4)', 9);
+        }
+      } else {
+        this.smoke += dt;
+        if (Math.random() < dt * (5 + this.smoke * 3)) {
+          const k = Math.min(1, this.smoke / SMOKE_GRACE);
+          sc.waft(490 + Math.random() * 32, 232, `rgba(48,38,30,${(0.2 + k * 0.35).toFixed(2)})`, 8 + k * 6);
+        }
+        if (this.smoke >= SMOKE_GRACE) this.scorch();
+      }
+    }
+    if (this.failed && Math.random() < dt * 6) {
+      sc.waft(478 + Math.random() * 54, 230, 'rgba(34,26,22,0.45)', 11 + Math.random() * 6);
+    }
+
     // Steam always; seeds pop on the comal now and then.
     this.steamT -= dt;
     if (this.steamT <= 0) {
@@ -317,10 +399,12 @@ export class MolePanel {
     }
 
     sc.frame(dt, (g) => this.paint(g));
-    this.setHint?.(this.hint);
+    const warn = this.smoke >= 0 ? `${SMOKE_WARN}<br>` : '';
+    this.setHint?.(warn + this.hint);
   }
 
   private moleColor(): string {
+    if (this.failed) return '#332a22';
     return ramp(MOLE_RAMP, Math.min(1, (this.rounds + this.step / 4) / STIR_ROUNDS));
   }
 
@@ -345,8 +429,17 @@ export class MolePanel {
     dot(g, 300 + wobble(t, 7) * 2, 281, 2.2, '#fff0c0');
 
     // Chiles toasting on the comal, darkening round by round, charring late.
+    // While they are catching the comal glows hot and they blacken fast.
+    const smokeK = this.smoke >= 0 ? Math.min(1, this.smoke / SMOKE_GRACE) : 0;
+    if (smokeK > 0 || this.failed) {
+      emberGlow ??= bakeGlow('rgba(255,154,60,0.85)');
+      g.globalAlpha = this.failed ? 0.2 : 0.3 + 0.3 * smokeK + 0.08 * wobble(t, 9);
+      const w = 130 + smokeK * 30;
+      g.drawImage(emberGlow.cv, 505 - w / 2, 214, w, 74);
+      g.globalAlpha = 1;
+    }
     const toast = Math.min(1, this.rounds / STIR_ROUNDS + 0.08);
-    const chileC = mix('#b03524', '#2e1410', toast);
+    const chileC = this.failed ? '#120a08' : mix('#b03524', '#2e1410', Math.min(1, toast + smokeK * 0.55));
     const spots: [number, number, number][] = [[483, 239, 0.5], [508, 234, -0.4], [530, 241, 0.9]];
     for (const [cx, cy, rot] of spots) {
       oval(g, cx, cy + wobble(t, 9, cx) * 0.6, 12, 4.6, chileC, rot);
@@ -426,6 +519,19 @@ export class MolePanel {
         g.stroke();
         g.globalAlpha = 1;
       }
+    }
+
+    // A scorched pot skins over: grey islands where the gloss should be.
+    if (this.failed) {
+      for (let i = 0; i < 9; i++) {
+        const a = i * 2.4;
+        const rad = 12 + (i % 4) * 18;
+        g.globalAlpha = 0.4;
+        dot(g, Math.cos(a) * rad, Math.sin(a) * rad, 7 + (i % 3) * 4, '#6b6154');
+        g.globalAlpha = 0.3;
+        dot(g, Math.cos(a + 1) * rad * 0.8, Math.sin(a + 1) * rad * 0.8, 5 + (i % 2) * 3, '#8a7d68');
+      }
+      g.globalAlpha = 1;
     }
 
     // Win gloss: the surface turns lacquer and catches the window light.
