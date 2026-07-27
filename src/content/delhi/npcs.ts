@@ -52,6 +52,7 @@ export const DELHI_NPCS: NpcDef[] = [
       { when: { has: ['c11.met.kamla'], not: ['c11.dance'] }, node: 'c11.kamla.dance' },
       { when: { has: ['c11.dance'], not: ['c11.cook.done'] }, node: 'c11.kamla.cookoffer' },
       { when: { has: ['c11.complete'] }, node: 'c11.kamla.after' },
+      { when: { has: ['c11.cook.done'] }, node: 'c11.kamla.cookagain' },
       { node: 'c11.kamla.idle' },
     ],
   },
@@ -97,6 +98,7 @@ export const DELHI_NPCS: NpcDef[] = [
       { when: { has: ['c11.names'], not: ['c11.kite.done'] }, node: 'c11.yusuf.offer' },
       { when: { has: ['c11.kite.done', 'c11.rain'], not: ['c11.duel.done'] }, node: 'c11.yusuf.duel' },
       { when: { has: ['c11.duel.done'], not: ['c11.yusuf2'] }, node: 'c11.yusuf.after' },
+      { when: { has: ['c11.kite.done'] }, node: 'c11.yusuf.flyagain' },
       { node: 'c11.yusuf.idle' },
     ],
   },
@@ -449,6 +451,21 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Kamla Chachi', text: 'The dough rests, the ghee thinks, the queue grows. Everything in its order, beta, and the order begins with sit down.' },
     ],
   },
+  'c11.kamla.cookagain': {
+    lines: [
+      { who: 'Kamla Chachi', text: 'The queue is the queue and my wrist is sixty-one years old. Your hands know the pin now. Come, stand where you stood.' },
+    ],
+    choices: [
+      { text: 'Tie the apron again', when: { has: ['c11.cook.done'] }, goto: 'c11.kamla.cookReplay' },
+      { text: 'Another day; the gali is still teaching', goto: 'c11.kamla.idle' },
+    ],
+  },
+  'c11.kamla.cookReplay': {
+    lines: [
+      { who: 'Kamla Chachi', text: 'Nothing to prove today. Only the pin, the ghee, and the good noise. Burn one if you like; Sheru has been extremely patient.' },
+    ],
+    effects: ['set:replay.mode', 'set:c11.cook.start'],
+  },
 
   // ---------------- the langar (scripted, unscored, sacred) ----------------
   'c11.jog.first': {
@@ -621,6 +638,28 @@ export const DELHI_NODES: NodeMap = {
     lines: [
       { who: 'Ustad Yusuf Miyan', text: 'Dusk and dawn the flock flies; between, the roof thinks. You may think here too, if you do it quietly.' },
     ],
+  },
+  'c11.yusuf.flyagain': {
+    lines: [
+      { who: 'Ustad Yusuf Miyan', text: 'The wind is doing nothing important this evening. Neither, from the look of you, are you. The charkhi is where it always is.' },
+    ],
+    choices: [
+      { text: 'Take the charkhi up again', when: { has: ['c11.kite.done'] }, goto: 'c11.yusuf.kiteReplay' },
+      { text: 'Fly the tournament sky once more', when: { has: ['c11.duel.done'] }, goto: 'c11.yusuf.duelReplay' },
+      { text: 'Just stand and watch the roofs', goto: 'c11.yusuf.idle' },
+    ],
+  },
+  'c11.yusuf.kiteReplay': {
+    lines: [
+      { who: 'Ustad Yusuf Miyan', text: 'No tournament, no crowd, nothing riding on it. One kite, one argument, one sky. This is the version I actually like.' },
+    ],
+    effects: ['set:replay.mode', 'set:c11.kite.start'],
+  },
+  'c11.yusuf.duelReplay': {
+    lines: [
+      { who: 'Ustad Yusuf Miyan', text: 'The roofs replay that night constantly, and each telling adds a rival. Fly it again before they add a fourth. Yellow, green, red.' },
+    ],
+    effects: ['set:replay.mode', 'set:c11.duel.start'],
   },
 
   // ---------------- Sushila Jain, the bird ward ----------------

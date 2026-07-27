@@ -83,11 +83,23 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c7.sail.start',
       doneNode: 'c7.sail.done',
+      title: 'The lateen sail',
+      howTo: [
+        'The compass shows where the kaskazi is leaning. Left and right ease the sheet to follow it.',
+        'When the telltale streams flat, the sail is breathing and the ngalawa makes way.',
+        'A luffing sail is only a slow one. Bakari has been in irons a thousand times; you bear away and go again.',
+      ],
       make: (root, audio) => new SailPanel(root, audio as AudioBus),
     },
     {
       flag: 'c7.cook.start',
       doneNode: 'c7.cook.finish',
+      title: 'Behind the urojo pot',
+      howTo: [
+        'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in.',
+        'Build it however you hear it, then choose SERVE and let Zuberi read the bowl aloud.',
+        'There are no wrong bowls here. He said so himself, and he owns the pot.',
+      ],
       make: (root, audio) => new UrojoPanel(root, audio as AudioBus),
     },
   ],

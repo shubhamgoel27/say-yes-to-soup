@@ -97,6 +97,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       { when: { not: ['c7.met.zuberi'] }, node: 'c7.zuberi.first' },
       { when: { has: ['c7.met.zuberi'], not: ['c7.zuberi.dusk'] }, node: 'c7.zuberi.dusk' },
       { when: { has: ['page.dishes.urojo'], not: ['c7.cook.done'] }, node: 'c7.zuberi.apron' },
+      { when: { has: ['c7.cook.done'] }, node: 'c7.zuberi.cookAgain' },
       { node: 'c7.zuberi.idle' },
     ],
   },
@@ -160,6 +161,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       { when: { not: ['c7.met.bakari'] }, node: 'c7.bakari.first' },
       { when: { has: ['c7.met.bakari'], not: ['c7.sail.ok'] }, node: 'c7.bakari.sail' },
       { when: { has: ['c7.sail.ok'], not: ['c7.bakari.props'] }, node: 'c7.bakari.praise' },
+      { when: { has: ['c7.sail.ok'] }, node: 'c7.bakari.sailAgain' },
       { node: 'c7.bakari.idle' },
     ],
   },
@@ -612,6 +614,21 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'The octopus is tender in a way that suggests a private agreement with the coconut. You understand the island a little more per bite.' },
     ],
   },
+  'c7.zuberi.cookAgain': {
+    lines: [
+      { who: 'Zuberi', text: 'The vat is full and the corner is hungry, mgeni. The apron is where you left it, on the cart handle.' },
+    ],
+    choices: [
+      { text: 'Tie the apron on again', when: { has: ['c7.cook.done'] }, goto: 'c7.zuberi.cookReplay' },
+      { text: '"I am here to eat tonight, not to ladle."', goto: 'c7.zuberi.idle' },
+    ],
+  },
+  'c7.zuberi.cookReplay': {
+    lines: [
+      { who: 'Zuberi', text: 'Good. No lesson in it this time; you know the corner. Feed them however you hear them, and I will describe the damage.' },
+    ],
+    effects: ['set:replay.mode', 'set:c7.cook.start'],
+  },
   'c7.zuberi.idle': {
     lines: [
       { who: 'Zuberi', text: 'Come at dusk, mgeni. The day market sells things. The night market sells the day itself, warmed up.' },
@@ -766,6 +783,21 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Kapteni Bakari', text: 'The telltale streamed, and Issa says the wind agreed with you. When you ride a strange ship north, help in the galley and stay off the ropes.' },
     ],
     effects: ['set:c7.bakari.props'],
+  },
+  'c7.bakari.sailAgain': {
+    lines: [
+      { who: 'Kapteni Bakari', text: 'The kaskazi is still working and the ngalawa is still tied to a post. Between us, that is a waste of two good things.' },
+    ],
+    choices: [
+      { text: 'Take the ngalawa out again', when: { has: ['c7.sail.ok'] }, goto: 'c7.bakari.sailReplay' },
+      { text: '"Another tide, kapteni."', goto: 'c7.bakari.idle' },
+    ],
+  },
+  'c7.bakari.sailReplay': {
+    lines: [
+      { who: 'Kapteni Bakari', text: 'Haya. Nothing to prove today, mgeni. Only the wind, the telltale, and the long way back to the jetty.' },
+    ],
+    effects: ['set:replay.mode', 'set:c7.sail.start'],
   },
   'c7.bakari.idle': {
     lines: [

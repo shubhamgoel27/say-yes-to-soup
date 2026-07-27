@@ -210,7 +210,7 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c7.met.bakari'], not: ['c7.sail.ok'] },
-    text: 'Kapteni Bakari offered the ngalawa and the kaskazi. Keep the telltale streaming; luffing only slows you, and nothing out there punishes.',
+    text: 'Kapteni Bakari offered the ngalawa and the kaskazi. Keep the telltale streaming; luffing only slows you, and irons costs nothing but the reach.',
   },
   {
     when: { has: ['c7.met.salma'], not: ['c7.salma.helped'] },

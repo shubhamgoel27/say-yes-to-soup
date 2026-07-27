@@ -8,8 +8,11 @@ import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } 
  *
  * The wind arrow wanders; you ease the sheet with left/right so the sail
  * angle stays inside the wind's good zone. When the telltale streams, you
- * make way. Luffing cannot hurt you; it only slows you down, which on this
- * coast is barely a punishment at all.
+ * make way. Luffing costs nothing but way, which on this coast is barely a
+ * punishment at all; only sustained neglect, a sail left flogging while the
+ * kaskazi walks off without you, puts the ngalawa in irons. That is the one
+ * fail here, it announces itself long before it lands, and Space bears away
+ * into a fresh reach with Bakari in a good mood about it.
  */
 
 type Cv = HTMLCanvasElement;
@@ -178,7 +181,11 @@ function villageCard(): Cv {
   return cv;
 }
 
-type SailPhase = 'sail' | 'done';
+type SailPhase = 'sail' | 'irons' | 'done';
+
+/** Seconds of unbroken luffing before the boat gives up and rounds up. */
+const IRONS_WARN = 5.5;
+const IRONS_AT = 9;
 
 export class SailPanel {
   private phase: SailPhase = 'sail';
@@ -189,6 +196,8 @@ export class SailPanel {
   private dist = 0; // way made good
   private need = 12;
   private wasTrim = false;
+  private luffT = 0; // seconds the sail has been flogging without a fix
+  private ironsT = 0;
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -223,6 +232,10 @@ export class SailPanel {
     this.sail = 0.24;
     this.dist = 0;
     this.wasTrim = false;
+    // A negative start is three seconds of grace: the first moments of a reach
+    // are for reading the water, not for being punished by it.
+    this.luffT = -3;
+    this.ironsT = 0;
     this.hint = 'The kaskazi fills in from the northeast. Ease the sail with the arrows until the telltale streams.';
     this.root.hidden = false;
     this.root.style.lineHeight = '1.45'; // the #frame ancestor zeroes line-height; hints need it back
@@ -255,7 +268,7 @@ export class SailPanel {
       this.wind += Math.max(-0.09 * dt, Math.min(0.09 * dt, d)) + (Math.random() - 0.5) * 0.02 * dt;
       this.wind = Math.max(0.05, Math.min(0.95, this.wind));
 
-      const trimmed = Math.abs(this.sail - this.wind) < 0.11;
+      const trimmed = this.isTrim();
       if (trimmed && !this.wasTrim) {
         this.audio.slosh();
         this.scene.flash('#eaf8ff', 0.12);
@@ -263,11 +276,15 @@ export class SailPanel {
         this.scene.burst(bow.x, bow.y, { n: calm() ? 4 : 10, color: '#f2fbfa', speed: 120, grav: 300, size: 2.6, life: 0.55 });
       }
       this.wasTrim = trimmed;
+      this.luffT = trimmed ? 0 : this.luffT + dt;
       this.dist += dt * (trimmed ? 1 : 0.15);
       this.hint = trimmed
         ? 'The telltale streams. The hull hums; the outriggers barely kiss the water.'
-        : 'The sail luffs and grumbles. No harm done; you just slow. Follow the wind arrow with the arrows.';
-      if (this.dist >= this.need) {
+        : this.luffT >= IRONS_WARN
+          ? 'The sail is flogging and the bow is creeping up into the wind. Trim to the arrow now, before she stops answering.'
+          : 'The sail luffs and grumbles. No harm done; you just slow. Follow the wind arrow with the arrows.';
+      if (this.luffT >= IRONS_AT) this.goIrons();
+      else if (this.dist >= this.need) {
         this.phase = 'done';
         this.audio.weaveDone();
         this.scene.flash('#ffe9b8', 0.3);
@@ -289,6 +306,12 @@ export class SailPanel {
   }
 
   onAction() {
+    if (this.phase === 'irons') {
+      // Bearing away is one motion: the same reach, the same hands, from the top.
+      const done = this.onDone;
+      if (done) this.open(done);
+      return;
+    }
     if (this.phase === 'done') {
       this.root.hidden = true;
       const done = this.onDone;
@@ -297,17 +320,40 @@ export class SailPanel {
     }
   }
 
+  /** The sail sits inside the wind's good zone, so the telltale streams. */
+  private isTrim(): boolean {
+    return this.phase !== 'irons' && Math.abs(this.sail - this.wind) < 0.11;
+  }
+
+  /**
+   * The one fail: a sail left flogging long enough that the bow rounds up and
+   * the ngalawa stops answering. Costs the reach, costs nothing else. Bakari
+   * has done it more times than you have been on a boat.
+   */
+  private goIrons() {
+    this.phase = 'irons';
+    this.ironsT = this.scene.time;
+    this.audio.blip();
+    this.scene.flash('#dfe9ee', 0.18);
+    if (!calm()) this.scene.thump(2.5, 0.05);
+    this.hint =
+      'In irons. The bow swings into the wind, the sail slats, and the ngalawa simply stops. ' +
+      'Bakari laughs. "Every sailor sleeps here once, mgeni." Space to bear away and take the reach again.';
+  }
+
   // ------------------------------------------------------------ painted sea
 
   /** Eases the rig, spawns spray and wake, and thumps the boom across tacks. */
   private animate(dt: number) {
-    const trimmed = Math.abs(this.sail - this.wind) < 0.11;
-    const sp = this.phase === 'done' ? 0.4 : trimmed ? 1 : 0.25;
+    const trimmed = this.isTrim();
+    const irons = this.phase === 'irons';
+    // In irons the reef stops sliding past, which is how a stop looks from aboard.
+    const sp = irons ? -0.28 : this.phase === 'done' ? 0.4 : trimmed ? 1 : 0.25;
     this.scroll += dt * (26 + sp * 84);
     this.sailVis += (visAng(this.sail) - this.sailVis) * Math.min(1, dt * 5);
-    this.heelVis += ((trimmed ? 0.05 : 0.012) - this.heelVis) * Math.min(1, dt * 2.5);
-    this.billow += ((trimmed ? 20 : 7) - this.billow) * Math.min(1, dt * 4);
-    this.luff += ((trimmed ? 1.1 : 6) - this.luff) * Math.min(1, dt * 4);
+    this.heelVis += ((trimmed ? 0.05 : irons ? -0.01 : 0.012) - this.heelVis) * Math.min(1, dt * 2.5);
+    this.billow += ((trimmed ? 20 : irons ? 2 : 7) - this.billow) * Math.min(1, dt * 4);
+    this.luff += ((trimmed ? 1.1 : irons ? 9 : 6) - this.luff) * Math.min(1, dt * 4);
     const side = Math.sign(this.sail - this.wind) || this.side;
     if (side !== this.side && this.side !== 0 && this.phase === 'sail') {
       // The yard swings across and lands on the new tack with a knock.
@@ -396,11 +442,32 @@ export class SailPanel {
     this.paintBoat(g, t);
     waveBand(g, W, 302, 4, 70, t * 1.8 + 3, '#a8e0da', 0.22, 5);
     this.paintCompass(g);
+    if (this.phase === 'irons') this.paintIrons(g, t, W);
+  }
+
+  /** A paper strip that names the stop, so the screen says what the boat says. */
+  private paintIrons(g: CanvasRenderingContext2D, t: number, W: number) {
+    const k = easeOutCubic(Math.min(1, (t - this.ironsT) / 0.4));
+    const w = 214;
+    const x = (W - w) / 2;
+    const y = 12 + (1 - k) * -14;
+    g.globalAlpha = 0.94 * k;
+    rr(g, x, y, w, 32, 5, '#f2e6d0');
+    g.strokeStyle = 'rgba(43,33,24,0.45)';
+    g.lineWidth = 1.5;
+    g.beginPath();
+    g.roundRect(x, y, w, 32, 5);
+    g.stroke();
+    g.fillStyle = '#2b2118';
+    g.font = '600 13px Literata, Georgia, serif';
+    g.textAlign = 'center';
+    g.fillText('in irons · Space to bear away', W / 2, y + 21);
+    g.globalAlpha = 1;
   }
 
   private paintBoat(g: CanvasRenderingContext2D, t: number) {
     const pose = this.boatPose();
-    const trimmed = Math.abs(this.sail - this.wind) < 0.11;
+    const trimmed = this.isTrim();
     g.save();
     g.translate(pose.x, pose.y);
     g.rotate(pose.rot);
@@ -638,6 +705,11 @@ export class SailPanel {
  * bowl; you build it from the components ringed around the vat, each add
  * landing with a visible splash. There is no wrong bowl. There are only bowls
  * Zuberi gets to describe afterward, which is his favorite part of the job.
+ *
+ * Deliberately unfailable. The verb here is feeding a hungry stranger, and
+ * Zuberi's own law is that no bowl is wrong; a fail state would call a man a
+ * liar in his own corner. The one correction, serving a nearly empty bowl, is
+ * a hand over the rim and a joke, and it costs nothing but the moment.
  */
 
 type UrojoItem = { name: string; color: string; splash: string };

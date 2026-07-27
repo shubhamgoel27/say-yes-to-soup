@@ -26,16 +26,35 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c11.cook.start',
       doneNode: 'c11.cook.finish',
+      title: "Kamla Chachi's tawa",
+      howTo: [
+        'Space stops the rolling pin. Catch it in the middle of the meter and the disc comes out even.',
+        'Cup the stuffing, seal it, roll again. Then the tawa: Space on the bright band, when the ghee starts to sing.',
+        'Burn one and Kamla laughs and slaps down fresh dough. The burnt one goes to Sheru, who is always available.',
+      ],
       make: (root, audio) => new ParanthaPanel(root, audio as AudioBus),
     },
     {
       flag: 'c11.kite.start',
       doneNode: 'c11.kite.flown',
+      title: 'The patang',
+      howTo: [
+        'Space launches her when the breeze leans in. After that, Up is kheench, the pull; Down is dheel, the slack.',
+        'Kheench while the line is taut and steady. When a gust shoves, give dheel and let her climb it like a stair.',
+        'When pigeons cross, Down. Always. The sky is theirs first, and Yusuf is watching.',
+        'If your dor goes, it goes. Yusuf unwinds another off the charkhi: paper is cheap, the wind is free.',
+      ],
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, false),
     },
     {
       flag: 'c11.duel.start',
       doneNode: 'c11.duel.won',
+      title: 'The sawan tournament',
+      howTo: [
+        'Three rivals, a rising wind, and a storm queueing behind the fort. The same two hands: kheench and dheel.',
+        'The last one flies in the storm front. Give dheel early and often; pull into a shove and your own line frays.',
+        'A cut costs you that round and nothing else. Yusuf hands you the next kite and the roofs shout you back up.',
+      ],
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, true),
     },
   ],

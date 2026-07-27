@@ -20,6 +20,14 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art
  * Both panels paint real scenes now: the tawa close-up in the gali, and the
  * rooftop sky at pigeon hour. The logic underneath is untouched, save one
  * repair: the second roll used to dead-end and never reach the tawa.
+ *
+ * Both also know how to fail, warmly. Ignore the tawa twice on one parantha
+ * and it burns: Kamla is delighted, Sheru is delighted, and fresh dough
+ * lands in your palm on the next press. Let the rival's line saw yours three
+ * times and he takes your dor: your patang tumbles away over the rooftops,
+ * the flock scatters, and Yusuf unwinds another off the charkhi. Kaghaz
+ * sasta hai, hawa muft. Neither failure ever costs more than the round, and
+ * neither can end the panel; only finishing does.
  */
 
 const linear = (t: number) => t;
@@ -125,9 +133,20 @@ const OOPS_ROLL = [
   'She takes your hands in hers and rolls one slow circle. "Feel that? Even. The pin listens to the palms."',
 ];
 
-const OOPS_FLIP = [
-  'Early. The underside is pale as a clerk. "Listen to the tawa, beta. It says when."',
-  'Late. A dark scorch ring. Kamla flips it to the customer side down without looking.',
+/** Three ways to miss the singing band, none of them fatal. */
+const OOPS_EARLY = 'Early. The underside is pale as a clerk. "Listen to the tawa, beta. It says when."';
+const OOPS_LATE = 'A beat late; the palta lifts a dark ring. Kamla turns that side toward herself and says nothing about it.';
+const OOPS_IGNORED = 'Late. A dark scorch ring, and a smell with an opinion. One more like that and it is Sheru\'s dinner.';
+
+/**
+ * The burn. Kamla has waited all evening for this and it has made her
+ * evening; the gali dog has waited all his life. Nothing is lost but the
+ * parantha, and the parantha was never the point.
+ */
+const BURNT_LINES = [
+  'Black as a bad decision. Kamla laughs from the belly, the first real laugh she has given you, and scrapes it off with two strokes.',
+  'Burnt. Kamla holds it up to the lane like evidence. "See? A cook. Only cooks burn things; eaters just complain."',
+  'Charcoal. She is enjoying this enormously. "Ghee is cheap, beta. Atta is cheap. Learning is the only expensive thing here."',
 ];
 
 /** Blister freckles in unit-disc coords, revealed as a side browns. */
@@ -409,7 +428,101 @@ function drawParantha(
   g.stroke();
 }
 
-type PPhase = 'roll' | 'stuff' | 'tawa' | 'served' | 'done';
+const SHERU = { coat: '#c08a4e', lit: '#d9a86a', line: '#4a2f1c' } as const;
+
+/** Body and head as one silhouette, so the outline pass is the same shapes. */
+function sheruBody(g: CanvasRenderingContext2D, i: number, color: string) {
+  rr(g, -46 - i, -64 - i, 58 + 2 * i, 68 + 2 * i, 22 + i, color);
+  rr(g, -10 - i, -76 - i, 38 + 2 * i, 52 + 2 * i, 16 + i, color);
+  rr(g, 8 - i, -58 - i, 20 + 2 * i, 60 + 2 * i, 9 + i, color);
+  rr(g, 2 - i, -12 - i, 32 + 2 * i, 12 + 2 * i, 6 + i, color);
+}
+function sheruHead(g: CanvasRenderingContext2D, i: number, color: string, caught: boolean) {
+  // Ears first: they sit behind the skull in the silhouette.
+  g.fillStyle = color;
+  g.beginPath();
+  g.moveTo(-8 - i, -16);
+  g.lineTo(-2, -48 - i - (caught ? 5 : 0));
+  g.lineTo(10 + i, -17);
+  g.closePath();
+  g.fill();
+  g.beginPath();
+  g.moveTo(-12, -18 - i);
+  g.quadraticCurveTo(-34 - i, -14, -27 - i, 6 + i);
+  g.quadraticCurveTo(-14, -4, -6, -12);
+  g.closePath();
+  g.fill();
+  rr(g, -20 - i, -22 - i, 44 + 2 * i, 36 + 2 * i, 14 + i, color);
+  rr(g, 14 - i, -10 - i, 32 + 2 * i, 20 + 2 * i, 8 + i, color);
+}
+
+/**
+ * Sheru, the gali's dog: brown, one standing ear, one clear conscience. He
+ * sits side-on at the front edge of the stall, most of him below the frame,
+ * facing the tawa with the patience of an employee. He is drawn large on
+ * purpose; a small dog in the corner would read as a prop, and he is not.
+ */
+function drawSheru(
+  g: CanvasRenderingContext2D,
+  x: number,
+  ground: number,
+  time: number,
+  caught: boolean,
+  rise: number,
+) {
+  const S = 1.32;
+  const wag = Math.sin(time * (caught ? 17 : 11));
+  const tilt = caught ? -0.26 : -0.05 + Math.sin(time * 2.2) * 0.035;
+
+  softShadow(g, x + 4, ground - 2, 52, 12, 0.34);
+  g.save();
+  g.translate(x, ground);
+  g.scale(S, S);
+  g.globalAlpha = Math.min(1, rise * 2.5);
+
+  // Tail, sweeping the dust behind him at a rate set by the ghee.
+  for (const [w, c] of [[13, SHERU.line], [7, SHERU.coat]] as const) {
+    g.strokeStyle = c;
+    g.lineWidth = w;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(-40, -34);
+    g.quadraticCurveTo(-66, -48, -58 + wag * 15, -70 + Math.cos(time * 11) * 8);
+    g.stroke();
+  }
+  g.lineCap = 'butt';
+
+  // Outline pass, then the coat: a street dog needs a hard edge to read
+  // against a counter that is exactly his color.
+  sheruBody(g, 3, SHERU.line);
+  sheruBody(g, 0, SHERU.coat);
+  rr(g, -42, -60, 44, 26, 15, SHERU.lit);
+  rr(g, 2, -12, 32, 12, 6, SHERU.lit);
+
+  g.save();
+  g.translate(16, -74);
+  g.rotate(tilt);
+  sheruHead(g, 3, SHERU.line, caught);
+  sheruHead(g, 0, SHERU.coat, caught);
+  rr(g, 14, -10, 32, 20, 8, SHERU.lit);
+  rr(g, -16, -20, 28, 11, 7, SHERU.lit);
+  // Nose, and the one eye you can see, which is watching the tawa.
+  rr(g, 38, -8, 12, 12, 5, '#3d2a1e');
+  dot(g, 44, -3, 2.6, '#2b2118');
+  dot(g, 0, -10, 3.4, '#2b2118');
+  dot(g, -1, -11.4, 1.2, '#f6ecc8');
+  if (caught) {
+    // The parantha is gone. A tongue appears, briefly, in gratitude.
+    rr(g, 30, 6, 18, 9, 4, '#c4626a');
+    dot(g, 52, 8 + Math.sin(time * 6) * 2, 2, '#3d2a1e');
+  }
+  g.restore();
+
+  g.globalAlpha = 1;
+  g.restore();
+}
+
+type PPhase = 'roll' | 'stuff' | 'tawa' | 'burnt' | 'served' | 'done';
 
 export class ParanthaPanel {
   private phase: PPhase = 'roll';
@@ -419,6 +532,9 @@ export class ParanthaPanel {
   private flipsDone = 0;
   private sizzle = 0; // 0..1, flip window near the top
   private rolled = 0;
+  /** Missed singing windows on THIS parantha. The second one burns it. */
+  private overheld = 0;
+  private burnt = 0; // burnt paranthas, for the caption's honest arithmetic
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -437,6 +553,8 @@ export class ParanthaPanel {
   private steamT = 0;
   private flourT = 0;
   private singT = 0;
+  private burnT = 0; // seconds since the burn, drives the toss and the dog
+  private burntLine = 0;
 
   constructor(
     private root: HTMLElement,
@@ -449,23 +567,13 @@ export class ParanthaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
-    this.phase = 'roll';
     this.course = 0;
-    this.meter = 0;
-    this.dir = 1;
-    this.flipsDone = 0;
-    this.sizzle = 0;
-    this.rolled = 0;
-    this.hint = `${COURSES[0]?.intro} Space stops the pin when the disc is even: the middle of the meter.`;
-    this.root.hidden = false;
-    this.flipA = 1;
-    this.landSq = 1;
-    this.wobA = 1;
-    this.brownUp = 0;
-    this.brownDown = 0;
-    this.slideA = 1;
+    this.burnt = 0;
     this.stacked = 0;
+    this.slideA = 1;
     this.servedT = 0;
+    this.freshDough(`${COURSES[0]?.intro} Space stops the pin when the disc is even: the middle of the meter.`);
+    this.root.hidden = false;
     if (!this.scene) this.scene = new Scene();
     this.scene.restart();
     this.setHint = mountScene(this.root, "Kamla Chachi's Tawa", this.scene).setHint;
@@ -492,17 +600,26 @@ export class ParanthaPanel {
       // The sizzle climbs; flip inside the singing window near the top.
       this.sizzle = Math.min(1, this.sizzle + dt * (0.34 + this.course * 0.1));
       if (this.sizzle >= 1) {
-        // Held too long: the tawa complains, the window resets, no funeral.
+        // Held too long. Once is a scorch ring and a warning; twice on the
+        // same parantha and the tawa has made its decision without you.
         this.sizzle = 0;
-        this.audio.bump();
-        this.hint = OOPS_FLIP[1] as string;
-        this.brownDown = Math.min(1, this.brownDown + 0.3);
+        this.overheld++;
         const s = this.scene;
-        if (s) {
-          if (!calmMotion()) s.thump(2, 0.02);
-          for (let i = 0; i < 3; i++) s.waft(TAWA.x - 20 + i * 22, TAWA.y - 24, 'rgba(96,86,78,0.5)', 8);
+        if (this.overheld >= 2) {
+          this.burnIt();
+        } else {
+          this.audio.bump();
+          this.hint = OOPS_IGNORED;
+          this.brownDown = Math.min(1, this.brownDown + 0.3);
+          if (s) {
+            if (!calmMotion()) s.thump(2, 0.02);
+            for (let i = 0; i < 3; i++) s.waft(TAWA.x - 20 + i * 22, TAWA.y - 24, 'rgba(96,86,78,0.5)', 8);
+          }
         }
       }
+      this.render();
+    } else if (this.phase === 'burnt') {
+      this.burnT += dt;
       this.render();
     }
     const s = this.scene;
@@ -526,6 +643,18 @@ export class ParanthaPanel {
     const c = COURSES[Math.min(this.course, COURSES.length - 1)];
     if (!c) return;
     const s = this.scene;
+    if (this.phase === 'burnt') {
+      // Fresh atta, same parantha, no ledger kept. Nothing here can be lost
+      // except a parantha, and a parantha was never the point.
+      this.audio.blip();
+      this.freshDough(`Fresh atta in your palm and the same ${c.name} to make. Space stops the pin when the disc is even.`);
+      if (s) {
+        s.burst(CHAKLA.x, CHAKLA.y - 8, { n: calmMotion() ? 4 : 11, color: 'rgba(246,238,216,0.85)', speed: 60, grav: 70, size: 2.6, life: 0.5 });
+        if (!calmMotion()) s.thump(2, 0.02);
+      }
+      this.render();
+      return;
+    }
     if (this.phase === 'roll') {
       const mid = Math.abs(this.meter - 0.5);
       if (mid <= c.zone / 2) {
@@ -592,54 +721,31 @@ export class ParanthaPanel {
     }
     if (this.phase === 'roll' as PPhase) return;
     if (this.phase === 'tawa') {
-      if (this.sizzle >= 0.62 && this.sizzle <= 0.88) {
-        this.flipsDone++;
+      const onTheWord = this.sizzle >= 0.62 && this.sizzle <= 0.88;
+      const early = this.sizzle < 0.62;
+      this.sizzle = 0;
+      if (onTheWord) {
         this.audio.slosh();
-        this.sizzle = 0;
         this.startFlip();
-        if (this.flipsDone >= c.flips) {
-          this.audio.weaveNote(this.course + 2);
-          this.course++;
-          const next = COURSES[this.course];
-          if (next) {
-            this.hint = `Golden, blistered, correct. ${next.intro} Back to the pin: Space stops it even.`;
-            this.phase = 'roll';
-            this.rolled = 0;
-            this.meter = 0;
-            this.dir = 1;
-            if (s) {
-              s.flash('#ffe9c0', 0.25);
-              this.slideA = 0;
-              s.tween(0, 1, 0.75, easeInOutSine, (v) => (this.slideA = v), () => {
-                this.stacked++;
-                if (!calmMotion()) s.thump(2, 0.02);
-                s.burst(STACK.x, STACK.y - 14, { n: 6, color: '#ffd98a', kind: 'spark', speed: 70, grav: 60, size: 2, life: 0.45 });
-              });
-            }
-            this.brownUp = 0;
-            this.brownDown = 0;
-          } else {
-            this.phase = 'served';
-            this.hint =
-              'The rabri parantha goes to the porter in the corner. He takes one bite and stops talking entirely. Kamla nods once. Press Space.';
-            this.servedT = 0;
-            if (s) {
-              s.flash('#ffe9c0', 0.3);
-              s.burst(320, 200, { n: calmMotion() ? 8 : 20, color: '#ffd98a', kind: 'spark', speed: 130, grav: 90, size: 2.4, life: 0.8 });
-            }
-          }
-        } else {
-          this.hint = `Flipped on the word. ${c.flips - this.flipsDone} more; the tawa will tell you when.`;
-        }
-      } else if (this.sizzle < 0.62) {
+        this.landFlip(c, false);
+      } else {
+        // Off the band on either side. Early leaves it pale and unturned;
+        // past the band it turns anyway with a dark ring, because a hand
+        // that acted is always answered. Only ignoring the tawa can burn.
         this.audio.bump();
-        this.sizzle = 0;
-        this.hint = OOPS_FLIP[0] as string;
+        this.hint = early ? OOPS_EARLY : OOPS_LATE;
         if (s) {
           if (!calmMotion()) s.thump(2, 0.02);
-          this.landSq = 0.85;
-          s.tween(0.85, 1, 0.3, easeOutBack, (v) => (this.landSq = v));
           s.burst(TAWA.x, TAWA.y - 6, { n: 4, color: 'rgba(255,226,160,0.7)', speed: 60, grav: 100, size: 2, life: 0.4 });
+          if (early) {
+            this.landSq = 0.85;
+            s.tween(0.85, 1, 0.3, easeOutBack, (v) => (this.landSq = v));
+          }
+        }
+        if (!early) {
+          this.brownDown = Math.min(1, this.brownDown + 0.22);
+          this.startFlip();
+          this.landFlip(c, true);
         }
       }
       this.render();
@@ -657,6 +763,94 @@ export class ParanthaPanel {
     const done = this.onDone;
     this.onDone = null;
     done?.();
+  }
+
+  /**
+   * Back to the pin with one parantha's worth of state cleared. Used by
+   * open() and by the retry after a burn, so a fresh start is a fresh start
+   * either way: the courses already plated stay plated.
+   */
+  private freshDough(hint: string) {
+    this.phase = 'roll';
+    this.meter = 0;
+    this.dir = 1;
+    this.rolled = 0;
+    this.flipsDone = 0;
+    this.sizzle = 0;
+    this.overheld = 0;
+    this.burnT = 0;
+    this.flipA = 1;
+    this.landSq = 1;
+    this.wobA = 1;
+    this.brownUp = 0;
+    this.brownDown = 0;
+    this.hint = hint;
+  }
+
+  /**
+   * The burn. Smoke, a laugh, and a dog with excellent timing. The story
+   * cannot be lost here; only this one parantha can, and Sheru disagrees
+   * that it was lost at all.
+   */
+  private burnIt() {
+    this.phase = 'burnt';
+    this.burnT = 0;
+    this.burnt++;
+    this.burntLine = (this.burntLine + 1) % BURNT_LINES.length;
+    this.brownUp = 1;
+    this.brownDown = 1;
+    this.audio.bump();
+    this.hint = `${BURNT_LINES[this.burntLine]} Sheru is already sitting, ears forward, being extremely good. Press Space for fresh atta.`;
+    const s = this.scene;
+    if (!s) return;
+    if (!calmMotion()) s.thump(5, 0.05);
+    for (let i = 0; i < 6; i++) s.waft(TAWA.x - 46 + i * 18, TAWA.y - 18, 'rgba(64,58,54,0.6)', 11);
+    s.burst(TAWA.x, TAWA.y - 6, { n: calmMotion() ? 5 : 13, color: 'rgba(58,44,34,0.8)', speed: 90, grav: -30, size: 3.4, life: 0.9 });
+  }
+
+  /**
+   * One turn of the parantha counted: the next flip, the next course, or the
+   * plate. Shared by the on-the-word flip and the late one, so a late hand
+   * still moves the dish forward and only the browning remembers.
+   */
+  private landFlip(c: Course, late: boolean) {
+    const s = this.scene;
+    this.flipsDone++;
+    if (this.flipsDone < c.flips) {
+      if (!late) this.hint = `Flipped on the word. ${c.flips - this.flipsDone} more; the tawa will tell you when.`;
+      return;
+    }
+    this.audio.weaveNote(this.course + 2);
+    this.course++;
+    const next = COURSES[this.course];
+    if (next) {
+      this.hint = `${late ? 'It goes out anyway; nobody in this gali has ever sent a parantha back.' : 'Golden, blistered, correct.'} ${next.intro} Back to the pin: Space stops it even.`;
+      this.phase = 'roll';
+      this.rolled = 0;
+      this.overheld = 0;
+      this.meter = 0;
+      this.dir = 1;
+      this.brownUp = 0;
+      this.brownDown = 0;
+      if (s) {
+        s.flash('#ffe9c0', 0.25);
+        this.slideA = 0;
+        s.tween(0, 1, 0.75, easeInOutSine, (v) => (this.slideA = v), () => {
+          this.stacked++;
+          if (!calmMotion()) s.thump(2, 0.02);
+          s.burst(STACK.x, STACK.y - 14, { n: 6, color: '#ffd98a', kind: 'spark', speed: 70, grav: 60, size: 2, life: 0.45 });
+        });
+      }
+      return;
+    }
+    this.phase = 'served';
+    this.hint =
+      'The rabri parantha goes to the porter in the corner. He takes one bite and stops talking entirely. Kamla nods once. Press Space.';
+    this.servedT = 0;
+    if (s) {
+      s.flash('#ffe9c0', 0.3);
+      s.burst(320, 200, { n: calmMotion() ? 8 : 20, color: '#ffd98a', kind: 'spark', speed: 130, grav: 90, size: 2.4, life: 0.8 });
+    }
   }
 
   /** The flip: a full arc with rotation, ghee sparkle burst on landing. */
@@ -685,6 +879,13 @@ export class ParanthaPanel {
       this.steamT = heavy ? 0.3 : 0.6;
       s.waft(TAWA.x - 40 + Math.random() * 80, TAWA.y - 22);
     }
+    if (this.phase === 'burnt' && this.steamT <= 0) {
+      // Black smoke, plentiful, entirely unembarrassed. Two plumes a beat,
+      // because one is not a smell the whole gali can read from its doorways.
+      this.steamT = heavy ? 0.08 : 0.2;
+      s.waft(TAWA.x - 40 + Math.random() * 80, TAWA.y - 16, 'rgba(58,50,46,0.6)', 13);
+      s.waft(TAWA.x - 24 + Math.random() * 48, TAWA.y - 34, 'rgba(88,80,74,0.45)', 9);
+    }
     if ((this.phase === 'served' || this.phase === 'done') && this.steamT <= 0) {
       this.steamT = heavy ? 0.25 : 0.5;
       s.waft(300 + Math.random() * 60, 168, 'rgba(255,252,244,0.4)', 8);
@@ -711,8 +912,13 @@ export class ParanthaPanel {
       count = `${c?.name} &middot; ${c?.stuffing}`;
     } else if (this.phase === 'tawa') {
       count = `${c?.name} &middot; flip ${this.flipsDone + 1} of ${c?.flips} &middot; listen for the singing band`;
+    } else if (this.phase === 'burnt') {
+      count = `${c?.name} &middot; one for the dog &middot; Space for fresh atta`;
     } else {
       count = 'the plate goes out';
+    }
+    if (this.burnt > 0 && this.phase !== 'burnt') {
+      count += ` &middot; Sheru fed ${this.burnt}`;
     }
     return `${this.hint}<div class="c-count">${count}</div>`;
   }
@@ -757,6 +963,7 @@ export class ParanthaPanel {
 
     if (this.phase === 'roll' || this.phase === 'stuff') this.paintBoard(g, t);
     if (this.phase === 'tawa' || this.phase === 'roll' || this.phase === 'stuff') this.paintTawa(g, t);
+    if (this.phase === 'burnt') this.paintBurnt(g, t);
     if (this.slideA < 1) this.paintSlide(g);
     this.paintStack(g);
     if (this.phase === 'served' || this.phase === 'done') this.paintServed(g, t);
@@ -929,6 +1136,60 @@ export class ParanthaPanel {
     dot(g, tx, ty, 4, inWin ? '#fff3d0' : '#ffd98a');
   }
 
+  /**
+   * The burn, staged in three beats. The disc sits on the iron gone black,
+   * smoking honestly. Sheru rises into frame at the counter's front edge,
+   * having heard the smell from two lanes away. Then the palta lifts the ruin
+   * off the tawa, it arcs down, and it never touches the ground.
+   */
+  private paintBurnt(g: CanvasRenderingContext2D, t: number) {
+    const bt = this.burnT;
+    // The tawa keeps its heat; the ghee sheet dims under the smoke.
+    const sh = gheeSheet();
+    g.globalAlpha = 0.09 + Math.sin(t * 2.1) * 0.03;
+    g.drawImage(sh, TAWA.x - 140, TAWA.y - 65);
+    g.globalAlpha = 1;
+
+    // Sheru first, so the parantha lands in front of his muzzle, not behind.
+    const rise = easeOutCubic(Math.min(1, bt / 0.55));
+    const dogX = 132;
+    const dogGround = 392 - rise * 34;
+    const toss = Math.max(0, Math.min(1, (bt - 1) / 0.8));
+    const caught = toss >= 1;
+    // The muzzle tip, in canvas space: where the parantha stops existing.
+    const mouth: [number, number] = [dogX + 66, dogGround - 66];
+    drawSheru(g, dogX, dogGround, t, caught, rise);
+
+    // The burnt disc: on the iron, then an arc into a waiting mouth.
+    if (!caught) {
+      const bx = TAWA.x + (mouth[0] - TAWA.x) * toss;
+      const by = TAWA.y - 4 + (mouth[1] - (TAWA.y - 4)) * toss - Math.sin(toss * Math.PI) * 74;
+      if (toss === 0) oval(g, TAWA.x, TAWA.y + 4, 58, 25, 'rgba(12,8,6,0.45)');
+      g.save();
+      g.translate(bx, by);
+      g.rotate(toss * 2.4);
+      const rx = 56 - toss * 20;
+      oval(g, 0, 0, rx, rx * 0.5, '#2a2018');
+      oval(g, 0, 0, rx * 0.9, rx * 0.45, '#160f0c');
+      // Char scale: cracked, dull, and holding two last embers.
+      const rng = new Rng(909);
+      for (let i = 0; i < 16; i++) {
+        const a = rng.next() * Math.PI * 2;
+        const rad = Math.sqrt(rng.next()) * 0.85;
+        oval(g, Math.cos(a) * rad * rx, Math.sin(a) * rad * rx * 0.5, 2 + rng.next() * 4, 1.4, '#0a0806');
+      }
+      const ember = 0.4 + Math.sin(t * 7) * 0.3;
+      dot(g, -rx * 0.3, rx * 0.12, 1.9, `rgba(232,124,52,${ember})`);
+      dot(g, rx * 0.22, -rx * 0.1, 1.4, `rgba(232,144,62,${ember * 0.7})`);
+      g.restore();
+    }
+
+    // The smoke column, and the gali reading it from three doorways away.
+    g.globalAlpha = Math.min(0.42, bt * 0.6);
+    stampGlow(g, TAWA.x - 20, 130, 170, 'rgba(84,76,70,1)', 0.55);
+    g.globalAlpha = 1;
+  }
+
   /** A finished parantha arcs from the tawa to the waiting thali. */
   private paintSlide(g: CanvasRenderingContext2D) {
     const a = this.slideA;
@@ -1002,7 +1263,24 @@ export class ParanthaPanel {
 // ------------------------------------------------------------ the patang
 
 type Wind = 'steady' | 'gust' | 'birds';
-type KPhase = 'launch' | 'duel' | 'between' | 'storm' | 'done';
+type KPhase = 'launch' | 'duel' | 'cut' | 'between' | 'storm' | 'done';
+
+/**
+ * Losing your own dor. Three sawings and the rival takes it; the roofs shout
+ * the same two words they shout for anybody, and Ustad Yusuf, who has been
+ * cut more times than anyone alive, reaches for the charkhi without comment.
+ */
+const CUT_LINES = [
+  'WOH KATA. This time it is yours. The dor goes slack in your fist like a sentence someone finished for you.',
+  'The saw catches, sings once, and stops. Yours. Somewhere across the kucha a boy is already running for the rooftops.',
+  'Gone. Your patang lifts free, turns over twice, and goes to be somebody else\'s kingdom two lanes east.',
+];
+
+const YUSUF_AFTER_CUT = [
+  'Yusuf spits a seed over the parapet and unwinds another. "Kaghaz sasta hai, hawa muft. Paper is cheap, the wind is free."',
+  'Yusuf is already tying the next one on. "Every flyer on this roof has fed that sky. You are on the register now. Again."',
+  'Yusuf hands you a fresh patang, moon patch and all. "The wind took a tax. It always does. Pay it and keep flying."',
+];
 
 type Rival = { name: string; need: number; line: string };
 
@@ -1327,6 +1605,9 @@ export class PatangPanel {
   private cuts = 0;
   private altitude = 0.3;
   private blessed = 0; // pigeon crossings honored
+  /** How far the rival's line has sawed through YOURS. Three and it goes. */
+  private selfFray = 0;
+  private lost = 0; // dors given to the sky, for the caption's honesty
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -1353,6 +1634,13 @@ export class PatangPanel {
   private cutRot = 0;
   private cutPaper = '#332b36';
   private cutPatch = '#8a7f98';
+  /** A beaten rival spirals into the lane; your own kite sails out. */
+  private cutSink = 26;
+  private cutDrift = 110;
+  private bokataMine = false;
+  private scatterT = 0;
+  private scatterX = 0;
+  private scatterY = 0;
 
   constructor(
     private root: HTMLElement,
@@ -1383,6 +1671,10 @@ export class PatangPanel {
     this.cuts = 0;
     this.altitude = 0.3;
     this.blessed = 0;
+    this.selfFray = 0;
+    this.lost = 0;
+    this.bokataMine = false;
+    this.scatterT = 0;
     this.hint = this.tournament
       ? 'The mohalla is on its roofs. Yusuf hands you the charkhi: "Fly for the kucha. Space when the breeze leans in."'
       : 'The patang lies on your palm like a letter to the sky. Space when the breeze leans in, and up she goes.';
@@ -1412,7 +1704,9 @@ export class PatangPanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
-    if (this.phase !== 'done' && this.phase !== 'between') {
+    // While the dor is gone there is no weather to answer: the roof simply
+    // watches your patang leave, and waits for you to take the next one.
+    if (this.phase !== 'done' && this.phase !== 'between' && this.phase !== 'cut') {
       this.windT += dt;
       if (this.phase !== 'launch' && this.windT >= this.windDur) {
         this.windT = 0;
@@ -1457,10 +1751,11 @@ export class PatangPanel {
     this.sawGlowT = Math.max(0, this.sawGlowT - dt);
     this.fraySelfT = Math.max(0, this.fraySelfT - dt);
     this.bokataT = Math.max(0, this.bokataT - dt);
+    this.scatterT = Math.max(0, this.scatterT - dt);
     if (this.cutT < 99) {
       // The cut kite is nobody's now; the wind does the flying.
-      this.cutX += (110 + this.gustK * 70) * dt;
-      this.cutY += (-58 * Math.exp(-2 * this.cutT) + 26 + 22 * Math.sin(this.cutT * 2.6)) * dt;
+      this.cutX += (this.cutDrift + this.gustK * 70) * dt;
+      this.cutY += (-58 * Math.exp(-2 * this.cutT) + this.cutSink + 22 * Math.sin(this.cutT * 2.6)) * dt;
       this.cutRot += (2.1 + Math.sin(this.cutT * 3.2) * 1.1) * dt;
       this.cutT += dt;
     }
@@ -1521,13 +1816,13 @@ export class PatangPanel {
       } else if (this.wind === 'gust') {
         this.progress = Math.max(0, this.progress - 1);
         this.altitude = Math.max(0.12, this.altitude - 0.1);
-        this.audio.bump();
-        this.hint = 'You pulled into the gust; the patang staggers sideways. "Dheel!" barks Yusuf. "The sky is bigger than you!"';
         if (s) {
           this.kvx += 210;
           this.kvy += 60;
           if (!calmMotion()) s.thump(3, 0.03);
         }
+        // Pulling into a shove strains your own cotton, not his.
+        this.fray('You pulled into the gust; the patang staggers sideways. "Dheel!" barks Yusuf. "The sky is bigger than you!"');
       } else {
         // Pulling through pigeons: the one real sin, and even it is warm.
         this.progress = Math.max(0, this.progress - 2);
@@ -1557,15 +1852,108 @@ export class PatangPanel {
         }
       } else {
         this.progress = Math.max(0, this.progress - 1);
-        this.audio.blip();
-        this.hint = 'Slack in steady air; the rival line saws YOU. You feel a fray start, and pull back just in time.';
-        if (s) {
-          this.fraySelfT = 0.7;
-          this.kvy += 70;
-        }
+        if (s) this.kvy += 70;
+        // Slack in steady air is an invitation, and he accepts it every time.
+        this.fray('Slack in steady air, and the rival line saws YOU. His dor takes the offer without thanking you for it.');
       }
     }
     this.render();
+  }
+
+  /**
+   * One more pass of his line across yours. Twice is a warning you can feel
+   * through the cotton; the third takes the kite. Nothing else is at stake:
+   * the round resets, the tournament does not, and the story never can.
+   */
+  private fray(line: string) {
+    this.selfFray++;
+    if (this.selfFray >= 3) {
+      this.getCut(line);
+      return;
+    }
+    this.audio.bump();
+    this.fraySelfT = 1;
+    const warn = this.selfFray === 1
+      ? 'A thin fray opens where the lines kiss. You feel it arrive in your fingers.'
+      : 'The dor sings a wrong, thin note. Yusuf hears it from six feet away and says nothing, which is worse.';
+    this.hint = `${line} ${warn}`;
+    const s = this.scene;
+    if (!s) return;
+    const cross = this.crossing();
+    if (cross) {
+      s.burst(cross[0], cross[1], { n: calmMotion() ? 3 : 6, color: '#ffb070', kind: 'spark', speed: 80, grav: 120, size: 1.8, life: 0.45 });
+    }
+  }
+
+  /**
+   * The cut, and it is yours. The kite goes over the rooftops with nobody
+   * holding it, the flock comes off the coops in one sheet, and the charkhi
+   * is already turning in an old man's hands. This is the best thing that
+   * can go wrong on this roof, which is why it is allowed to.
+   */
+  private getCut(line: string) {
+    const s = this.scene;
+    this.lost++;
+    this.selfFray = 0;
+    this.progress = 0;
+    this.phase = 'cut';
+    this.wind = 'steady';
+    this.fraySelfT = 0;
+    this.audio.bump();
+    const cry = CUT_LINES[(this.lost - 1) % CUT_LINES.length];
+    const ustad = YUSUF_AFTER_CUT[(this.lost - 1) % YUSUF_AFTER_CUT.length];
+    this.hint = `${line} ${cry} ${ustad} Press Space and take it up again.`;
+    if (!s) return;
+    s.flash('#e2d8e8', 0.28);
+    if (!calmMotion()) s.thump(8, 0.08);
+    // Your patang becomes the loose one: same machinery, your colors.
+    this.cutT = 0;
+    this.cutX = this.kx;
+    this.cutY = this.ky;
+    this.cutRot = 0;
+    this.cutPaper = '#c1512f';
+    this.cutPatch = '#f2e6d0';
+    // Yours does not spiral into a lane. It keeps its height and goes east,
+    // over roofs you have never stood on, to be somebody else's.
+    this.cutSink = 9;
+    this.cutDrift = 132;
+    this.bokataT = 2.1;
+    this.bokataMine = true;
+    // Every coop on the block empties at once. That sound is the whole scene.
+    this.scatterT = 1.5;
+    this.scatterX = this.kx - 30;
+    this.scatterY = Math.min(190, this.ky + 56);
+    s.burst(this.kx, this.ky, { n: calmMotion() ? 4 : 10, color: '#c1512f', speed: 100, grav: 60, size: 2.6, life: 0.9 });
+    s.burst(this.scatterX, this.scatterY, { n: calmMotion() ? 6 : 16, color: '#8b8798', kind: 'streak', speed: 260, grav: -40, size: 8, life: 0.7 });
+  }
+
+  /**
+   * Yusuf's answer to a cut: another kite, immediately, no lecture. The
+   * round starts over with the same rival; every cut already earned stays
+   * earned, so a lost dor costs a round and never the night.
+   */
+  private relaunch() {
+    this.phase = 'launch';
+    this.wind = 'steady';
+    this.windT = 0;
+    this.windDur = 2;
+    this.selfFray = 0;
+    this.progress = 0;
+    this.altitude = 0.3;
+    this.kx = 322;
+    this.ky = 264;
+    this.kvx = 0;
+    this.kvy = 0;
+    this.rkx = 700;
+    this.rky = 40;
+    this.rvx = 0;
+    this.rvy = 0;
+    this.fraySelfT = 0;
+    this.bokataT = 0;
+    this.bokataMine = false;
+    this.audio.chime();
+    this.hint = 'The new patang lies on your palm, lighter than the last one felt. Space when the breeze leans in, and up she goes.';
+    this.scene?.burst(322, 292, { n: calmMotion() ? 4 : 9, color: 'rgba(214,180,140,0.6)', speed: 60, grav: 90, size: 2.4, life: 0.5 });
   }
 
   private cutRival(rival: Rival) {
@@ -1585,7 +1973,10 @@ export class PatangPanel {
       this.cutRot = 0;
       this.cutPaper = look.paper;
       this.cutPatch = look.patch;
+      this.cutSink = 26;
+      this.cutDrift = 110;
       this.bokataT = 1.7;
+      this.bokataMine = false;
       this.rkx = 720;
       this.rky = 30;
       this.rvx = 0;
@@ -1595,6 +1986,8 @@ export class PatangPanel {
     this.audio.weaveNote(this.cuts + 2);
     this.rivalIdx++;
     this.progress = 0;
+    // A won round is also a fresh spool: whatever he sawed, you wind past it.
+    this.selfFray = 0;
     if (this.rivalIdx >= this.rivals.length) {
       this.phase = this.tournament ? 'storm' : 'between';
       this.hint = this.tournament
@@ -1608,13 +2001,19 @@ export class PatangPanel {
 
   onAction() {
     const s = this.scene;
+    if (this.phase === 'cut') {
+      this.relaunch();
+      this.render();
+      return;
+    }
     if (this.phase === 'launch') {
       this.phase = 'duel';
       this.audio.chime();
       this.windT = 0;
       this.windDur = 2;
       this.wind = 'steady';
-      this.hint = `${this.rivals[0]?.name ?? 'A rival'} crosses your line. Up is kheench, Down is dheel. The sharper line wins.`;
+      // The current rival, not the first: after a cut you meet him again.
+      this.hint = `${this.rivals[this.rivalIdx]?.name ?? 'A rival'} crosses your line. Up is kheench, Down is dheel. The sharper line wins.`;
       if (s) {
         this.kvy = -330;
         this.kvx = -40;
@@ -1661,9 +2060,16 @@ export class PatangPanel {
 
   private caption(): string {
     const alt = Math.round(this.altitude * 100);
-    const count = this.phase === 'launch'
-      ? 'the charkhi is wound with plain cotton dor'
-      : `altitude ${alt} &middot; cuts ${this.cuts}${this.tournament ? ' of 3' : ''} &middot; flocks honored ${this.blessed}`;
+    let count: string;
+    if (this.phase === 'cut') {
+      count = 'the dor is gone &middot; the charkhi is already turning &middot; Space';
+    } else if (this.phase === 'launch') {
+      count = 'the charkhi is wound with plain cotton dor';
+    } else {
+      const dor = this.selfFray === 0 ? 'dor sound' : this.selfFray === 1 ? 'dor fraying' : 'dor nearly through';
+      count = `altitude ${alt} &middot; cuts ${this.cuts}${this.tournament ? ' of 3' : ''} &middot; flocks honored ${this.blessed} &middot; ${dor}`;
+    }
+    if (this.lost > 0 && this.phase !== 'cut') count += ` &middot; given to the sky ${this.lost}`;
     return `${this.hint}<div class="c-count">${count}</div>`;
   }
 
@@ -1754,24 +2160,30 @@ export class PatangPanel {
 
     if (this.wind === 'birds' && this.phase === 'duel') this.paintFlock(g, t);
     if (this.cutT < 8) this.paintCutKite(g, t);
+    if (this.scatterT > 0) this.paintScatter(g, t);
 
     const duelish = this.phase === 'duel';
-    if (duelish) this.paintRival(g, t);
+    // The rival stays up through the cut; he has earned the view.
+    if (duelish || this.phase === 'cut') this.paintRival(g, t);
     this.paintYourLine(g, t);
-    drawPatang(g, this.kx, this.ky, Math.max(-0.55, Math.min(0.55, this.kvx * 0.004)) + Math.sin(t * 1.7) * 0.05,
-      this.phase === 'launch' ? 20 : 26, '#c1512f', '#f2e6d0', t, -this.kvx * 0.06 - this.gustK * 8);
+    if (this.phase !== 'cut') {
+      drawPatang(g, this.kx, this.ky, Math.max(-0.55, Math.min(0.55, this.kvx * 0.004)) + Math.sin(t * 1.7) * 0.05,
+        this.phase === 'launch' ? 20 : 26, '#c1512f', '#f2e6d0', t, -this.kvx * 0.06 - this.gustK * 8);
+    }
 
     if (duelish) this.paintCrossing(g, t);
 
     g.drawImage(parapet(), 0, 200);
     this.paintPennant(g, t);
     this.paintCharkhi(g, t);
+    if (this.phase === 'cut') this.paintSlackDor(g, t);
     if (duelish || this.phase === 'launch') this.paintChit(g, t);
     if (this.bokataT > 0) this.paintBokata(g);
     g.drawImage(vignette(), 0, 0);
   }
 
   private paintYourLine(g: CanvasRenderingContext2D, t: number) {
+    if (this.phase === 'cut') return; // the slack dor is drawn over the parapet
     const sag = this.wind === 'gust' ? 26 : 13 + Math.sin(t * 1.1) * 4;
     const mx = (ANCHOR.x + this.kx) / 2 + this.gustK * -14;
     const my = (ANCHOR.y + this.ky) / 2 + sag;
@@ -1786,6 +2198,24 @@ export class PatangPanel {
     const gx = (1 - gt) * (1 - gt) * ANCHOR.x + 2 * (1 - gt) * gt * mx + gt * gt * this.kx;
     const gy = (1 - gt) * (1 - gt) * ANCHOR.y + 2 * (1 - gt) * gt * my + gt * gt * (this.ky + 14);
     dot(g, gx, gy, 1.3, 'rgba(255,246,220,0.9)');
+
+    // Fraying, made honest: one whisker of loose cotton per pass he has
+    // taken across your line, so the third one is never a surprise.
+    for (let i = 0; i < this.selfFray; i++) {
+      const k = 0.42 + i * 0.16;
+      const fx = (1 - k) * (1 - k) * ANCHOR.x + 2 * (1 - k) * k * mx + k * k * this.kx;
+      const fy = (1 - k) * (1 - k) * ANCHOR.y + 2 * (1 - k) * k * my + k * k * (this.ky + 14);
+      stampGlow(g, fx, fy, 13, 'rgba(255,150,80,1)', 0.35 + Math.sin(t * 7 + i) * 0.14);
+      g.strokeStyle = 'rgba(255,168,110,0.85)';
+      g.lineWidth = 1.1;
+      for (let k2 = 0; k2 < 3; k2++) {
+        const a = k2 * 2.2 + 0.6 + Math.sin(t * 6 + k2 + i) * 0.3;
+        g.beginPath();
+        g.moveTo(fx, fy);
+        g.lineTo(fx + Math.cos(a) * 6.5, fy + Math.sin(a) * 6.5);
+        g.stroke();
+      }
+    }
   }
 
   private paintRival(g: CanvasRenderingContext2D, t: number) {
@@ -1849,6 +2279,23 @@ export class PatangPanel {
     g.restore();
   }
 
+  /**
+   * Every coop on the block emptying at once. A kite comes off its line and
+   * the roofs answer with birds; this is the sound Old Delhi actually makes.
+   */
+  private paintScatter(g: CanvasRenderingContext2D, t: number) {
+    const e = easeOutCubic(Math.max(0, Math.min(1, 1 - this.scatterT / 1.5)));
+    g.globalAlpha = Math.min(1, this.scatterT * 1.4);
+    for (let i = 0; i < 13; i++) {
+      const a = (i / 13) * Math.PI * 2 + 0.4;
+      const d = 18 + e * (150 + (i % 5) * 44);
+      const px = this.scatterX + Math.cos(a) * d * 1.6;
+      const py = this.scatterY + Math.sin(a) * d * 0.62 - e * 34;
+      drawPigeon(g, px, py, 1.2 - e * 0.3, Math.sin(t * 18 + i * 1.7));
+    }
+    g.globalAlpha = 1;
+  }
+
   private paintFlock(g: CanvasRenderingContext2D, t: number) {
     const p = Math.min(1, this.windT / this.windDur);
     const fx = 700 - p * 860;
@@ -1873,6 +2320,28 @@ export class PatangPanel {
     g.closePath();
     g.fill();
     dot(g, px, py, 2, '#2b2118');
+  }
+
+  /**
+   * The dor with nothing on the end of it. It comes off the charkhi in slack
+   * loops, lies along the parapet, and hangs over the edge where the kite
+   * used to pull. Drawn over the wall so you can actually see it go limp.
+   */
+  private paintSlackDor(g: CanvasRenderingContext2D, t: number) {
+    const fall = Math.min(1, this.cutT * 0.8);
+    g.strokeStyle = 'rgba(244,236,220,0.7)';
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.moveTo(ANCHOR.x + 12, 310);
+    for (let i = 1; i <= 16; i++) {
+      const k = i / 16;
+      g.lineTo(
+        ANCHOR.x + 12 + k * 176,
+        // Taut at the instant of the cut, a lazy scallop a moment later.
+        306 - 46 * (1 - fall) * Math.sin(k * 0.9) + fall * Math.sin(k * 7 + t * 1.4) * 7 + fall * k * 24,
+      );
+    }
+    g.stroke();
   }
 
   private paintCharkhi(g: CanvasRenderingContext2D, t: number) {
@@ -1920,22 +2389,33 @@ export class PatangPanel {
     g.restore();
   }
 
+  /**
+   * The cry, which the roofs shout the same either way. Only the color
+   * changes: gold when the sky lost a kite to you, cold silver when it was
+   * yours, and the same fifty voices behind both.
+   */
   private paintBokata(g: CanvasRenderingContext2D) {
-    const k = this.bokataT / 1.7;
+    const span = this.bokataMine ? 2.1 : 1.7;
+    const k = this.bokataT / span;
     const inK = Math.min(1, (1 - k) * 6);
     const y = 118 - (1 - k) * 26;
     g.save();
     g.globalAlpha = Math.min(1, k * 3) * inK;
     g.translate(340, y);
-    g.rotate(-0.05);
+    g.rotate(this.bokataMine ? 0.04 : -0.05);
     g.font = 'italic 700 52px Fraunces, Georgia, serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.strokeStyle = 'rgba(43,33,24,0.85)';
+    g.strokeStyle = this.bokataMine ? 'rgba(34,28,42,0.85)' : 'rgba(43,33,24,0.85)';
     g.lineWidth = 7;
     g.strokeText('bo kata!', 0, 0);
-    g.fillStyle = '#fff3d8';
+    g.fillStyle = this.bokataMine ? '#e4dcee' : '#fff3d8';
     g.fillText('bo kata!', 0, 0);
+    if (this.bokataMine) {
+      g.font = 'italic 500 17px Fraunces, Georgia, serif';
+      g.fillStyle = 'rgba(228,220,238,0.9)';
+      g.fillText('and it was yours', 0, 34);
+    }
     g.restore();
   }
 }
