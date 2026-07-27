@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync, readdirSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 import { GameState } from '../src/engine/state';
@@ -179,6 +180,46 @@ describe('map integrity', () => {
       m.ground.forEach((row, y) => assert.equal(row.length, w, `${m.id} ground row ${y}`));
       m.objects?.forEach((row, y) => assert.equal(row.length, w, `${m.id} object row ${y}`));
     }
+  });
+
+  /**
+   * Every tile kind a map names must have art somewhere, or the renderer
+   * falls back to a magenta placeholder. This shipped once: a composition
+   * pass added ground kinds, the maps that used them were committed, and
+   * their art was left behind, so the first screen of the game drew the
+   * village plaza in solid magenta. A map and its paint travel together.
+   */
+  it('every tile kind a map uses has art painted for it', () => {
+    const src = [
+      readFileSync(new URL('../src/art/tiles.ts', import.meta.url), 'utf8'),
+      ...readdirSync(new URL('../src/art/sets/', import.meta.url))
+        .filter((f) => f.endsWith('.ts'))
+        .map((f) => readFileSync(new URL(`../src/art/sets/${f}`, import.meta.url), 'utf8')),
+    ].join('\n');
+    // Kinds the tilesets paint, plus kinds that borrow another kind's art.
+    const painted = new Set<string>();
+    for (const m of src.matchAll(/\bmake\(\s*'([A-Za-z0-9_]+)'/g)) painted.add(m[1] as string);
+    // Aliases borrow another kind's art. They appear both one per line and
+    // inline as `aliases: { ferrysign: 'signpost' }`, so this is unanchored.
+    for (const m of src.matchAll(/([A-Za-z0-9_]+)\s*:\s*'[A-Za-z0-9_]+'/g)) {
+      painted.add(m[1] as string);
+    }
+    // Painted by dedicated code paths rather than a make() call: the path
+    // autotiler builds from pathCore, and water and sea are frame arrays.
+    for (const k of ['path', 'water', 'sea', 'bridge']) painted.add(k);
+    const missing = new Set<string>();
+    for (const m of Object.values(REGION_MAPS)) {
+      for (const def of Object.values(m.legend)) {
+        const kind = (def as { t: string }).t;
+        if (kind === 'void' || kind === 'blocked') continue;
+        if (!painted.has(kind)) missing.add(`${m.id}:${kind}`);
+      }
+    }
+    assert.equal(
+      missing.size,
+      0,
+      `tile kinds used by a map with no art anywhere: ${[...missing].join(', ')}`,
+    );
   });
 
   it('every map character exists in the legend', () => {

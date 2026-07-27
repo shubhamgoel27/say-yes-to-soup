@@ -169,12 +169,95 @@ export const ART: ChapterArt = {
     });
 
     // A grave: whitewashed, swept, flowered. Somebody is expected.
-    make('tumba', 3, (g, r) => {
-      softShadow(g, 32, 52, 22, 6, 0.16);
+    // Twenty four graves that all draw the same slab and the same cross read
+    // as one grave printed twenty four times, which is the opposite of what a
+    // family cemetery is. These differ in silhouette, not just in wash: a
+    // tiled tomb stands taller than a mound with a wooden cross, and a kerbed
+    // plot has no headstone at all.
+    make('tumba', 5, (g, r, i) => {
+      const kind = i % 5;
       const wash = r.chance(0.6) ? '#e6ded0' : '#cfd8e0';
+      const marigolds = (n: number, y: number) => {
+        for (let k = 0; k < n; k++) {
+          dot(g, 18 + r.int(28), y + r.int(4), 2.4 + r.next(), r.chance(0.6) ? MARIGOLD : MARIGOLD_HI);
+        }
+      };
+      const candle = (x: number, y: number) => {
+        rr(g, x, y, 5, 8, 2, 'rgba(200,225,225,0.55)');
+        dot(g, x + 2.5, y - 0.5, 1.2, '#ffe9ad');
+      };
+
+      if (kind === 1) {
+        // An earth mound with a wooden cross: the oldest and the poorest.
+        softShadow(g, 32, 52, 20, 5, 0.14);
+        g.fillStyle = '#8d6f4e';
+        g.beginPath();
+        g.ellipse(32, 46, 18, 8, 0, 0, Math.PI * 2);
+        g.fill();
+        vgrad(g, 14, 38, 36, 6, 'rgba(255,240,215,0.28)', 'rgba(0,0,0,0)');
+        g.strokeStyle = '#7a5636';
+        g.lineWidth = 3.4;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(32, 22);
+        g.lineTo(32, 40);
+        g.moveTo(25, 28);
+        g.lineTo(39, 28);
+        g.stroke();
+        marigolds(5, 48);
+        return;
+      }
+      if (kind === 2) {
+        // A tiled tomb, paid for and proud of it: taller, with a coloured top.
+        softShadow(g, 32, 54, 22, 6, 0.18);
+        const tile = r.chance(0.5) ? '#7fa8b8' : '#c98f5f';
+        rr(g, 13, 26, 38, 26, 3, shade(wash, -0.04));
+        rr(g, 13, 22, 38, 8, 3, tile);
+        vgrad(g, 13, 22, 38, 4, 'rgba(255,255,245,0.45)', 'rgba(0,0,0,0)');
+        g.strokeStyle = shade(tile, -0.3);
+        g.lineWidth = 1;
+        for (let x = 20; x < 50; x += 8) {
+          g.beginPath();
+          g.moveTo(x, 22);
+          g.lineTo(x, 30);
+          g.stroke();
+        }
+        marigolds(4, 52);
+        candle(46, 42);
+        return;
+      }
+      if (kind === 3) {
+        // A kerbed plot, no stone at all: a rectangle of gravel and flowers.
+        softShadow(g, 32, 52, 21, 5, 0.12);
+        rr(g, 12, 30, 40, 24, 2, shade(wash, -0.1));
+        rr(g, 16, 34, 32, 16, 2, '#a89880');
+        for (let k = 0; k < 10; k++) {
+          dot(g, 18 + r.int(28), 36 + r.int(12), 1.4 + r.next(), r.chance(0.5) ? MARIGOLD : MARIGOLD_HI);
+        }
+        candle(14, 26);
+        return;
+      }
+      if (kind === 4) {
+        // A niche with an arched head, a little glass door, a photograph.
+        softShadow(g, 32, 54, 20, 6, 0.18);
+        rr(g, 16, 32, 32, 20, 3, wash);
+        g.fillStyle = shade(wash, -0.05);
+        g.beginPath();
+        g.moveTo(22, 34);
+        g.lineTo(22, 18);
+        g.arc(32, 18, 10, Math.PI, 0);
+        g.lineTo(42, 34);
+        g.closePath();
+        g.fill();
+        rr(g, 27, 14, 10, 13, 2, 'rgba(150,180,190,0.5)');
+        dot(g, 32, 20, 2.6, 'rgba(60,48,36,0.5)');
+        marigolds(4, 50);
+        return;
+      }
+      // The common one: a slab with a soft cross on its headstone.
+      softShadow(g, 32, 52, 22, 6, 0.16);
       rr(g, 14, 34, 36, 18, 3, wash);
       vgrad(g, 14, 34, 36, 5, 'rgba(255,255,245,0.5)', 'rgba(0,0,0,0)');
-      // Headstone with a soft cross.
       rr(g, 24, 16, 16, 20, 3, shade(wash, -0.06));
       g.strokeStyle = shade(wash, -0.35);
       g.lineWidth = 2.2;
@@ -184,12 +267,8 @@ export const ART: ChapterArt = {
       g.moveTo(28, 23.5);
       g.lineTo(36, 23.5);
       g.stroke();
-      // Marigolds heaped at the foot; a candle keeping its corner.
-      for (let i = 0; i < 6; i++) {
-        dot(g, 18 + r.int(28), 50 + r.int(4), 2.4 + r.next(), r.chance(0.6) ? MARIGOLD : MARIGOLD_HI);
-      }
-      rr(g, 44, 40, 5, 8, 2, 'rgba(200,225,225,0.55)');
-      dot(g, 46.5, 39.5, 1.2, '#ffe9ad');
+      marigolds(6, 50);
+      candle(44, 40);
     });
 
     // Portales pier: green cantera, an arch springing to either side.

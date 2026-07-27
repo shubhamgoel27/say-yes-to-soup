@@ -13,7 +13,10 @@ const S = 64;
 
 /** Gamcheon-ish pastels for the hillside and the awnings. */
 const PASTELS = ['#8fc3d4', '#e0a7a0', '#e8d9a8', '#a8c9a0', '#d9b06a', '#b3a8cf'];
-const AWNINGS = ['#c1512f', '#3f7fb0', '#4d7440', '#d9853f'];
+// Red is reserved: Sun-hee's stall is the one red awning in the chapter,
+// because the letter tells you to start where the red awning is. When the
+// ordinary awnings could also be red, that instruction named six things.
+const AWNINGS = ['#e0c15c', '#3f7fb0', '#4d7440', '#d9853f'];
 
 function paint(make: MakeTile) {
   // ------------------------------------------------------------ grounds
