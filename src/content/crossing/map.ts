@@ -33,12 +33,22 @@ const isEdge = (x: number, y: number): boolean =>
 /** The house: 5x5 casa footprint, anchor bottom-left, door at [+2,+4]. */
 const HOUSE: [number, number] = [19, 22];
 
-/** Container bays: [x0, x1, y0, y1, legend char]. Uniform color per block. */
+/**
+ * Container bays: [x0, x1, y0, y1, legend char]. Uniform color per block.
+ *
+ * Four blocks, four different footprints. A stow is planned around weight and
+ * discharge order, not symmetry: the port block runs deeper forward, the
+ * starboard block reaches a row further forward aft, and the short bay by the
+ * house is three wide because that is what was left. The rail lanes at x=15
+ * and x=28, the athwartships lane at y=14 and the row aft of the stow at y=18
+ * are kept clear end to end, because a ship you cannot walk around is a ship
+ * nobody can work.
+ */
 const BAYS: [number, number, number, number, string][] = [
-  [16, 20, 12, 13, 'A'],
-  [23, 27, 12, 13, 'B'],
-  [16, 20, 16, 17, 'C'],
-  [23, 27, 16, 17, 'A'],
+  [17, 20, 11, 13, 'A'],
+  [24, 27, 12, 13, 'B'],
+  [16, 18, 16, 17, 'C'],
+  [22, 27, 15, 17, 'A'],
 ];
 
 function groundAt(x: number, y: number): string {
@@ -67,26 +77,32 @@ function objectAt(x: number, y: number): string {
   if (x === 26 && y === 23) return 'L'; // the lifeboat in its davits
   if ((x === 18 || x === 25) && y === 6) return 'w'; // mooring winches, foredeck
   if ((x === 16 || x === 27) && (y === 10 || y === 19)) return 'o'; // bollards
-  if (x === 17 && y === 15) return 'h'; // a hammock, between the stacks
-  if (x === 17 && y === 27) return 'c'; // the ship's cat, off duty
+  if (x === 16 && y === 15) return 'h'; // a hammock, slung in the pocket
+  if (x === 17 && y === 26) return 'c'; // the ship's cat, off duty
   if (x === 20 && y === 9) return 't'; // spare hatch beams, lashed
   // Life clusters where the work is: the bosun's starboard-forward corner.
-  // Everything here is stowed inboard: the rail lanes stay clear, because a
-  // ship that cannot be walked around is a ship nobody can work.
   if (x === 27 && y === 7) return 'D'; // oil drums, stenciled
   if (x === 27 && y === 9) return 'R'; // fire hose on its reel
   // Joseph's port-rail war on rust, tools staged where he left them.
   if (x === 16 && y === 9) return 'p'; // paint cans and a wire brush
   if ((x === 15 && y === 13) || (x === 28 && y === 17)) return 'u'; // rust blooms
-  if ((x === 17 && y === 10) || (x === 26 && y === 19)) return 'r'; // rope coils, flemished flat
+  if ((x === 17 && y === 10) || (x === 26 && y === 19) || (x === 20 && y === 14)) return 'r'; // rope coils
   if (x === 23 && y === 4) return 'f'; // a flying fish, stranded overnight
   if (x === 24 && y === 10) return 'T'; // the tarp-covered something
-  if ((x === 26 && y === 15) || (x === 16 && y === 20)) return 'P'; // port-stenciled crates
+  if ((x === 21 && y === 9) || (x === 16 && y === 20)) return 'P'; // port-stenciled crates
+  // The pocket the short bay leaves between the stacks: not a lane, so it
+  // fills up with the things there is nowhere else to put.
+  if (x === 19 && y === 16) return 't';
+  if (x === 21 && y === 17) return 'D';
   if (x === 27 && y === 24) return 'G'; // life ring on its stand, named
   if (x === 16 && y === 27) return 'D'; // more drums, aft
-  // The aft port strip, where off-watch life happens in the house's lee.
+  // The aft port strip, where off-watch life happens in the house's lee. Six
+  // paces of deck out of the wind, and everything the crossing has that is
+  // not cargo has ended up in it.
   if (x === 18 && y === 22) return 'V'; // the little deck shrine
-  if (x === 16 && y === 24) return 'y'; // the laundry line
+  if (x === 17 && y === 23) return 't'; // the crate everybody sits on
+  if ((x === 16 && y === 23) || (x === 16 && y === 24)) return 'y'; // the laundry line
+  if (x === 18 && y === 24) return 'r'; // a coil somebody never took below
   if (x === 21 && y === 27) return 'm'; // the welcome mat at the watertight door
   return ' ';
 }
@@ -188,15 +204,18 @@ export const GALLEY_MAP: MapData = {
     '..............',
     '..............',
   ],
+  // One long mess table, one short one set inboard of it, and the chess corner
+  // aft where the light from the door lands. Two parallel bars would be a
+  // canteen; this is a room three watches have argued the furniture into.
   objects: [
     '##SMS#S##S#D##',
     '#q p p      K#',
     '#            #',
-    '#  sTTTTTGs  #',
-    '#            #',
     '#  sTTTTTTs  #',
     '#            #',
-    '# t         P#',
+    '#   sTTTT    #',
+    '#           P#',
+    '# t      TGs #',
     '#            #',
     '#######m######',
   ],

@@ -39,12 +39,23 @@ function objectAt(x: number, y: number): string {
   if (x === 13 && y === ROAD_Y - 1) return 'e'; // a traveler's q'epi, resting by it
   // The kite tree: a wind-bent queñua holding somebody's condor, mid-descent.
   if (x === 9 && y === ROAD_Y - 2) return 'K';
-  // The arriero's camp, south of the road past the pass.
-  if (x === 38 && y === ROAD_Y + 2) return 'E'; // tent
-  if (x === 40 && y === ROAD_Y + 2) return 'k'; // campfire
+  // The corral half of the old tambo: three stubs of dry-stone wall with the
+  // gap the drovers use, holding a hollow of trodden ground the wind stays out
+  // of. Nothing in it, and it is the emptiest thing on the road on purpose.
+  if (y === ROAD_Y + 3 && x >= 18 && x <= 24 && x !== 21) return 'q';
+  if ((x === 18 || x === 24) && y === ROAD_Y + 4) return 'q';
+  if ((x === 20 && y === ROAD_Y + 2) || (x === 23 && y === ROAD_Y + 2)) return 'r';
+  // The arriero's camp: the fire and the tent close together, the fodder and
+  // the rail set back, and nothing on a line with anything else.
+  if (x === 37 && y === ROAD_Y + 3) return 'E'; // tent
+  if (x === 39 && y === ROAD_Y + 2) return 'k'; // campfire
   if (x === 40 && y === ROAD_Y + 3) return 's'; // stool
-  if (x === 36 && y === ROAD_Y + 2) return 'h'; // the hitching rail, swept
+  if (x === 38 && y === ROAD_Y + 2) return 'e'; // his q'epi, dropped where he sat
+  if (x === 35 && y === ROAD_Y + 2) return 'v'; // the fodder rick
+  if (x === 34 && y === ROAD_Y - 2) return 'h'; // the hitching rail, swept
   if (x === 49 && y === ROAD_Y - 2) return 'P'; // the signboard east, on the wide road's shoulder
+  // Boulders in twos and threes where the ridge has shed them.
+  if ((x === 6 && y === ROAD_Y + 3) || (x === 7 && y === ROAD_Y + 2) || (x === 26 && y === ROAD_Y - 3)) return 'r';
 
   // Windswept scatter, sparser than the valley floor.
   if (groundAt(x, y) === ',') {
@@ -92,6 +103,8 @@ export const EAST_ROAD_MAP: MapData = {
     e: { t: 'qepi', solid: true },
     K: { t: 'condorkite', solid: true, tall: true },
     h: { t: 'hitchpost', solid: true, tall: true },
+    q: { t: 'pirca', solid: true },
+    v: { t: 'parva', solid: true, tall: true },
     f: { t: 'flower' },
     i: { t: 'tuft' },
     r: { t: 'rock', solid: true },

@@ -1502,6 +1502,47 @@ export const NODES: NodeMap = {
       { text: 'The red pot is stained a red that will outlive the pot.' },
     ],
   },
+  'ex.wellstone': {
+    lines: [
+      { text: 'Small dark setts laid in rings around the wellhead, wet in the middle at any hour, swept every morning by whoever arrives first.' },
+      { text: 'Stand on it and you can feel the square lean inward. This is the place the village is measured from.' },
+    ],
+  },
+  'ex.plazaworn': {
+    lines: [
+      { text: 'The paving here is rubbed pale and smooth, the joints packed with dust. Nothing grows in it. Nothing gets the chance.' },
+      { text: 'Four of these tracks cross the square, and every one of them bends toward the well.' },
+    ],
+  },
+  'ex.parva': {
+    lines: [
+      { text: 'A parva: barley sheaves stacked into a rick and tied at the crown, with one flat stone on top in case the wind has opinions.' },
+      { text: 'It is taller than you are and smells like a warm afternoon that happened three months ago.' },
+    ],
+  },
+  'ex.cantaros': {
+    lines: [
+      { text: 'Cántaros set down in a queue at the well, each one holding a place for somebody who is currently busy talking.' },
+      { text: 'The order is not written anywhere. Everyone knows it anyway.' },
+    ],
+  },
+  'ex.batea': {
+    lines: [
+      { text: 'A stone trough worn dish-shaped in the middle, half full of grey water with the soap still on it, one red cloth over the lip.' },
+      { text: 'Whoever is washing today has gone off to say one more thing to somebody.' },
+    ],
+  },
+  'ex.mantas': {
+    lines: [
+      { text: 'Mantas spread out on the paving with stones on the corners: cochineal red, indigo, a yellow that argues with the sun and wins.' },
+      { text: 'Every band of pattern is somebody counting in their head for a week.' },
+    ],
+  },
+  'ex.mantas.woven': {
+    lines: [
+      { text: 'You can read them now, a little. That row of hooks is the one Carmen called out to you, and yours came out crookeder than these.' },
+    ],
+  },
 };
 
 /**
@@ -1613,10 +1654,19 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   charango: [{ node: 'ex.charango' }],
   pushka: [{ node: 'ex.pushka' }],
   dyepots: [{ node: 'ex.dyepots' }],
+  parva: [{ node: 'ex.parva' }],
+  cantaros: [{ node: 'ex.cantaros' }],
+  batea: [{ node: 'ex.batea' }],
+  mantas: [
+    { when: { has: ['pallay.done'] }, node: 'ex.mantas.woven' },
+    { node: 'ex.mantas' },
+  ],
   // The look-is-never-wasted rule: even plain ground answers.
   puna: [{ node: 'ex.puna' }],
   path: [{ node: 'ex.path' }],
   plaza: [{ node: 'ex.plaza' }],
+  plazaWorn: [{ node: 'ex.plazaworn' }],
+  wellstone: [{ node: 'ex.wellstone' }],
   grass: [{ node: 'ex.grass' }],
 };
 

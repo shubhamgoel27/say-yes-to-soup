@@ -52,6 +52,22 @@ function objectAt(x: number, y: number): string {
   if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 17 && y === 15)) return 'a';
   // Lizards keep the warm rubble at the road's edge, an arm's length away.
   if ((x === 10 && y === 11) || (x === 17 && y === 17)) return 'z';
+  // Cactus stands, in threes and pairs and one alone, so the descent has a
+  // silhouette instead of an even sprinkle. The lone one at the lip is the
+  // thing the sea gets seen past, and it is taller than everything near it.
+  for (const [cx, cy] of [
+    [8, 6], [9, 7], [7, 8],
+    [26, 8], [27, 9],
+    [14, 14], [15, 15], [13, 16],
+    [9, 18],
+    [24, 13],
+  ] as [number, number][]) {
+    if (x === cx && y === cy && groundAt(x, y) === 'L') return 'C';
+  }
+  // Boulders shed off the ladera, always in pairs, never on a line.
+  for (const [bx, by] of [[11, 8], [12, 9], [21, 12], [22, 13], [8, 15], [26, 18]] as [number, number][]) {
+    if (x === bx && y === by && groundAt(x, y) === 'L') return 'r';
+  }
   // Nothing else stands on the road, the pull-off or the cliff: the shelf
   // keeps its room for a tripod and two people looking at the same thing.
   if (g !== 'L') return ' ';

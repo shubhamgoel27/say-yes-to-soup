@@ -956,6 +956,29 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.pizarra': {
     lines: [{ text: 'The chalkboard says HOY: LO QUE DIGA LA MAR. Under it, in ghost chalk, the faded ancestors of every dish this week ever was.' }],
   },
+  'mar.ex.tendal': {
+    lines: [
+      { text: 'A blue tarpaulin lashed to four poles over the cleaning table. Everything under it goes the color of a swimming pool, including you.' },
+      { text: 'The shade is the whole village\'s, technically. In practice it belongs to whoever got here with fish first.' },
+    ],
+  },
+  'mar.ex.bidones': {
+    lines: [
+      { text: 'Drums and fish boxes stacked against the wall, repainted every few years in whatever the boats had left over.' },
+      { text: 'Blue, yellow, a red that used to be a bow. Nothing here has ever been thrown away, only relocated.' },
+    ],
+  },
+  'mar.ex.pintura': {
+    lines: [
+      { text: 'A hull up on trestles, keel to the sky, half of it still salt-grey and half of it turquoise. The wet edge stops mid-stroke.' },
+      { text: 'The tins are open and the brush is lying across one of them. Somebody was called away, and the sea is patient about this.' },
+    ],
+  },
+  'mar.ex.pintura2': {
+    lines: [
+      { text: 'Another hand\'s width of turquoise since yesterday. It gets finished the way everything here gets finished: eventually, and beautifully.' },
+    ],
+  },
 };
 
 /** Coastal examine arms; map-tagged so shared props keep their Andes words at home. */
@@ -1024,6 +1047,12 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   mototaxi: [{ node: 'mar.ex.mototaxi' }],
   pizarra: [{ node: 'mar.ex.pizarra' }],
+  tendal: [{ node: 'mar.ex.tendal' }],
+  bidones: [{ node: 'mar.ex.bidones' }],
+  pintura: [
+    { when: { has: ['c2.complete'] }, node: 'mar.ex.pintura2' },
+    { node: 'mar.ex.pintura' },
+  ],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */
