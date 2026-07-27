@@ -1540,6 +1540,8 @@ function letterAdvance() {
 
 let showDebug = false;
 let bumps = 0;
+/** Time until a wall may knock aloud again; see the bumped branch. */
+let bumpQuiet = 0;
 
 function update(dt: number) {
   renderer.tick(dt);
@@ -1772,9 +1774,18 @@ function update(dt: number) {
       const prevX = player.x;
       const prevY = player.y;
       const ev = player.update(dt, { intent, blocked: blockedFor(player) });
+      // The quiet decays whether or not you are still leaning on the wall, so
+      // walking off and bumping again later knocks properly.
+      if (bumpQuiet > 0) bumpQuiet = Math.max(0, bumpQuiet - dt);
       if (ev?.kind === 'bumped') {
         bumps++;
-        audio.bump();
+        // Holding into a wall re-thudded every fifth of a second, which turns
+        // a soft cue into a woodpecker. The first knock speaks; leaning on it
+        // only murmurs.
+        if (bumpQuiet <= 0) {
+          audio.bump();
+          bumpQuiet = 0.5;
+        }
         // A villager stepped into the planned path; route around them.
         if (autoGoal) replanAuto();
         // The full caporal does not appreciate walls.

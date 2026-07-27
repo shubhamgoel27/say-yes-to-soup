@@ -144,6 +144,15 @@ export class Actor {
 
   /** Sub-pixel render position, interpolated across the current step. */
   renderPos(): [number, number] {
+    if (this.bump > 0) {
+      // A refused step should still be visible. The actor knew it had walked
+      // into something and showed nothing at all, so the most repeated moment
+      // in the game was a silent hard stop: lean into it, then settle back.
+      const k = Math.sin((1 - this.bump / BUMP_DUR) * Math.PI);
+      const [bx, by] = stepFrom(0, 0, this.dir);
+      const push = k * 1.8;
+      return [this.x * TILE + bx * push, this.y * TILE + by * push];
+    }
     if (!this.moving) return [this.x * TILE, this.y * TILE];
     const p = Math.min(this.t / STEP_DUR, 1);
     return [
