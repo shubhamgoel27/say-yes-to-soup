@@ -1010,6 +1010,18 @@ export const SICILY_NODES: NodeMap = {
       { text: 'Tubs of granita smooth as marble: lemon, almond, coffee, mulberry. Behind the glass, empty cannoli shells wait to be asked.' },
     ],
   },
+  'c8.ex.fontana': {
+    lines: [
+      { text: 'The piazza fountain: a lava basin, a bronze spout worn bright by hands, and water that has not been turned off in living memory.' },
+      { text: 'Two boys are filling a bottle for a grandmother who is watching from a chair to make sure it is done properly.' },
+    ],
+  },
+  'c8.ex.bucato': {
+    lines: [
+      { text: 'A line of washing strung from a shutter to a hook across the lane: two shirts, a tablecloth, and somebody’s enormous blue trousers.' },
+      { text: 'It is the only flag this street flies. In August it is dry before the pegs are cold.' },
+    ],
+  },
   'c8.ex.bartable': {
     lines: [
       { text: 'A little round table under an umbrella, sized for two elbows and one long morning. The shade underneath is communal property.' },
@@ -1207,6 +1219,8 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   lavarock: [{ node: 'c8.ex.lavarock' }],
   faraglione: [{ node: 'c8.ex.faraglione' }],
   lemontree: [{ node: 'c8.ex.lemontree' }],
+  fontana: [{ node: 'c8.ex.fontana' }],
+  bucato: [{ node: 'c8.ex.bucato' }],
   granitabar: [{ node: 'c8.ex.granitabar' }],
   bartable: [{ node: 'c8.ex.bartable' }],
   barlamp: [{ node: 'c8.ex.barlamp' }],

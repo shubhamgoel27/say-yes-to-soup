@@ -14,6 +14,7 @@ const S = 64;
 export const ART: ChapterArt = {
   aliases: { postsign: 'signpost' },
   grounded: [
+    'fontana',
     'faraglione',
     'lemontree',
     'granitabar',
@@ -45,32 +46,66 @@ export const ART: ChapterArt = {
   paint(make) {
     // ------------------------------------------------------------ grounds
 
-    make('basalto', 5, (g, r) => {
+    make('basalto', 9, (g, r, i) => {
       // Sun-worn lava paving: unmistakably grey, but noon-bright, not night.
+      // It was laid by hand over two centuries, so it must not tile like a
+      // spreadsheet: a ninth of these cells is one uncut slab, a third runs
+      // its joints the other way, and no two neighbours share a pattern.
       const base = '#8b8590';
       rect(g, 0, 0, S, S, base);
-      // Two slab seams, soft dark joints; the mountain's stone, dressed.
-      const sy = 22 + r.int(20);
-      const vx = 18 + r.int(26);
-      rr(g, 1.5, 1.5, S - 3, sy - 3, 5, shade(base, (r.next() - 0.5) * 0.06));
-      rr(g, 1.5, sy + 1.5, vx - 3, S - sy - 3, 5, shade(base, (r.next() - 0.5) * 0.05));
-      rr(g, vx + 1.5, sy + 1.5, S - vx - 3, S - sy - 3, 5, shade(base, (r.next() - 0.5) * 0.07));
-      g.strokeStyle = 'rgba(18,14,22,0.4)';
-      g.lineWidth = 2;
-      g.beginPath();
-      g.moveTo(0, sy);
-      g.lineTo(S, sy);
-      g.moveTo(vx, sy);
-      g.lineTo(vx, S);
-      g.stroke();
-      // Glassy chips catching the sun, and a stubborn weed in a joint.
+      const joint = (ax: number, ay: number, bx: number, by: number) => {
+        g.strokeStyle = 'rgba(18,14,22,0.36)';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(ax, ay);
+        g.quadraticCurveTo((ax + bx) / 2 + (r.next() - 0.5) * 5, (ay + by) / 2 + (r.next() - 0.5) * 5, bx, by);
+        g.stroke();
+      };
+      const slab = (x: number, y: number, w: number, h: number) =>
+        rr(g, x + 1.5, y + 1.5, w - 3, h - 3, 5, shade(base, (r.next() - 0.5) * 0.09));
+      const mode = i % 3;
+      if (i === 4) {
+        // One whole slab, quarried in a good year and never cracked since.
+        slab(0, 0, S, S);
+        joint(0, -1, S, 1);
+      } else if (mode === 0) {
+        const sy = 20 + r.int(24);
+        const vx = 16 + r.int(30);
+        slab(0, 0, S, sy);
+        slab(0, sy, vx, S - sy);
+        slab(vx, sy, S - vx, S - sy);
+        joint(0, sy, S, sy);
+        joint(vx, sy, vx + (r.next() - 0.5) * 6, S);
+      } else if (mode === 1) {
+        // Joints running the other way: a stretch relaid after the flow.
+        const vx = 20 + r.int(24);
+        const sy = 18 + r.int(28);
+        slab(0, 0, vx, S);
+        slab(vx, 0, S - vx, sy);
+        slab(vx, sy, S - vx, S - sy);
+        joint(vx, 0, vx, S);
+        joint(vx, sy, S, sy + (r.next() - 0.5) * 6);
+      } else {
+        // Small setts around a bigger one: where a lane elbows into the piazza.
+        const vx = 22 + r.int(16);
+        const sy = 24 + r.int(14);
+        slab(0, 0, vx, sy);
+        slab(vx, 0, S - vx, sy);
+        slab(0, sy, S, S - sy);
+        joint(vx, 0, vx, sy);
+        joint(0, sy, S, sy);
+      }
+      // Sand drifted into the low corner of some slabs, and glassy chips.
+      if (r.chance(0.35)) oval(g, r.int(S), r.int(S), 9 + r.int(9), 5 + r.int(5), 'rgba(196,168,122,0.13)');
       if (r.chance(0.5)) dot(g, r.int(S), r.int(S), 1.6, 'rgba(230,238,246,0.5)');
-      if (r.chance(0.2)) {
+      if (r.chance(0.22)) {
+        const wx = 8 + r.int(48);
+        const wy = 10 + r.int(44);
         g.strokeStyle = '#5f7a44';
         g.lineWidth = 2;
         g.beginPath();
-        g.moveTo(vx, sy + 4);
-        g.quadraticCurveTo(vx + 3, sy - 2, vx + 5, sy - 6);
+        g.moveTo(wx, wy);
+        g.quadraticCurveTo(wx + 3, wy - 6, wx + 5, wy - 10);
         g.stroke();
       }
     });
@@ -96,13 +131,21 @@ export const ART: ChapterArt = {
       }
     });
 
-    make('lavarock', 2, (g, r) => {
-      softShadow(g, 32, 50, 20, 6, 0.2);
-      const c = '#38323e';
-      blob(g, 32, 38, 15, c, r, 0.3);
-      blob(g, 26, 32, 9, shade(c, 0.12), r, 0.3);
+    make('lavarock', 5, (g, r) => {
+      // No two of these are the same size: a reef of identical pebbles reads
+      // as wallpaper, and this coast is a rubble field, not a pattern.
+      const s = 0.62 + r.next() * 0.75;
+      const cxx = 32 + (r.next() - 0.5) * 14;
+      const cyy = 40 + (r.next() - 0.5) * 10;
+      softShadow(g, cxx, cyy + 12, 20 * s, 6 * s, 0.2);
+      const c = shade('#38323e', (r.next() - 0.5) * 0.16);
+      blob(g, cxx, cyy - 2, 15 * s, c, r, 0.34);
+      blob(g, cxx - 6 * s, cyy - 8 * s, 9 * s, shade(c, 0.12), r, 0.34);
+      if (r.chance(0.4)) blob(g, cxx + 11 * s, cyy + 2, 6 * s, shade(c, -0.08), r, 0.3);
       // Pores: the stone remembers being foam.
-      for (let i = 0; i < 5; i++) dot(g, 22 + r.int(20), 28 + r.int(18), 1.3, shade(c, -0.25));
+      for (let i = 0; i < 5; i++) {
+        dot(g, cxx - 10 * s + r.int(20 * s), cyy - 12 * s + r.int(18 * s), 1.3, shade(c, -0.25));
+      }
     });
 
     // ------------------------------------------------------------ flora
@@ -297,6 +340,119 @@ export const ART: ChapterArt = {
       dot(g, 32, 52, 2.2, '#3d3d47');
       dot(g, 32, 70, 2.2, '#3d3d47');
     }, 64, 96);
+
+    make('fontana', 1, (g) => {
+      // The piazza's one loud thing, and the reason the piazza is where it is:
+      // a lava basin the width of two men, a bronze spout polished bright by
+      // four generations of hands, and water that has never been turned off.
+      const cx = 64;
+      softShadow(g, cx, 152, 46, 11, 0.26);
+      const stone = '#4a4450';
+      // The basin: an eight-sided tub cut from the mountain and set down here.
+      g.fillStyle = shade(stone, -0.12);
+      g.beginPath();
+      g.moveTo(10, 112);
+      g.lineTo(22, 96);
+      g.lineTo(106, 96);
+      g.lineTo(118, 112);
+      g.lineTo(106, 144);
+      g.lineTo(22, 144);
+      g.closePath();
+      g.fill();
+      rr(g, 12, 90, 104, 14, 5, stone);
+      vgrad(g, 12, 90, 104, 7, 'rgba(255,246,224,0.24)', 'rgba(0,0,0,0)');
+      vgrad(g, 14, 124, 100, 20, 'rgba(0,0,0,0)', 'rgba(18,14,22,0.4)');
+      // The water inside it, holding the sky, a leaf, and a slick of pollen.
+      oval(g, cx, 104, 46, 12, '#4a7f9c');
+      oval(g, cx, 101, 39, 9, '#7fb3c9');
+      oval(g, 44, 100, 12, 3, 'rgba(240,250,255,0.65)');
+      oval(g, 86, 105, 7, 2, 'rgba(240,250,255,0.4)');
+      dot(g, 74, 100, 2, '#5f7a44');
+      // The pillar, its cornice, and the small cross the mason threw in free.
+      rr(g, 50, 30, 28, 66, 4, shade(stone, 0.08));
+      vgrad(g, 50, 30, 28, 22, 'rgba(255,246,224,0.2)', 'rgba(0,0,0,0)');
+      rr(g, 44, 22, 40, 12, 4, shade(stone, 0.18));
+      rr(g, 46, 78, 36, 10, 4, shade(stone, 0.12));
+      // A carved face on the pillar, worn down to an opinion.
+      dot(g, 64, 52, 9, shade(stone, -0.08));
+      dot(g, 60, 50, 1.8, shade(stone, -0.3));
+      dot(g, 68, 50, 1.8, shade(stone, -0.3));
+      g.strokeStyle = shade(stone, -0.28);
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(60, 57);
+      g.quadraticCurveTo(64, 59, 68, 57);
+      g.stroke();
+      g.strokeStyle = '#c9a35f';
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(64, 6);
+      g.lineTo(64, 22);
+      g.moveTo(56, 12);
+      g.lineTo(72, 12);
+      g.stroke();
+      // Two bronze spouts: one running, one retired mid-argument in 1974.
+      g.strokeStyle = '#b98a3e';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(52, 68);
+      g.lineTo(38, 76);
+      g.moveTo(76, 68);
+      g.lineTo(90, 76);
+      g.stroke();
+      dot(g, 38, 76, 3.4, '#d9b463');
+      dot(g, 90, 76, 3.4, '#8a6a3a');
+      // The one that runs, and the ring it has worn in the water.
+      g.strokeStyle = 'rgba(214,240,250,0.75)';
+      g.lineWidth = 3.4;
+      g.beginPath();
+      g.moveTo(38, 79);
+      g.quadraticCurveTo(40, 92, 42, 102);
+      g.stroke();
+      oval(g, 42, 103, 9, 3.4, 'rgba(240,252,255,0.55)');
+      dot(g, 47, 98, 1.6, 'rgba(255,255,255,0.8)');
+      dot(g, 36, 94, 1.2, 'rgba(255,255,255,0.6)');
+      // A tin bucket waiting its turn, and a wet patch that never dries.
+      rr(g, 16, 128, 16, 15, 3, '#9aa6ab');
+      rr(g, 16, 126, 16, 4, 2, '#b9c4c9');
+      g.strokeStyle = '#7a838a';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.arc(24, 126, 8, Math.PI, 0);
+      g.stroke();
+      oval(g, 92, 148, 20, 6, 'rgba(40,60,80,0.2)');
+    }, 128, 160);
+
+    make('bucato', 3, (g, r) => {
+      // Washing strung across the lane: the only flag this street flies.
+      const wash = ['#c98a7a', '#7f9fb5', PAL.cream, '#9fc4b8', '#e8dcc4', '#b5443a'];
+      g.strokeStyle = 'rgba(240,236,224,0.75)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(0, 9);
+      g.quadraticCurveTo(S / 2, 15, S, 9);
+      g.stroke();
+      let x = 2 + r.int(4);
+      while (x < S - 10) {
+        const w = 9 + r.int(9);
+        const h = 12 + r.int(12);
+        const yy = 11 + Math.sin((x / S) * Math.PI) * 4.5;
+        const c = wash[r.int(wash.length)] ?? PAL.cream;
+        rr(g, x, yy, w, h, 2, c);
+        vgrad(g, x, yy, w, h * 0.4, 'rgba(255,250,235,0.22)', 'rgba(0,0,0,0)');
+        // A fold, and the peg holding the whole argument together.
+        g.strokeStyle = shade(c, -0.14);
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(x + w * 0.5, yy + 3);
+        g.lineTo(x + w * 0.5, yy + h - 2);
+        g.stroke();
+        dot(g, x + 2, yy - 1, 1.2, '#8a6a3a');
+        dot(g, x + w - 2, yy - 1, 1.2, '#8a6a3a');
+        x += w + 3 + r.int(6);
+      }
+    });
 
     make('vespa', 2, (g, r) => {
       softShadow(g, 32, 54, 22, 6, 0.18);

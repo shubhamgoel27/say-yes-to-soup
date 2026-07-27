@@ -2,7 +2,7 @@ import type { ChapterDef } from '../schema';
 import type { AudioBus } from '../../engine/audio';
 import { OAXACA_EVENTS, OAXACA_EXAMINES, OAXACA_NODES, OAXACA_NPCS } from './npcs';
 import { OAXACA_JOURNAL, OAXACA_TASKS } from './journal';
-import { CAMPOSANTO_MAP, COCINA_MAP, OAXACA_MAP } from './map';
+import { CAMPOSANTO_MAP, CAMPO_VIGIL_CELLS, COCINA_MAP, OAXACA_MAP } from './map';
 import { RECALL } from './recall';
 import { MolePanel, OfrendaPanel } from '../../ui/games/oaxaca';
 
@@ -172,41 +172,25 @@ export const CHAPTER: ChapterDef = {
     {
       map: 'camposanto',
       when: { has: ['c9.ofrenda.done'] },
-      cells: [
-        // The upper row of graves, lit at the foot.
-        [3, 5, { t: 'veladora', solid: true }],
-        [5, 5, { t: 'veladora', solid: true }],
-        [7, 5, { t: 'veladora', solid: true }],
-        [13, 5, { t: 'veladora', solid: true }],
-        [15, 5, { t: 'veladora', solid: true }],
-        [17, 5, { t: 'veladora', solid: true }],
-        // The middle row.
-        [3, 8, { t: 'veladora', solid: true }],
-        [5, 8, { t: 'veladora', solid: true }],
-        [7, 8, { t: 'veladora', solid: true }],
-        [13, 8, { t: 'veladora', solid: true }],
-        [15, 8, { t: 'veladora', solid: true }],
-        [17, 8, { t: 'veladora', solid: true }],
-        // The near row, closest to the gate you come in by.
-        [4, 11, { t: 'veladora', solid: true }],
-        [6, 11, { t: 'veladora', solid: true }],
-        [14, 11, { t: 'veladora', solid: true }],
-        [16, 11, { t: 'veladora', solid: true }],
-        // Refugio's extra one, on the wall, turned to face the road out.
-        [11, 12, { t: 'veladora', solid: true }],
-      ],
+      // A candle at the foot of every grave, wherever the grave stands: the
+      // list comes from the graves themselves so the two can never disagree.
+      cells: CAMPO_VIGIL_CELLS.map(([x, y]): [number, number, { t: string; solid: boolean }] => [
+        x,
+        y,
+        { t: 'veladora', solid: true },
+      ]),
     },
     {
       map: 'oaxaca',
       when: { has: ['c9.ofrenda.done'] },
       cells: [
-        [41, 2, { t: 'veladora', solid: true }],
+        [41, 3, { t: 'veladora', solid: true }],
+        [38, 4, { t: 'veladora', solid: true }],
         [41, 5, { t: 'veladora', solid: true }],
+        [38, 7, { t: 'veladora', solid: true }],
         [41, 9, { t: 'veladora', solid: true }],
         [41, 11, { t: 'veladora', solid: true }],
-        [39, 3, { t: 'veladora', solid: true }],
-        [39, 7, { t: 'veladora', solid: true }],
-        [39, 10, { t: 'veladora', solid: true }],
+        [38, 12, { t: 'veladora', solid: true }],
       ],
     },
   ],

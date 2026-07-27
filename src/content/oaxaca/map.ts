@@ -11,63 +11,178 @@ import { cellHash } from '../../art/pix';
 const W = 46;
 const H = 32;
 
-/** Casona anchors: 5x5 footprint, door at [+2,+4], casa-compatible grid. */
+/**
+ * Casona anchors: 5x5 footprint, door at [+2,+4], casa-compatible grid. No
+ * two of them stand on the same line: the street bends where the ground made
+ * it bend, and the houses were built to the street, not to a ruler.
+ */
 const CASONAS: [number, number][] = [
-  [4, 5],
-  [12, 5],
-  [18, 5],
-  [26, 5], // the panaderia
-  [33, 5], // Elias's workshop, loom out front
+  [4, 4],
+  [12, 6],
+  [18, 4],
+  [26, 6], // the panaderia
+  [33, 3], // Elias's workshop, loom out front
   [6, 16], // Dona Refugio's house, comal patio below
 ];
 
 /** Doors that open: Refugio's kitchen. The rest hold banda practice. */
 const OPEN_DOORS = new Set(['6,16']);
 
+const inEll = (x: number, y: number, cx: number, cy: number, rx: number, ry: number) =>
+  ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
+
+/** Distance from a cell to a segment: the lanes here were walked, not drawn. */
+function segDist(x: number, y: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(x - (ax + dx * t), y - (ay + dy * t));
+}
+
+/** The main street: two rows the whole way, and never once on one line. */
+const streetY = (x: number) => 13.5 + 0.85 * Math.sin((x + 4) / 5.5) + 0.3 * Math.sin(x / 2.1);
+
+/** The plaza: an old atrio that grew lopsided around its own portales. */
+const PLAZA: [number, number, number, number][] = [
+  [21, 19.6, 7.6, 4.2],
+  [16.5, 20.5, 4.6, 3.4],
+  [26, 17.8, 4.2, 2.6],
+];
+
+/** The marigold way, strewn from the gate down to where the street takes over. */
+const PETAL: [number, number, number, number][] = [
+  [40, 1, 40.4, 6],
+  [40.4, 6, 38.6, 11.6],
+];
+
 function groundAt(x: number, y: number): string {
   // The marigold way: petals from the camposanto gate down to the street.
-  if (x === 40 && y >= 1 && y <= 12) return 'm';
-  // Streets.
-  if (y === 13 && x >= 2 && x <= 43) return '-';
-  if (x === 24 && ((y >= 2 && y <= 12) || y === 14 || y === 15 || (y >= 24 && y <= 29))) return '-';
+  for (const [ax, ay, bx, by] of PETAL) if (segDist(x, y, ax, ay, bx, by) <= 0.7) return 'm';
+  // Streets: the long one east to west, the one that climbs to the camposanto
+  // road, and the one the colectivo grinds up from the valley floor.
+  if (Math.abs(y - streetY(x)) <= 1.15 && x >= 2 && x <= 43) return '-';
+  if (segDist(x, y, 24.4, 2, 23.6, 12) <= 0.9) return '-';
+  if (segDist(x, y, 23.4, 24, 24.5, 29.6) <= 0.9) return '-';
   // The plaza with its portales.
-  if (x >= 14 && x <= 28 && y >= 16 && y <= 23) return 'P';
-  // Refugio's swept-earth comal patio.
-  if (x >= 5 && x <= 12 && y >= 21 && y <= 23) return 'f';
-  // The cempasuchil field at the village edge.
-  if (x >= 2 && x <= 10 && y >= 26 && y <= 30) return 'F';
+  for (const [cx, cy, rx, ry] of PLAZA) if (inEll(x, y, cx, cy, rx, ry)) return 'P';
+  // Refugio's swept-earth comal patio, worn pale where the women stand.
+  if (inEll(x, y, 8.6, 22, 4.4, 2.0)) return 'f';
+  // The cempasuchil field at the village edge, cut in rows the rows follow.
+  if (inEll(x, y, 6, 28.2, 5.4, 2.8) || inEll(x, y, 10.5, 27, 3.2, 2.0)) return 'F';
+  if (inEll(x, y, 39, 26, 5.0, 2.6)) return 'F';
   // Green where the rains were generous this year.
-  if (x >= 30 && x <= 38 && y >= 24 && y <= 28) return 'g';
-  if (x >= 2 && x <= 12 && y >= 23 && y <= 25) return 'g';
-  if (x >= 36 && x <= 44 && y >= 16 && y <= 22) return 'g';
+  if (inEll(x, y, 33.5, 26, 5.4, 3.0) || inEll(x, y, 29, 27.5, 3.0, 2.0)) return 'g';
+  if (inEll(x, y, 7, 24.6, 6.0, 2.2)) return 'g';
+  if (inEll(x, y, 40.5, 18.5, 5.0, 3.6) || inEll(x, y, 36.5, 21, 3.0, 2.4)) return 'g';
+  if (inEll(x, y, 15.5, 27.5, 3.6, 2.2)) return 'g';
   return 's';
 }
 
 /**
  * The love layer: small true things clustered where life actually gathers,
- * doorways, the market lane, the patio, the road out. Nothing blocks a lane.
+ * doorways, the market lane, the patio, the road out. Nothing blocks a lane,
+ * nothing sits at even spacing, and the colour lives out here in the objects:
+ * the ground is dry earth all week, and this week the village is not.
  */
-const EXTRAS = new Map<string, string>([
-  ['5,10', 'A'], // agave piña resting by a door, eight years old
-  ['21,10', 'u'], // the banda's tuba, on its own chair outside rehearsal
-  ['13,10', 'W'], // papel picado still folded, waiting in a doorway
-  ['27,10', 'd'], // the street dog on the warm panaderia step
-  ['30,10', 'y'], // pan de muerto trays cooling by the bakery
-  ['10,7', 'R'], // the rotulista's half-finished sign between casonas
-  ['12,12', 'q'], // market crates: tomatillos and chiles
-  ['14,12', 'h'], // the chapulines basket at the stall's elbow
+const PROPS = new Map<string, string>([
+  // ---- the market lane, north side: the stalls stand in front of the houses
+  ['10,11', 'V'], // the flower stand, first thing you meet and the loudest
+  ['11,12', 'q'], // market crates: tomatillos, chiles, a pyramid of limes
+  ['13,12', 'M'], // Eugenia's chile and cacao stall
+  ['14,12', 'h'], // the chapulines basket at her elbow
+  ['9,12', 'L'],
+  ['17,12', 'B'], // barro negro, black as a wet stone
+  ['20,12', 'Z'], // the rebozo rack, hung to be walked into
+  ['21,11', 'u'], // the banda's tuba, on its own chair outside rehearsal
+  ['27,12', 'p'], // the pan de muerto stall
+  ['30,12', 'y'], // trays cooling in the doorway draft
+  ['31,11', 'd'], // the street dog on the warm panaderia step
+  ['32,12', 'L'],
+  // ---- and the south side, where the market spills toward the plaza ----
+  ['18,15', 'j'], // the carver's table of alebrijes, drying in the sun
+  ['17,17', 'V'], // a second flower stand, backed against the arcade
+  ['22,15', 'q'],
+  ['26,15', 'S'], // the village sign, off the road where it can be read
+  ['15,15', 'Z'],
+  // ---- doorways: what each house put outside this morning ----
+  ['5,9', 'A'], // agave piña resting by a door, eight years old
+  ['13,11', 'W'], // papel picado still folded, waiting in a doorway
+  ['10,6', 'R'], // the rotulista's half-finished sign between casonas
+  ['9,7', 'K'],
+  ['34,11', 'T'], // the telar, red cloth half born
+  ['36,11', 'Z'],
+  ['32,8', 'A'],
   ['23,3', 'N'], // corner nicho on the camposanto road
+  ['26,2', 'K'],
   ['1,12', 'b'], // bougainvillea over the west wall
-  ['44,15', 'b'], // bougainvillea over the east wall
+  ['44,16', 'b'], // bougainvillea over the east wall
+  // ---- the plaza: the arcade, the correo, the tree everyone meets under ---
+  ['28,18', 'E'], // correo counter under the portales
+  ['14,19', 'n'],
+  ['23,21', 'n'],
+  ['16,18', 'L'],
+  ['17,20', 'V'], // flowers sold in the plaza too, all week, by anyone
+  ['18,21', 'q'],
+  ['15,22', 'n'],
+  ['26,20', 't'], // the plaza's own tree, off centre, older than the arcade
+  ['25,22', 't'],
+  ['13,22', 'L'],
+  ['20,23', 'j'],
+  // ---- Refugio's patio: the comal, the water, the metate, the broom ----
+  ['7,22', 'c'], // Chela's comal
   ['5,20', 'J'], // Refugio's water cantaros in the shade
   ['10,23', 'e'], // the metate on Chela's patio
-  ['12,23', 'Q'], // the patio broom, mid-shift
-  ['26,28', 'z'], // the paletero's bicycle cart near the colectivo
-  ['11,27', 'K'], // cut cempasuchil bundles at the field edge
-  ['12,28', 'K'],
-  ['42,12', 'K'], // bundles staged by the camposanto lane
+  ['11,23', 'Q'], // the patio broom, mid-shift
+  ['11,21', 'v'],
+  ['6,23', 'K'],
   ['3,18', 'l'], // hens auditing the ground
-  ['33,26', 'l'],
+  ['4,19', 'l'],
+  ['2,21', 't'],
+  // ---- the field, the road out, and the paletero who works both ----
+  ['11,26', 'K'], // cut cempasuchil bundles at the field edge
+  ['12,27', 'K'],
+  ['10,28', 'K'],
+  ['13,25', 't'],
+  ['8,25', 'V'], // the third flower stand, at the field gate itself
+  ['23,28', 'X'], // the colectivo stop
+  ['26,28', 'z'], // the paletero's bicycle cart near the colectivo
+  ['27,26', 'l'],
+  ['21,26', 'N'], // the roadside nicho, for whoever is travelling
+  ['22,27', 'v'],
+  ['20,25', 'K'],
+  ['27,24', 't'],
+  ['32,25', 't'],
+  ['33,27', 'l'],
+  ['30,23', 'A'],
+  ['31,22', 'A'],
+  ['43,19', 't'],
+  ['41,22', 'A'],
+  ['38,24', 'K'],
+  ['39,23', 'K'],
+  // ---- the camposanto road: petals, candles, bundles staged for tonight ---
+  ['40,10', 'v'],
+  ['41,6', 'v'],
+  ['42,11', 'K'],
+  ['41,15', 'K'],
+  ['9,2', 't'],
+  ['31,2', 't'],
+  ['3,11', 't'],
+]);
+
+/** Papel picado, strung in runs so each string is one string, not four dots. */
+const PAPEL = new Set([
+  '15,13', '16,13', '17,13',
+  '29,13', '30,13',
+  '23,7', '24,7', '25,7',
+  '19,18', '20,18', '21,18',
+  '36,14', '37,14',
+  '24,25',
+]);
+
+/** The portales: two contiguous arcades meeting at the plaza's north corner. */
+const PORTALES = new Set([
+  '18,16', '19,16', '20,16', '21,16', '22,16',
+  '25,17', '26,17', '27,17', '28,17', '29,17',
 ]);
 
 function objectAt(x: number, y: number): string {
@@ -81,37 +196,27 @@ function objectAt(x: number, y: number): string {
       return 'x';
     }
   }
-  // The market lane along the main street.
-  if (x === 13 && y === 12) return 'M'; // the chile and cacao stall
-  if (x === 17 && y === 12) return 'B'; // barro negro pottery
-  if (x === 27 && y === 12) return 'p'; // the pan de muerto stall
-  // Plaza furniture: portales row, benches, farol, the post office counter.
-  if (y === 16 && (x === 15 || x === 17 || x === 19 || x === 21 || x === 26 || x === 28)) return 'a';
-  if ((x === 18 && y === 19) || (x === 26 && y === 21)) return 'n';
-  if ((x === 10 || x === 30) && y === 12) return 'L';
-  if (x === 14 && y === 22) return 'L';
-  if (x === 28 && y === 17) return 'E'; // correo counter under the portales
-  if (x === 25 && y === 14) return 'S'; // the village sign
-  if (x === 16 && y === 24) return 'j'; // the alebrije table
-  if (x === 23 && y === 28) return 'X'; // the colectivo stop
-  if (x === 7 && y === 22) return 'c'; // Chela's comal
-  if (x === 36 && y === 11) return 'T'; // the telar, red cloth half born
-  // Veladoras: small lights left where the path will need them.
-  if ((x === 39 && y === 12) || (x === 41 && y === 6) || (x === 11 && y === 21)) return 'v';
-  // Papel picado strings across streets and plaza.
-  const papel = new Set(['16,13', '22,13', '28,13', '34,13', '24,7', '24,15', '20,17', '24,25']);
-  if (papel.has(`${x},${y}`)) return 'w';
-  // Trees: jacaranda shade and bougainvillea climbing the walls.
-  const trees = new Set(['3,11', '31,15', '43,18', '12,25', '33,25', '9,2', '31,2', '3,24']);
-  if (trees.has(`${x},${y}`)) return 't';
-  const extra = EXTRAS.get(`${x},${y}`);
-  if (extra) return extra;
-  // Sparse dry-valley life, deterministic so it never shifts.
+  const key = `${x},${y}`;
+  if (PORTALES.has(key)) return 'a';
+  if (PAPEL.has(key)) return 'w';
+  const prop = PROPS.get(key);
+  if (prop) return prop;
+  // Dry-valley life, deterministic so it never shifts, and gathered along the
+  // edges: weeds come up where one kind of ground gives way to another.
   if (groundAt(x, y) === 's') {
     const h = cellHash(x, y, 91);
-    if (h < 0.04) return 'i';
-    if (h > 0.986 && h < 0.993) return 'k'; // spent cohete sticks, obviously
-    if (h > 0.995) return 'r';
+    const edge =
+      x <= 1 || x >= 44 || y <= 1 || y >= 30 ||
+      groundAt(x + 1, y) !== 's' || groundAt(x - 1, y) !== 's' ||
+      groundAt(x, y + 1) !== 's' || groundAt(x, y - 1) !== 's';
+    if (edge && h < 0.12) return 'i';
+    if (h > 0.988 && h < 0.994) return 'k'; // spent cohete sticks, obviously
+    // A stone big enough to stub a toe never sits where feet actually go.
+    const byRoad = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+      const g = groundAt(x + (dx as number), y + (dy as number));
+      return g === '-' || g === 'P';
+    });
+    if (edge && !byRoad && h > 0.982) return 'r';
   }
   return ' ';
 }
@@ -144,7 +249,7 @@ export const OAXACA_MAP: MapData = {
     { at: [40, 1], type: 'door', to: 'camposanto', spawn: [10, 12], facing: 'up' },
   ],
   smoke: [
-    [28, 6],
+    [28, 7],
     [8, 17],
   ],
   legend: {
@@ -192,6 +297,8 @@ export const OAXACA_MAP: MapData = {
     Q: { t: 'escoba', solid: true },
     z: { t: 'paletas', solid: true, tall: true },
     K: { t: 'cempacut', solid: true },
+    Z: { t: 'rebozos', solid: true, tall: true },
+    V: { t: 'puestoflores', solid: true, tall: true },
     l: { t: 'gallina' },
     k: { t: 'cohete' },
     ' ': { t: 'void' },
@@ -253,28 +360,77 @@ export const COCINA_MAP: MapData = {
 const CW = 20;
 const CH = 14;
 
+/**
+ * The petal way, strewn by hand from the gate to the chapel, so it wanders
+ * the way a person carrying a basket wanders.
+ */
+const CAMPO_PETAL: [number, number, number, number][] = [
+  [10, 13.5, 10.2, 10],
+  [10.2, 10, 11.6, 7.4],
+  [11.6, 7.4, 13.4, 5.6],
+];
+
 function campoGround(x: number, y: number): string {
-  if (x === 10 && y >= 2 && y <= 13) return 'm';
+  for (const [ax, ay, bx, by] of CAMPO_PETAL) if (segDist(x, y, ax, ay, bx, by) <= 0.65) return 'm';
+  // The marigold bed along the north wall, banked deeper where the gate is.
   if (y === 1 && x >= 2 && x <= 17) return 'F';
+  if (y === 2 && (x === 4 || x === 5 || x === 10 || x === 11)) return 'F';
+  // Grass where nobody has been buried yet, which is where the families sit.
+  if (inEll(x, y, 3.5, 11.5, 3.4, 2.0) || inEll(x, y, 16.5, 9.5, 3.0, 2.4)) return 'g';
   return 's';
 }
+
+/**
+ * The graves stand in families, not in ranks: a plot bought in 1902 and added
+ * to ever since, then a gap where the ground is bad, then two on their own.
+ * The open middle is not emptiness, it is where the whole village will sit.
+ */
+const TUMBAS: [number, number][] = [
+  // the Soto plot, bought in 1902 and added to ever since
+  [2, 3], [3, 3], [2, 4], [3, 5], [4, 5], [2, 6],
+  // Epifania's people, three of them, shoulder to shoulder
+  [6, 3], [7, 3], [6, 4],
+  // and Bernardo's, who paid for the chapel and never stopped saying so
+  [16, 4], [17, 4], [17, 5],
+  // the Cruz side, under the wall where the ground is best
+  [12, 3], [13, 4], [12, 5],
+  // Serafin's brother and the two nobody claims any more
+  [8, 8], [9, 8], [8, 7],
+  // Chuy's grandmother, and his grandmother's sister beside her
+  [13, 9], [14, 10], [13, 10],
+  // the newest two, still raw, nearest the gate
+  [5, 11], [6, 11],
+  // and one on its own, older than the wall it leans toward
+  [17, 11],
+];
+
+/** Cells the vigil needs kept clear: the families' own standing room. */
+const CAMPO_KEEP = new Set(['11,6', '11,11', '6,5', '16,5', '12,6', '8,9', '12,9', '10,12', '10,13']);
+
+const CAMPO_FIXED = new Map<string, string>([
+  ['15,4', 'H'], // the Ramirez chapel, whitewashed every October by argument
+  ['3,7', 'v'],
+  ['7,5', 'v'],
+  ['16,7', 'v'],
+  ['14,12', 'v'],
+  ['2,10', 't'],
+  ['18,8', 't'],
+  ['4,12', 'n'], // benches carried in for the vigil, facing their own rows
+  ['15,12', 'n'],
+  ['11,12', 'c'], // the petal costal by the gate
+  ['9,4', 'B'], // whitewash bucket, lid off, brush across it
+  ['9,5', 'Q'], // Meliton's slanted broom, exactly where he set it down
+  ['3,2', 'K'], // cut marigolds below the wall row
+  ['12,2', 'K'],
+  ['13,3', 'K'],
+]);
 
 function campoObject(x: number, y: number): string {
   if (y === 0 || x === 0 || x === CW - 1) return 'o';
   if (y === CH - 1) return x === 10 ? ' ' : 'o';
-  const tumbas = new Set(['3,4', '5,4', '7,4', '13,4', '15,4', '17,4', '3,7', '5,7', '7,7', '13,7', '15,7', '17,7', '4,10', '6,10', '14,10', '16,10']);
-  if (tumbas.has(`${x},${y}`)) return 'U';
-  const velas = new Set(['4,5', '14,5', '6,8', '16,8', '9,10', '11,10']);
-  if (velas.has(`${x},${y}`)) return 'v';
-  if ((x === 2 && y === 11) || (x === 17 && y === 11)) return 't';
-  // Benches for the vigil: brought out each year, facing the family rows.
-  if ((x === 4 && y === 12) || (x === 15 && y === 12)) return 'n';
-  // The caretaker's working corner: whitewash, broom, the costal of petals.
-  if (x === 12 && y === 12) return 'c'; // the petal costal by the gate
-  if (x === 8 && y === 7) return 'B'; // whitewash bucket between graves
-  if (x === 18 && y === 3) return 'Q'; // Melitón's slanted broom
-  if (x === 3 && y === 2) return 'K'; // cut marigolds below the wall row
-  return ' ';
+  const key = `${x},${y}`;
+  if (TUMBAS.some(([tx, ty]) => tx === x && ty === y)) return 'U';
+  return CAMPO_FIXED.get(key) ?? ' ';
 }
 
 const campo = paint(CW, CH, campoGround, campoObject);
@@ -286,6 +442,7 @@ export const CAMPOSANTO_MAP: MapData = {
   spawnFacing: 'up',
   legend: {
     s: { t: 'dirt' },
+    g: { t: 'grass' },
     m: { t: 'petalpath' },
     F: { t: 'cempa' },
     o: { t: 'wallStone', solid: true, tall: true },
@@ -297,9 +454,32 @@ export const CAMPOSANTO_MAP: MapData = {
     B: { t: 'cubeta', solid: true },
     Q: { t: 'escoba', solid: true },
     K: { t: 'cempacut', solid: true },
+    H: { t: 'capilla', solid: true, tall: true },
     ' ': { t: 'void' },
   },
   ground: campo.ground,
   objects: campo.objects,
   triggers: [{ at: [10, 13], type: 'door', to: 'oaxaca', spawn: [40, 2], facing: 'down' }],
 };
+
+/**
+ * A candle at the foot of every grave, on the night. Derived from the graves
+ * themselves so the two can never drift apart, and filtered so no family
+ * loses the tile it stands on.
+ */
+export const CAMPO_VIGIL_CELLS: [number, number][] = (() => {
+  const out: [number, number][] = [];
+  const taken = new Set<string>();
+  for (const [x, y] of TUMBAS) {
+    for (const [cx, cy] of [[x, y + 1], [x + 1, y], [x - 1, y]] as [number, number][]) {
+      const key = `${cx},${cy}`;
+      if (taken.has(key) || CAMPO_KEEP.has(key)) continue;
+      if (cx < 1 || cy < 1 || cx > CW - 2 || cy > CH - 2) continue;
+      if (campoObject(cx, cy) !== ' ') continue;
+      taken.add(key);
+      out.push([cx, cy]);
+      break;
+    }
+  }
+  return out;
+})();

@@ -1065,6 +1065,24 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'Copal-wood creatures drying in the sun: impossible anatomy, confident paint. None of them are ancient. All of them are certain.' },
     ],
   },
+  'c9.ex.rebozos': {
+    lines: [
+      { text: 'A rack of rebozos hung to be walked into: cochineal red, indigo, one green that argues with everything near it and wins.' },
+      { text: 'The seller says a rebozo carries a baby, a market load, or a grief, depending on the year. She says it like a price list.' },
+    ],
+  },
+  'c9.ex.puestoflores': {
+    lines: [
+      { text: 'Buckets of cempasuchil by the armful, and one bucket of cresta de gallo, red as a stove ring. The whole week is these two colors.' },
+      { text: 'You buy them by the arm, not by the stem. Everyone leaves this stall carrying more orange than they can see over.' },
+    ],
+  },
+  'c9.ex.capilla': {
+    lines: [
+      { text: 'A small whitewashed chapel over one family’s dead, with a glass door and candles behind it that have been lit since Tuesday.' },
+      { text: 'It is repainted every October, by an argument about the color, which is settled the same way every year: white, and someone sulks.' },
+    ],
+  },
   'c9.ex.campogate': {
     lines: [
       { text: 'The camposanto arch, garlanded in marigolds. Gates usually keep things out. This one is decorated for arrivals.' },
@@ -1319,6 +1337,9 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   panstall: [{ node: 'c9.ex.panstall' }],
   barrostall: [{ node: 'c9.ex.barrostall' }],
   telar: [{ node: 'c9.ex.telar' }],
+  rebozos: [{ node: 'c9.ex.rebozos' }],
+  puestoflores: [{ node: 'c9.ex.puestoflores' }],
+  capilla: [{ node: 'c9.ex.capilla' }],
   alebrije: [
     { when: { has: ['met.carver'], not: ['c9.alebrije.close'] }, node: 'c9.ex.alebrije.close' },
     { node: 'c9.ex.alebrije' },

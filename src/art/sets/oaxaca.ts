@@ -21,6 +21,7 @@ export const ART: ChapterArt = {
   aliases: { correo: 'signpost', colectivo: 'signpost' },
   grounded: [
     'portales', 'panstall', 'barrostall', 'telar', 'ofrenda', 'correo', 'colectivo',
+    'rebozos', 'puestoflores', 'capilla',
     'tuba', 'rotulo', 'mercadocrates', 'pantray', 'bugambilia', 'nicho', 'paletas', 'ristra',
   ],
   buildings: ['casona'],
@@ -30,7 +31,7 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['comal', 'veladora', 'nicho'],
+  glows: ['comal', 'veladora', 'nicho', 'capilla'],
   pathy: ['petalpath'],
   noInk: ['gallina', 'cohete', 'streetdog'],
 
@@ -314,6 +315,159 @@ export const ART: ChapterArt = {
       rr(g, 4, 31, 2.6, 28, 1.3, '#7a5636');
       rr(g, 57, 31, 2.6, 28, 1.3, '#7a5636');
     }, 64, 96);
+
+    // The rebozo rack: the loudest thing in the lane, and the only wall of
+    // colour in a village built out of dry earth.
+    make('rebozos', 3, (g, r) => {
+      softShadow(g, 32, 90, 24, 6, 0.2);
+      // The frame: two poles and a crossbar, lashed, leaning slightly.
+      rr(g, 6, 20, 4.4, 68, 2, '#7a5636');
+      rr(g, 53, 20, 4.4, 68, 2, '#7a5636');
+      rr(g, 3, 16, 58, 5.5, 2.5, '#8a6238');
+      const bolts = [GRANA, '#2f6f8a', MARIGOLD_HI, '#5c3a7a', '#3f7a52', '#c94f7c', '#d9a441'];
+      // Cloth hung to be walked into: different lengths, different hems.
+      let x = 7;
+      let i = r.int(bolts.length);
+      while (x < 52) {
+        const w = 7 + r.int(6);
+        const h = 34 + r.int(30);
+        const c = bolts[i % bolts.length] ?? GRANA;
+        i += 1 + r.int(3);
+        rr(g, x, 20, w, h, 2, c);
+        vgrad(g, x, 20, w, h * 0.35, 'rgba(255,250,235,0.22)', 'rgba(0,0,0,0)');
+        vgrad(g, x, 20 + h * 0.5, w, h * 0.5, 'rgba(0,0,0,0)', 'rgba(30,20,26,0.28)');
+        // The banded weave, and the knotted fringe at the bottom.
+        g.strokeStyle = shade(c, 0.28);
+        g.lineWidth = 1.2;
+        for (let k = 1; k < 4; k++) {
+          g.beginPath();
+          g.moveTo(x + 0.5, 20 + (h * k) / 4);
+          g.lineTo(x + w - 0.5, 20 + (h * k) / 4);
+          g.stroke();
+        }
+        g.strokeStyle = shade(c, -0.2);
+        g.lineWidth = 1;
+        for (let k = 0; k < 4; k++) {
+          const fx = x + 1.5 + k * ((w - 3) / 3);
+          g.beginPath();
+          g.moveTo(fx, 20 + h);
+          g.lineTo(fx + (r.next() - 0.5) * 2, 20 + h + 4);
+          g.stroke();
+        }
+        x += w + 1 + r.int(2);
+      }
+      // A folded stack on the ground where the seller sits.
+      for (let k = 0; k < 3; k++) {
+        rr(g, 12 + k, 80 - k * 4, 24, 5, 2, bolts[(i + k) % bolts.length] ?? GRANA);
+      }
+    }, 64, 96);
+
+    // The flower stand: cempasuchil by the armful, cresta de gallo beside it,
+    // the two colours this week is actually made of.
+    make('puestoflores', 3, (g, r) => {
+      softShadow(g, 32, 90, 26, 7, 0.22);
+      // A cloth on the ground, buckets on it, the whole shop.
+      oval(g, 32, 78, 27, 11, '#4a6d7a');
+      oval(g, 32, 76, 24, 9, '#5c8494');
+      for (const [bx, by, bw] of [[13, 50, 18], [34, 40, 21], [52, 54, 16]] as const) {
+        // The bucket.
+        rr(g, bx - bw / 2, by + 14, bw, 20, 3, '#9aa6ab');
+        rr(g, bx - bw / 2, by + 13, bw, 5, 2, '#b9c4c9');
+        vgrad(g, bx - bw / 2, by + 14, bw, 8, 'rgba(255,255,255,0.3)', 'rgba(0,0,0,0)');
+        // The armful standing in it: marigold heads, and one bucket of red.
+        const red = bx === 52;
+        for (let k = 0; k < 16; k++) {
+          const a = -2.1 + (k / 15) * 2.5 + (r.next() - 0.5) * 0.24;
+          const rad = 18 + r.int(15);
+          const hx = bx + Math.cos(a) * rad * 0.75;
+          const hy = by + 16 + Math.sin(a) * rad;
+          g.strokeStyle = '#4a6b3a';
+          g.lineWidth = 1.6;
+          g.beginPath();
+          g.moveTo(bx, by + 18);
+          g.quadraticCurveTo((bx + hx) / 2, (by + hy) / 2, hx, hy);
+          g.stroke();
+          dot(g, hx, hy, 4 + r.next() * 1.4, red ? (k % 2 ? GRANA : '#c94f7c') : k % 2 ? MARIGOLD : MARIGOLD_HI);
+          dot(g, hx - 1.4, hy - 1.4, 1.5, red ? '#e0748a' : '#ffcf7a');
+        }
+      }
+      // Loose heads on the cloth, and the tin the money lives in.
+      for (let k = 0; k < 5; k++) {
+        dot(g, 14 + r.int(38), 74 + r.int(8), 2.6, k % 2 ? MARIGOLD : GRANA);
+      }
+      rr(g, 44, 74, 10, 8, 2, '#c9b48a');
+    }, 64, 96);
+
+    // The Ramírez chapel: the family that could afford a roof over its dead,
+    // whitewashed every October by an argument that is itself a tradition.
+    make('capilla', 1, (g) => {
+      softShadow(g, 48, 122, 34, 9, 0.26);
+      const wash = '#efe7d6';
+      const trim = CANTERA;
+      // The body, with a shallow buttress each side.
+      rr(g, 12, 44, 72, 78, 4, shade(wash, -0.06));
+      rr(g, 16, 40, 64, 84, 4, wash);
+      vgrad(g, 16, 40, 64, 26, 'rgba(255,255,246,0.5)', 'rgba(0,0,0,0)');
+      vgrad(g, 16, 96, 64, 28, 'rgba(0,0,0,0)', 'rgba(60,50,44,0.28)');
+      rr(g, 8, 108, 80, 16, 3, shade(trim, -0.06));
+      // The gable and the little bell arch on top of it.
+      g.fillStyle = shade(wash, 0.04);
+      g.beginPath();
+      g.moveTo(14, 44);
+      g.lineTo(48, 12);
+      g.lineTo(82, 44);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = trim;
+      g.lineWidth = 4;
+      g.beginPath();
+      g.moveTo(12, 46);
+      g.lineTo(48, 12);
+      g.lineTo(84, 46);
+      g.stroke();
+      g.strokeStyle = '#8c8479';
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(48, 2);
+      g.lineTo(48, 14);
+      g.moveTo(42, 6);
+      g.lineTo(54, 6);
+      g.stroke();
+      // The glazed door, its iron grille, and the family name below the arch.
+      g.fillStyle = '#3a4a3e';
+      g.beginPath();
+      g.moveTo(32, 108);
+      g.lineTo(32, 68);
+      g.quadraticCurveTo(48, 52, 64, 68);
+      g.lineTo(64, 108);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = shade(trim, 0.1);
+      g.lineWidth = 2;
+      for (const gx of [40, 48, 56]) {
+        g.beginPath();
+        g.moveTo(gx, 106);
+        g.lineTo(gx, 62 + Math.abs(gx - 48) * 0.5);
+        g.stroke();
+      }
+      g.beginPath();
+      g.moveTo(34, 84);
+      g.lineTo(62, 84);
+      g.stroke();
+      rr(g, 30, 56, 36, 6, 2, shade(trim, 0.14));
+      // Behind the glass: candles that have been burning since Tuesday.
+      glowSpot(g, 42, 96, 14, '#ffc978', 0.5);
+      glowSpot(g, 54, 98, 12, '#ffc978', 0.42);
+      rr(g, 40, 92, 5, 10, 2, 'rgba(255,236,200,0.85)');
+      rr(g, 52, 94, 5, 9, 2, 'rgba(255,236,200,0.75)');
+      // Marigolds banked along the plinth, and a jar of water for the flowers.
+      for (let k = 0; k < 9; k++) {
+        dot(g, 14 + k * 9 + (k % 2) * 3, 112 + (k % 3), 3.4, k % 2 ? MARIGOLD : MARIGOLD_HI);
+      }
+      rr(g, 76, 100, 9, 10, 2, 'rgba(200,225,225,0.55)');
+      dot(g, 80.5, 96, 3, GRANA);
+    }, 96, 128);
 
     // The telar: a standing tapestry loom, cochineal red walking up the warp.
     make('telar', 1, (g) => {
