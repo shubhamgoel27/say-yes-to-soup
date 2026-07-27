@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, keyCap } from './scene';
 import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot } from '../../art/pix';
 
 /**
@@ -198,6 +198,11 @@ function bakeCocina(): Surface {
   return s;
 }
 
+const MOLE_LEGEND = [
+  { keys: ['left', 'up', 'right', 'down'], does: 'stir, going the way the circle goes' },
+  { keys: ['space'], does: 'when the pot has decided' },
+] as const;
+
 export class MolePanel {
   private step = 0;
   private rounds = 0;
@@ -254,7 +259,7 @@ export class MolePanel {
     // The #frame ancestor zeroes line-height for canvas layout; restore it
     // here so two-line hints do not collapse onto themselves.
     this.root.style.lineHeight = '1.45';
-    this.setHint = mountScene(this.root, 'The Hour of Stirring', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'The Hour of Stirring', this.scene, MOLE_LEGEND).setHint;
     this.setHint(this.hint);
     this.root.hidden = false;
   }
@@ -600,6 +605,31 @@ export class MolePanel {
     dot(g, topX + lean, topY, 5.5, '#c9a35f');
     dot(g, topX + lean - 1.5, topY - 1.5, 1.8, '#e8d3a0');
     if (rest > 0.5) oval(g, tipX - 10, tipY, 13, 6, '#b08a4c', 0.15);
+
+    // Where the spoon goes next, on the rim it goes round. The circle is the
+    // whole input and it used to be spelled out only in the caption, which is
+    // a poor place to keep a thing you need on every single press.
+    if (!this.done && !this.failed) {
+      const nd = STIR_ORDER[this.step] ?? 'up';
+      const na = nd === 'up' ? -Math.PI / 2 : nd === 'down' ? Math.PI / 2 : nd === 'left' ? Math.PI : 0;
+      const kx = POT_X + Math.cos(na) * (POT_RX + 20);
+      const ky = POT_Y + Math.sin(na) * (POT_RX * 0.25 + 22);
+      const puff = 0.86 + Math.abs(wobble(t, 3.4)) * 0.1;
+      keyCap(g, kx, ky, nd, 0.95, puff);
+      // The three still to come, faint, so the round reads as a round.
+      for (let i = 1; i < 4; i++) {
+        const d2 = STIR_ORDER[(this.step + i) % 4] ?? 'up';
+        const a2 = d2 === 'up' ? -Math.PI / 2 : d2 === 'down' ? Math.PI / 2 : d2 === 'left' ? Math.PI : 0;
+        keyCap(
+          g,
+          POT_X + Math.cos(a2) * (POT_RX + 20),
+          POT_Y + Math.sin(a2) * (POT_RX * 0.25 + 22),
+          d2,
+          0.28,
+          0.72,
+        );
+      }
+    }
 
     // The six rounds, told as six little chiles on the hearth edge.
     for (let i = 0; i < STIR_ROUNDS; i++) {
@@ -954,6 +984,11 @@ function paintItem(g: CanvasRenderingContext2D, id: string, x: number, y: number
   g.restore();
 }
 
+const OFRENDA_LEGEND = [
+  { keys: ['up', 'down'], does: 'choose a shelf' },
+  { keys: ['space'], does: 'set the thing down there' },
+] as const;
+
 export class OfrendaPanel {
   private items: OfrendaItem[] = [];
   private placed: string[][] = [[], [], []];
@@ -996,7 +1031,7 @@ export class OfrendaPanel {
     this.scene ??= new Scene();
     this.scene.restart();
     this.root.style.lineHeight = '1.45';
-    this.setHint = mountScene(this.root, 'An Ofrenda for Nani', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'An Ofrenda for Nani', this.scene, OFRENDA_LEGEND).setHint;
     this.root.hidden = false;
   }
 

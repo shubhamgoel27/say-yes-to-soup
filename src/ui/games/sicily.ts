@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, easeInCubic, easeOutBack, easeOutCubic, mountScene, squashed, wobble } from './scene';
+import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 
 /**
@@ -430,6 +430,11 @@ type ScopaPhase = 'play' | 'wait' | 'between' | 'lost' | 'done';
  * story flag only ever comes from a win, and a loss costs nothing but the
  * afternoon, which is what the afternoon is for.
  */
+const SCOPA_LEGEND = [
+  { keys: ['left', 'right'], does: 'choose a card from your hand' },
+  { keys: ['space'], does: 'play it' },
+] as const;
+
 const CONSOLATIONS = [
   'You played fast and honest. Fast is worth two points; honest is worth the chair. Keep the second one.',
   'Ha! Do not make that face. I have been losing at this table since before your country had that flag.',
@@ -469,6 +474,14 @@ export class ScopaPanel {
   private flourishAt = -1;
   private steamAt = 0;
   private sparkleAt = 0;
+  /**
+   * What the selected card would take, kept as card keys so the painter can
+   * ring them. Recomputed only when the hand, the table or the cursor moves:
+   * findSum walks every subset of the table, which must never run per frame.
+   */
+  private marks = new Set<number>();
+  private markSig = -1;
+  private markSum = '';
 
   constructor(
     private root: HTMLElement,
@@ -488,7 +501,7 @@ export class ScopaPanel {
     this.lesson = '';
     this.scene ??= new Scene();
     this.scene.restart();
-    this.setHint = mountScene(this.root, 'Scopa at the Circolo', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'Scopa at the Circolo', this.scene, SCOPA_LEGEND).setHint;
     fixHint(this.root);
     this.sprs.clear();
     this.q.length = 0;
@@ -842,6 +855,32 @@ export class ScopaPanel {
     this.phase = 'play';
   }
 
+  /**
+   * Keep the capture marks honest. The signature folds in the cursor, the
+   * chosen card and the whole table, so any change re-solves exactly once.
+   */
+  private refreshMarks() {
+    let sig = this.phase === 'play' ? this.cursor + 1 : 0;
+    for (const c of this.table) sig = (sig * 61 + ckey(c) + 1) % 1e9;
+    const chosen = this.hand[Math.min(this.cursor, this.hand.length - 1)];
+    sig = (sig * 61 + (chosen ? ckey(chosen) + 1 : 0)) % 1e9;
+    if (sig === this.markSig) return;
+    this.markSig = sig;
+    this.marks.clear();
+    this.markSum = '';
+    if (this.phase !== 'play' || !chosen) return;
+    const got = this.wouldTake(chosen);
+    if (!got) {
+      this.markSum = `the ${chosen.v} takes nothing`;
+      return;
+    }
+    for (const c of got) this.marks.add(ckey(c));
+    this.markSum =
+      got.length === 1
+        ? `the ${chosen.v} takes the ${got[0]?.v}`
+        : `the ${chosen.v} takes ${got.map((c) => c.v).join(' + ')}`;
+  }
+
   tick(dt: number) {
     if (!this.isOpen) return;
     if (this.phase === 'wait') {
@@ -869,6 +908,7 @@ export class ScopaPanel {
       const t = i === this.cursor && this.phase === 'play' ? 1 : 0;
       s.rl += (t - s.rl) * Math.min(1, dt * 12);
     });
+    this.refreshMarks();
     sc.frame(dt, (g) => this.paint(g));
     this.setHint(this.hint);
   }
@@ -992,6 +1032,28 @@ export class ScopaPanel {
         g.drawImage(glowDisc(46, 'rgba(255,214,120,0.5)'), s.x - 46, s.y - lift - 38);
         g.globalAlpha = 1;
       }
+      // What the chosen card can actually take, marked on the wood. The
+      // coaching says talìa, look before you play; this is the looking.
+      if (this.marks.has(ckey(s.card)) && s.up && s.layer !== 1) {
+        const pulse = 0.5 + 0.22 * Math.sin(sc.time * 4);
+        g.globalAlpha = 0.42 + pulse * 0.3;
+        g.drawImage(glowDisc(52, 'rgba(255,206,110,0.55)'), s.x - 52, s.y + bob - 52);
+        g.globalAlpha = 1;
+        g.save();
+        g.translate(s.x, s.y + bob);
+        g.rotate(s.rot);
+        g.strokeStyle = `rgba(255,226,150,${0.75 + pulse * 0.25})`;
+        g.lineWidth = 3;
+        g.beginPath();
+        g.roundRect(-CW / 2 - 4, -CH / 2 - 4, CW + 8, CH + 8, 6);
+        g.stroke();
+        g.strokeStyle = 'rgba(60,40,16,0.55)';
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.roundRect(-CW / 2 - 6, -CH / 2 - 6, CW + 12, CH + 12, 7);
+        g.stroke();
+        g.restore();
+      }
       g.save();
       g.translate(s.x, s.y - lift + bob);
       g.rotate(s.rot);
@@ -1004,6 +1066,18 @@ export class ScopaPanel {
       const c = this.hand[Math.min(this.cursor, this.hand.length - 1)];
       const s = c ? this.sprs.get(ckey(c)) : undefined;
       if (s) {
+        // A thread of light from the card in your fingers to what it takes.
+        if (this.marks.size > 0) {
+          g.strokeStyle = `rgba(255,214,130,${0.3 + 0.12 * Math.sin(sc.time * 4)})`;
+          g.lineWidth = 1.6;
+          for (const sp of this.sprs.values()) {
+            if (!this.marks.has(ckey(sp.card))) continue;
+            g.beginPath();
+            g.moveTo(s.x, s.y - s.rl * 14 - CH / 2 + 6);
+            g.quadraticCurveTo((s.x + sp.x) / 2, (s.y + sp.y) / 2 + 18, sp.x, sp.y + CH / 2 - 6);
+            g.stroke();
+          }
+        }
         const ty = s.y - s.rl * 14 - CH / 2 - 12 + Math.sin(sc.time * 5) * 2.5;
         g.fillStyle = '#e8c86a';
         g.strokeStyle = 'rgba(43,33,24,0.7)';
@@ -1048,8 +1122,25 @@ export class ScopaPanel {
       this.sparkleAt = sc.time;
       sc.burst(140 + Math.random() * 360, 90 + Math.random() * 60, { n: calm() ? 2 : 4, color: '#ffe1a0', size: 2, speed: 40, life: 0.6, grav: 60 });
     }
-    inkText(g, `you ${this.myPts} · him ${this.oppPts}`, 88, 292, { size: 14, color: 'rgba(244,242,232,0.9)', align: 'center' });
-    inkText(g, `playing to ${this.target}`, 88, 311, { size: 12, color: 'rgba(244,242,232,0.65)', align: 'center', italic: true });
+    inkText(g, `you ${this.myPts} · him ${this.oppPts}`, 88, 300, { size: 14, color: 'rgba(244,242,232,0.9)', align: 'center' });
+    inkText(g, `playing to ${this.target}`, 88, 317, { size: 12, color: 'rgba(244,242,232,0.65)', align: 'center', italic: true });
+    // The club's chalk slate does the arithmetic out loud, the way the elder
+    // does it for anyone new: what this card takes, before you commit it.
+    if (this.phase === 'play' && this.markSum) {
+      inkText(g, this.markSum, 88, 283, {
+        size: 11,
+        align: 'center',
+        italic: true,
+        color: this.marks.size > 0 ? 'rgba(255,226,150,0.95)' : 'rgba(238,232,214,0.6)',
+      });
+    }
+    // The keys, on the hand they move.
+    if (this.phase === 'play' && this.hand.length > 1) {
+      const n = this.hand.length;
+      keyCap(g, this.handSlot(0, n).x - 46, 286, 'left', 0.9, 0.86);
+      keyCap(g, this.handSlot(n - 1, n).x + 46, 286, 'right', 0.9, 0.86);
+    }
+    if (this.phase === 'play') keyCap(g, 320, 330, 'space', 0.9, 0.86);
   }
 }
 
@@ -1254,6 +1345,8 @@ function pisciFish(): HTMLCanvasElement {
 
 type PisciPhase = 'row' | 'leap' | 'lost' | 'done';
 
+const PISCI_LEGEND = [{ keys: ['space'], does: 'pull on the rais\u2019s call' }] as const;
+
 export class PisciPanel {
   private phase: PisciPhase = 'row';
   private strokes = 0; // good strokes this leg
@@ -1294,7 +1387,7 @@ export class PisciPanel {
     this.speed = 0.5;
     this.scene ??= new Scene();
     this.scene.restart();
-    this.setHint = mountScene(this.root, 'U Pisci a Mari', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'U Pisci a Mari', this.scene, PISCI_LEGEND).setHint;
     fixHint(this.root);
     this.lunge = 0;
     this.rockT = 9;
@@ -1798,6 +1891,11 @@ function miniCannolo(): HTMLCanvasElement {
 
 type CannoloPhase = 'pipe' | 'burst' | 'garnish' | 'served' | 'done';
 
+const CANNOLO_LEGEND = [
+  { keys: ['space'], does: 'start the ricotta, and stop it' },
+  { keys: ['left', 'right'], does: 'choose the garnish' },
+] as const;
+
 export class CannoloPanel {
   private phase: CannoloPhase = 'pipe';
   private shell = 0; // 0..2
@@ -1845,7 +1943,7 @@ export class CannoloPanel {
     this.gCur = 0;
     this.scene ??= new Scene();
     this.scene.restart();
-    this.setHint = mountScene(this.root, 'The Pastry Bag', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'The Pastry Bag', this.scene, CANNOLO_LEGEND).setHint;
     fixHint(this.root);
     this.bagEase = 0;
     this.creamDone0 = 0;
@@ -2015,6 +2113,13 @@ export class CannoloPanel {
     const cx = endX + dir * (4 + out * 0.5);
     oval(g, cx, SHELL_AT.y + 2, r * 0.9 + out * 0.35, r * 0.92, '#e3dcc8');
     oval(g, cx - dir * 1.5, SHELL_AT.y, r * 0.85 + out * 0.3, r * 0.88, '#f6f1e2');
+    // In the sweet zone the ricotta itself catches the light, so the eye can
+    // stay on the shell instead of ping-ponging to a meter.
+    if (active && this.phase === 'pipe' && f >= this.zoneLo && f <= this.zoneLo + this.zoneW && sc) {
+      g.globalAlpha = 0.5 + 0.2 * Math.sin(sc.time * 7);
+      g.drawImage(glowDisc(40, 'rgba(255,222,140,0.75)'), cx - 40, SHELL_AT.y - 40);
+      g.globalAlpha = 1;
+    }
     const rot = active && this.flowing && sc ? sc.time * 7 : 0.6;
     g.strokeStyle = 'rgba(210,200,178,0.85)';
     g.lineWidth = 1.4;
@@ -2074,6 +2179,11 @@ export class CannoloPanel {
           g.stroke();
         }
         inkText(g, gn, b.x, yb + 25, { size: 10.5, align: 'center', color: sel ? '#2b2118' : 'rgba(43,33,24,0.75)' });
+        if (sel) {
+          keyCap(g, b.x - 60, yb + 25, 'left', 0.9, 0.82);
+          keyCap(g, b.x + 60, yb + 25, 'right', 0.9, 0.82);
+          keyCap(g, b.x, yb - 44, 'space', 0.92, 0.86);
+        }
       }
     });
     // Finished cannoli collect on the tray, dressed and vouched for.
@@ -2123,16 +2233,24 @@ export class CannoloPanel {
       squashed(g, 0, -60, 2 - squeeze, squeeze, (gg) => gg.drawImage(bagSpr(), -45, -128));
       g.restore();
     }
-    // The gauge: needle, sweet zone, no diplomacy.
+    // The gauge, dressed as what it is: a brass rail scribed into Alfio's
+    // marble, the ricotta running along it and the sweet zone marked in gold.
+    // It used to end in a percentage, which is not a thing a pastry chef says.
     if (this.phase === 'pipe' || this.phase === 'burst') {
       const zx = 160 + this.zoneLo * 280;
       const zw = this.zoneW * 280;
+      const fillW = Math.min(1, this.fill) * 280;
+      rr(g, 158, 304, 284, 15, 5, 'rgba(40,26,14,0.45)');
+      rr(g, 160, 306, 280, 11, 4, '#cfc7b4');
+      if (fillW > 2) {
+        rr(g, 160, 306, fillW, 11, 4, '#f4efe4');
+        rr(g, 160, 306, fillW, 4.5, 2, 'rgba(255,255,255,0.75)');
+      }
       rr(g, zx, 306, zw, 11, 4, '#e0b13d');
       rr(g, zx, 306, zw, 4.5, 2, 'rgba(255,240,200,0.55)');
-      for (const f of [0.25, 0.5, 0.75]) rect(g, 160 + f * 280, 307, 1.5, 9, 'rgba(242,230,208,0.3)');
-      const pct = Math.min(100, this.fill * 100);
-      const nx = 160 + Math.min(1, this.fill) * 280;
-      rect(g, nx - 0.8, 305, 1.6, 13, '#f4efe4');
+      for (const f of [0.25, 0.5, 0.75]) rect(g, 160 + f * 280, 307, 1.5, 9, 'rgba(90,70,40,0.3)');
+      const nx = 160 + fillW;
+      rect(g, nx - 0.8, 303, 1.6, 17, '#2b2118');
       g.fillStyle = '#f4efe4';
       g.strokeStyle = 'rgba(43,33,24,0.7)';
       g.lineWidth = 1.4;
@@ -2143,7 +2261,10 @@ export class CannoloPanel {
       g.closePath();
       g.fill();
       g.stroke();
-      inkText(g, `${Math.round(pct)}%`, 452, 312, { size: 12, color: '#2b2118', bold: true });
+      inkText(g, 'stop her in the gold', zx + zw / 2 + 14, 329, {
+        size: 11, italic: true, color: 'rgba(244,236,214,0.9)', align: 'center',
+      });
+      keyCap(g, zx + zw / 2 - 68, 329, 'space', 0.95, 0.86);
     }
     // The order ticket, impaled on habit.
     g.save();

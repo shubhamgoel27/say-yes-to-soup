@@ -371,6 +371,11 @@ function meterCv(): Surface {
   return s;
 }
 
+const WATIA_LEGEND = [
+  { keys: ['left', 'right'], does: 'choose a gap in the dome' },
+  { keys: ['space'], does: 'set the clod in it' },
+] as const;
+
 export class WatiaPanel {
   private phase: WatiaPhase = 'stack';
   private placed: boolean[] = [];
@@ -417,7 +422,7 @@ export class WatiaPanel {
     this.hint = 'Big ones at the bottom. Arrows pick a spot; Space sets the clod.';
     this.root.hidden = false;
     this.scene.restart();
-    this.setHintFn = mountScene(this.root, 'The Watia', this.scene).setHint;
+    this.setHintFn = mountScene(this.root, 'The Watia', this.scene, WATIA_LEGEND).setHint;
     const hintEl = this.root.querySelector('.w-hint') as HTMLElement | null;
     if (hintEl) hintEl.style.lineHeight = '1.4'; // a parent zeroes line-height; wrapped hints must not overlap
     this.dropOff = SLOTS.map(() => 0);

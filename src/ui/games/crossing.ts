@@ -312,6 +312,11 @@ let galleyVig: HTMLCanvasElement | null = null;
 
 type Fly = { icon: number; sx: number; sy: number; t: number };
 
+const GALLEY_LEGEND = [
+  { keys: ['left', 'right', 'up', 'down'], does: 'reach along the pantry' },
+  { keys: ['space'], does: 'put it in the pot' },
+] as const;
+
 export class GalleyPanel {
   private step = 0;
   private cur = 0;
@@ -373,7 +378,7 @@ export class GalleyPanel {
     flameGlow ??= bakeGlow('rgba(255,150,60,0.9)', 56);
     galleyVig ??= bakeVignette('42,26,16', 0.28);
     this.sc.restart();
-    this.ui = mountScene(this.root, 'The Galley: Adobo', this.sc);
+    this.ui = mountScene(this.root, 'The Galley: Adobo', this.sc, GALLEY_LEGEND);
     fixHintLeading(this.root);
     this.root.hidden = false;
   }
@@ -1108,6 +1113,11 @@ let starVig: HTMLCanvasElement | null = null;
 
 type Shoot = { x: number; y: number; vx: number; vy: number; age: number };
 
+const STAR_LEGEND = [
+  { keys: ['left', 'right', 'up', 'down'], does: 'swing the glass across the sky' },
+  { keys: ['space'], does: 'name what is in it' },
+] as const;
+
 export class StarPanel {
   private target = 0;
   private cx = 5;
@@ -1156,7 +1166,7 @@ export class StarPanel {
     this.rx = ((this.cx + 0.5) / GRID_W) * SCENE_W;
     this.ry = FIELD_TOP + ((this.cy + 0.5) / GRID_H) * FIELD_H;
     this.sc.restart();
-    this.ui = mountScene(this.root, 'The Star Deck', this.sc);
+    this.ui = mountScene(this.root, 'The Star Deck', this.sc, STAR_LEGEND);
     fixHintLeading(this.root);
     this.root.hidden = false;
   }

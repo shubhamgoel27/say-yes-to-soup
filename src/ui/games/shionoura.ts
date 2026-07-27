@@ -3,7 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
 
 /** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
 function calm(): boolean {
@@ -36,6 +36,17 @@ type Ripple = { x: number; y: number; r: number; a: number };
 const TUB = { x: 22, y: 20, w: 468, h: 300 };
 const WATER = { x: 38, y: 36, w: 436, h: 268 };
 const BOWL = { x: 572, y: 244, r: 36 };
+
+/** The poi reaches this far to either side; it is the whole aim of the game. */
+const REACH = 0.09;
+/** Dash patterns live here so the hot path never allocates an array. */
+const REACH_DASH = [5, 5];
+const EMPTY_DASH: number[] = [];
+
+const KINGYO_LEGEND = [
+  { keys: ['left', 'right'], does: 'drift the poi' },
+  { keys: ['space'], does: 'dip it under a shallow fish' },
+] as const;
 
 export class KingyoPanel {
   private fish: Fish[] = [];
@@ -97,7 +108,7 @@ export class KingyoPanel {
     this.bagT = 0;
     this.shreds = [];
     this.tearStep = -1;
-    const m = mountScene(this.root, 'Kingyo-sukui', this.scene);
+    const m = mountScene(this.root, 'Kingyo-sukui', this.scene, KINGYO_LEGEND);
     fixHint(this.root);
     this.setHint = m.setHint;
     this.scene.restart();
@@ -413,9 +424,18 @@ export class KingyoPanel {
   private drawFish(g: CanvasRenderingContext2D, f: Fish, t: number) {
     const x = this.fishX(f.x);
     const y = this.fishY(f);
-    const scale = 1.22 * (1 - f.dd * 0.28);
+    const scale = 1.5 * (1 - f.dd * 0.34);
     const vy = Math.cos(t * 0.7 + f.ph) * 0.14;
     const ang = Math.atan2(vy, f.hv === 0 ? 0.01 : f.hv);
+    // A shallow fish carries lantern light on its back: in a tub of teal, the
+    // thing you are hunting is the hottest colour in the frame, and the only
+    // one that glows. A deep one has gone cold and blue, and reads as refusal.
+    if (f.dd < 0.9) {
+      const near = this.phase === 'scoop' && Math.abs(f.x - this.cx) < REACH;
+      g.globalAlpha = (1 - f.dd) * (near ? 0.62 + wobble(t, 6) * 0.12 : 0.34);
+      g.drawImage(this.glowSprite().cv, x - 40, y - 26, 80, 52);
+      g.globalAlpha = 1;
+    }
     softShadow(g, x + 4, y + 16 - f.dd * 8, 13 * scale, 5 * scale, 0.16 * (1 - f.dd * 0.5));
     g.save();
     g.translate(x, y);
@@ -424,28 +444,28 @@ export class KingyoPanel {
     const spd = Math.abs(f.v);
     const tail = Math.sin(t * (5 + spd * 16) + f.ph) * 0.55;
     // The veil tail, two soft lobes beating.
-    g.fillStyle = 'rgba(232,110,52,0.72)';
+    g.fillStyle = 'rgba(255,120,40,0.82)';
     g.beginPath();
     g.moveTo(-10, 0);
     g.quadraticCurveTo(-18, -3 + tail * 6, -25, -8 + tail * 7);
     g.quadraticCurveTo(-17, 0 + tail * 3, -10, 1);
     g.fill();
-    g.fillStyle = 'rgba(206,88,44,0.62)';
+    g.fillStyle = 'rgba(226,84,34,0.72)';
     g.beginPath();
     g.moveTo(-10, 0);
     g.quadraticCurveTo(-18, 4 + tail * 5, -24, 9 + tail * 6);
     g.quadraticCurveTo(-16, 1 + tail * 3, -10, -1);
     g.fill();
-    // The body, painted: warm orange, cap of red, pale belly, one dark eye.
-    oval(g, 0, 0, 12, 5.6, '#e8862f');
-    oval(g, 5, 0, 6.5, 4.6, '#ef9a44');
-    oval(g, -1, -1.8, 7, 2.8, '#c1512f');
-    oval(g, 2, 2, 7, 2.4, 'rgba(246,206,150,0.8)');
+    // The body, painted: hot orange, a vermilion cap, pale belly, one dark eye.
+    oval(g, 0, 0, 12, 5.6, '#ff7a18');
+    oval(g, 5, 0, 6.5, 4.6, '#ffa23a');
+    oval(g, -1, -1.8, 7, 2.8, '#e03a12');
+    oval(g, 2, 2, 7, 2.4, 'rgba(255,226,168,0.85)');
     const flap = Math.sin(t * 6 + f.ph) * 0.35;
-    oval(g, 3, -5.5, 4, 1.7, 'rgba(240,150,70,0.7)', -0.5 + flap);
-    oval(g, 3, 5.5, 4, 1.7, 'rgba(240,150,70,0.7)', 0.5 - flap);
+    oval(g, 3, -5.5, 4, 1.7, 'rgba(255,160,70,0.75)', -0.5 + flap);
+    oval(g, 3, 5.5, 4, 1.7, 'rgba(255,160,70,0.75)', 0.5 - flap);
     dot(g, 9.5, -1.8, 1.3, PAL.ink);
-    if (f.dd > 0.03) oval(g, 0, 0, 15, 9, `rgba(22,54,66,${f.dd * 0.5})`);
+    if (f.dd > 0.03) oval(g, 0, 0, 15, 9, `rgba(16,46,62,${f.dd * 0.72})`);
     g.restore();
   }
 
@@ -497,6 +517,36 @@ export class KingyoPanel {
       g.beginPath();
       g.ellipse(rp.x, rp.y, rp.r, rp.r * 0.42, 0, 0, Math.PI * 2);
       g.stroke();
+    }
+    // The poi's reach, laid on the water as a pool of lantern light: a fish
+    // inside this is a fish you can lift, which used to be knowable only by
+    // trying. It rides under the fish so it never hides one.
+    if (this.phase === 'scoop') {
+      const px0 = this.fishX(this.poiX);
+      const wLeft = this.fishX(Math.max(0, this.poiX - REACH));
+      const wRight = this.fishX(Math.min(1, this.poiX + REACH));
+      const rw = (wRight - wLeft) / 2;
+      let catchable = false;
+      for (const f of this.fish) {
+        if (!f.deep && Math.abs(f.x - this.cx) < REACH) {
+          catchable = true;
+          break;
+        }
+      }
+      g.globalAlpha = catchable ? 0.3 + wobble(t, 5) * 0.07 : 0.16;
+      g.fillStyle = catchable ? '#ffd9a0' : '#dcefef';
+      g.beginPath();
+      g.ellipse(px0, 172, rw, WATER.h * 0.44, 0, 0, Math.PI * 2);
+      g.fill();
+      g.globalAlpha = catchable ? 0.75 : 0.4;
+      g.strokeStyle = catchable ? 'rgba(255,224,160,0.95)' : 'rgba(220,240,242,0.6)';
+      g.lineWidth = 1.6;
+      g.setLineDash(catchable ? EMPTY_DASH : REACH_DASH);
+      g.beginPath();
+      g.ellipse(px0, 172, rw, WATER.h * 0.44, 0, 0, Math.PI * 2);
+      g.stroke();
+      g.setLineDash(EMPTY_DASH);
+      g.globalAlpha = 1;
     }
     for (const f of shallowFish) this.drawFish(g, f, t);
     if (this.phase !== 'scoop') {
@@ -617,9 +667,23 @@ export class KingyoPanel {
       g.fill();
       g.restore();
     }
-    // The soak tag fills as the paper drinks.
+    // The soak tag fills as the paper drinks, and now says what it is.
     const fillH = (this.soak / 100) * 50;
     rect(g, 555, 151 + (52 - fillH), 12, fillH, 'rgba(176,86,48,0.85)');
+    g.save();
+    g.fillStyle = 'rgba(238,228,204,0.8)';
+    g.font = 'italic 10px Literata, Georgia, serif';
+    g.textAlign = 'center';
+    g.fillText('the paper', 561, 218);
+    g.restore();
+    // The keys, painted on the tub's near rim where the hands are: the poi
+    // walks left and right, and the dip is one press.
+    if (this.phase === 'scoop') {
+      const px1 = this.fishX(this.poiX);
+      keyCap(g, px1 - 46, 312, 'left', 0.92, 0.9);
+      keyCap(g, px1, 312, 'space', 0.92, 0.9);
+      keyCap(g, px1 + 46, 312, 'right', 0.92, 0.9);
+    }
     // The parting gift: a water bag swaying in lantern light.
     if (this.phase === 'done' && this.bagT > 0) {
       const bx = 256;
@@ -717,6 +781,11 @@ function mix(a: string, b: string, k: number): string {
   return `#${((ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).padStart(6, '0')}`;
 }
 
+const DASHI_LEGEND = [
+  { keys: ['space'], does: 'the next move, when the pot asks for it' },
+  { keys: ['left', 'right'], does: 'move your hands over the pot' },
+] as const;
+
 export class DashiPanel {
   private phase: DashiPhase = 'steep';
   private dropped = false; // the kombu and iriko are in the water
@@ -802,7 +871,7 @@ export class DashiPanel {
       };
       this.print.src = 'assets/games/hiroshige-medetai.jpg';
     }
-    const m = mountScene(this.root, 'The Dawn Kitchen', this.scene);
+    const m = mountScene(this.root, 'The Dawn Kitchen', this.scene, DASHI_LEGEND);
     fixHint(this.root);
     this.setHint = m.setHint;
     this.scene.restart();

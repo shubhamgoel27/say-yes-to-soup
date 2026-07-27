@@ -155,6 +155,8 @@ function hyacinth(g: CanvasRenderingContext2D, x: number, y: number, s: number, 
   g.restore();
 }
 
+const ROW_LEGEND = [{ keys: ['space'], does: 'pull on the call, when the blade is in the water' }] as const;
+
 export class RowPanel {
   private phase: RowPhase = 'row';
   private x = 1; // the beat marker, 1 -> 0 across the track
@@ -199,7 +201,7 @@ export class RowPanel {
     this.pulled = false;
     this.hint = 'The singer calls; the oars answer. Space exactly as the beat reaches the blades.';
     this.scene ??= new Scene();
-    this.hints = mountScene(this.root, 'The Chundan Vallam', this.scene);
+    this.hints = mountScene(this.root, 'The Chundan Vallam', this.scene, ROW_LEGEND);
     unclampHint(this.root);
     this.scene.restart();
     this.strokeT = 0;
@@ -822,6 +824,11 @@ function paintFood(g: CanvasRenderingContext2D, item: string, x: number, y: numb
   g.restore();
 }
 
+const SADYA_LEGEND = [
+  { keys: ['left', 'right', 'up', 'down'], does: 'choose the place on the leaf' },
+  { keys: ['space'], does: 'serve it there' },
+] as const;
+
 export class SadyaPanel {
   private phase: SadyaPhase = 'serve';
   private placed: (string | null)[] = [];
@@ -861,7 +868,7 @@ export class SadyaPanel {
     this.fold = 'toward';
     this.hint = 'Narrow end of the leaf points left. Arrows choose a spot; Space serves the pappadam. Right hand only.';
     this.scene ??= new Scene();
-    this.hints = mountScene(this.root, 'The Sadya Leaf', this.scene);
+    this.hints = mountScene(this.root, 'The Sadya Leaf', this.scene, SADYA_LEGEND);
     unclampHint(this.root);
     this.scene.restart();
     this.curX = SLOT_POS[0]![0];
@@ -1245,6 +1252,11 @@ function chayaBackdrop(): Surface {
   return s;
 }
 
+const CHAYA_LEGEND = [
+  { keys: ['space'], does: 'the next move: lift, pour, set down' },
+  { keys: ['left', 'right'], does: 'choose how it is served' },
+] as const;
+
 export class ChayaPanel {
   private phase: ChayaPhase = 'boil';
   private boil = 0;
@@ -1286,7 +1298,7 @@ export class ChayaPanel {
     this.serve = 'under';
     this.hint = 'Milk and tea over the flame. Nothing to press yet; the boil is the boil.';
     this.scene ??= new Scene();
-    this.hints = mountScene(this.root, 'The Meter-Long Pour', this.scene);
+    this.hints = mountScene(this.root, 'The Meter-Long Pour', this.scene, CHAYA_LEGEND);
     unclampHint(this.root);
     this.scene.restart();
     this.spoonT = 0;

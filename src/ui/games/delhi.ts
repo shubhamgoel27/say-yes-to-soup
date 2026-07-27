@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art/pix';
 
 /**
@@ -524,6 +524,8 @@ function drawSheru(
 
 type PPhase = 'roll' | 'stuff' | 'tawa' | 'burnt' | 'served' | 'done';
 
+const TAWA_LEGEND = [{ keys: ['space'], does: 'stop the pin, turn the parantha, lift it off' }] as const;
+
 export class ParanthaPanel {
   private phase: PPhase = 'roll';
   private course = 0;
@@ -576,7 +578,7 @@ export class ParanthaPanel {
     this.root.hidden = false;
     if (!this.scene) this.scene = new Scene();
     this.scene.restart();
-    this.setHint = mountScene(this.root, "Kamla Chachi's Tawa", this.scene).setHint;
+    this.setHint = mountScene(this.root, "Kamla Chachi's Tawa", this.scene, TAWA_LEGEND).setHint;
     // The overlay root inherits #frame's line-height: 0; restore prose here.
     this.root.style.lineHeight = '1.45';
     this.render();
@@ -1595,6 +1597,19 @@ function drawPigeon(g: CanvasRenderingContext2D, x: number, y: number, sc: numbe
   }
 }
 
+/** The crossing flock: x offset, y offset, and how near the bird is flying. */
+const FLOCK: [number, number, number][] = [
+  [0, 0, 2.2], [48, -22, 1.8], [92, 10, 2.6], [136, -34, 1.6],
+  [172, -6, 2.3], [212, -42, 1.5], [252, 16, 2.8], [296, -18, 2],
+  [338, 2, 1.7], [372, -28, 2.4],
+];
+
+const KITE_LEGEND = [
+  { keys: ['up'], does: 'kheench, pull, when the line is taut' },
+  { keys: ['down'], does: 'dheel, slack, for gusts and birds' },
+  { keys: ['space'], does: 'launch, and go again' },
+] as const;
+
 export class PatangPanel {
   private phase: KPhase = 'launch';
   private wind: Wind = 'steady';
@@ -1696,7 +1711,7 @@ export class PatangPanel {
     this.cutT = 99;
     if (!this.scene) this.scene = new Scene();
     this.scene.restart();
-    this.setHint = mountScene(this.root, this.tournament ? 'The Sawan Tournament' : 'Patangbazi', this.scene).setHint;
+    this.setHint = mountScene(this.root, this.tournament ? 'The Sawan Tournament' : 'Patangbazi', this.scene, KITE_LEGEND).setHint;
     // The overlay root inherits #frame's line-height: 0; restore prose here.
     this.root.style.lineHeight = '1.45';
     this.render();
@@ -2131,17 +2146,22 @@ export class PatangPanel {
       g.fillRect(0, 0, 640, 340);
     }
 
-    // Wind made visible: long pale threads combing the sky.
-    const wa = 0.05 + this.gustK * 0.2;
-    g.strokeStyle = `rgba(255,244,224,${wa})`;
-    g.lineWidth = 1.6;
-    const wsp = 90 + this.gustK * 260;
-    for (let i = 0; i < 5; i++) {
-      const wx = 640 - (((t * wsp + i * 173) % 840) - 100);
-      const wy = 52 + i * 44;
+    // Wind made visible: long pale threads combing the sky, and in a gust
+    // they stop being a texture and start being the weather that is happening
+    // to you. The number in the caption was never going to do this.
+    const wa = 0.07 + this.gustK * 0.42;
+    g.strokeStyle = `rgba(255,246,230,${wa})`;
+    g.lineWidth = 1.6 + this.gustK * 2.2;
+    g.lineCap = 'round';
+    const wsp = 90 + this.gustK * 420;
+    const lanes = 5 + Math.round(this.gustK * 5);
+    for (let i = 0; i < lanes; i++) {
+      const wx = 640 - (((t * wsp + i * 173) % 900) - 130);
+      const wy = 42 + i * 30 + ((i * 37) % 19);
+      const len = 90 + this.gustK * 130;
       g.beginPath();
       g.moveTo(wx, wy);
-      g.quadraticCurveTo(wx + 40, wy - 7, wx + 90, wy - 3);
+      g.quadraticCurveTo(wx + len * 0.45, wy - 7 - this.gustK * 5, wx + len, wy - 3);
       g.stroke();
     }
 
@@ -2184,7 +2204,9 @@ export class PatangPanel {
 
   private paintYourLine(g: CanvasRenderingContext2D, t: number) {
     if (this.phase === 'cut') return; // the slack dor is drawn over the parapet
-    const sag = this.wind === 'gust' ? 26 : 13 + Math.sin(t * 1.1) * 4;
+    // Slack you can see: a gust puts a real belly in the dor, a steady wind
+    // pulls it near straight. The line is the wind's own readout.
+    const sag = this.wind === 'gust' ? 46 + Math.sin(t * 2.2) * 7 : 8 + Math.sin(t * 1.1) * 3;
     const mx = (ANCHOR.x + this.kx) / 2 + this.gustK * -14;
     const my = (ANCHOR.y + this.ky) / 2 + sag;
     g.strokeStyle = this.fraySelfT > 0 ? `rgba(255,140,90,${0.5 + Math.sin(t * 20) * 0.3})` : 'rgba(244,236,220,0.75)';
@@ -2296,15 +2318,25 @@ export class PatangPanel {
     g.globalAlpha = 1;
   }
 
+  /**
+   * The flock, drawn big enough to be the reason you gave slack. It used to
+   * be eight specks in the upper right that a player could miss entirely
+   * while the caption insisted they were the whole event.
+   */
   private paintFlock(g: CanvasRenderingContext2D, t: number) {
     const p = Math.min(1, this.windT / this.windDur);
-    const fx = 700 - p * 860;
-    const offs: [number, number][] = [[0, 0], [34, -16], [66, 6], [96, -24], [122, -4], [150, -30], [178, 10], [206, -14]];
-    for (let i = 0; i < offs.length; i++) {
-      const o = offs[i];
+    const fx = 760 - p * 980;
+    for (let i = 0; i < FLOCK.length; i++) {
+      const o = FLOCK[i];
       if (!o) continue;
+      const x = fx + o[0];
+      const y = 132 + o[1] + Math.sin(t * 2 + i) * 6;
       const flap = Math.sin(t * 15 + i * 1.4);
-      drawPigeon(g, fx + o[0], 128 + o[1] + Math.sin(t * 2 + i) * 5, 1.15, flap);
+      // A soft shadow under each bird so the flock has weight against the sky.
+      g.globalAlpha = 0.16;
+      oval(g, x + 5, y + 13, 9, 3, '#3a3446');
+      g.globalAlpha = 1;
+      drawPigeon(g, x, y, o[2] ?? 2, flap);
     }
   }
 
@@ -2370,22 +2402,36 @@ export class PatangPanel {
     }
   }
 
+  /**
+   * The weather chit, and the answer to it. The wind state was legible enough
+   * here; what was missing was the move it asks for, which lived in a sentence
+   * that the response to your last input immediately overwrote. Now the chit
+   * carries the key, so it stays a readout for as long as the wind lasts.
+   */
   private paintChit(g: CanvasRenderingContext2D, t: number) {
-    const tag = this.phase === 'launch'
+    const launch = this.phase === 'launch';
+    const tag = launch
       ? 'the breeze leans in'
       : this.wind === 'steady' ? 'taut and steady' : this.wind === 'gust' ? 'GUST' : 'PIGEONS CROSSING';
     const under = this.wind === 'steady' ? 'rgba(200,165,91,0.9)' : this.wind === 'gust' ? 'rgba(120,160,200,0.95)' : 'rgba(168,166,176,0.95)';
+    const answer = launch ? 'let her go' : this.wind === 'steady' ? 'kheench · pull' : 'dheel · give slack';
+    const key: 'up' | 'down' | 'space' = launch ? 'space' : this.wind === 'steady' ? 'up' : 'down';
     g.save();
-    g.translate(552, 30);
+    g.translate(536, 34);
     g.rotate(0.03 + Math.sin(t * 0.8) * 0.012);
-    rr(g, -80, -16, 160, 34, 4, 'rgba(43,33,24,0.5)');
-    rr(g, -78, -17, 158, 33, 4, 'rgba(244,234,214,0.94)');
+    rr(g, -96, -20, 192, 60, 4, 'rgba(43,33,24,0.5)');
+    rr(g, -94, -21, 190, 59, 4, 'rgba(244,234,214,0.94)');
     g.fillStyle = '#2b2118';
     g.font = '600 16px Fraunces, Georgia, serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(tag, 0, -3);
-    rr(g, -56, 8, 112, 4, 2, this.phase === 'launch' ? 'rgba(200,165,91,0.9)' : under);
+    g.fillText(tag, 0, -7);
+    rr(g, -64, 3, 128, 3, 1.5, launch ? 'rgba(200,165,91,0.9)' : under);
+    keyCap(g, -56, 22, key, 1, 0.92);
+    g.fillStyle = 'rgba(43,33,24,0.85)';
+    g.font = 'italic 13px Fraunces, Georgia, serif';
+    g.textAlign = 'left';
+    g.fillText(answer, -38, 22);
     g.restore();
   }
 

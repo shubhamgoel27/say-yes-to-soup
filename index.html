@@ -1045,9 +1045,46 @@
       }
       .w-cell.on { transform: scale(1.12); }
       .w-hint { font-size: 13.5px; font-style: italic; min-height: 20px; margin-bottom: 10px; }
-      .w-legend { display: flex; gap: 14px; justify-content: center; }
-      .w-key { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; }
-      .w-key i { width: 14px; height: 14px; border: 1px solid var(--ink); border-radius: 2px; display: inline-block; }
+      /* The key legend: the how-to card leaves, the keys stay. One row, the
+       * same shape in every panel, quiet enough to sit under the painting. */
+      .w-legend {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 2px 0 2px;
+        padding-top: 7px;
+        border-top: 1px solid rgba(43, 33, 24, 0.16);
+      }
+      .w-key {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11.5px;
+        font-style: normal;
+        letter-spacing: 0.01em;
+        color: rgba(43, 33, 24, 0.72);
+      }
+      .w-key i {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 17px;
+        height: 16px;
+        padding: 0 4px;
+        margin-right: -2px;
+        border: 1px solid rgba(43, 33, 24, 0.6);
+        border-top-color: rgba(43, 33, 24, 0.35);
+        border-radius: 3px;
+        background: rgba(255, 252, 244, 0.62);
+        box-shadow: 0 1px 0 rgba(43, 33, 24, 0.18);
+        font-family: var(--display);
+        font-style: normal;
+        font-size: 10.5px;
+        line-height: 1;
+        color: var(--ink);
+      }
+      .w-key i + i { margin-left: 3px; }
 
       /* ---- pause: a rest, on paper ---- */
       #pause {

@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 
 /**
@@ -187,6 +187,21 @@ type SailPhase = 'sail' | 'irons' | 'done';
 const IRONS_WARN = 5.5;
 const IRONS_AT = 9;
 
+const SAIL_LEGEND = [
+  { keys: ['left', 'right'], does: 'ease the sheet' },
+  { keys: ['space'], does: 'when the reach is sailed' },
+] as const;
+
+/**
+ * The trim card: Bakari's brass rose, lashed to the fore-deck. Wind and sheet
+ * ride the same arc on it, so the question the game actually asks — is my
+ * sheet where the wind is? — is answered by looking, not by reading.
+ */
+const ROSE = { x: 100, y: 94, r: 56 };
+const ROSE_A0 = -Math.PI * 0.86;
+const ROSE_A1 = -Math.PI * 0.14;
+const roseAng = (v: number) => ROSE_A0 + (ROSE_A1 - ROSE_A0) * Math.max(0, Math.min(1, v));
+
 export class SailPanel {
   private phase: SailPhase = 'sail';
   private wind = 0.5; // where the good trim lives on the track, 0..1
@@ -239,7 +254,7 @@ export class SailPanel {
     this.hint = 'The kaskazi fills in from the northeast. Ease the sail with the arrows until the telltale streams.';
     this.root.hidden = false;
     this.root.style.lineHeight = '1.45'; // the #frame ancestor zeroes line-height; hints need it back
-    const m = mountScene(this.root, 'The Kaskazi', this.scene);
+    const m = mountScene(this.root, 'The Kaskazi', this.scene, SAIL_LEGEND);
     this.setHint = m.setHint;
     this.scene.restart();
     this.sailVis = visAng(this.sail);
@@ -437,6 +452,8 @@ export class SailPanel {
     if (this.phase === 'done') {
       const k = easeOutCubic(Math.min(1, this.doneT / 1.6));
       g.drawImage(villageCard(), W - 24 - 216 * k, 54);
+    } else {
+      this.paintLandfall(g);
     }
 
     this.paintBoat(g, t);
@@ -663,38 +680,147 @@ export class SailPanel {
     g.stroke();
   }
 
+  /**
+   * The trim card. Everything the sail game is about lives on this one dial:
+   * where the kaskazi is leaning (the brass wind arrow and its lit sector),
+   * where your sheet is (the little sail marker), and which key walks the
+   * marker which way. It used to be a compass that showed only the wind, and
+   * the decision lived in the sentence underneath.
+   */
   private paintCompass(g: CanvasRenderingContext2D) {
-    const x = 47;
-    const y = 47;
-    g.globalAlpha = 0.88;
-    dot(g, x, y, 27, '#f2e6d0');
+    const { x, y, r } = ROSE;
+    const t = this.scene.time;
+    const trimmed = this.isTrim();
+    // Card: worn brass ring on a scrubbed paper face.
+    g.globalAlpha = 0.5;
+    oval(g, x, y + r * 0.9, r * 1.02, r * 0.34, 'rgba(18,12,6,0.55)');
     g.globalAlpha = 1;
-    g.strokeStyle = 'rgba(43,33,24,0.55)';
-    g.lineWidth = 1.5;
+    dot(g, x, y, r + 5, '#8a6a3c');
+    dot(g, x, y, r + 3, '#c9a35f');
+    g.globalAlpha = 0.94;
+    dot(g, x, y, r, '#f2e6d0');
+    g.globalAlpha = 1;
+    dot(g, x, y, r - 2, '#efe1c4');
+    g.strokeStyle = 'rgba(43,33,24,0.4)';
+    g.lineWidth = 1.2;
     g.beginPath();
-    g.arc(x, y, 27, 0, Math.PI * 2);
+    g.arc(x, y, r - 8, ROSE_A0, ROSE_A1);
     g.stroke();
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
+    // Ticks along the arc: the sheet has stops, like a real traveller.
+    for (let i = 0; i <= 4; i++) {
+      const a = roseAng(i / 4);
+      const inner = i % 2 === 0 ? r - 18 : r - 14;
       g.beginPath();
-      g.moveTo(x + Math.cos(a) * 22, y + Math.sin(a) * 22);
-      g.lineTo(x + Math.cos(a) * 26, y + Math.sin(a) * 26);
+      g.moveTo(x + Math.cos(a) * inner, y + Math.sin(a) * inner);
+      g.lineTo(x + Math.cos(a) * (r - 5), y + Math.sin(a) * (r - 5));
       g.stroke();
     }
-    const deg = ((25 + (this.wind - 0.5) * 60) * Math.PI) / 180;
+    // The wind's good sector, lit: put the sheet in here and the sail breathes.
+    const lo = roseAng(this.wind - 0.11);
+    const hi = roseAng(this.wind + 0.11);
+    g.lineCap = 'butt';
+    g.strokeStyle = 'rgba(43,33,24,0.5)';
+    g.lineWidth = 19;
+    g.beginPath();
+    g.arc(x, y, r - 12, lo, hi);
+    g.stroke();
+    g.strokeStyle = trimmed ? '#6fae62' : '#e0b13d';
+    g.lineWidth = 16;
+    g.globalAlpha = trimmed ? 0.9 + 0.1 * wobble(t, 4) : 0.85;
+    g.beginPath();
+    g.arc(x, y, r - 12, lo, hi);
+    g.stroke();
+    g.globalAlpha = 1;
+    // The wind arrow itself, pointing out of the sector's middle.
+    const wa = roseAng(this.wind);
     g.save();
     g.translate(x, y);
-    g.rotate(deg);
+    g.rotate(wa);
     g.fillStyle = '#c1512f';
     g.beginPath();
-    g.moveTo(-14, -2.5); g.lineTo(8, -2.5); g.lineTo(8, -6.5); g.lineTo(19, 0); g.lineTo(8, 6.5); g.lineTo(8, 2.5); g.lineTo(-14, 2.5);
+    g.moveTo(-6, -2.6); g.lineTo(r - 20, -2.6); g.lineTo(r - 20, -6.6); g.lineTo(r - 9, 0);
+    g.lineTo(r - 20, 6.6); g.lineTo(r - 20, 2.6); g.lineTo(-6, 2.6);
     g.closePath();
     g.fill();
     g.restore();
-    g.fillStyle = 'rgba(43,33,24,0.8)';
+    // Which way to ease, drawn on the arc: two chevrons walking from your
+    // sheet toward the wind's sector, so the arrow key is never a guess.
+    const gap = this.wind - this.sail;
+    if (!trimmed && Math.abs(gap) > 0.01) {
+      const dir = gap > 0 ? 1 : -1;
+      const march = (t * 0.9) % 1;
+      for (let i = 0; i < 2; i++) {
+        const k = this.sail + dir * (0.045 + i * 0.05 + march * 0.05);
+        const a = roseAng(k);
+        const cx2 = x + Math.cos(a) * (r - 12);
+        const cy2 = y + Math.sin(a) * (r - 12);
+        g.save();
+        g.translate(cx2, cy2);
+        g.rotate(a + (dir > 0 ? 0 : Math.PI));
+        g.globalAlpha = 0.85 - i * 0.3;
+        g.strokeStyle = '#2b2118';
+        g.lineWidth = 2.2;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(-2.6, -3.6);
+        g.lineTo(1.6, 0);
+        g.lineTo(-2.6, 3.6);
+        g.stroke();
+        g.restore();
+      }
+      g.globalAlpha = 1;
+    }
+    // Your sheet: a small lateen sail riding the same arc, dark against the card.
+    const sa = roseAng(this.sail);
+    const sx = x + Math.cos(sa) * (r - 12);
+    const sy = y + Math.sin(sa) * (r - 12);
+    g.save();
+    g.translate(sx, sy);
+    g.rotate(sa + Math.PI / 2);
+    g.fillStyle = '#f7f3e6';
+    g.beginPath();
+    g.moveTo(0, -12);
+    g.lineTo(8, 7);
+    g.lineTo(-8, 7);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = '#2b2118';
+    g.lineWidth = 2.2;
+    g.lineJoin = 'round';
+    g.stroke();
+    g.fillStyle = '#2b2118';
+    g.beginPath();
+    g.moveTo(0, -8);
+    g.lineTo(5, 5);
+    g.lineTo(-5, 5);
+    g.closePath();
+    g.fill();
+    g.restore();
+    dot(g, x, y, 3.4, '#8a6a3c');
+    // Which key walks the sail which way, at the ends of its own track.
+    keyCap(g, x - r - 3, y + 20, 'left', 0.95, 0.86);
+    keyCap(g, x + r + 3, y + 20, 'right', 0.95, 0.86);
+    g.fillStyle = 'rgba(43,33,24,0.85)';
     g.font = '600 10px Literata, Georgia, serif';
     g.textAlign = 'center';
-    g.fillText('kaskazi', x, y + 41);
+    g.fillText('kaskazi', x, y + r - 12);
+    g.font = 'italic 9.5px Literata, Georgia, serif';
+    g.fillStyle = 'rgba(43,33,24,0.6)';
+    g.fillText('the sheet', x, y + r - 1);
+  }
+
+  /**
+   * Home, coming on. The reach used to be a percentage in the caption; now
+   * the village grows out of the haze, which is how you know on a real boat.
+   */
+  private paintLandfall(g: CanvasRenderingContext2D) {
+    const k = Math.max(0, Math.min(1, this.dist / this.need));
+    const s = 0.26 + k * 0.5;
+    const w = 230 * s;
+    const h = 110 * s;
+    g.globalAlpha = 0.32 + k * 0.62;
+    g.drawImage(villageCard(), 614 - w - k * 46, 152 - h, w, h);
+    g.globalAlpha = 1;
   }
 }
 
@@ -867,6 +993,11 @@ function goldGlow(): Cv {
   return goldGlowCv;
 }
 
+const UROJO_LEGEND = [
+  { keys: ['left', 'right'], does: 'go round the ring of components' },
+  { keys: ['space'], does: 'add it to the bowl, or serve' },
+] as const;
+
 export class UrojoPanel {
   private phase: UrojoPhase = 'build';
   private round = 0;
@@ -906,7 +1037,7 @@ export class UrojoPanel {
     this.hint = `Zuberi hands you the ladle. ${UROJO_ROUNDS[0]?.call ?? ''} Arrows choose, Space adds; choose SERVE when the bowl is a bowl.`;
     this.root.hidden = false;
     this.root.style.lineHeight = '1.45'; // the #frame ancestor zeroes line-height; hints need it back
-    const m = mountScene(this.root, 'Behind the Urojo Pot', this.scene);
+    const m = mountScene(this.root, 'Behind the Urojo Pot', this.scene, UROJO_LEGEND);
     this.setHint = m.setHint;
     this.scene.restart();
     this.bowlOff = 0;
@@ -1302,16 +1433,26 @@ export class UrojoPanel {
       const y = SLOT_Y + bob;
       if (sel) blit(g, warmGlow(), x - 36, y - 24, 72, 48, 0.7);
       if (i === UROJO_ITEMS.length) {
-        blit(g, shadowSprite(), x - 30, y + 6, 60, 18, 0.4);
-        rr(g, x - 28, y - 14, 56, 26, 5, sel ? '#f7edd6' : '#e0d0ac');
-        g.strokeStyle = sel ? '#c1512f' : 'rgba(43,33,24,0.55)';
-        g.lineWidth = 2;
-        g.beginPath();
-        g.roundRect(x - 28, y - 14, 56, 26, 5);
-        g.stroke();
-        g.fillStyle = '#2b2118';
-        g.font = '700 11px Literata, Georgia, serif';
-        g.fillText('SERVE', x, y + 3);
+        // Zuberi's slate, not a button. It hangs off the cart on two nails and
+        // says the word in chalk, in his hand, the way the price does.
+        blit(g, shadowSprite(), x - 32, y + 8, 64, 18, 0.4);
+        rr(g, x - 32, y - 18, 64, 34, 3, '#5c4030');
+        rr(g, x - 28, y - 14, 56, 26, 2, sel ? '#3f4a42' : '#2f3a34');
+        if (sel) {
+          g.strokeStyle = 'rgba(247,237,214,0.5)';
+          g.lineWidth = 1;
+          g.beginPath();
+          g.roundRect(x - 25, y - 11, 50, 20, 2);
+          g.stroke();
+        }
+        dot(g, x - 26, y - 16, 1.6, '#8a7a5c');
+        dot(g, x + 26, y - 16, 1.6, '#8a7a5c');
+        g.fillStyle = sel ? '#fdf6e2' : 'rgba(240,232,212,0.72)';
+        g.font = `italic ${sel ? 700 : 600} 15px Literata, Georgia, serif`;
+        g.fillText('serve', x, y + 4);
+        g.fillStyle = sel ? 'rgba(253,246,226,0.8)' : 'rgba(240,232,212,0.5)';
+        g.font = 'italic 8.5px Literata, Georgia, serif';
+        g.fillText('hand it over', x, 330);
         continue;
       }
       blit(g, shadowSprite(), x - 28, y + 4, 56, 20, 0.4);

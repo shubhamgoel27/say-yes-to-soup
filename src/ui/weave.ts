@@ -254,6 +254,11 @@ function diamond(g: CanvasRenderingContext2D, x: number, y: number, r: number, c
   g.fill();
 }
 
+const LOOM_LEGEND = [
+  { keys: ['left', 'up', 'right', 'down'], does: 'call the colours back, as the basket shows' },
+  { keys: ['space'], does: 'the next row' },
+] as const;
+
 export class WeavePanel {
   private phase: Phase = 'show';
   private row = 0;
@@ -294,7 +299,7 @@ export class WeavePanel {
     this.woven = [];
     this.root.hidden = false;
     this.scene.restart();
-    this.setHintFn = mountScene(this.root, 'The Loom', this.scene).setHint;
+    this.setHintFn = mountScene(this.root, 'The Loom', this.scene, LOOM_LEGEND).setHint;
     const hintEl = this.root.querySelector('.w-hint') as HTMLElement | null;
     if (hintEl) hintEl.style.lineHeight = '1.4'; // a parent zeroes line-height; wrapped hints must not overlap
     this.ballK = [0, 0, 0, 0];

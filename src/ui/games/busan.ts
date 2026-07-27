@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed } from './scene';
+import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag } from './scene';
 import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../../art/pix';
 
 /**
@@ -33,6 +33,12 @@ const DX = 252; // the working disc's spot on the iron
 const DY = 198;
 const TINX = 570; // the paper-lined tin where finished discs stack
 const TINY = 282;
+
+const HOTTEOK_LEGEND = [{ keys: ['space'], does: 'press and flip, in the golden middle' }] as const;
+
+/** Mi-ja's dough tray on the counter: what is still to come, in the picture. */
+const TRAY_X = 86;
+const TRAY_Y = 300;
 
 const RAW = '#f0e3c0';
 const GOLD = '#d9a441';
@@ -143,6 +149,24 @@ function bakeBg(): HTMLCanvasElement {
     rect(g, x, 296, 2, 44, 'rgba(30,18,8,0.5)');
   }
   glowSpot(g, GX, 296, 180, '#c1512f', 0.22);
+  // Mi-ja's tray of waiting dough, and her oil can, on the near counter: the
+  // batch you have left to cook is a thing on the cart, not a number in prose.
+  oval(g, TRAY_X, TRAY_Y + 14, 62, 13, 'rgba(8,5,4,0.45)');
+  rr(g, TRAY_X - 58, TRAY_Y - 12, 116, 26, 7, '#3a2c20');
+  rr(g, TRAY_X - 55, TRAY_Y - 14, 110, 24, 6, '#6b4a2c');
+  rr(g, TRAY_X - 51, TRAY_Y - 11, 102, 15, 4, '#8a5f38');
+  rect(g, TRAY_X - 51, TRAY_Y - 11, 102, 2, 'rgba(255,232,190,0.2)');
+  glowSpot(g, TRAY_X, TRAY_Y - 6, 54, '#d9a441', 0.12);
+  // The oil can beside it, catching one lantern.
+  rr(g, TRAY_X + 78, TRAY_Y - 30, 26, 42, 4, '#8c8479');
+  rr(g, TRAY_X + 81, TRAY_Y - 27, 8, 36, 3, '#b8b0a4');
+  g.strokeStyle = '#8c8479';
+  g.lineWidth = 3;
+  g.beginPath();
+  g.moveTo(TRAY_X + 104, TRAY_Y - 24);
+  g.lineTo(TRAY_X + 120, TRAY_Y - 34);
+  g.stroke();
+  rr(g, TRAY_X + 86, TRAY_Y - 36, 10, 8, 2, '#6e675e');
   // A quiet vignette so the griddle owns the light.
   vgrad(g, 0, 0, W, 46, 'rgba(8,5,12,0.5)', 'rgba(8,5,12,0)');
   vgrad(g, 0, H - 30, W, 30, 'rgba(8,5,12,0)', 'rgba(8,5,12,0.4)');
@@ -347,7 +371,7 @@ export class HotteokPanel {
     this.hint = 'The dough sizzles. Space presses and flips: catch the heat in the golden middle.';
     this.root.hidden = false;
     this.scene.restart();
-    this.setHint = mountScene(this.root, 'The Hotteok Griddle', this.scene).setHint;
+    this.setHint = mountScene(this.root, 'The Hotteok Griddle', this.scene, HOTTEOK_LEGEND).setHint;
     // The overlay inherits line-height 0 from the stage frame; wrapped hints
     // would overlap themselves. Restore normal leading inside this panel.
     const hintEl = this.root.querySelector('.w-hint') as HTMLElement | null;
@@ -575,6 +599,7 @@ export class HotteokPanel {
     g.globalAlpha = 1;
 
     this.paintStack(g);
+    this.paintTray(g, tm);
     if (this.phase === 'press' && this.anim < 0 && this.hasBall) this.paintGauge(g, tm);
     this.paintWorking(g, tm);
     if (this.phase !== 'done' || this.anim >= 0) this.paintPress(g, tm);
@@ -588,6 +613,29 @@ export class HotteokPanel {
       const [sx, sy] = slot(i);
       cookedDisc(g, sx, sy, 33, 19, kind === 'gold', 101 + i * 7, 0.85);
     }
+  }
+
+  /**
+   * The dough still to come, sitting in its tray. Three balls at the start,
+   * one leaving the tray each time you commit one to the iron: the batch's
+   * shape, in the picture, instead of "2 to go" at the end of a sentence.
+   */
+  private paintTray(g: CanvasRenderingContext2D, tm: number) {
+    const onIron = this.hasBall || this.ballDrop >= 0 || this.anim >= 0 ? 1 : 0;
+    const left = Math.max(0, ROUNDS - this.round - onIron);
+    for (let i = 0; i < left; i++) {
+      const x = TRAY_X - 32 + i * 32;
+      const y = TRAY_Y - 12 + wobble(tm, 0.8, i * 2) * 0.6;
+      g.globalAlpha = 0.35;
+      oval(g, x, y + 11, 15, 5, '#120b06');
+      g.globalAlpha = 1;
+      oval(g, x, y, 15, 13, '#e4d3a4');
+      oval(g, x - 4, y - 4, 9, 7, '#f3e6ba');
+      g.globalAlpha = 0.4;
+      dot(g, x + 5, y + 3, 1.4, '#fff6dd');
+      g.globalAlpha = 1;
+    }
+    paperTag(g, TRAY_X, TRAY_Y - 40, left === 1 ? 'one more' : left === 0 ? 'the batch is in' : `${left} more`, 10, 0.9);
   }
 
   private paintGauge(g: CanvasRenderingContext2D, tm: number) {
@@ -634,6 +682,10 @@ export class HotteokPanel {
       g.lineTo(cx + Math.cos(a) * (R + 13), cy + Math.sin(a) * (R + 13));
       g.stroke();
     }
+    // The key, sitting on the one place worth pressing it. The gauge used to
+    // say when; nothing in the frame said with what.
+    const mid = at(0.5);
+    keyCap(g, cx + Math.cos(mid) * (R + 23), cy + Math.sin(mid) * (R + 23), 'space', 0.95, 0.92);
     const ang = at(clamp01(this.t));
     const bx = cx + Math.cos(ang) * R;
     const by = cy + Math.sin(ang) * R;

@@ -1,7 +1,7 @@
 import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack } from './games/scene';
-import { surface, type Surface, Rng, dot, oval, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag } from './games/scene';
+import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
 
 /**
@@ -289,6 +289,11 @@ function drawSwell(g: CanvasRenderingContext2D, wx: number, baseY: number, h: nu
   oval(g, wx - 46, baseY + 22, 32, 7, 'rgba(246,240,226,0.45)');
 }
 
+const WAVE_LEGEND = [
+  { keys: ['space'], does: 'paddle as the swell reaches you' },
+  { keys: ['left', 'right'], does: 'hold the middle on the ride' },
+] as const;
+
 export class WavePanel {
   private phase: WavePhase = 'paddle';
   private waves = 0; // waves punched through
@@ -330,7 +335,7 @@ export class WavePanel {
     this.hint = 'A swell rolls in. Space to paddle as it reaches you.';
     this.root.hidden = false;
     this.scene ??= new Scene();
-    this.ui = mountScene(this.root, 'The Caballito', this.scene);
+    this.ui = mountScene(this.root, 'The Caballito', this.scene, WAVE_LEGEND);
     this.scene.restart();
     this.lunge = 0;
     this.paddleK = 1;
@@ -646,6 +651,11 @@ function bakeNeedle(): Surface {
   return s;
 }
 
+const NET_LEGEND = [
+  { keys: ['left', 'right', 'up', 'down'], does: 'walk the needle' },
+  { keys: ['space'], does: 'tie the hole under it' },
+] as const;
+
 export class NetPanel {
   private holes = new Set<number>();
   private cur = 0;
@@ -684,7 +694,7 @@ export class NetPanel {
     this.hint = 'Walk the shuttle with the arrows. Space ties a hole shut.';
     this.root.hidden = false;
     this.scene ??= new Scene();
-    this.ui = mountScene(this.root, 'The Net Circle', this.scene);
+    this.ui = mountScene(this.root, 'The Net Circle', this.scene, NET_LEGEND);
     this.scene.restart();
     this.torn = new Set(this.holes);
     const c = this.cellCenter(this.cur);
@@ -994,6 +1004,19 @@ function bakeCevBg(): Surface {
     oval(g, rng.next() * 640, 80 + rng.next() * 250, 6 + rng.next() * 14, 0.8, 'rgba(50,32,16,0.18)');
   }
   glowSpot(g, 320, 40, 300, '#ffdf9a', 0.22);
+  // The shelf over the fire, where the whole dish waits in its own order.
+  rr(g, 244, 63, 296, 9, 2, '#3a2a18');
+  rr(g, 244, 62, 296, 7, 2, '#7d5836');
+  rect(g, 246, 62.5, 292, 2, 'rgba(255,232,190,0.28)');
+  for (const bx of [262, 516]) {
+    g.fillStyle = '#5c4024';
+    g.beginPath();
+    g.moveTo(bx, 71);
+    g.lineTo(bx + 9, 71);
+    g.lineTo(bx + 9, 82);
+    g.closePath();
+    g.fill();
+  }
   // The cutting board, up and to the left, with the dawn's flour of salt.
   rr(g, 64, 62, 190, 52, 10, '#b98a58');
   rr(g, 64, 62, 190, 8, 6, 'rgba(255,236,200,0.25)');
@@ -1064,6 +1087,28 @@ function bakeCevBg(): Surface {
   return s;
 }
 
+/**
+ * Doña Petro's mise en place, on the shelf over the fire, in the order the
+ * dish is built. The step you are on is the lit one and wears its own name
+ * and its own key; the ones behind you go quiet. The recipe used to live
+ * entirely in the sentence under the picture.
+ */
+const MISE: { tag: string; x: number }[] = [
+  { tag: 'cut the lisa', x: 268 },
+  { tag: 'the salt, alone', x: 308 },
+  { tag: 'the lime', x: 348 },
+  { tag: 'the onion', x: 388 },
+  { tag: 'the ají', x: 428 },
+  { tag: 'the rim', x: 468 },
+  { tag: 'the glass', x: 508 },
+];
+const MISE_Y = 50;
+let miseCache: Surface | null = null;
+
+const CEVICHE_LEGEND = [
+  { keys: ['space'], does: 'the next move, on the lit thing' },
+] as const;
+
 /** Where the cut cubes settle inside the bowl, seeded so nothing crawls. */
 const CUBE_SPOTS: [number, number, number][] = (() => {
   const rng = new Rng(88);
@@ -1120,7 +1165,7 @@ export class CevichePanel {
     this.hint = 'The dawn lisa, the board, the knife. Space to cut: even pieces, no ceremony.';
     this.root.hidden = false;
     this.scene ??= new Scene();
-    this.ui = mountScene(this.root, 'Behind the Pots', this.scene);
+    this.ui = mountScene(this.root, 'Behind the Pots', this.scene, CEVICHE_LEGEND);
     this.scene.restart();
     this.chopT = 1;
     this.dropAt = this.saltAt = this.onionAt = this.ajiAt = this.pourAt = -1;
@@ -1273,11 +1318,153 @@ export class CevichePanel {
     this.ui?.setHint(hintHtml(this.hint));
   }
 
+  /** One ingredient on the shelf, painted at its own small still-life scale. */
+  private paintMiseItem(g: CanvasRenderingContext2D, i: number, x: number, y: number) {
+    switch (i) {
+      case 0: // the lisa
+        oval(g, x, y, 15, 6, '#b8c4cc');
+        oval(g, x, y - 3, 12, 3, '#dde3e7');
+        g.fillStyle = '#9fb0ba';
+        g.beginPath();
+        g.moveTo(x + 13, y - 2);
+        g.lineTo(x + 21, y - 6);
+        g.lineTo(x + 21, y + 6);
+        g.closePath();
+        g.fill();
+        dot(g, x - 9, y - 1, 1.5, '#2b2118');
+        break;
+      case 1: // salt in its dish
+        oval(g, x, y + 5, 13, 4.5, '#8f867a');
+        g.fillStyle = '#f4f0e6';
+        g.beginPath();
+        g.moveTo(x - 10, y + 4);
+        g.quadraticCurveTo(x, y - 11, x + 10, y + 4);
+        g.closePath();
+        g.fill();
+        oval(g, x - 3, y - 1, 4, 2, '#ffffff');
+        break;
+      case 2: // limes
+        dot(g, x - 6, y + 1, 8, '#6d9a35');
+        dot(g, x + 7, y - 2, 8.5, '#7fae3f');
+        oval(g, x + 5, y - 5, 4, 2, '#a8cc6a');
+        break;
+      case 3: // the red onion
+        dot(g, x, y, 10, '#8c3a6e');
+        g.strokeStyle = 'rgba(232,200,220,0.75)';
+        g.lineWidth = 1.4;
+        for (const a of [-0.5, 0.1, 0.7]) {
+          g.beginPath();
+          g.arc(x, y, 7, a, a + 1.5);
+          g.stroke();
+        }
+        g.strokeStyle = '#6b8e4e';
+        g.lineWidth = 2;
+        g.beginPath();
+        g.moveTo(x, y - 9);
+        g.lineTo(x + 3, y - 15);
+        g.stroke();
+        break;
+      case 4: // ají, two of them
+        for (const [dx, dy, ro] of [[-4, 2, 0.4], [5, -1, -0.3]] as const) {
+          g.save();
+          g.translate(x + dx, y + dy);
+          g.rotate(ro);
+          oval(g, 0, 0, 9, 4, '#e8a03c');
+          oval(g, -3, -1, 5, 2.4, '#f2bc63');
+          g.strokeStyle = '#6b8e4e';
+          g.lineWidth = 1.6;
+          g.beginPath();
+          g.moveTo(8, 0);
+          g.lineTo(13, -3);
+          g.stroke();
+          g.restore();
+        }
+        break;
+      case 5: // cancha and camote on a plate
+        oval(g, x, y + 4, 15, 5, '#b5713f');
+        oval(g, x, y + 2, 13, 4, '#c98a63');
+        for (let k = 0; k < 4; k++) dot(g, x - 9 + k * 4, y - 1, 2.4, k % 2 ? '#d9b96a' : '#c98a2e');
+        oval(g, x + 8, y - 2, 6, 3.4, '#d97b3c');
+        break;
+      default: // the tiger's glass
+        g.fillStyle = 'rgba(255,255,255,0.28)';
+        g.beginPath();
+        g.moveTo(x - 7, y - 10);
+        g.lineTo(x - 6, y + 6);
+        g.quadraticCurveTo(x, y + 10, x + 6, y + 6);
+        g.lineTo(x + 7, y - 10);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.7)';
+        g.lineWidth = 1.4;
+        g.stroke();
+        break;
+    }
+  }
+
+  /** The seven ingredients, painted once into a strip of 44px cells. */
+  private miseSheet(): Surface {
+    if (miseCache) return miseCache;
+    const s = surface(MISE.length * 44, 44);
+    for (let i = 0; i < MISE.length; i++) this.paintMiseItem(s.g, i, i * 44 + 22, 22);
+    miseCache = s;
+    return miseCache;
+  }
+
+  /**
+   * The recipe, on the shelf, in order. The lit one is the one your hands are
+   * on; behind it the finished ones go quiet. This is the decision the caption
+   * used to have to make for you.
+   */
+  private paintMise(g: CanvasRenderingContext2D, t: number, idx: number) {
+    const sheet = this.miseSheet().cv;
+    for (let i = 0; i < MISE.length; i++) {
+      const m = MISE[i]!;
+      const cur = i === idx;
+      const past = i < idx;
+      if (cur) {
+        stampGlow(g, m.x, MISE_Y, 30, '#ffe9c0', 0.62 + wobble(t, 2.6) * 0.1);
+        // A pool of lamplight on the plank, so the lit one is lit, not merely
+        // brighter than its neighbours.
+        g.globalAlpha = 0.32;
+        oval(g, m.x, 64, 22, 4, '#ffdba8');
+        g.globalAlpha = 1;
+      }
+      g.globalAlpha = past ? 0.4 : cur ? 1 : 0.78;
+      const lift = cur ? -2 - Math.abs(wobble(t, 3.2)) * 1.6 : 0;
+      g.drawImage(sheet, i * 44, 0, 44, 44, m.x - 22, MISE_Y + lift - 22, 44, 44);
+      g.globalAlpha = 1;
+      if (past) {
+        // A chalk tick on the shelf edge: done, and not coming back.
+        g.strokeStyle = 'rgba(244,236,214,0.6)';
+        g.lineWidth = 1.8;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(m.x - 5, 58);
+        g.lineTo(m.x - 1, 62);
+        g.lineTo(m.x + 6, 52);
+        g.stroke();
+      }
+      if (cur) {
+        // The tag hangs on a thread from the shelf, over the thing it names.
+        g.strokeStyle = 'rgba(244,234,210,0.55)';
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(m.x, 25);
+        g.lineTo(m.x, MISE_Y - 15);
+        g.stroke();
+        paperTag(g, m.x, 17, m.tag, 10.5, 0.96);
+        keyCap(g, m.x, 78, 'space', 0.95, 0.82);
+      }
+    }
+  }
+
   private paint(g: CanvasRenderingContext2D, sc: Scene) {
     const t = sc.time;
     const idx = CEVICHE_ORDER.indexOf(this.step);
     const at = (s: CevicheStep) => idx > CEVICHE_ORDER.indexOf(s);
     g.drawImage(bakeCevBg().cv, 0, 0);
+    this.paintMise(g, t, idx);
 
     // The lisa on its board, in as many pieces as you have earned.
     if (this.cuts < 3) {
