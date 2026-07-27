@@ -39,12 +39,34 @@ const ART_ALIAS: Record<string, string> = {
   piersign: 'signpost',
 };
 
+/**
+ * How far the roof cap's contact shade reaches onto the street beyond the
+ * building's far edge. Small: it grounds the roof, it does not stain the lane.
+ */
+const CAP_LIP = 10;
+
+/** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
+type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
+
 export class Tileset {
   private v = new Map<string, HTMLCanvasElement[]>();
   private water: HTMLCanvasElement[] = [];
   private seaFrames: HTMLCanvasElement[] = [];
+  /** Roof caps, keyed by the sprite variant each one extends. */
+  private caps = new Map<HTMLCanvasElement, Cap>();
+  /** The long soft shadow a building lays on the ground at its feet. */
+  private baseShade: HTMLCanvasElement;
 
   constructor() {
+    // Baked once: at 60fps a per-building createLinearGradient is a small
+    // allocation and a shader rebuild every frame, for a strip that never
+    // changes. One 8px-wide gradient, stretched to whatever width it lands on.
+    {
+      const { cv, g } = surface(8, 18);
+      vgrad(g, 0, 0, 8, 18, 'rgba(26,18,12,0.3)', 'rgba(26,18,12,0)');
+      this.baseShade = cv;
+    }
+
     // ------------------------------------------------------------ grounds
 
     // Ground tiles must be SEAMLESS: one flat base color, detail only.
@@ -1286,7 +1308,256 @@ export class Tileset {
     // here it hides inside the load.
     for (const [kind, list] of this.v) {
       for (const cvs of list) this.inked(cvs, kind);
+      if (BUILDINGS.has(kind)) for (const cvs of list) this.bakeCap(cvs, kind);
     }
+  }
+
+  /**
+   * Roof caps: the footprint row the house sprites never reach.
+   *
+   * Every building sprite is 352x256, five and a half tiles wide and four
+   * tall, on a 5x5 solid footprint anchored at its bottom-left cell, door
+   * on the bottom row. So the art covers the four southern footprint rows and
+   * the northern one is solid with nothing painted on it: from the lane it
+   * reads as clean open pavement you cannot walk on, which is why a two-row
+   * gali looks four rows wide.
+   *
+   * The cap paints that row as the building's own roof plane carrying on away
+   * from the viewer: the colour is read off the sprite's own roofline, the
+   * sides keep the taper of its own silhouette, the far edge takes a lit
+   * coping lip, and a soft contact shade falls on the street beyond it. Baked
+   * once per variant at boot, alongside the ink.
+   */
+  private bakeCap(src: HTMLCanvasElement, kind: string) {
+    const sg = src.getContext('2d');
+    if (!sg) return;
+    const w = src.width;
+    const probeH = src.height;
+    let data: Uint8ClampedArray;
+    try {
+      data = sg.getImageData(0, 0, w, probeH).data;
+    } catch {
+      return; // a cap is grace, never a requirement: never break the load for it
+    }
+    const alphaAt = (x: number, y: number) => data[(y * w + x) * 4 + 3] ?? 0;
+
+    // The silhouette, row by row.
+    const lo: number[] = [];
+    const hi: number[] = [];
+    let widest = 0;
+    for (let y = 0; y < probeH; y++) {
+      let a = -1;
+      let b = -1;
+      for (let x = 0; x < w; x++) {
+        if (alphaAt(x, y) <= 200) continue;
+        if (a < 0) a = x;
+        b = x;
+      }
+      lo.push(a);
+      hi.push(b);
+      if (a >= 0) widest = Math.max(widest, b - a);
+    }
+    if (widest < S * 2) return;
+
+    // Where the roof begins: the first row wide enough to be the building
+    // itself rather than a chimney, a finial, a dome or a snagged kite.
+    let roofY = -1;
+    for (let y = 0; y < probeH; y++) {
+      if ((lo[y] ?? -1) >= 0 && (hi[y] ?? 0) - (lo[y] ?? 0) >= widest * 0.62) {
+        roofY = y;
+        break;
+      }
+    }
+    if (roofY < 0) return;
+    const yA = Math.min(roofY + 6, probeH - 2);
+    const yB = Math.min(roofY + 24, probeH - 1);
+    if (yB - yA < 8) return;
+    const aLo = lo[yA] ?? -1;
+    const aHi = hi[yA] ?? -1;
+    const bLo = lo[yB] ?? -1;
+    const bHi = hi[yB] ?? -1;
+    if (aLo < 0 || bLo < 0 || bHi - bLo < S) return;
+
+    // The roof's own colour: per-channel median over a deep band of it, so
+    // windows, streaks and ridge lines cannot pull the material off its hue.
+    const rs: number[] = [];
+    const gs: number[] = [];
+    const bs: number[] = [];
+    for (let y = roofY + 6; y <= Math.min(roofY + 44, probeH - 1); y += 2) {
+      for (let x = bLo + 12; x <= bHi - 12; x += 3) {
+        const i = (y * w + x) * 4;
+        if ((data[i + 3] ?? 0) < 240) continue;
+        rs.push(data[i] ?? 0);
+        gs.push(data[i + 1] ?? 0);
+        bs.push(data[i + 2] ?? 0);
+      }
+    }
+    if (rs.length < 24) return;
+    const mid = (v: number[]) => {
+      v.sort((a, b) => a - b);
+      return v[v.length >> 1] ?? 0;
+    };
+    const hex = (n: number) => n.toString(16).padStart(2, '0');
+    const roof = `#${hex(mid(rs))}${hex(mid(gs))}${hex(mid(bs))}`;
+
+    // Geometry. The cap's bottom edge lands on the sprite row whose width it
+    // borrowed, so the sprite covers the join exactly; its top edge is one
+    // tile higher, over the footprint row nothing else paints.
+    const capX0 = Math.max(0, bLo - 3);
+    const capX1 = Math.min(w, bHi + 4);
+    const capW = capX1 - capX0;
+    const capH = CAP_LIP + S + yB;
+    const plane = capH - CAP_LIP;
+    const lean = (d: number) => Math.max(0, Math.min(0.4, d / (yB - yA)));
+    const insetL = Math.min(capW * 0.18, Math.max(5, lean(aLo - bLo) * plane));
+    const insetR = Math.min(capW * 0.18, Math.max(5, lean(bHi - aHi) * plane));
+
+    // The far edge is painted, not ruled: a shallow wandering line.
+    const r = new Rng(kind.length * 7919 + capW * 31 + 11);
+    const pts: [number, number][] = [];
+    const segs = 6;
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      pts.push([
+        insetL + (capW - insetR - insetL) * t,
+        CAP_LIP + 2 - Math.sin(t * Math.PI) * 1.6 + (r.next() - 0.5) * 3.2,
+      ]);
+    }
+    const traceTop = (g: CanvasRenderingContext2D) => {
+      const first = pts[0] ?? [0, CAP_LIP];
+      const last = pts[pts.length - 1] ?? first;
+      g.lineTo(first[0], first[1]);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const p = pts[i] ?? first;
+        const n = pts[i + 1] ?? last;
+        g.quadraticCurveTo(p[0], p[1], (p[0] + n[0]) / 2, (p[1] + n[1]) / 2);
+      }
+      g.lineTo(last[0], last[1]);
+    };
+    const outline = (g: CanvasRenderingContext2D) => {
+      g.beginPath();
+      g.moveTo(0, capH);
+      traceTop(g);
+      g.lineTo(capW, capH);
+      g.closePath();
+    };
+
+    const { cv, g } = surface(capW, capH);
+
+    // The street beyond takes the roof's shade: the plane's own silhouette,
+    // lifted a lip's worth and faded out, so the edge never reads as a ruler.
+    g.save();
+    g.translate(0, -CAP_LIP);
+    outline(g);
+    g.clip();
+    g.translate(0, CAP_LIP);
+    vgrad(g, 0, 0, capW, CAP_LIP + 6, 'rgba(24,17,10,0)', 'rgba(24,17,10,0.2)');
+    g.restore();
+
+    // The roof plane itself.
+    g.save();
+    outline(g);
+    g.clip();
+    rect(g, 0, 0, capW, capH, shade(roof, -0.03));
+    // Shade gathers where the plane meets the ridge below it, and the whole
+    // surface leans a little toward the light as it comes forward.
+    vgrad(g, 0, CAP_LIP, capW, plane, 'rgba(38,28,18,0.12)', 'rgba(38,28,18,0)');
+    vgrad(g, 0, capH - 34, capW, 34, 'rgba(38,28,18,0)', 'rgba(38,28,18,0.2)');
+    // Weathering: broad, soft, elongated washes. Big enough to read as light
+    // over a surface rather than as spots on one.
+    for (let i = 0; i < 5; i++) {
+      const rx = 34 + r.next() * 34;
+      g.save();
+      g.translate(10 + r.next() * (capW - 20), CAP_LIP + 12 + r.next() * (plane - 24));
+      g.scale(1, 0.42);
+      glowSpot(g, 0, 0, rx, shade(roof, (r.next() - 0.5) * 0.16), 0.16);
+      g.restore();
+    }
+    // Courses. Thatch is laid in them, coppi are laid in them, a terrace gets
+    // them from its screed and its rain: shallow horizontal lines are what
+    // says "roof" on any of these materials, so every cap gets a few, sagging
+    // slightly and never quite parallel.
+    g.lineCap = 'round';
+    const courses = 5;
+    for (let i = 0; i < courses; i++) {
+      g.strokeStyle = shade(roof, i % 2 ? 0.16 : -0.18);
+      g.globalAlpha = 0.12;
+      g.lineWidth = 2 + r.next() * 2.6;
+      const y = CAP_LIP + 20 + ((i + 0.3 + r.next() * 0.4) * (plane - 30)) / courses;
+      g.beginPath();
+      g.moveTo(-2, y + (r.next() - 0.5) * 4);
+      g.quadraticCurveTo(capW / 2, y + 2 + (r.next() - 0.5) * 7, capW + 2, y + (r.next() - 0.5) * 4);
+      g.stroke();
+    }
+    // A little tooth, so the plane holds a brush and not a fill.
+    for (let i = 0; i < 26; i++) {
+      g.strokeStyle = shade(roof, r.next() < 0.5 ? 0.26 : -0.26);
+      g.globalAlpha = 0.09;
+      g.lineWidth = 1.6 + r.next();
+      const x = 6 + r.next() * (capW - 12);
+      const y = CAP_LIP + 10 + r.next() * (plane - 18);
+      g.beginPath();
+      g.moveTo(x, y);
+      g.lineTo(x + (r.next() - 0.5) * 5, y + 4 + r.next() * 7);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+    // The far edge, built the way a low parapet is: a band of the building's
+    // own material, a lit rim along the top of it, and its shadow laid on the
+    // roof below. Stroked against the clip, so only the inner half lands and
+    // the ink can still sit outside.
+    g.lineJoin = 'round';
+    g.lineCap = 'butt';
+    // Only the far edge: an empty subpath makes the first lineTo a moveTo, so
+    // the sides of the plane keep out of the coping entirely.
+    const edgePath = () => {
+      g.beginPath();
+      traceTop(g);
+    };
+    g.save();
+    g.translate(0, 13);
+    edgePath();
+    g.strokeStyle = 'rgba(40,30,20,0.16)';
+    g.lineWidth = 9;
+    g.stroke();
+    g.restore();
+    edgePath();
+    g.strokeStyle = shade(roof, 0.1);
+    g.lineWidth = 22;
+    g.stroke();
+    edgePath();
+    g.strokeStyle = shade(roof, 0.26);
+    g.lineWidth = 8;
+    g.stroke();
+    g.restore();
+
+    // The same soft ink the sprites wear, on the two edges that show.
+    g.save();
+    g.lineJoin = 'round';
+    g.beginPath();
+    g.moveTo(0, capH);
+    traceTop(g);
+    g.lineTo(capW, capH);
+    g.strokeStyle = 'rgba(38,26,16,0.26)';
+    g.lineWidth = 6.5;
+    g.stroke();
+    g.strokeStyle = 'rgba(38,26,16,0.5)';
+    g.lineWidth = 3;
+    g.stroke();
+    g.restore();
+
+    // One sun for everyone, exactly as the buildings take it.
+    g.save();
+    g.globalCompositeOperation = 'source-atop';
+    const sun = g.createLinearGradient(0, 0, capW, 0);
+    sun.addColorStop(0, 'rgba(44,30,54,0.12)');
+    sun.addColorStop(0.45, 'rgba(0,0,0,0)');
+    sun.addColorStop(1, 'rgba(255,238,196,0.10)');
+    g.fillStyle = sun;
+    g.fillRect(0, 0, capW, capH);
+    g.restore();
+
+    this.caps.set(src, { cv, dx: capX0, dy: -(S + CAP_LIP) });
   }
 
   private make(
@@ -1486,6 +1757,31 @@ export class Tileset {
     return BUILDINGS.has(kind);
   }
 
+  /**
+   * The tiles a building sprite accounts for: `rows` of art above its anchor
+   * cell, and the `cols` of solid footprint it spans (the half-tile it
+   * overhangs on each side belongs to no cell). The renderer needs both to ask
+   * the map whether the row above the art is solid.
+   */
+  buildingSpan(kind: string): { cols: number; rows: number } | null {
+    if (!BUILDINGS.has(kind)) return null;
+    const first = this.v.get(ART_ALIAS[kind] ?? kind)?.[0];
+    if (!first) return null;
+    return { cols: Math.round((first.width - ART * 8) / S), rows: Math.round(first.height / S) };
+  }
+
+  /**
+   * Paint the footprint row above a building's art as that building's own roof
+   * carrying on away from the viewer. Draw it before the sprite: the sprite's
+   * own edge covers the join. No-op for kinds with no baked cap.
+   */
+  drawBuildingCap(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
+    const src = this.variant(kind, cx, cy);
+    const cap = this.caps.get(src);
+    if (!cap) return;
+    g.drawImage(cap.cv, sx - ART * 4 + cap.dx, sy - (src.height - S) + cap.dy);
+  }
+
   /** The inked tall sprite plus its anchor offsets, for reflections. */
   tallImage(kind: string, cx: number, cy: number): { cvs: HTMLCanvasElement; ox: number; oy: number } | null {
     const cvs = this.inked(this.variant(kind, cx, cy), kind);
@@ -1502,12 +1798,8 @@ export class Tileset {
     if (kind === 'tree') {
       // The renderer casts the directional shadow; nothing extra here.
     } else if (building) {
-      // The building grounds itself with a long soft base shadow.
-      const grad = g.createLinearGradient(0, sy + S, 0, sy + S + 18);
-      grad.addColorStop(0, 'rgba(26,18,12,0.3)');
-      grad.addColorStop(1, 'rgba(26,18,12,0)');
-      g.fillStyle = grad;
-      g.fillRect(sx - 12, sy + S, cvs.width - 8, 18);
+      // The building grounds itself with a long soft base shadow, baked.
+      g.drawImage(this.baseShade, sx - 12, sy + S, cvs.width - 8, 18);
     } else if (GROUNDED_TALL.has(kind)) {
       // Shadow baked into most tall sprites; nothing extra needed here.
     }

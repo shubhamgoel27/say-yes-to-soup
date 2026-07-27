@@ -748,8 +748,18 @@ export class Renderer {
           if (t.kind === 'tree' || t.kind === 'palm') {
             this.castShadow(tx + S / 2, ty + S - 8, 52, 0.2);
             this.drawDapple(tx + S / 2, ty + S - 8, t.cx, t.cy);
-          } else if (this.tiles.isBuilding(t.kind)) this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
-          else if (this.tiles.castsSun(t.kind)) this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
+          } else if (this.tiles.isBuilding(t.kind)) {
+            this.castShadow(tx + S * 2.2, ty + S - 4, 120, 0.16);
+            // A house sprite is four tiles of art on a five-tile footprint, so
+            // the row above it is solid with nothing painted on it and reads
+            // as open street. Where the map agrees that row is solid, give it
+            // the building's own roof; where it does not, leave the ground be.
+            if (this.footprintCapped(map, t.kind, t.cx, t.cy)) {
+              this.tiles.drawBuildingCap(ctx, t.kind, tx, ty, t.cx, t.cy);
+            }
+          } else if (this.tiles.castsSun(t.kind)) {
+            this.castShadow(tx + S / 2, ty + S - 6, 34, 0.18);
+          }
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
           }
@@ -794,6 +804,23 @@ export class Renderer {
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
 
+  }
+
+  /**
+   * True when the whole footprint row above a building's art is solid object:
+   * the row a 4-tile-tall sprite on a 5-tile-deep footprint can never paint.
+   * Anything less than solid all the way across is somebody's walkable ground
+   * and gets left exactly as it is.
+   */
+  private footprintCapped(map: TileMap, kind: string, cx: number, cy: number): boolean {
+    const span = this.tiles.buildingSpan(kind);
+    if (!span) return false;
+    const y = cy - span.rows;
+    if (!map.inBounds(cx, y)) return false;
+    for (let i = 0; i < span.cols; i++) {
+      if (map.object(cx + i, y)?.solid !== true) return false;
+    }
+    return true;
   }
 
   /** World-anchored tonal patches, keyed to a coarse grid so they never move. */
