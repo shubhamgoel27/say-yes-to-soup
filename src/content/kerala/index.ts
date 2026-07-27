@@ -65,16 +65,34 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c6.row.start',
       doneNode: 'c6.rowed',
+      title: 'The chundan vallam',
+      howTo: [
+        'A golden beat travels the water toward the blades. Space exactly as it arrives.',
+        'Land it clean and a hundred oars bite at once, and the whole boat surges.',
+        'Miss and the song circles back for you. Lose it badly and the boat only wallows a while.',
+      ],
       make: (root, audio) => new RowPanel(root, audio as AudioBus),
     },
     {
       flag: 'c6.sadya.start',
       doneNode: 'c6.sadya.served',
+      title: 'The sadya leaf',
+      howTo: [
+        'Narrow end of the leaf points left. Arrows choose a seat, Space serves the course.',
+        'Right hand only. Every dish has kept the same corner for about four generations.',
+        'Nothing here can be lost. A wrong seat only buys you an auntie, and an opinion.',
+      ],
       make: (root, audio) => new SadyaPanel(root, audio as AudioBus),
     },
     {
       flag: 'c6.cook.start',
       doneNode: 'c6.cook.finish',
+      title: 'The meter-long pour',
+      howTo: [
+        'The boil will not be hurried. Nothing to press yet; waiting is the first ingredient.',
+        'Then Space lifts the pouring arm, Space again lets the tea go. Height is froth.',
+        'Reach too far and it rings the counter. Shaji laughs, wipes, and hands you the tumblers again.',
+      ],
       make: (root, audio) => new ChayaPanel(root, audio as AudioBus),
     },
   ],

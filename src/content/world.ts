@@ -86,7 +86,21 @@ export const JOURNAL: JournalEntry[] = CHAPTERS.flatMap((c) => c.journal);
 export const JOURNAL_BY_ID = new Map(JOURNAL.map((e) => [e.id, e]));
 
 /** Newest chapter's threads first: they are the more specific once you are there. */
-export const TASKS: TaskDef[] = newestFirst.flatMap((c) => c.tasks);
+/**
+ * A task carries the chapters that supersede it: the arrival flags of every
+ * chapter after its own. Guidance is per chapter, and merging every chapter's
+ * tasks into one list meant Ch'aska Pampa was still telling you to meet the
+ * village while you stood in the endgame, an ocean and ten villages later.
+ */
+export type WorldTask = TaskDef & { supersededBy: string[] };
+
+export const TASKS: WorldTask[] = newestFirst.flatMap((c) => {
+  const own = CHAPTERS.indexOf(c);
+  const later = CHAPTERS.slice(own + 1)
+    .map((x) => x.arrival?.flag)
+    .filter((f): f is string => !!f);
+  return c.tasks.map((t) => ({ ...t, supersededBy: later }));
+});
 
 export const ERRANDS: ErrandDef[] = CHAPTERS.flatMap((c) => c.errands ?? []);
 export const ERRAND_BY_ID = new Map(ERRANDS.map((e) => [e.id, e]));

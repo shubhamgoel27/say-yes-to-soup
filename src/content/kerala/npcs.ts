@@ -34,6 +34,7 @@ export const KERALA_NPCS: NpcDef[] = [
         node: 'c6.mariamma.blessing',
       },
       { when: { has: ['c6.complete'] }, node: 'c6.mariamma.after' },
+      { when: { has: ['c6.sadya.done'] }, node: 'c6.mariamma.sadyaAgain' },
       { node: 'c6.mariamma.idle' },
     ],
   },
@@ -81,6 +82,7 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['c6.chaya', 'page.words.chetta'], not: ['c6.chetta'] }, node: 'c6.shaji.chetta' },
       { when: { has: ['c6.rain'], not: ['c6.rainchaya'] }, node: 'c6.shaji.rainstall' },
       { when: { has: ['page.words.chaya'], not: ['c6.cook.done'] }, node: 'c6.shaji.cookoffer' },
+      { when: { has: ['c6.cook.done'] }, node: 'c6.shaji.pourAgain' },
       { node: 'c6.shaji.idle' },
     ],
   },
@@ -187,6 +189,7 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['errand.coir-rope'], not: ['c6.rope.given'] }, node: 'c6.varkey.rope' },
       { when: { has: ['c6.rope.given', 'c6.letter.delivered'], not: ['c6.row.done'] }, node: 'c6.varkey.invite' },
       { when: { has: ['c6.row.done'], not: ['c6.varkey2'] }, node: 'c6.varkey.after' },
+      { when: { has: ['c6.row.done'] }, node: 'c6.varkey.rowAgain' },
       { node: 'c6.varkey.idle' },
     ],
   },
@@ -340,6 +343,26 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { who: 'Mariamma', text: 'When you reach the next coast, eat properly and write to me. One page, no news needed. Mothers read between lines; it is our alphabet.' },
     ],
+    choices: [
+      { text: 'Ask if there are leaves left to lay', when: { has: ['c6.sadya.done'] }, goto: 'c6.mariamma.sadyaReplay' },
+      { text: 'Just sit with her a while', goto: 'c6.mariamma.idle' },
+    ],
+  },
+  'c6.mariamma.sadyaAgain': {
+    lines: [
+      { who: 'Mariamma', text: 'The aunties are back and still wrong about the fold. There are leaves cut, mone, and my knees have not improved.' },
+    ],
+    choices: [
+      { text: 'Take up the serving spoon again', when: { has: ['c6.sadya.done'] }, goto: 'c6.mariamma.sadyaReplay' },
+      { text: 'Sit on the step instead', goto: 'c6.mariamma.idle' },
+    ],
+  },
+  'c6.mariamma.sadyaReplay': {
+    lines: [
+      { who: 'Mariamma', text: 'Go on. Nothing to prove today, only leaves to fill. Your hand already knows where the rice belongs.' },
+      { text: 'Auntie Leela and Auntie Rosamma take their stations without being asked, already disagreeing about something.' },
+    ],
+    effects: ['set:replay.mode', 'set:c6.sadya.start'],
   },
   'c6.mariamma.idle': {
     lines: [
@@ -417,6 +440,21 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { who: 'Shaji', text: 'Chaya kudikkam? The kettle has opinions about everyone, but it keeps them at a simmer. Sit; it likes you.' },
     ],
+  },
+  'c6.shaji.pourAgain': {
+    lines: [
+      { who: 'Shaji', text: 'The kettle has been asking after you, mone. Two tumblers, one wrist, and a bench with nothing better to watch.' },
+    ],
+    choices: [
+      { text: 'Step behind the kettle again', when: { has: ['c6.cook.done'] }, goto: 'c6.shaji.pourReplay' },
+      { text: 'The customer side, today', goto: 'c6.shaji.idle' },
+    ],
+  },
+  'c6.shaji.pourReplay': {
+    lines: [
+      { who: 'Shaji', text: 'No lesson, no counting. Pull it high enough that the bench looks up, and spill whatever the counter is owed.' },
+    ],
+    effects: ['set:replay.mode', 'set:c6.cook.start'],
   },
   'c6.shaji.cookoffer': {
     lines: [
@@ -631,6 +669,21 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Captain Varkey', text: 'The lake gives less fish every year; the houseboats churn it like soup. But race week, the water is only ours again.' },
     ],
     effects: ['set:c6.varkey2'],
+  },
+  'c6.varkey.rowAgain': {
+    lines: [
+      { who: 'Captain Varkey', text: 'Seat forty-one stays empty on practice evenings now. The crew keeps it clear, which from this lot is a love letter.' },
+    ],
+    choices: [
+      { text: 'Take seat forty-one again', when: { has: ['c6.row.done'] }, goto: 'c6.varkey.rowReplay' },
+      { text: 'Watch from the bank tonight', goto: 'c6.varkey.idle' },
+    ],
+  },
+  'c6.varkey.rowReplay': {
+    lines: [
+      { who: 'Captain Varkey', text: 'Oar in. Nothing to prove, nobody counting your ragged ones. Row for the noise a hundred blades make together.' },
+    ],
+    effects: ['set:replay.mode', 'set:c6.row.start'],
   },
   'c6.varkey.idle': {
     lines: [

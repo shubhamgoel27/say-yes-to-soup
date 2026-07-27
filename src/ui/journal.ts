@@ -1,6 +1,7 @@
 import type { GameState } from '../engine/state';
 import type { Dir } from '../engine/input';
 import type { JournalEntry, JournalTab, TaskDef } from '../content/schema';
+import type { WorldTask } from '../content/world';
 import type { RouteStop } from '../content/route';
 import { makeDishArt } from '../art/dishes';
 import { makePhotoArt } from '../art/albumart';
@@ -55,14 +56,18 @@ export class JournalUI {
   constructor(
     private root: HTMLElement,
     private entries: JournalEntry[],
-    private tasks: TaskDef[],
+    private tasks: WorldTask[],
     private route: RouteStop[],
     private state: GameState,
   ) {}
 
   /** Every open thread, in priority order. */
   activeTasks(): string[] {
-    return this.tasks.filter((t) => this.state.check(t.when)).map((t) => t.text);
+    return this.tasks
+      // A chapter stops advising you the moment you have moved on past it.
+      .filter((t) => !t.supersededBy.some((f) => this.state.has(f)))
+      .filter((t) => this.state.check(t.when))
+      .map((t) => t.text);
   }
 
   /**

@@ -8,8 +8,9 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type S
  *
  * RowPanel: a seat in the chundan vallam on a monsoon channel. The vanchipattu
  * beat travels the water as a golden ripple; strike Space as it reaches the
- * blades and a hundred oars bite at once. There is no failure, only rhythm
- * found late.
+ * blades and a hundred oars bite at once. A single ragged stroke costs
+ * nothing; four in a row and the crew loses the song, the boat wallows, and
+ * Raghavan finally looks at you. Space takes the seat again.
  *
  * SadyaPanel: an overhead banana leaf, each course ladled on as a blob that
  * lands with a plop and settles. Wrong placements earn warm auntie
@@ -55,7 +56,10 @@ const CALLS = [
   'Aaaarppo! The channel answers back.',
 ];
 
-type RowPhase = 'row' | 'done';
+type RowPhase = 'row' | 'wallow' | 'done';
+
+/** Four ragged strokes in a row before the crew loses the song. Rare, and funny. */
+const RAGGED_LIMIT = 4;
 
 /** Deterministic monsoon: fixed drops and stipple rings, phased by scene time. */
 const RAIN = (() => {
@@ -158,6 +162,8 @@ export class RowPanel {
   private progress = 0;
   private good = 0;
   private call = 0;
+  private ragged = 0;
+  private pulled = false;
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -170,6 +176,7 @@ export class RowPanel {
   private ripples: { x: number; y: number; age: number }[] = [];
   private vortices: { x: number; y: number; age: number; dir: number }[] = [];
   private drift = 0;
+  private wallowT = 0;
 
   constructor(
     private root: HTMLElement,
@@ -188,6 +195,8 @@ export class RowPanel {
     this.progress = 0;
     this.good = 0;
     this.call = 0;
+    this.ragged = 0;
+    this.pulled = false;
     this.hint = 'The singer calls; the oars answer. Space exactly as the beat reaches the blades.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Chundan Vallam', this.scene);
@@ -199,6 +208,7 @@ export class RowPanel {
     this.ripples = [];
     this.vortices = [];
     this.drift = 0;
+    this.wallowT = 0;
     this.root.hidden = false;
     this.hints.setHint(this.hint);
   }
@@ -211,8 +221,12 @@ export class RowPanel {
         // A beat sailed past unstruck. The boat glides; the song circles back.
         this.x = 1;
         this.hint = 'The beat comes around again. The song waits for no one, and forgives everyone.';
+        // Only once you have actually swung: reading the hint costs nothing.
+        if (this.pulled) this.ragged++;
+        if (this.ragged >= RAGGED_LIMIT) this.loseTheSong();
       }
     }
+    if (this.phase === 'wallow') this.wallowT = Math.min(1, this.wallowT + dt * 1.6);
     // Visual decay and drift.
     this.strokeT = Math.max(0, this.strokeT - dt * 2.2);
     this.surge += (0 - this.surge) * Math.min(1, dt * 3);
@@ -236,11 +250,43 @@ export class RowPanel {
     // The song sets the course; you only have to be on time.
   }
 
+  /**
+   * The song gets away from you. A hundred oars stop agreeing and the boat sits
+   * down in the water. Nothing is lost but the moment; Space and the seat is
+   * yours again.
+   */
+  private loseTheSong() {
+    const sc = this.scene;
+    this.phase = 'wallow';
+    this.wallowT = 0;
+    this.audio.bump();
+    this.hint =
+      'The stroke dies. A hundred blades go their own way and the boat sits down in the water like a tired buffalo. Space to take the seat again.';
+    if (sc && !calm()) {
+      sc.thump(5, 0.05);
+      for (let i = 0; i < 5; i++) sc.burst(158 + i * 38, 240, { n: 3, color: '#cfe4da', speed: 60, grav: 240, size: 2.2, life: 0.6 });
+    }
+  }
+
+  /** Take the seat again: the panel's own reset, same completion callback. */
+  private again() {
+    const done = this.onDone;
+    if (done) this.open(done);
+    this.hint = 'Raghavan clears his throat and starts the count from the top. Nobody mentions the wallowing. Ever.';
+    this.hints?.setHint(this.hint);
+  }
+
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'wallow') {
+      this.again();
+      return;
+    }
     if (this.phase === 'row') {
+      this.pulled = true;
       if (this.x <= 0.22 && this.x >= -0.06) {
         this.good++;
+        this.ragged = 0;
         this.progress = Math.min(1, this.progress + 0.13);
         this.speed += 0.04;
         this.audio.slosh();
@@ -261,12 +307,21 @@ export class RowPanel {
         }
       } else {
         this.progress = Math.min(1, this.progress + 0.03);
+        this.ragged++;
         this.audio.bump();
-        this.hint = 'Ragged. Your oar slaps alone; the song scoops you back onto the beat.';
+        this.hint =
+          this.ragged >= RAGGED_LIMIT - 1
+            ? 'Ragged again. Raghavan draws breath the way a kettle does. One clean stroke and all is forgiven.'
+            : 'Ragged. Your oar slaps alone; the song scoops you back onto the beat.';
         this.strokeT = 0.55;
         if (sc && !calm()) {
           sc.burst(310, 238, { n: 5, color: '#cfe4da', speed: 80, grav: 260, size: 2.2, life: 0.5 });
           this.vortices.push({ x: 306, y: 242, age: 0, dir: 1 });
+        }
+        if (this.ragged >= RAGGED_LIMIT) {
+          this.x = 1;
+          this.loseTheSong();
+          return;
         }
       }
       this.x = 1;
@@ -379,6 +434,26 @@ export class RowPanel {
       g.beginPath();
       g.ellipse(mx, 240, 10, 3.4, 0, 0, Math.PI * 2);
       g.stroke();
+    } else if (this.phase === 'wallow') {
+      // The strike lane stands empty; the beat has gone on down the channel
+      // without you, and the water flattens out into slow, embarrassed swells.
+      for (const px of [300, 372]) {
+        g.strokeStyle = '#8a6b40';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(px, 218);
+        g.lineTo(px, 250);
+        g.stroke();
+        dot(g, px, 216, 2.6, '#8f4a30');
+      }
+      g.strokeStyle = `rgba(206,226,216,${(0.22 * this.wallowT).toFixed(3)})`;
+      g.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const rr2 = 40 + i * 46 + this.wallowT * 26;
+        g.beginPath();
+        g.ellipse(240, 252, rr2, rr2 * 0.2, 0, 0, Math.PI * 2);
+        g.stroke();
+      }
     } else {
       // Across the line: the finish post and a bank gone loud with color.
       g.strokeStyle = '#7d5836';
@@ -420,15 +495,25 @@ export class RowPanel {
     }
 
     const prog = Math.round(this.progress * 100);
-    cap(g, this.phase === 'row' ? `${prog}m of 100 · ${this.good} clean strokes` : 'across the line');
+    cap(
+      g,
+      this.phase === 'row'
+        ? `${prog}m of 100 · ${this.good} clean strokes`
+        : this.phase === 'wallow'
+          ? 'the song got away · the boat wallows'
+          : 'across the line',
+    );
   }
 
   private paintBoat(g: CanvasRenderingContext2D, t: number) {
     const bx = this.surge;
-    const by = 214 + wobble(t, 1.7) * 2.4;
+    // Wallowing: she settles a few inches and rolls, the way a boat does when
+    // a hundred people stop agreeing about when to pull.
+    const sag = this.wallowT * 6;
+    const by = 214 + wobble(t, 1.7) * 2.4 + sag;
     g.save();
     g.translate(bx, by - 214);
-    g.rotate(-this.surge * 0.003);
+    g.rotate(-this.surge * 0.003 + wobble(t, 0.9) * 0.012 * this.wallowT);
     softShadow(g, 210, 252, 150, 22, 0.28);
 
     // Hull: long oiled teak, the stern beak rising like a cobra hood astern.
@@ -488,8 +573,14 @@ export class RowPanel {
       g.beginPath();
       g.arc(0, -19.4, 4.2, Math.PI, Math.PI * 2);
       g.fill();
-      // The paddle: forward reach, then the sweep astern.
-      const ang = this.strokeT > 0 ? 0.95 - 1.7 * pull : 0.55 + wobble(t, 1.5, i) * 0.12;
+      // The paddle: forward reach, then the sweep astern. In the wallow, five
+      // rowers hold five different opinions about where an oar goes.
+      const ang =
+        this.phase === 'wallow'
+          ? 0.1 + i * 0.42 * this.wallowT + wobble(t, 1.1, i * 3) * 0.18
+          : this.strokeT > 0
+            ? 0.95 - 1.7 * pull
+            : 0.55 + wobble(t, 1.5, i) * 0.12;
       const tipX = Math.sin(ang) * 40;
       const tipY = Math.cos(ang) * 40;
       g.strokeStyle = '#8a6238';
@@ -1059,7 +1150,9 @@ export class SadyaPanel {
  * lifts the pouring arm and it keeps climbing; Space again lets the tea go.
  * Height is froth, and each pull wants more of it. Too low is not chaya, it is
  * surrender; too high spills, earns laughter and a wet counter, and costs
- * nothing. It ends with the glass and the question of the hand beneath it.
+ * nothing. Three spills and the pot is empty, which is not a failure either,
+ * only a fresh boil and a wetter legend. It ends with the glass and the
+ * question of the hand beneath it.
  */
 
 const PULL_TARGETS = [0.5, 0.66, 0.82];
@@ -1070,7 +1163,10 @@ const PULL_PRAISE = [
   'The full meter. Tumbler to tumbler in one bronze arc, and the froth stands like a monsoon cloud.',
 ];
 
-type ChayaPhase = 'boil' | 'pull' | 'serve' | 'done';
+type ChayaPhase = 'boil' | 'pull' | 'dry' | 'serve' | 'done';
+
+/** The counter can drink three tumblers before the pot notices. */
+const SPILL_LIMIT = 3;
 
 const PUDDLES: [number, number][] = [
   [468, 262],
@@ -1228,6 +1324,7 @@ export class ChayaPanel {
           sc.thump(6, 0.05);
           sc.burst(410, 250, { n: 14, color: '#c9862e', speed: 130, grav: 320, size: 2.6, life: 0.6 });
         }
+        if (this.spills >= SPILL_LIMIT) this.potDry();
       }
     }
     // Visual clocks.
@@ -1259,8 +1356,32 @@ export class ChayaPanel {
     }
   }
 
+  /** The counter has drunk the pot. Nothing lost but milk, and some dignity. */
+  private potDry() {
+    const sc = this.scene;
+    this.phase = 'dry';
+    this.lifting = false;
+    this.arm = 0;
+    this.audio.bump();
+    this.hint =
+      'The pot goes light, then empty. Shaji looks at the shining counter, then at you. "Mone, today the table drank first. Space, and we boil again."';
+    if (sc && !calm()) sc.thump(3, 0.03);
+  }
+
+  /** Boil again: the panel's own reset, same completion callback. */
+  private again() {
+    const done = this.onDone;
+    if (done) this.open(done);
+    this.hint = 'Fresh milk, fresh tea, the same flame. Shaji wipes the counter with one unhurried arm. "Patience is an ingredient."';
+    this.hints?.setHint(this.hint);
+  }
+
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'dry') {
+      this.again();
+      return;
+    }
     if (this.phase === 'boil') {
       if (this.boil < 1) {
         this.stirs++;
@@ -1352,6 +1473,13 @@ export class ChayaPanel {
 
     if (this.phase === 'boil') {
       cap(g, `the boil: ${Math.round(this.boil * 100)}%`);
+    } else if (this.phase === 'dry') {
+      // Two empty tumblers standing in a shining puddle, waiting for a refill.
+      this.paintGlass(g, 410, 250, 1, 0, 0, t);
+      this.paintGlass(g, 340, 252, 0.9, 0, 0, t);
+      oval(g, 375, 258, 74, 9, 'rgba(150,95,40,0.28)');
+      oval(g, 352, 255, 22, 3, 'rgba(255,235,200,0.18)');
+      cap(g, 'the pot is empty · the counter drank well');
     } else if (this.phase === 'pull') {
       this.paintPull(g, t);
       const wet = this.spills > 0 ? `  ·  counter: wet x${this.spills}` : '';
@@ -1393,9 +1521,10 @@ export class ChayaPanel {
     oval(g, 132, 208, 12, 7, 'rgba(230,238,240,0.35)', -0.4);
     oval(g, 150, 196, 44, 10, '#aab3b8');
     oval(g, 150, 196, 39, 8, '#4c3b2c');
-    const lvl = this.phase === 'boil' ? this.boil : 1;
+    const lvl = this.phase === 'boil' ? this.boil : this.phase === 'dry' ? 0 : 1;
     const milk = shade('#f0e2c8', -lvl * 0.1);
-    oval(g, 150, 197 - lvl * 3, 36, 6.5, milk);
+    // An emptied pot shows its own dark bottom, not a pale disc of nothing.
+    if (lvl > 0.02) oval(g, 150, 197 - lvl * 3, 36, 6.5, milk);
     // Bubbles walk in from the walls as the boil takes hold.
     const r = new Rng(88);
     const n = Math.floor(lvl * 12);
@@ -1515,12 +1644,16 @@ export class ChayaPanel {
     const fillH = fill * (h - 8);
     rr(g, x - w / 2 + 3, base - 3 - fillH, w - 6, fillH, 3, '#b5732e');
     rr(g, x - w / 2 + 3, base - 3 - fillH, w - 6, Math.min(6, fillH), 3, '#d9a441');
-    const r = new Rng(31);
-    for (let i = 0; i < 7; i++) {
-      const bx = x - w / 2 + 5 + r.next() * (w - 10);
-      dot(g, bx, base - 4 - fillH - r.next() * froth, 2 + r.next() * 2.2 * s, '#f6ecd8');
+    // Froth and the tea's surface only exist when there is tea; an empty
+    // tumbler on a wet counter should read as plainly empty.
+    if (fill > 0.06) {
+      const r = new Rng(31);
+      for (let i = 0; i < 7; i++) {
+        const bx = x - w / 2 + 5 + r.next() * (w - 10);
+        dot(g, bx, base - 4 - fillH - r.next() * froth, 2 + r.next() * 2.2 * s, '#f6ecd8');
+      }
+      oval(g, x, base - 4 - fillH, w / 2 - 4, 3.4, '#faf3e4');
     }
-    oval(g, x, base - 4 - fillH, w / 2 - 4, 3.4, '#faf3e4');
     // The glass itself, drawn over its contents.
     g.strokeStyle = 'rgba(225,235,240,0.55)';
     g.lineWidth = 2;
