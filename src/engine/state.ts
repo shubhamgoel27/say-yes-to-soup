@@ -10,6 +10,10 @@ const SAVE_KEY = 'elsewhere.save';
 /** Saves written before the game was renamed still load. */
 const OLD_SAVE_KEY = 'wayfare.save';
 
+/** The three strokes of the traveler the player may choose at the flyleaf.
+ * null everywhere means Nani's original sketch (the default look). */
+export type PlayerLook = { skin: string; cloth: string; hair: string };
+
 type Events = {
   journal: (id: string) => void;
   errand: (id: string | null) => void;
@@ -25,6 +29,11 @@ export class GameState {
   /** Where the player last stood; updated by the game loop, persisted with
    * every save so Continue resumes the journey where it paused. */
   place: { map: string; x: number; y: number; dir: string } | null = null;
+  /** The name written on the flyleaf, or null when it was left blank.
+   * Dialogue falls back to "traveler" wherever a name would have gone. */
+  playerName: string | null = null;
+  /** The traveler's chosen look, or null for the default. */
+  playerLook: PlayerLook | null = null;
 
   private onJournal: Events['journal'][] = [];
   private onErrand: Events['errand'][] = [];
@@ -157,6 +166,8 @@ export class GameState {
           journal: [...this.journal],
           errand: this.errand,
           place: this.place,
+          name: this.playerName,
+          look: this.playerLook,
         }),
       );
     } catch {
@@ -170,6 +181,8 @@ export class GameState {
     this.journal.clear();
     this.errand = null;
     this.place = null;
+    this.playerName = null;
+    this.playerLook = null;
     try {
       localStorage.removeItem(SAVE_KEY);
     } catch {
@@ -199,11 +212,23 @@ export class GameState {
         journal?: string[];
         errand?: string | null;
         place?: { map: string; x: number; y: number; dir: string } | null;
+        // Added later; saves from before the flyleaf simply have neither.
+        name?: string | null;
+        look?: PlayerLook | null;
       };
       for (const f of data.flags ?? []) this.flags.add(f);
       for (const j of data.journal ?? []) this.journal.add(j);
       this.errand = data.errand ?? null;
       this.place = data.place ?? null;
+      this.playerName = typeof data.name === 'string' && data.name.trim() ? data.name : null;
+      const look = data.look;
+      this.playerLook =
+        look &&
+        typeof look.skin === 'string' &&
+        typeof look.cloth === 'string' &&
+        typeof look.hair === 'string'
+          ? { skin: look.skin, cloth: look.cloth, hair: look.hair }
+          : null;
     } catch {
       // A corrupt save should never brick the game; start fresh.
     }

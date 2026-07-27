@@ -28,6 +28,8 @@ export class Textbox {
   private nodes: NodeMap = {};
   private nodeId = '';
   private lineIdx = 0;
+  /** The current line with tokens resolved; what the typewriter reveals. */
+  private lineText = '';
   private shown = 0;
   private typing = false;
   private cursor = 0;
@@ -97,10 +99,17 @@ export class Textbox {
     this.showLine();
   }
 
+  /** Token substitution: `{name}` becomes the name on the flyleaf, or
+   * "traveler" when it was left blank. The only token dialogue knows. */
+  private withTokens(text: string): string {
+    return text.replace(/\{name\}/g, this.state.playerName?.trim() || 'traveler');
+  }
+
   private showLine() {
     const node = this.nodes[this.nodeId];
     const line = node?.lines[this.lineIdx];
     if (!node || !line) return;
+    this.lineText = this.withTokens(line.text);
 
     const narrator = !line.who;
     this.els.name.textContent = line.who ?? '';
@@ -123,11 +132,11 @@ export class Textbox {
     const line = this.nodes[this.nodeId]?.lines[this.lineIdx];
     if (!line) return;
     const before = Math.floor(this.shown);
-    this.shown = Math.min(line.text.length, this.shown + dt * this.cps);
+    this.shown = Math.min(this.lineText.length, this.shown + dt * this.cps);
     const now = Math.floor(this.shown);
-    this.els.text.textContent = line.text.slice(0, now);
+    this.els.text.textContent = this.lineText.slice(0, now);
     if (now > before) this.onType?.(line.who);
-    if (this.shown >= line.text.length) this.finishLine();
+    if (this.shown >= this.lineText.length) this.finishLine();
   }
 
   private stopType() {
@@ -139,8 +148,8 @@ export class Textbox {
     const node = this.nodes[this.nodeId];
     const line = node?.lines[this.lineIdx];
     if (!node || !line) return;
-    this.els.text.textContent = line.text;
-    this.shown = line.text.length;
+    this.els.text.textContent = this.lineText;
+    this.shown = this.lineText.length;
 
     const last = this.lineIdx >= node.lines.length - 1;
     if (last && this.activeChoices(node).length) {

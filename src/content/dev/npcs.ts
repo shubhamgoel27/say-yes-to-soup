@@ -362,7 +362,7 @@ export const NODES: NodeMap = {
   // ---------------- Rosa ----------------
   'rosa.first': {
     lines: [
-      { who: 'Rosa', text: 'You walked up from the valley? Sit, sit. The soup is hot and you look like wind.' },
+      { who: 'Rosa', text: 'You walked up from the valley? Sit, sit, {name}. The soup is hot and you look like wind.' },
       { text: 'A bowl lands in front of you before you can answer. Steam. Potatoes. Something green and sharp.' },
     ],
     choices: [
@@ -968,7 +968,7 @@ export const NODES: NodeMap = {
   },
   'chasca.offer': {
     lines: [
-      { who: 'Chasca', text: 'A portrait, traveler? You, the descent, and the sea making its entrance behind you.' },
+      { who: 'Chasca', text: 'A portrait, {name}? You, the descent, and the sea making its entrance behind you.' },
     ],
     choices: [
       { text: 'Pose', goto: 'chasca.snap' },

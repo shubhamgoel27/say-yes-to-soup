@@ -3,6 +3,8 @@ import type { Dir } from '../engine/input';
 import type { JournalEntry, JournalTab, TaskDef } from '../content/schema';
 import type { RouteStop } from '../content/route';
 import { makeDishArt } from '../art/dishes';
+import { makePhotoArt } from '../art/albumart';
+import { PHOTOS } from './album';
 
 export type { TaskDef };
 
@@ -32,14 +34,18 @@ const EPHEMERA: Record<string, { src: string; alt: string; caption: string }> = 
   },
 };
 
-const TABS: { id: JournalTab | 'tasks' | 'route'; label: string }[] = [
+const TABS: { id: JournalTab | 'tasks' | 'route' | 'photos'; label: string }[] = [
   { id: 'tasks', label: 'Tasks' },
   { id: 'route', label: 'Route' },
   { id: 'words', label: 'Words' },
   { id: 'dishes', label: 'Dishes' },
   { id: 'people', label: 'People' },
   { id: 'customs', label: 'Customs' },
+  { id: 'photos', label: 'Photos' },
 ];
+
+/** The prints land in the journal at slight, believable angles. */
+const PHOTO_TILTS = [-1.9, 1.5, -1.1, 2.1];
 
 export class JournalUI {
   private tab = 0;
@@ -110,10 +116,11 @@ export class JournalUI {
       this.tab = (this.tab + 1) % TABS.length;
       this.cursor = 0;
     } else {
-      const unlocked = this.unlockedInTab();
-      if (unlocked.length === 0) return;
-      if (dir === 'up') this.cursor = (this.cursor + unlocked.length - 1) % unlocked.length;
-      else this.cursor = (this.cursor + 1) % unlocked.length;
+      const count =
+        TABS[this.tab]?.id === 'photos' ? this.earnedPhotos().length : this.unlockedInTab().length;
+      if (count === 0) return;
+      if (dir === 'up') this.cursor = (this.cursor + count - 1) % count;
+      else this.cursor = (this.cursor + 1) % count;
     }
     this.render();
   }
@@ -128,6 +135,11 @@ export class JournalUI {
     return this.tabEntries().filter((e) => this.state.hasPage(e.id));
   }
 
+  /** The prints Chasca has actually taken, in album order. */
+  private earnedPhotos() {
+    return PHOTOS.filter((p) => this.state.has(p.flag));
+  }
+
   private render() {
     if (TABS[this.tab]?.id === 'tasks') {
       this.renderTasks();
@@ -135,6 +147,10 @@ export class JournalUI {
     }
     if (TABS[this.tab]?.id === 'route') {
       this.renderRoute();
+      return;
+    }
+    if (TABS[this.tab]?.id === 'photos') {
+      this.renderPhotos();
       return;
     }
     const all = this.tabEntries();
@@ -206,6 +222,72 @@ export class JournalUI {
       const art = slot ? makeDishArt(sel.id) : null;
       if (slot && art) slot.appendChild(art);
     }
+  }
+
+  /**
+   * The Photos tab: the prints Chasca has caught you in so far, pasted two to
+   * a row where you can visit them between chapters. Frames she has not taken
+   * yet wait as faint taped corners labeled only with the route's own place
+   * names, so nothing is spoiled that the front cover does not already show.
+   * The prints count toward no total; they are hers, not Nani's pages.
+   */
+  private renderPhotos() {
+    const tabsHtml = TABS.map(
+      (t, i) => `<span class="j-tab${i === this.tab ? ' on' : ''}">${t.label}</span>`,
+    ).join('');
+    const earned = this.earnedPhotos();
+    const sel = earned[Math.min(this.cursor, Math.max(earned.length - 1, 0))];
+    const cells = PHOTOS.map((p, i) => {
+      const tilt = PHOTO_TILTS[i % PHOTO_TILTS.length] ?? 0;
+      if (!this.state.has(p.flag)) {
+        // Only the route stop's name, which the Route tab already gives away.
+        const name = this.route[i]?.name ?? '';
+        return `<div class="j-ph-slot" style="--j-ph-tilt:${tilt}deg">
+            <span class="j-ph-corner c1"></span><span class="j-ph-corner c2"></span>
+            <span class="j-ph-corner c3"></span><span class="j-ph-corner c4"></span>
+            <div class="j-ph-name">${name}</div>
+          </div>`;
+      }
+      return `<figure class="j-item j-ph-print${p === sel ? ' sel' : ''}" style="--j-ph-tilt:${tilt}deg">
+          <div class="j-ph-art" data-art="${p.art}"></div>
+          <figcaption class="j-ph-cap">${p.caption}</figcaption>
+          <div class="j-ph-stamp">${p.stamp}</div>
+        </figure>`;
+    }).join('');
+    const detailHtml = sel
+      ? `<figure class="j-ph-big">
+          <div class="j-ph-art" data-art="${sel.art}"></div>
+          <figcaption class="j-ph-cap">${sel.caption}</figcaption>
+          <div class="j-ph-stamp">${sel.stamp}</div>
+        </figure>`
+      : `<div class="j-empty">Chasca has not caught you yet.<br>Stand still near her sometime.</div>`;
+    const total = this.entries.length;
+    const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
+    this.root.innerHTML = `
+      <div class="j-book${this.opening ? ' opening' : ''}">
+        <div class="j-head">
+          <div class="j-name">Nani&rsquo;s Journal</div>
+          <div class="j-progress">${found} / ${total} pages</div>
+        </div>
+        <div class="j-tabs">${tabsHtml}</div>
+        <div class="j-body">
+          <div class="j-ph-grid">${cells}</div>
+          <div class="j-detail">${detailHtml}</div>
+        </div>
+        <div class="j-hint">&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close</div>
+      </div>`;
+    // Mount copies of the cached prints: the album owns the originals, and a
+    // canvas can only live in one place, so each slot gets its own repaint.
+    for (const slot of this.root.querySelectorAll<HTMLElement>('.j-ph-art')) {
+      const src = makePhotoArt(slot.dataset.art ?? '');
+      if (!src) continue;
+      const copy = document.createElement('canvas');
+      copy.width = src.width;
+      copy.height = src.height;
+      copy.getContext('2d')?.drawImage(src, 0, 0);
+      slot.appendChild(copy);
+    }
+    this.root.querySelector('.j-ph-print.sel')?.scrollIntoView({ block: 'nearest' });
   }
 
   /**

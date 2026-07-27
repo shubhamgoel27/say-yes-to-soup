@@ -467,3 +467,17 @@ Plan (per docs/chapter-authoring-guide.md; new files only, no shared edits):
   but cannot deliver synthetic key events to the page or read its variables.
   Movement is therefore verified headlessly in `tests/`, and the browser is used
   only for looking at things. `DevBridge` exists for DOM-mediated inspection.
+
+## P? — A personable start (naming + look)
+
+- [x] state.ts: `playerName` + `playerLook` persisted, backward-compatible load
+- [x] textbox.ts: `{name}` token substitution (fallback "traveler")
+- [x] title.ts: NamingCard (two steps: flyleaf name, traveler's look) + letter salutation
+- [x] index.html: `#cc-card` element + cc- styles
+- [x] main.ts: 'naming' mode between Begin and letter; player sheet from saved look
+- [x] content: rosa.first + chasca.offer use `{name}`
+- [x] verify: tsc clean, 42/42 tests, Playwright: name flow, skip flow, old-save Continue
+
+Review: save shape gains optional `name` (string|null) and `look` ({skin,cloth,hair}|null);
+old saves without either load as null and every surface falls back ("traveler" /
+"For my grandchild"). Continue never asks; Begin again re-asks after reset.

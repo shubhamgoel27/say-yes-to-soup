@@ -466,6 +466,88 @@
       .j-task.now::before { content: '\25B8'; color: #c1512f; }
       .j-hint { font-size: 11px; color: #8a7455; text-align: center; padding-top: 6px; }
 
+      /* ---- journal photos: Chasca's prints, pasted where you can visit them ---- */
+      .j-ph-grid {
+        flex: 0 0 46%;
+        min-width: 0;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px 12px;
+        align-content: start;
+        padding: 10px 14px 14px 6px;
+      }
+      .j-ph-print, .j-ph-slot {
+        position: relative;
+        margin: 0;
+        min-width: 0;
+        transform: rotate(var(--j-ph-tilt, 0deg));
+      }
+      .j-ph-print {
+        padding: 4px 4px 2px;
+        background: #faf6ea;
+        border: 1px solid rgba(43, 33, 24, 0.18);
+        box-shadow: 0 1px 2px rgba(20, 14, 8, 0.25), 0 4px 9px rgba(20, 14, 8, 0.16);
+        color: #57452f;
+      }
+      .j-ph-print.sel {
+        background: #fdfaf0;
+        color: var(--ink);
+        box-shadow: 0 0 0 2px rgba(193, 81, 47, 0.55), 0 4px 10px rgba(20, 14, 8, 0.2);
+      }
+      .j-ph-art canvas { display: block; width: 100%; height: auto; }
+      .j-ph-cap {
+        font-family: var(--hand);
+        font-size: 12px;
+        line-height: 1.15;
+        color: #4c3a28;
+        padding: 4px 2px 2px;
+        transform: rotate(-0.4deg);
+        text-wrap: pretty;
+      }
+      .j-ph-stamp {
+        display: inline-block;
+        margin: 1px 0 3px;
+        padding: 1px 6px 0;
+        font-family: var(--display);
+        font-size: 8.5px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: #a3542f;
+        border: 1px solid rgba(163, 84, 47, 0.55);
+        border-radius: 3px;
+        background: rgba(250, 246, 234, 0.9);
+        transform: rotate(-2deg);
+      }
+      /* The frames she has not taken yet: faint taped corners, name only. */
+      .j-ph-slot {
+        aspect-ratio: 240 / 170;
+        border: 1.5px dashed rgba(43, 33, 24, 0.2);
+        background: rgba(43, 33, 24, 0.04);
+        display: grid;
+        place-items: center;
+        opacity: 0.75;
+      }
+      .j-ph-corner { position: absolute; width: 0; height: 0; border: 9px solid transparent; }
+      .j-ph-corner.c1 { top: 3px; left: 3px; border-top-color: rgba(58, 44, 30, 0.4); border-left-color: rgba(58, 44, 30, 0.4); }
+      .j-ph-corner.c2 { top: 3px; right: 3px; border-top-color: rgba(58, 44, 30, 0.4); border-right-color: rgba(58, 44, 30, 0.4); }
+      .j-ph-corner.c3 { bottom: 3px; left: 3px; border-bottom-color: rgba(58, 44, 30, 0.4); border-left-color: rgba(58, 44, 30, 0.4); }
+      .j-ph-corner.c4 { bottom: 3px; right: 3px; border-bottom-color: rgba(58, 44, 30, 0.4); border-right-color: rgba(58, 44, 30, 0.4); }
+      .j-ph-name { font-size: 11px; font-style: italic; color: #a08c6b; padding: 0 6px; text-align: center; }
+      /* The selected print, larger, in the detail pane. */
+      .j-ph-big {
+        margin: 8px auto 0;
+        max-width: 300px;
+        padding: 9px 9px 5px;
+        background: #faf6ea;
+        border: 1px solid rgba(43, 33, 24, 0.2);
+        box-shadow: 0 2px 3px rgba(20, 14, 8, 0.3), 0 10px 22px rgba(20, 14, 8, 0.2);
+        transform: rotate(-1.2deg);
+      }
+      .j-ph-big .j-ph-cap { font-size: 16px; padding: 7px 3px 4px; }
+      .j-ph-big .j-ph-stamp { font-size: 9.5px; margin: 2px 0 4px; }
+
       /* ---- title screen ---- */
       #title, #letter {
         position: absolute;
@@ -736,6 +818,164 @@
         animation: pulse 1.6s ease-in-out infinite;
       }
       @keyframes pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+      /* ---- cc: the flyleaf card (name + the traveler's look) ---- */
+      #cc-card {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(19, 14, 10, 0.86);
+        backdrop-filter: blur(3px) saturate(0.9);
+        pointer-events: auto;
+      }
+      #cc-card[hidden] { display: none; }
+      .cc-paper {
+        width: min(88vw, 430px);
+        background:
+          repeating-linear-gradient(180deg, transparent 0 27px, rgba(122, 90, 58, 0.1) 27px 28px),
+          url('/assets/textures/paper-grain-white.jpg'),
+          linear-gradient(#f4ead6, #e9dabb);
+        background-blend-mode: normal, multiply, normal;
+        background-position: 0 23px, 0 0, 0 0;
+        border: 2px solid var(--ink);
+        border-radius: 3px;
+        box-shadow: var(--shadow-card);
+        color: #43331f;
+        padding: 26px 34px 16px;
+        text-align: center;
+        line-height: 1.45;
+        animation: ccOpen 0.4s ease-out;
+      }
+      @keyframes ccOpen {
+        from { transform: translateY(16px) rotate(-0.6deg) scale(0.97); opacity: 0; }
+        to { transform: none; opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .cc-paper { animation: none; }
+      }
+      .cc-kicker {
+        font-family: var(--display);
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: #8a755a;
+        margin-bottom: 12px;
+      }
+      .cc-copy {
+        font-family: var(--hand);
+        font-size: 21px;
+        line-height: 1.25;
+        color: #43331f;
+        max-width: 320px;
+        margin: 0 auto 16px;
+        transform: rotate(-0.4deg);
+        text-wrap: pretty;
+      }
+      .cc-input {
+        display: block;
+        width: 64%;
+        margin: 0 auto 4px;
+        padding: 0 0 3px;
+        font-family: var(--hand);
+        font-size: 30px;
+        text-align: center;
+        color: var(--ink);
+        background: transparent;
+        border: none;
+        border-bottom: 1.5px dashed rgba(43, 33, 24, 0.4);
+        border-radius: 0;
+        outline: none;
+        caret-color: #7a3b22;
+      }
+      .cc-input:focus { border-bottom-color: rgba(122, 59, 34, 0.65); }
+      .cc-input::placeholder { color: rgba(122, 90, 58, 0.4); }
+      .cc-fig {
+        position: relative;
+        height: 140px;
+        display: grid;
+        place-items: end center;
+        margin: 0 auto 12px;
+      }
+      /* A pencil-soft contact shadow, so the sketch stands on the page. */
+      .cc-fig::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        bottom: 1px;
+        width: 44px;
+        height: 8px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        background: rgba(43, 33, 24, 0.16);
+        filter: blur(1.5px);
+      }
+      .cc-fig canvas { position: relative; z-index: 1; width: 84px; height: 134px; }
+      .cc-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        max-width: 300px;
+        margin: 0 auto 8px;
+      }
+      .cc-row {
+        display: grid;
+        grid-template-columns: 30px 1fr 30px;
+        align-items: center;
+        padding: 3px 4px;
+        border-radius: 3px;
+        color: #6b5a44;
+      }
+      .cc-row.sel { background: rgba(43, 33, 24, 0.07); color: var(--ink); }
+      .cc-arr {
+        font-family: var(--display);
+        font-size: 22px;
+        line-height: 1;
+        color: #a3542f;
+        opacity: 0.5;
+        cursor: pointer;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      .cc-row.sel .cc-arr, .cc-arr:hover { opacity: 1; }
+      .cc-mid {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .cc-lab { font-family: var(--hand); font-size: 20px; min-width: 64px; text-align: right; }
+      .cc-dots { display: inline-flex; gap: 6px; align-items: center; }
+      .cc-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        border: 1px solid rgba(43, 33, 24, 0.45);
+        box-shadow: inset 0 1px 1px rgba(255, 252, 244, 0.35);
+      }
+      .cc-dot.on { outline: 1.5px solid #7a3b22; outline-offset: 2px; }
+      .cc-actions { margin-top: 2px; }
+      .cc-btn {
+        font-family: var(--hand);
+        font-size: 23px;
+        color: #7a3b22;
+        background: none;
+        border: none;
+        padding: 2px 10px;
+        cursor: pointer;
+      }
+      .cc-btn:hover {
+        text-decoration: underline;
+        text-decoration-color: rgba(193, 81, 47, 0.55);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 4px;
+      }
+      .cc-hint {
+        font-size: 11.5px;
+        color: #a08c6b;
+        padding-top: 6px;
+      }
 
       /* ---- weaving mini-game ---- */
       #weave {
@@ -1208,6 +1448,7 @@
           <div id="fade"></div>
           <div id="iris"></div>
           <div id="journeycard"></div>
+          <div id="cc-card" hidden></div>
           <div id="letter" hidden></div>
           <div id="title" hidden></div>
         </div>

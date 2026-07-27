@@ -15,7 +15,7 @@ import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
 import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
-import { TitleScreen } from './ui/title';
+import { NamingCard, TitleScreen } from './ui/title';
 import { WeavePanel } from './ui/weave';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
@@ -285,6 +285,7 @@ const textbox = new Textbox(
 );
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'));
+const naming = new NamingCard($('cc-card'));
 const weave = new WeavePanel($('weave'), audio);
 const albumUI = new AlbumUI($('album'), state, audio);
 const pauseMenu = new PauseMenu($('pause'), audio, {
@@ -633,19 +634,27 @@ function updateRhythm(dt: number) {
   }
 }
 
-/** The golden traveler, for those who remember an older code. */
-const GOLDEN_LOOK = {
-  ...PLAYER_LOOK,
-  cloth: '#c8a55b',
-  stripe: '#f2e6d0',
-  hat: '#e8c97a',
-};
+/**
+ * The traveler's look: Nani's sketch, overlaid with whatever was chosen at
+ * the flyleaf (persisted in the save), gilded if the older code is known.
+ */
+function currentPlayerLook() {
+  const base = { ...PLAYER_LOOK, ...(state.playerLook ?? {}) };
+  /** The golden traveler, for those who remember an older code. */
+  return state.has('konami')
+    ? { ...base, cloth: '#c8a55b', stripe: '#f2e6d0', hat: '#e8c97a' }
+    : base;
+}
 
 const playerSprite: Sprite = {
   actor: player,
-  sheet: makeSheet(state.has('konami') ? GOLDEN_LOOK : PLAYER_LOOK),
+  sheet: makeSheet(currentPlayerLook()),
   rig: 'human',
 };
+
+function refreshPlayerSheet() {
+  playerSprite.sheet = makeSheet(currentPlayerLook());
+}
 
 /** ↑↑↓↓←→←→ on the title screen. Some traditions cross all borders. */
 const KONAMI: Dir[] = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
@@ -655,7 +664,7 @@ function feedKonami(d: Dir) {
   konamiAt = d === KONAMI[konamiAt] ? konamiAt + 1 : d === 'up' ? 1 : 0;
   if (konamiAt >= KONAMI.length) {
     state.set('konami');
-    playerSprite.sheet = makeSheet(GOLDEN_LOOK);
+    refreshPlayerSheet();
     audio.jingle();
     toasts.show('✦ 30 lives. (You will not need them here.)');
     toasts.show('your poncho remembers an older gold');
@@ -1216,7 +1225,7 @@ function tryInteract() {
 
 // ---------------------------------------------------------------- modes
 
-type Mode = 'title' | 'letter' | 'play';
+type Mode = 'title' | 'naming' | 'letter' | 'play';
 let mode: Mode = 'title';
 let attractT = 0;
 let quietHud = false;
@@ -1266,8 +1275,18 @@ function titleActivate() {
     applyGateState();
     applyDressings();
     refreshTaskChip();
-    mode = 'letter';
-    title.showLetter();
+    refreshPlayerSheet();
+    // The flyleaf first: a name (or not) and the traveler's look, then the
+    // letter. Continue never passes through here, so it never asks.
+    mode = 'naming';
+    naming.open((res) => {
+      state.playerName = res.name;
+      state.playerLook = res.look;
+      state.save();
+      refreshPlayerSheet();
+      mode = 'letter';
+      title.showLetter(undefined, state.playerName);
+    });
   } else {
     beginPlay(false);
   }
@@ -1422,6 +1441,9 @@ function update(dt: number) {
       audio.select();
     }
     if (act) titleActivate();
+  } else if (mode === 'naming') {
+    // The flyleaf card owns the keyboard entirely (capture-phase listener);
+    // any stray edges from other devices drain here without effect.
   } else if (mode === 'letter') {
     if (act || back) letterAdvance();
   } else if (title.letterOpen) {

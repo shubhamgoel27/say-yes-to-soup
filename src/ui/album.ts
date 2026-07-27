@@ -12,7 +12,7 @@ import { makePhotoArt } from '../art/albumart';
  * screen) turn spreads; Space or Esc hands the album back.
  */
 
-type PhotoDef = {
+export type PhotoDef = {
   /** The story flag proving this frame exists. */
   flag: string;
   /** Painter key in art/albumart.ts. */
@@ -24,7 +24,7 @@ type PhotoDef = {
 };
 
 /** In the order the road happened, which is the only order an album accepts. */
-const PHOTOS: PhotoDef[] = [
+export const PHOTOS: PhotoDef[] = [
   {
     flag: 'photo.taken',
     art: 'bajada',

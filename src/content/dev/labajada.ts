@@ -13,11 +13,16 @@ const H = 22;
 
 /** The road switchbacks down: three landings joined by short drops. */
 function onRoad(x: number, y: number): boolean {
+  // The mouth of the pass: three tiles wide right up to the map edge,
+  // matching the flared road on the east-road side.
+  if (x <= 4 && y >= 3 && y <= 5) return true;
   if (y === 4 && x >= 1 && x <= 24) return true;
   if (x === 24 && y >= 4 && y <= 10) return true;
   if (y === 10 && x >= 5 && x <= 24) return true;
   if (x === 5 && y >= 10 && y <= 16) return true;
   if (y === 16 && x >= 5 && x <= 20) return true;
+  // A small landing where the switchbacks hand you on toward La Caleta.
+  if (x >= 18 && x <= 20 && y >= 15 && y <= 17) return true;
   return false;
 }
 
@@ -30,7 +35,7 @@ function groundAt(x: number, y: number): string {
 
 function objectAt(x: number, y: number): string {
   if (y === 0 || x === 0 || x === W - 1) {
-    if (x === 0 && y === 4) return ' '; // the road in from the pass
+    if (x === 0 && onRoad(x, y)) return ' '; // the road in from the pass, full width
     if (y >= H - 3) return ' '; // the ridge never argues with the sea
     return 'o';
   }
@@ -39,7 +44,7 @@ function objectAt(x: number, y: number): string {
   if (x === 12 && y === 18) return ' ';
   // Apachetas along the descent, gaining a stone per traveler. They grow
   // taller the closer the road gets to the sea, as the loads get lighter.
-  if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 19 && y === 15)) return 'a';
+  if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 21 && y === 16)) return 'a';
   // Lizards keep the lower, warmer stretch of road.
   if ((x === 10 && y === 12) || (x === 17 && y === 18)) return 'z';
   const h = cellHash(x, y, 47);
@@ -98,8 +103,14 @@ export const LA_BAJADA_MAP: MapData = {
   ground,
   objects,
   triggers: [
+    // The pass mouth, three tiles wide, mirrors the east-road side row for row.
+    { at: [0, 3], type: 'door', to: 'east-road', spawn: [50, 5], facing: 'left' },
     { at: [0, 4], type: 'door', to: 'east-road', spawn: [50, 6], facing: 'left' },
-    // The switchbacks keep going; the coast is real now.
+    { at: [0, 5], type: 'door', to: 'east-road', spawn: [50, 7], facing: 'left' },
+    // The switchbacks keep going; the coast is real now. The whole landing
+    // at the road's end hands you on, no square-hunting.
+    { at: [20, 15], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
     { at: [20, 16], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
+    { at: [20, 17], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
   ],
 };

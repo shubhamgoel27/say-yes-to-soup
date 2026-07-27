@@ -13,8 +13,13 @@ const H = 13;
 
 const ROAD_Y = 6;
 
-function groundAt(_x: number, y: number): string {
+// Near the pass mouth the road opens out, three tiles wide, so the way into
+// La Bajada reads as a gate and not a pinhole in the ridge wall.
+const FLARE_X = W - 8;
+
+function groundAt(x: number, y: number): string {
   if (y === ROAD_Y) return '-';
+  if (x >= FLARE_X && Math.abs(y - ROAD_Y) === 1) return '-';
   return ',';
 }
 
@@ -22,7 +27,8 @@ function objectAt(x: number, y: number): string {
   // Ridge walls top and bottom; open at both ends of the road.
   if (y <= 1 || y >= H - 2) return 'o';
   if (x === 0 && y !== ROAD_Y) return 'o';
-  if (x === W - 1 && y !== ROAD_Y) return 'o';
+  // The east wall opens the full width of the flared road, not one square.
+  if (x === W - 1 && groundAt(x, y) !== '-') return 'o';
 
   // The narrow pass: boulders pinch the road where Paca holds court.
   if ((x === 30 || x === 31) && (y === ROAD_Y - 1 || y === ROAD_Y + 1)) return 'o';
@@ -36,7 +42,7 @@ function objectAt(x: number, y: number): string {
   if (x === 40 && y === ROAD_Y + 2) return 'k'; // campfire
   if (x === 40 && y === ROAD_Y + 3) return 's'; // stool
   if (x === 36 && y === ROAD_Y + 2) return 'h'; // the hitching rail, swept
-  if (x === 49 && y === ROAD_Y - 1) return 'P'; // the signboard east
+  if (x === 49 && y === ROAD_Y - 2) return 'P'; // the signboard east, on the wide road's shoulder
 
   // Windswept scatter, sparser than the valley floor.
   if (groundAt(x, y) === ',') {
@@ -92,6 +98,9 @@ export const EAST_ROAD_MAP: MapData = {
   objects,
   triggers: [
     { at: [0, ROAD_Y], type: 'door', to: 'village', spawn: [40, 16], facing: 'left' },
+    // The whole open mouth of the pass carries you through, row for row.
+    { at: [W - 1, ROAD_Y - 1], type: 'door', to: 'la-bajada', spawn: [1, 3], facing: 'right' },
     { at: [W - 1, ROAD_Y], type: 'door', to: 'la-bajada', spawn: [1, 4], facing: 'right' },
+    { at: [W - 1, ROAD_Y + 1], type: 'door', to: 'la-bajada', spawn: [1, 5], facing: 'right' },
   ],
 };
