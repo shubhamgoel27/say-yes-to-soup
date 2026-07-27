@@ -218,52 +218,12 @@ export const RETURN_NODES: NodeMap = {
   'c10.album.open': {
     lines: [
       { text: 'The album opens across both your knees. It is heavier than it looks. Most memory is.' },
-    ],
-    next: 'c10.album.hub',
-  },
-  'c10.album.hub': {
-    lines: [
       { who: 'Chasca', text: 'Turn the pages. I will do the remembering out loud if you get stuck.' },
     ],
-    choices: [
-      { text: 'The star plain, first page', goto: 'c10.album.p1', when: { has: ['photo.taken'], not: ['c10.album.p1'] } },
-      { text: 'The pier at La Caleta', goto: 'c10.album.p2', when: { has: ['photo.c2.pier'], not: ['c10.album.p2'] } },
-      { text: 'The deck, mid-ocean', goto: 'c10.album.p3', when: { has: ['photo.c3.deck'], not: ['c10.album.p3'] } },
-      { text: 'All the roads between', goto: 'c10.album.rest', when: { not: ['c10.album.rest'] } },
-      { text: 'Close the album', goto: 'c10.album.close' },
-    ],
-  },
-  'c10.album.p1': {
-    lines: [
-      { text: 'The star plain. A person in a poncho, mid-astonishment, the sea making its first entrance behind them.' },
-      { who: 'Chasca', text: 'You said papas. You meant it. Look at that face; nobody has ever meant papas more.' },
-    ],
-    effects: ['set:c10.album.p1'],
-    next: 'c10.album.hub',
-  },
-  'c10.album.p2': {
-    lines: [
-      { text: 'The pier at La Caleta. Reed horses on end, the garúa hanging like a held breath, you standing where the land runs out.' },
-      { who: 'Chasca', text: 'The mountain let you go that day. I was not sure it would. Mountains get attached.' },
-    ],
-    effects: ['set:c10.album.p2'],
-    next: 'c10.album.hub',
-  },
-  'c10.album.p3': {
-    lines: [
-      { text: 'The deck, mid-ocean. No land in any direction, and you standing like the ship was a village. By then it was.' },
-      { who: 'Chasca', text: 'Thirty-one days of water. The album needed one page with nothing on the horizon. Every road has that page.' },
-    ],
-    effects: ['set:c10.album.p3'],
-    next: 'c10.album.hub',
-  },
-  'c10.album.rest': {
-    lines: [
-      { text: 'Lantern light. Festival smoke. A monsoon caught mid-arrival, a market shouting itself hoarse, marigolds by the armful. Pages and pages.' },
-      { who: 'Chasca', text: 'Some of these I took. Some the roads took by themselves. You will argue about which is which for years. Good.' },
-    ],
-    effects: ['set:c10.album.rest'],
-    next: 'c10.album.hub',
+    // The engine consumes this signal when the textbox closes and unfolds the
+    // album itself: the actual prints, two to a spread. Her closing words run
+    // when the player hands it back (see the RETURN_EVENTS ledger entry).
+    effects: ['set:album.open'],
   },
   'c10.album.close': {
     lines: [
@@ -277,6 +237,16 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { who: 'Chasca', text: 'The album sleeps in my bag, finished. Tomorrow I start the next one. Roads keep happening; somebody has to keep up.' },
     ],
+    choices: [
+      { text: 'Look through it again', goto: 'c10.chasca.again' },
+      { text: 'Let it sleep', goto: 'c10.chasca.later' },
+    ],
+  },
+  'c10.chasca.again': {
+    lines: [
+      { who: 'Chasca', text: 'Always. It starts with you and ends in marigolds. The middle is the good part; middles always are.' },
+    ],
+    effects: ['set:album.open'],
   },
 
   // ---------------- Faustino, arriero ----------------
@@ -649,5 +619,12 @@ export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
   ],
 };
 
-/** No minigames and no dig sites in the Return; nothing fires by event. */
-export const RETURN_EVENTS: EventNode[] = [];
+/**
+ * One ledger entry: the album overlay is an engine panel, so, exactly like a
+ * minigame's doneNode, its closing narration is listed here to keep the
+ * reachability walk honest. At runtime main.ts consumes `album.open` when the
+ * conversation ends and runs `c10.album.close` when the album is handed back.
+ */
+export const RETURN_EVENTS: EventNode[] = [
+  { when: { has: ['album.open'] }, node: 'c10.album.close' },
+];

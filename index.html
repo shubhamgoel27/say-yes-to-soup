@@ -854,6 +854,183 @@
       .p-c-head { font-family: var(--display); font-weight: 600; font-size: 17px; }
       .p-c-sec { color: #57452f; }
 
+      /* ---- Chasca's album: prints on cream card, card on dark cloth ---- */
+      #album {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        pointer-events: auto;
+        cursor: pointer;
+        background:
+          radial-gradient(120% 110% at 50% 38%, rgba(64, 46, 34, 0.55), rgba(21, 14, 10, 0.85)),
+          rgba(23, 18, 14, 0.92);
+      }
+      #album[hidden] { display: none; }
+      .al-book { text-align: center; perspective: 1300px; line-height: 1.35; }
+      .al-title {
+        font-family: var(--hand);
+        font-size: 22px;
+        color: #d9c298;
+        margin-bottom: 10px;
+        transform: rotate(-1.2deg);
+      }
+      .al-spread {
+        display: flex;
+        align-items: stretch;
+        width: min(94vw, 720px);
+      }
+      .al-page {
+        flex: 1;
+        min-width: 0;
+        display: grid;
+        place-items: center;
+        padding: 22px 16px 18px;
+        background:
+          linear-gradient(rgba(242, 231, 207, 0.85), rgba(231, 216, 184, 0.85)),
+          url('/assets/textures/paper-aged-cream.jpg') repeat;
+        background-blend-mode: normal, multiply;
+        background-size: auto, 420px;
+        border: 1px solid rgba(43, 33, 24, 0.55);
+        box-shadow: inset 0 0 28px rgba(102, 78, 48, 0.22), 0 12px 32px rgba(0, 0, 0, 0.55);
+      }
+      .al-left { border-radius: 7px 2px 2px 7px; transform: rotate(-0.35deg); }
+      .al-right { border-radius: 2px 7px 7px 2px; transform: rotate(0.3deg); }
+      .al-spine {
+        width: 16px;
+        margin: 3px -3px;
+        z-index: 1;
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+      }
+      .al-spread.al-turn-r { animation: alTurnR 0.34s ease-out; }
+      .al-spread.al-turn-l { animation: alTurnL 0.34s ease-out; }
+      .al-spread.al-settle { animation: alSettle 0.3s ease-out; }
+      @keyframes alTurnR {
+        from { transform: rotateY(-12deg); opacity: 0.3; }
+        to { transform: none; opacity: 1; }
+      }
+      @keyframes alTurnL {
+        from { transform: rotateY(12deg); opacity: 0.3; }
+        to { transform: none; opacity: 1; }
+      }
+      @keyframes alSettle {
+        from { transform: translateY(12px) scale(0.97); opacity: 0; }
+        to { transform: none; opacity: 1; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .al-spread { animation: none !important; }
+      }
+      .al-photo {
+        position: relative;
+        margin: 0;
+        width: min(258px, 38vw);
+        padding: 8px 8px 4px;
+        background: #faf6ea;
+        box-shadow: 0 2px 3px rgba(20, 14, 8, 0.35), 0 9px 20px rgba(20, 14, 8, 0.3);
+        transform: rotate(var(--tilt, -2deg));
+      }
+      .al-photo canvas { display: block; width: 100%; height: auto; }
+      .al-print { min-height: 40px; background: #efe6d2; }
+      .al-cap {
+        font-family: var(--hand);
+        font-size: 16.5px;
+        line-height: 1.12;
+        color: #4c3a28;
+        padding: 7px 3px 4px;
+        transform: rotate(-0.5deg);
+        text-wrap: pretty;
+      }
+      .al-stamp {
+        position: absolute;
+        right: -11px;
+        bottom: -11px;
+        padding: 2px 8px 1px;
+        font-family: var(--display);
+        font-size: 9.5px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: #a3542f;
+        border: 1.5px solid rgba(163, 84, 47, 0.6);
+        border-radius: 3px;
+        background: rgba(250, 246, 234, 0.9);
+        transform: rotate(-4deg);
+      }
+      .al-tape {
+        position: absolute;
+        width: 42px;
+        height: 13px;
+        background: rgba(226, 208, 168, 0.78);
+        box-shadow: 0 1px 2px rgba(20, 14, 8, 0.2);
+      }
+      .al-tl { top: -6px; left: 14px; transform: rotate(-5deg); }
+      .al-tr { top: -6px; right: 14px; transform: rotate(4deg); }
+      /* The one we did not take: mounting corners around honest blank card. */
+      .al-missing { background: transparent; box-shadow: none; }
+      .al-empty {
+        aspect-ratio: 240 / 170;
+        border: 1.5px dashed rgba(43, 33, 24, 0.28);
+        background: rgba(43, 33, 24, 0.045);
+      }
+      .al-corner {
+        position: absolute;
+        width: 0;
+        height: 0;
+        border: 12px solid transparent;
+      }
+      .al-corner.c1 { top: 4px; left: 4px; border-top-color: rgba(58, 44, 30, 0.5); border-left-color: rgba(58, 44, 30, 0.5); }
+      .al-corner.c2 { top: 4px; right: 4px; border-top-color: rgba(58, 44, 30, 0.5); border-right-color: rgba(58, 44, 30, 0.5); }
+      .al-corner.c3 { bottom: 4px; left: 4px; border-bottom-color: rgba(58, 44, 30, 0.5); border-left-color: rgba(58, 44, 30, 0.5); }
+      .al-corner.c4 { bottom: 4px; right: 4px; border-bottom-color: rgba(58, 44, 30, 0.5); border-right-color: rgba(58, 44, 30, 0.5); }
+      .al-ghost { opacity: 0.55; }
+      .al-dots { margin-top: 16px; display: flex; gap: 7px; justify-content: center; }
+      .al-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(217, 194, 152, 0.3);
+      }
+      .al-dot.on { background: rgba(217, 194, 152, 0.95); }
+      .al-hint { margin-top: 8px; font-size: 11.5px; color: #8a7455; }
+
+      /* ---- journal ephemera: clippings taped in beside Nani's notes ---- */
+      .j-eph {
+        float: right;
+        width: 112px;
+        margin: 6px 0 6px 12px;
+        padding: 5px 5px 2px;
+        position: relative;
+        background: #faf5e8;
+        border: 1px solid rgba(43, 33, 24, 0.25);
+        box-shadow: 0 2px 6px rgba(31, 22, 12, 0.22);
+        transform: rotate(2.2deg);
+      }
+      .j-eph::before, .j-eph::after {
+        content: '';
+        position: absolute;
+        width: 34px;
+        height: 11px;
+        background: rgba(222, 205, 165, 0.75);
+        box-shadow: 0 1px 2px rgba(31, 22, 12, 0.15);
+      }
+      .j-eph::before { top: -6px; left: -9px; transform: rotate(-38deg); }
+      .j-eph::after { bottom: -5px; right: -9px; transform: rotate(-40deg); }
+      .j-eph img {
+        display: block;
+        width: 100%;
+        aspect-ratio: 1054 / 1600;
+        object-fit: cover;
+        background: #efe6d2;
+      }
+      .j-eph-cap {
+        font-family: var(--hand);
+        font-size: 13.5px;
+        line-height: 1.1;
+        color: #7a5a3a;
+        padding: 4px 1px 2px;
+        transform: rotate(-0.6deg);
+      }
+
       /* ---- reduce motion: calm is also a setting ---- */
       body.reduce-motion * { animation: none !important; transition: none !important; }
 
@@ -1027,6 +1204,7 @@
           <div id="journal" hidden></div>
           <div id="weave" hidden></div>
           <div id="pause" hidden></div>
+          <div id="album" hidden></div>
           <div id="fade"></div>
           <div id="iris"></div>
           <div id="journeycard"></div>

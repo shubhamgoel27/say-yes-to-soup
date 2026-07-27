@@ -13,6 +13,25 @@ export type { TaskDef };
  * notice, never what.
  */
 
+/**
+ * Ephemera: real public-domain plates pasted into a few pages the way a 1974
+ * notebook collects things (see public/assets/games/LICENSES.md). The image
+ * lazy-loads; the frame reserves its exact shape so nothing shifts while the
+ * paper is still "drying".
+ */
+const EPHEMERA: Record<string, { src: string; alt: string; caption: string }> = {
+  'dishes.sadya': {
+    src: '/assets/games/pomological-mango-mulgoba.jpg',
+    alt: 'watercolor of a mulgoba mango, whole and halved',
+    caption: 'from a seed catalogue, she says. the mango the pickle used to be',
+  },
+  'dishes.aam': {
+    src: '/assets/games/pomological-mango-mulgoba.jpg',
+    alt: 'watercolor of a mulgoba mango, whole and halved',
+    caption: 'a painted mango, taped in. sweet, and only one; Ghalib wanted many',
+  },
+};
+
 const TABS: { id: JournalTab | 'tasks' | 'route'; label: string }[] = [
   { id: 'tasks', label: 'Tasks' },
   { id: 'route', label: 'Route' },
@@ -143,10 +162,16 @@ export class JournalUI {
         : '');
 
     const rhyme = sel ? this.rhymeFor(sel.id) : null;
+    const eph = sel ? EPHEMERA[sel.id] : undefined;
+    const ephHtml = eph
+      ? `<div class="j-eph"><img src="${eph.src}" alt="${eph.alt}" loading="lazy">` +
+        `<div class="j-eph-cap">${eph.caption}</div></div>`
+      : '';
     const detailHtml = sel
       ? `<div class="j-title">${sel.title}${sel.script ? ` <span class="j-native">${sel.script}</span>` : ''}</div>` +
         (sel.sub ? `<div class="j-sub">${sel.sub}</div>` : '') +
         (sel.tab === 'dishes' ? `<div class="j-dishart"></div>` : '') +
+        ephHtml +
         (sel.nani
           ? `<div class="j-nani"><span>Nani, 1974</span>${sel.nani}</div>`
           : `<div class="j-nani empty"><span>Nani, 1974</span>(she never reached this page)</div>`) +

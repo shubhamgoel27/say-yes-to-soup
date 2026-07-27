@@ -365,6 +365,12 @@ export class AudioBus {
       case 'basalto':
       case 'corallane':
       case 'laterite':
+      case 'galistone':
+      case 'chowkbrick':
+      case 'terrace':
+      case 'terracelime':
+      case 'terracerose':
+      case 'wornedge':
         this.thud(700 * j, 0.06, 0.06, 'bandpass');
         break;
       case 'tatami':

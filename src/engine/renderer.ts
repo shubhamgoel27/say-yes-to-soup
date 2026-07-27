@@ -1305,7 +1305,7 @@ export class Renderer {
   private drawWeather(map: TileMap, cam: Camera) {
     const ctx = this.ctx;
     const mood = this.mood;
-    if (mood === 'monsoon') {
+    if (mood === 'monsoon' || mood === 'sawanrain') {
       // Rain: fast slanted streaks in two depths, plus splash rings on the
       // ground that bloom and vanish. Steady, warm, unbothered.
       for (let layer = 0; layer < 2; layer++) {

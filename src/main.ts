@@ -17,6 +17,7 @@ import { Toasts } from './ui/toast';
 import { TitleScreen } from './ui/title';
 import { WeavePanel } from './ui/weave';
 import { PauseMenu } from './ui/pause';
+import { AlbumUI } from './ui/album';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
@@ -284,6 +285,7 @@ const textbox = new Textbox(
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'));
 const weave = new WeavePanel($('weave'), audio);
+const albumUI = new AlbumUI($('album'), state, audio);
 const pauseMenu = new PauseMenu($('pause'), audio, {
   onTextSpeed: (cps) => textbox.setSpeed(cps),
   onToTitle: () => {
@@ -715,6 +717,18 @@ function endDialogue() {
     });
     return;
   }
+  // Chasca's album unfolds once the conversation has stepped back from it.
+  if (state.has('album.open')) {
+    state.clearFlag('album.open');
+    player.frozen = true;
+    audio.pageFlip();
+    albumUI.open(() => {
+      player.frozen = false;
+      // The first viewing earns her closing words; reopenings close quietly.
+      if (!state.has('c10.album.seen')) startNarration('c10.album.close');
+    });
+    return;
+  }
   if (
     state.has('dig.invite') &&
     !state.has('dig.done') &&
@@ -1022,11 +1036,12 @@ function update(dt: number) {
   renderer.setMood(moodFor(map.id));
   stage.setAmbient(ambientNow());
   audio.setDucked(textbox.isOpen || celebrateT > 0);
-  audio.setWorldAmbience(nightLevel(dayT), moodFor(map.id) === 'monsoon');
+  const moodNow = moodFor(map.id);
+  audio.setWorldAmbience(nightLevel(dayT), moodNow === 'monsoon' || moodNow === 'sawanrain');
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   const zoomT =
-    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen ? 1.06 : 1;
+    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || weave.isOpen || anyGameOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1;
   stage.setZoomTarget(zoomT);
   // Mirror the stage's zoom easing so pointer math maps screen to world
   // without reaching into the presenter's internals.
@@ -1035,7 +1050,7 @@ function update(dt: number) {
   // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
   {
     const quiet =
-      mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen;
+      mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen || albumUI.isOpen;
     if (quiet !== quietHud) {
       quietHud = quiet;
       document.body.classList.toggle('quiet-hud', quiet);
@@ -1046,7 +1061,7 @@ function update(dt: number) {
   renderer.setSpeaker(textbox.isTyping && talkingTo ? talkingTo.actor : null);
 
   // The curiosity dot: does the cell you face have anything to say?
-  if (mode === 'play' && !textbox.isOpen && !journalUI.isOpen && !sitting && !warp && !anyGameOpen()) {
+  if (mode === 'play' && !textbox.isOpen && !journalUI.isOpen && !sitting && !warp && !anyGameOpen() && !albumUI.isOpen) {
     const [fx, fy] = player.facingCell();
     const npcThere = villagersHere().some((v) => {
       const [ox, oy] = v.actor.occupies();
@@ -1142,6 +1157,15 @@ function update(dt: number) {
   } else if (weave.isOpen) {
     if (menuDir) weave.onDir(menuDir);
     if (act) weave.onAction();
+  } else if (albumUI.isOpen) {
+    // Arrows are the album's page-turn keys; drain the walk-tap buffer so the
+    // last turn does not spin the player around once the album is handed back.
+    input.intent();
+    if (menuDir) albumUI.onDir(menuDir);
+    if (act || back || pauseKey) {
+      albumUI.close();
+      audio.pageFlip();
+    }
   } else if (anyGameOpen()) {
     const g = games.find((x) => x.panel.isOpen);
     if (g) {
@@ -1632,7 +1656,7 @@ glCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (mode !== 'play' || warp || celebrateT > 0) return;
-  if (pauseMenu.isOpen || journalUI.isOpen || weave.isOpen || anyGameOpen() || title.letterOpen) return;
+  if (pauseMenu.isOpen || journalUI.isOpen || weave.isOpen || anyGameOpen() || title.letterOpen || albumUI.isOpen) return;
   if (sitting) {
     standUp();
     return;
@@ -1652,7 +1676,7 @@ glCanvas.addEventListener('pointermove', (e) => {
     cursor = 'pointer';
   } else if (
     mode === 'play' && !player.frozen && !warp &&
-    !pauseMenu.isOpen && !journalUI.isOpen && !weave.isOpen && !anyGameOpen()
+    !pauseMenu.isOpen && !journalUI.isOpen && !weave.isOpen && !anyGameOpen() && !albumUI.isOpen
   ) {
     const [wx, wy] = screenToWorld(e.clientX, e.clientY);
     const tx = Math.floor(wx / TILE);
@@ -1835,6 +1859,9 @@ function attachPanelPointer(
 }
 attachPanelPointer($('weave'), weave);
 for (const g of games) attachPanelPointer(g.root, g.panel);
+// The album turns pages by the same thirds; the middle keeps going, and past
+// the last spread it hands the album back.
+attachPanelPointer($('album'), albumUI);
 
 // ---- the touch pad: held movement + action, only once a finger is seen ----
 
