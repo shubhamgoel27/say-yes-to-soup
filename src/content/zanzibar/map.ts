@@ -95,8 +95,9 @@ function objectAt(x: number, y: number): string {
   if (x === 17 && y === 11) return 'J';
   // Doormats where the latched doors keep their households.
   if ((x === 33 && y === 11) || (x === 5 && y === 18)) return 'Z';
-  // Cats, stationed where everyone must step around them.
-  if ((x === 14 && y === 18) || (x === 44 && y === 16)) return 'P';
+  // Cats, stationed where everyone must step around them, which only works
+  // if there is a way around: the shore cat used to seal the tile behind it.
+  if ((x === 14 && y === 18) || (x === 44 && y === 18)) return 'P';
   // A white chicken patrols outside the kanga shop, on brand.
   if (x === 19 && y === 16) return 'Q';
   // The henna stall at the shop corner.

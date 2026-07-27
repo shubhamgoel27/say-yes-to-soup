@@ -302,7 +302,7 @@ const ROOF_DECOR: Record<string, string> = {
   '18,15': 'Q', // the parliament charpai, bedding and all
   '19,15': 'F', // its transistor, volume set by committee
   '17,16': 'j',
-  '20,16': 'j',
+  '21,16': 'j',
   '18,16': 'C', // the chai tray: kettle, kulhads, quorum
   '21,15': 'T',
   '24,17': '1',
