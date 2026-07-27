@@ -1010,6 +1010,11 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'The shrine yard\'s raked earth, swept into faint tidy arcs. Genji\'s broom signature, renewed daily.' },
     ],
   },
+  'c4.ex.hisashi': {
+    lines: [
+      { text: 'A shop awning on steel arms, cloth bleached on the seaward half only. No two on this street hang at the same height, and no two ever did.' },
+    ],
+  },
   'c4.ex.stall': {
     lines: [
       { text: 'A market stall, scales and ice and yesterday\'s prices chalked over twice. By eight in the morning it has already had its whole day.' },
@@ -1246,6 +1251,7 @@ export const SHIONOURA_NODES: NodeMap = {
 export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   machiya: [{ node: 'c4.ex.machiya' }],
   noren: [{ node: 'c4.ex.noren' }],
+  hisashi: [{ node: 'c4.ex.hisashi' }],
   torii: [{ node: 'c4.ex.torii' }],
   ishidoro: [{ node: 'c4.ex.ishidoro' }],
   bamboo: [{ node: 'c4.ex.bamboo' }],

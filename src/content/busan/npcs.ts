@@ -665,6 +665,17 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'A stall awning, patched where patched, bright where bright. Under it the morning catch is arranged like an argument you will lose.' },
     ],
   },
+  'c5.ex.hongawning': {
+    lines: [
+      { text: 'The red awning, three times the width of its neighbors, a bulb burning under it since four. You can find this stall from the quay.' },
+      { text: 'Mackerel nose to tail on crushed ice, basins half unpacked underneath, a scale swinging off the post. The morning is run from here.' },
+    ],
+  },
+  'c5.ex.barrow': {
+    lines: [
+      { text: 'A two-wheel barrow, tipped on its legs mid-errand, half its load already off. The lane keeps its middle clear so these can get through.' },
+    ],
+  },
   'c5.ex.rack': {
     lines: [
       { text: 'Racks of drying fish, silver going gold in rows. The smell is ammonia-sweet and absolute; your coat has decided to keep it.' },
@@ -900,6 +911,8 @@ export const BUSAN_NODES: NodeMap = {
 export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   lanepave: [{ node: 'c5.ex.lane' }],
   awning: [{ node: 'c5.ex.awning' }],
+  hongawning: [{ node: 'c5.ex.hongawning' }],
+  barrow: [{ node: 'c5.ex.barrow' }],
   fishrack: [{ node: 'c5.ex.rack' }],
   basin: [{ node: 'c5.ex.basin' }],
   steamvent: [{ node: 'c5.ex.vent' }],

@@ -133,46 +133,180 @@ function paint(make: MakeTile) {
 
   // ------------------------------------------------------------ talls
 
-  // A market stall under a striped awning, catch on ice.
-  make('awning', 3, (g, r) => {
+  // A market stall under a striped awning, catch on ice. One variant per
+  // cloth colour, and each hangs its cloth at its own height: four stalls in
+  // a lane should never read as one stall printed four times.
+  make('awning', 4, (g, r, i) => {
     softShadow(g, 32, 90, 26, 6, 0.2);
-    const cloth = r.pick(AWNINGS);
+    const cloth = AWNINGS[i % AWNINGS.length] as string;
+    const hang = [0, 5, -3, 8][i % 4] as number; // how low this one slings its cloth
+    const sag = [6, 3, 9, 5][i % 4] as number;
     // Posts.
-    for (const px of [8, 56]) rr(g, px - 1.5, 30, 3, 58, 1.5, '#5c4630');
+    for (const px of [8, 56]) rr(g, px - 1.5, 30 + hang, 3, 58 - hang, 1.5, '#5c4630');
     // Counter of crates and ice.
     rr(g, 5, 60, 54, 24, 3, '#9b7a50');
     vgrad(g, 5, 60, 54, 7, 'rgba(255,240,210,0.2)', 'rgba(0,0,0,0)');
     rr(g, 8, 54, 48, 10, 4, '#e8f0f2');
-    // The morning catch, nose to tail.
-    for (let i = 0; i < 4; i++) {
-      oval(g, 14 + i * 12, 58, 5.5, 2.4, i % 2 ? '#b9c4c9' : '#9fb3bd', 0.12);
-      dot(g, 18 + i * 12, 57.4, 0.8, '#2b2118');
+    // The morning catch, nose to tail, and never the same count.
+    for (let k = 0; k < 3 + (i % 3); k++) {
+      oval(g, 14 + k * 12, 58, 5.5, 2.4, k % 2 ? '#b9c4c9' : '#9fb3bd', 0.12);
+      dot(g, 18 + k * 12, 57.4, 0.8, '#2b2118');
     }
     // The awning: a sagging stripe of cloth.
+    const top = 30 + hang;
     g.fillStyle = cloth;
     g.beginPath();
-    g.moveTo(2, 30);
-    g.quadraticCurveTo(32, 24, 62, 30);
-    g.lineTo(62, 42);
-    g.quadraticCurveTo(32, 48, 2, 42);
+    g.moveTo(2, top);
+    g.quadraticCurveTo(32, top - sag, 62, top);
+    g.lineTo(62, top + 12);
+    g.quadraticCurveTo(32, top + 12 + sag, 2, top + 12);
     g.closePath();
     g.fill();
     g.fillStyle = 'rgba(242,230,208,0.85)';
     for (const bx of [12, 30, 48]) {
       g.beginPath();
-      g.moveTo(bx, 27 + (32 - Math.abs(bx - 32)) * -0.05);
-      g.lineTo(bx + 8, 27);
-      g.lineTo(bx + 8, 45);
-      g.lineTo(bx, 45);
+      g.moveTo(bx, top - 3 + (32 - Math.abs(bx - 32)) * -0.05);
+      g.lineTo(bx + 8, top - 3);
+      g.lineTo(bx + 8, top + 15);
+      g.lineTo(bx, top + 15);
       g.closePath();
       g.fill();
     }
     // Scalloped hem.
     for (let bx = 6; bx < 62; bx += 8) {
-      dot(g, bx, 43 + (r.int(2)), 3.4, bx % 16 < 8 ? cloth : 'rgba(242,230,208,0.85)');
+      dot(g, bx, top + 13 + r.int(2), 3.4, bx % 16 < 8 ? cloth : 'rgba(242,230,208,0.85)');
     }
-    vgrad(g, 2, 24, 60, 8, 'rgba(255,250,240,0.25)', 'rgba(0,0,0,0)');
+    vgrad(g, 2, top - 6, 60, 8, 'rgba(255,250,240,0.25)', 'rgba(0,0,0,0)');
   }, 64, 96);
+
+  /**
+   * Sun-hee's stall: the red awning the letter tells you to look for, and the
+   * one thing in the lane built at a size nothing else is. Three tiles of
+   * cloth, a bulb burning under it before dawn, and the whole morning's
+   * argument laid out on ice.
+   */
+  make('hongawning', 2, (g, r) => {
+    const W2 = 96;
+    // Drawn in a 96x128 frame and stretched to fill 128x160, so it stands two
+    // clear tiles wide: nothing else in the lane is built at this size.
+    g.scale(128 / 96, 160 / 128);
+    softShadow(g, 48, 122, 40, 8, 0.22);
+    const cloth = shade('#b8332b', (r.next() - 0.5) * 0.05);
+    // Four posts, the back pair shorter so the roof reads as pitched forward.
+    for (const px of [10, 86]) rr(g, px - 2, 40, 4, 82, 2, '#4e3a26');
+    for (const px of [24, 72]) rr(g, px - 1.6, 34, 3.2, 40, 1.6, '#5c4630');
+    // The counter: two trestles of crates, a plank, a bed of crushed ice.
+    rr(g, 6, 86, 84, 30, 3, '#8a6c46');
+    vgrad(g, 6, 86, 84, 8, 'rgba(255,240,210,0.22)', 'rgba(0,0,0,0)');
+    rr(g, 10, 76, 76, 14, 5, '#e6eef2');
+    for (let k = 0; k < 9; k++) {
+      dot(g, 14 + k * 9, 80 + (k % 2), 3.4, 'rgba(255,255,255,0.5)');
+    }
+    // The catch: mackerel nose to tail, one drawer of knives.
+    for (let k = 0; k < 8; k++) {
+      const fx = 14 + k * 9.4;
+      oval(g, fx, 82 - (k % 2) * 1.2, 4.4, 2.2, k % 2 ? '#7f96a4' : '#96aab4', 0.1);
+      oval(g, fx - 1, 81 - (k % 2) * 1.2, 2, 0.9, 'rgba(230,244,250,0.5)');
+      dot(g, fx + 3, 81.6 - (k % 2) * 1.2, 0.7, '#221a12');
+    }
+    // Red basins under the counter, half unpacked.
+    for (const [bx, by] of [[16, 112], [34, 116], [76, 113]] as const) {
+      oval(g, bx, by, 10, 5, shade('#c0392b', -0.14));
+      oval(g, bx, by - 2, 10, 4.6, '#c0392b');
+      oval(g, bx, by - 1.6, 7.4, 3, shade('#c0392b', -0.3));
+    }
+    // The awning: a long red cloth, hung deeper on the left where it sags.
+    g.fillStyle = cloth;
+    g.beginPath();
+    g.moveTo(2, 40);
+    g.quadraticCurveTo(48, 28, 94, 36);
+    g.lineTo(94, 52);
+    g.quadraticCurveTo(48, 46, 2, 58);
+    g.closePath();
+    g.fill();
+    // Two cream bands, off centre.
+    g.fillStyle = 'rgba(246,236,216,0.9)';
+    for (const bx of [22, 62]) {
+      g.beginPath();
+      g.moveTo(bx, 33 + (bx - 22) * -0.05);
+      g.lineTo(bx + 11, 32);
+      g.lineTo(bx + 11, 51);
+      g.lineTo(bx, 54 + (bx - 22) * -0.05);
+      g.closePath();
+      g.fill();
+    }
+    // Scalloped hem, deeper at the sagging end.
+    for (let bx = 5; bx < W2 - 2; bx += 9) {
+      dot(g, bx, 57 - bx * 0.2 + r.int(2), 4, bx % 18 < 9 ? cloth : 'rgba(246,236,216,0.9)');
+    }
+    vgrad(g, 2, 26, W2 - 4, 10, 'rgba(255,250,240,0.28)', 'rgba(0,0,0,0)');
+    // The hand-lettered board wired to the front post.
+    rr(g, 60, 58, 30, 18, 2, '#f0e6ce');
+    g.strokeStyle = 'rgba(60,44,30,0.75)';
+    g.lineWidth = 1.6;
+    for (let ly = 63; ly < 74; ly += 4) {
+      g.beginPath();
+      g.moveTo(64, ly);
+      g.lineTo(64 + 8 + r.int(12), ly);
+      g.stroke();
+    }
+    dot(g, 86, 62, 2.4, '#b8332b');
+    // The bulb on its flex, burning since four in the morning.
+    g.strokeStyle = 'rgba(40,32,24,0.7)';
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.moveTo(38, 40);
+    g.quadraticCurveTo(40, 50, 42, 58);
+    g.stroke();
+    glowSpot(g, 42, 60, 22, '#ffca7a', 0.55);
+    dot(g, 42, 60, 4, '#ffd98a');
+    // The scale, hung off the near post, and a knife on the plank.
+    rr(g, 84, 60, 3, 12, 1.5, '#6e6a62');
+    oval(g, 85.5, 74, 6, 3.2, '#c9c4bb');
+    rr(g, 24, 74, 22, 3, 1.5, '#cfd6da');
+    rr(g, 20, 73.6, 7, 4, 1.5, '#6b4f33');
+  }, 128, 160);
+
+  // The lane's own vehicle: a two-wheel barrow, tipped on its legs, waiting
+  // out an argument with a load half taken off.
+  make('barrow', 2, (g, r) => {
+    softShadow(g, 32, 74, 24, 6, 0.2);
+    // The wheel, seen side on, and the leg it leans on.
+    dot(g, 20, 62, 11, '#3a3128');
+    dot(g, 20, 62, 4, '#8c8479');
+    rr(g, 46, 54, 3, 20, 1.5, '#5c4630');
+    // The tray: planks, worn silver at the lip.
+    rr(g, 8, 40, 50, 22, 3, '#9b7a50');
+    vgrad(g, 8, 40, 50, 7, 'rgba(255,240,210,0.22)', 'rgba(0,0,0,0)');
+    g.strokeStyle = 'rgba(60,44,28,0.35)';
+    g.lineWidth = 1.6;
+    for (const ly of [47, 54]) {
+      g.beginPath();
+      g.moveTo(9, ly);
+      g.lineTo(57, ly);
+      g.stroke();
+    }
+    // Handles, running back past the wheel.
+    for (const hy of [42, 56]) rr(g, 54, hy, 12, 3, 1.5, '#8a6a44');
+    // The load: foam boxes and, on top, a basin nobody has emptied.
+    rr(g, 12, 26, 26, 16, 2, '#eef1f2');
+    rect(g, 12, 32, 26, 2, 'rgba(150,160,168,0.4)');
+    if (r.chance(0.6)) {
+      rr(g, 36, 30, 20, 12, 2, '#e6e9ea');
+      rect(g, 36, 35, 20, 1.6, 'rgba(150,160,168,0.35)');
+    }
+    oval(g, 26, 24, 13, 6, shade('#c0392b', -0.14));
+    oval(g, 26, 21, 13, 5.6, '#c0392b');
+    oval(g, 26, 21.6, 9.6, 3.6, shade('#c0392b', -0.3));
+    // Rope, coiled on the near corner.
+    g.strokeStyle = '#c9b489';
+    g.lineWidth = 2;
+    for (const rr2 of [7, 4.4]) {
+      g.beginPath();
+      g.ellipse(50, 46, rr2, rr2 * 0.5, 0, 0, Math.PI * 2);
+      g.stroke();
+    }
+  }, 64, 80);
 
   // Dried fish hanging in rows; the alley's wall and weather.
   make('fishrack', 3, (g, r) => {
@@ -1241,6 +1375,8 @@ export const ART: ChapterArt = {
   aliases: { ferrysign: 'signpost' },
   grounded: [
     'awning',
+    'hongawning',
+    'barrow',
     'fishrack',
     'eomukcart',
     'hotteokcart',
@@ -1268,7 +1404,7 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['eomukcart', 'hotteokcart', 'hanjilamp', 'lotusline'],
+  glows: ['eomukcart', 'hotteokcart', 'hanjilamp', 'lotusline', 'hongawning'],
   pathy: ['lanepave'],
   noInk: ['chilimat', 'hosecoil', 'shoerow'],
 };

@@ -336,6 +336,54 @@ export const ART: ChapterArt = {
       }
     }, 64, 96);
 
+    /**
+     * A shop hisashi: the cloth awning a shotengai frontage puts out over the
+     * pavement. Three variants at three heights and three ages, because the
+     * families who hung them did not consult one another about it.
+     */
+    make('hisashi', 3, (g, r, i) => {
+      const drop = [10, 0, 20][i % 3] as number; // how low this one is slung
+      const cloth = [INDIGO, '#b5844a', '#6d7f5e'][i % 3] as string;
+      const top = 22 + drop;
+      softShadow(g, 32, 90, 22, 5, 0.14);
+      // The frame: two steel arms off the shopfront, and their feet.
+      g.strokeStyle = '#4a4238';
+      g.lineWidth = 3;
+      for (const px of [10, 54]) {
+        g.beginPath();
+        g.moveTo(px, top + 4);
+        g.lineTo(px, 88);
+        g.stroke();
+        g.beginPath();
+        g.moveTo(px, top + 10);
+        g.lineTo(px + (px < 32 ? 8 : -8), top + 2);
+        g.stroke();
+      }
+      // The cloth, stretched and sagging in the middle.
+      g.fillStyle = shade(cloth, (r.next() - 0.5) * 0.06);
+      g.beginPath();
+      g.moveTo(4, top);
+      g.quadraticCurveTo(32, top - 5, 60, top);
+      g.lineTo(60, top + 15);
+      g.quadraticCurveTo(32, top + 21, 4, top + 15);
+      g.closePath();
+      g.fill();
+      vgrad(g, 4, top - 4, 56, 8, 'rgba(255,250,240,0.24)', 'rgba(0,0,0,0)');
+      // The valance, hand-lettered by somebody's uncle.
+      rect(g, 5, top + 14, 54, 9, shade(cloth, -0.16));
+      g.fillStyle = 'rgba(244,238,222,0.85)';
+      for (let k = 0; k < 3; k++) rect(g, 14 + k * 13, top + 16, 7, 5, 'rgba(244,238,222,0.8)');
+      // Sun-bleach down the seaward half, and a patched corner.
+      vgrad(g, 34, top, 26, 15, 'rgba(255,252,244,0.18)', 'rgba(255,252,244,0.02)');
+      if (i % 3 === 2) rect(g, 44, top + 2, 12, 7, shade(cloth, 0.22));
+      // What lives under it: a crate of produce, or nothing at all.
+      if (i % 3 !== 1) {
+        rr(g, 16, 66, 30, 18, 2, WOODLIGHT);
+        rect(g, 16, 71, 30, 2, 'rgba(60,44,28,0.3)');
+        for (let k = 0; k < 4; k++) dot(g, 21 + k * 7, 65, 3.4, k % 2 ? '#c05a3a' : '#7f9b4e');
+      }
+    }, 64, 96);
+
     make('postbox', 1, (g) => {
       // The round red pillar box, patient as a shrine.
       softShadow(g, 32, 90, 16, 5, 0.18);
@@ -1152,7 +1200,7 @@ export const ART: ChapterArt = {
   },
 
   grounded: [
-    'noren', 'torii', 'ishidoro', 'bamboo', 'bambooWish', 'tairyobata',
+    'noren', 'torii', 'ishidoro', 'bamboo', 'bambooWish', 'tairyobata', 'hisashi',
     'chochin', 'postbox', 'yatai', 'keitruck', 'ebisudo',
     'jizo', 'ema', 'jihanki', 'himono', 'monohoshi', 'gyokyo', 'furin',
   ],
