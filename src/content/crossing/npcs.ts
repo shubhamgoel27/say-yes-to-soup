@@ -27,8 +27,9 @@ export const CROSSING_NPCS: NpcDef[] = [
       { when: { has: ['c3.met.ben'], not: ['c3.baon'] }, node: 'c3.ben.baon' },
       { when: { has: ['c3.baon'], not: ['c3.baon.done'] }, node: 'c3.ben.wait' },
       { when: { has: ['c3.baon.done'], not: ['c3.cook.done'] }, node: 'c3.ben.cookoffer' },
-      { when: { has: ['c3.cook.done'], not: ['c3.shellback'] }, node: 'c3.ben.mess' },
+      { when: { has: ['c3.cook.done'], not: ['c3.ben.messtold', 'c3.shellback'] }, node: 'c3.ben.mess' },
       { when: { has: ['c3.shellback'], not: ['c3.feast'] }, node: 'c3.ben.feast' },
+      { when: { has: ['c3.cook.done'] }, node: 'c3.ben.cookagain' },
       { node: 'c3.ben.idle' },
     ],
   },
@@ -36,8 +37,10 @@ export const CROSSING_NPCS: NpcDef[] = [
     id: 'joseph',
     name: 'Joseph',
     map: 'ship',
-    pos: [15, 11],
-    range: 1,
+    // One tile in off the rail, kneeling at his rust: the port lane is the
+    // only way forward on this side, and a man with a wire brush is a wall.
+    pos: [16, 11],
+    range: 0,
     look: {
       skin: '#7a4a2e',
       hair: '#1c1410',
@@ -72,6 +75,7 @@ export const CROSSING_NPCS: NpcDef[] = [
       { when: { not: ['c3.met.hana'] }, node: 'c3.hana.first' },
       { when: { has: ['c3.met.hana'], not: ['c3.stars.done'] }, node: 'c3.hana.stars' },
       { when: { has: ['c3.stars.done'], not: ['c3.hana.tanabata'] }, node: 'c3.hana.words' },
+      { when: { has: ['c3.stars.done'] }, node: 'c3.hana.starsagain' },
       { node: 'c3.hana.idle' },
     ],
   },
@@ -325,6 +329,8 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Mang Ben', text: 'Hear the mess room tonight? Loud. The mess is the heart of the ship, pare, and that is a healthy heartbeat.' },
       { who: 'Mang Ben', text: 'Also: the bosun keeps looking at the chart and grinning. When a bosun grins, pollywogs should stretch first. I say no more.' },
     ],
+    // Said once, and then the galley goes back to offering you an apron.
+    effects: ['set:c3.ben.messtold'],
   },
   'c3.ben.feast': {
     lines: [
@@ -333,6 +339,21 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Mang Ben', text: 'Take a plate when you go up. And ingat, ha? Take care. I say it to everyone who leaves my galley. It works; look at this crew.' },
     ],
     effects: ['set:c3.feast', 'journal:dishes.pancit', 'journal:words.ingat'],
+  },
+  'c3.ben.cookagain': {
+    lines: [
+      { who: 'Mang Ben', text: 'Pare! The freezer surrendered another chicken and the rice is already on. Same pot, same argument. Cook it with me again?' },
+    ],
+    choices: [
+      { text: 'Tie the apron on again', when: { has: ['c3.cook.done'] }, goto: 'c3.ben.cookreplay' },
+      { text: 'Not this watch', goto: 'c3.ben.idle' },
+    ],
+  },
+  'c3.ben.cookreplay': {
+    lines: [
+      { who: 'Mang Ben', text: 'Sige. No lesson tonight, only the cooking. Garlic first, and let her take her own time on the heat.' },
+    ],
+    effects: ['set:replay.mode', 'set:c3.cook.start'],
   },
   'c3.ben.idle': {
     lines: [
@@ -446,6 +467,21 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and you will be adopted by dinner.' },
     ],
     effects: ['set:c3.hana.tanabata'],
+  },
+  'c3.hana.starsagain': {
+    lines: [
+      { who: 'Hana', text: 'The lights go out forward again at eight bells, and the river will have turned one night further. Stand at the bow with me?' },
+    ],
+    choices: [
+      { text: 'Go up to the dark bow', when: { has: ['c3.stars.done'] }, goto: 'c3.hana.starsreplay' },
+      { text: 'Another night', goto: 'c3.hana.idle' },
+    ],
+  },
+  'c3.hana.starsreplay': {
+    lines: [
+      { who: 'Hana', text: 'No sights to take tonight, no names to prove. Only the three skies, and the two of us being small under them.' },
+    ],
+    effects: ['set:replay.mode', 'set:c3.stars.start'],
   },
   'c3.hana.idle': {
     lines: [

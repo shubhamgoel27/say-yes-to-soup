@@ -47,8 +47,10 @@ function groundAt(x: number, y: number): string {
 
 function objectAt(x: number, y: number): string {
   if (!inHull(x, y)) return ' ';
-  // The jackstaff takes the bow tip's place at the rail.
+  // The jackstaff takes the bow tip's place at the rail, and the fishing rod
+  // the stern's: both belong to the rail, not to the lane inside it.
   if (x === 21 && y === 2) return 'J';
+  if (x === 24 && y === 29) return 'z'; // the rod, lashed to the stern rail
   if (isEdge(x, y)) return '=';
   // The house aft, casa-pattern: anchor char, blocked cells, open door.
   const [hx, hy] = HOUSE;
@@ -69,21 +71,22 @@ function objectAt(x: number, y: number): string {
   if (x === 17 && y === 27) return 'c'; // the ship's cat, off duty
   if (x === 20 && y === 9) return 't'; // spare hatch beams, lashed
   // Life clusters where the work is: the bosun's starboard-forward corner.
+  // Everything here is stowed inboard: the rail lanes stay clear, because a
+  // ship that cannot be walked around is a ship nobody can work.
   if (x === 27 && y === 7) return 'D'; // oil drums, stenciled
-  if (x === 28 && y === 8) return 'R'; // fire hose on its reel
+  if (x === 27 && y === 9) return 'R'; // fire hose on its reel
   // Joseph's port-rail war on rust, tools staged where he left them.
-  if (x === 15 && y === 9) return 'p'; // paint cans and a wire brush
+  if (x === 16 && y === 9) return 'p'; // paint cans and a wire brush
   if ((x === 15 && y === 13) || (x === 28 && y === 17)) return 'u'; // rust blooms
   if ((x === 17 && y === 10) || (x === 26 && y === 19)) return 'r'; // rope coils, flemished flat
   if (x === 23 && y === 4) return 'f'; // a flying fish, stranded overnight
   if (x === 24 && y === 10) return 'T'; // the tarp-covered something
-  if ((x === 26 && y === 15) || (x === 15 && y === 20)) return 'P'; // port-stenciled crates
-  if (x === 28 && y === 24) return 'G'; // life ring on its stand, named
-  if (x === 15 && y === 27) return 'D'; // more drums, aft
+  if ((x === 26 && y === 15) || (x === 16 && y === 20)) return 'P'; // port-stenciled crates
+  if (x === 27 && y === 24) return 'G'; // life ring on its stand, named
+  if (x === 16 && y === 27) return 'D'; // more drums, aft
   // The aft port strip, where off-watch life happens in the house's lee.
   if (x === 18 && y === 22) return 'V'; // the little deck shrine
   if (x === 16 && y === 24) return 'y'; // the laundry line
-  if (x === 24 && y === 28) return 'z'; // the fishing rod, lashed to the stern rail
   if (x === 21 && y === 27) return 'm'; // the welcome mat at the watertight door
   return ' ';
 }

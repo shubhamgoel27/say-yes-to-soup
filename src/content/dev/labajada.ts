@@ -26,11 +26,15 @@ function onRoad(x: number, y: number): boolean {
   return false;
 }
 
+/** The mirador: the one shelf off the road, where the sea is first seen. */
+const onOverlook = (x: number, y: number): boolean => x >= 10 && x <= 13 && y >= 17 && y <= 18;
+
 function groundAt(x: number, y: number): string {
   if (y >= H - 2) return 'S'; // the sea, far below
   if (y === H - 3) return 'V'; // the cliff lip
-  if (onRoad(x, y)) return '-';
-  return ',';
+  // The road, and the beaten pull-off where everyone stops to look at the sea.
+  if (onRoad(x, y) || onOverlook(x, y)) return '-';
+  return 'L'; // the ladera: rubble too steep to cross, which is why there is a road
 }
 
 function objectAt(x: number, y: number): string {
@@ -39,14 +43,18 @@ function objectAt(x: number, y: number): string {
     if (y >= H - 3) return ' '; // the ridge never argues with the sea
     return 'o';
   }
-  if (groundAt(x, y) !== ',') return ' ';
-  // The photographer's tripod spot faces the overlook.
-  if (x === 12 && y === 18) return ' ';
+  const g = groundAt(x, y);
+  // The board on the landing, so the way onward is a place and not a hunch.
+  if (x === 18 && y === 17) return 'P';
   // Apachetas along the descent, gaining a stone per traveler. They grow
   // taller the closer the road gets to the sea, as the loads get lighter.
-  if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 21 && y === 16)) return 'a';
-  // Lizards keep the lower, warmer stretch of road.
-  if ((x === 10 && y === 12) || (x === 17 && y === 18)) return 'z';
+  // The last one stands where the road hands you over, in time to be seen.
+  if ((x === 23 && y === 6) || (x === 6 && y === 12) || (x === 17 && y === 15)) return 'a';
+  // Lizards keep the warm rubble at the road's edge, an arm's length away.
+  if ((x === 10 && y === 11) || (x === 17 && y === 17)) return 'z';
+  // Nothing else stands on the road, the pull-off or the cliff: the shelf
+  // keeps its room for a tripod and two people looking at the same thing.
+  if (g !== 'L') return ' ';
   const h = cellHash(x, y, 47);
   // Drier life as the map descends.
   if (y > 12) {
@@ -86,9 +94,10 @@ export const LA_BAJADA_MAP: MapData = {
   spawn: [1, 4],
   spawnFacing: 'right',
   legend: {
-    ',': { t: 'puna' },
     '-': { t: 'path' },
     ' ': { t: 'void' },
+    L: { t: 'ladera', solid: true },
+    P: { t: 'signpost', solid: true, tall: true },
     V: { t: 'cliff', solid: true },
     S: { t: 'sea', solid: true },
     o: { t: 'wallStone', solid: true, tall: true },
@@ -108,9 +117,9 @@ export const LA_BAJADA_MAP: MapData = {
     { at: [0, 4], type: 'door', to: 'east-road', spawn: [50, 6], facing: 'left' },
     { at: [0, 5], type: 'door', to: 'east-road', spawn: [50, 7], facing: 'left' },
     // The switchbacks keep going; the coast is real now. The whole landing
-    // at the road's end hands you on, no square-hunting.
-    { at: [20, 15], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
+    // at the road's end hands you on, lane for lane, no square-hunting.
+    { at: [20, 15], type: 'door', to: 'la-caleta', spawn: [7, 1], facing: 'down' },
     { at: [20, 16], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
-    { at: [20, 17], type: 'door', to: 'la-caleta', spawn: [8, 1], facing: 'down' },
+    { at: [20, 17], type: 'door', to: 'la-caleta', spawn: [9, 1], facing: 'down' },
   ],
 };

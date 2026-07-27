@@ -1,5 +1,5 @@
 import type { ChapterArt } from './index';
-import { Rng, blob, dot, oval, rr, shade, softShadow, vgrad } from '../pix';
+import { Rng, blob, dot, mute, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
 import { PAL } from '../../engine/config';
 
 /**
@@ -46,6 +46,36 @@ export const ART: ChapterArt = {
   noInk: ['chuno', 'grano', 'gallina', 'lagarto'],
 
   paint(make) {
+    // ------------------------------------------------------ the descent
+
+    // The ladera: the raw slope La Bajada's switchbacks are cut into. Loose
+    // dry rubble on a face too steep to stand on, so the road is the road.
+    make('ladera', 5, (g, r) => {
+      // Cool grey rubble, so the warm road across it reads as a road.
+      rect(g, 0, 0, S, S, mute(shade(PAL.stone, -0.02), 0.06));
+      // Short downhill streaks where the last rain sorted the stones.
+      for (let i = 0; i < 3; i++) {
+        const gx = 6 + r.int(S - 12);
+        const gy = r.int(S - 16);
+        g.strokeStyle = i % 2 ? 'rgba(255,246,225,0.10)' : 'rgba(48,40,32,0.14)';
+        g.lineWidth = 2.5 + r.int(3);
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(gx, gy);
+        g.quadraticCurveTo(gx + 3 - r.int(6), gy + 9, gx + 5 - r.int(10), gy + 16);
+        g.stroke();
+      }
+      // Rubble caught on the way down, each stone lit from above.
+      for (let i = 0; i < 9; i++) {
+        const sx = r.int(S);
+        const sy = r.int(S);
+        const c = shade(PAL.stoneDark, 0.06 + (r.next() - 0.5) * 0.3);
+        blob(g, sx, sy, 2.5 + r.int(4), c, r, 0.24);
+        dot(g, sx - 1, sy - 2, 1.3, shade(c, 0.22));
+      }
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 8, 3.5, 'rgba(48,40,32,0.10)');
+    });
+
     // ------------------------------------------------------- village flats
 
     // The pirca: field stones stacked dry, the wall every field grows.

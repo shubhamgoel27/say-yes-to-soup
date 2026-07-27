@@ -55,7 +55,8 @@ export const NPCS: NpcDef[] = [
     id: 'rosa',
     name: 'Rosa',
     map: 'village',
-    pos: [15, 27],
+    // Just off the corner where the worn path turns toward her door, not on it.
+    pos: [15, 28],
     range: 2,
     look: {
       skin: '#b97f4f',
@@ -1143,6 +1144,18 @@ export const NODES: NodeMap = {
       { text: 'The land ends politely, without a railing. Far below, the other half of the world practices its breathing.' },
     ],
   },
+  'ex.bajadasign': {
+    lines: [
+      { text: 'A board at the elbow of the last switchback, lettered by somebody patient: LA CALETA, and under it an arrow, pointing down.' },
+      { text: 'The arrow has been repainted more often than the letters. People keep needing to be told that yes, it really is just down there.' },
+    ],
+  },
+  'ex.ladera': {
+    lines: [
+      { text: 'The raw face of the slope, loose rubble at the angle where rubble stops sliding. Nothing walks on it twice.' },
+      { text: 'This is the whole argument for the switchbacks: the mountain would rather you went the long way, and it wins.' },
+    ],
+  },
   'ex.puna': {
     lines: [{ text: 'Dry gold grass to every horizon. The wind is reading it aloud, softly, to nobody.' }],
   },
@@ -1539,7 +1552,11 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   apacheta: [{ node: 'ex.apacheta' }],
   tent: [{ node: 'ex.tent' }],
   campfire: [{ node: 'ex.campfire' }],
-  signpost: [{ node: 'ex.signpost' }],
+  signpost: [
+    { map: 'la-bajada', node: 'ex.bajadasign' },
+    { node: 'ex.signpost' },
+  ],
+  ladera: [{ node: 'ex.ladera' }],
   cactus: [{ node: 'ex.cactus' }],
   shrub: [{ node: 'ex.shrub' }],
   // The overlook: the cliff carries the first sight of the sea, because the

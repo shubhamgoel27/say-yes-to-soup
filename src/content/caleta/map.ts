@@ -70,7 +70,9 @@ function groundAt(x: number, y: number): string {
   if (x >= 41 && x <= 45 && y >= 5 && y <= 8) return 'w';
   if (x >= 40 && x <= 46 && y >= 4 && y <= 9) return '.';
   if (x >= 39 && x <= 46 && y >= 3 && y <= 10) return 'd';
-  // Streets: hard-packed sand.
+  // Streets: hard-packed sand. The road in from La Bajada arrives three tiles
+  // wide, the way the pass above it does, and narrows once it is in the village.
+  if (x >= 7 && x <= 9 && y >= 1 && y <= 3) return '-';
   if (x === 8 && y >= 1 && y <= 21) return '-';
   if (y === 12 && x >= 2 && x <= 45) return '-';
   if (x === 24 && y >= 13 && y <= 21) return '-';
@@ -84,9 +86,9 @@ function groundAt(x: number, y: number): string {
 }
 
 function objectAt(x: number, y: number): string {
-  // The dune ridge; the road from La Bajada parts it at x=8.
+  // The dune ridge; the road from La Bajada parts it, three tiles wide.
   if (y === 0 || (x === 0 && y < 24) || (x === W - 1 && y < 24)) {
-    if (x === 8 && y === 0) return ' ';
+    if (x >= 7 && x <= 9 && y === 0) return ' ';
     return 'o';
   }
   // Rocky groins where the beach meets the map edge.
@@ -112,11 +114,10 @@ function objectAt(x: number, y: number): string {
   if ((x === 30 && y === 26) || (x === 35 && y === 25)) return 'B';
   if ((x === 28 && y === 24) || (x === 18 && y === 26)) return 'N';
   if ((x === 26 && y === 27) || (x === 38 && y === 27) || (x === 37 && y === 28)) return 'A';
-  // Reeds around the ponds.
-  if (groundAt(x, y) === '.') {
-    if ((x === 40 && (y === 5 || y === 7)) || (x === 46 && (y === 5 || y === 7))) return 'R';
-    if ((x === 42 && y === 4) || (x === 44 && y === 9) || (x === 41 && y === 9)) return 'R';
-  }
+  // Reeds around the ponds. The eastern clumps stand out in the shallows,
+  // which leaves the strip of bank under the ridge walkable end to end.
+  if ((x === 40 || x === 45) && (y === 5 || y === 7)) return 'R';
+  if ((x === 42 && y === 4) || (x === 44 && y === 9) || (x === 41 && y === 9)) return 'R';
   const prop = PROPS[`${x},${y}`];
   if (prop) return prop;
   // Tide wrack along the water line, deterministic like all scatter.
@@ -157,7 +158,10 @@ export const LA_CALETA_MAP: MapData = {
   spawn: [8, 1],
   spawnFacing: 'down',
   triggers: [
+    // The whole mouth of the road carries you back up, lane for lane.
+    { at: [7, 0], type: 'door', to: 'la-bajada', spawn: [19, 15], facing: 'left' },
     { at: [8, 0], type: 'door', to: 'la-bajada', spawn: [19, 16], facing: 'left' },
+    { at: [9, 0], type: 'door', to: 'la-bajada', spawn: [19, 17], facing: 'left' },
     { at: [18, 18], type: 'door', to: 'picanteria', spawn: [7, 8], facing: 'up' },
   ],
   legend: {
@@ -251,7 +255,7 @@ export const PICANTERIA_MAP: MapData = {
     '#q p pl   Z  #',
     '#            #',
     '#  sTTTTTTs  #',
-    '#  s      s  #',
+    '#            #', // the aisle between the tables, where the plates go
     '#  sTTTTTTs  #',
     '#            #',
     '#  zr        #',

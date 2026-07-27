@@ -33,9 +33,21 @@ function groundAt(x: number, y: number): string {
   if (y === 16 && x >= 6 && x <= 40) return '-';
   if (x === 21 && y >= 3 && y <= 28) return '-';
   // Short paths from each house door down to the street, worn right up to
-  // (and under) the doorway itself.
+  // (and under) the doorway itself. The northern houses face the street, so
+  // theirs runs straight. The southern two turn their backs on it: their path
+  // leaves the street along the flank nearer the plaza, drops past the wall
+  // and comes back up to the door from below, which is the side that opens.
   for (const [hx, hy] of HOUSES) {
-    if (x === hx + 2 && ((hy < 16 && y >= hy + 4 && y <= 16) || (hy > 16 && y >= 16 && y <= hy + 4))) return '-';
+    const door = hx + 2;
+    if (hy < 16) {
+      if (x === door && y >= hy + 4 && y <= 16) return '-';
+      continue;
+    }
+    const side = door < 21 ? hx + 5 : hx - 1;
+    const foot = hy + 6; // the row below the house, where the doorway looks out
+    if (x === side && y >= 16 && y <= foot) return '-';
+    if (y === foot && x >= Math.min(door, side) && x <= Math.max(door, side)) return '-';
+    if (x === door && y >= hy + 4 && y <= foot) return '-';
   }
   // Potato terraces in the southeast: planted beds banded with bare earth
   // walkways, the way hillside terraces actually read.
@@ -47,11 +59,10 @@ function groundAt(x: number, y: number): string {
 const OPEN_DOORS = new Set(['10,21', '27,6']);
 
 function objectAt(x: number, y: number): string {
-  // Stone ridge enclosing the valley, parted where the east road leaves it.
-  if (y <= 1 || y >= H - 1 || x === 0 || x === W - 1) {
-    if (x === W - 1 && y === 16) return ' '; // the road runs out through the ridge
-    return 'o';
-  }
+  // Stone ridge enclosing the valley. The gate is the only way out of it, and
+  // the ridge behind the gate is unbroken, so no tile is left stranded on the
+  // far side of a door the player is carried through the moment they touch it.
+  if (y <= 1 || y >= H - 1 || x === 0 || x === W - 1) return 'o';
   // The gate across the east road, shut until the story opens it.
   if ((x === 41 || x === 42) && y === 16) return 'G';
   // Houses are single illustrated sprites now; the grid only collides.
@@ -79,7 +90,7 @@ function objectAt(x: number, y: number): string {
   if (x === 13 && y === 26) return 'F'; // Rosa's chicha flag, beside her door
   // Street furniture: the village owns its plaza.
   if ((x === 19 && y === 15) || (x === 23 && y === 17)) return 'n'; // benches
-  if ((x === 15 && y === 23) || (x === 34 && y === 7)) return 'Y'; // woodpiles
+  if ((x === 16 && y === 23) || (x === 34 && y === 7)) return 'Y'; // woodpiles, off the worn path
   if ((x === 9 && y === 26) || (x === 32 && y === 11)) return 'p'; // planters
   if ((x === 17 && y === 13) || (x === 25 && y === 13) || (x === 7 && y === 15) || (x === 36 && y === 12)) return 'L'; // lamp posts
   for (const [tx, ty] of TREES) if (x === tx && y === ty) return 'T';
@@ -89,7 +100,9 @@ function objectAt(x: number, y: number): string {
   if (x === 13 && y === 12) return 'a'; // ají and maize drying by the north house
   if ((x === 13 && y === 4) || (x === 14 && y === 4) || (x === 14 && y === 5)) return 'u'; // chuño on the cold flat
   if (x === 27 && y === 27) return 'B'; // adobe bricks curing under plastic
-  if (x === 11 && y === 26) return 'g'; // geraniums in lard cans by the chichería door
+  // Geraniums in lard cans by the chichería door: one either side of the turn,
+  // so the worn path elbows toward the doorway instead of running on into grass.
+  if ((x === 11 && y === 26) || (x === 11 && y === 27)) return 'g';
   if (x === 20 && y === 10) return 'N'; // the votive niche beside the lane
   if (x === 26 && y === 18) return 'S'; // sacks of mote and habas at the stall
   if (x === 25 && y === 19) return 'j'; // spilled barley; the hens know

@@ -30,8 +30,10 @@ function objectAt(x: number, y: number): string {
   // The east wall opens the full width of the flared road, not one square.
   if (x === W - 1 && groundAt(x, y) !== '-') return 'o';
 
-  // The narrow pass: boulders pinch the road where Paca holds court.
-  if ((x === 30 || x === 31) && (y === ROAD_Y - 1 || y === ROAD_Y + 1)) return 'o';
+  // The narrow pass: the ridge closes in from both sides and leaves one tile
+  // of road, which is the tile Paca is standing on. There is no way around a
+  // llama here, only through, and that takes a whistle.
+  if ((x === 30 || x === 31) && y !== ROAD_Y) return 'o';
 
   if (x === 14 && y === ROAD_Y - 1) return 'A'; // the apacheta cairn
   if (x === 13 && y === ROAD_Y - 1) return 'e'; // a traveler's q'epi, resting by it

@@ -22,11 +22,24 @@ export const CHAPTER: ChapterDef = {
     {
       flag: 'c3.cook.start',
       doneNode: 'c3.cooked',
+      title: 'Ben’s adobo',
+      howTo: [
+        'Ben calls for a thing. Arrows find it on his shelf, Space feeds it to the pot.',
+        'Reach for the wrong jar and nothing breaks. He laughs, hands you the right one, and the pot moves on.',
+        'Lid last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
+        'Burn it and Ben just scrubs the pot out. He has burnt more dinners than you will ever cook.',
+      ],
       make: (root, audio) => new GalleyPanel(root, audio as AudioBus),
     },
     {
       flag: 'c3.stars.start',
       doneNode: 'c3.starsdone',
+      title: 'The dark bow',
+      howTo: [
+        'Hana names something in the sky. Arrows walk your eyes across it; Space says "there."',
+        'Land on it and the lines ink themselves in, and she tells you whose sky it is.',
+        'Nothing can be lost up here. Look in the wrong place and she only says warmer.',
+      ],
       make: (root, audio) => new StarPanel(root, audio as AudioBus),
     },
   ],
