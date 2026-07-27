@@ -403,16 +403,36 @@ export class HotteokPanel {
       if (done) this.open(done);
       return;
     }
-    // The golden middle of the griddle.
-    const inZone = this.t >= 0.38 && this.t <= 0.62;
-    if (!inZone) {
-      // One burnt one ends the batch, and costs nothing but another minute.
-      this.phase = 'burnt';
+    // The golden middle of the griddle. Early and late are different
+    // mistakes and must not be told the same story: pressing as early as
+    // physically possible used to report "too late".
+    if (this.t < 0.38) {
+      // Too soon is not a ruined one. The dough simply is not ready, and
+      // Mi-ja will not let you lift it yet.
+      this.audio.bump();
+      this.hint = 'Not yet. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.';
+      return;
+    }
+    if (this.t > 0.62) {
+      // A burnt one costs that disc, and only that disc. The card promises
+      // exactly this, so the batch must not restart underneath it.
+      this.round++;
       this.audio.bump();
       this.scene.flash('#2a1a10', 0.2);
       this.hint =
-        'Too late, and it goes past gold. <b>Burnt.</b> "That one is mine, then," says Mi-ja, already rolling the next ball. Space for fresh dough.';
+        this.round >= ROUNDS
+          ? 'Past gold, and that is the batch. "Those are mine, then," says Mi-ja, entirely unbothered. Press Space.'
+          : `Past gold. <b>Burnt.</b> "That one is mine, then," says Mi-ja, already rolling the next ball. ${ROUNDS - this.round} to go.`;
       this.startFlip(false);
+      if (this.round >= ROUNDS) {
+        // The batch is finished either way; a burnt one is not a failure
+        // state, it is one hotteok Mi-ja eats standing up.
+        this.phase = this.golden > 0 ? 'done' : 'burnt';
+        if (this.phase === 'done') this.audio.weaveDone();
+      } else {
+        this.t = 0;
+        this.dirn = 1;
+      }
       return;
     }
     this.round++;
