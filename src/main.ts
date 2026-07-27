@@ -170,8 +170,11 @@ const DAY_KEYS: [number, [number, number, number]][] = [
   [0.0, [1.04, 0.88, 0.74]],
   [0.1, [1.0, 1.0, 1.0]],
   [0.45, [1.01, 0.98, 0.93]],
-  [0.55, [1.05, 0.8, 0.68]],
-  [0.63, [0.55, 0.58, 0.8]],
+  // Golden hour used to crush blue almost to nothing: at 0.57 three whole
+  // chapters held no pixel where blue exceeded red, so every evening in the
+  // game was the same orange. Ember still, but with a sky left in it.
+  [0.55, [1.04, 0.84, 0.78]],
+  [0.63, [0.6, 0.63, 0.86]],
   [0.9, [0.48, 0.53, 0.78]],
   [0.97, [0.75, 0.68, 0.72]],
   [1.0, [1.04, 0.88, 0.74]],

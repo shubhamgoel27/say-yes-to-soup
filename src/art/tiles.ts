@@ -1538,10 +1538,20 @@ export class Tileset {
     g.lineWidth = 22;
     g.stroke();
     // The lit top of the coping: the one hard-won value step that says this
-    // plane ends here and the ground beyond it is somewhere else.
+    // plane ends here and the ground beyond it is somewhere else. It has to
+    // be emphatic. Three separate critics read the player as standing on the
+    // roof, and the last one measured why: the darkened ground and the roof
+    // plane had landed within three levels of each other, so the boundary
+    // between them carried no edge at all. A bright rim breaks the tie.
     edgePath();
-    g.strokeStyle = shade(roof, 0.34);
-    g.lineWidth = 7;
+    g.strokeStyle = shade(roof, 0.52);
+    g.lineWidth = 8;
+    g.stroke();
+    // And a fine dark seam above it, so the lit rim reads as a lip catching
+    // the sun rather than as a pale smear along the roof.
+    edgePath();
+    g.strokeStyle = 'rgba(34,24,15,0.5)';
+    g.lineWidth = 2.4;
     g.stroke();
     g.restore();
 
