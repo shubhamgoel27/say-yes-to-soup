@@ -9,6 +9,31 @@ import type { Cond } from '../content/schema';
 const SAVE_KEY = 'elsewhere.save';
 /** Saves written before the game was renamed still load. */
 const OLD_SAVE_KEY = 'wayfare.save';
+/** The previous known-good save, kept so a bad write is survivable. */
+const BACKUP_KEY = 'elsewhere.save.bak';
+
+type SaveData = {
+  flags?: string[];
+  journal?: string[];
+  errand?: string | null;
+  place?: { map: string; x: number; y: number; dir: string } | null;
+  // Added later; saves from before the flyleaf simply have neither.
+  name?: string | null;
+  look?: PlayerLook | null;
+};
+
+/** Parse a stored save, returning null for anything we cannot trust. */
+function parseSave(raw: string | null): SaveData | null {
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw) as SaveData;
+    // A save is only credible if it carries the shape we wrote.
+    if (!data || typeof data !== 'object' || !Array.isArray(data.flags)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
 
 /** The three strokes of the traveler the player may choose at the flyleaf.
  * null everywhere means Nani's original sketch (the default look). */
@@ -159,17 +184,19 @@ export class GameState {
 
   save() {
     try {
-      localStorage.setItem(
-        SAVE_KEY,
-        JSON.stringify({
-          flags: [...this.flags],
-          journal: [...this.journal],
-          errand: this.errand,
-          place: this.place,
-          name: this.playerName,
-          look: this.playerLook,
-        }),
-      );
+      const payload = JSON.stringify({
+        flags: [...this.flags],
+        journal: [...this.journal],
+        errand: this.errand,
+        place: this.place,
+        name: this.playerName,
+        look: this.playerLook,
+      });
+      // Keep the last known-good copy before overwriting. A journey can be
+      // thirty hours long; a single torn write must never be able to end it.
+      const prev = localStorage.getItem(SAVE_KEY);
+      if (prev && parseSave(prev)) localStorage.setItem(BACKUP_KEY, prev);
+      localStorage.setItem(SAVE_KEY, payload);
     } catch {
       // Private browsing or full storage: play on without persistence.
     }
@@ -185,6 +212,7 @@ export class GameState {
     this.playerLook = null;
     try {
       localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(BACKUP_KEY);
     } catch {
       // Nothing to remove is fine.
     }
@@ -192,7 +220,11 @@ export class GameState {
 
   hasSave(): boolean {
     try {
-      return localStorage.getItem(SAVE_KEY) !== null || localStorage.getItem(OLD_SAVE_KEY) !== null;
+      return (
+        parseSave(localStorage.getItem(SAVE_KEY)) !== null ||
+        parseSave(localStorage.getItem(BACKUP_KEY)) !== null ||
+        localStorage.getItem(OLD_SAVE_KEY) !== null
+      );
     } catch {
       return false;
     }
@@ -202,20 +234,17 @@ export class GameState {
     try {
       if (new URLSearchParams(location.search).has('fresh')) {
         localStorage.removeItem(SAVE_KEY);
+        localStorage.removeItem(BACKUP_KEY);
         localStorage.removeItem(OLD_SAVE_KEY);
         return;
       }
-      const raw = localStorage.getItem(SAVE_KEY) ?? localStorage.getItem(OLD_SAVE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw) as {
-        flags?: string[];
-        journal?: string[];
-        errand?: string | null;
-        place?: { map: string; x: number; y: number; dir: string } | null;
-        // Added later; saves from before the flyleaf simply have neither.
-        name?: string | null;
-        look?: PlayerLook | null;
-      };
+      // Primary first, then the last known-good copy, then the old key.
+      // Silently starting a fresh journey is the one unacceptable outcome.
+      const data =
+        parseSave(localStorage.getItem(SAVE_KEY)) ??
+        parseSave(localStorage.getItem(BACKUP_KEY)) ??
+        parseSave(localStorage.getItem(OLD_SAVE_KEY));
+      if (!data) return;
       for (const f of data.flags ?? []) this.flags.add(f);
       for (const j of data.journal ?? []) this.journal.add(j);
       this.errand = data.errand ?? null;

@@ -487,7 +487,12 @@ let pendingLetter: string | null = null;
 state.on('letter', (id) => {
   pendingLetter = id;
 });
-state.on('changed', () => applyDressings());
+state.on('changed', () => {
+  applyDressings();
+  // Tasks are flag gated, so any change to the world can retire the top one.
+  // Refreshing only on errands left the chip advising work already finished.
+  refreshTaskChip();
+});
 state.on('errand', (id) => {
   refreshTaskChip();
   toasts.show(id ? '✉ you are carrying something for someone' : '✉ delivered');
