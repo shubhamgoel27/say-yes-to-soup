@@ -3,12 +3,13 @@ import { AudioBus } from './engine/audio';
 import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { DevBridge } from './engine/devbridge';
-import { TileMap, type TriggerDef } from './engine/grid';
+import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
 import { GameState } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
+import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
 import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
 import { Textbox } from './ui/textbox';
@@ -380,6 +381,20 @@ type Villager = Sprite & {
   portrait: HTMLCanvasElement | null;
   think: number;
   want: Dir | null;
+  // -- village rhythm (all derived at boot; see the section below) --
+  /** Claimed resting spot beside a bench-like object, and which way to face. */
+  seat: { at: [number, number]; dir: Dir } | null;
+  /** Nearest lamp/fire cell near home; night owls drift into its light. */
+  glow: [number, number] | null;
+  /** Keepers never fade at night: story-gated folk, companions, two anchors per map. */
+  keeper: boolean;
+  seated: boolean;
+  /** 1 fully present, 0 gone for the night. Eased at FADE_SPEED per second. */
+  fade: number;
+  /** Per-villager timing jitter so nobody moves in lockstep. Timing only. */
+  jitter: number;
+  baseSheet: HTMLCanvasElement;
+  fadeSheet: HTMLCanvasElement | null;
 };
 
 function sheetFor(def: NpcDef): HTMLCanvasElement {
@@ -389,18 +404,234 @@ function sheetFor(def: NpcDef): HTMLCanvasElement {
   return makeSheet(def.look);
 }
 
-const villagers: Villager[] = NPCS.map((def) => ({
-  def,
-  actor: new Actor(def.pos[0], def.pos[1], 'down'),
-  sheet: sheetFor(def),
-  rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
-  portrait: def.sprite ? null : makePortrait(def.look),
-  think: Math.random() * 2,
-  want: null,
-}));
+const villagers: Villager[] = NPCS.map((def) => {
+  const sheet = sheetFor(def);
+  return {
+    def,
+    actor: new Actor(def.pos[0], def.pos[1], 'down'),
+    sheet,
+    rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
+    portrait: def.sprite ? null : makePortrait(def.look),
+    think: Math.random() * 2,
+    want: null,
+    seat: null,
+    glow: null,
+    keeper: true,
+    seated: false,
+    fade: 1,
+    jitter: Math.random(),
+    baseSheet: sheet,
+    fadeSheet: null,
+  };
+});
 
 const dog = villagers.find((v) => v.def.id === 'allqu');
 const paca = villagers.find((v) => v.def.id === 'paca');
+
+// ---------------------------------------------------------------- village rhythm
+//
+// The day has hours now, and villages keep them. At golden hour, villagers
+// whose patch of the world holds a bench drift over and settle; deep night
+// sends the non-essential home (a soft fade where they stand); whoever stays
+// up gravitates toward the nearest lamp. Everything here is derived from the
+// maps and the NPC roster at boot; no chapter data knows about any of it.
+
+/** nightLevel where sitters head for their seat (golden hour). */
+const SIT_NK = 0.25;
+/** nightLevel where non-essential villagers turn in for the night. */
+const FADE_NK = 0.75;
+/** Fade rate in alpha per second: a two-second goodnight. */
+const FADE_SPEED = 0.5;
+
+/** Deterministic 0..1 per npc id: decides WHO does what, never when. */
+function idHash(id: string, salt: number): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return cellHash(h & 0xffff, (h >>> 16) & 0xffff, salt);
+}
+
+/** Per-villager phase edges, jittered a touch so nobody moves in lockstep. */
+const sitAt = (v: Villager) => SIT_NK + v.jitter * 0.08;
+const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
+
+// Seats, lamps, and keepers, found once at boot.
+{
+  const claimed = new Set<string>();
+  const PERCHES: [number, number, Dir][] = [
+    [0, 1, 'up'],
+    [-1, 0, 'right'],
+    [1, 0, 'left'],
+    [0, -1, 'down'],
+  ];
+  for (const v of villagers) {
+    const tm = maps[v.def.map];
+    if (!tm || sceneFor(v.def.map) === 'interior') continue;
+    const [hx, hy] = v.def.pos;
+    // Nearest lamp or fire within reach of home; the light they gather to.
+    let bestGlow: [number, number] | null = null;
+    let bestD = 10;
+    for (const [gx, gy] of fireCells[v.def.map] ?? []) {
+      const d = Math.max(Math.abs(gx - hx), Math.abs(gy - hy));
+      if (d < bestD) {
+        bestD = d;
+        bestGlow = [gx, gy];
+      }
+    }
+    v.glow = bestGlow;
+  }
+  // Every bench-like object recruits its evening sitter: the closest
+  // wandering human within eight tiles of home claims the walkable cell
+  // beside it, facing the seat, the same way the player sits. One villager
+  // per seat, seats in reading order, ties broken by roster order, so the
+  // same people take the same benches every single dusk.
+  for (const [mid, tm] of Object.entries(maps)) {
+    if (sceneFor(mid) === 'interior') continue;
+    const seats: [number, number][] = [];
+    for (let y = 0; y < tm.h; y++) {
+      for (let x = 0; x < tm.w; x++) {
+        if (SIT_KINDS.has(tm.object(x, y)?.t ?? '')) seats.push([x, y]);
+      }
+    }
+    const sitters = villagers.filter(
+      (v) => v.def.map === mid && !v.def.sprite && v.def.range > 0,
+    );
+    for (const [sx, sy] of seats) {
+      let best: Villager | null = null;
+      let bestD = 9;
+      for (const v of sitters) {
+        if (v.seat) continue;
+        const d = Math.max(Math.abs(sx - v.def.pos[0]), Math.abs(sy - v.def.pos[1]));
+        if (d < bestD) {
+          bestD = d;
+          best = v;
+        }
+      }
+      if (!best) continue;
+      for (const [dx, dy, dir] of PERCHES) {
+        const px = sx + dx;
+        const py = sy + dy;
+        const k = `${mid}:${px},${py}`;
+        if (!tm.inBounds(px, py) || tm.solid(px, py) || claimed.has(k)) continue;
+        claimed.add(k);
+        best.seat = { at: [px, py], dir };
+        break;
+      }
+    }
+  }
+  // Keepers: anyone story-gated (`when`), the companions, and at least two
+  // always-present anchors per map (lowest hash wins) so no square ever dies.
+  const byMap = new Map<string, Villager[]>();
+  for (const v of villagers) {
+    const list = byMap.get(v.def.map) ?? [];
+    list.push(v);
+    byMap.set(v.def.map, list);
+  }
+  for (const here of byMap.values()) {
+    const kept = new Set(here.filter((v) => v.def.when !== undefined || v === dog || v === paca));
+    // Two always-present PEOPLE stay per map; companions don't count for this.
+    let anchors = here.filter((v) => kept.has(v) && v.def.when === undefined && !v.def.sprite).length;
+    const rest = here
+      .filter((v) => !kept.has(v) && v.def.when === undefined && !v.def.sprite)
+      .sort((a, b) => idHash(a.def.id, 3) - idHash(b.def.id, 3));
+    for (const v of rest) {
+      if (anchors >= 2) break;
+      kept.add(v);
+      anchors++;
+    }
+    for (const v of here) v.keeper = kept.has(v);
+  }
+}
+
+/**
+ * Villagers an active errand or carried thing currently points at: anyone
+ * whose dialogue would react to a held errand/carry flag stays up however
+ * late it gets, so the night never strands an open thread.
+ */
+let erranded = new Set<Villager>();
+function refreshErranded() {
+  erranded = new Set(
+    villagers.filter((v) =>
+      v.def.entry.some((e) =>
+        e.when?.has?.some((f) => (f.startsWith('errand.') || f.startsWith('carry.')) && state.has(f)),
+      ),
+    ),
+  );
+}
+refreshErranded();
+state.on('changed', refreshErranded);
+
+/** Swap in a sheet drawn at the current fade alpha; full sheets swap back. */
+function applyFade(v: Villager) {
+  if (v.fade >= 1) {
+    v.sheet = v.baseSheet;
+    return;
+  }
+  if (!v.fadeSheet) {
+    v.fadeSheet = document.createElement('canvas');
+    v.fadeSheet.width = v.baseSheet.width;
+    v.fadeSheet.height = v.baseSheet.height;
+  }
+  const g = v.fadeSheet.getContext('2d');
+  if (!g) return;
+  g.clearRect(0, 0, v.fadeSheet.width, v.fadeSheet.height);
+  g.globalAlpha = v.fade;
+  g.drawImage(v.baseSheet, 0, 0);
+  v.sheet = v.fadeSheet;
+}
+
+/** One greedy step toward a cell, preferring the longer axis; null when stuck. */
+function stepToward(
+  a: Actor,
+  tx: number,
+  ty: number,
+  blocked: (x: number, y: number) => boolean,
+): Dir | null {
+  const [ax, ay] = a.occupies();
+  const dx = tx - ax;
+  const dy = ty - ay;
+  if (dx === 0 && dy === 0) return null;
+  const h: Dir | null = dx > 0 ? 'right' : dx < 0 ? 'left' : null;
+  const vd: Dir | null = dy > 0 ? 'down' : dy < 0 ? 'up' : null;
+  const order = Math.abs(dx) >= Math.abs(dy) ? [h, vd] : [vd, h];
+  for (const d of order) {
+    if (!d) continue;
+    const [nx, ny] = stepFrom(ax, ay, d);
+    if (!blocked(nx, ny)) return d;
+  }
+  return null;
+}
+
+/**
+ * The world-clock side of the rhythm, run for EVERY villager every frame:
+ * fades ease toward their target, and villagers on other maps simply snap to
+ * where the hour would have them, so arriving at night finds a night village.
+ * Nobody the player is engaged with (dialogue, click-to-walk) ever fades.
+ */
+function updateRhythm(dt: number) {
+  const nk = nightLevel(dayT);
+  for (const v of villagers) {
+    if (sceneFor(v.def.map) === 'interior') continue;
+    const engaged = v === talkingTo || autoGoal?.npc === v;
+    const gone = !v.keeper && !engaged && !erranded.has(v) && nk > fadeAt(v);
+    const target = gone ? 0 : 1;
+    if (v.fade !== target) {
+      v.fade = target > v.fade ? Math.min(target, v.fade + dt * FADE_SPEED) : Math.max(target, v.fade - dt * FADE_SPEED);
+      applyFade(v);
+    }
+    const duskish = nk >= sitAt(v) && nk < fadeAt(v);
+    if (v.def.map !== map.id && !v.actor.frozen) {
+      // Unobserved villagers teleport through their evening.
+      if (v.seat && duskish && !v.seated) {
+        v.actor.placeAt(v.seat.at[0], v.seat.at[1], v.seat.dir);
+        v.actor.pose = 'sit';
+        v.seated = true;
+      } else if (v.seated && !duskish) {
+        v.actor.pose = 'none';
+        v.seated = false;
+      }
+    }
+  }
+}
 
 /** The golden traveler, for those who remember an older code. */
 const GOLDEN_LOOK = {
@@ -445,8 +676,9 @@ function moundsHere(): Sprite[] {
 
 function villagersHere(): Villager[] {
   // A villager with a `when` is only in town while it holds (travelers,
-  // homecomings). Everyone else simply lives here.
-  return villagers.filter((v) => v.def.map === map.id && state.check(v.def.when));
+  // homecomings). Everyone else simply lives here. The fully night-faded are
+  // gone in every sense: undrawn, unclickable, and no longer in the way.
+  return villagers.filter((v) => v.def.map === map.id && v.fade > 0.02 && state.check(v.def.when));
 }
 function spritesHere(): Sprite[] {
   return [playerSprite, ...villagersHere()];
@@ -495,23 +727,59 @@ function updateVillager(v: Villager, dt: number) {
   }
 
   if (v.def.range === 0 || dev.freezeWander) return;
-  // Deep evening: the wandering stops. People stand where the day left them,
-  // finishing conversations, and the village audibly settles.
-  if (sceneFor(map.id) !== 'interior' && nightLevel(dayT) > 0.6) return;
+  const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
+  const blocked = blockedFor(v.actor);
+
+  // Golden hour: those with a claimed seat amble over, settle, and stay
+  // until night deepens or morning. They talk seated; dialogue freezes them.
+  if (v.seat && nk >= sitAt(v) && nk < fadeAt(v)) {
+    const [tx, ty] = v.seat.at;
+    const [cx, cy] = v.actor.occupies();
+    if (v.seated) return;
+    if (cx === tx && cy === ty) {
+      if (v.actor.isMoving) {
+        v.actor.update(dt, { intent: null, blocked });
+        return;
+      }
+      v.actor.face(v.seat.dir);
+      v.actor.pose = 'sit';
+      v.seated = true;
+      return;
+    }
+    v.actor.update(dt, { intent: stepToward(v.actor, tx, ty, blocked), blocked });
+    return;
+  }
+  if (v.seated) {
+    v.actor.pose = 'none';
+    v.seated = false;
+  }
+
+  // Deep night, for those about to fade: stand still and say goodnight.
+  if (!v.keeper && nk > fadeAt(v)) return;
+
+  // Night owls re-center their leash on the nearest lamp, so whoever stays
+  // up stands in the light; by day the leash is home, as it always was.
+  const gathering = nk > sitAt(v) && v.glow !== null;
+  const [hx, hy] = gathering && v.glow ? v.glow : v.def.pos;
+  const r = gathering ? Math.max(v.def.range, 2) : v.def.range;
+  const [ax, ay] = v.actor.occupies();
+  const outside = ax < hx - r || ax > hx + r || ay < hy - r || ay > hy + r;
+  // Deep evening: the wandering stops. People stand where the hour has led
+  // them (lamplight, mostly), finishing conversations as the village settles.
+  if (nk > 0.6 && !outside) return;
   v.think -= dt;
   if (v.think <= 0) {
-    // Mostly stand around; occasionally amble. Village time moves slowly.
-    v.want =
-      Math.random() < 0.4
+    // Outside the leash (walking to the lamp, or home at dawn): head for the
+    // center. Inside: mostly stand around, occasionally amble. Village time.
+    v.want = outside
+      ? stepToward(v.actor, hx, hy, blocked)
+      : Math.random() < 0.4
         ? ((['up', 'down', 'left', 'right'] as Dir[])[Math.floor(Math.random() * 4)] ?? null)
         : null;
     v.think = 1.0 + Math.random() * 2.8;
   }
-  const [hx, hy] = v.def.pos;
-  const r = v.def.range;
   const leash = (x: number, y: number) => x < hx - r || x > hx + r || y < hy - r || y > hy + r;
-  const blocked = blockedFor(v.actor);
-  v.actor.update(dt, { intent: v.want, blocked: (x, y) => blocked(x, y) || leash(x, y) });
+  v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
 // ---------------------------------------------------------------- doors
@@ -692,7 +960,11 @@ let flashT = 0;
 
 function endDialogue() {
   player.frozen = false;
-  if (talkingTo) talkingTo.actor.frozen = false;
+  if (talkingTo) {
+    talkingTo.actor.frozen = false;
+    // A seated villager turned to face the player; they settle back afterward.
+    if (talkingTo.seated && talkingTo.seat) talkingTo.actor.face(talkingTo.seat.dir);
+  }
   talkingTo = null;
 
   // Mail handed over during the conversation unfolds now.
@@ -1030,6 +1302,7 @@ function update(dt: number) {
 
   // The world turns.
   if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
+  updateRhythm(dt);
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
   renderer.setSun(dayT);
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
@@ -1285,6 +1558,14 @@ function update(dt: number) {
     pages: state.pageCount(),
     errand: state.errand,
     npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
+    rhythm: {
+      nk: Number(nightLevel(dayT).toFixed(3)),
+      seated: villagersHere().filter((v) => v.seated).map((v) => v.def.id),
+      gone: villagers.filter((v) => v.def.map === map.id && v.fade <= 0.02).map((v) => v.def.id),
+      fading: villagers
+        .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
+        .map((v) => v.def.id),
+    },
     bumps,
     auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
   });
