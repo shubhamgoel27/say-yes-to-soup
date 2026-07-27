@@ -10,10 +10,12 @@ import type { EventNode, ExamineArm, NodeMap, NpcDef, NpcExtension } from '../sc
 export const RETURN_NPCS: NpcDef[] = [
   {
     // The one new face: a young traveler at the east gate, pointed outward.
+    // She stands beside the signboard, not in the road: the way out stays
+    // clear across all three lanes, and she is still an easy hello.
     id: 'traveler',
     name: 'A Traveler',
     map: 'east-road',
-    pos: [48, 6],
+    pos: [48, 4],
     range: 0,
     look: {
       skin: '#c98f5f',
