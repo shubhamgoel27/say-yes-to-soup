@@ -154,7 +154,12 @@ renderer.registerMoods(MOODS);
  * The ambient curve grades the whole scene; windows wake up at dusk.
  * `?tod=0.7` pins the clock for development.
  */
-const DAY_LEN = 300;
+// A full day. This was five minutes, which meant a new player reached night
+// twice before finishing the opening errand, and the evening thinning kept
+// taking away the person the task chip was pointing at. A day should be about
+// as long as a sitting, so dusk is an event you notice rather than weather
+// that keeps happening to you.
+const DAY_LEN = 1500;
 const todOverride = dev.enabled
   ? Number.parseFloat(new URLSearchParams(location.search).get('tod') ?? 'NaN')
   : Number.NaN;
@@ -742,12 +747,26 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
  * late it gets, so the night never strands an open thread.
  */
 let erranded = new Set<Villager>();
+/**
+ * Someone still has something particular to say when the first entry arm that
+ * passes is not their unconditional fallback: an unmet greeting, a reunion, a
+ * held errand. Those people are an open thread and the night may not take
+ * them, however late it gets, because the journal is probably naming them.
+ */
+function openThread(v: Villager): boolean {
+  const arms = v.def.entry;
+  const last = arms[arms.length - 1];
+  const hit = arms.find((e) => state.check(e.when));
+  return !!hit && hit !== last;
+}
 function refreshErranded() {
   erranded = new Set(
-    villagers.filter((v) =>
-      v.def.entry.some((e) =>
-        e.when?.has?.some((f) => (f.startsWith('errand.') || f.startsWith('carry.')) && state.has(f)),
-      ),
+    villagers.filter(
+      (v) =>
+        openThread(v) ||
+        v.def.entry.some((e) =>
+          e.when?.has?.some((f) => (f.startsWith('errand.') || f.startsWith('carry.')) && state.has(f)),
+        ),
     ),
   );
 }
@@ -1163,6 +1182,8 @@ let flashT = 0;
 
 function endDialogue() {
   player.frozen = false;
+  // The intro has let go; now the village may introduce itself.
+  if (pendingWelcome) setTimeout(playWelcome, 420);
   if (talkingTo) {
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward.
@@ -1445,9 +1466,22 @@ function beginPlay(freshStart: boolean) {
     setTimeout(() => {
       if (!textbox.isOpen) startNarration('intro.wake');
     }, 900);
-    toasts.show('walk with the arrow keys or WASD');
-    toasts.show('Space talks to people and touches things');
+    // The welcome waits for the intro to finish. Shown here it was invisible:
+    // the narration holds the textbox open for over a minute, quiet-hud fades
+    // the plate and the toasts for all of it, and their timers run out behind
+    // the fade. The village nameplate and both control hints were authored,
+    // good, and never once seen by a new player.
+    pendingWelcome = true;
   }
+}
+
+/** The opening's stagecraft, held until the player can actually see it. */
+let pendingWelcome = false;
+function playWelcome() {
+  pendingWelcome = false;
+  showPlate(map.name);
+  toasts.show('walk with the arrow keys or WASD, or click where you want to go');
+  toasts.show('Space talks to people and touches things');
 }
 
 /** Confirm the title menu's current option; shared by Space and click. */
