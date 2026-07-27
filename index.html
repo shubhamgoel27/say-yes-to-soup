@@ -164,6 +164,13 @@
       #errand::before { content: '\2709\00a0\00a0'; font-style: normal; }
 
       /* ---- dialogue box ---- */
+      /* It arrives rather than appearing. Kept short: this happens hundreds
+       * of times an hour and anything slower would start to cost patience. */
+      #textbox.tb-in { animation: tbIn 0.13s ease-out; }
+      @keyframes tbIn {
+        from { transform: translateX(-50%) translateY(9px); opacity: 0; }
+        to { transform: translateX(-50%) translateY(0); opacity: 1; }
+      }
       #textbox {
         position: absolute;
         left: 50%;
@@ -343,7 +350,7 @@
         to { transform: none; opacity: 1; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .j-book, .letter-paper, .w-panel { animation: none !important; }
+        .j-book, .letter-paper, .w-panel, #textbox.tb-in { animation: none !important; }
       }
       .j-head { display: flex; justify-content: space-between; align-items: baseline; }
       .j-name { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: 0.01em; }

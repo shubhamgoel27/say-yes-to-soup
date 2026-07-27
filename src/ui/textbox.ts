@@ -68,6 +68,12 @@ export class Textbox {
     this.portraitCv = portrait;
     this.onClose = onClose ?? null;
     this.els.root.hidden = false;
+    // Every other surface in the game unfolds; the dialogue box was the one
+    // hard cut, and it is the most repeated moment there is. Retrigger the
+    // entrance on each open by clearing the class and forcing a reflow.
+    this.els.root.classList.remove('tb-in');
+    void this.els.root.offsetWidth;
+    this.els.root.classList.add('tb-in');
     this.enterNode(startId);
   }
 
