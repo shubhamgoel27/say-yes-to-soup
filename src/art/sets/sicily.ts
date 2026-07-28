@@ -43,6 +43,10 @@ export const ART: ChapterArt = {
   glows: ['barlamp', 'edicola', 'lampadario'],
   pathy: ['basalto'],
   noInk: ['campetto', 'limoni'],
+  /** The circolo is whitewash, oil paint and graniglia, not Andean adobe. */
+  skins: {
+    circolo: { wallInt: 'wallCalce', floorEarth: 'floorGraniglia', rug: 'rugPezzara' },
+  },
 
   paint(make) {
     // ------------------------------------------------------------ grounds
@@ -1282,5 +1286,107 @@ export const ART: ChapterArt = {
       glowSpot(g, 32, 46, 30, 'rgba(255,214,138,0.55)', 0.85);
       glowSpot(g, 32, 74, 26, 'rgba(255,204,128,0.28)', 0.6);
     }, 64, 96);
+
+    // ------------------------------------------------------- the circolo
+
+    /**
+     * The circolo's wall: calce, whitewash slapped on over lava-stone block
+     * every spring, with the sea-green oil dado every bar, barbershop and
+     * parish hall in Sicily wears up to shoulder height. The plaster and the
+     * basalt bones under it are `casedda`'s own (`#e6d3ac`, `#3a3540`), so
+     * the room agrees with the street it opens onto.
+     */
+    make('wallCalce', 10, (g, r, i) => {
+      const calce = '#e8e2d0';
+      const oil = '#6f8f82';
+      vgrad(g, 0, 0, S, S, shade(calce, 0.03), shade(calce, -0.06));
+      // Brushed on by hand: the streaks never lie flat.
+      for (let i = 0; i < 5; i++) {
+        vgrad(g, r.int(S), 0, 6 + r.int(10), 34, 'rgba(252,248,238,0.24)', 'rgba(0,0,0,0)');
+      }
+      // The oil dado, and the black line ruled along the top of it.
+      rect(g, 0, 34, S, 30, shade(oil, -0.02));
+      vgrad(g, 0, 34, S, 6, 'rgba(255,255,255,0.14)', 'rgba(0,0,0,0)');
+      rect(g, 0, 32.5, S, 2, '#3a3540');
+      // Where the whitewash has come off, the basalt shows through, black.
+      if (r.chance(0.5)) oval(g, r.int(S), 8 + r.int(20), 7, 4, 'rgba(58,53,64,0.2)');
+      // Four in ten: a circolo hangs things sparsely and never moves them.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // The tournament board: names in chalk, and last year's still on it.
+        rr(g, 12, 6, 40, 24, 1.5, '#2f2b34');
+        g.strokeStyle = 'rgba(230,226,212,0.6)';
+        g.lineWidth = 1.2;
+        for (const ly of [12, 17, 22, 27]) { g.beginPath(); g.moveTo(16, ly); g.lineTo(40 + r.int(8), ly); g.stroke(); }
+        g.beginPath(); g.moveTo(32, 6); g.lineTo(32, 30); g.stroke();
+      } else if (deco === 1) {
+        // A saint's card and a photo of a boat, both slightly crooked.
+        rr(g, 14, 8, 15, 20, 1, '#f2ead8');
+        rr(g, 16.5, 11, 10, 12, 0.8, '#8fb4c4');
+        dot(g, 21.5, 15, 3, '#e8c25a');
+        rr(g, 36, 11, 18, 14, 1, '#f2ead8');
+        rr(g, 38, 13, 14, 10, 0.8, '#3f6b8a');
+        rr(g, 41, 18, 8, 3, 1, '#d9853f');
+      } else if (deco === 2) {
+        // A window with the shutters pulled to against the afternoon.
+        rr(g, 16, 4, 32, 26, 2, '#5f7a44');
+        rr(g, 19, 7, 26, 20, 1.5, shade('#5f7a44', 0.12));
+        g.strokeStyle = 'rgba(40,54,32,0.55)';
+        g.lineWidth = 1.6;
+        for (let sy = 10; sy < 27; sy += 4) { g.beginPath(); g.moveTo(19, sy); g.lineTo(45, sy); g.stroke(); }
+        // The one blade of Sicilian light that gets through anyway.
+        rect(g, 31, 7, 2.4, 20, '#f6ecc8');
+      } else if (deco === 3) {
+        // A row of pegs, one cap, one jacket nobody has claimed since March.
+        rr(g, 6, 24, 52, 3, 1.5, '#5c3f2a');
+        for (let k = 0; k < 4; k++) dot(g, 12 + k * 13, 28, 2, '#5c3f2a');
+        oval(g, 25, 22, 8, 4.4, '#3f4a56');
+        rr(g, 44, 28, 12, 18, 3, '#4a5560');
+      }
+    });
+
+    /**
+     * Graniglia: chips of marble set in cement and ground flat, the floor of
+     * every Italian room built between the wars. It is cold, it is loud, and
+     * it has outlived four generations of scopa players.
+     */
+    make('floorGraniglia', 5, (g, r) => {
+      const base = '#c9c2b0';
+      rect(g, 0, 0, S, S, base);
+      // The chips: grey, ox-blood and lava black, scattered not spaced.
+      // Chips, not confetti: at 64px a terrazzo chip is barely a pixel and
+      // a shade off its bed. Anything bigger reads as a party.
+      const chips = ['#b3ab9c', '#c0a294', '#a49f9e', '#d6d0c0'];
+      for (let i = 0; i < 16; i++) {
+        oval(g, r.int(S), r.int(S), 0.8 + r.next(), 0.7 + r.next() * 0.7, chips[r.int(4)] ?? '#b3ab9c');
+      }
+      // Tile joints, on two of five variants, so a floor reads as laid.
+      if (r.chance(0.45)) {
+        g.strokeStyle = 'rgba(120,114,102,0.3)';
+        g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(0, 32); g.lineTo(S, 32); g.moveTo(32, 0); g.lineTo(32, S); g.stroke();
+      }
+      if (r.chance(0.4)) oval(g, r.int(S), r.int(S), 15, 6, 'rgba(255,250,236,0.09)');
+    });
+
+    /** A pezzara: strips of worn shirt woven into a runner, because nobody
+     * in this room has ever thrown cloth away. */
+    make('rugPezzara', 2, (g, r) => {
+      const warp = '#cbbfa6';
+      rect(g, 0, 0, S, S, warp);
+      // Four wide strips, not twelve narrow ones: at this scale a fine
+      // stripe reads as a barcode and a wide one reads as cloth.
+      const rags = ['#9d6b5e', '#6b8296', '#c2ac82', '#84998f'];
+      for (let y = 0; y < S; y += 16) {
+        const c = rags[Math.floor(y / 16) % 4] ?? '#9d6b5e';
+        rect(g, 0, y, S, 15, shade(c, r.chance(0.4) ? -0.05 : 0.02));
+        rect(g, 0, y + 6, S, 2.4, shade(c, 0.14));
+      }
+      // The warp showing through where it is worn thin.
+      g.strokeStyle = 'rgba(230,224,208,0.2)';
+      g.lineWidth = 1;
+      for (let x = 3; x < S; x += 6) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 12, 6, 'rgba(40,32,24,0.1)');
+    });
   },
 };

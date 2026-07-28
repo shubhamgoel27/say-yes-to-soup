@@ -1139,7 +1139,8 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.rug': {
     lines: [
-      { text: 'Two runners the color of old wine, overlapping beside the card table, worn to the weave where the elders stand to argue about a hand.' },
+      { text: 'Two pezzare the color of old wine, overlapping beside the card table, worn to the weave where the elders stand to argue about a hand.' },
+      { text: 'Woven out of shirts that stopped being shirts. You can pick out a collar stripe, and somebody\'s Sunday blue.' },
     ],
   },
   'c8.ex.mat': {
@@ -1246,10 +1247,25 @@ export const SICILY_NODES: NodeMap = {
       { text: 'The fan stands by the door pointed at nobody in particular, which is the only setting the membership has ever agreed on.' },
     ],
   },
+  'c8.ex.wallcalce': {
+    lines: [
+      { text: 'Whitewash over lava block, laid on by hand every spring, and sea-green oil paint to shoulder height because shoulders lean.' },
+      { text: 'Where the calce has come off, the basalt underneath is still black. The mountain is in the wall; the wall would rather you did not dwell on it.' },
+    ],
+  },
+  'c8.ex.floorgraniglia': {
+    lines: [
+      { text: 'Graniglia: marble chips in cement, ground flat some time between the wars. Cold, loud, and outliving its fourth generation of scopa players.' },
+    ],
+  },
 };
 
 /** Sicilian examine arms; shared props keep their words at home via map tags. */
 export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
+  // The circolo is skinned to calce, graniglia and pezzara in
+  // `art/sets/sicily.ts`; each surface says what it is made of.
+  wallInt: [{ map: 'circolo', node: 'c8.ex.wallcalce' }],
+  floorEarth: [{ map: 'circolo', node: 'c8.ex.floorgraniglia' }],
   casedda: [{ node: 'c8.ex.casedda' }],
   basalto: [{ node: 'c8.ex.basalto' }],
   lavashore: [{ node: 'c8.ex.lavashore' }],

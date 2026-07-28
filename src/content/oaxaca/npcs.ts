@@ -1362,10 +1362,32 @@ export const OAXACA_NODES: NodeMap = {
     ],
     effects: ['set:c9.alebrije.close'],
   },
+  'c9.ex.wallcal': {
+    lines: [
+      { text: 'Cal above, colour below, and the join is a hand\'s width of somebody\'s decision made once and never revisited.' },
+      { text: 'The top of the wall has gone the soft brown of thirty years of comal smoke. Refugio calls that seasoning and refuses to paint over it.' },
+    ],
+  },
+  'c9.ex.floorsaltillo': {
+    lines: [
+      { text: 'Saltillo tiles, fired by hand, no two the same red. Warm underfoot by ten in the morning and still warm at midnight.' },
+      { text: 'A marigold petal has got into the grout. Several have. It is that month.' },
+    ],
+  },
+  'c9.ex.rugpetate': {
+    lines: [
+      { text: 'A petate of woven palm with a grana stripe and a marigold one. Babies sleep on these, chiles dry on these, and eventually everyone is wrapped in one.' },
+    ],
+  },
 };
 
 /** Valley examine arms; shared props keep map tags so other coasts stay themselves. */
 export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
+  // The cocina is skinned to painted cal, saltillo and petate in
+  // `art/sets/oaxaca.ts`. The village's own `floorEarth` cells keep their
+  // patio words below.
+  wallInt: [{ map: 'cocina', node: 'c9.ex.wallcal' }],
+  rug: [{ map: 'cocina', node: 'c9.ex.rugpetate' }],
   casona: [{ node: 'c9.ex.casona' }],
   portales: [{ node: 'c9.ex.portales' }],
   papel: [
@@ -1425,6 +1447,7 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   signpost: [{ map: 'oaxaca', node: 'c9.ex.sign9' }],
   floorEarth: [
     { map: 'oaxaca', node: 'c9.ex.patio' },
+    { map: 'cocina', node: 'c9.ex.floorsaltillo' },
   ],
   wallStone: [{ map: 'camposanto', node: 'c9.ex.wall9' }],
   bench: [{ map: 'oaxaca', node: 'c9.ex.bench9' }],

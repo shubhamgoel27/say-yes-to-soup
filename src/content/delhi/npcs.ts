@@ -1579,7 +1579,7 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.ex.rug.haveli': {
     lines: [
-      { text: 'A carpet worn to its geometry by a century of listeners sitting exactly where you would sit. The mushaira is over; the carpet disagrees.' },
+      { text: 'A cotton dari, indigo-striped, worn to its geometry by listeners sitting exactly where you would sit. The mushaira is over; the dari disagrees.' },
     ],
   },
   'c11.ex.mat.langar': {
@@ -1592,10 +1592,27 @@ export const DELHI_NODES: NodeMap = {
       { text: 'A reed mat at the door, older than the electricity. You wipe your feet; the haveli notices, and approves in its cool, plastered way.' },
     ],
   },
+  'c11.ex.floorterrazzo': {
+    lines: [
+      { text: 'Grey terrazzo in brass-edged bays, mopped between sittings. It has fed and been wiped clean more times than anybody has counted.' },
+      { text: 'Still damp in patches. The mop never gets far ahead of the sangat, and is not supposed to.' },
+    ],
+  },
+  'c11.ex.floorsandstone': {
+    lines: [
+      { text: 'Agra sandstone flags, laid before anyone\'s grandmother, cool in June. The entire argument for building a house around a courtyard, in one material.' },
+    ],
+  },
 };
 
 /** Examine arms: new kinds get untagged fallbacks, shared kinds speak only on these maps. */
 export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
+  // Both Delhi rooms are skinned in `art/sets/delhi.ts`: terrazzo in the
+  // hall, sandstone in the haveli. Two floors, two different lives.
+  floorEarth: [
+    { map: 'delhi-langar', node: 'c11.ex.floorterrazzo' },
+    { map: 'delhi-haveli', node: 'c11.ex.floorsandstone' },
+  ],
   galistone: [{ node: 'c11.ex.galistone' }],
   chowkbrick: [{ node: 'c11.ex.chowkbrick' }],
   wornedge: [{ node: 'c11.ex.wornedge' }],

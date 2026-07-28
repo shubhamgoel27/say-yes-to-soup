@@ -33,9 +33,28 @@ export type ChapterArt = {
   pathy?: string[];
   /** Soft ground decor that melts into the earth: no ink outline, no shadow. */
   noInk?: string[];
+  /**
+   * Per-map re-skins: on this map, draw kind X with kind Y's art.
+   *
+   * The interior shell (`wallInt`, `floorEarth`, `rug`) is written once and
+   * named by every legend, which is convenient and, left alone, means a
+   * Zanzibari kanga shop and a Sikh langar are the same Andean room with
+   * different furniture in it. A skin lets a chapter say "on my map that wall
+   * is lime-washed coral rag" without every legend having to learn a
+   * chapter-private kind, and without a map grid changing at all. The kind
+   * name the map used still decides the examine, so per-map examine arms
+   * (`ExamineArm.map`) carry the words the way they always did.
+   */
+  skins?: Record<string, Record<string, string>>;
 };
 
 export const ART_SETS: ChapterArt[] = [];
+
+/**
+ * Which art each map substitutes for which kind. Merged at registration so
+ * the Tileset can swap in one lookup when the map changes, never per tile.
+ */
+export const MAP_SKINS: Record<string, Record<string, string>> = {};
 
 /** Window-light offsets for the built-in buildings, extended by chapters. */
 export const WINDOW_OFFSETS: Record<string, [number, number][]> = {
@@ -60,6 +79,9 @@ export function registerArt(set: ChapterArt) {
   for (const k of set.noInk ?? []) SOFT_KINDS.add(k);
   for (const [k, v] of Object.entries(set.windows ?? {})) WINDOW_OFFSETS[k] = v;
   for (const k of set.glows ?? []) GLOW_KINDS.add(k);
+  for (const [mapId, skin] of Object.entries(set.skins ?? {})) {
+    MAP_SKINS[mapId] = { ...(MAP_SKINS[mapId] ?? {}), ...skin };
+  }
 }
 
 // ---- chapter art modules (registered here; two lines per chapter) ----

@@ -47,6 +47,15 @@ export const ART: ChapterArt = {
     'grainspill', 'chalkpitch', 'doormat', 'couplitter', 'dryingcloth',
     'pigeonflock',
   ],
+  /**
+   * Two Delhi rooms, two different walls: the langar is a public hall kept
+   * wipeable, the haveli is a private one kept cool. Sharing a wall between
+   * them would have been almost as wrong as sharing one with Peru.
+   */
+  skins: {
+    'delhi-langar': { wallInt: 'wallLangar', floorEarth: 'floorTerrazzo' },
+    'delhi-haveli': { wallInt: 'wallHaveli', floorEarth: 'floorSandstone', rug: 'rugDari' },
+  },
 
   paint(make) {
     // ---------------------------------------------------------- grounds
@@ -3426,5 +3435,188 @@ export const ART: ChapterArt = {
       // Eave shadow.
       vgrad(g, 16, wallTop + 4, W2 - 32, 14, 'rgba(25,20,14,0.3)', 'rgba(0,0,0,0)');
     }, 352, 256);
+
+    // ------------------------------------------- the langar and the haveli
+
+    /**
+     * The langar hall's wall: institutional distemper, cool blue-white,
+     * kept that colour on purpose because the room is fed and washed twice a
+     * day and everything in it has to be wipeable. Nothing decorative that
+     * anybody owns; the only things on it are the things a hall needs.
+     */
+    make('wallLangar', 10, (g, r, i) => {
+      const wash = '#dfe4e2';
+      const dado = '#8fa8b0';
+      vgrad(g, 0, 0, S, S, shade(wash, 0.03), shade(wash, -0.05));
+      // Oil-bound dado to shoulder height, because shoulders lean on it.
+      rect(g, 0, 36, S, 28, shade(dado, -0.02));
+      vgrad(g, 0, 36, S, 6, 'rgba(255,255,255,0.16)', 'rgba(0,0,0,0)');
+      rect(g, 0, 35, S, 1.6, 'rgba(70,92,100,0.4)');
+      // Damp, and the scuffs of ten thousand backs.
+      for (let i = 0; i < 3; i++) {
+        oval(g, r.int(S), 40 + r.int(20), 7 + r.int(6), 2.6, 'rgba(90,116,124,0.12)');
+      }
+      // Three in ten: an institution decorates itself very little.
+      const deco = i < 3 ? i : -1;
+      if (deco === 0) {
+        // A ceiling-height saffron nishan pennant tacked flat to the wall.
+        rr(g, 26, 2, 12, 30, 1.5, '#d98a2c');
+        g.fillStyle = '#e8a64a';
+        g.beginPath();
+        g.moveTo(26, 32); g.lineTo(32, 26); g.lineTo(38, 32); g.closePath();
+        g.fill();
+      } else if (deco === 1) {
+        // A steel water pipe with its tap, the wall's own plumbing.
+        rect(g, 44, 0, 5, 34, '#b0b6b4');
+        vgrad(g, 44, 0, 2, 34, 'rgba(255,255,255,0.4)', 'rgba(0,0,0,0)');
+        rr(g, 38, 28, 12, 4, 1.5, '#a8aead');
+        dot(g, 46.5, 24, 3, '#8f9694');
+      } else if (deco === 2) {
+        // A notice in Gurmukhi, taped up, corners already curling.
+        rr(g, 16, 8, 28, 20, 1, '#f2ead8');
+        g.strokeStyle = 'rgba(60,60,66,0.55)';
+        g.lineWidth = 1.4;
+        g.beginPath(); g.moveTo(20, 13); g.lineTo(40, 13); g.stroke();
+        for (const ly of [18, 22]) { g.beginPath(); g.moveTo(20, ly); g.lineTo(36 + r.int(4), ly); g.stroke(); }
+        rect(g, 25, 6, 10, 3, 'rgba(230,226,210,0.7)');
+      } else if (deco === 3) {
+        // A high louvred vent, and the daylight standing in it.
+        rr(g, 20, 4, 26, 16, 1.5, '#9aa2a0');
+        rr(g, 22, 6, 22, 12, 1, '#e8eee8');
+        g.strokeStyle = 'rgba(120,132,130,0.6)';
+        g.lineWidth = 1.6;
+        for (const sy of [9, 13, 17]) { g.beginPath(); g.moveTo(22, sy); g.lineTo(44, sy); g.stroke(); }
+        glowSpot(g, 33, 12, 15, '#f6f4e4', 0.4);
+      }
+    });
+
+    /** Grey terrazzo, mopped between sittings, the floor of every hall in
+     * north India that has ever fed a thousand people. */
+    make('floorTerrazzo', 5, (g, r) => {
+      const base = '#b9b8ac';
+      rect(g, 0, 0, S, S, base);
+      // Fine and close in value: terrazzo is a texture, not a pattern.
+      const chips = ['#a9a89e', '#cecdc2', '#9ea7a4', '#c3b8a4'];
+      for (let i = 0; i < 15; i++) {
+        oval(g, r.int(S), r.int(S), 0.8 + r.next(), 0.7 + r.next() * 0.6, chips[r.int(4)] ?? '#a9a89e');
+      }
+      // Brass dividing strips, the grid the terrazzo was poured into.
+      g.strokeStyle = 'rgba(168,146,86,0.34)';
+      g.lineWidth = 1.8;
+      g.beginPath(); g.moveTo(0, 32); g.lineTo(S, 32); g.moveTo(32, 0); g.lineTo(32, S); g.stroke();
+      // Still wet in patches: the mop never gets far ahead of the sangat.
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 17, 6, 'rgba(226,232,232,0.11)');
+    });
+
+    /**
+     * The haveli's wall: lime plaster gone the colour of weak tea, with the
+     * ghost of a painted dado somebody stopped repainting in about 1950, and
+     * the shallow arched niches a room like this keeps its lamps in.
+     */
+    make('wallHaveli', 10, (g, r, i) => {
+      const lime = '#e2d3b4';
+      vgrad(g, 0, 0, S, S, shade(lime, 0.05), shade(lime, -0.07));
+      // The old dado: a band of faded rose with a fine red rule over it.
+      rect(g, 0, 40, S, 24, 'rgba(178,120,110,0.3)');
+      rect(g, 0, 39, S, 1.6, 'rgba(150,72,64,0.4)');
+      // A hundred and forty monsoons.
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(S), 8 + r.int(46), 8 + r.int(8), 3.4, 'rgba(150,120,80,0.1)');
+      }
+      if (r.chance(0.5)) {
+        vgrad(g, r.int(S), 0, 8 + r.int(8), 40, 'rgba(120,96,60,0.12)', 'rgba(0,0,0,0)');
+      }
+      // Four in ten, and never two the same beside each other by luck.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // A shallow arched niche, empty except for the dust of a lamp.
+        g.fillStyle = shade(lime, -0.22);
+        g.beginPath();
+        g.moveTo(22, 40); g.lineTo(22, 24);
+        g.quadraticCurveTo(32, 12, 42, 24);
+        g.lineTo(42, 40);
+        g.closePath();
+        g.fill();
+        vgrad(g, 22, 24, 20, 16, 'rgba(30,20,10,0.24)', 'rgba(0,0,0,0)');
+        rect(g, 20, 39, 24, 2.4, shade(lime, -0.1));
+      } else if (deco === 1) {
+        // A couplet in nastaliq, painted straight onto the plaster, fading.
+        g.strokeStyle = 'rgba(70,52,36,0.42)';
+        g.lineWidth = 2;
+        g.lineCap = 'round';
+        for (const ly of [16, 27]) {
+          g.beginPath();
+          g.moveTo(9, ly);
+          g.quadraticCurveTo(20, ly - 5, 30, ly);
+          g.quadraticCurveTo(42, ly + 5, 55, ly - 2);
+          g.stroke();
+        }
+        for (let k = 0; k < 5; k++) dot(g, 13 + k * 10, 21 + (k % 2) * 9, 1, 'rgba(70,52,36,0.4)');
+      } else if (deco === 2) {
+        // A jharokha window, its sandstone screen half in shadow.
+        rr(g, 16, 8, 32, 28, 2, '#c08a5a');
+        rr(g, 19, 11, 26, 22, 1.5, '#7a5638');
+        g.strokeStyle = 'rgba(228,206,168,0.55)';
+        g.lineWidth = 1.6;
+        for (let k = 0; k < 4; k++) {
+          g.beginPath(); g.moveTo(19 + k * 7, 11); g.lineTo(19 + k * 7, 33); g.stroke();
+        }
+        for (const ly of [17, 24, 30]) { g.beginPath(); g.moveTo(19, ly); g.lineTo(45, ly); g.stroke(); }
+        glowSpot(g, 32, 22, 15, '#f6ecc8', 0.35);
+      } else if (deco === 3) {
+        // A peg, a shawl over it, and the hook the cage used to hang from.
+        rr(g, 10, 20, 26, 3, 1.5, '#7a5636');
+        g.fillStyle = '#9d7a9d';
+        g.beginPath();
+        g.moveTo(14, 22); g.quadraticCurveTo(20, 44, 30, 40);
+        g.quadraticCurveTo(26, 30, 30, 22);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = '#8a8378';
+        g.lineWidth = 2;
+        g.beginPath(); g.moveTo(50, 6); g.lineTo(50, 16); g.stroke();
+        dot(g, 50, 18, 2.4, '#8a8378');
+      }
+    });
+
+    /** Red sandstone flags, Agra stone, laid before anybody's grandmother.
+     * Cool in June, which is the entire point of a haveli. */
+    make('floorSandstone', 5, (g, r) => {
+      const base = '#bd8b6c';
+      rect(g, 0, 0, S, S, base);
+      // Two flags to a cell, each cut from a different bed of the quarry.
+      for (let k = 0; k < 2; k++) {
+        rect(g, 0, k * 32, S, 32, shade(base, (r.next() - 0.5) * 0.06));
+      }
+      for (let i = 0; i < 5; i++) {
+        oval(g, r.int(S), r.int(S), 9 + r.int(9), 3, shade(base, r.chance(0.5) ? -0.05 : 0.06));
+      }
+      g.strokeStyle = 'rgba(120,84,62,0.3)';
+      g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(0, 32); g.lineTo(S, 32); g.stroke();
+      if (r.chance(0.45)) g.beginPath(), g.moveTo(20 + r.int(24), 32), g.lineTo(20 + r.int(24), S), g.stroke();
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 14, 6, 'rgba(255,232,200,0.1)');
+    });
+
+    /** A cotton dari, the flat woven rug a north Indian room is furnished
+     * with before it is furnished with anything else. Edge to edge, so the
+     * poet's floor carries one rug and not a tray of table mats. */
+    make('rugDari', 2, (g, r) => {
+      const cotton = '#e0d6bc';
+      rect(g, 0, 0, S, S, cotton);
+      // Flat-weave ribbing.
+      g.strokeStyle = 'rgba(140,118,86,0.14)';
+      g.lineWidth = 1;
+      for (let x = 2; x < S; x += 3) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
+      // Indigo stripes, wide-narrow-wide, at fixed heights so cells align.
+      const indigo = '#3f5a8a';
+      rect(g, 0, 6, S, 7, indigo);
+      rect(g, 0, 17, S, 2.4, shade(indigo, 0.2));
+      rect(g, 0, 34, S, 7, indigo);
+      rect(g, 0, 45, S, 2.4, shade(indigo, 0.2));
+      // A madder line, and the dust of a room that is swept but not often.
+      rect(g, 0, 26, S, 3, 'rgba(158,74,58,0.5)');
+      if (r.chance(0.6)) oval(g, r.int(S), r.int(S), 13, 5, 'rgba(90,70,44,0.09)');
+    });
   },
 };

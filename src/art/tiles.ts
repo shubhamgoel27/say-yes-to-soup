@@ -1,6 +1,6 @@
 import { ART, PAL, TILE } from '../engine/config';
 import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
-import { ART_SETS, SOFT_KINDS } from './sets';
+import { ART_SETS, MAP_SKINS, SOFT_KINDS } from './sets';
 
 /**
  * The tileset, smooth-art era. Every texture is authored at 4x (64px tiles)
@@ -124,10 +124,12 @@ export class Tileset {
       for (let i = 0; i < 3; i++) dot(g, r.int(S), r.int(S), 1.8, shade(PAL.stone, 0.05));
     });
 
+    // Swept adobe floor, lifted a step: the puna outside chapter one's two
+    // doors is bright, and a threshold should not cost the chapter its light.
     this.make('floorEarth', 4, (g, r) => {
-      groundBase(g, r, '#9c7a52');
+      groundBase(g, r, '#ad8b60');
       for (let i = 0; i < 3; i++) {
-        oval(g, r.int(S), r.int(S), 4, 2.4, shade('#9c7a52', r.chance(0.5) ? -0.06 : 0.06));
+        oval(g, r.int(S), r.int(S), 4, 2.4, shade('#ad8b60', r.chance(0.5) ? -0.06 : 0.06));
       }
     });
 
@@ -314,20 +316,32 @@ export class Tileset {
       blob(g, x + 7, y - 2, 6, shade('#6b7d46', -0.1), r, 0.25);
     });
 
+    // The Andean frazada, drawn EDGE TO EDGE like `pangat`, on purpose.
+    // Inset with a fringe on all four sides, a nine-cell rug rendered as nine
+    // fringed mats in a grid, which is not a thing anybody has ever laid on a
+    // floor. Bleeding to the tile edge with the bands at fixed heights means
+    // a run of cells is one textile and a single cell is a small one, and the
+    // renderer never has to know which cells are the outside.
     this.make('rug', 2, (g, r) => {
       const bands = [PAL.terracotta, PAL.gold, PAL.skyDeep, '#7a4460'];
-      rr(g, 3, 3, S - 6, S - 6, 4, shade(PAL.cream, -0.06));
-      for (let y = 6; y < S - 6; y += 7) {
-        const c = bands[Math.floor(y / 7) % bands.length] ?? PAL.gold;
-        rr(g, 5, y, S - 10, 5, 2, shade(c, r.chance(0.3) ? -0.06 : 0));
+      rect(g, 0, 0, S, S, shade(PAL.cream, -0.06));
+      // Warp: the vertical threads the weft is beaten down onto.
+      g.strokeStyle = 'rgba(120,96,64,0.13)';
+      g.lineWidth = 1;
+      for (let x = 2; x < S; x += 4) {
+        g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke();
       }
-      // Fringe.
-      g.strokeStyle = PAL.cream;
-      g.lineWidth = 1.6;
-      for (let x = 6; x < S - 6; x += 5) {
-        g.beginPath(); g.moveTo(x, 3); g.lineTo(x, 0.5); g.stroke();
-        g.beginPath(); g.moveTo(x, S - 3); g.lineTo(x, S - 0.5); g.stroke();
+      // Weft bands at fixed heights so neighbours line up across the seam.
+      // Wide, because at 64px to the tile a five-pixel stripe is a barcode
+      // and an eleven-pixel one is a blanket.
+      for (let y = 2; y < S; y += 15) {
+        const c = bands[Math.floor(y / 15) % bands.length] ?? PAL.gold;
+        rect(g, 0, y, S, 11, mute(shade(c, r.chance(0.3) ? -0.05 : 0.02), 0.14));
+        // A pallay motif riding the band, offset per variant, never centred.
+        for (let x = 5 + r.int(8); x < S; x += 18) dot(g, x, y + 5.5, 2, shade(PAL.cream, -0.04));
       }
+      // Wool has nap: one soft sheen, low, so the pile reads as pile.
+      vgrad(g, 0, S - 22, S, 22, 'rgba(0,0,0,0)', 'rgba(60,44,28,0.10)');
     });
 
     this.make('mat', 1, (g) => {
@@ -914,11 +928,29 @@ export class Tileset {
       rr(g, 12, 14, 18, 12, 5, '#f2ead8');
     });
 
-    this.make('wallInt', 6, (g, r) => {
-      const base = '#6e5138';
-      vgrad(g, 0, 0, S, S, shade(base, -0.14), shade(base, 0.03));
-      vgrad(g, 0, 0, S, 16, 'rgba(15,10,6,0.5)', 'rgba(0,0,0,0)'); // soot
-      const deco = r.int(4);
+    /**
+     * Chapter one's wall, and only chapter one's: adobe under a coat of
+     * yeso, with a chili ristra hanging on it because this is the room the
+     * chilis were grown for. Every other chapter skins it (`ChapterArt.skins`)
+     * with a wall of its own, so a Sikh langar and a Zanzibari kanga shop
+     * stopped being this room with different furniture in them.
+     *
+     * Lifted about twenty points of value off its old brown: the puna outside
+     * these two doors is bright, and crossing a threshold should not cost the
+     * chapter its light.
+     */
+    this.make('wallInt', 10, (g, r, i) => {
+      const base = '#ac8a5e';
+      vgrad(g, 0, 0, S, S, shade(base, -0.08), shade(base, 0.06));
+      // The lime wash goes as high as a woman with a bucket can reach.
+      vgrad(g, 0, 0, S, 34, 'rgba(240,231,210,0.62)', 'rgba(240,231,210,0.05)');
+      vgrad(g, 0, 0, S, 14, 'rgba(40,26,14,0.24)', 'rgba(0,0,0,0)'); // soot under the beam
+      for (let k = 0; k < 5; k++) {
+        oval(g, r.int(S), 22 + r.int(40), 5 + r.int(6), 2.4, `rgba(120,88,54,${0.05 + r.next() * 0.05})`);
+      }
+      // Decorated on four tiles in ten. A wall with something hanging on
+      // every cell of it is not a wall, it is wallpaper made of objects.
+      const deco = i < 4 ? i : -1;
       if (deco === 0) {
         // Chili ristra.
         g.strokeStyle = '#4d3a28';
@@ -1600,8 +1632,30 @@ export class Tileset {
     this.v.set(kind, out);
   }
 
+  /**
+   * The map being drawn, so its chapter's interior skin is in force. Set once
+   * per frame from the renderer: one object lookup, never a per-tile branch.
+   */
+  private skin: Record<string, string> | null = null;
+  private skinnedMap = ' ';
+  setMap(mapId: string) {
+    if (mapId === this.skinnedMap) return;
+    this.skinnedMap = mapId;
+    this.skin = MAP_SKINS[mapId] ?? null;
+  }
+
+  /** Which painted kind actually supplies this kind's pixels here. */
+  private art(kind: string): string {
+    return this.skin?.[kind] ?? ART_ALIAS[kind] ?? kind;
+  }
+
+  /** The same answer, for callers that cache art by name across maps. */
+  artName(kind: string): string {
+    return this.art(kind);
+  }
+
   private variant(kind: string, cx: number, cy: number): HTMLCanvasElement {
-    const list = this.v.get(ART_ALIAS[kind] ?? kind);
+    const list = this.v.get(this.art(kind));
     if (!list || list.length === 0) return this.fallback();
     const pick = list[Math.floor(cellHash(cx, cy, 5) * list.length)];
     return pick ?? this.fallback();
@@ -1751,10 +1805,14 @@ export class Tileset {
       return;
     }
     g.drawImage(this.inked(this.variant(kind, cx, cy), kind), sx, sy);
-    if (kind === 'campfire' || kind === 'qoncha') {
+    // A hearth is a hearth under any name: the langar's chulha and Mariamma's
+    // aduppu borrow the qoncha's clay, and used to borrow it cold, which is
+    // why those two rooms were the only ones with no fire in them.
+    const hearth = ART_ALIAS[kind] ?? kind;
+    if (hearth === 'campfire' || hearth === 'qoncha') {
       // A living flame: layered teardrops that flicker.
       const fx = sx + S / 2;
-      const fy = kind === 'campfire' ? sy + 44 : sy + 40;
+      const fy = hearth === 'campfire' ? sy + 44 : sy + 40;
       const k = Math.sin(time * 11 + cellHash(cx, cy, 17) * 6) * 0.5 + 0.5;
       glowSpot(g, fx, fy, 22 + k * 6, '#ffb35c', 0.5);
       const flame = (h: number, w: number, c: string) => {
@@ -1774,11 +1832,12 @@ export class Tileset {
   /**
    * A plain ground tile, for the renderer's boundary-feathering pass to spill
    * across a seam. Null for the kinds that paint themselves (water banks,
-   * path cores) and for anything that isn't ground at all.
+   * path cores) and for anything that isn't ground at all. Skin-resolved, so
+   * callers that cache the result must key it on `artName`, not on the kind.
    */
   groundImage(kind: string, variant: number): HTMLCanvasElement | null {
     if (NO_SPILL.has(kind) || WATERY.has(kind)) return null;
-    const list = this.v.get(ART_ALIAS[kind] ?? kind);
+    const list = this.v.get(this.art(kind));
     if (!list || list.length === 0) return null;
     const cvs = list[variant % list.length];
     if (!cvs || cvs.width !== S || cvs.height !== S) return null;

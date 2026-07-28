@@ -1196,10 +1196,31 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'A handcart tipped onto its shafts, sacks still aboard. Nobody unloads a cart they can lean, and nobody leans a cart they mean to move soon.' },
     ],
   },
+  'c7.ex.wallcoral': {
+    lines: [
+      { text: 'Coral rag under lime wash: rubble off a reef that stopped being a reef long before anyone here was born, painted white and asked to be a room.' },
+      { text: 'The lumps take the light unevenly, so the wall is never one colour twice in a day. The carved lintel over it came off a mangrove.' },
+    ],
+  },
+  'c7.ex.floorlimescreed': {
+    lines: [
+      { text: 'Lime screed, cool through your soles even at two in the afternoon. This is why the shoes came off at the door and not politeness.' },
+    ],
+  },
+  'c7.ex.rugmkeka': {
+    lines: [
+      { text: 'A mkeka, plaited palm leaf with two dyed strips running its length. Everything in this shop that matters gets done sitting on one of these.' },
+    ],
+  },
 };
 
 /** Examine arms; shared kinds stay map-tagged so their words stay home. */
 export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
+  // Bi Amina's shop is skinned to coral rag, lime screed and mkeka in
+  // `art/sets/zanzibar.ts`. The words follow the material.
+  wallInt: [{ map: 'kangashop', node: 'c7.ex.wallcoral' }],
+  floorEarth: [{ map: 'kangashop', node: 'c7.ex.floorlimescreed' }],
+  rug: [{ map: 'kangashop', node: 'c7.ex.rugmkeka' }],
   nyumba: [{ node: 'c7.ex.nyumba' }],
   mlango: [{ node: 'c7.ex.mlango' }],
   baraza: [{ node: 'c7.ex.baraza' }],

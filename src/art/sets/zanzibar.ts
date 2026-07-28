@@ -25,6 +25,10 @@ export const ART: ChapterArt = {
   glows: ['marketlamp'],
   aliases: { postcounter: 'signpost' },
   noInk: ['starfish', 'flipflopgoal', 'doormat'],
+  /** Bi Amina's shop is coral rag and lime, the same as her house front. */
+  skins: {
+    kangashop: { wallInt: 'wallCoral', floorEarth: 'floorLimeScreed', rug: 'rugMkeka' },
+  },
 
   paint(make) {
     // ------------------------------------------------------------ grounds
@@ -1274,5 +1278,96 @@ export const ART: ChapterArt = {
         vgrad(g, kx, wallTop - 14, 38, 8, 'rgba(255,255,255,0.25)', 'rgba(0,0,0,0)');
       }
     }, 352, 256);
+
+    // ---------------------------------------------------- Bi Amina's shop
+
+    /**
+     * Coral rag under lime wash, indoors: the same wall as the street front,
+     * seen from the cool side. Rag is rubble, so the wash never lies flat and
+     * the lumps take the light unevenly; that irregularity is the whole
+     * material. Carved mangrove lintels, a shuttered vent, and the one thing
+     * a kanga shop's wall is actually for: kangas, folded to the ceiling.
+     */
+    make('wallCoral', 10, (g, r, i) => {
+      const wash = CORAL_WASHES[r.int(6)] ?? '#e9e0cb';
+      vgrad(g, 0, 0, S, S, shade(wash, 0.04), shade(wash, -0.07));
+      // The rag under the wash: lumps, not courses.
+      for (let i = 0; i < 7; i++) {
+        oval(g, r.int(S), r.int(S), 6 + r.int(6), 4 + r.int(3), shade(wash, r.chance(0.5) ? -0.05 : 0.05));
+      }
+      // Where the wash lost, the coral shows grey-pink through it.
+      if (r.chance(0.55)) oval(g, r.int(S), 30 + r.int(30), 9, 5, 'rgba(178,150,124,0.22)');
+      // The plinth: mortar swept up the base, darker, always damp.
+      rect(g, 0, 56, S, 8, shade(wash, -0.16));
+      vgrad(g, 0, 52, S, 6, 'rgba(0,0,0,0)', 'rgba(120,102,78,0.28)');
+      // Four in ten. Rag under lime is the subject; the rest is punctuation.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // A carved mangrove lintel: rosettes and a chain, chisel-cut.
+        rect(g, 0, 8, S, 14, '#7a5636');
+        vgrad(g, 0, 8, S, 5, 'rgba(255,238,196,0.2)', 'rgba(0,0,0,0)');
+        for (let k = 0; k < 5; k++) {
+          dot(g, 6 + k * 13, 15, 3.4, shade('#7a5636', -0.2));
+          dot(g, 6 + k * 13, 15, 1.6, shade('#7a5636', 0.14));
+        }
+        rect(g, 0, 22, S, 2, shade('#7a5636', -0.3));
+      } else if (deco === 1) {
+        // Kangas folded on a shelf, the shop's whole colour supply.
+        rr(g, 6, 30, 52, 4, 1.5, '#8a6b46');
+        for (let k = 0; k < 4; k++) {
+          const c = KANGA_INKS[(k * 2 + r.int(2)) % 6] ?? '#c1512f';
+          rr(g, 8 + k * 13, 30 - 5 - r.int(6), 11, 5 + r.int(6), 1.5, c);
+          rect(g, 8 + k * 13, 28, 11, 1.6, '#f2ead8');
+        }
+      } else if (deco === 2) {
+        // A shuttered vent: the Indian Ocean's air conditioning.
+        rr(g, 18, 12, 28, 24, 2, '#6b5a3c');
+        rr(g, 21, 15, 22, 18, 1.5, '#3f4a4a');
+        g.strokeStyle = 'rgba(210,214,206,0.5)';
+        g.lineWidth = 2;
+        for (const sy of [18, 23, 28]) { g.beginPath(); g.moveTo(21, sy); g.lineTo(43, sy); g.stroke(); }
+        glowSpot(g, 32, 24, 13, '#f2ead8', 0.3);
+      } else if (deco === 3) {
+        // A framed sura, and a clove-studded orange on a nail beneath it.
+        rr(g, 22, 10, 21, 16, 1.5, '#2f6b5a');
+        rr(g, 24.5, 12.5, 16, 11, 1, '#f2ead8');
+        g.strokeStyle = 'rgba(60,80,70,0.6)';
+        g.lineWidth = 1.4;
+        for (const ly of [16, 20]) { g.beginPath(); g.moveTo(27, ly); g.lineTo(38, ly); g.stroke(); }
+        dot(g, 32, 36, 5, '#d9853f');
+        for (let k = 0; k < 5; k++) dot(g, 29 + r.int(7), 33 + r.int(6), 0.9, '#4a3222');
+      }
+    });
+
+    /** Lime screed, swept twice a day, cool underfoot: the reason shoes come
+     * off at Bi Amina's door. */
+    make('floorLimeScreed', 5, (g, r) => {
+      const base = '#d9cfb4';
+      rect(g, 0, 0, S, S, base);
+      for (let i = 0; i < 5; i++) {
+        oval(g, r.int(S), r.int(S), 6 + r.int(6), 3, shade(base, r.chance(0.5) ? -0.05 : 0.05));
+      }
+      // Coral chips in the screed, and the broom's last arc.
+      if (r.chance(0.5)) dot(g, r.int(S), r.int(S), 1.6, '#f4eddc');
+      if (r.chance(0.4)) oval(g, r.int(S), r.int(S), 16, 5, 'rgba(150,128,92,0.09)');
+    });
+
+    /** Mkeka: a plaited palm-leaf mat, the floor you actually sit on. */
+    make('rugMkeka', 2, (g, r) => {
+      const straw = '#d6c48a';
+      rect(g, 0, 0, S, S, straw);
+      // The plait: wide strips crossing at a slant, two tones of leaf.
+      for (let y = 0; y < S; y += 10) {
+        for (let x = 0; x < S; x += 10) {
+          const on = ((x / 10) + (y / 10)) % 2 === 0;
+          rect(g, x, y, 10, 10, shade(straw, on ? 0.06 : -0.08));
+          rect(g, x, y, 10, 2, shade(straw, on ? -0.04 : 0.1));
+        }
+      }
+      // Two dyed strips: the same inks as the kangas on the rack.
+      const c = KANGA_INKS[r.int(6)] ?? '#c1512f';
+      rect(g, 0, 20, S, 5, `${c}cc`);
+      rect(g, 0, 44, S, 3, 'rgba(60,44,28,0.28)');
+    });
   },
 };

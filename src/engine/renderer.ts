@@ -569,7 +569,8 @@ export class Renderer {
    * one mask. Composed on demand and kept, so a seam costs one drawImage.
    */
   private spillTile(kind: string, dir: number, mask: number, variant: number): HTMLCanvasElement | null {
-    const key = `${kind}|${dir}|${mask}|${variant}`;
+    // Keyed on the art, not the kind: an interior floor is re-skinned per map.
+    const key = `${this.tiles.artName(kind)}|${dir}|${mask}|${variant}`;
     const hit = this.spillCache.get(key);
     if (hit !== undefined) return hit;
     const src = this.tiles.groundImage(kind, variant);
@@ -888,6 +889,9 @@ export class Renderer {
 
   drawWorld(map: TileMap, cam: Camera, sprites: Sprite[]) {
     const ctx = this.ctx;
+    // Which room we are in decides what its walls are made of. One lookup a
+    // frame, and only when the map actually changed.
+    this.tiles.setMap(map.id);
     const kindAt = (x: number, y: number) => (map.inBounds(x, y) ? map.ground(x, y).t : 'scree');
 
     const x0 = Math.floor(cam.x / TILE) - 3;

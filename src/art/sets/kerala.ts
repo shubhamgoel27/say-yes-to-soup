@@ -32,6 +32,10 @@ export const ART: ChapterArt = {
   },
   glows: ['thattukada', 'aduppu', 'nilavilakku'],
   noInk: ['huskpile', 'hyacinth', 'waterlily', 'anthill', 'fallennut', 'tennisball', 'keralacat', 'chappals'],
+  /** Inside Mariamma's house is laterite and red oxide, like the lane outside. */
+  skins: {
+    'mariamma-veedu': { wallInt: 'wallLaterite', floorEarth: 'floorOxide', rug: 'rugCoir' },
+  },
 
   paint(make) {
     // ---------------------------------------------------------- grounds
@@ -1567,5 +1571,107 @@ export const ART: ChapterArt = {
         dot(g, cx + 5, 13, 2.6, '#241a12');
       }
     }, 352, 256);
+
+    // ------------------------------------------------- Mariamma's kitchen
+
+    /**
+     * The veedu's wall: laterite block, cut wet out of the ground the whole
+     * chapter stands on (`laterite`, `#a35a3c`), limed white to head height
+     * because lime is cheap and the monsoon is not. On it, the things a
+     * Kerala kitchen wall carries: the year's calendar, a bunch of curry
+     * leaves, a shuttered window with green light coming through it.
+     */
+    make('wallLaterite', 10, (g, r, i) => {
+      const lime = '#ded3c0';
+      const stone = '#a35a3c';
+      // Limed above, the raw block showing at the base where the mop reaches.
+      vgrad(g, 0, 0, S, S, shade(lime, 0.04), shade(lime, -0.07));
+      rect(g, 0, 48, S, 16, shade(stone, -0.04));
+      vgrad(g, 0, 44, S, 8, 'rgba(0,0,0,0)', 'rgba(120,64,44,0.5)');
+      // The block courses, offset so no two tiles agree where the joint is.
+      g.strokeStyle = 'rgba(140,100,80,0.16)';
+      g.lineWidth = 1.4;
+      for (const y of [16, 32]) {
+        g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke();
+      }
+      const jx = 8 + r.int(40);
+      g.beginPath(); g.moveTo(jx, 16); g.lineTo(jx, 32); g.stroke();
+      // Monsoon: the wall is never quite dry.
+      for (let i = 0; i < 3; i++) {
+        oval(g, r.int(S), 10 + r.int(34), 6 + r.int(6), 3, 'rgba(120,140,110,0.1)');
+      }
+      // Four in ten, so the lime has room to be lime.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // The calendar: a god, a date, and a shop's phone number.
+        rr(g, 20, 10, 22, 30, 1.5, '#f2ead8');
+        rect(g, 20, 10, 22, 8, '#c95a2f');
+        dot(g, 31, 25, 5.5, '#e8c25a');
+        dot(g, 31, 25, 3, '#4a7d5a');
+        g.strokeStyle = 'rgba(90,70,50,0.4)';
+        g.lineWidth = 1;
+        for (const cy of [33, 36]) { g.beginPath(); g.moveTo(23, cy); g.lineTo(39, cy); g.stroke(); }
+      } else if (deco === 1) {
+        // Curry leaves on a nail, still on the stem.
+        g.strokeStyle = '#6b5a3c';
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(36, 8); g.lineTo(34, 18); g.stroke();
+        blob(g, 33, 27, 9, '#3f6b3a', r, 0.32);
+        blob(g, 38, 22, 5.5, '#5a8a44', r, 0.3);
+        blob(g, 28, 23, 4.5, '#4d7440', r, 0.3);
+      } else if (deco === 2) {
+        // A wooden window, shutters half back, the yard green behind it.
+        rr(g, 14, 8, 36, 30, 2, '#6b4a30');
+        rr(g, 17, 11, 30, 24, 1.5, '#b5cfae');
+        glowSpot(g, 32, 22, 16, '#dff0d4', 0.55);
+        rect(g, 31, 11, 2.4, 24, '#6b4a30');
+        g.strokeStyle = 'rgba(70,50,32,0.6)';
+        g.lineWidth = 1.6;
+        for (const by of [17, 23, 29]) { g.beginPath(); g.moveTo(17, by); g.lineTo(47, by); g.stroke(); }
+      } else if (deco === 3) {
+        // A shelf of steel: the tumblers a Malayali kitchen counts wealth in.
+        rr(g, 8, 30, 48, 4, 1.5, '#7a5636');
+        for (let k = 0; k < 4; k++) {
+          rr(g, 12 + k * 11, 20, 8, 10, 1.5, '#c9ced0');
+          rect(g, 12 + k * 11, 20, 3, 10, '#e2e6e6');
+        }
+      }
+    });
+
+    /**
+     * Red oxide floor, polished by fifty years of bare feet and coconut oil.
+     * The one floor in the game you could see your own face in.
+     */
+    make('floorOxide', 5, (g, r) => {
+      const base = '#b25c42';
+      rect(g, 0, 0, S, S, base);
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(S), r.int(S), 8 + r.int(8), 4, shade(base, r.chance(0.5) ? -0.05 : 0.07));
+      }
+      // The polish: broad soft sheens, not speckle. Oxide has no grain.
+      if (r.chance(0.7)) oval(g, 10 + r.int(44), 10 + r.int(44), 18, 8, 'rgba(255,230,202,0.16)');
+      if (r.chance(0.35)) oval(g, r.int(S), r.int(S), 12, 5, 'rgba(60,26,18,0.09)');
+    });
+
+    /** A coir mat, woven from the husks piled in the yard. Bleeds edge to
+     * edge like every floor covering in this game now does, so a run of them
+     * is one mat. */
+    make('rugCoir', 2, (g, r) => {
+      const coir = '#b08a52';
+      rect(g, 0, 0, S, S, coir);
+      // Two-over-two weave, coarse enough to see from standing.
+      for (let y = 0; y < S; y += 8) {
+        for (let x = 0; x < S; x += 8) {
+          const on = ((x / 8) + (y / 8)) % 2 === 0;
+          rect(g, x, y, 8, 8, shade(coir, on ? 0.07 : -0.07));
+        }
+      }
+      g.strokeStyle = 'rgba(90,64,36,0.18)';
+      g.lineWidth = 1;
+      for (let y = 4; y < S; y += 8) { g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke(); }
+      // One band of dyed coir, green, running the length of it.
+      rect(g, 0, 26, S, 6, 'rgba(74,116,64,0.5)');
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 9, 4, 'rgba(255,240,210,0.08)');
+    });
   },
 };

@@ -1141,10 +1141,26 @@ export const KERALA_NODES: NodeMap = {
       { text: 'A kitchen stool worn smooth by three generations of supervised tasting. Sit, and something will arrive to be judged.' },
     ],
   },
+  'c6.ex.flooroxide': {
+    lines: [
+      { text: 'Red oxide, polished with coconut oil until it gives back a soft version of whatever is standing on it. Yours is upside down and slightly orange.' },
+      { text: 'Fifty years of bare feet did the rest. No machine makes this; only mornings do.' },
+    ],
+  },
+  'c6.ex.rugcoir': {
+    lines: [
+      { text: 'A coir mat, plaited from the husks that pile up in the yard, with one band dyed green because somebody had dye and a free afternoon.' },
+      { text: 'Rough enough to take the outside off your feet, which is the whole job.' },
+    ],
+  },
 };
 
 /** Examine arms: new kinds get untagged fallbacks, shared kinds speak only on this map. */
 export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
+  // The veedu is skinned to laterite, red oxide and coir in
+  // `art/sets/kerala.ts`; these are the words that go with those surfaces.
+  floorEarth: [{ map: 'mariamma-veedu', node: 'c6.ex.flooroxide' }],
+  rug: [{ map: 'mariamma-veedu', node: 'c6.ex.rugcoir' }],
   paddy: [{ node: 'c6.ex.paddy' }],
   laterite: [{ node: 'c6.ex.laterite' }],
   palm: [{ node: 'c6.ex.palm' }],

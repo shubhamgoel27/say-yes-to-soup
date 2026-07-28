@@ -920,10 +920,19 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'Weeds in the yard corners, unmoved by commerce. The hill keeps sending green down between the houses to check on everyone.' },
     ],
   },
+  'c5.ex.wallhanji': {
+    lines: [
+      { text: 'Hanji papered over lath, gone the colour of the floor it warms. Where the sun has found it for sixty years it is nearly translucent.' },
+      { text: 'Somebody has patched a tear with a square of newer paper. It is a different white, and it will match in about ten years.' },
+    ],
+  },
 };
 
 /** Examine arms; shared props keep their coastal words at home via map tags. */
 export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
+  // Cho's wall is papered hanji, not Andean adobe: skinned in
+  // `art/sets/busan.ts`, worded here.
+  wallInt: [{ map: 'teahouse', node: 'c5.ex.wallhanji' }],
   lanepave: [{ node: 'c5.ex.lane' }],
   awning: [{ node: 'c5.ex.awning' }],
   hongawning: [{ node: 'c5.ex.hongawning' }],

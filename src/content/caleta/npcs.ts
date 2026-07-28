@@ -994,10 +994,26 @@ export const CALETA_NODES: NodeMap = {
       { text: 'Another hand\'s width of turquoise since yesterday. It gets finished the way everything here gets finished: eventually, and beautifully.' },
     ],
   },
+  'mar.ex.wallquincha': {
+    lines: [
+      { text: 'Cane and mud under salt-faded cream, and a band of sea blue up to your waist because that is the part that gets scrubbed.' },
+      { text: 'Everything above the blue line is the wall. Everything below it is the argument the wall has been having with the ocean.' },
+    ],
+  },
+  'mar.ex.floorcemento': {
+    lines: [
+      { text: 'Cement, poured once, mopped twice a day for forty years. The red oxide underneath has come back through where the chairs go.' },
+      { text: 'You could map the busiest table in the room without ever seeing anyone sit at it.' },
+    ],
+  },
 };
 
 /** Coastal examine arms; map-tagged so shared props keep their Andes words at home. */
 export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
+  // The picantería's shell is skinned to the chapter's own quincha and
+  // cement (`art/sets/caleta.ts`), so it gets the chapter's own words too.
+  wallInt: [{ map: 'picanteria', node: 'mar.ex.wallquincha' }],
+  floorEarth: [{ map: 'picanteria', node: 'mar.ex.floorcemento' }],
   sand: [{ node: 'mar.ex.sand' }],
   sandWet: [
     { when: { has: ['pilar.sea'], not: ['c2.gift'] }, node: 'mar.tidepool' },

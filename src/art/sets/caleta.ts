@@ -15,6 +15,10 @@ export const ART: ChapterArt = {
     'tendal', 'pintura',
   ],
   noInk: ['seaweed', 'jellyfish'],
+  /** Inside the picantería is inside La Caleta, not inside the Andes. */
+  skins: {
+    picanteria: { wallInt: 'wallQuincha', floorEarth: 'floorCemento' },
+  },
 
   paint(make) {
     // ------------------------------------------------------------- flats
@@ -963,5 +967,87 @@ export const ART: ChapterArt = {
       dot(g, 100, 116, 3, shade(paint, -0.06));
       dot(g, 88, 118, 2, shade(paint, -0.1));
     }, 128, 128);
+
+    // ------------------------------------------------- the picantería shell
+
+    /**
+     * The picantería's wall: quincha, cane and mud, painted the salt-faded
+     * cream the whole caleta is painted, with the sea-blue zócalo every
+     * coastal room in Peru wears to waist height because that is the part
+     * that gets scrubbed. The chapter's own colours, straight off the street
+     * outside the door: `#e8e0cc` off the tendal, `#7f9fb5` off the boats.
+     */
+    make('wallQuincha', 10, (g, r, i) => {
+      const cream = '#e2d8c0';
+      const dado = '#7f9fb5';
+      vgrad(g, 0, 0, 64, 64, shade(cream, 0.03), shade(cream, -0.05));
+      // The zócalo, and the brush line where it stopped.
+      rect(g, 0, 40, 64, 24, shade(dado, -0.02));
+      vgrad(g, 0, 40, 64, 5, 'rgba(255,255,255,0.16)', 'rgba(0,0,0,0)');
+      rect(g, 0, 39, 64, 1.6, 'rgba(60,86,100,0.35)');
+      // Damp and salt, which win eventually.
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(64), 44 + r.int(20), 6 + r.int(7), 2.6, 'rgba(90,120,134,0.12)');
+      }
+      if (r.chance(0.5)) oval(g, r.int(64), 8 + r.int(24), 7, 3, 'rgba(180,166,140,0.2)');
+      // Four tiles in ten carry something; the rest are just wall.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // A string of ají amarillo drying. Yellow, and nobody's else's.
+        g.strokeStyle = '#8a7a5c';
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(34, 6); g.lineTo(34, 14); g.stroke();
+        for (let k = 0; k < 4; k++) {
+          oval(g, 34 + (k % 2 ? 4 : -4), 17 + k * 5, 3, 4.4, k % 2 ? '#e8a52f' : '#d18a24');
+        }
+      } else if (deco === 1) {
+        // A shuttered window with the garúa behind it, grey and generous.
+        rr(g, 16, 10, 32, 26, 2, '#5c7d8a');
+        rr(g, 19, 13, 26, 20, 1.5, '#c8d2d4');
+        g.strokeStyle = 'rgba(70,96,108,0.55)';
+        g.lineWidth = 1.6;
+        for (const lx of [27, 36]) { g.beginPath(); g.moveTo(lx, 13); g.lineTo(lx, 33); g.stroke(); }
+      } else if (deco === 2) {
+        // The estampa: purple habit, plastic flower, a candle stub.
+        rr(g, 24, 10, 17, 22, 1.5, '#f0e7d2');
+        rr(g, 27, 14, 11, 15, 1, '#6b4a7d');
+        dot(g, 32.5, 17, 2.6, '#e8cfa8');
+        dot(g, 43, 26, 2.4, '#c1512f');
+        rr(g, 22, 33, 21, 3, 1.5, '#8a6b46');
+      } else if (deco === 3) {
+        // A nail, an enamel ladle, and a calendar nobody turned over.
+        g.strokeStyle = '#c9c4bb';
+        g.lineWidth = 3;
+        g.lineCap = 'round';
+        g.beginPath(); g.moveTo(41, 12); g.lineTo(41, 26); g.stroke();
+        oval(g, 41, 29, 6, 5, '#dfe2e0');
+        oval(g, 41, 28, 4, 3.2, '#b8bfbe');
+        rr(g, 14, 12, 14, 18, 1, '#e8e0cc');
+        rect(g, 14, 12, 14, 4, '#c1512f');
+      }
+    });
+
+    /**
+     * And its floor: cement, laid once, mopped daily for forty years until
+     * the ridges wore off and the red oxide came through where the chairs go.
+     */
+    make('floorCemento', 5, (g, r) => {
+      const base = '#c8c1b1';
+      rect(g, 0, 0, 64, 64, base);
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(64), r.int(64), 6 + r.int(6), 3, shade(base, r.chance(0.5) ? -0.04 : 0.05));
+      }
+      // Oxide showing through where the traffic is.
+      if (r.chance(0.5)) oval(g, 12 + r.int(40), 12 + r.int(40), 11, 6, 'rgba(168,104,72,0.16)');
+      // A scored joint, sometimes, from when it was poured in bays.
+      if (r.chance(0.45)) {
+        g.strokeStyle = 'rgba(96,92,84,0.3)';
+        g.lineWidth = 1.6;
+        const jy = 10 + r.int(44);
+        g.beginPath(); g.moveTo(0, jy); g.lineTo(64, jy); g.stroke();
+      }
+      // The mop's last pass, still drying.
+      if (r.chance(0.4)) oval(g, r.int(64), r.int(64), 15, 5, 'rgba(226,230,228,0.09)');
+    });
   },
 };

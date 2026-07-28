@@ -1371,6 +1371,63 @@ function paint(make: MakeTile) {
     // Eave shadow onto the wall.
     vgrad(g, 16, wallTop + 12, W - 32, 18, 'rgba(25,20,14,0.35)', 'rgba(0,0,0,0)');
   }, 352, 256);
+
+  // -------------------------------------------------- the tea house shell
+
+  /**
+   * Cho's wall: hanji papered over mud-and-lath between dark posts, which is
+   * what a tea house wall is and what the ondol floor already implies. The
+   * paper takes the same warm light as `floorOndol` (`#c9a25e`), so the room
+   * finally agrees with its own floor.
+   */
+  make('wallHanji', 10, (g, r, i) => {
+    const paper = '#e6d7ad';
+    const post = '#5a4029';
+    vgrad(g, 0, 0, S, S, shade(paper, 0.05), shade(paper, -0.06));
+    // The lath showing faintly through, the way old hanji goes translucent.
+    g.strokeStyle = 'rgba(150,120,74,0.1)';
+    g.lineWidth = 1.2;
+    for (let y = 6; y < S; y += 9) { g.beginPath(); g.moveTo(0, y); g.lineTo(S, y); g.stroke(); }
+    // Where the paper has yellowed and where a hand has been.
+    for (let k = 0; k < 3; k++) {
+      oval(g, r.int(S), 12 + r.int(40), 7 + r.int(7), 3, `rgba(170,138,84,${0.05 + r.next() * 0.05})`);
+    }
+    // Beam over, sill under: the post-and-beam frame the paper fills.
+    rect(g, 0, 0, S, 9, shade(post, 0.04));
+    vgrad(g, 0, 9, S, 9, 'rgba(40,26,14,0.28)', 'rgba(0,0,0,0)');
+    rect(g, 0, 56, S, 8, post);
+    vgrad(g, 0, 56, S, 3, 'rgba(255,238,196,0.16)', 'rgba(0,0,0,0)');
+    // Four in ten. Paper walls are mostly paper.
+    const deco = i < 4 ? i : -1;
+    if (deco === 0) {
+      // A post, because a wall this long has to stand on something.
+      rect(g, 26, 9, 12, 47, shade(post, 0.06));
+      vgrad(g, 26, 9, 4, 47, 'rgba(255,240,210,0.14)', 'rgba(0,0,0,0)');
+    } else if (deco === 1) {
+      // Persimmons drying on a string: the tea house's own autumn.
+      g.strokeStyle = '#8a7a5c';
+      g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(10, 14); g.lineTo(54, 17); g.stroke();
+      for (let k = 0; k < 5; k++) oval(g, 13 + k * 10, 22 + (k % 2) * 2, 3.6, 4.4, k % 2 ? '#d9853f' : '#c96e2f');
+    } else if (deco === 2) {
+      // A scroll: four characters, none of which the traveler can read.
+      rr(g, 24, 12, 16, 40, 1.5, '#f2ead8');
+      rect(g, 24, 12, 16, 3, '#3f5560');
+      rect(g, 24, 49, 16, 3, '#3f5560');
+      g.fillStyle = '#2b2822';
+      for (const cy of [20, 29, 38, 45]) { rect(g, 29, cy, 6, 1.8, '#2b2822'); rect(g, 31, cy - 3, 1.8, 6, '#2b2822'); }
+    } else if (deco === 3) {
+      // A maedeup knot in Sun-hee's blue, and the nail it forgave.
+      g.strokeStyle = '#3f7fb0';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(42, 12); g.lineTo(42, 22); g.stroke();
+      rr(g, 36, 22, 12, 12, 4, '#4a8ac0');
+      rr(g, 39, 25, 6, 6, 2, '#e6d7ad');
+      g.beginPath(); g.moveTo(39, 34); g.lineTo(38, 46); g.moveTo(45, 34); g.lineTo(46, 46); g.stroke();
+      dot(g, 38, 47, 1.8, '#3f7fb0');
+      dot(g, 46, 47, 1.8, '#3f7fb0');
+    }
+  });
 }
 
 export const ART: ChapterArt = {
@@ -1410,4 +1467,8 @@ export const ART: ChapterArt = {
   glows: ['eomukcart', 'hotteokcart', 'hanjilamp', 'lotusline', 'hongawning'],
   pathy: ['lanepave'],
   noInk: ['chilimat', 'hosecoil', 'shoerow'],
+  /** The tea house already had its own floor; now it has its own wall. */
+  skins: {
+    teahouse: { wallInt: 'wallHanji' },
+  },
 };

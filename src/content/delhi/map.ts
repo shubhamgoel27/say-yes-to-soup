@@ -621,11 +621,16 @@ export const DELHI_LANGAR_MAP: MapData = {
     // The pangat rows are the hall's whole argument, so they stay rows. What
     // they stop being is a grid: they start where the queue reached, end
     // where it stopped, and the aisles between them are wide enough to carry
-    // a deg down. The kitchen knots itself into one corner and glows there.
+    // a deg down.
+    //
+    // The chulha has come two cells out of the north-west corner and down a
+    // row, so it stands at the head of the first pangat row instead of behind
+    // the frame edge. This was the only room in the game with no fire visible
+    // from the door: a langar hall whose hearth you had to go looking for.
     '##########N#########',
-    '#CDD  L      A rrT #',
-    '#C                 #',
-    '#DW              F #',
+    '# DD  L      A rrT #',
+    '#                  #',
+    '#DW CC           F #',
     '#   gggggggg       #',
     '#            D     #',
     '#     gggggggggg   #',
@@ -678,18 +683,26 @@ export const DELHI_HAVELI_MAP: MapData = {
   ],
   objects: [
     // The rug is not a rectangle in the middle of the floor: it is a big
-    // one laid off-centre with a small one overlapping its corner, the way
-    // a room that is actually used ends up. The jaali stands where you have
-    // to walk around it, which is what puts depth in a flat room.
+    // one laid off-centre with a small one meeting it at the corner, the way
+    // a room that is actually used ends up. It used to say that and draw a
+    // twenty-one cell cross dead centre; now it is a four-by-three dari to
+    // the west of the door lane and a two-by-two touching its bottom corner,
+    // and `rug` bleeds to the tile edge, so each one is one textile.
+    //
+    // Five cells of rug came out. Two things you can see from eye level went
+    // in where they were: a second bookchest beside the first, and a divan on
+    // the east wall, because this was the emptiest silhouette of the twelve
+    // rooms. The jaali stands where you have to walk around it, which is what
+    // puts depth in a flat room.
     '####c####c##L###',
-    '# b            #',
+    '# b b          #',
     '# v   p    t   #',
-    '#    rrrrr   J #',
-    '#   rrrrrrr    #',
-    '#    rrrrr  a  #',
-    '#              #',
-    '#   J      rr  #',
-    '#          rr  #',
+    '#   rrrr     J #',
+    '#   rrrr       #',
+    '#   rrrr    a  #',
+    '#       rr     #',
+    '#   J   rr     #',
+    '#            v #',
     '#  t     M     #',
     '########m#######',
   ],

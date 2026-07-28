@@ -34,6 +34,10 @@ export const ART: ChapterArt = {
   glows: ['comal', 'veladora', 'nicho', 'capilla'],
   pathy: ['petalpath'],
   noInk: ['gallina', 'cohete', 'streetdog'],
+  /** Only the cocina: the village's own `floorEarth` cells stay swept earth. */
+  skins: {
+    cocina: { wallInt: 'wallCal', floorEarth: 'floorSaltillo', rug: 'rugPetate' },
+  },
 
   paint(make) {
     // ------------------------------------------------------------ grounds
@@ -1483,5 +1487,121 @@ export const ART: ChapterArt = {
         }
       }
     }, 352, 256);
+
+    // ------------------------------------------------ la cocina de Refugio
+
+    /**
+     * Painted plaster, the Valles Centrales way: a strong colour laid on to
+     * about shoulder height and cal above it, so a kitchen is two colours and
+     * the join is a hand's width of somebody's decision. The greens are the
+     * chapter's cantera (`#87a08a`), the reds its grana (`#a02335`), and the
+     * smoke above the comal is why the top of the wall is not white any more.
+     */
+    make('wallCal', 10, (g, r, i) => {
+      const cal = '#efe5cf';
+      // One colour for the whole room. Picking per tile made the kitchen a
+      // patchwork quilt: nobody paints a wall four colours by the metre.
+      const skirt = shade(CANTERA, (r.next() - 0.5) * 0.05);
+      vgrad(g, 0, 0, S, S, shade(cal, 0.03), shade(cal, -0.05));
+      // The colour, and the wobble in the line where the brush ran out.
+      rect(g, 0, 30, S, 34, skirt);
+      vgrad(g, 0, 30, S, 7, 'rgba(255,255,255,0.14)', 'rgba(0,0,0,0)');
+      g.fillStyle = shade(skirt, -0.12);
+      g.beginPath();
+      g.moveTo(0, 30);
+      g.quadraticCurveTo(32, 30 + (r.next() - 0.5) * 4, S, 30);
+      g.lineTo(S, 32.5);
+      g.quadraticCurveTo(32, 32.5 + (r.next() - 0.5) * 4, 0, 32.5);
+      g.closePath();
+      g.fill();
+      // Comal smoke on the cal above it.
+      vgrad(g, 0, 0, S, 18, 'rgba(70,54,38,0.22)', 'rgba(0,0,0,0)');
+      // Four in ten.
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // A talavera splashback: four tiles, blue on white, one cracked.
+        for (let k = 0; k < 4; k++) {
+          const tx = 16 + (k % 2) * 16;
+          const ty = 20 + Math.floor(k / 2) * 16;
+          rr(g, tx, ty, 15, 15, 1, '#f2ead8');
+          dot(g, tx + 7.5, ty + 7.5, 4.4, '#2f5f9d');
+          dot(g, tx + 7.5, ty + 7.5, 2, '#f2ead8');
+          dot(g, tx + 2.5, ty + 2.5, 1.4, '#d9a52f');
+        }
+      } else if (deco === 1) {
+        // La Guadalupana, and the marigold somebody put under her this week.
+        rr(g, 23, 4, 18, 24, 2, '#c9a35f');
+        rr(g, 25.5, 6.5, 13, 19, 1.5, '#2f6f8a');
+        oval(g, 32, 15, 5, 8, '#e8e0d0');
+        dot(g, 32, 11, 3, '#c98a6a');
+        for (let k = 0; k < 8; k++) dot(g, 32 + Math.cos(k) * 8.5, 15 + Math.sin(k) * 11, 1, MARIGOLD_HI);
+        dot(g, 32, 31, 3.2, MARIGOLD);
+      } else if (deco === 2) {
+        // A rack of tin milagros: hearts, legs, an eye, one whole cow.
+        rr(g, 12, 22, 40, 3, 1.5, '#8a6b46');
+        for (let k = 0; k < 5; k++) {
+          const mx = 15 + k * 9;
+          dot(g, mx, 18 - r.int(4), 2.6, '#c9ced0');
+          dot(g, mx, 17, 1.2, '#e8ecee');
+        }
+      } else if (deco === 3) {
+        // Papel picado pinned flat to the wall, left over from last year.
+        const cols = [MARIGOLD, '#a02335', '#2f6f8a', '#7a4a8a'];
+        for (let k = 0; k < 4; k++) {
+          rr(g, 6 + k * 14, 8 + (k % 2) * 3, 12, 14, 1, cols[k] ?? MARIGOLD);
+          dot(g, 12 + k * 14, 15 + (k % 2) * 3, 2.4, cal);
+        }
+      } else if (deco === 4) {
+        // A hook, a jícara, and the string of garlic beside it.
+        g.strokeStyle = '#8a8378';
+        g.lineWidth = 2.4;
+        g.beginPath(); g.moveTo(20, 6); g.lineTo(20, 14); g.stroke();
+        oval(g, 20, 18, 6, 5, '#8a6238');
+        oval(g, 20, 17, 4.4, 3.4, '#5c4030');
+        g.strokeStyle = '#b5a882';
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(44, 6); g.lineTo(44, 12); g.stroke();
+        for (let k = 0; k < 4; k++) dot(g, 44 + (k % 2 ? 3 : -3), 15 + k * 4.4, 3, k % 2 ? '#efe6d2' : '#e0d6bc');
+      }
+    });
+
+    /** Saltillo: fired clay tiles, laid by hand, no two the same colour, and
+     * every one of them warm to walk on by ten in the morning. */
+    make('floorSaltillo', 5, (g, r) => {
+      const base = '#cc8a58';
+      rect(g, 0, 0, S, S, base);
+      // Four tiles to a cell, each its own firing.
+      for (let k = 0; k < 4; k++) {
+        const tx = (k % 2) * 32;
+        const ty = Math.floor(k / 2) * 32;
+        rect(g, tx, ty, 32, 32, shade(base, (r.next() - 0.5) * 0.07));
+        vgrad(g, tx, ty, 32, 9, 'rgba(255,226,186,0.1)', 'rgba(0,0,0,0)');
+      }
+      // The grout, sanded and pale.
+      g.strokeStyle = 'rgba(214,196,164,0.42)';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(0, 32); g.lineTo(S, 32); g.moveTo(32, 0); g.lineTo(32, S); g.stroke();
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 6, 3, 'rgba(90,52,32,0.12)');
+      if (r.chance(0.35)) dot(g, r.int(S), r.int(S), 1.6, MARIGOLD_HI); // a petal got in
+    });
+
+    /** A petate: woven palm, the mat everything in this village is done on. */
+    make('rugPetate', 2, (g, r) => {
+      const palm = '#cdb47e';
+      rect(g, 0, 0, S, S, palm);
+      for (let y = 0; y < S; y += 8) {
+        for (let x = 0; x < S; x += 8) {
+          const on = ((x / 8) + (y / 8)) % 2 === 0;
+          rect(g, x, y, 8, 8, shade(palm, on ? 0.07 : -0.08));
+        }
+      }
+      g.strokeStyle = 'rgba(120,92,54,0.16)';
+      g.lineWidth = 1;
+      for (let x = 4; x < S; x += 8) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
+      // Two dyed strips, grana and marigold, running its length.
+      rect(g, 0, 18, S, 4, 'rgba(160,35,53,0.55)');
+      rect(g, 0, 42, S, 4, 'rgba(232,134,47,0.5)');
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 10, 4, 'rgba(255,240,205,0.1)');
+    });
   },
 };
