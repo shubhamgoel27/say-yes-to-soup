@@ -892,6 +892,36 @@ export class NetPanel {
       g.stroke();
     }
 
+    // The holes themselves. A critic reading this panel cold saw the frayed
+    // strand ends as birds against the sunset and could not find the task at
+    // all, because a gap in a net is the absence of a thing and the eye does
+    // not look for absences. Darken what is missing so it reads as damage.
+    for (const idx of this.holes) {
+      const c = this.cellCenter(idx, t);
+      g.fillStyle = 'rgba(28,34,44,0.34)';
+      g.beginPath();
+      g.ellipse(c[0], c[1], 15, 12, 0, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // And the one the shuttle is standing over, so the cursor is a place and
+    // not just a boat drifting across a mesh.
+    {
+      const c = this.cellCenter(this.cur, t);
+      const pulse = 0.5 + 0.5 * Math.sin(t * 3.4);
+      g.strokeStyle = `rgba(255,236,186,${(0.5 + pulse * 0.35).toFixed(3)})`;
+      g.lineWidth = 2.2;
+      g.beginPath();
+      g.ellipse(c[0], c[1], 16, 13, 0, 0, Math.PI * 2);
+      g.stroke();
+      if (this.holes.has(this.cur)) {
+        g.fillStyle = `rgba(255,226,150,${(0.1 + pulse * 0.1).toFixed(3)})`;
+        g.beginPath();
+        g.ellipse(c[0], c[1], 15, 12, 0, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+
     // The shuttle walks; while tying it swings a little loop around the knot.
     const target = this.cellCenter(this.cur, t);
     this.vx += (target[0] - this.vx) * Math.min(1, dt * 10);

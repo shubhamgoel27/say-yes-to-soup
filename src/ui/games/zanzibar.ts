@@ -189,7 +189,10 @@ const IRONS_AT = 9;
 
 const SAIL_LEGEND = [
   { keys: ['left', 'right'], does: 'ease the sheet' },
-  { keys: ['space'], does: 'when the reach is sailed' },
+  // Space does nothing at all while the reach is being sailed; it bears away
+  // when the boat is in irons. A legend that promises otherwise is worse than
+  // no legend, because the player presses it and learns the game is lying.
+  { keys: ['space'], does: 'bear away, if she comes up into the wind' },
 ] as const;
 
 /**
@@ -1204,6 +1207,7 @@ export class UrojoPanel {
     this.paintRings(g, t);
     this.paintLime(g, t);
     this.paintSlots(g, t);
+    this.paintOrder(g);
     this.paintTag(g);
   }
 
@@ -1508,6 +1512,36 @@ export class UrojoPanel {
       dot(g, x, y - 1, 5.5, c);
       dot(g, x - 2, y - 4, 2.5, c);
     }
+  }
+
+  /**
+   * What the customer actually asked for, chalked on the cart. This is the
+   * only decision the game asks you to make, and it lived entirely in the
+   * caption: a critic playing cold could not find it in the picture at all.
+   */
+  private paintOrder(g: CanvasRenderingContext2D) {
+    if (this.phase !== 'build') return;
+    const want = UROJO_ROUNDS[this.round]?.want;
+    if (!want) return;
+    const asked = want === 'brave' ? 'brave' : 'crunchy';
+    g.save();
+    g.translate(464, 14);
+    g.rotate(0.02);
+    // A little slate hung on the cart, in Zuberi's chalk.
+    rr(g, 0, 0, 164, 46, 4, 'rgba(38,32,28,0.9)');
+    g.strokeStyle = 'rgba(226,214,188,0.5)';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.roundRect(2, 2, 160, 42, 3);
+    g.stroke();
+    g.fillStyle = 'rgba(238,230,212,0.72)';
+    g.font = 'italic 11px Literata, Georgia, serif';
+    g.textAlign = 'left';
+    g.fillText('he asked for it', 12, 18);
+    g.fillStyle = '#f6ecd6';
+    g.font = '600 17px Fraunces, Georgia, serif';
+    g.fillText(asked, 12, 36);
+    g.restore();
   }
 
   private paintTag(g: CanvasRenderingContext2D) {

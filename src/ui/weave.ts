@@ -255,7 +255,7 @@ function diamond(g: CanvasRenderingContext2D, x: number, y: number, r: number, c
 }
 
 const LOOM_LEGEND = [
-  { keys: ['left', 'up', 'right', 'down'], does: 'call the colours back, as the basket shows' },
+  { keys: ['left', 'up', 'right', 'down'], does: 'call the colors back, as the basket shows' },
   { keys: ['space'], does: 'the next row' },
 ] as const;
 

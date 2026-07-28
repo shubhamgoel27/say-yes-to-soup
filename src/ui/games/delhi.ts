@@ -2427,11 +2427,14 @@ export class PatangPanel {
     g.textBaseline = 'middle';
     g.fillText(tag, 0, -7);
     rr(g, -64, 3, 128, 3, 1.5, launch ? 'rgba(200,165,91,0.9)' : under);
-    keyCap(g, -56, 22, key, 1, 0.92);
+    const capW = keyCap(g, -56, 22, key, 1, 0.92);
     g.fillStyle = 'rgba(43,33,24,0.85)';
     g.font = 'italic 13px Fraunces, Georgia, serif';
     g.textAlign = 'left';
-    g.fillText(answer, -38, 22);
+    // Start clear of the cap's real right edge. This used to be a constant,
+    // and the cap ate the first letter of 'let her go' on the launch frame,
+    // which is the first thing a player ever sees of this game.
+    g.fillText(answer, -56 + capW / 2 + 7, 22);
     g.restore();
   }
 

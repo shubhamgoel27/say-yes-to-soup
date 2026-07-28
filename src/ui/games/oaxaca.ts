@@ -200,7 +200,8 @@ function bakeCocina(): Surface {
 
 const MOLE_LEGEND = [
   { keys: ['left', 'up', 'right', 'down'], does: 'stir, going the way the circle goes' },
-  { keys: ['space'], does: 'when the pot has decided' },
+  // Space's live purpose is the rescue, not the dismissal at the end.
+  { keys: ['space'], does: 'sweep the chiles off when the comal smokes' },
 ] as const;
 
 export class MolePanel {

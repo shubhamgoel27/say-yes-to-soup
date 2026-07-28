@@ -372,7 +372,7 @@ export function keyCap(
   k: KeyGlyph,
   alpha = 1,
   scale = 1,
-): void {
+): number {
   const cv = capSprite(k);
   const w = (cv.width / CAP_SS) * scale;
   const h = (cv.height / CAP_SS) * scale;
@@ -380,6 +380,9 @@ export function keyCap(
   g.globalAlpha = a * alpha;
   g.drawImage(cv, x - w / 2, y - h / 2, w, h);
   g.globalAlpha = a;
+  // Returned so a caller can place text after the cap. Glyph widths differ a
+  // lot ('space' against an arrow), so a fixed gap silently collides.
+  return w;
 }
 
 const tagCache = new Map<string, HTMLCanvasElement>();
