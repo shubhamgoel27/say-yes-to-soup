@@ -1,4 +1,5 @@
 import type { ChapterArt, MakeTile } from './index';
+import { floorPour, grit } from './floor';
 import { dot, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -40,50 +41,121 @@ function paint(make: MakeTile) {
     if (r.chance(0.22)) oval(g, r.int(S), r.int(S), 3.5, 2.2, 'rgba(138,84,48,0.25)');
   });
 
-  make('floorSteel', 4, (g, r) => {
-    rect(g, 0, 0, S, S, '#7e8178');
-    for (let i = 0; i < 4; i++) {
-      oval(g, r.int(S), r.int(S), 4, 2, shade('#7e8178', r.chance(0.5) ? -0.06 : 0.07));
-    }
-    // The worn path from stove to table, polished a shade lighter.
-    if (r.chance(0.4)) oval(g, S / 2 + r.int(16) - 8, S / 2, 14, 6, 'rgba(230,228,216,0.08)');
+  /**
+   * The galley sole: steel deck plate under grey deck paint, gritted while the
+   * paint was wet. Cool and green-grey on purpose. This room sits behind the
+   * only exterior in the game with no warm colour in it at all, and the point
+   * of chapter three is that the ship is not a place, it is a corridor between
+   * places; warming this floor to match the other eleven kitchens would be
+   * lying about the only room in the game that is allowed to be hard.
+   */
+  make('floorSteel', 5, (g, r, i) => {
+    const base = floorPour(g, r, i, '#969b93', 0.06);
+    // Nonskid: grit broadcast into wet paint, so it is genuinely random and
+    // genuinely everywhere, and it is the whole reason a deck is not slippery.
+    grit(g, r, base, 30, 0.13, 1.0);
+    // Plate seams on the thirty-twos, welded and ground, running the room.
+    g.strokeStyle = 'rgba(48,58,54,0.26)';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    if (r.chance(0.5)) { g.moveTo(0, 32); g.lineTo(S, 32); } else { g.moveTo(32, 0); g.lineTo(32, S); }
+    g.stroke();
+    // The worn track from stove to table, walked back to bare metal.
+    if (r.chance(0.45)) oval(g, S / 2 + r.int(16) - 8, S / 2, 15, 7, 'rgba(226,230,224,0.1)');
+    // Rust the crew has not caught yet, and the paint chip it started under.
+    if (r.chance(0.3)) oval(g, r.next() * S, r.next() * S, 4, 2.6, 'rgba(140,86,50,0.2)');
   });
 
   // ------------------------------------------------------------ interior
 
-  make('wallSteel', 5, (g, r) => {
-    const base = STEEL;
-    vgrad(g, 0, 0, S, S, shade(base, -0.06), shade(base, 0.04));
-    vgrad(g, 0, 0, S, 14, 'rgba(60,60,50,0.25)', 'rgba(0,0,0,0)');
-    // Riveted seam.
-    g.strokeStyle = 'rgba(90,95,90,0.35)';
-    g.lineWidth = 1.6;
-    g.beginPath();
-    g.moveTo(0, 50);
-    g.lineTo(S, 50);
-    g.stroke();
-    for (let x = 6; x < S; x += 12) dot(g, x, 50, 1.2, 'rgba(70,75,72,0.4)');
-    const deco = r.int(4);
-    if (deco === 0) {
-      // A brass-rimmed porthole, sea beyond.
-      dot(g, 32, 28, 13, '#a08a4a');
-      dot(g, 32, 28, 10, '#274b66');
-      oval(g, 32, 24, 8, 4, 'rgba(190,220,240,0.35)');
-      dot(g, 41, 20, 1.6, '#c9b46a');
-      dot(g, 23, 36, 1.6, '#c9b46a');
-    } else if (deco === 1) {
-      // A pipe run with a valve wheel.
-      rr(g, 0, 18, S, 7, 3, '#b8b2a2');
-      vgrad(g, 0, 18, S, 3, 'rgba(255,255,245,0.4)', 'rgba(0,0,0,0)');
-      dot(g, 40, 21, 6, '#8a4030');
-      dot(g, 40, 21, 2.2, '#5c2a1e');
-    } else if (deco === 2) {
-      // The crew noticeboard: menu, watch bill, one postcard.
-      rr(g, 14, 18, 36, 26, 3, '#7a5636');
-      rr(g, 17, 21, 12, 9, 1, '#f2ead8');
-      rr(g, 32, 22, 14, 10, 1, '#e8dcc4');
-      rr(g, 19, 33, 13, 8, 1, '#c98a7a');
+  /**
+   * The galley bulkhead: painted steel, and the paint is the material. White
+   * enamel above a deck-green scuff band, split by the rubbing strake every
+   * working alleyway in every ship afloat has at hip height, because that is
+   * the height a crate corner arrives at. Rivets, weld runs, chips down to red
+   * lead where something has been dragged past.
+   *
+   * Ten variants, decorated on four, like every other chapter's wall. The old
+   * five-variant version put the crew noticeboard on two cells in five, so the
+   * mess of a ship read as a corridor of identical noticeboards.
+   */
+  make('wallSteel', 10, (g, r, i) => {
+    vgrad(g, 0, 0, S, S, shade(STEEL, -0.04), shade(STEEL, 0.04));
+    // Rolled enamel over plate: the roller left tracks and nobody sanded them.
+    for (let k = 0; k < 4; k++) {
+      vgrad(g, r.next() * S, 0, 5 + r.next() * 9, 34, 'rgba(255,255,248,0.16)', 'rgba(0,0,0,0)');
     }
+    // The scuff band, and the strake above it.
+    rect(g, 0, 44, S, 20, shade(DECK, 0.08));
+    vgrad(g, 0, 44, S, 5, 'rgba(255,255,240,0.12)', 'rgba(0,0,0,0)');
+    rect(g, 0, 41, S, 4, shade(STEEL, -0.22));
+    vgrad(g, 0, 41, S, 1.6, 'rgba(255,255,250,0.3)', 'rgba(0,0,0,0)');
+    // Riveted seam along the top, and a weld run under it.
+    g.strokeStyle = 'rgba(90,95,90,0.32)';
+    g.lineWidth = 1.6;
+    g.beginPath(); g.moveTo(0, 16); g.lineTo(S, 16); g.stroke();
+    for (let x = 4; x < S; x += 8) dot(g, x, 16, 1.1, 'rgba(70,75,72,0.36)');
+    // Chipped to red lead where something has been dragged past. Not charming.
+    if (r.chance(0.5)) {
+      const cx = r.next() * S;
+      const cy = 44 + r.next() * 18;
+      oval(g, cx, cy, 2.6 + r.next() * 2.6, 1.6, 'rgba(122,70,44,0.42)');
+      oval(g, cx, cy, 1.4, 0.9, 'rgba(58,46,40,0.5)');
+    }
+    const deco = i < 4 ? i : -1;
+    if (deco === 0) {
+      // A brass-rimmed porthole with the deadlight swung back, sea beyond.
+      dot(g, 32, 24, 13, '#a08a4a');
+      dot(g, 32, 24, 10, '#274b66');
+      oval(g, 32, 20, 8, 4, 'rgba(190,220,240,0.35)');
+      dot(g, 41, 16, 1.6, '#c9b46a');
+      dot(g, 23, 32, 1.6, '#c9b46a');
+    } else if (deco === 1) {
+      // A pipe run with a valve wheel, lagged where it carries steam.
+      rr(g, 0, 20, S, 7, 3, '#b8b2a2');
+      vgrad(g, 0, 20, S, 3, 'rgba(255,255,245,0.4)', 'rgba(0,0,0,0)');
+      rect(g, 12, 20, 9, 7, '#d8d2c2');
+      dot(g, 40, 23, 6, '#8a4030');
+      dot(g, 40, 23, 2.2, '#5c2a1e');
+    } else if (deco === 2) {
+      // The crew noticeboard: watch bill, port rotation, one postcard.
+      rr(g, 14, 14, 36, 24, 3, '#7a5636');
+      rr(g, 17, 17, 12, 9, 1, '#f2ead8');
+      rr(g, 32, 18, 14, 10, 1, '#e8dcc4');
+      rr(g, 19, 29, 13, 7, 1, '#c98a7a');
+    } else if (deco === 3) {
+      // Extinguisher on its bracket and the muster placard over it. Every
+      // room on a ship tells you, in the same two colours, how to leave it.
+      rr(g, 22, 6, 20, 12, 1.5, '#2f6b4a');
+      rect(g, 25, 10, 5, 5, '#e8e4d6');
+      rect(g, 33, 9, 7, 2, '#e8e4d6');
+      rect(g, 33, 13, 7, 2, '#e8e4d6');
+      rr(g, 27, 22, 11, 22, 4, '#9e2f22');
+      vgrad(g, 27, 22, 11, 7, 'rgba(255,220,200,0.28)', 'rgba(0,0,0,0)');
+      rr(g, 29, 18, 7, 5, 2, '#4a4d4a');
+      rect(g, 24, 27, 17, 2.4, '#5a5d58');
+      rect(g, 24, 39, 17, 2.4, '#5a5d58');
+    }
+  });
+
+  /**
+   * Dunnage board: a duckboard grating of scrap timber, laid where the cook
+   * stands so eight hours on a steel deck do not end his back. The galley's
+   * one `mat` cell used to draw the shared woven mat, which is a floor
+   * covering for a room with a floor, and this room has a sole.
+   */
+  make('dunnage', 2, (g, r) => {
+    const timber = '#9a8b6e';
+    rect(g, 0, 0, S, S, shade(timber, -0.22));
+    // Slats on the sixteens, gaps between, so a run of cells is one grating.
+    for (let y = 1; y < S; y += 16) {
+      rect(g, 0, y, S, 12, shade(timber, (r.next() - 0.5) * 0.14));
+      vgrad(g, 0, y, S, 3, 'rgba(255,244,214,0.14)', 'rgba(0,0,0,0)');
+      vgrad(g, 0, y + 9, S, 3, 'rgba(0,0,0,0)', 'rgba(24,16,10,0.3)');
+    }
+    // Bearers under the slats, and the water that lives down there.
+    for (const bx of [10, 42]) rect(g, bx, 0, 6, S, 'rgba(40,30,20,0.16)');
+    if (r.chance(0.6)) oval(g, r.next() * S, r.next() * S, 10, 5, 'rgba(50,58,54,0.14)');
   });
 
   make('stove', 1, (g) => {
@@ -1183,5 +1255,9 @@ export const ART: ChapterArt = {
     ],
   },
   glows: ['stove', 'deckshrine'],
-  noInk: ['ropecoil', 'rustpatch', 'flyingfish'],
+  noInk: ['ropecoil', 'rustpatch', 'flyingfish', 'dunnage'],
+  /** In the galley a mat is a dunnage board, not a woven one. */
+  skins: {
+    galley: { mat: 'dunnage' },
+  },
 };

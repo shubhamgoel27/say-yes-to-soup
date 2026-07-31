@@ -1,4 +1,5 @@
 import type { ChapterArt, MakeTile } from './index';
+import { floorBed, grit } from './floor';
 import { dot, oval, rr, rect, vgrad, glowSpot, softShadow, shade } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -44,10 +45,14 @@ function paint(make: MakeTile) {
     if (r.chance(0.2)) oval(g, r.int(S), r.int(S), 3, 1.6, 'rgba(60,64,74,0.25)');
   });
 
-  // The tea house floor: warm oiled hanji paper over a heated ondol.
-  make('floorOndol', 4, (g, r) => {
-    const base = '#c9a25e';
-    rect(g, 0, 0, S, S, base);
+  /**
+   * The tea house floor: oiled hanji paper over a heated ondol. Papered sheet
+   * by sheet and re-oiled where it wears, so it is a patchwork by construction
+   * and never one colour twice: the tone ring here is the widest of any floor
+   * in the game except Mariamma's oxide, and it is the honest one.
+   */
+  make('floorOndol', 5, (g, r, i) => {
+    const base = floorBed(g, r, i, '#c9a25e', 0.07);
     // Paper-sheet seams.
     g.strokeStyle = 'rgba(120,86,40,0.22)';
     g.lineWidth = 1.6;
@@ -56,9 +61,9 @@ function paint(make: MakeTile) {
     g.moveTo(sx, 0);
     g.lineTo(sx, S);
     g.stroke();
-    for (let i = 0; i < 2; i++) {
-      oval(g, r.int(S), r.int(S), 6, 3, shade(base, r.chance(0.5) ? 0.05 : -0.04));
-    }
+    // Where the heat runs closest under it the oil has gone amber and hard.
+    if (r.chance(0.55)) oval(g, r.next() * S, r.next() * S, 15, 7, 'rgba(196,124,44,0.1)');
+    grit(g, r, base, 10, 0.07, 0.6);
     if (r.chance(0.4)) dot(g, r.int(S), r.int(S), 1.4, 'rgba(255,240,210,0.35)');
   });
 

@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorBed, floorPour, grit } from './floor';
 import { blob, dot, oval, rect, rr, shade, softShadow, vgrad, glowSpot } from '../pix';
 
 /**
@@ -28,9 +29,16 @@ export const ART: ChapterArt = {
   paint(make) {
     // ---------------------------------------------------------- grounds
 
-    make('tatami', 3, (g, r) => {
-      const base = '#c9bd8a';
-      rect(g, 0, 0, S, S, base);
+    /**
+     * Tatami. A tatami floor is not a material, it is a set of objects: each
+     * mat was made separately, laid separately, and has been standing in a
+     * different amount of sun ever since. The green goes out of the rush from
+     * the window end first, which is why the tone ring here is wide. Rooms of
+     * flat identical tatami are the giveaway of every game that has ever drawn
+     * one; a real eight-mat room is eight slightly different colours.
+     */
+    make('tatami', 5, (g, r, i) => {
+      const base = floorBed(g, r, i, '#cdc292', 0.075);
       // The weave: fine horizontal rush lines, a shade apart.
       for (let y = 3; y < S; y += 5) {
         g.strokeStyle = `rgba(120,105,60,${0.10 + r.next() * 0.06})`;
@@ -40,13 +48,16 @@ export const ART: ChapterArt = {
         g.lineTo(S, y + r.int(2));
         g.stroke();
       }
+      // Rush that has taken the sun goes gold at the tips, unevenly.
+      grit(g, r, base, 14, 0.09, 0.6);
       if (r.chance(0.4)) vgrad(g, 0, r.int(S), S, 8, 'rgba(255,250,225,0.10)', 'rgba(0,0,0,0)');
     });
 
-    make('floorWood', 3, (g, r) => {
-      const base = shade('#96744c', (r.next() - 0.5) * 0.04);
-      rect(g, 0, 0, S, S, base);
-      // Long boards, polished by socks for sixty years.
+    /** Sixty years of socks, and every board off a different tree. */
+    make('floorWood', 5, (g, r, i) => {
+      const base = floorPour(g, r, i, '#a6835a', 0.08);
+      // Long boards. Sixteen apart, which divides the tile, so a run of cells
+      // is one floor and the boards do not step at the seams.
       for (const by of [0, 16, 32, 48]) {
         rect(g, 0, by, S, 15, shade(base, (r.next() - 0.5) * 0.08));
         g.strokeStyle = 'rgba(40,28,16,0.35)';
@@ -57,56 +68,125 @@ export const ART: ChapterArt = {
         g.stroke();
         vgrad(g, 0, by, S, 4, 'rgba(255,240,210,0.10)', 'rgba(0,0,0,0)');
       }
+      // Grain, and the odd nail head that has come proud again.
+      grit(g, r, base, 16, 0.1, 0.7);
       if (r.chance(0.3)) dot(g, r.int(S), r.int(S), 1.6, 'rgba(40,28,16,0.4)');
     });
 
-    make('tataki', 2, (g, r) => {
-      // The genkan's packed earthen-stone floor, a step below the world.
-      const base = '#9a938a';
-      rect(g, 0, 0, S, S, shade(base, -0.04));
-      for (let i = 0; i < 5; i++) {
-        dot(g, r.int(S), r.int(S), 1.4 + r.next(), shade(base, r.chance(0.5) ? -0.14 : 0.08));
-      }
+    /** The genkan's packed earthen-stone floor, a step below the world. */
+    make('tataki', 4, (g, r, i) => {
+      const base = floorPour(g, r, i, '#a69f92', 0.07);
+      // Tataki is lime, earth and brine tamped down: it is aggregate all the
+      // way through, so the grain is the point and it is coarser than a floor.
+      grit(g, r, base, 26, 0.15, 1.2);
       vgrad(g, 0, 0, S, 10, 'rgba(30,26,22,0.14)', 'rgba(0,0,0,0)');
     });
 
     // ---------------------------------------------------------- interior
 
-    make('wallShoji', 4, (g, r) => {
-      vgrad(g, 0, 0, S, S, shade(WOOD, -0.12), shade(WOOD, 0.02));
-      vgrad(g, 0, 0, S, 14, 'rgba(15,10,6,0.4)', 'rgba(0,0,0,0)');
-      const deco = r.int(4);
+    /**
+     * The minshuku's wall, and the whole reason chapter four's interior is not
+     * the Andean room in a hat.
+     *
+     * A machiya wall is two materials with a stick between them: clay plaster
+     * above, a cedar koshiita wainscot below, and the nageshi rail dividing
+     * them at about shoulder height. Drawing it as one field of dark timber,
+     * which is what this used to be, cost the brightest chapter in the game
+     * fifty-three points of luminance at its own front door and made Fumi's
+     * house the dimmest room a player had seen since the ship.
+     *
+     * Ten variants, decorated on four. The old four-variant version put a
+     * round window or a scroll on every single cell, so the wall of a
+     * fisherman's guest house read as a row of buttons.
+     */
+    make('wallShoji', 10, (g, r, i) => {
+      // Clay plaster above: Inland Sea light comes off the water all day and
+      // this is the surface in the house that carries it.
+      vgrad(g, 0, 0, S, 38, shade(PLASTER, -0.03), shade(PLASTER, -0.12));
+      // Straw in the clay, which is what stops jurakukabe reading as paint.
+      for (let k = 0; k < 9; k++) {
+        const sx = r.next() * S;
+        const sy = 4 + r.next() * 30;
+        g.strokeStyle = `rgba(150,126,86,${0.10 + r.next() * 0.12})`;
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(sx, sy);
+        g.lineTo(sx + 3 + r.next() * 5, sy + (r.chance(0.5) ? 1 : -1) * r.next() * 2);
+        g.stroke();
+      }
+      // The nageshi rail, and the cedar wainscot under it, dark and oiled.
+      rect(g, 0, 36, S, 28, shade(WOOD, -0.08));
+      for (let bx = 0; bx < S; bx += 16) {
+        rect(g, bx, 36, 15, 28, shade(WOOD, (r.next() - 0.5) * 0.12));
+      }
+      rect(g, 0, 34, S, 5, WOODLIGHT);
+      vgrad(g, 0, 34, S, 2.5, 'rgba(255,238,200,0.34)', 'rgba(0,0,0,0)');
+      vgrad(g, 0, 39, S, 5, 'rgba(20,12,6,0.3)', 'rgba(0,0,0,0)');
+      // Soot up under the beam: this house burns wood and always has.
+      vgrad(g, 0, 0, S, 12, 'rgba(24,16,10,0.22)', 'rgba(0,0,0,0)');
+      const deco = i < 4 ? i : -1;
       if (deco === 0) {
-        // A shoji panel, paper glowing faintly with day.
-        rr(g, 10, 14, 44, 40, 3, shade(WOOD, -0.25));
-        rr(g, 13, 17, 38, 34, 2, '#efe6d2');
-        g.strokeStyle = 'rgba(90,70,45,0.6)';
+        // A shoji panel, paper holding the sea light. Kumiko on the sixteens
+        // so a run of panels reads as one screen wall and not four posters.
+        rect(g, 0, 12, S, 46, shade(WOOD, -0.28));
+        rect(g, 3, 15, S - 6, 40, '#efe6d2');
+        glowSpot(g, 32, 34, 26, '#fff4d2', 0.4);
+        g.strokeStyle = 'rgba(90,70,45,0.55)';
         g.lineWidth = 1.6;
-        for (const lx of [26, 39]) {
-          g.beginPath(); g.moveTo(lx, 17); g.lineTo(lx, 51); g.stroke();
-        }
-        for (const ly of [28, 40]) {
-          g.beginPath(); g.moveTo(13, ly); g.lineTo(51, ly); g.stroke();
-        }
+        for (const lx of [16, 32, 48]) { g.beginPath(); g.moveTo(lx, 15); g.lineTo(lx, 55); g.stroke(); }
+        for (const ly of [28, 42]) { g.beginPath(); g.moveTo(3, ly); g.lineTo(S - 3, ly); g.stroke(); }
+        // One pane patched with a squarer, newer paper. Every shoji has one.
+        if (r.chance(0.6)) rect(g, 17, 29, 14, 12, '#f8f2e2');
       } else if (deco === 1) {
         // A hanging scroll: one brushstroke, probably a fish.
-        rr(g, 24, 12, 16, 42, 2, PAPERWARM);
+        rr(g, 24, 6, 16, 40, 2, PAPERWARM);
         g.strokeStyle = '#3a4048';
         g.lineWidth = 2.6;
         g.beginPath();
-        g.moveTo(28, 24);
-        g.quadraticCurveTo(38, 30, 30, 42);
+        g.moveTo(28, 18);
+        g.quadraticCurveTo(38, 24, 30, 36);
         g.stroke();
-        rect(g, 24, 12, 16, 3, '#4a5d63');
-        rect(g, 24, 51, 16, 3, '#4a5d63');
+        rect(g, 24, 6, 16, 3, '#4a5d63');
+        rect(g, 24, 43, 16, 3, '#4a5d63');
       } else if (deco === 2) {
-        // A round window onto nothing in particular.
-        dot(g, 32, 32, 15, shade(WOOD, -0.3));
-        dot(g, 32, 32, 12, '#dce8e4');
-        glowSpot(g, 32, 32, 12, '#f6f0d8', 0.5);
+        // A round window onto nothing in particular. Once in ten now, which
+        // is roughly how many round windows a house has.
+        dot(g, 32, 20, 13, shade(WOOD, -0.3));
+        dot(g, 32, 20, 10, '#dce8e4');
+        glowSpot(g, 32, 20, 11, '#f6f0d8', 0.5);
+      } else if (deco === 3) {
+        // Pegs on the nageshi: a straw hat, a towel, a coil of line. The wall
+        // of a working house, where things are hung at the height of a hand.
+        for (let k = 0; k < 3; k++) dot(g, 14 + k * 18, 33, 2, shade(WOOD, -0.3));
+        oval(g, 14, 26, 9, 5, '#c9ae72');
+        dot(g, 14, 26, 3.4, shade('#c9ae72', -0.12));
+        rr(g, 29, 30, 6, 16, 2, '#5f7d96');
+        rect(g, 29, 30, 6, 2.4, '#e8e0cc');
+        dot(g, 50, 27, 6, shade('#8a7a52', -0.05));
+        dot(g, 50, 27, 3, shade('#8a7a52', 0.1));
       }
-      // Beam along the top.
-      rect(g, 0, 8, S, 4, shade(WOOD, -0.2));
+    });
+
+    /**
+     * A goza: rush matting with a cloth border, the mat you unroll on the
+     * boards to sit or to put wet things on. The minshuku's one `mat` cell
+     * used to draw the generic Andean-tan woven mat, on a floor that is
+     * already rush, in the one room in the game that knows what rush is.
+     */
+    make('goza', 2, (g, r) => {
+      const rush = '#d3c48e';
+      rect(g, 0, 0, S, S, shade(rush, (r.next() - 0.5) * 0.05));
+      // Finer weave than tatami and running the other way: a goza is a mat
+      // laid on a floor, and it has to read as not-the-floor.
+      g.strokeStyle = 'rgba(126,106,58,0.22)';
+      g.lineWidth = 1.2;
+      for (let x = 2; x < S; x += 4) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
+      // The heri, indigo cloth bound along the long edges. Fixed at the
+      // sixteens so a run of cells is one mat with one border down it.
+      rect(g, 0, 6, S, 4, INDIGO);
+      rect(g, 0, S - 10, S, 4, INDIGO);
+      vgrad(g, 0, 6, S, 1.6, 'rgba(255,255,255,0.2)', 'rgba(0,0,0,0)');
+      if (r.chance(0.5)) oval(g, r.next() * S, r.next() * S, 12, 6, 'rgba(60,44,24,0.08)');
     });
 
     make('irori', 1, (g) => {
@@ -1241,7 +1321,11 @@ export const ART: ChapterArt = {
     ],
   },
   glows: ['ishidoro', 'chochin', 'irori', 'jihanki'],
-  noInk: ['koke', 'kaigara', 'getarow', 'zabuton'],
+  noInk: ['koke', 'kaigara', 'getarow', 'zabuton', 'goza'],
+  /** In Fumi's house a mat is a goza, not the shared Andean weave. */
+  skins: {
+    minshuku: { mat: 'goza' },
+  },
 };
 
 // No side effects here; the integrator registers this set in art/sets/index.ts.

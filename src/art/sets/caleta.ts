@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorPour, grit } from './floor';
 import { dot, oval, rr, rect, vgrad, softShadow, shade } from '../pix';
 
 /**
@@ -1031,12 +1032,10 @@ export const ART: ChapterArt = {
      * And its floor: cement, laid once, mopped daily for forty years until
      * the ridges wore off and the red oxide came through where the chairs go.
      */
-    make('floorCemento', 5, (g, r) => {
-      const base = '#c8c1b1';
-      rect(g, 0, 0, 64, 64, base);
-      for (let i = 0; i < 4; i++) {
-        oval(g, r.int(64), r.int(64), 6 + r.int(6), 3, shade(base, r.chance(0.5) ? -0.04 : 0.05));
-      }
+    make('floorCemento', 5, (g, r, i) => {
+      const base = floorPour(g, r, i, '#c8c1b1', 0.07);
+      // Sand in the mix, and the grit the malecón walks in through the door.
+      grit(g, r, base, 20, 0.11);
       // Oxide showing through where the traffic is.
       if (r.chance(0.5)) oval(g, 12 + r.int(40), 12 + r.int(40), 11, 6, 'rgba(168,104,72,0.16)');
       // A scored joint, sometimes, from when it was poured in bays.

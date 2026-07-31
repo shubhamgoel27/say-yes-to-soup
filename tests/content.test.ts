@@ -189,6 +189,38 @@ describe('map integrity', () => {
    * their art was left behind, so the first screen of the game drew the
    * village plaza in solid magenta. A map and its paint travel together.
    */
+  /**
+   * A per-map re-skin says "on this map draw kind X with kind Y's art". If Y
+   * is misspelled, the room silently falls back to magenta exactly the way a
+   * missing kind does, and the coverage test above cannot see it because the
+   * map never names Y. Flagged by the agent that introduced most of them.
+   */
+  it('every per-map re-skin points at a kind that has art', () => {
+    const setsDir = new URL('../src/art/sets/', import.meta.url);
+    const files = readdirSync(setsDir).filter((f) => f.endsWith('.ts'));
+    const src = [
+      readFileSync(new URL('../src/art/tiles.ts', import.meta.url), 'utf8'),
+      ...files.map((f) => readFileSync(new URL(`../src/art/sets/${f}`, import.meta.url), 'utf8')),
+    ].join('\n');
+    const painted = new Set<string>();
+    for (const m of src.matchAll(/\bmake\(\s*'([A-Za-z0-9_]+)'/g)) painted.add(m[1] as string);
+    for (const m of src.matchAll(/([A-Za-z0-9_]+)\s*:\s*'[A-Za-z0-9_]+'/g)) painted.add(m[1] as string);
+    for (const k of ['path', 'water', 'sea', 'bridge']) painted.add(k);
+
+    const bad: string[] = [];
+    for (const f of files) {
+      const text = readFileSync(new URL(`../src/art/sets/${f}`, import.meta.url), 'utf8');
+      const block = /skins\s*:\s*\{([\s\S]*?)\n\s{0,4}\},/.exec(text);
+      if (!block) continue;
+      // Inside a skins block every `from: 'to'` pair names a target kind.
+      for (const m of (block[1] as string).matchAll(/([A-Za-z0-9_]+)\s*:\s*'([A-Za-z0-9_]+)'/g)) {
+        const target = m[2] as string;
+        if (!painted.has(target)) bad.push(`${f}: ${m[1]} -> ${target}`);
+      }
+    }
+    assert.equal(bad.length, 0, `re-skins pointing at art that does not exist: ${bad.join(', ')}`);
+  });
+
   it('every tile kind a map uses has art painted for it', () => {
     const src = [
       readFileSync(new URL('../src/art/tiles.ts', import.meta.url), 'utf8'),

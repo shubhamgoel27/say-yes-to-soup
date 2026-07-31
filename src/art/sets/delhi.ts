@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorBed, floorPour, grit } from './floor';
 import { dot, oval, rr, rect, vgrad, glowSpot, softShadow, shade, blob } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -3492,14 +3493,16 @@ export const ART: ChapterArt = {
 
     /** Grey terrazzo, mopped between sittings, the floor of every hall in
      * north India that has ever fed a thousand people. */
-    make('floorTerrazzo', 5, (g, r) => {
-      const base = '#b9b8ac';
-      rect(g, 0, 0, S, S, base);
+    make('floorTerrazzo', 5, (g, r, i) => {
+      // Poured bay by bay across a week, so no two bays are quite the grey
+      // the last one set to. That is the patchwork; the chips are the grain.
+      const base = floorPour(g, r, i, '#b9b8ac', 0.06);
       // Fine and close in value: terrazzo is a texture, not a pattern.
       const chips = ['#a9a89e', '#cecdc2', '#9ea7a4', '#c3b8a4'];
-      for (let i = 0; i < 15; i++) {
+      for (let k = 0; k < 15; k++) {
         oval(g, r.int(S), r.int(S), 0.8 + r.next(), 0.7 + r.next() * 0.6, chips[r.int(4)] ?? '#a9a89e');
       }
+      grit(g, r, base, 14, 0.08, 0.5);
       // Brass dividing strips, the grid the terrazzo was poured into.
       g.strokeStyle = 'rgba(168,146,86,0.34)';
       g.lineWidth = 1.8;
@@ -3581,16 +3584,15 @@ export const ART: ChapterArt = {
 
     /** Red sandstone flags, Agra stone, laid before anybody's grandmother.
      * Cool in June, which is the entire point of a haveli. */
-    make('floorSandstone', 5, (g, r) => {
-      const base = '#bd8b6c';
-      rect(g, 0, 0, S, S, base);
+    make('floorSandstone', 5, (g, r, i) => {
+      const base = floorBed(g, r, i, '#bd8b6c', 0.06);
       // Two flags to a cell, each cut from a different bed of the quarry.
       for (let k = 0; k < 2; k++) {
         rect(g, 0, k * 32, S, 32, shade(base, (r.next() - 0.5) * 0.06));
       }
-      for (let i = 0; i < 5; i++) {
-        oval(g, r.int(S), r.int(S), 9 + r.int(9), 3, shade(base, r.chance(0.5) ? -0.05 : 0.06));
-      }
+      // Agra stone is a sandstone: it has actual sand in it, and at close
+      // range the whole floor twinkles slightly where the mica sits.
+      grit(g, r, base, 24, 0.12, 0.7);
       g.strokeStyle = 'rgba(120,84,62,0.3)';
       g.lineWidth = 1.6;
       g.beginPath(); g.moveTo(0, 32); g.lineTo(S, 32); g.stroke();

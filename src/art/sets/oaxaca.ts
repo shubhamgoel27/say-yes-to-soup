@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorBed, grit } from './floor';
 import { dot, oval, rr, rect, vgrad, glowSpot, softShadow, shade } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -1567,9 +1568,10 @@ export const ART: ChapterArt = {
 
     /** Saltillo: fired clay tiles, laid by hand, no two the same colour, and
      * every one of them warm to walk on by ten in the morning. */
-    make('floorSaltillo', 5, (g, r) => {
-      const base = '#cc8a58';
-      rect(g, 0, 0, S, S, base);
+    make('floorSaltillo', 5, (g, r, i) => {
+      // "No two the same colour" has to be true across cells as well as inside
+      // them, or a room of saltillo is one four-tile stamp repeated to the wall.
+      const base = floorBed(g, r, i, '#cc8a58', 0.07);
       // Four tiles to a cell, each its own firing.
       for (let k = 0; k < 4; k++) {
         const tx = (k % 2) * 32;
@@ -1577,6 +1579,8 @@ export const ART: ChapterArt = {
         rect(g, tx, ty, 32, 32, shade(base, (r.next() - 0.5) * 0.07));
         vgrad(g, tx, ty, 32, 9, 'rgba(255,226,186,0.1)', 'rgba(0,0,0,0)');
       }
+      // Clay fired in a wood kiln comes out freckled, every batch differently.
+      grit(g, r, base, 16, 0.1, 0.7);
       // The grout, sanded and pale.
       g.strokeStyle = 'rgba(214,196,164,0.42)';
       g.lineWidth = 2.4;

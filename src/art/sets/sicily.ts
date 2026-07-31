@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorPour, grit } from './floor';
 import { blob, dot, glowSpot, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -1350,16 +1351,16 @@ export const ART: ChapterArt = {
      * every Italian room built between the wars. It is cold, it is loud, and
      * it has outlived four generations of scopa players.
      */
-    make('floorGraniglia', 5, (g, r) => {
-      const base = '#c9c2b0';
-      rect(g, 0, 0, S, S, base);
+    make('floorGraniglia', 5, (g, r, i) => {
+      const base = floorPour(g, r, i, '#c9c2b0', 0.06);
       // The chips: grey, ox-blood and lava black, scattered not spaced.
       // Chips, not confetti: at 64px a terrazzo chip is barely a pixel and
       // a shade off its bed. Anything bigger reads as a party.
       const chips = ['#b3ab9c', '#c0a294', '#a49f9e', '#d6d0c0'];
-      for (let i = 0; i < 16; i++) {
+      for (let k = 0; k < 16; k++) {
         oval(g, r.int(S), r.int(S), 0.8 + r.next(), 0.7 + r.next() * 0.7, chips[r.int(4)] ?? '#b3ab9c');
       }
+      grit(g, r, base, 12, 0.08, 0.5);
       // Tile joints, on two of five variants, so a floor reads as laid.
       if (r.chance(0.45)) {
         g.strokeStyle = 'rgba(120,114,102,0.3)';
@@ -1378,8 +1379,11 @@ export const ART: ChapterArt = {
       // stripe reads as a barcode and a wide one reads as cloth.
       const rags = ['#9d6b5e', '#6b8296', '#c2ac82', '#84998f'];
       for (let y = 0; y < S; y += 16) {
-        const c = rags[Math.floor(y / 16) % 4] ?? '#9d6b5e';
-        rect(g, 0, y, S, 15, shade(c, r.chance(0.4) ? -0.05 : 0.02));
+        const k = Math.floor(y / 16);
+        const c = rags[k % 4] ?? '#9d6b5e';
+        // Shaded off the strip's own index, never off the variant: two cells
+        // side by side must not disagree about the strip running through them.
+        rect(g, 0, y, S, 15, shade(c, k % 2 ? -0.04 : 0.02));
         rect(g, 0, y + 6, S, 2.4, shade(c, 0.14));
       }
       // The warp showing through where it is worn thin.

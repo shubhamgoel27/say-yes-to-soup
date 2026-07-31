@@ -741,10 +741,16 @@ export const CROSSING_NODES: NodeMap = {
     lines: [{ text: 'The tray rack by the scullery hatch. A sign in three languages and one drawing: BUS YOUR OWN TRAY. The drawing is stern.' }],
   },
   'c3.ex.wallsteel': {
-    lines: [{ text: 'White-painted steel, warm from the sun on its far side. When the soup boils, condensation draws brief rivers down it.' }],
+    lines: [
+      { text: 'White-painted steel, warm from the sun on its far side. When the soup boils, condensation draws brief rivers down it.' },
+      { text: 'Deck green from hip height down, where every crate corner in thirty years has arrived. Under the chips it goes red, then grey, then sea.' },
+    ],
   },
   'c3.ex.floorsteel': {
-    lines: [{ text: 'Scuffed steel underfoot, the sand-paint worn smooth in one path from stove to table. Thirty years of dinners went this way.' }],
+    lines: [
+      { text: 'Scuffed steel underfoot, the sand-paint worn smooth in one path from stove to table. Thirty years of dinners went this way.' },
+      { text: 'They broadcast grit into the paint while it was wet, which is the only reason anybody stays upright in this room in weather.' },
+    ],
   },
   'c3.ex.table': {
     lines: [{ text: 'The long mess table, rimmed so the plates cannot wander. Fiddles, Joseph calls the rims. In weather, the sea eats here too.' }],
@@ -755,8 +761,13 @@ export const CROSSING_NODES: NodeMap = {
   'c3.ex.pot': {
     lines: [{ text: 'The stockpot mutters on its hook. Whatever it is becoming, it has been becoming it since Callao.' }],
   },
+  // Skinned to `dunnage` on this map in `art/sets/crossing.ts`: a woven mat is
+  // a floor covering for a room with a floor, and this room has a sole.
   'c3.ex.matgalley': {
-    lines: [{ text: 'The threshold mat, worn to the weave by every pair of deck boots aboard. Wipe twice; Ben hears the difference between once and twice.' }],
+    lines: [
+      { text: 'A dunnage board at the threshold, scrap timber slatted over bearers, worn pale where every pair of deck boots aboard has stamped on it.' },
+      { text: 'The water goes down between the slats and stays there. Wipe twice; Ben hears the difference between once and twice.' },
+    ],
   },
   'c3.ex.menuboard2': {
     lines: [{ text: 'Tonight the chalk says adobo and sinigang, underlined twice. Smaller, underneath: ask the new hands how it happened.' }],

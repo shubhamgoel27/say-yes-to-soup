@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorPour, grit } from './floor';
 import { dot, oval, rr, rect, vgrad, glowSpot, softShadow, shade, blob } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -1642,15 +1643,22 @@ export const ART: ChapterArt = {
      * Red oxide floor, polished by fifty years of bare feet and coconut oil.
      * The one floor in the game you could see your own face in.
      */
-    make('floorOxide', 5, (g, r) => {
-      const base = '#b25c42';
-      rect(g, 0, 0, S, S, base);
-      for (let i = 0; i < 4; i++) {
-        oval(g, r.int(S), r.int(S), 8 + r.int(8), 4, shade(base, r.chance(0.5) ? -0.05 : 0.07));
-      }
-      // The polish: broad soft sheens, not speckle. Oxide has no grain.
-      if (r.chance(0.7)) oval(g, 10 + r.int(44), 10 + r.int(44), 18, 8, 'rgba(255,230,202,0.16)');
-      if (r.chance(0.35)) oval(g, r.int(S), r.int(S), 12, 5, 'rgba(60,26,18,0.09)');
+    make('floorOxide', 5, (g, r, i) => {
+      // Wider tone ring than any other floor gets. Oxide is mixed in a bucket
+      // and burnished in patches by hand, and a hall of it laid on one flat
+      // red is the flattest thing in the game; the cloudiness IS the material.
+      const base = floorPour(g, r, i, '#bd6547', 0.11);
+      // The polish: broad soft sheens, not speckle. Oxide has no grain of its
+      // own, so what grain there is came in on somebody's feet.
+      //
+      // These are radial falloffs and not ellipses, which matters more than it
+      // sounds like it should: a hard-edged sheen at this contrast, dropped
+      // once per cell, laid a pale lattice across the hall on a 64px beat and
+      // undid the seamless bed underneath it. A sheen with soft edges can sit
+      // anywhere, half off the tile, and nothing shows.
+      if (r.chance(0.5)) glowSpot(g, r.next() * S, r.next() * S, 20 + r.next() * 12, '#ffe6ca', 0.15);
+      if (r.chance(0.3)) glowSpot(g, r.next() * S, r.next() * S, 15, '#3c1a12', 0.1);
+      grit(g, r, base, 9, 0.09, 0.6);
     });
 
     /** A coir mat, woven from the husks piled in the yard. Bleeds edge to

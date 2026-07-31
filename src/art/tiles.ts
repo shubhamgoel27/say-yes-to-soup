@@ -1,6 +1,7 @@
 import { ART, PAL, TILE } from '../engine/config';
 import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
 import { ART_SETS, MAP_SKINS, SOFT_KINDS } from './sets';
+import { floorPour, grit } from './sets/floor';
 
 /**
  * The tileset, smooth-art era. Every texture is authored at 4x (64px tiles)
@@ -126,11 +127,15 @@ export class Tileset {
 
     // Swept adobe floor, lifted a step: the puna outside chapter one's two
     // doors is bright, and a threshold should not cost the chapter its light.
-    this.make('floorEarth', 4, (g, r) => {
-      groundBase(g, r, '#ad8b60');
-      for (let i = 0; i < 3; i++) {
-        oval(g, r.int(S), r.int(S), 4, 2.4, shade('#ad8b60', r.chance(0.5) ? -0.06 : 0.06));
-      }
+    // Poured and gritted like every other continuous interior floor now is, so
+    // a room of it is earth beaten flat over years, unevenly, by feet, and not
+    // one swatch stamped ninety times.
+    this.make('floorEarth', 5, (g, r, i) => {
+      const tone = floorPour(g, r, i, '#b8956a', 0.08);
+      grit(g, r, tone, 22, 0.13);
+      // The broom's arc, and the dark where the doorway drip lands.
+      if (r.chance(0.5)) oval(g, r.next() * S, r.next() * S, 17, 5, 'rgba(255,238,206,0.08)');
+      if (r.chance(0.35)) oval(g, r.next() * S, r.next() * S, 8, 4, 'rgba(84,58,34,0.09)');
     });
 
     this.make('pathCore', 5, (g, r) => {
@@ -316,13 +321,24 @@ export class Tileset {
       blob(g, x + 7, y - 2, 6, shade('#6b7d46', -0.1), r, 0.25);
     });
 
-    // The Andean frazada, drawn EDGE TO EDGE like `pangat`, on purpose.
-    // Inset with a fringe on all four sides, a nine-cell rug rendered as nine
-    // fringed mats in a grid, which is not a thing anybody has ever laid on a
-    // floor. Bleeding to the tile edge with the bands at fixed heights means
-    // a run of cells is one textile and a single cell is a small one, and the
-    // renderer never has to know which cells are the outside.
-    this.make('rug', 2, (g, r) => {
+    /**
+     * The Andean frazada, drawn EDGE TO EDGE like `pangat`, on purpose.
+     *
+     * Inset with a fringe on all four sides, a nine-cell rug rendered as nine
+     * fringed mats in a grid, which is not a thing anybody has ever laid on a
+     * floor. Bleeding to the tile edge means a run of cells is one textile and
+     * a single cell is a small rug, and the renderer never has to know which
+     * cells are the outside.
+     *
+     * Bleeding is necessary but it is not sufficient, and the difference is
+     * arithmetic: **every rhythm in here has a period that divides 64.** Bands
+     * every 15px lined up inside a tile and then left an 8px gap at the seam
+     * where every other gap was 4, so the textile still announced the grid
+     * once per cell; so did a motif spaced 18 apart, and so did a nap gradient
+     * that faded to dark at the bottom of every single tile. Sixteen and
+     * sixteen, no gradient, and the weave crosses the seam without a word.
+     */
+    this.make('rug', 3, (g, r) => {
       const bands = [PAL.terracotta, PAL.gold, PAL.skyDeep, '#7a4460'];
       rect(g, 0, 0, S, S, shade(PAL.cream, -0.06));
       // Warp: the vertical threads the weft is beaten down onto.
@@ -331,17 +347,24 @@ export class Tileset {
       for (let x = 2; x < S; x += 4) {
         g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke();
       }
-      // Weft bands at fixed heights so neighbours line up across the seam.
-      // Wide, because at 64px to the tile a five-pixel stripe is a barcode
-      // and an eleven-pixel one is a blanket.
-      for (let y = 2; y < S; y += 15) {
-        const c = bands[Math.floor(y / 15) % bands.length] ?? PAL.gold;
-        rect(g, 0, y, S, 11, mute(shade(c, r.chance(0.3) ? -0.05 : 0.02), 0.14));
-        // A pallay motif riding the band, offset per variant, never centred.
-        for (let x = 5 + r.int(8); x < S; x += 18) dot(g, x, y + 5.5, 2, shade(PAL.cream, -0.04));
+      // Weft bands, wide, because at 64px to the tile a five-pixel stripe is a
+      // barcode and a twelve-pixel one is a blanket. Colour and value come off
+      // the band's own index, never off the variant, so two neighbouring cells
+      // cannot disagree about what colour the stripe running through them is.
+      for (let b = 0; b < 4; b++) {
+        const y = b * 16;
+        const c = bands[b] ?? PAL.gold;
+        rect(g, 0, y, S, 12, mute(shade(c, b % 2 ? -0.04 : 0.02), 0.14));
+        // A pallay motif riding the band, on a fixed phase and a spacing that
+        // divides 64. Offsetting it per variant was tempting and wrong: it put
+        // two motifs four pixels apart at every seam, which is the tile grid
+        // announcing itself in the one asset whose whole job is to hide it. A
+        // weaver counting warps does not lose count at 64.
+        for (let x = 8; x < S; x += 16) dot(g, x, y + 6, 2, shade(PAL.cream, -0.04));
       }
-      // Wool has nap: one soft sheen, low, so the pile reads as pile.
-      vgrad(g, 0, S - 22, S, 22, 'rgba(0,0,0,0)', 'rgba(60,44,28,0.10)');
+      // Wool has nap. One soft blot of it, off-centre, never a gradient tied
+      // to the tile's own bottom edge.
+      oval(g, r.next() * S, r.next() * S, 16, 9, 'rgba(60,44,28,0.07)');
     });
 
     this.make('mat', 1, (g) => {

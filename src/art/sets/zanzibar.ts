@@ -1,4 +1,5 @@
 import type { ChapterArt } from './index';
+import { floorPour, grit } from './floor';
 import { dot, glowSpot, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
 import { PAL } from '../../engine/config';
 
@@ -1341,32 +1342,35 @@ export const ART: ChapterArt = {
 
     /** Lime screed, swept twice a day, cool underfoot: the reason shoes come
      * off at Bi Amina's door. */
-    make('floorLimeScreed', 5, (g, r) => {
-      const base = '#d9cfb4';
-      rect(g, 0, 0, S, S, base);
-      for (let i = 0; i < 5; i++) {
-        oval(g, r.int(S), r.int(S), 6 + r.int(6), 3, shade(base, r.chance(0.5) ? -0.05 : 0.05));
-      }
+    make('floorLimeScreed', 5, (g, r, i) => {
+      const base = floorPour(g, r, i, '#d9cfb4', 0.07);
+      // Screed made with sand off the beach forty metres away: it is full of
+      // ground shell, and in a low sun the whole floor glitters faintly.
+      grit(g, r, base, 22, 0.12, 0.8);
       // Coral chips in the screed, and the broom's last arc.
       if (r.chance(0.5)) dot(g, r.int(S), r.int(S), 1.6, '#f4eddc');
       if (r.chance(0.4)) oval(g, r.int(S), r.int(S), 16, 5, 'rgba(150,128,92,0.09)');
     });
 
     /** Mkeka: a plaited palm-leaf mat, the floor you actually sit on. */
-    make('rugMkeka', 2, (g, r) => {
+    make('rugMkeka', 1, (g) => {
       const straw = '#d6c48a';
       rect(g, 0, 0, S, S, straw);
-      // The plait: wide strips crossing at a slant, two tones of leaf.
-      for (let y = 0; y < S; y += 10) {
-        for (let x = 0; x < S; x += 10) {
-          const on = ((x / 10) + (y / 10)) % 2 === 0;
-          rect(g, x, y, 10, 10, shade(straw, on ? 0.06 : -0.08));
-          rect(g, x, y, 10, 2, shade(straw, on ? -0.04 : 0.1));
+      // The plait: wide strips crossing at a slant, two tones of leaf. Eight,
+      // not ten: ten does not divide sixty-four, so the weave used to lose its
+      // place at every tile edge and a three-cell mkeka was three mkekas.
+      for (let y = 0; y < S; y += 8) {
+        for (let x = 0; x < S; x += 8) {
+          const on = ((x / 8) + (y / 8)) % 2 === 0;
+          rect(g, x, y, 8, 8, shade(straw, on ? 0.06 : -0.08));
+          rect(g, x, y, 8, 2, shade(straw, on ? -0.04 : 0.1));
         }
       }
-      // Two dyed strips: the same inks as the kangas on the rack.
-      const c = KANGA_INKS[r.int(6)] ?? '#c1512f';
-      rect(g, 0, 20, S, 5, `${c}cc`);
+      // Two dyed strips: the same inks as the kangas on the rack. The colour
+      // is fixed and not per variant, because a mat is dyed before it is cut:
+      // two cells of one mkeka disagreeing about which red they are is the
+      // same defect as a fringe on every tile, wearing a nicer shirt.
+      rect(g, 0, 20, S, 5, `${KANGA_INKS[1] ?? '#c1512f'}cc`);
       rect(g, 0, 44, S, 3, 'rgba(60,44,28,0.28)');
     });
   },

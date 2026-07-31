@@ -951,6 +951,7 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.ex.tatami': {
     lines: [
       { text: 'Tatami, green-gold and springy underfoot, smelling faintly of dry grass and summer. Slippers stop at its border; even they know.' },
+      { text: 'No two mats are quite the same colour. They were made one at a time, and they have been standing in different amounts of sun ever since.' },
     ],
   },
   'c4.ex.floorWood': {
@@ -961,11 +962,14 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.ex.tataki': {
     lines: [
       { text: 'The genkan: a cool stone floor a step below the house. Shoes stop here, and with them the road. The step up is the real front door.' },
+      { text: 'Lime, earth and brine, beaten down by hand until it set. There is grit all the way through it; that is not wear, that is the recipe.' },
     ],
   },
   'c4.ex.wallShoji': {
     lines: [
       { text: 'Wood and paper walls that trade in light and rumor. A shoji does not block sound; it just asks everyone to pretend.' },
+      { text: 'Clay above the rail, cedar below it, dark with sixty years of the same fire. The straw in the plaster still shows if you stand close.' },
+      { text: 'One pane is patched with newer paper, a slightly wronger white. It will match in about ten years, and by then there will be another.' },
     ],
   },
   'c4.ex.irori': {
@@ -1255,9 +1259,13 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Jars of iriko, kombu, pickled plums, and one shelf of guest cups that are never the everyday cups. Guests can tell. That is the point.' },
     ],
   },
+  // Skinned to `goza` on this map in `art/sets/shionoura.ts`: the one room in
+  // the game that knows what rush is should not be furnished with the shared
+  // Andean weave.
   'c4.ex.mat2': {
     lines: [
-      { text: 'The genkan mat, shoes lined up on it with their toes to the door, ready to leave the moment you are. Fumi\'s doing, silent as a tide.' },
+      { text: 'A goza unrolled at the edge of the genkan, rush like the tatami but finer, bound down its long sides with indigo cloth.' },
+      { text: 'Shoes lined up on it with their toes to the door, ready to leave the moment you are. Fumi\'s doing, silent as a tide.' },
     ],
   },
 };
