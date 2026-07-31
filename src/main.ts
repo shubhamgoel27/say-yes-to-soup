@@ -71,8 +71,10 @@ state.load();
 const maps: Record<string, TileMap> = Object.fromEntries(
   Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)]),
 );
-const startMap = maps['village'];
-if (!startMap) throw new Error('village map missing');
+const startMapMaybe = maps['village'];
+if (!startMapMaybe) throw new Error('village map missing');
+/** Where every new journey begins, and where Begin again must return to. */
+const startMap: TileMap = startMapMaybe;
 
 let map: TileMap = startMap;
 const camera = new Camera();
@@ -1451,8 +1453,18 @@ let quietHud = false;
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
-  // Continue resumes the journey where it paused, anywhere in the world.
-  if (!freshStart && !override && state.place && maps[state.place.map]) {
+  if (freshStart && !override) {
+    // Begin again has to mean the beginning. The title screen idles over
+    // wherever the journey paused, and this function only ever repositioned
+    // for Continue, so erasing the save left the player standing in whatever
+    // chapter they had reached: a new game that opened in Delhi.
+    map = startMap;
+    player.placeAt(startMap.spawn[0], startMap.spawn[1], startMap.spawnFacing);
+    const [px, py] = player.renderPos();
+    camera.resetLead();
+    camera.follow(px, py, map.w, map.h);
+  } else if (!freshStart && !override && state.place && maps[state.place.map]) {
+    // Continue resumes the journey where it paused, anywhere in the world.
     map = maps[state.place.map] as TileMap;
     player.placeAt(state.place.x, state.place.y, state.place.dir as Dir);
     const [px, py] = player.renderPos();
@@ -2547,6 +2559,152 @@ if (dev.enabled && new URLSearchParams(location.search).has('skiptitle')) {
 } else {
   title.showTitle(state.hasSave());
 }
+
+/**
+ * The cheat desk. Dev builds only. Everything here exists so the game can be
+ * inspected out of order: eleven chapters is a long way to walk to check one
+ * roof at dusk. Type `soup.help()` in the console.
+ */
+function installCheats() {
+  if (!dev.enabled) return;
+
+  /** Chapter order, with the flag that says you got there and where it is. */
+  const CHAPTERS_CHEAT: { n: number; id: string; map: string; flag: string }[] = [
+    { n: 1, id: 'chaska-pampa', map: 'village', flag: 'intro.done' },
+    { n: 2, id: 'la-caleta', map: 'la-caleta', flag: 'c2.arrived' },
+    { n: 3, id: 'crossing', map: 'ship', flag: 'c3.arrived' },
+    { n: 4, id: 'shionoura', map: 'shionoura', flag: 'c4.arrived' },
+    { n: 5, id: 'busan', map: 'busan', flag: 'c5.arrived' },
+    { n: 6, id: 'kerala', map: 'kerala', flag: 'c6.arrived' },
+    { n: 7, id: 'delhi', map: 'delhi', flag: 'c11.arrived' },
+    { n: 8, id: 'zanzibar', map: 'zanzibar', flag: 'c7.arrived' },
+    { n: 9, id: 'sicily', map: 'sicily', flag: 'c8.arrived' },
+    { n: 10, id: 'oaxaca', map: 'oaxaca', flag: 'c9.arrived' },
+    { n: 11, id: 'home', map: 'village', flag: 'c10.arrived' },
+  ];
+
+  const jump = (mapId: string, at?: [number, number]) => {
+    const dest = maps[mapId];
+    if (!dest) return `no such map: ${mapId}`;
+    const spawn: [number, number] = at ?? (dest.spawn as [number, number]);
+    if (mode !== 'play') {
+      title.hideTitle();
+      title.hideLetter();
+      beginPlay(false);
+    }
+    startWarp({ at: [player.x, player.y], type: 'door', to: mapId, spawn, facing: dest.spawnFacing });
+    return `-> ${mapId} at ${spawn[0]},${spawn[1]}`;
+  };
+
+  const api = {
+    /** Everything this desk can do. */
+    help() {
+      console.log(
+        [
+          'soup.go(n | id)      jump to a chapter, granting everything before it',
+          'soup.warp(map, x, y) teleport to any map by id',
+          'soup.maps()          list every map id',
+          'soup.chapters()      list chapters with their numbers',
+          'soup.flag(f, on?)    set or clear one story flag',
+          'soup.flags(sub?)     list flags currently set, optionally filtered',
+          'soup.games()         list every minigame and its start flag',
+          'soup.play(flag)      open a minigame right now',
+          'soup.pages()         fill the journal, every page',
+          'soup.photos()        grant every photograph Chasca can take',
+          'soup.tod(t)          set time of day, 0 dawn, 0.35 day, 0.57 gold, 0.85 night',
+          'soup.rain(on?)       toggle the monsoon and the sawan rain',
+          'soup.end()           set up the endgame at the well',
+          'soup.wipe()          erase the save and return to the title',
+        ].join('\n'),
+      );
+      return 'the cheat desk is open';
+    },
+    chapters: () => CHAPTERS_CHEAT.map((c) => `${c.n}. ${c.id} (${c.map})`),
+    maps: () => Object.keys(maps).sort(),
+    /** Jump to a chapter, granting every arrival and completion before it. */
+    go(which: number | string) {
+      const target =
+        typeof which === 'number'
+          ? CHAPTERS_CHEAT.find((c) => c.n === which)
+          : CHAPTERS_CHEAT.find((c) => c.id === which || c.map === which);
+      if (!target) return `no such chapter: ${which}. try soup.chapters()`;
+      state.set('intro.done');
+      for (const c of CHAPTERS_CHEAT) {
+        if (c.n >= target.n) break;
+        state.set(c.flag);
+        const num = c.id === 'delhi' ? 11 : c.n === 1 ? 0 : c.n;
+        if (num) state.set(`c${num}.complete`);
+      }
+      state.set(target.flag);
+      return jump(target.map);
+    },
+    warp: (mapId: string, x?: number, y?: number) =>
+      jump(mapId, x !== undefined && y !== undefined ? [x, y] : undefined),
+    flag(f: string, on = true) {
+      if (on) state.set(f);
+      else state.clearFlag(f);
+      return `${f} = ${on}`;
+    },
+    /** Flags currently set, read back out of the save the game just wrote. */
+    flags(sub?: string) {
+      let set: string[] = [];
+      try {
+        set = JSON.parse(localStorage.getItem('elsewhere.save') ?? '{}').flags ?? [];
+      } catch {
+        return [];
+      }
+      return set.filter((f) => !sub || f.includes(sub)).sort();
+    },
+    games: () => GAMES.map((g) => `${g.title ?? g.flag}  ->  soup.play('${g.flag}')`),
+    play(flag: string) {
+      const g = games.find((x) => x.def.flag === flag);
+      if (!g) return `no game with start flag ${flag}. try soup.games()`;
+      state.set(flag);
+      if (textbox.isOpen) return `${flag} armed; it opens when this conversation ends`;
+      openPanel(g);
+      return `playing ${flag}`;
+    },
+    pages() {
+      for (const e of JOURNAL) state.apply([`journal:${e.id}`]);
+      return `${JOURNAL.length} pages filled`;
+    },
+    photos() {
+      const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
+        'photo.c5.market', 'photo.c6.jetty', 'photo.c11.kites', 'photo.c7.shore',
+        'photo.c8.piazza', 'photo.c9.ofrenda'];
+      for (const f of shots) state.set(f);
+      return `${shots.length} photographs granted`;
+    },
+    tod(t: number) {
+      dayT = Math.max(0, Math.min(0.999, t));
+      return `time of day = ${dayT.toFixed(2)}`;
+    },
+    rain(on = true) {
+      for (const f of ['c6.rain', 'c11.rain']) {
+        if (on) state.set(f);
+        else state.clearFlag(f);
+      }
+      return on ? 'it is raining' : 'the rain has stopped';
+    },
+    end() {
+      api.pages();
+      api.photos();
+      for (const c of CHAPTERS_CHEAT) state.set(c.flag);
+      for (const n of [2, 3, 4, 5, 6, 7, 8, 9, 11]) state.set(`c${n}.complete`);
+      state.set('story.complete');
+      return jump('village');
+    },
+    wipe() {
+      state.reset();
+      location.reload();
+      return 'erased';
+    },
+  };
+
+  (globalThis as unknown as { soup: typeof api }).soup = api;
+  console.log('%csoup cheat desk ready. soup.help() for the list.', 'color:#c8a55b');
+}
+installCheats();
 
 // Dev-only: lets automation advance the simulation synchronously, independent
 // of rAF (which Chrome pauses entirely in hidden tabs).
