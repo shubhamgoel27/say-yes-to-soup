@@ -1575,7 +1575,7 @@ function update(dt: number) {
   renderer.setRaining(rainingOn(map.id));
   stage.setAmbient(ambientNow());
   audio.setDucked(textbox.isOpen || celebrateT > 0);
-  audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id));
+  audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id), dayT);
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   const zoomT =
@@ -2586,6 +2586,10 @@ function installCheats() {
   const jump = (mapId: string, at?: [number, number]) => {
     const dest = maps[mapId];
     if (!dest) return `no such map: ${mapId}`;
+    // startWarp drops the request while a transition is running; without this
+    // check the desk would still print the arrow and the caller would believe
+    // it. A dropped teleport that reports success cost an evening once.
+    if (warp) return `mid-transition; wait for the wipe, then warp again`;
     const spawn: [number, number] = at ?? (dest.spawn as [number, number]);
     if (mode !== 'play') {
       title.hideTitle();
