@@ -369,6 +369,14 @@ export const DELHI_TASKS: TaskDef[] = [
     text: 'Sethji\'s chit is in your pocket; Bantu\'s rickshaw waits at the stand. Rail south to Bombay, then the sea road west. The gali keeps your mornings.',
   },
   {
+    // Late in the list on purpose: a quiet trail for an idle moment, not a
+    // demand. Joginder's pointer is one spoken line, the bricks carry no
+    // curiosity dot, and without this a player who forgets has no way back
+    // to the moon story or its page.
+    when: { has: ['c11.jog2'], not: ['page.customs.chandni'] },
+    text: 'Joginder said the silver street rumor is wrong and would not say more. The bricks of the chowk have been asked before; ask them yourself.',
+  },
+  {
     when: { has: ['c11.arrived'], not: ['c11.complete'] },
     text: 'Kucha Aab-o-Daana: the gali of the griddle, the spice end, the chowk, the rooftops. Walk it slowly; it is loud, but it notices.',
   },

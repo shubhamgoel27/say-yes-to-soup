@@ -1251,34 +1251,8 @@ function endDialogue() {
     celebrated = true;
     applyGateState();
 
-/**
- * Festival dressing: chapters redecorate their maps as the story moves
- * (bamboo fills with wishes, candles line the marigold path). Idempotent;
- * runs at boot and whenever flags change.
- */
-function applyDressings() {
-  const touched = new Set<string>();
-  for (const d of DRESSINGS) {
-    if (!state.check(d.when)) continue;
-    const tm = maps[d.map];
-    if (!tm) continue;
-    if (d.swap) {
-      for (let y = 0; y < tm.h; y++) {
-        for (let x = 0; x < tm.w; x++) {
-          if (tm.object(x, y)?.t === d.swap.from) tm.setObject(x, y, d.swap.to);
-        }
-      }
-    }
-    for (const [x, y, def] of d.cells ?? []) tm.setObject(x, y, def);
-    // A dressing can add or remove light, so this map's lights are restated.
-    scanFires(d.map);
-    touched.add(d.map);
-  }
-  // If the map underfoot just gained candles, they should be lit now.
-  if (touched.has(map.id)) {
-    renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
-  }
-}
+// The identical top-level applyDressings serves here too; a nested copy of
+// it once lived in this scope as a paste leftover and shadowed nothing.
 applyDressings();
     showPlate('CHAPTER ONE · COMPLETE', 5200);
     toasts.show('✦ the journal remembers her now');
@@ -2142,6 +2116,10 @@ function interactableAt(x: number, y: number): boolean {
   // Only THINGS invite the pointer (props, seats, mounds, people), matching
   // the curiosity dot: bare ground still answers the button, but a click on
   // it should simply walk there.
+  // A door outranks whatever sits on it. Some exits carry an examinable mat,
+  // and if the click examines instead of walking, a pointer-only player can
+  // stand in the langar reading the threshold forever and never leave.
+  if (map.triggerAt(x, y)) return false;
   const objKind = map.object(x, y)?.t;
   if (objKind === undefined || objKind === 'blocked') return false;
   if (sitKindsOn(map.id).has(objKind)) return true;
@@ -2614,6 +2592,7 @@ function installCheats() {
           'soup.games()         list every minigame and its start flag',
           'soup.play(flag)      open a minigame right now',
           'soup.pages()         fill the journal, every page',
+          "soup.page(id)        grant one page properly (soup.flag can't)",
           'soup.photos()        grant every photograph Chasca can take',
           'soup.tod(t)          set time of day, 0 dawn, 0.35 day, 0.57 gold, 0.85 night',
           'soup.rain(on?)       toggle the monsoon and the sawan rain',
@@ -2671,6 +2650,13 @@ function installCheats() {
     pages() {
       for (const e of JOURNAL) state.apply([`journal:${e.id}`]);
       return `${JOURNAL.length} pages filled`;
+    },
+    /** One page, granted the way play grants it, so rhymes and gates see it.
+     * A raw soup.flag('page.x') writes a flag the journal never reads. */
+    page(id: string) {
+      if (!JOURNAL.some((e) => e.id === id)) return `no such page: ${id}`;
+      state.apply([`journal:${id}`]);
+      return `page.${id} granted`;
     },
     photos() {
       const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
