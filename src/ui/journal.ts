@@ -42,6 +42,7 @@ const TABS: { id: JournalTab | 'tasks' | 'route' | 'photos'; label: string }[] =
   { id: 'dishes', label: 'Dishes' },
   { id: 'people', label: 'People' },
   { id: 'customs', label: 'Customs' },
+  { id: 'her', label: 'Her' },
   { id: 'photos', label: 'Photos' },
 ];
 
@@ -202,7 +203,9 @@ export class JournalUI {
             `<span>Nani&rsquo;s margin</span>${rhyme.note}` +
             `<div class="j-thread-to">&#10087; stitched to ${rhyme.other.title}</div></div>`
           : '')
-      : `<div class="j-empty">Nothing noticed here yet.<br>The village is not hiding. Go and talk.</div>`;
+      : TABS[this.tab]?.id === 'her'
+        ? `<div class="j-empty">You have her handwriting and not much else yet.<br>People along this road knew her. Some of them will say so.</div>`
+        : `<div class="j-empty">Nothing noticed here yet.<br>The village is not hiding. Go and talk.</div>`;
 
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">

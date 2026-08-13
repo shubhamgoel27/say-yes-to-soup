@@ -54,7 +54,12 @@ export type EventNode = { when?: Cond; node: string };
  */
 export type ExamineArm = { when?: Cond; node: string; map?: string };
 
-export type JournalTab = 'words' | 'dishes' | 'people' | 'customs';
+/**
+ * `her` is the thread about Nani herself, assembled from what strangers along
+ * her route remember. Its pages carry no `nani` field on purpose: every other
+ * tab is what she wrote, and this one is what she left in other people.
+ */
+export type JournalTab = 'words' | 'dishes' | 'people' | 'customs' | 'her';
 
 export type JournalEntry = {
   id: string;
