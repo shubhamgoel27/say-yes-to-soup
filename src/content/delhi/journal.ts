@@ -204,6 +204,10 @@ export const DELHI_JOURNAL: JournalEntry[] = [
     script: 'ਸੇਵਾ',
     sub: 'Service as repayment: anyone may knead, roll, serve, sweep. No skill required, which is the point.',
     you: 'I rolled rotis badly, then less badly. The langar washes its ledger with the dishes, says Joginder, so no one is a debtor at dinner. Ayni, erased.',
+    rhyme: {
+      with: 'customs.ayni',
+      note: 'Ayni writes down who owes so no kindness is lost; seva washes the ledger with the dishes so no one dines a debtor. One care, two grammars.',
+    },
   },
   {
     id: 'customs.patang',

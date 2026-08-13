@@ -507,31 +507,30 @@ export const DELHI_NODES: NodeMap = {
     ],
     effects: ['errand:seva-atta', 'set:errand.seva-atta'],
   },
+  // The page fills while the flour is still on your wrists: the doing is the
+  // teaching, and the ayni contrast lives in the journal's stitched margin.
   'c11.jog.seva': {
     lines: [
       { text: 'Tuesday. The kitchen is a weather system: steam, flour, forty wrists. You knead until your arms complain, then roll rotis, badly, then less badly.' },
       { who: 'Joginder Singh', text: 'Round is a direction, not a requirement. The deg does not grade; it feeds.' },
       { text: 'Hours pass in minutes. You wipe the floor where five hundred people sat, and it feels less like cleaning and more like turning a page.' },
     ],
-    effects: ['errand.done', 'clear:errand.seva-atta', 'set:c11.seva.done', 'set:c11.seva.langar'],
+    effects: ['errand.done', 'clear:errand.seva-atta', 'set:c11.seva.done', 'set:c11.seva.langar', 'journal:customs.seva'],
     next: 'c11.jog.soul',
   },
   'c11.jog.soul': {
     lines: [
-      { who: 'Joginder Singh', text: 'You mentioned your mountains once. The kindness book, ayni, where every favor is written so none is lost. A beautiful ledger.' },
-      { who: 'Joginder Singh', text: 'Here we cook so much kindness we can afford to lose count. In ayni you remember who owes. Here we wash the ledger with the dishes.' },
-      { who: 'Joginder Singh', text: 'That way nobody is ever a debtor at dinner. Tell Sethji the langar says your hands are true; he weighs my sentences too.' },
+      { who: 'Joginder Singh', text: 'Tell Sethji the langar says your hands are true; he weighs my sentences too. The rest, your wrists already know.' },
     ],
-    effects: ['journal:customs.seva'],
     next: 'c11.jog.moon',
   },
+  // The moonlight etymology now waits in the chowk brick itself, where the
+  // name lives. Joginder only points your eye at the place.
   'c11.jog.moon': {
     lines: [
-      { who: 'Joginder Singh', text: 'One more thing, since Bantu delivers you everywhere. Has he told you Chandni Chowk means silver street? He tells everyone. The jewelers love him.' },
-      { who: 'Joginder Singh', text: 'Moonlight square, beta. A canal ran down the middle once, and the moon rode it all night. The silver came later and took the credit.' },
-      { who: 'Joginder Singh', text: 'Correct him gently; he is sixteen and the moon can wait. It has practice.' },
+      { who: 'Joginder Singh', text: 'When Bantu tells you Chandni Chowk means silver street, go and ask the bricks of the chowk yourself. Correct him gently; he is sixteen.' },
     ],
-    effects: ['set:c11.jog2', 'journal:customs.chandni'],
+    effects: ['set:c11.jog2'],
   },
   'c11.jog.tuesday': {
     lines: [
@@ -574,9 +573,11 @@ export const DELHI_NODES: NodeMap = {
       { text: 'Not yet; the wind and I are strangers', goto: 'c11.yusuf.later' },
     ],
   },
+  // No lecture before the sky: the panel's own weather teaches kheench and
+  // dheel, and the first frayed dor teaches the one law about birds.
   'c11.yusuf.go': {
     lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'Two verbs. Dheel is slack, kheench is the pull. The wind writes the sentence; you choose the punctuation. When birds cross, you give ground. Always.' },
+      { who: 'Ustad Yusuf Miyan', text: 'The wind writes the sentence; you choose the punctuation. Make your mistakes with my paper: it is cheap, and the wind is free.' },
     ],
     effects: ['set:c11.kite.start'],
   },
@@ -627,7 +628,7 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.yusuf.duelgo': {
     lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'Dheel when the storm shoves, kheench when the line sings, and birds before glory, always. Go. Make the sky shout.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Birds before glory, always; the rest your hands already know. Go. Make the sky shout.' },
     ],
     effects: ['set:c11.duel.start'],
   },
@@ -1055,6 +1056,14 @@ export const DELHI_NODES: NodeMap = {
     lines: [
       { text: 'The chowk\'s redone brick, herringbone and proud. By day it belongs to feet, handcarts, and rickshaws; the cars wait outside like scolded dogs.' },
     ],
+  },
+  // The sevadar sent you here; the square answers for its own name.
+  'c11.ex.chowkbrick.moon': {
+    lines: [
+      { text: 'Down the chowk\'s spine the brick dips in one long shallow line: an old channel, paved over. A canal ran here once, and the moon rode it all night.' },
+      { text: 'Chandni Chowk, the moonlight square. The silver shops came later and took the credit; the bricks under your feet never signed the paperwork.' },
+    ],
+    effects: ['journal:customs.chandni'],
   },
   'c11.ex.wornedge': {
     lines: [
@@ -1630,7 +1639,12 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'delhi-haveli', node: 'c11.ex.floorsandstone' },
   ],
   galistone: [{ node: 'c11.ex.galistone' }],
-  chowkbrick: [{ node: 'c11.ex.chowkbrick' }],
+  chowkbrick: [
+    // Once Joginder points your eye at the name, the square tells its own
+    // moonlight story; the page fills where the canal was.
+    { when: { has: ['c11.jog2'] }, node: 'c11.ex.chowkbrick.moon' },
+    { node: 'c11.ex.chowkbrick' },
+  ],
   wornedge: [{ node: 'c11.ex.wornedge' }],
   terrace: [{ node: 'c11.ex.terrace' }],
   mohallawall: [{ node: 'c11.ex.mohallawall' }],

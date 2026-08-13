@@ -314,17 +314,54 @@ export const NPCS: NpcDef[] = [
 
 export const NODES: NodeMap = {
   // ---------------- intro ----------------
+  // Three lines, then the village. Everything else the intro used to narrate
+  // (the postcards, the envelope, the bag nobody believed) now lives in the
+  // bag itself, one card per look, at whatever pace the player browses.
   'intro.wake': {
     lines: [
       { text: 'The bus left you at the bottom of the valley an hour ago. The driver pointed uphill and said only: arriba.' },
-      { text: 'You grew up on her postcards. A camel with opinions. A sea the color of a bruise. "Eat first, ask after," in six languages.' },
-      { text: 'Then the postcards stopped being from elsewhere, and then, last winter, they stopped.' },
-      { text: 'The lawyer\'s envelope held no money and one journal, half full. Her note said the empty half was always yours.' },
-      { text: 'So: unpaid leave, one bag, her route. You told everyone it was a short trip. Nobody believed you, least of all the bag.' },
-      { text: "The journal's first page: \"Ch'aska Pampa. Start where the water is.\"" },
+      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch\'aska Pampa. Start where the water is."' },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
     effects: ['set:intro.done'],
+  },
+
+  // ---------------- the bag, and the postcards in it ----------------
+  // The q'epi at the spawn. Each look draws the next card; no card repeats.
+  'ex.bag.first': {
+    lines: [
+      { text: 'Your bag, set down where your lungs gave out. You told everyone this was a short trip. Nobody believed you, least of all the bag.' },
+      { text: 'Her postcards ride in the top pocket, rubber-banded, in order.' },
+    ],
+    effects: ['set:bag.opened'],
+  },
+  'ex.bag.card1': {
+    lines: [
+      { text: 'The first postcard: a camel with opinions, mid-opinion. On the back she swears the camel started it.' },
+    ],
+    effects: ['set:bag.card1'],
+  },
+  'ex.bag.card2': {
+    lines: [
+      { text: 'Next card: a sea the color of a bruise. She swam in it anyway. "Cold is a rumor," she wrote. She lied.' },
+    ],
+    effects: ['set:bag.card2'],
+  },
+  'ex.bag.card3': {
+    lines: [
+      { text: 'The creased one: "Eat first, ask after," in six languages. You can read two of them and believe all six.' },
+    ],
+    effects: ['set:bag.card3'],
+  },
+  'ex.bag.card4': {
+    lines: [
+      { text: 'The last cards stopped being from elsewhere. Then, last winter, they stopped.' },
+      { text: 'Under them, the lawyer\'s envelope. No money; one note. The empty half of the journal was always yours.' },
+    ],
+    effects: ['set:bag.done'],
+  },
+  'ex.bag.after': {
+    lines: [{ text: 'The bag waits, packed for a short trip. You both know better now.' }],
   },
 
   // ---------------- Don Aurelio ----------------
@@ -496,20 +533,20 @@ export const NODES: NodeMap = {
     ],
     next: 'justina.watia',
   },
+  // No watia lecture here: the oven explains itself when it gets built, and
+  // its journal page arrives with the first bite, at watia.finish.
   'justina.watia': {
     lines: [
-      { who: 'Justina', text: 'Stay near when the harvest comes in. We build a little oven from the field itself, clods stacked so, fired until they glow.' },
-      { who: 'Justina', text: 'Watia. The earth bakes its own potatoes. It asks nothing back except the first bite.' },
+      { who: 'Justina', text: 'Stay near when the harvest comes in, wawa. The field cooks for the people who dug it.' },
       { who: 'Justina', text: 'In fact. See those mounds? Early ones, ready. Dig them up for me and I will teach you their names. Every papa has a name.' },
     ],
-    effects: ['journal:dishes.watia', 'set:dig.invite'],
+    effects: ['set:dig.invite'],
   },
   'justina.after': {
     lines: [
       { who: 'Justina', text: 'These rows? Forty kinds of papa, and I know each one by its face.' },
-      { who: 'Justina', text: 'There is one called llumchuy waqachi. "Makes the daughter-in-law cry." Knobbly on purpose. Our jokes are long games.' },
+      { who: 'Justina', text: 'Some of the names are jokes, and our jokes are long games. Dig, and you will meet the worst of them.' },
     ],
-    effects: ['journal:dishes.papa'],
     choices: [
       { text: 'Build the watia again', when: { has: ['watia.done'] }, goto: 'justina.watiaAgain' },
       { text: 'Leave her to the rows', goto: 'justina.idle' },
@@ -802,20 +839,21 @@ export const NODES: NodeMap = {
   },
 
   // ---------------- Aurelio remembers ----------------
+  // By the time this fires the player has already found Zoila at Carmen's
+  // loom (her.zoila gates the entry). Aurelio does not retell her; he hands
+  // over what he kept. Her portrait lives in the journal's Nani margins.
   'aurelio.nani': {
     lines: [
       { who: 'Don Aurelio', text: 'Sit. The stone is warm and I have been deciding something.' },
-      { who: 'Don Aurelio', text: 'That journal you carry. Red thread on the spine. I watched a girl sew that thread, right here, in 1974.' },
-      { text: 'The well rope creaks. Somewhere a loom keeps its slow time.' },
-      { who: 'Don Aurelio', text: 'Zoila. She greeted everyone, even the dogs. She drank her chicha straight down and the whole room laughed. You have her way of standing.' },
+      { who: 'Don Aurelio', text: 'That journal you carry. I watched Zoila sew that red thread on the spine, right here, in 1974.' },
     ],
     next: 'aurelio.nani2',
   },
   'aurelio.nani2': {
     lines: [
       { text: 'From inside his poncho he brings out a letter, soft with fifty years of being carried.' },
-      { who: 'Don Aurelio', text: 'She left it for the road east and never came back for it. I kept it. Ayni, you understand. She helped my mother with the harvest.' },
-      { who: 'Don Aurelio', text: 'A debt does not expire. It waits, like a seed. Take it to the east gate. The road will tell you the rest.' },
+      { who: 'Don Aurelio', text: 'She left it for the road east and never came back for it. She helped my mother with the harvest; ayni does not expire.' },
+      { who: 'Don Aurelio', text: 'You have her way of standing. Take it to the east gate. The road will tell you the rest.' },
     ],
     effects: ['set:nani.letter', 'errand:nani-letter', 'set:errand.nani-letter'],
   },
@@ -836,7 +874,9 @@ export const NODES: NodeMap = {
       { text: 'You dig. A fat golden papa, shaped like a cat\'s paw.' },
       { who: 'Justina', text: 'Puma maki! Puma\'s paw. Good soil manners; came up on the first ask.' },
     ],
-    effects: ['set:dig.1'],
+    // The first named papa carries the papa page: the fact arrives in your
+    // hands, dirt still on it, instead of in a speech about the rows.
+    effects: ['set:dig.1', 'journal:dishes.papa'],
   },
   'dig.spot2': {
     lines: [
@@ -905,7 +945,7 @@ export const NODES: NodeMap = {
       { who: 'Justina', text: 'First bite is the field\'s fee. Eat. No pot in Peru can do this; the earth cooks its own, and does it best.' },
       { text: 'It tastes of smoke and rain and the exact ground you are standing on. Every oven after this one will lose the comparison.' },
     ],
-    effects: ['clear:watia.start', 'set:watia.done'],
+    effects: ['clear:watia.start', 'set:watia.done', 'journal:dishes.watia'],
   },
 
   // ---------------- the dog ----------------
@@ -1069,22 +1109,21 @@ export const NODES: NodeMap = {
   },
 
   // ---------------- the east road ----------------
+  // Faustino keeps the human moment; the game's thesis is nowhere in his
+  // mouth. What the road teaches, the road teaches. The cliff shows the rest.
   'faustino.first': {
     lines: [
       { who: 'Faustino', text: 'Ho! A walker! Sit, the fire is honest and the wind is not.' },
       { who: 'Faustino', text: 'Faustino. Arriero. I walk roads for a living, and my llamas walk them for a better living; they get paid in grass.' },
-      { who: 'Faustino', text: 'Where does this road go? Down, friend, until the air gets thick and the sea starts talking.' },
-      { who: 'Faustino', text: 'Other foods there. Other words. Same soup, underneath.' },
+      { who: 'Faustino', text: 'Where does this road go? Down, friend, until the air gets thick and the sea starts talking. The cliff past the signpost will show you.' },
     ],
     effects: ['set:met.faustino', 'journal:people.faustino'],
     next: 'faustino.whistle',
   },
   'faustino.whistle': {
     lines: [
-      { who: 'Faustino', text: 'Ah, but you met Paca at the pass, no? She holds that spot like she pays rent on it.' },
-      { text: 'He puts two fingers to his teeth and whistles, one short, one long.' },
-      { text: 'From up the road comes the sound of a llama making a large decision slowly.' },
-      { who: 'Faustino', text: 'She will move. Eventually. It is her one flaw and her whole personality.' },
+      { who: 'Faustino', text: 'But first: Paca holds the pass like she pays rent on it. One moment.' },
+      { text: 'Two fingers, one short whistle, one long. Up the road, a llama begins making a large decision, slowly.' },
     ],
     effects: ['set:paca.moved'],
   },
@@ -1718,6 +1757,14 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   qepi: [
     { map: 'chicheria', node: 'ex.qepi.indoors' },
     { map: 'casa-carmen', node: 'ex.qepi.indoors' },
+    // On the village map the q'epi at the spawn is yours: the postcards come
+    // out one look at a time, in the order she sent them.
+    { map: 'village', when: { not: ['bag.opened'] }, node: 'ex.bag.first' },
+    { map: 'village', when: { not: ['bag.card1'] }, node: 'ex.bag.card1' },
+    { map: 'village', when: { not: ['bag.card2'] }, node: 'ex.bag.card2' },
+    { map: 'village', when: { not: ['bag.card3'] }, node: 'ex.bag.card3' },
+    { map: 'village', when: { not: ['bag.done'] }, node: 'ex.bag.card4' },
+    { map: 'village', node: 'ex.bag.after' },
     { node: 'ex.qepi' },
   ],
   apachetita: [

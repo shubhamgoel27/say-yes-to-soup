@@ -18,6 +18,20 @@ export const CHAPTER: ChapterDef = {
   tasks: KERALA_TASKS,
   errands: [{ id: 'coir-rope', label: "Omana's rope coil, bound for Captain Varkey" }],
   letters: [
+    // Joseph's letter home, the one the player has carried since the
+    // mid-Pacific. It opens in the letter overlay the moment it reaches
+    // Mariamma's hands: the chapter's front door, read rather than recapped.
+    {
+      id: 'joseph.amma',
+      from: 'Joseph, at sea',
+      body: [
+        'Amma. I eat well, nobody cooks like you. I stand my watches and I am careful on the ladders. That is the whole news, but you would call a short letter rude.',
+        'The cook aboard is Filipino and very good. Do not tell the cook, but Amma, your meen curry wins. I have tasted three oceans now and it is not close.',
+        'There is a parcel with this letter. Do not shake it and do not save it for Onam; open it before the rains come.',
+        'The friend who carries this stood galley duty beside me across the Pacific. Feed them until they surrender. You know the fee; I have apologized to them already.',
+        'Three months and my contract is done. Keep the pot thinking. Your Joseph.',
+      ],
+    },
     // Pilar, now a candidate. Her prose style remains invoices.
     {
       id: 'kochi.pilar',
@@ -79,7 +93,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The sadya leaf',
       howTo: [
         'Narrow end of the leaf points left. Arrows choose a seat, Space serves the course.',
-        'Right hand only. Every dish has kept the same corner for about four generations.',
+        'Right hand only; the left has other duties in life, and everyone at the leaf knows what they are.',
         'Nothing here can be lost. A wrong seat only buys you an auntie, and an opinion.',
       ],
       make: (root, audio) => new SadyaPanel(root, audio as AudioBus),
@@ -140,6 +154,25 @@ export const CHAPTER: ChapterDef = {
     ],
   },
   arrival: { map: 'kerala', node: 'c6.arrive', flag: 'c6.arrived' },
+  dressings: [
+    {
+      // Joseph's umbrella takes its post by the door, a guest of honor
+      // standing with the household three, waiting for edavappathi.
+      map: 'mariamma-veedu',
+      when: { has: ['c6.letter.delivered'] },
+      cells: [[11, 8, { t: 'umbrellas', solid: true }]],
+    },
+    {
+      // After your first row the club boat rests hauled out on the practice
+      // bank, oars shipped beside her: the evening leaves a mark on the shore.
+      map: 'kerala',
+      when: { has: ['c6.row.done'] },
+      cells: [
+        [33, 24, { t: 'vallam', solid: true, tall: true }],
+        [32, 24, { t: 'oars', solid: true, tall: true }],
+      ],
+    },
+  ],
   completion: {
     flag: 'c6.complete',
     plate: 'CHAPTER SIX · COMPLETE',

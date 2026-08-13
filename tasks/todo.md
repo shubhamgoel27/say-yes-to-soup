@@ -481,3 +481,29 @@ Plan (per docs/chapter-authoring-guide.md; new files only, no shared edits):
 Review: save shape gains optional `name` (string|null) and `look` ({skin,cloth,hair}|null);
 old saves without either load as null and every surface falls back ("traveler" /
 "For my grandchild"). Continue never asks; Begin again re-asks after reset.
+
+# Goal: less text, more play; music with a birthplace
+
+The owner's brief, 2026-08-12: information should arrive through interaction
+and play rather than dialogue walls, across every chapter; and each village's
+background music should be present and carry its instruments, not just exist.
+
+## Phase 1: research (running)
+- [x] Launch text-density audit across all 11 chapters (counts, worst walls, conversion candidates)
+- [x] Launch music audit + library landscape (current audibility, Tone.js et al vs extending the engine)
+- [x] Launch wordless-storytelling pattern catalog (engine levers x cozy-game patterns)
+
+## Phase 2: design
+- [x] All three reports landed. Verdicts: extend the audio engine (no library: Tone adds 83kB for the same oscillators, Strudel is AGPL, WebAudioFont is GPL); text problem is channel monoculture (~2,682 say-lines, a third routable to existing channels), not walls; 16 patterns catalogued, top 8 ranked
+- [x] Textbox already completes-then-advances; CPS is a setting. No change needed now
+
+## Phase 3: implement
+- [x] Music agent launched: KS plucks, flutes, drone/pad, reverb send, motif tables, phrase clock, arrangement cycle, all 11 regions, recorded auditions (port 5490)
+- [x] Wave 1 conversion agents launched: delhi, oaxaca, kerala, crossing, village (each owns its folder, no commits; I review, test, commit the batch)
+- [ ] Wave 2 after wave 1 commits: shionoura, busan, zanzibar, sicily, caleta, return
+- [ ] Engine-dependent patterns after music agent commits (station scheduling for customs-practiced-on-schedule, seated vignettes)
+- [ ] Tests stay green (50), reachability holds after any dialogue restructuring
+
+## Phase 4: verify
+- [ ] Frozen-build playthrough per touched chapter, own port, kill servers after
+- [ ] Blind before/after critics on both dimensions (talkiness, music presence)

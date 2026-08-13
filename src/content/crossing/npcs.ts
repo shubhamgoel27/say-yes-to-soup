@@ -300,7 +300,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { who: 'Mang Ben', text: 'Week three. The salad is a memory, the freezer is the whole harvest now, and the faces in my mess are getting long.' },
       { who: 'Mang Ben', text: 'So tonight: lutong bahay. Home cooking, the medicine kind. Adobo first; the dish every Filipino abroad learns before the alphabet.' },
-      { who: 'Mang Ben', text: 'And sinigang after, sour soup for Joseph’s homesick face. Sour fish soup fixes sailors on every coast. Ask your captain.' },
+      { who: 'Mang Ben', text: 'And sinigang after, sour soup for Joseph’s homesick face.' },
     ],
     effects: ['journal:words.lutongbahay', 'journal:dishes.sinigang'],
     choices: [
@@ -389,8 +389,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { who: 'Joseph', text: 'Ben sent the baon? Then you are my favorite person on this watch. Joseph, by the way. Able seaman, Kerala.' },
       { text: 'He eats standing at the rail, plate balanced like it grew there. Somewhere aft, the bell strikes twice, bright as a coin.' },
-      { who: 'Joseph', text: 'Two bells. One strike for each half hour of the watch; at eight bells the watch is done and somebody gets to sleep. Sea arithmetic.' },
-      { who: 'Joseph', text: 'Four hours on, eight off, around the clock. The whole ship sleeps in shifts so that she never has to.' },
+      { who: 'Joseph', text: 'Two bells. One hour of the watch down, and it went down better fed. Tell Ben the plate came home warm, will you?' },
     ],
     effects: [
       'set:c3.baon.done',
@@ -468,11 +467,12 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Hana', text: 'They rise on schedule. The mate says it is the only thing aboard that does. Find me when the deck goes dark.' },
     ],
   },
+  // The naming happened on the bow, in the game's own hand; this is only the
+  // coming down. The starriver page and its rhyme carry the recognition.
   'c3.starsdone': {
     lines: [
-      { text: 'Three skies, one river. The hunter wheels away west, the dark llama drinks at the Mayu, and dead ahead the Amanogawa waits for July.' },
-      { who: 'Hana', text: 'Amanogawa. The River of Heaven. On its two banks, two stars wait all year for one night to meet. That is what Tanabata is for.' },
-      { who: 'Hana', text: 'And your llama is not stars at all but the dark between them! The ship is named for her, you know. Somebody’s grandmother knew.' },
+      { text: 'Three skies, one river, inked in your own hand. Dead ahead, the Amanogawa waits for July.' },
+      { who: 'Hana', text: 'And the ship is named for your llama, you know. Somebody’s grandmother knew exactly where to look.' },
     ],
     effects: ['clear:c3.stars.start', 'set:c3.stars.done', 'journal:customs.starriver'],
   },
@@ -545,14 +545,13 @@ export const CROSSING_NODES: NodeMap = {
     ],
     effects: ['set:c3.met.bosun', 'journal:people.bosun'],
   },
+  // The summons is a summons. The history and the gag live on the scroll he
+  // posts (see c3.ex.manifest); the court itself carries the doing.
   'c3.bosun.summons': {
     lines: [
       { text: 'The bosun unrolls a scroll with terrible ceremony. It is a cargo manifest wearing a border drawn in marker.' },
-      { who: 'The Bosun', text: 'Hear ye. Tomorrow this vessel crosses the Line, and King Neptune finds among her crew a POLLYWOG, unbaptized in his domain. You.' },
-      { who: 'The Bosun', text: 'A pollywog has never crossed the equator. A shellback has, and fears nothing but dry land. By Thursday you will be one or the other.' },
-      { who: 'The Bosun', text: 'All voluntary, all gentle, mostly flour. My court has been kind for a thousand years, ever since the Vikings invented it.' },
-      { who: 'Hana', text: 'Four hundred. The book on the bridge says four hundred years.' },
-      { who: 'The Bosun', text: 'The book was not there.' },
+      { who: 'The Bosun', text: 'Hear ye. At noon tomorrow this vessel crosses the Line, and King Neptune finds one POLLYWOG aboard. You, wog. Court on the hatch.' },
+      { who: 'The Bosun', text: 'The particulars go up on the house door. I decorated them myself.' },
     ],
     effects: ['set:c3.wog', 'journal:words.pollywog'],
     choices: [
@@ -572,7 +571,7 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'The Bosun', text: 'The charge: presuming to enter my kingdom unshelled and unsalted. How plead you? Wrong. All wogs plead wrong. It is tradition.' },
       { text: 'The royal barber pats your face with flour. The royal court, meaning everyone off watch, tips one bucket of warm sea over you.' },
       { text: 'Then the bosun shakes your dripping hand and the whole deck cheers like something true just happened. Somehow, it did.' },
-      { who: 'The Bosun', text: 'Rise, shellback, child of Neptune. The certificate is signed by the captain and by me. Frame it. I am famous nowhere else.' },
+      { who: 'The Bosun', text: 'Rise, shellback, child of Neptune.' },
     ],
     effects: ['set:c3.shellback', 'journal:customs.linecrossing'],
   },
@@ -653,6 +652,22 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ex.shiphouse': {
     lines: [{ text: 'The house: white steel stacked over the galley, the cabins, the bridge. An entire village fitted into one apartment block, aft.' }],
+  },
+  // The bosun's scroll, posted: Neptune's court in marker-on-paper voice.
+  // The lore of the line-crossing lives here now, not in his mouth.
+  'c3.ex.manifest': {
+    lines: [
+      { text: 'Taped to the house door, the manifest wears its marker border proudly. BY ORDER OF KING NEPTUNE: ALL POLLYWOGS STAND TRIAL AT NOON, ON THE LINE.' },
+      { text: 'Beneath: A POLLYWOG HAS NEVER CROSSED THE EQUATOR. A SHELLBACK FEARS NOTHING BUT DRY LAND. Then, smaller: VOLUNTARY. GENTLE. MOSTLY FLOUR.' },
+      { text: 'The footer declares A THOUSAND YEARS OF TRADITION (VIKING). A neat pencil hand has added: four hundred, says the book on the bridge.' },
+    ],
+  },
+  // The keepsake after the court: the certificate lands as a thing, not a speech.
+  'c3.ex.manifest2': {
+    lines: [
+      { text: 'Where the summons hung, a certificate now: SHELLBACK, over your name, signed by the captain and by King Neptune himself.' },
+      { text: 'Neptune’s handwriting is the bosun’s exactly. Nobody aboard has found this worth mentioning.' },
+    ],
   },
   'c3.ex.hammock2': {
     lines: [{ text: 'Chasca’s hammock. A camera bag hangs at its head, and the sea appears to have been given instructions to hold still.' }],
@@ -818,7 +833,11 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   winch: [{ node: 'c3.ex.winch' }],
   bollard: [{ node: 'c3.ex.bollard' }],
   funnel: [{ node: 'c3.ex.funnel' }],
-  shiphouse: [{ node: 'c3.ex.shiphouse' }],
+  shiphouse: [
+    { when: { has: ['c3.shellback'] }, node: 'c3.ex.manifest2' },
+    { when: { has: ['c3.wog'] }, node: 'c3.ex.manifest' },
+    { node: 'c3.ex.shiphouse' },
+  ],
   hammock: [
     { map: 'galley', node: 'c3.ex.hammock.galley' },
     { when: { has: ['c3.met.chasca'] }, node: 'c3.ex.hammock2' },
@@ -957,6 +976,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
     body: [
       'Casera. Marisol tells the whole malecón that her casero sailed with the capitana. She says it proudly, like weather she predicted.',
       'Listen: a galley is only a picantería that moves. Same law applies. Feed them what the pots say, and never argue with the pot.',
+      'The capitana taught me her cook’s word once: baon. Food packed for somebody’s watch, the love kept warm under the cloth. We always had the thing; now you have the word.',
       'The sudado was better the week you carried the lisa. That is not sentiment, it is seasoning. Pass this way again and test me.',
     ],
   },
@@ -966,6 +986,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
     body: [
       'Hija. The fog has lifted twice since you sailed, and the village has decided it is your doing. Let them; it costs nothing.',
       'Eat warm things at night. The sea is cold at the bottom and it climbs. Ask your captain for soup, not for courage.',
+      'Her cook has a word, the capitana says: baon. Food packed for somebody’s watch, love kept warm under a cloth. Eat yours, and carry someone else’s.',
       'The pots say you come back this way someday. The pots are never wrong, hija. Only slow.',
     ],
   },

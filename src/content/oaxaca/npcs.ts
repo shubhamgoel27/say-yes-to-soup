@@ -30,7 +30,9 @@ export const OAXACA_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['met.refugio'] }, node: 'c9.refugio.first' },
       { when: { has: ['errand.pan-refugio'], not: ['c9.bread.done'] }, node: 'c9.refugio.bread' },
-      { when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger'] }, node: 'c9.refugio.ledger' },
+      { when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger.out'] }, node: 'c9.refugio.ledger' },
+      { when: { has: ['c9.ledger.out'], not: ['c9.ledger'] }, node: 'c9.refugio.lookit' },
+      { when: { has: ['c9.ledger'], not: ['c9.telegram'] }, node: 'c9.refugio.telegram' },
       {
         when: { has: ['c9.mole.done', 'c9.bread.done', 'c9.path.laid'], not: ['c9.family.done'] },
         node: 'c9.refugio.family',
@@ -349,30 +351,30 @@ export const OAXACA_NODES: NodeMap = {
     ],
     effects: ['set:met.refugio', 'journal:people.refugio', 'journal:dishes.tejate'],
   },
+  // The ledger is not narrated at you. She sets it on the table and you read
+  // it yourself: the examine on the table (c9.ledger.read) finds the line.
   'c9.refugio.ledger': {
     lines: [
       { who: 'Doña Refugio', text: 'Elías told me about your wrist. Chela told me about your appetite. Now show me the book you carry like a child.' },
       { text: 'You hand over the journal. She turns pages with a wet thumb, and then she stops turning.' },
-      { who: 'Doña Refugio', text: 'This hand wrote in my mother’s kitchen. I was nine. She drew the comal with me sitting beside it, there, in the corner.' },
+      { who: 'Doña Refugio', text: 'This hand wrote in my mother’s kitchen. I was nine, sitting there in the corner.' },
+      { text: 'From under the altar table she brings a notebook, swollen with years, spine mended with cloth. She lays it open on the table, and waits.' },
     ],
-    next: 'c9.refugio.ledger2',
+    effects: ['set:c9.ledger.out'],
   },
-  'c9.refugio.ledger2': {
+  'c9.refugio.lookit': {
     lines: [
-      { text: 'From under the altar table she brings a notebook, swollen with years, spine mended with cloth. The guelaguetza ledger.' },
-      { who: 'Doña Refugio', text: 'What this village lends, this village writes. Weddings, funerals, fiestas. Kindness with a page number.' },
-      { text: 'She finds the line without looking for it. Zoila, 1975: one week of shelter, one mole feast. Owed.' },
+      { who: 'Doña Refugio', text: 'It is on the table. Read it the way she read your book: slowly.' },
     ],
-    effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
-    next: 'c9.refugio.telegram',
   },
   'c9.refugio.telegram': {
     lines: [
       { who: 'Doña Refugio', text: 'She stayed the week before the fiesta, right where you stand. She was going to help with the mole. She never got to.' },
-      { who: 'Doña Refugio', text: 'A telegram came up from the town. Her mother was dying in Peru. She left that same night, and the road never brought her back.' },
+      { text: 'From the back of the ledger she takes a folded paper, soft as cloth at the creases, and puts it in your hands.' },
+      { who: 'Doña Refugio', text: 'She left that same night, and the road never brought her back.' },
       { who: 'Doña Refugio', text: 'My mother kept her cup on the shelf a whole year. Then she wrote the line, so we would not be allowed to forget.' },
     ],
-    effects: ['journal:her.oaxaca'],
+    effects: ['set:c9.telegram', 'letter:oax.telegram', 'journal:her.oaxaca'],
     choices: [
       {
         text: 'Answer Old Man Cho, half a world late: say what it weighs',
@@ -401,7 +403,6 @@ export const OAXACA_NODES: NodeMap = {
   'c9.refugio.owe': {
     lines: [
       { who: 'Doña Refugio', text: 'A guelaguetza is not owed to a grave. It is owed to a family, and here is her family, standing in my kitchen.' },
-      { who: 'Doña Refugio', text: 'The fiesta needs what it always needs. Chela’s mole wants hands. Tacho’s bread wants carrying. The camposanto path wants petals.' },
       { who: 'Doña Refugio', text: 'Work her week, the one she never finished. Then we will talk about what my mother wrote on the next page.' },
     ],
   },
@@ -413,28 +414,27 @@ export const OAXACA_NODES: NodeMap = {
     ],
     effects: ['errand.done', 'clear:errand.pan-refugio', 'set:c9.bread.done'],
   },
+  // The what-each-element-is-for catechism lives in the build game now: every
+  // element speaks its one line at the moment your hands set it down.
   'c9.refugio.family': {
     lines: [
       { text: 'The altar rises through the afternoon: two levels, then a third, cloth smoothed, the marigold arch tied over everything.' },
-      { who: 'Doña Refugio', text: 'Water for the thirst. Salt for the seasoning of life. Copal to carry what we say upward. Candles so nobody trips on the dark.' },
       { text: 'Her mother’s photograph goes up last, next to a cup for tejate. You hand her things before she asks; she stops noticing you are a guest.' },
       { who: 'Doña Refugio', text: 'There. The mole is resting, the bread is up, the path is laid. The ledger line is paid, hija. Fifty years late and right on time.' },
     ],
-    effects: ['set:c9.family.done', 'set:c9.debt.paid', 'journal:customs.ofrenda'],
+    effects: ['set:c9.family.done', 'set:c9.debt.paid'],
     next: 'c9.refugio.page2',
   },
   'c9.refugio.page2': {
     lines: [
       { text: 'She opens the ledger to cross out the line. Then she turns the page and goes still.' },
-      { who: 'Doña Refugio', text: 'This is my mother’s hand. I never read past the entry. Look.' },
-      { text: 'Below the old ink, smaller: Debts of kindness pass to the children. Both directions.' },
+      { text: 'Below the old ink, in her mother’s smaller hand: Debts of kindness pass to the children. Both directions.' },
       { who: 'Doña Refugio', text: 'Both directions, hija. You paid hers. Now this village pays what it owes her, to you. We are building your Nani an ofrenda.' },
     ],
     next: 'c9.altar.hub',
   },
   'c9.altar.hub': {
     lines: [
-      { text: 'A small table appears beside the family altar, carried in by neighbors who do not knock. Refugio spreads a white cloth.' },
       { who: 'Doña Refugio', text: 'The altar holds what she loved and what she was owed. What did the road put in your hands? Bring all of it.' },
     ],
     choices: [
@@ -518,7 +518,9 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Doña Refugio', text: 'Fifty years she had no place set in this valley. Look at her now. Tonight we take the last candle to the camposanto.' },
       { text: 'The journal sits at the altar’s foot, closed. For once it does not feel half finished. It feels half full.' },
     ],
-    effects: ['clear:c9.ofrenda.start', 'set:c9.ofrenda.done'],
+    // The customs page fills here, with your own hands just off the altar: the
+    // elements taught themselves as you placed them.
+    effects: ['clear:c9.ofrenda.start', 'set:c9.ofrenda.done', 'journal:customs.ofrenda'],
   },
   'c9.refugio.again': {
     lines: [
@@ -869,19 +871,20 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Don Melitón', text: 'The costal will not lay itself along the path, and I have swept the same spot twice waiting to watch you do it.' },
     ],
   },
+  // The vigil is shown, not told: the candle dressing, the velacion mood and
+  // the families themselves carry the night. What remains is what only a
+  // person could say, plus the one thing that happens to you.
   'c9.vigil': {
     lines: [
-      { text: 'Night. The camposanto is a low field of candlelight, and it is loud: gossip, a guitar, somebody’s laugh rolling between the stones.' },
-      { text: 'Families eat at the graves they washed. A tamal is set at a headstone the way you would set it before an uncle: casually, certain.' },
       { who: 'Don Melitón', text: 'You see? A reunion. The ones who cry, cry a while, and then someone hands them bread. The night knows its business.' },
     ],
     next: 'c9.vigil2',
   },
   'c9.vigil2': {
     lines: [
-      { text: 'On the south wall, apart from her family’s row, Refugio has set one extra candle facing out, the way a light is set for a traveler.' },
-      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. She has an altar in my kitchen and a place on my wall. Fifty years owed, both directions, and paid.' },
-      { text: 'The petals you laid run gate to lane to doorway. If she is coming, she will not miss the turn.' },
+      { text: 'On the south wall, apart from her family’s row, Refugio has set one candle facing out, toward the road.' },
+      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. Fifty years owed, both directions, and paid.' },
+      { who: 'Doña Refugio', text: 'Your petals run gate to lane to doorway. If she is coming, she will not miss the turn.' },
     ],
     next: 'c9.vigil3',
   },
@@ -889,7 +892,6 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { who: 'Don Melitón', text: 'Sit. Eat. Tonight nobody in this camposanto is a stranger, which for one night includes the dead.' },
       { text: 'You stay until the candles are low. Someone tells a story about your grandmother that you have never heard, and now will never forget.' },
-      { text: 'The half-finished journal was never unfinished. It was a table set early, waiting for the family to arrive. Tonight it did.' },
     ],
     effects: ['set:c9.complete', 'journal:customs.camposanto'],
   },
@@ -1261,6 +1263,25 @@ export const OAXACA_NODES: NodeMap = {
   },
 
   // ---------------- examines: the cocina, indoors and in its own voice ----------------
+  // The ledger is read, not recited: Refugio leaves it open on the table and
+  // the player finds the 1975 line with their own eyes.
+  'c9.ex.mesa': {
+    lines: [
+      { text: 'The kitchen table, scrubbed pale by decades of elbows. Under the altar end, a low shelf holds one cloth-mended notebook.' },
+    ],
+  },
+  'c9.ledger.read': {
+    lines: [
+      { text: 'The guelaguetza ledger, open where she left it. Weddings, funerals, fiestas: fifty years of lending, line after line crossed out, repaid.' },
+      { text: 'One page stops you. Zoila, 1975: one week of shelter, one mole feast. Owed. Nothing crosses it out.' },
+    ],
+    effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
+  },
+  'c9.ex.ledger.after': {
+    lines: [
+      { text: 'The ledger, back under the altar table. Fifty years of kindness with page numbers, and one line that waited for you.' },
+    ],
+  },
   'c9.ex.comal.cocina': {
     lines: [
       { text: 'The kitchen comal, set low against the west wall where the smoke knows the way out. It is the only fire in the room and it is never quite out.' },
@@ -1389,6 +1410,13 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   // patio words below.
   wallInt: [{ map: 'cocina', node: 'c9.ex.wallcal' }],
   rug: [{ map: 'cocina', node: 'c9.ex.rugpetate' }],
+  // The kitchen table carries the ledger once Refugio sets it out; finding
+  // the 1975 line is the player's own act, and it grants the journal page.
+  table: [
+    { map: 'cocina', when: { has: ['c9.ledger.out'], not: ['c9.ledger'] }, node: 'c9.ledger.read' },
+    { map: 'cocina', when: { has: ['c9.ledger'] }, node: 'c9.ex.ledger.after' },
+    { map: 'cocina', node: 'c9.ex.mesa' },
+  ],
   casona: [{ node: 'c9.ex.casona' }],
   portales: [{ node: 'c9.ex.portales' }],
   papel: [

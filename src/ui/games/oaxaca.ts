@@ -671,7 +671,17 @@ function buildItems(flags: Set<string>): OfrendaItem[] {
     {
       id: 'agua',
       label: 'a clay cup of water',
-      echo: 'For the thirsty traveler. She crossed an ocean twice. She will be thirsty.',
+      echo: 'Water for the thirst, Refugio says. She crossed an ocean twice. She will be thirsty.',
+    },
+    {
+      id: 'sal',
+      label: 'a little dish of salt',
+      echo: 'Salt for the seasoning of life. Refugio nudges the dish until it sits true, and says nothing else about it.',
+    },
+    {
+      id: 'copal',
+      label: 'copal, already smoking',
+      echo: 'Copal to carry what we say upward. The smoke finds the rafters and does not stop there.',
     },
     {
       id: 'pan',
@@ -942,6 +952,25 @@ function paintItem(g: CanvasRenderingContext2D, id: string, x: number, y: number
       for (let i = 0; i < 6; i++) dot(g, -8 + i * 3.2, -6 - (i % 3) * 4, 0.8, '#f7efd9');
       break;
     }
+    case 'sal': {
+      // A shallow clay dish with its small white hill of salt.
+      oval(g, 0, -3, 10, 4, '#b5713f');
+      oval(g, 0, -4.5, 8, 3, '#8a5330');
+      oval(g, 0, -6, 6.5, 3, '#f2ead6');
+      dot(g, -2, -7.5, 1.6, '#faf6ea');
+      dot(g, 1.5, -7, 1.3, '#faf6ea');
+      dot(g, 0, -8.6, 1, '#fffdf4');
+      break;
+    }
+    case 'copal': {
+      // The three-legged copalero, resin lit, smoke handled by the scene.
+      for (const lx of [-5, 0, 5]) rect(g, lx - 1, -4, 2, 4, '#6b4226');
+      oval(g, 0, -5, 8, 3.5, '#8a5330');
+      oval(g, 0, -7.5, 6.5, 3, '#54331f');
+      dot(g, 0, -8, 2.2, '#e8863a');
+      dot(g, 0, -8.5, 1.1, '#f4c15c');
+      break;
+    }
     case 'omiyage': {
       rr(g, -11, -15, 22, 15, 2, '#e8dcc4');
       rect(g, -11, -12, 22, 2.5, 'rgba(138,98,56,0.3)');
@@ -1062,7 +1091,7 @@ export class OfrendaPanel {
       this.done = true;
       this.audio.weaveDone();
       this.straightT = 0;
-      this.hint = 'Refugio lights the last candle. The altar holds a whole journey now. Press Space.';
+      this.hint = 'Refugio lights the last candle: so nobody trips on the dark, she says. Press Space.';
     } else {
       this.hint = 'The village watches, and nobody corrects a single placement. Next: choose a level, Space to set.';
     }
@@ -1112,6 +1141,16 @@ export class OfrendaPanel {
             if (c) sc.waft(c[0], c[1] - 22, 'rgba(255,214,140,0.5)', 4);
           }
         }
+      }
+    }
+    // The copal keeps smoking wherever it is: in your hands, then on its shelf.
+    const held = this.items[this.idx];
+    if (!this.done && held?.id === 'copal' && Math.random() < dt * 1.8) {
+      sc.waft(HELD[0] + (Math.random() - 0.5) * 5, HELD[1] - 16, 'rgba(216,206,192,0.30)', 5 + Math.random() * 3);
+    }
+    for (const rec of this.recs) {
+      if (rec.id === 'copal' && rec.land >= 0 && Math.random() < dt * 1.6) {
+        sc.waft(rec.x + (Math.random() - 0.5) * 5, rec.y - 12, 'rgba(216,206,192,0.26)', 4 + Math.random() * 3);
       }
     }
     if (this.straightT >= 0 && this.straightT < 1) {

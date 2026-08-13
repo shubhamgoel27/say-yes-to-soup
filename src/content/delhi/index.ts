@@ -38,11 +38,12 @@ export const CHAPTER: ChapterDef = {
       flag: 'c11.kite.start',
       doneNode: 'c11.kite.flown',
       title: 'The patang',
+      // Two lines only: the sky itself teaches the rest. Gusts, rivals, and
+      // pigeons each announce themselves in the panel, and the first frayed
+      // dor teaches the one law more gently than any card could.
       howTo: [
         'Space launches her when the breeze leans in. After that, Up is kheench, the pull; Down is dheel, the slack.',
-        'Kheench while the line is taut and steady. When a gust shoves, give dheel and let her climb it like a stair.',
-        'When pigeons cross, Down. Always. The sky is theirs first, and Yusuf is watching.',
-        'If your dor goes, it goes. Yusuf unwinds another off the charkhi: paper is cheap, the wind is free.',
+        'The wind will tell you which it wants. Whatever the sky takes, Yusuf\'s charkhi replaces: paper is cheap, the wind is free.',
       ],
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, false),
     },
@@ -52,7 +53,6 @@ export const CHAPTER: ChapterDef = {
       title: 'The sawan tournament',
       howTo: [
         'Three rivals, a rising wind, and a storm queueing behind the fort. The same two hands: kheench and dheel.',
-        'The last one flies in the storm front. Give dheel early and often; pull into a shove and your own line frays.',
         'A cut costs you that round and nothing else. Yusuf hands you the next kite and the roofs shout you back up.',
       ],
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, true),
@@ -157,6 +157,33 @@ export const CHAPTER: ChapterDef = {
         [26, 13, { t: 'kitecut' }],
         [12, 15, { t: 'kitecut' }],
       ],
+    },
+    {
+      // The night the kucha flew: what the roofs cut, the lanes inherit.
+      // Paper settles in the kinari lane, on the maidan, on the chowk brick.
+      map: 'delhi',
+      when: { has: ['c11.duel.done'] },
+      cells: [
+        [25, 22, { t: 'kitecut' }],
+        [9, 25, { t: 'kitecut' }],
+        [41, 17, { t: 'kitecut' }],
+      ],
+    },
+    {
+      // Sher for chai, standing offer: a regular's kulhads join the lane's
+      // percussion section outside Akhtar's corner.
+      map: 'delhi',
+      when: { has: ['c11.sherchai'] },
+      cells: [
+        [30, 15, { t: 'kulhadshards' }],
+        [35, 15, { t: 'kulhadshards' }],
+      ],
+    },
+    {
+      // After your Tuesday: the stack you rolled leans beside the atta board.
+      map: 'delhi-langar',
+      when: { has: ['c11.seva.done'] },
+      cells: [[14, 1, { t: 'rotistack' }]],
     },
   ],
   completion: {

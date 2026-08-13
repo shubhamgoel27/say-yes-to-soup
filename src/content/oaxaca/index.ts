@@ -74,6 +74,17 @@ export const CHAPTER: ChapterDef = {
         'Light a candle where you are going. We do that here too, in our own month. The sea between us is just a very wide table.',
       ],
     },
+    // The 1975 telegram, kept folded at the ledger's last page for fifty
+    // years. Refugio puts it in your hands; the paper does the rest.
+    {
+      id: 'oax.telegram',
+      from: 'kept fifty years at the back of the ledger',
+      body: [
+        'TELEGRAMA URGENTE · OFICINA DE OAXACA · 30 OCTUBRE 1975',
+        'PARA: ZOILA · SAN ISIDRO GUELAZANA',
+        'MAMA MUY GRAVE. VEN PRONTO. TE ESPERAMOS. LA CALETA.',
+      ],
+    },
   ],
   games: [
     {
@@ -93,7 +104,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c9.ofrenda.built',
       title: 'Her ofrenda',
       howTo: [
-        'Her things come into your hands one at a time, in the order the road gave them to you.',
+        'Things come into your hands one at a time: what every altar asks for, and what the road gave you.',
         'Up and down chooses a level: what guides her, what feeds her, what walks beside her.',
         'Space sets a thing down. No shelf is wrong here, and nobody in this room will correct you.',
         'Take all the time you want. The candles are patient, and the village is in no hurry at all.',

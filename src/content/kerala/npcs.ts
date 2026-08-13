@@ -25,6 +25,7 @@ export const KERALA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { has: ['joseph.letter'], not: ['c6.letter.delivered'] }, node: 'c6.mariamma.letter' },
+      { when: { has: ['c6.letter.delivered'], not: ['c6.letter.heard'] }, node: 'c6.mariamma.read' },
       { when: { not: ['met.mariamma'] }, node: 'c6.mariamma.nofirst' },
       { when: { has: ['c6.letter.delivered'], not: ['c6.mariamma2'] }, node: 'c6.mariamma.kitchen' },
       // After the kitchen lesson, once you are sitting in her house the way a
@@ -253,15 +254,30 @@ export const KERALA_NODES: NodeMap = {
   },
 
   // ---------------- Mariamma, the front door ----------------
+  // The delivery runs through the letter channel: the conversation ends, the
+  // page you carried across an ocean unfolds on screen, and her reaction
+  // waits for the next word. Every emotional line of the old chain survives.
   'c6.mariamma.letter': {
     lines: [
       { text: 'The open door breathes out woodsmoke and curry leaves. A small woman looks up, and somehow knows before you speak.' },
       { who: 'Mariamma', text: 'That is my Joseph’s knot on that parcel. Sit. Sit! Did you eat? You will eat.' },
+      { text: 'You hand over the letter, carried across one whole ocean for this kitchen. She unfolds it like something that might fly away.' },
+    ],
+    effects: [
+      'set:met.mariamma',
+      'set:c6.letter.delivered',
+      'clear:joseph.letter',
+      'journal:people.mariamma',
+      'letter:joseph.amma',
+    ],
+  },
+  'c6.mariamma.read': {
+    lines: [
       { text: 'She reads the letter aloud, to you, to the kitchen, to the smoke. At "Amma, I eat well, nobody cooks like you" she cries.' },
       { who: 'Mariamma', text: 'He says the cook is Filipino and very good. Then he says do not tell the cook, but Amma, your meen curry wins.' },
       { text: 'She laughs, wipes her eyes with the end of her mundu, and keeps reading. The page trembles a little, like the palms outside.' },
     ],
-    effects: ['set:met.mariamma', 'set:c6.letter.delivered', 'clear:joseph.letter', 'journal:people.mariamma'],
+    effects: ['set:c6.letter.heard'],
     next: 'c6.mariamma.gift',
   },
   'c6.mariamma.gift': {
@@ -326,10 +342,11 @@ export const KERALA_NODES: NodeMap = {
       { text: 'Not yet', goto: 'c6.sadya.wait' },
     ],
   },
+  // The rules live on the how-to card and in the aunties' corrections inside
+  // the panel; the send-off only has to be a send-off.
   'c6.sadya.go': {
     lines: [
-      { who: 'Mariamma', text: 'Right hand only, mone. The left hand has other duties in life and everyone at the leaf knows what they are.' },
-      { text: 'Auntie Leela and Auntie Rosamma flank you like tugboats. The first banana leaf is laid, narrow end pointing left.' },
+      { text: 'Auntie Leela and Auntie Rosamma flank you like tugboats. The first banana leaf is already down and waiting.' },
     ],
     effects: ['set:c6.sadya.start'],
   },
@@ -338,13 +355,13 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Mariamma', text: 'Go, walk, come back hungry. A sadya waits better than it reheats, but not by much.' },
     ],
   },
+  // The map of the leaf and the fold argument both happen inside the panel
+  // now, hands-on; the journal pages fill here, from the doing. One line of
+  // afterglow, one line of Mariamma, and the room goes back to eating.
   'c6.sadya.served': {
     lines: [
-      { text: 'Leaf after leaf, you learn the map: pickles small and sharp up left, rice arriving last like a monarch. Your right hand aches politely.' },
       { text: 'The room eats, argues, laughs, asks for more payasam. Someone says mathi, enough, and means it the third time they say it.' },
-      { who: 'Auntie Leela', text: 'See how the child folds the leaf! Toward, satisfied. I taught that.' },
-      { who: 'Auntie Rosamma', text: 'Away means satisfied, Leela. Your whole family folds it wrong and has since 1951.' },
-      { who: 'Mariamma', text: 'Both of you, mathi. The leaf is folded, the child ate, Joseph’s letter is answered. That is the grammar that matters.' },
+      { who: 'Mariamma', text: 'The leaf is folded, the child ate, Joseph’s letter is answered. That is the grammar that matters.' },
     ],
     effects: ['set:c6.sadya.done', 'clear:c6.sadya.start', 'journal:dishes.sadya', 'journal:dishes.payasam'],
   },
@@ -561,11 +578,13 @@ export const KERALA_NODES: NodeMap = {
     ],
     next: 'c6.rain.arrives',
   },
+  // The c6.rain flag flips the map to the monsoon mood and starts the rain
+  // audio the moment this node is entered, so the sky does the describing.
+  // What remains is only what a man up a palm would actually shout.
   'c6.rain.arrives': {
     lines: [
-      { text: 'The first drops land like coins on the tin roofs, then the tile roofs answer, deeper, and then the sky simply opens.' },
-      { text: 'Nobody runs for cover. Kids run OUT of cover. The tea stall fills, the frogs start their shift, the channel fizzes like soda.' },
-      { text: 'Edavappathi. The monsoon has arrived, and the village greets it like a relative who always comes on the promised day.' },
+      { who: 'Kuttan', text: 'HA! There she is.' },
+      { who: 'Kuttan', text: 'Edavappathi, mone. Stand in it a minute; introductions matter here.' },
     ],
     effects: ['set:c6.rain', 'journal:customs.monsoon'],
   },
@@ -650,10 +669,11 @@ export const KERALA_NODES: NodeMap = {
     ],
     effects: ['set:c6.rope.given', 'errand.done', 'clear:errand.coir-rope'],
   },
+  // How the song steers the boat is taught by the how-to card and by the
+  // song itself, one safe ragged stroke at a time. Varkey only recruits.
   'c6.varkey.invite': {
     lines: [
       { who: 'Captain Varkey', text: 'You carried rope without dropping it and letters across an ocean. Hands and reliability. I can teach rhythm to anything with both.' },
-      { who: 'Captain Varkey', text: 'The song is the whole trick. Singer calls, crew answers, oars strike ON the word. Miss the beat and you row alone; nobody rows alone for long.' },
     ],
     choices: [
       { text: 'Take the empty seat', goto: 'c6.varkey.go' },
@@ -965,6 +985,16 @@ export const KERALA_NODES: NodeMap = {
       { text: 'Oars lean at the jetty in order of height, like a family photo. None are labeled and all are somebody’s; everybody simply knows.' },
     ],
   },
+  'c6.ex.oars.after': {
+    lines: [
+      { text: 'Oars in order of height, one blade still wet from practice. None are labeled and one of them is yours; everybody simply knows.' },
+    ],
+  },
+  'c6.ex.vallam.after': {
+    lines: [
+      { text: 'Hauled out on the bank with her oars shipped, still dripping. Your shoulders count her seats differently now.' },
+    ],
+  },
   'c6.ex.spicesacks': {
     lines: [
       { text: 'Spice sacks under a tarpaulin, stenciled CARDAMOM. The smell escapes the jute anyway; fragrance has never respected packaging.' },
@@ -1132,6 +1162,11 @@ export const KERALA_NODES: NodeMap = {
   'c6.ex.umbrellas.kitchen': {
     lines: [{ text: 'Three umbrellas stood in the corner, still damp at the tips, dripping a small honest map of the last time anyone went out.' }],
   },
+  'c6.ex.umbrella.gift': {
+    lines: [
+      { text: 'Three tall umbrellas, and one from Japan, small as a mango, standing by the door like a guest of honor. It came early for the sky on purpose.' },
+    ],
+  },
   'c6.ex.shrub': {
     lines: [{ text: 'Pandanus thicket, spiny and satisfied. It hems the village the way commas hem a long sentence.' }],
   },
@@ -1182,7 +1217,10 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   laterite: [{ node: 'c6.ex.laterite' }],
   palm: [{ node: 'c6.ex.palm' }],
   banana: [{ node: 'c6.ex.banana' }],
-  vallam: [{ node: 'c6.ex.vallam' }],
+  vallam: [
+    { when: { has: ['c6.row.done'] }, node: 'c6.ex.vallam.after' },
+    { node: 'c6.ex.vallam' },
+  ],
   kettuvallam: [{ node: 'c6.ex.kettuvallam' }],
   coirrack: [{ node: 'c6.ex.coirrack' }],
   thattukada: [{ node: 'c6.ex.stall' }],
@@ -1197,6 +1235,7 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   nilavilakku: [{ node: 'c6.ex.nilavilakku' }],
   umbrellas: [
+    { map: 'mariamma-veedu', when: { has: ['c6.letter.delivered'] }, node: 'c6.ex.umbrella.gift' },
     { map: 'mariamma-veedu', node: 'c6.ex.umbrellas.kitchen' },
     { when: { has: ['c6.rain'] }, node: 'c6.ex.umbrellas.rain' },
     { node: 'c6.ex.umbrellas' },
@@ -1209,7 +1248,10 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c6.stumps.seen'] }, node: 'c6.ex.tennisball.six' },
     { node: 'c6.ex.tennisball' },
   ],
-  oars: [{ node: 'c6.ex.oars' }],
+  oars: [
+    { when: { has: ['c6.row.done'] }, node: 'c6.ex.oars.after' },
+    { node: 'c6.ex.oars' },
+  ],
   spicesacks: [
     { map: 'mariamma-veedu', node: 'c6.ex.spicesacks.kitchen' },
     { when: { has: ['c6.depart.ready'] }, node: 'c6.ex.spicesacks.manifest' },

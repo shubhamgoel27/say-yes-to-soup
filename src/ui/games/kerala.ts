@@ -970,7 +970,8 @@ export class SadyaPanel {
       this.phase = 'done';
       this.audio.weaveDone();
       if (sc) sc.flash('#ffe9b0', 0.4);
-      this.hint = 'They argue happily over your folded leaf. Either way, the leaf says you ate well. Press Space.';
+      this.hint =
+        '"Your whole family folds it wrong and has since 1951," someone adds, delighted. Either way, the leaf says you ate well. Press Space.';
     } else {
       this.root.hidden = true;
       const done = this.onDone;

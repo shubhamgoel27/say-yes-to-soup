@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic } from './scene';
+import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
 
 /**
@@ -885,7 +885,8 @@ const TARGETS: StarTarget[] = [
   {
     title: 'the Amanogawa',
     ask: '"Last: the river itself. At home we say Amanogawa, the River of Heaven. Follow the bright dust northeast."',
-    found: '"The Amanogawa. In twelve days I will see it from my grandmother\'s roof, and it will be the same river."',
+    found:
+      '"The Amanogawa. Two stars wait on its banks all year to meet for one night: Tanabata. In twelve days I watch it from my grandmother\'s roof."',
     rect: [0.6, 0.04, 0.96, 0.44],
   },
 ];
@@ -939,6 +940,8 @@ const LINES: [number, number][][][] = [
 
 const LABEL_AT: [number, number][] = [[0.155, 0.545], [0.485, 0.565], [0.79, 0.27]];
 const LINE_COLOR = ['rgba(240,214,150,0.9)', 'rgba(190,176,224,0.75)', 'rgba(200,222,244,0.8)'];
+/** Whose sky each reading belongs to: the tag says it so nobody has to. */
+const SKY_OF = ["the mate's sky", "Nani's sky", "Hana's sky"];
 
 /** Per-star twinkle phases and speeds, fixed so the sky never crawls. */
 const TWINKLE: [number, number][] = STARS.map((_, i) => {
@@ -1383,6 +1386,8 @@ export class StarPanel {
         g.fillStyle = '#e8d3a0';
         g.fillText(TARGETS[i]?.title ?? '', fpx(lx), fpy(ly) + (1 - la) * 6);
         g.globalAlpha = 1;
+        // A paper tag under the name: three skies, each claimed in the doing.
+        paperTag(g, fpx(lx), fpy(ly) + 16, SKY_OF[i] ?? '', 10, la * 0.9);
       }
     }
   }

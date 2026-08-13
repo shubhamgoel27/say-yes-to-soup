@@ -198,6 +198,10 @@ export const KERALA_TASKS: TaskDef[] = [
     text: 'Joseph’s letter and parcel have crossed an ocean in your pocket. His mother Mariamma is up from the jetty, the veedu with the open door.',
   },
   {
+    when: { has: ['c6.letter.delivered'], not: ['c6.letter.heard'] },
+    text: 'The letter is in Mariamma’s hands and her eyes are already shining. Stay in the kitchen; some readings need a witness.',
+  },
+  {
     when: { has: ['c6.letter.delivered'], not: ['c6.chaya'] },
     text: 'Mariamma’s orders: chaya at Shaji’s thattukada, and tell him whose guest you are. The village will do the rest.',
   },

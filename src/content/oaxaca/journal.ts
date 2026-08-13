@@ -225,6 +225,14 @@ export const OAXACA_TASKS: TaskDef[] = [
     text: 'Melitón’s costal of petals is over your shoulder. Walk the lane below the camposanto gate and lay the marigold path, thick where it bends.',
   },
   {
+    when: { has: ['c9.ledger.out'], not: ['c9.ledger'] },
+    text: 'The guelaguetza ledger lies open on Refugio’s table: fifty years of kindness with page numbers. Read until a name stops you.',
+  },
+  {
+    when: { has: ['c9.ledger'], not: ['c9.telegram'] },
+    text: 'The line in the ledger: Zoila, 1975. Owed. Refugio watched you find it. Ask her what happened that year.',
+  },
+  {
     when: { has: ['c9.ledger'], not: ['c9.mole.ask'] },
     text: 'Repay the week she never finished. Start where she would have: Chela’s mole, at the big comal on Refugio’s patio.',
   },
@@ -249,7 +257,7 @@ export const OAXACA_TASKS: TaskDef[] = [
     text: 'Tonight the camposanto is lit. Follow your own petals through the marigold arch. Don Melitón says the night knows its business.',
   },
   {
-    when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger'] },
+    when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger.out'] },
     text: 'Refugio keeps looking at the journal on your hip like a face she knows. Go back to her kitchen and show it to her.',
   },
   {

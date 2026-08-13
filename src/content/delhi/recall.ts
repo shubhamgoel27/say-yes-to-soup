@@ -35,6 +35,7 @@ export const RECALL: RecallManifest = {
   },
   rhymes: [
     ['customs.langar', 'customs.ayni'],
+    ['customs.seva', 'customs.ayni'],
     ['words.bhaiya', 'words.chetta'],
     ['words.abhi', 'words.ahorita'],
     ['customs.patang', 'customs.tanabata'],

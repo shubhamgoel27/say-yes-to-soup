@@ -183,6 +183,9 @@ function objectAt(x: number, y: number): string {
   if (x === 25 && y === 4) return 'j'; // fodder trodden into the ground
   if (x === 23 && y === 4) return 'h';
 
+  // Your own q'epi, set down beside the spawn: the postcards live in it, one
+  // look at a time, so the intro can stop narrating them.
+  if (x === 22 && y === 17) return 'A';
   if (x === 32 && y === 26) return 'k'; // the chakitaqlla leans on the house wall
   if (x === 13 && y === 26) return 'F'; // Rosa's chicha flag, beside her door
   // ---------------------------------------------------------- the plaza
@@ -308,6 +311,7 @@ export const VILLAGE_MAP: MapData = {
     l: { t: 'pelota', solid: true, tall: true },
     v: { t: 'parva', solid: true, tall: true },
     C: { t: 'cantaros', solid: true },
+    A: { t: 'qepi', solid: true },
     z: { t: 'batea', solid: true },
     m: { t: 'mantas' },
   },
