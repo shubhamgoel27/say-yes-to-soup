@@ -50,9 +50,40 @@ export function startLoop(update: (dt: number) => void, render: () => void): Loo
     };
   }
 
+  // rAF timestamps wobble by a fraction of a millisecond even when frames
+  // are presented at exact vsync intervals. Raw-delta dt integrates that
+  // wobble straight into every position: measured on a 60Hz window, the
+  // camera advanced 1.91px one frame and 2.21px the next at constant walk
+  // speed, an 8% velocity shimmer the eye reads as intermittent stutter.
+  // The fix: step by the display's typical interval (rolling median), and
+  // nudge toward the real clock so sim time never drifts from wall time.
+  const recent: number[] = [];
+  let drift = 0;
+
+  function smoothDt(raw: number): number {
+    recent.push(raw);
+    if (recent.length > 48) recent.shift();
+    if (recent.length < 12) return raw;
+    const sorted = [...recent].sort((a, b) => a - b);
+    const median = sorted[sorted.length >> 1] ?? raw;
+    // A real cadence change (120Hz to 60Hz, a stall) must be followed, not
+    // smoothed away: a raw delta far from the median resets the window.
+    if (raw > median * 1.6 || raw < median * 0.55) {
+      recent.length = 0;
+      recent.push(raw);
+      drift = 0;
+      return raw;
+    }
+    drift += raw - median;
+    // Repay drift over many frames; imperceptible per frame, exact overall.
+    const repay = Math.max(-0.1 * median, Math.min(0.1 * median, drift * 0.1));
+    drift -= repay;
+    return median + repay;
+  }
+
   function frame(now: number) {
     if (!running) return;
-    const dt = Math.min((now - last) / 1000, MAX_DT);
+    const dt = Math.min(smoothDt(now - last) / 1000, MAX_DT);
     last = now;
     // A thrown frame must never kill the game; log it and keep breathing.
     try {
