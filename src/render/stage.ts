@@ -53,19 +53,35 @@ export class PixiStage {
   private time = 0;
   private worldCanvas!: HTMLCanvasElement;
   private host!: HTMLElement;
-  /** Which API the next (re)build asks for. Drops to webgl after a GPU loss. */
-  private preference: 'webgpu' | 'webgl' = 'webgpu';
+  /** Which API the next (re)build asks for. Drops to webgl after a GPU loss.
+   * ?gl in the URL forces WebGL from the start, an escape hatch that also
+   * covers a Pixi prod-bundle hang observed after WebGPU device creation. */
+  private preference: 'webgpu' | 'webgl' =
+    new URLSearchParams(location.search).has('gl') ? 'webgl' : 'webgpu';
   /** Ambient tint survives a rebuild; the sprite holding it does not. */
   private ambient = 0xffffff;
   private recovering = false;
   private renderFails = 0;
 
-  static async create(worldCanvas: HTMLCanvasElement, host: HTMLElement): Promise<PixiStage> {
+  /** True from the end of init() until a recovery tears the app down. */
+  private live = false;
+  /** Callers who need the live canvas (pointer bindings); re-run per build. */
+  private canvasHooks: ((c: HTMLCanvasElement) => void)[] = [];
+
+  /**
+   * Synchronous on purpose. Awaiting this at main.ts's top level deadlocked
+   * the production bundle: the top-level await froze the index chunk mid
+   * evaluation, Pixi's renderer arrived by dynamic import, and that chunk
+   * imports shared bindings back out of the still-frozen index. Dev never
+   * hits it because dev serves real modules. The stage now assembles itself
+   * in the background and every public method no-ops until it is live,
+   * which the loss-recovery path needed anyway.
+   */
+  static create(worldCanvas: HTMLCanvasElement, host: HTMLElement): PixiStage {
     const s = new PixiStage();
     s.worldCanvas = worldCanvas;
     s.host = host;
-    await s.init();
-    s.resize();
+    void s.init().then(() => s.resize());
     window.addEventListener('resize', () => s.resize());
     if (import.meta.env.DEV) (globalThis as unknown as { __soupStage: PixiStage }).__soupStage = s;
     return s;
@@ -83,6 +99,7 @@ export class PixiStage {
     const worldCanvas = this.worldCanvas;
     const host = this.host;
     const app = new Application();
+    console.info(`[soup] boot: stage init (${this.preference})`);
     // WebGPU first: Chrome's newest graphics API; Pixi falls back to WebGL
     // automatically on browsers that lack it.
     await app.init({
@@ -175,6 +192,16 @@ export class PixiStage {
     s.present = new Sprite(s.prescaleRT);
     app.stage.addChild(s.present);
     s.ambientSprite.tint = s.ambient;
+    s.live = true;
+    // Pointer handlers bind to the canvas element, and this canvas is new on
+    // every build; whoever registered gets the fresh one each time.
+    for (const fn of s.canvasHooks) fn(app.canvas);
+  }
+
+  /** Run now if the stage is live, and again after every rebuild. */
+  withCanvas(fn: (c: HTMLCanvasElement) => void) {
+    this.canvasHooks.push(fn);
+    if (this.live) fn(this.app.canvas);
   }
 
   /** A lost GPUDevice never comes back; the stage has to notice and rebuild. */
@@ -191,6 +218,7 @@ export class PixiStage {
   private async recover(why: string): Promise<void> {
     if (this.recovering) return;
     this.recovering = true;
+    this.live = false;
     console.warn(`[soup] stage rebuilding: ${why}`);
     // A recovered WebGPU device has lost every resource anyway, and WebGL's
     // context restoration is the better-worn path; take it on the way back.
@@ -217,6 +245,7 @@ export class PixiStage {
    * the game IS the page.
    */
   resize() {
+    if (!this.live) return;
     const w = window.innerWidth;
     const h = window.innerHeight;
     this.base = Math.max(1, Math.max(w / VIEW_W, h / VIEW_H));
@@ -239,7 +268,7 @@ export class PixiStage {
   /** Ambient light color: 0xffffff = full day (multiply no-op). */
   setAmbient(color: number) {
     this.ambient = color;
-    this.ambientSprite.tint = color;
+    if (this.live) this.ambientSprite.tint = color;
   }
 
   setLights(specs: LightSpec[]) {
@@ -259,7 +288,7 @@ export class PixiStage {
 
   /** Called from the game's render step: upload, light, compose, present. */
   render() {
-    if (this.recovering) return;
+    if (!this.live || this.recovering) return;
     try {
       this.renderPass();
       this.renderFails = 0;

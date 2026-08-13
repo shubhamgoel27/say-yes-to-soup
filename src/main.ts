@@ -55,8 +55,11 @@ const $ = (id: string) => {
 // The Canvas2D composer now paints into an offscreen buffer; PixiJS presents
 // it with lighting, bloom, and shimmer-free zoom on top.
 const worldCanvas = $('game') as HTMLCanvasElement;
+console.info('[soup] boot: world composer');
 const renderer = new Renderer(worldCanvas);
-const stage = await PixiStage.create(worldCanvas, $('frame'));
+console.info('[soup] boot: gpu stage');
+const stage = PixiStage.create(worldCanvas, $('frame'));
+console.info('[soup] boot: stage ready');
 const debugEl = $('debug') as HTMLPreElement;
 const input = new Input();
 input.attach();
@@ -2336,7 +2339,6 @@ function render() {
 // drives. Every activation goes through the components' existing public
 // methods, so a click is indistinguishable from the key it stands in for.
 
-const glCanvas = $('stagegl') as HTMLCanvasElement;
 const frameEl = $('frame');
 const choicesEl = $('tb-choices');
 
@@ -2645,6 +2647,11 @@ function autoIntent(): Dir | null {
 
 // ---- the canvas: walk, interact, advance dialogue, rise from a bench ----
 
+// The stage canvas arrives asynchronously and is replaced wholesale if the
+// GPU device is ever lost; pointer bindings follow each new canvas.
+stage.withCanvas(bindPointer);
+
+function bindPointer(glCanvas: HTMLCanvasElement) {
 glCanvas.addEventListener('pointerdown', (e) => {
   if (e.button !== 0) return;
   if (textbox.isOpen) {
@@ -2684,6 +2691,7 @@ glCanvas.addEventListener('pointermove', (e) => {
   }
   if (glCanvas.style.cursor !== cursor) glCanvas.style.cursor = cursor;
 });
+}
 
 // ---- menu steering: drive each component's own cursor to the hovered row ----
 
