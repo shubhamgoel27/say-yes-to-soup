@@ -14,6 +14,20 @@ import { Rng, cellHash, outlineSheet, surface } from '../art/pix';
  */
 
 const A = ART;
+
+/**
+ * How many tiles beyond the viewport we still draw, per side. These are not
+ * arbitrary: a sprite is anchored at its bottom cell and drawn upward, so the
+ * anchor of a visible building can sit well below and left of the screen.
+ * `tests/engine.test.ts` holds these against the real art extents; the values
+ * were once padded on the wrong sides and houses blinked out as you walked
+ * away from them.
+ */
+export const CULL = { left: 7, right: 3, top: 3, bottom: 6 } as const;
+
+/** The widest and tallest sprite the world draws, in tiles, and its overhang
+ * to the left of its anchor cell. Buildings: 352x256 art plus a roof cap. */
+export const SPRITE_EXTENT = { wide: 5.5, tall: 5.25, leftOverhang: 0.25 } as const;
 const S = TILE * A;
 
 /** Which ground kinds grow which family of walkable micro-decor. */
@@ -60,6 +74,22 @@ const ACTOR_H = 1.15;
 
 /** Depth into the cell each boundary-feather mask reaches, as a fraction. */
 const SPILL_DEPTHS = [0.12, 0.2, 0.3, 0.42, 0.58];
+
+/**
+ * Every ground kind a seam on this map can ask to be feathered with. The draw
+ * loop asks for a cell's neighbour's kind, and a cell on the border neighbours
+ * the outside of the world, which reads as 'scree' whether or not the map
+ * contains any. Miss a kind here and it gets cut mid-stride instead.
+ */
+export function seamKinds(map: TileMap): Set<string> {
+  const kinds = new Set<string>(['scree']);
+  for (let y = 0; y < map.h; y++) {
+    for (let x = 0; x < map.w; x++) kinds.add(map.ground(x, y).t);
+  }
+  return kinds;
+}
+/** Seam fragments a single frame may cut before the rest wait their turn. */
+const BAKE_BUDGET = 2;
 
 export type Sprite = {
   actor: Actor;
@@ -149,6 +179,12 @@ export class Renderer {
   private spillMasks: HTMLCanvasElement[][] = [];
   /** Ground fragments already cut to a mask, keyed kind|dir|mask|variant. */
   private spillCache = new Map<string, HTMLCanvasElement | null>();
+  /** Maps whose seam fragments have all been cut already. */
+  private warmedMaps = new Set<string>();
+  /** Fragments cut so far this frame, against BAKE_BUDGET. */
+  private frameBakes = 0;
+  /** True while the warm pass runs, which the budget does not apply to. */
+  private warming = false;
   /** Sun geometry, driven by the world clock: skew sign is throw direction. */
   private sunSkew = -0.55;
   private sunLen = 1;
@@ -565,6 +601,33 @@ export class Renderer {
   }
 
   /**
+   * Cut every seam fragment this map could ask for, once, while the screen is
+   * still covered by the transition. Measured before this existed: walking
+   * across the village cut 40 fragments mid-stride, up to 8 in a single frame,
+   * and each one allocates a canvas. That is a hitch you can feel, and it
+   * moved around depending on which way you walked, which is exactly what
+   * "sometimes it stutters" feels like from the other side of the screen.
+   */
+  private warmSeams(map: TileMap) {
+    if (this.warmedMaps.has(map.id)) return;
+    this.warmedMaps.add(map.id);
+    const kinds = seamKinds(map);
+    // Any kind on the map can turn up as some other cell's neighbour, and the
+    // depth and variant are hashed per cell, so all of them are reachable.
+    this.warming = true;
+    for (const kind of kinds) {
+      if (kind === 'void') continue;
+      for (let dir = 0; dir < 4; dir++) {
+        for (let mask = 0; mask < SPILL_DEPTHS.length; mask++) {
+          this.spillTile(kind, dir, mask, 0);
+          this.spillTile(kind, dir, mask, 1);
+        }
+      }
+    }
+    this.warming = false;
+  }
+
+  /**
    * Boundary feathering, part two: one neighbouring material, already cut to
    * one mask. Composed on demand and kept, so a seam costs one drawImage.
    */
@@ -573,6 +636,11 @@ export class Renderer {
     const key = `${this.tiles.artName(kind)}|${dir}|${mask}|${variant}`;
     const hit = this.spillCache.get(key);
     if (hit !== undefined) return hit;
+    // Backstop for anything the warm pass could not foresee, such as a
+    // dressing that retiles the ground under you. A missing feather for one
+    // frame is a seam nobody notices; eight canvas allocations is a stutter.
+    if (!this.warming && this.frameBakes >= BAKE_BUDGET) return null;
+    this.frameBakes++;
     const src = this.tiles.groundImage(kind, variant);
     const m = this.spillMasks[dir]?.[mask];
     let out: HTMLCanvasElement | null = null;
@@ -892,12 +960,21 @@ export class Renderer {
     // Which room we are in decides what its walls are made of. One lookup a
     // frame, and only when the map actually changed.
     this.tiles.setMap(map.id);
+    this.frameBakes = 0;
+    this.warmSeams(map);
     const kindAt = (x: number, y: number) => (map.inBounds(x, y) ? map.ground(x, y).t : 'scree');
 
-    const x0 = Math.floor(cam.x / TILE) - 3;
-    const y0 = Math.floor(cam.y / TILE) - 5; // room for tall buildings above
-    const x1 = Math.ceil((cam.x + VIEW_W) / TILE) + 3;
-    const y1 = Math.ceil((cam.y + VIEW_H) / TILE) + 1;
+    // Cull margins, and which side each one is actually for. A building is
+    // drawn from its anchor cell UPWARD and a quarter tile left: its art is
+    // 5.5 tiles wide and about 5 tall, so the anchor can sit far below and far
+    // left of the view while the roof is still on screen. The old margins
+    // padded 5 tiles ABOVE, where tall art never reaches, and only 1 below and
+    // 3 left, where it always does, so houses blinked out as you walked away
+    // from them and blinked back as you returned.
+    const x0 = Math.floor(cam.x / TILE) - CULL.left;
+    const y0 = Math.floor(cam.y / TILE) - CULL.top;
+    const x1 = Math.ceil((cam.x + VIEW_W) / TILE) + CULL.right;
+    const y1 = Math.ceil((cam.y + VIEW_H) / TILE) + CULL.bottom;
 
     type TallEntry = { cx: number; cy: number; kind: string };
     const tall: TallEntry[] = [];

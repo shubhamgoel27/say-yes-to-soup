@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 
 import { Actor } from '../src/engine/actor';
 import { Camera } from '../src/engine/camera';
+import { CULL, SPRITE_EXTENT } from '../src/engine/renderer';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from '../src/engine/config';
 import { TileMap, type MapData } from '../src/engine/grid';
 import type { Dir } from '../src/engine/input';
@@ -227,5 +228,38 @@ describe('Camera', () => {
     for (let i = 0; i < 60; i++) cam.lead(0, 1, 1 / 60); // now south, no x intent
     cam.follow(px, py, bigW, bigH);
     assert.equal(cam.x, eastX, 'turning a corner yanked the other axis home');
+  });
+});
+
+describe('the draw range covers the art it must draw', () => {
+  /**
+   * Sprites hang up and slightly left of the cell they are anchored to, so the
+   * anchor of a building whose roof is plainly on screen can be several tiles
+   * below the bottom edge and several to the left. Margins that do not cover
+   * that make houses blink out as the player walks away and blink back on the
+   * way in. This once shipped: the margins padded five tiles above, where tall
+   * art never reaches, and one below, where it always does.
+   */
+  it('pads far enough below and left for a bottom-anchored sprite', () => {
+    // Below: art rises (tall - 1) tiles above its anchor row, so an anchor
+    // that far below the bottom edge is still partly on screen.
+    assert.ok(
+      CULL.bottom >= Math.ceil(SPRITE_EXTENT.tall - 1),
+      `bottom margin ${CULL.bottom} cannot reach an anchor ${Math.ceil(SPRITE_EXTENT.tall - 1)} tiles below the view`,
+    );
+    // Left: art runs (wide - 1) tiles right of its anchor column, so an anchor
+    // that far left of the left edge still paints into the view.
+    assert.ok(
+      CULL.left >= Math.ceil(SPRITE_EXTENT.wide - 1),
+      `left margin ${CULL.left} cannot reach an anchor ${Math.ceil(SPRITE_EXTENT.wide - 1)} tiles left of the view`,
+    );
+  });
+
+  it('pads far enough above and right for the overhang', () => {
+    assert.ok(CULL.top >= 1, 'top margin must cover a sprite standing on the first row above');
+    assert.ok(
+      CULL.right >= Math.ceil(SPRITE_EXTENT.leftOverhang) + 1,
+      'right margin must cover a sprite whose art overhangs left of its anchor',
+    );
   });
 });

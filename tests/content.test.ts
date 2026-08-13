@@ -17,6 +17,8 @@ import {
   REGION_MAPS,
   TASKS,
 } from '../src/content/world';
+import { TileMap } from '../src/engine/grid';
+import { seamKinds } from '../src/engine/renderer';
 import type { ExamineArm } from '../src/content/schema';
 import type { MapData } from '../src/engine/grid';
 
@@ -481,6 +483,39 @@ describe('the recall ledger stays honest across chapters', () => {
       const variants = LETTERS.filter((l) => l.id === id);
       assert.ok(variants.length > 0, `letter:${id} has no authored letter`);
       assert.ok(variants.at(-1) && !variants.at(-1)?.when, `letter ${id} has no unconditional fallback variant`);
+    }
+  });
+});
+
+/**
+ * Seam feathering cuts a canvas per (ground art, direction, depth, variant)
+ * and keeps it. Anything the warm pass misses gets cut mid-stride instead,
+ * and the measurement that prompted this found 40 cut while walking across
+ * the village, 8 of them in one frame. Each is a canvas allocation, and the
+ * hitch moved depending on which way you walked.
+ */
+describe('every seam a map can draw is cut before the map is played', () => {
+  it('warms every kind that can turn up as a neighbour, including off-map', () => {
+    for (const data of Object.values(REGION_MAPS)) {
+      const map = new TileMap(data);
+      const warmed = seamKinds(map);
+      const asked = new Set<string>();
+      for (let y = 0; y < map.h; y++) {
+        for (let x = 0; x < map.w; x++) {
+          for (const [dx, dy] of [
+            [0, -1],
+            [1, 0],
+            [0, 1],
+            [-1, 0],
+          ]) {
+            const nx = x + dx;
+            const ny = y + dy;
+            asked.add(map.inBounds(nx, ny) ? map.ground(nx, ny).t : 'scree');
+          }
+        }
+      }
+      const missed = [...asked].filter((k) => !warmed.has(k));
+      assert.deepEqual(missed, [], `${map.id}: would cut ${missed.join(', ')} while walking`);
     }
   });
 });
