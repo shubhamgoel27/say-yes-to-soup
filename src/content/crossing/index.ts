@@ -66,7 +66,7 @@ export const CHAPTER: ChapterDef = {
       'The wake unrolls astern, a white road that closes itself as fast as the ship can lay it.',
       'A flying fish bursts out, sprints on air for one silver breath, and hands itself back to the sea.',
       'The horizon rides at the same distance it kept yesterday. It is not that kind of line.',
-      'Under everything, the engine keeps its patient heartbeat. You feel it in the steel before you hear it.',
+      'Under everything, the engine keeps its steady heartbeat. You feel it in the steel before you hear it.',
       'An albatross holds station off the stern, adjusting nothing, spending nothing.',
       'Fourteen knots of west, and la mar files past like she has somewhere to be. She does not. She is the somewhere.',
     ],

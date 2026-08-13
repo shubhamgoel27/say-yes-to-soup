@@ -139,7 +139,7 @@ export const SICILY_JOURNAL: JournalEntry[] = [
     tab: 'customs',
     title: 'La passeggiata',
     sub: 'The evening walk. No destination, all company. The town’s daily parliament.',
-    you: 'Three laps of the lungomare at the speed of talk. You do not watch it, you join it, and by lap two slow is the only sensible speed.',
+    you: 'Three laps of the lungomare at the speed of talk. My legs kept trying to arrive somewhere, and the town outvoted them.',
   },
   {
     id: 'customs.upisci',
@@ -165,7 +165,7 @@ export const SICILY_JOURNAL: JournalEntry[] = [
     tab: 'customs',
     title: 'The circolo',
     sub: 'The fishermen’s club: cards, coffee, one fan, lifetime membership.',
-    you: 'Same men, same table, same argument since 1961. The empty chair was not empty; it was occupied by a man late by some years.',
+    you: 'Same men, same table, same argument since 1961. Nobody ever sat in the fifth chair, and nobody ever moved it either.',
   },
   {
     id: 'customs.abbanniata',

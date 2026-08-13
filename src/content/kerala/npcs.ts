@@ -250,8 +250,8 @@ export const KERALA_NODES: NodeMap = {
   // ---------------- arrival ----------------
   'c6.arrive': {
     lines: [
-      { text: 'The cargo ship left you at Kochi; a chugging boat left you here, on a jetty the width of a promise.' },
-      { text: 'Green water, green banks, green light. The air is a wet towel that smells of mud, smoke, and something frying.' },
+      { text: 'The cargo ship left you at Kochi; a chugging boat left you here, on a jetty one handcart wide, argued daily.' },
+      { text: 'Green water, green banks, green light. The air leans on you, wet, smelling of mud, smoke, and something frying.' },
       { text: 'In your pocket: a letter and a small parcel, carried across one whole ocean. Joseph said: the house with the open door.' },
       { text: 'Above the palms, the sky is stacking dark clouds like cargo. Everyone walks as if they know the schedule.' },
     ],
@@ -405,14 +405,14 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.idle': {
     lines: [
-      { who: 'Mariamma', text: 'The pot is thinking, the rain is coming, the leaf is cut. Sit, mone. Hurry is for people with worse kitchens.' },
+      { who: 'Mariamma', text: 'Mone, did you eat? Do not answer; sit, and the answer will become yes.' },
     ],
   },
 
   // ---------------- Shaji, the thattukada ----------------
   'c6.shaji.first': {
     lines: [
-      { text: 'A stall the size of a wardrobe, a kettle the size of an ambition. The man behind it nods with professional politeness.' },
+      { text: 'A stall the size of a wardrobe, a kettle the size of a temple bell. The man behind it nods with professional politeness.' },
       { who: 'Shaji', text: 'Chaya, sir? Puttu, sir? Sit, sir. The bench is for customers and philosophers, and the rate is the same.' },
     ],
     effects: ['set:met.shaji', 'journal:people.shaji'],
@@ -595,7 +595,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.kuttan.rain': {
     lines: [
-      { who: 'Kuttan', text: 'You planned around the rain, I saw; errands first, sky checked twice. We plan WITH it. It is not weather here, it is a relative.' },
+      { who: 'Kuttan', text: 'You planned around the rain, I saw; errands first, sky checked twice. We plan WITH it.' },
       { who: 'Kuttan', text: 'Fish move, roofs get tested, kallu tastes better. The rain does not care who curses it, which is a kind of wisdom.' },
     ],
     effects: ['set:c6.kuttan2'],
@@ -625,7 +625,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.omana.paddy': {
     lines: [
       { who: 'Omana', text: 'You see the flooded field? Pokkali rice. It grows tall in the monsoon with its feet in brackish water; no other rice would tolerate it.' },
-      { who: 'Omana', text: 'After harvest the field is opened to the tide, and prawns farm the stubble. Rice feeds prawn, prawn feeds soil. The field works both shifts.' },
+      { who: 'Omana', text: 'After harvest we open it to the tide and the prawns take the stubble. The field works both shifts.' },
     ],
     effects: ['set:c6.omana2', 'journal:customs.pokkali'],
   },
@@ -639,8 +639,8 @@ export const KERALA_NODES: NodeMap = {
   'c6.lib.first': {
     lines: [
       { text: 'One room, one ceiling fan, four newspapers on sticks, and shelves argued into order. A sign says: GRANDHASALA. READING ROOM.' },
-      { who: 'Divakaran Master', text: 'Every village has one. A laborer can read Marx, poetry, or the football page, and argue about all three before lunch. Usually he does.' },
-      { who: 'Divakaran Master', text: 'Whole generations learned letters in rooms like this. I keep the fan going and the arguments fair. It is quiet work. I am quietly proud of it.' },
+      { who: 'Divakaran Master', text: 'I keep the fan going and the arguments fair. Every village has a room like this one.' },
+      { who: 'Divakaran Master', text: 'Whole generations learned letters here, Marx to the football page, arguing all the way. Quiet work, and I am quietly proud of it.' },
     ],
     effects: ['set:met.librarian', 'journal:people.librarian', 'journal:customs.readingroom'],
   },
@@ -660,7 +660,7 @@ export const KERALA_NODES: NodeMap = {
   // ---------------- Captain Varkey, the race ----------------
   'c6.varkey.first': {
     lines: [
-      { text: 'On the bank, a crew drills strokes in an imaginary boat, counting in song. A thick-armed man watches them like a debt.' },
+      { text: 'On the bank, a crew drills strokes in an imaginary boat, counting in song. A thick-armed man watches them like money he is owed.' },
       { who: 'Captain Varkey', text: 'Club boat. Chundan vallam, hundred and one seats, and I am one rower short, which is the same as being short a lung.' },
       { who: 'Captain Varkey', text: 'Mind Raghavan, the stroke caller. He acknowledges only rowers. Everyone else is scenery to him, including, currently, you.' },
     ],
@@ -698,7 +698,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.rowed': {
     lines: [
-      { text: 'The song swallows you. Call, answer, strike; call, answer, strike. Somewhere in the middle you stop rowing and start belonging.' },
+      { text: 'The song swallows you. Call, answer, strike; call, answer, strike.' },
       { text: 'The boat surges each time a hundred blades bite at once, a muscle the length of a street. The bank blurs green; the crowd is one long vowel.' },
       { who: 'Captain Varkey', text: 'Ragged twice, on the beat the rest. For a first row in a chundan, I have seen worse from cousins.' },
       { text: 'Raghavan the stroke caller, who has not once looked at you, looks at you. One nod. It weighs more than the trophy would.' },
@@ -831,7 +831,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.moosa.idle': {
     lines: [
-      { who: 'Moosa', text: 'Cardamom in the sacks, rain on the tarpaulin, tea in the flask. Some inventories are simply a good day, counted.' },
+      { who: 'Moosa', text: 'Forty sacks yesterday, forty sacks today. On this jetty, boring news is the good kind.' },
     ],
   },
 
@@ -903,7 +903,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.ex.kettuvallam': {
     lines: [
-      { text: 'A kettuvallam, the tied boat: anjili wood and bamboo lashed with coir, famously no nails. It hauled rice for generations.' },
+      { text: 'A kettuvallam, the tied boat: anjili wood and bamboo lashed with coir, no nails. It hauled rice for generations.' },
       { text: 'Most of its cousins carry tourists now. The neighbors have opinions about this, and the opinions are not unanimous.' },
     ],
   },

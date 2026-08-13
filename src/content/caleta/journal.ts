@@ -63,7 +63,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     tab: 'words',
     title: 'Choclo',
     sub: 'Big-kernel corn, down from the valleys. Quechua, worn smooth by coastal mouths.',
-    you: 'Toasted it becomes cancha, eaten by the fistful while the ceviche makes you wait. The waiting is part of the recipe.',
+    you: 'The same big kernels from home, a whole road later. Toasted it turns into cancha; I ate a fistful waiting for the fish.',
     rhyme: {
       with: 'dishes.mote',
       note: 'Same corn, boiled in the mountains, grinning beside fish on the coast. I ate both inside one week and felt rich.',
@@ -77,7 +77,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     title: 'Ceviche',
     sub: 'Dawn-caught fish, a minutes-long kiss of lime, red onion, ají. Noon to three, never later.',
     nani: 'The bread here is not worth the walk, but the ceviche is worth the whole continent.',
-    you: 'Bright as a slap and gentler. Petro says it is a clock, not a dish, and the clock says noon.',
+    you: 'Lime, ají, and fish that was swimming at dawn. I understand now why nobody here eats it at night.',
   },
   {
     id: 'dishes.lechedetigre',
@@ -99,7 +99,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     tab: 'dishes',
     title: 'Emoliente',
     sub: 'Hot barley-and-herb glass from a cart that keeps the hours nobody else wants.',
-    you: 'Tastes like a field that decided to be tea. Don Wili serves it before dawn and after dark, the day’s two parentheses.',
+    you: 'Thick, warm, faintly sweet; it fixed a grey morning I did not know needed fixing. I went back the next day before the fog lifted.',
   },
   {
     id: 'dishes.chicharron',
@@ -167,13 +167,13 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     tab: 'people',
     title: 'Don Wili',
     sub: 'Emolientero. The cart and he keep the hours nobody else wants.',
-    you: 'Here before the boats leave, here after they return. A small lighthouse for cold hands.',
+    you: 'His cart was there when I got up and there when I quit for the day. I never once saw him arrive or leave.',
   },
   {
     id: 'people.rios',
     tab: 'people',
     title: 'Capitana Ríos',
-    sub: 'Master of the cargo ship at anchor. Checks clipboards like they owe her money.',
+    sub: 'Master of the cargo ship at anchor. Takes working hands only, and only ones the village vouches for.',
     you: '"They say a woman aboard is bad luck. I have crossed this ocean ninety times. The luck seems fine to me."',
   },
 
@@ -298,7 +298,7 @@ export const CALETA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['met.marisol', 'met.simon'], not: ['c2.stall2'] },
-    text: 'Go back to Marisol’s stall. A stall is not a shop, pe; it is a friendship with a scale in it, and friendships need visits.',
+    text: 'Go back to Marisol’s stall. She said you would see what a stall is; seeing takes visits.',
   },
   {
     when: { has: ['c2.stall2', 'c2.atenoon'], not: ['c2.casero'] },

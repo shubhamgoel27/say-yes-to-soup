@@ -263,7 +263,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'Hana presses a cloth bundle into your hands: two rice balls, still warm, wrapped like something precious. She uses both hands to give it.' },
       { who: 'Hana', text: 'Onigiri. Ferry food, boat food, everything food. My grandmother makes the umeboshi kind that fights back a little.' },
-      { who: 'Hana', text: 'And learn sumimasen. It means excuse me, and thank you, and sorry, and hello-please-forgive-the-bother. One word, does the work of ten.' },
+      { text: 'She says sumimasen edging past a porter, sumimasen to flag the tea cart, sumimasen over her change. Three jobs, one word.' },
     ],
     effects: ['set:c4.hana2', 'journal:dishes.onigiri', 'journal:words.sumimasen'],
   },
@@ -319,7 +319,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'Evening. You come up the lane as Hana holds the minshuku noren aside, and the word you have been carrying tries itself out: tadaima.' },
       { who: 'Hana', text: 'Okaeri.' },
-      { who: 'Hana', text: 'No, do not apologize! You said it right, so the door answered. That is the whole machine. Welcome back, to a house not yours. Yet.' },
+      { who: 'Hana', text: 'No, do not apologize! You said it right, so the door answered. Welcome back, to a house not yours. Yet.' },
     ],
     effects: ['set:c4.hana.okaeri'],
   },
@@ -353,7 +353,7 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.fumi.dashi': {
     lines: [
       { who: 'Fumi', text: 'The smell? Iriko, the little dried fish on the shelf there. This house\'s broth; the pot will teach you more than I can say.' },
-      { who: 'Fumi', text: 'Now, a favor with flavor in it. Daisuke on the quay holds a tai for me when the catch is good. My knees and that hill disagree. Fetch it?' },
+      { who: 'Fumi', text: 'A small work with lunch inside it: Daisuke holds a tai for me when the catch is good, and the hill got longer this year. Fetch it for me?' },
     ],
     effects: ['set:c4.dashi', 'errand:fumi-tai', 'set:errand.fumi-tai'],
   },
@@ -371,14 +371,13 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'You eat like someone I heard about. My mother-in-law kept this house before me, and she told a story her whole life.' },
       { who: 'Fumi', text: 'A laughing foreigner, a girl who bowed too deep to everyone, even the postman. Stayed a while, the year of the big Tanabata rain. 1974, I think.' },
       { who: 'Fumi', text: 'She wrote in a little book at this very table, and she thanked corrections. Twice, always twice. Why are you looking at me like that?' },
-      { text: 'The journal sits in your pack, suddenly weighing more than everything else in it.' },
+      { text: 'The journal is in your pack. You do not take it out.' },
     ],
     effects: ['set:c4.fumi.nani'],
   },
   'c4.fumi.okaeri': {
     lines: [
       { who: 'Fumi', text: 'Okaeri. See, you came in from the bath and I said it without thinking. The house has decided you count as coming home.' },
-      { who: 'Fumi', text: 'That is all okaeri is. A door that answers you. Take the word along; it works in every language, said or unsaid.' },
     ],
     effects: ['set:c4.okaeri'],
   },
@@ -506,8 +505,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Sachiko', text: 'Irasshai, irasshai! Come, taste first, questions after. This is the town meibutsu: lemon yokan, made with Setoda lemons since my grandmother.' },
       { text: 'A pale gold square, cool and dense, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad.' },
-      { who: 'Sachiko', text: 'Every town in Japan has its famous thing, and travelers carry it home. Omiyage. Not a souvenir for you. A piece of here, for your people there.' },
-      { text: 'Your people. Doña Petro at her pots. Pilar, Aurelio. It clicks like a latch: you have people now, in three ports behind you.' },
+      { text: 'Your people. Doña Petro at her pots. Pilar, Aurelio.' },
     ],
     effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai', 'journal:dishes.lemonyokan'],
   },
@@ -559,7 +557,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.omi.aurelio': {
     lines: [
-      { text: 'A tin of roasted olive-leaf tea from Shodoshima, where Japan first coaxed olives to grow, back in 1908. It smells like a warm, dry hillside.' },
+      { text: 'A tin of roasted olive-leaf tea from Shodoshima, where Japan first coaxed olives to grow. It smells like a warm, dry hillside.' },
       { who: 'Sachiko', text: 'For the man whose soup is always on. A tea for people who understand that slow is a flavor. He will taste what I mean.' },
     ],
     effects: ['set:omiyage.aurelio', 'set:c4.omiyage', 'journal:customs.omiyage'],
@@ -682,7 +680,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.isao.umi': {
     lines: [
-      { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath, and it has carried Japan\'s trade for two thousand years. A working sea.' },
+      { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath; a working sea.' },
       { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You lower your voice, you mind your manners, you say thank you at the rail.' },
     ],
   },
@@ -854,7 +852,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.postbox': {
     lines: [
-      { text: 'The red pillar box, patient as a shrine. Collection at eight and two, says the plate, and the box has never once been late.' },
+      { text: 'The red pillar box. Collection at eight and two, says the plate, and the box has never once been late.' },
     ],
   },
 
@@ -954,7 +952,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.tatami': {
     lines: [
-      { text: 'Tatami, green-gold and springy underfoot, smelling faintly of dry grass and summer. Slippers stop at its border; even they know.' },
+      { text: 'Tatami, green-gold and springy underfoot, smelling faintly of dry grass and summer. Slippers stop at its border.' },
       { text: 'No two mats are quite the same colour. They were made one at a time, and they have been standing in different amounts of sun ever since.' },
     ],
   },
@@ -1164,7 +1162,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.himono': {
     lines: [
-      { text: 'Small fish dry butterflied on the net rack, salted and patient. It stands exactly one cat\'s jump too high, built by a town that knows its cats.' },
+      { text: 'Small fish dry butterflied on the net rack, salted and stiffening. It stands exactly one cat\'s jump too high, built by a town that knows its cats.' },
     ],
   },
   'c4.ex.monohoshi': {

@@ -276,7 +276,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Marisol', text: 'Ah, down from the sierra, pe. I can smell the woodsmoke from here. Good smell.' },
       { who: 'Marisol', text: 'Lisa today. Humble fish, honest fish. The corvina is for people who need to impress somebody.' },
-      { who: 'Marisol', text: 'Come back, and come back again. A stall is not a shop, pe. It is a friendship with a scale in it.' },
+      { who: 'Marisol', text: 'Come back, and come back again. A stall is not a shop, pe; you will see.' },
     ],
     effects: ['set:met.marisol', 'journal:people.marisol', 'journal:words.pe'],
   },
@@ -462,8 +462,8 @@ export const CALETA_NODES: NodeMap = {
   'mar.nilda.words': {
     lines: [
       { who: 'Nilda', text: 'You heard Rafa earlier. He is not cruel, just lazy in the mouth. It runs on the coast like a current.' },
-      { who: 'Nilda', text: 'Meanwhile every kitchen here says choclo, cancha, yapa. Quechua words. The coast teases the mountain in the mountain’s own vocabulary.' },
-      { who: 'Nilda', text: 'Al toque means right away, by the way. You will need that one. Everything here is al toque except the actual doing.' },
+      { who: 'Nilda', text: 'Rafa teased you over a bowl of choclo, a Quechua word. I did not interrupt; the joke was doing my work for me.' },
+      { who: 'Nilda', text: 'Al toque, they will promise you. Then watch the actual doing.' },
     ],
     effects: ['set:c2.nilda2', 'journal:words.altoque'],
   },
@@ -508,7 +508,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { text: 'A man kneels over bundles of dry reed, binding them with cord in long, even wraps. A half-born boat.' },
       { who: 'Maestro Félix', text: 'Caballito de totora. Two big bundles, the madres. Two small, the hijos. Mothers and children, tied into a horse.' },
-      { who: 'Maestro Félix', text: 'A boat lasts a few weeks, then the sea has it back. So the boat is nothing. The knowing how is everything.' },
+      { who: 'Maestro Félix', text: 'In a month the sea takes it back. She has never once taken the hands.' },
     ],
     effects: ['set:met.felix', 'journal:people.felix'],
   },
@@ -567,7 +567,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.rode': {
     lines: [
       { text: 'The wave picks up the little horse and simply decides to keep it. The village rushes at you, whooping somewhere behind.' },
-      { text: 'Wet to the ribs, heart going like a drum. Three thousand years of people have grinned exactly this grin.' },
+      { text: 'Wet to the ribs, breathing in gulps. Behind you the village is scoring it a triumph.' },
       { who: 'Maestro Félix', text: 'There. Now you have been carried by la mar herself. She only does that for the ones who paddle.' },
     ],
     effects: ['set:c2.ride.done', 'clear:wave.start'],
@@ -680,7 +680,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { text: 'The plate goes out to the long table and comes back empty before you have wiped the board.' },
       { who: 'Doña Petro', text: 'You see? The fish works, the lime works, the clock works. We stay out of the way, politely, with a knife.' },
-      { who: 'Doña Petro', text: 'Now you carry a noon in your hands, hija. Spend it anywhere on earth. It will not stop being noon.' },
+      { who: 'Doña Petro', text: 'There; now noon owes you, anywhere on earth. Collect it.' },
     ],
     effects: ['clear:c2.cook.start', 'set:c2.cook.done'],
   },
@@ -793,7 +793,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.faustino.idle': {
     lines: [
-      { who: 'Faustino', text: 'Two days to sell, one to drink the sea with my eyes, then up again before the llamas learn to like fish. A road is ayni with distance.' },
+      { who: 'Faustino', text: 'Two days to sell, one to drink the sea with my eyes. Then up again, before the llamas learn to like fish.' },
     ],
   },
   'mar.llama.train': {
@@ -871,7 +871,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.netmended': {
     lines: [{ text: 'Last evening’s net, spread to dry with its new knots pale in the old mesh. The circle will find it more holes by tonight.' }],
   },
-  'mar.ex.crate': { lines: [{ text: 'Fish crates, silver tails over the rim. The pelicans study them with the patience of professionals.' }] },
+  'mar.ex.crate': { lines: [{ text: 'Fish crates, silver tails over the rim. The pelicans stand close and wait their moment.' }] },
   'mar.ex.caballito': {
     lines: [{ text: 'Reed horses stood on their tails to drain overnight. Born wet, retired in weeks, remembered for three thousand years.' }],
   },
@@ -887,11 +887,11 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.ex.sea': {
     lines: [
-      { text: 'Grey-green and cold and absolutely full of intent. It is easy to see why the ones who work her say la mar.' },
+      { text: 'Grey-green and cold, dragging whole ropes of kelp sideways. It is easy to see why the ones who work her say la mar.' },
     ],
   },
   'mar.ex.path2': { lines: [{ text: 'Hard-packed sand, swept by wind and brooms in unequal shifts.' }] },
-  'mar.ex.plaza2': { lines: [{ text: 'The malecón. In the evening the whole village walks it end to end, slowly, for no reason except every reason.' }] },
+  'mar.ex.plaza2': { lines: [{ text: 'The malecón. In the evening the whole village walks it end to end, slowly, twice.' }] },
   'mar.ex.pond': { lines: [{ text: 'Pond water the color of green glass. Reeds stand in it like a crowd waiting for news.' }] },
   'mar.ex.pond2': {
     lines: [{ text: 'Dug by hands that are gone, tended by hands that are here. The pond outlives every digger; that is the arrangement.' }],
@@ -915,7 +915,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [{ text: 'Yuyo the tide tore loose, drying into dark ribbons. At noon it will be under someone’s ceviche; for now it is the sea’s laundry.' }],
   },
   'mar.ex.jelly': {
-    lines: [{ text: 'A jellyfish the tide forgot, clear as a spilled dessert. You consider poking it, and decline with honor.' }],
+    lines: [{ text: 'A jellyfish the tide forgot, clear as a spilled dessert. The next tide is due by evening; it can wait.' }],
     effects: ['set:c2.seen.jelly'],
   },
   'mar.ex.jelly2': {
@@ -988,7 +988,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [{ text: 'A mooring post from the sugar days, now a full-time pelican office. Current occupant: present, upright, unimpressed.' }],
   },
   'mar.ex.galli': {
-    lines: [{ text: 'Gallinazos in a row, black as spilled ink, supervising the beach. Nothing has died; they wait anyway, professionally.' }],
+    lines: [{ text: 'Gallinazos in a row on the dune ridge, black as spilled ink. Nothing has died; they wait anyway.' }],
     effects: ['set:c2.seen.galli'],
   },
   'mar.ex.galli2': {
@@ -1015,7 +1015,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.pintura': {
     lines: [
       { text: 'A hull up on trestles, keel to the sky, half of it still salt-grey and half of it turquoise. The wet edge stops mid-stroke.' },
-      { text: 'The tins are open and the brush is lying across one of them. Somebody was called away, and the sea is patient about this.' },
+      { text: 'The tins are open and the brush is lying across one of them. Somebody was called away mid-coat.' },
     ],
   },
   'mar.ex.pintura2': {

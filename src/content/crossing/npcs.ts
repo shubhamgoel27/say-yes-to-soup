@@ -217,7 +217,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.rios.first': {
     lines: [
-      { text: 'The captain looks up from a clipboard. The clipboard appears to be losing.' },
+      { text: 'The captain looks up from a clipboard.' },
       { who: 'Capitana Ríos', text: 'The galley hand. Petro vouched, so the village vouched, so here you are. A ship floats on that arithmetic as much as on steel.' },
       { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, which means he runs the morale. Report to him. La mar is generous this week; help him keep it so.' },
     ],
@@ -231,7 +231,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.rios.lamar': {
     lines: [
       { who: 'Capitana Ríos', text: 'El mar is the thing on charts. La mar is the one who carries us, and could decline to. The ones she carries say it her way.' },
-      { who: 'Capitana Ríos', text: 'Ninety-two crossings and I have never once said it wrong. Superstition is only respect with barnacles on it.' },
+      { who: 'Capitana Ríos', text: 'Call it superstition. I call it not arguing with my employer.' },
     ],
   },
   'c3.rios.lamar.knows': {
@@ -326,7 +326,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.cooked': {
     lines: [
-      { text: 'The pot settles, dark and glossy. Garlic, soy, vinegar and time: the whole argument reduces to one certain sauce.' },
+      { text: 'The pot settles, dark and glossy. Garlic, soy, vinegar and time, reduced to one certain sauce.' },
       { who: 'Mang Ben', text: 'Masarap! When you hear that word across the mess tonight, remember you earned a piece of it. Adobo keeps; homesickness does not.' },
       { text: 'At dinner the mess is loud again. Joseph has two helpings of sinigang and no long face at all. Medicine, administered.' },
     ],
@@ -344,7 +344,7 @@ export const CROSSING_NODES: NodeMap = {
   // twice removed, and funnier every time it changes hands.
   'c3.ben.her': {
     lines: [
-      { text: 'He is portioning tomorrow’s rice into trays, counting scoops under his breath and losing the count on purpose.' },
+      { text: 'He is portioning tomorrow’s rice into trays, counting scoops under his breath and losing the count.' },
       { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once. The cook who taught me had it from the cook before him.' },
       { who: 'Mang Ben', text: 'A passenger girl who would not stay out of here. Zoila. Peeled onions for her supper and sang the whole watch.' },
       { who: 'Mang Ben', text: 'Badly, they say. They hid the ladle from her and she sang anyway. Thirty-one days, and the old cook missed it after.' },
@@ -411,7 +411,7 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Joseph', text: 'A word, friend. You land in Japan and keep going; from there, ships run everywhere. Mine runs the wrong way first.' },
       { text: 'From inside his jacket: a letter gone soft at the folds, and a small cloth bundle knotted with more care than any lashing on deck.' },
       { who: 'Joseph', text: 'For my mother. Mariamma, in the backwaters near Kochi; every boatman knows the house. The letter says what letters say.' },
-      { who: 'Joseph', text: 'If your road ever bends through Kerala, carry them to her. If it does not, carry them anyway. Roads listen when you hold something.' },
+      { who: 'Joseph', text: 'If your road ever bends through Kerala, carry them to her. If it does not, carry them anyway; better they wait in your bag than in mine.' },
     ],
     choices: [
       { text: 'Take the letter and the bundle', goto: 'c3.jos.entrust.yes' },
@@ -484,7 +484,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.hana.words': {
     lines: [
       { who: 'Hana', text: 'You gave me a constellation, so: arigatou. Thank you. Your first word of Japanese, and honestly the one I use most.' },
-      { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and you will be adopted by dinner.' },
+      { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
     ],
     effects: ['set:c3.hana.tanabata'],
   },
@@ -546,7 +546,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { text: 'The bosun stands in the container canyon, one hand on a lashing rod, testing it the way you test a drum.' },
       { who: 'The Bosun', text: 'New hands. Two rules on my deck: one hand for you, one for the ship. And no whistling; the wind takes requests too seriously.' },
-      { who: 'The Bosun', text: 'The cat outranks you. The cook outranks me. Learn the ladder and this is the happiest steel village afloat.' },
+      { who: 'The Bosun', text: 'The cat outranks you; the cook outranks me. Learn the ladder and the run goes easy.' },
     ],
     effects: ['set:c3.met.bosun', 'journal:people.bosun'],
   },
@@ -575,7 +575,7 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'Noon, on the Line. Neptune holds court on the hatch: the bosun in a mop wig and a bedsheet, trident of taped-together boat hooks.' },
       { who: 'The Bosun', text: 'The charge: presuming to enter my kingdom unshelled and unsalted. How plead you? Wrong. All wogs plead wrong. It is tradition.' },
       { text: 'The royal barber pats your face with flour. The royal court, meaning everyone off watch, tips one bucket of warm sea over you.' },
-      { text: 'Then the bosun shakes your dripping hand and the whole deck cheers like something true just happened. Somehow, it did.' },
+      { text: 'Then the bosun shakes your dripping hand and the whole deck cheers.' },
       { who: 'The Bosun', text: 'Rise, shellback, child of Neptune.' },
     ],
     effects: ['set:c3.shellback', 'journal:customs.linecrossing'],
@@ -632,7 +632,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [{ text: 'Steel plating painted deck-green, repainted so many times the coats have geology. Nonskid grit holds every step you give it.' }],
   },
   'c3.ex.railing': {
-    lines: [{ text: 'White rails, waist high, cold in any weather. Below them la mar goes by at fourteen knots, minding everything at once.' }],
+    lines: [{ text: 'White rails, waist high, cold in any weather. Below them la mar goes by at fourteen knots.' }],
   },
   'c3.ex.contA': {
     lines: [{ text: 'Rust-red boxes lashed four square with rods and twist-locks. The manifest says machine parts. The bosun says "weather, eventually."' }],

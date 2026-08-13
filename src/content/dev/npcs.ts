@@ -383,7 +383,7 @@ export const NODES: NodeMap = {
     lines: [
       { who: 'Don Aurelio', text: 'Mm. First: did you sleep warm?' },
       { who: 'Don Aurelio', text: 'And your family, they are well? The rains did not catch you on the pass?' },
-      { text: 'Some minutes go by. They do not feel wasted.' },
+      { text: 'Some minutes go by. By the third answer you have forgotten what you came to ask.' },
       { who: 'Don Aurelio', text: 'Now. What did you want to ask?' },
     ],
     effects: ['set:met.aurelio', 'journal:customs.warmup', 'journal:people.aurelio'],
@@ -567,7 +567,7 @@ export const NODES: NodeMap = {
   // ---------------- Mateo ----------------
   'mateo.first': {
     lines: [
-      { who: 'Mateo', text: 'My grandfather knits faster than I text. True fact.' },
+      { who: 'Mateo', text: 'My grandfather knits faster than I text; I timed us. He heard, and knitted me a hat.' },
       { who: 'Mateo', text: 'He says a chullu keeps thoughts warm. I say my phone dies by noon anyway, so maybe he wins.' },
     ],
     effects: ['set:met.mateo', 'journal:people.mateo', 'journal:customs.chullu'],
@@ -583,7 +583,7 @@ export const NODES: NodeMap = {
   'carmen.first': {
     lines: [
       { who: 'Doña Carmen', text: 'Sit if you like, the sun is free. This lliclla is for my granddaughter in Lima.' },
-      { who: 'Doña Carmen', text: 'The zigzag is the river. The river is also the road of stars. One thread, two truths, that is weaving.' },
+      { who: 'Doña Carmen', text: 'The zigzag is the river; also the road of stars. The thread is not confused; you are.' },
     ],
     effects: ['set:met.carmen', 'journal:people.carmen', 'journal:words.lliclla'],
   },
@@ -943,7 +943,7 @@ export const NODES: NodeMap = {
       { text: 'Earth over embers over papas. Then the waiting, which smells better every minute of it.' },
       { text: 'Justina rakes one out with a stick, tosses it palm to palm, splits it. Steam climbs out like something set free.' },
       { who: 'Justina', text: 'First bite is the field\'s fee. Eat. No pot in Peru can do this; the earth cooks its own, and does it best.' },
-      { text: 'It tastes of smoke and rain and the exact ground you are standing on. Every oven after this one will lose the comparison.' },
+      { text: 'It tastes of smoke and rain and the exact ground you are standing on.' },
     ],
     effects: ['clear:watia.start', 'set:watia.done', 'journal:dishes.watia'],
   },
@@ -958,7 +958,7 @@ export const NODES: NodeMap = {
     effects: ['set:allqu.friend', 'journal:people.allqu'],
   },
   'allqu.idle': {
-    lines: [{ text: 'The dog checks in: everything smells approximately correct. The patrol continues.' }],
+    lines: [{ text: 'The dog noses your hand, finds everything approximately correct, and moves on.' }],
   },
   // Petting escalates, because the game should always out-commit the player.
   'allqu.pet1': {
@@ -1081,7 +1081,7 @@ export const NODES: NodeMap = {
     lines: [
       { who: 'Chasca', text: 'Chin up. Eyes on the far water. And... ¡digan papas!' },
       { text: 'You say papas.' },
-      { who: 'Chasca', text: 'Lovely. The picture will be beautiful. Wherever pictures go.' },
+      { who: 'Chasca', text: 'Lovely. The picture will be beautiful.' },
     ],
     effects: ['set:photo.taken', 'set:photo.flash'],
   },
@@ -1129,7 +1129,7 @@ export const NODES: NodeMap = {
   },
   'faustino.idle': {
     lines: [
-      { who: 'Faustino', text: 'A road is just ayni with distance, friend. It carries you; someday you carry something back along it.' },
+      { who: 'Faustino', text: 'This road took salt up my whole life and brought sugar back down. Nobody rides it free; it just bills late.' },
     ],
   },
   'faustino.kintu': {
@@ -1194,8 +1194,7 @@ export const NODES: NodeMap = {
   },
   'ex.campfire': {
     lines: [
-      { text: 'A fire built by someone who has built ten thousand fires. It burns exactly as much as it should.' },
-      { text: 'You feel rested just standing here. The fire asks for nothing in return. Some fires are simply like that.' },
+      { text: 'A fire built by someone who has built ten thousand fires. It burns exactly as much as it should, and asks nothing for it.' },
     ],
   },
   'ex.signpost': {
@@ -1226,7 +1225,7 @@ export const NODES: NodeMap = {
   },
   'ex.bajadasign': {
     lines: [
-      { text: 'A board at the elbow of the last switchback, lettered by somebody patient: LA CALETA, and under it an arrow, pointing down.' },
+      { text: 'A board at the elbow of the last switchback, lettered by a careful hand: LA CALETA, and under it an arrow, pointing down.' },
       { text: 'The arrow has been repainted more often than the letters. People keep needing to be told that yes, it really is just down there.' },
     ],
   },
@@ -1406,7 +1405,7 @@ export const NODES: NodeMap = {
     lines: [{ text: 'Bare worked earth. Somebody turns this ground and the ground, on balance, cooperates.' }],
   },
   'ex.wallInt': {
-    lines: [{ text: 'A wall that has heard everything and repeated none of it.' }],
+    lines: [{ text: 'Adobe, whitewashed to shoulder height, still warm where the afternoon sun sat on it.' }],
   },
   'ex.mat': {
     lines: [{ text: 'The threshold mat, thin with welcomes.' }],
@@ -1526,7 +1525,7 @@ export const NODES: NodeMap = {
   },
   'ex.gallina': {
     lines: [
-      { text: 'A hen, auditing the ground with total confidence. She finds something every third step, or claims to.' },
+      { text: 'A hen works the ground with total confidence. She finds something every third step, or claims to.' },
     ],
   },
   'ex.kite': {
@@ -1558,7 +1557,7 @@ export const NODES: NodeMap = {
   },
   'ex.apachetita.stone': {
     lines: [
-      { text: 'You add a stone before you have finished deciding to. The pile is one traveler taller now, and so, somehow, are you.' },
+      { text: 'You add a stone before you have finished deciding to. The pile is one traveler taller now.' },
     ],
   },
   'ex.lagarto': {

@@ -352,7 +352,7 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'In the cool of the kitchen a woman works a clay basin, lifting the corn-and-cacao with her forearm until white foam rises.' },
       { who: 'Doña Refugio', text: 'Tejate. Sit. The foam is the prize, and the foam does not wait for introductions.' },
       { text: 'It is cold, faintly of flowers, drunk from a painted jícara. She watches you drink like the drink is a question.' },
-      { who: 'Doña Refugio', text: 'You carry that book on your hip the way some people carry a sleeping child. Come back when you have met my village.' },
+      { who: 'Doña Refugio', text: 'You carry that book the way some people carry a thing they have stopped noticing they are holding. Come back when you have met my village.' },
     ],
     effects: ['set:met.refugio', 'journal:people.refugio', 'journal:dishes.tejate'],
   },
@@ -520,7 +520,7 @@ export const OAXACA_NODES: NodeMap = {
   'c9.ofrenda.built': {
     lines: [
       { text: 'The small altar glows beside the big one: her photograph, her bread, her flowers, the journey arranged around her like company.' },
-      { who: 'Doña Refugio', text: 'Fifty years she had no place set in this valley. Look at her now. Tonight we take the last candle to the camposanto.' },
+      { who: 'Doña Refugio', text: 'All this time she had no place set in this valley. Look at her now. Tonight we take the last candle to the camposanto.' },
       { text: 'The journal sits at the altar’s foot, closed. For once it does not feel half finished. It feels half full.' },
     ],
     // The customs page fills here, with your own hands just off the altar: the
@@ -654,7 +654,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.chela.stiryes': {
     lines: [
-      { who: 'Abuela Chela', text: 'In circles, with the pot, never against it. The mole sets the pace and you agree with it. That is the entire recipe for everything.' },
+      { who: 'Abuela Chela', text: 'In circles, with the pot, never against it. The mole sets the pace and you agree with it. That is the entire recipe.' },
     ],
     effects: ['set:c9.mole.start'],
   },
@@ -672,7 +672,7 @@ export const OAXACA_NODES: NodeMap = {
   'c9.mole.stirred': {
     lines: [
       { text: 'Somewhere in the hour, your arm stops being yours and becomes the pot’s. The mole turns glossy, black as a polished olla, quiet.' },
-      { who: 'Abuela Chela', text: 'There. Fifty years ago I promised a traveler she would stir this pot. I am telling her right now that her family kept the appointment.' },
+      { who: 'Abuela Chela', text: 'There. Before the church was painted, I promised a traveler she would stir this pot. I am telling her now that her family kept the appointment.' },
       { text: 'She says it to the steam, conversationally, like the steam has ears. On this patio, this week, it might.' },
     ],
     effects: ['clear:c9.mole.start', 'set:c9.mole.done', 'journal:dishes.molenegro'],
@@ -827,7 +827,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.kid.two': {
     lines: [
-      { who: 'Nico', text: 'Okay, Silvino says the alebrijes came from a fever dream in 1936, which is honestly BETTER. A fever! You can catch one anytime!' },
+      { who: 'Nico', text: 'Okay, Silvino says the alebrijes came from a fever dream in 1936. A fever! You can catch one anytime!' },
       { who: 'Nico', text: 'Also, the face paint is for us, for the comparsa. Not for standing next to graves taking pictures. Melitón made that rule very clear.' },
     ],
     effects: ['set:c9.kid2'],
@@ -841,7 +841,7 @@ export const OAXACA_NODES: NodeMap = {
   // ---------------- Don Melitón, camposanto caretaker ----------------
   'c9.care.first': {
     lines: [
-      { text: 'An old man sweeps between the graves with a broom worn to a slant, unhurried, like the dust and he have an understanding.' },
+      { text: 'An old man sweeps between the graves with a broom worn to a slant, unhurried, moving the dust only as far as it agrees to go.' },
       { who: 'Don Melitón', text: 'Welcome. Walk anywhere, the paths are for walking. We are getting the beds ready; company is coming from far away.' },
     ],
     effects: ['set:met.caretaker', 'journal:people.caretaker'],
@@ -888,7 +888,7 @@ export const OAXACA_NODES: NodeMap = {
   'c9.vigil2': {
     lines: [
       { text: 'On the south wall, apart from her family’s row, Refugio has set one candle facing out, toward the road.' },
-      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. Fifty years owed, both directions, and paid.' },
+      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. Owed, both directions, and paid.' },
       { who: 'Doña Refugio', text: 'Your petals run gate to lane to doorway. If she is coming, she will not miss the turn.' },
     ],
     next: 'c9.vigil3',
@@ -896,7 +896,8 @@ export const OAXACA_NODES: NodeMap = {
   'c9.vigil3': {
     lines: [
       { who: 'Don Melitón', text: 'Sit. Eat. Tonight nobody in this camposanto is a stranger, which for one night includes the dead.' },
-      { text: 'You stay until the candles are low. Someone tells a story about your grandmother that you have never heard, and now will never forget.' },
+      { text: 'You stay until the candles are low. Someone starts on your grandmother: a borrowed horse, the wrong river, her refusing to dry off.' },
+      { text: 'You will never hear it the same twice.' },
     ],
     effects: ['set:c9.complete', 'journal:customs.camposanto'],
   },
@@ -950,7 +951,7 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Chasca', text: 'The soup-eater, standing waist-deep in marigolds. I have followed you across one entire planet and this is the picture I was saving film for.' },
       { who: 'Chasca', text: 'Orange to the horizon, you in the middle, the camposanto wall behind. Do not smile. Just be arriving. You are very good at arriving.' },
       { text: 'The shutter clicks once. She lowers the camera slowly, like setting down a full cup.' },
-      { who: 'Chasca', text: 'That was the last frame of the roll, and the roll is the album. Albums end, you know. That is how you can tell they were about something.' },
+      { who: 'Chasca', text: 'That was the last frame of the roll, and the roll is the album. Albums end, you know.' },
     ],
     effects: ['set:met.chascaC9', 'set:photo.flash', 'set:photo.c9.field'],
   },
@@ -1060,7 +1061,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.ex.barrostall': {
     lines: [
-      { text: 'Barro negro: grey clay burnished with a quartz stone until it fires black and shining. Doña Rosa’s trick, the whole craft turned by one woman’s hands.' },
+      { text: 'Barro negro: grey clay burnished with a quartz stone until it fires black. The shelf shines like wet river stones.' },
     ],
   },
   'c9.ex.telar': {

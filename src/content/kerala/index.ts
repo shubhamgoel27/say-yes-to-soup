@@ -144,7 +144,7 @@ export const CHAPTER: ChapterDef = {
       'The rain is rehearsing somewhere out over the lagoon. You can hear it tuning.',
       'A coconut lets go back in the grove: one drumbeat. The palms wait a decent interval before the next.',
       'Shaji’s kettle and the frogs split the afternoon between them, steam solo, chorus after.',
-      'The laterite lane glows redder as the clouds stack. Colors here rise before the rain does.',
+      'The laterite lane glows redder as the clouds stack. Down the row, somebody pulls washing off the line in armfuls.',
     ],
     'mariamma-veedu': [
       'The aduppu breathes coconut-husk smoke up into rafters that have smelled it all their lives.',

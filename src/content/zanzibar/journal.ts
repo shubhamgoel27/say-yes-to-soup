@@ -48,7 +48,7 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     tab: 'words',
     title: 'Habari',
     sub: 'The greeting ladder: news of the morning, the road, the home. Answer nzuri, then ask back.',
-    nani: 'I tried to skip to my question and was returned, smiling, to the start. The greeting is not the door; it is the house.',
+    nani: 'I tried to skip to my question and was returned, smiling, to the start, twice. The third time I stopped carrying the question.',
     you: 'Rashid restarted me from the top twice. The third time I greeted all the way down, and the village unlocked like a tide.',
   },
   {

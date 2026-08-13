@@ -170,7 +170,7 @@ export const CHAPTER: ChapterDef = {
       'The vigil settles in around you, family by family, blanket by blanket. Nobody hurries, and nobody speaks of leaving.',
       'One by one the candles stop flickering and steady, as if the night had put a hand around each flame.',
       'Along the wall, names are being read aloud, softly. Each name has a story attached, and each story has a laugh somewhere inside it.',
-      'You are not visiting the graves. You are sitting among the family, and tonight the family is all of them, and it includes you.',
+      'You are not visiting the graves. You are sitting among the family, and tonight the family is all of them.',
     ],
   },
   sitKinds: ['stool'],

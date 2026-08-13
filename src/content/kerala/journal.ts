@@ -13,7 +13,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     tab: 'words',
     title: 'Nanni',
     script: 'നന്ദി',
-    sub: 'Thank you. Deployed sparingly; family shows it daily instead.',
+    sub: 'Thank you. The first Malayalam word I learned and the one I use least.',
     you: 'Mariamma taught it and then told me not to overuse it. Gratitude here is a verb with your hands, not a word with your mouth.',
   },
   {
@@ -171,7 +171,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     tab: 'customs',
     title: 'Pokkali',
     sub: 'Salt-tolerant rice in monsoon, prawns on the same field after. Rice feeds prawn; prawn feeds soil.',
-    you: 'One flooded field, two harvests, zero chemicals, centuries of proof. Omana’s summary beats every textbook: the field works both shifts.',
+    you: 'One flooded field, two harvests, zero chemicals. I walked the bund twice looking for the trick; there is no trick.',
   },
   {
     id: 'customs.headwobble',
@@ -239,7 +239,7 @@ export const KERALA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c6.rain'], not: ['photo.c6.jetty'] },
-    text: 'Chasca is at the end of the jetty under a big black umbrella, dry as an idea. The album wants you mid-downpour.',
+    text: 'Chasca is at the end of the jetty under a big black umbrella, not one drop on her. The album wants you mid-downpour.',
   },
   {
     when: { has: ['c6.letter.delivered'], not: ['letter.read.kochi.pilar'] },

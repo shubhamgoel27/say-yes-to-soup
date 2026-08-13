@@ -23,7 +23,7 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
     script: 'すみません',
     sub: 'Excuse me, thank you, sorry, and hello-please-forgive-the-bother. One word, ten jobs.',
     nani: 'I have said sumimasen forty times today and meant something different each time. The all-purpose social oil. I am delighted by its economy.',
-    you: 'Hana\'s advice: when in doubt, sumimasen. I have yet to find the doubt it does not cover.',
+    you: 'Hana used it three times in one minute, three different meanings. When in doubt, sumimasen.',
   },
   {
     id: 'words.itadakimasu',

@@ -343,7 +343,7 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'He shifts a hand-width along the bench, following the shade, and considers the book on your hip without asking a thing about it.' },
       { who: 'Mzee Rashid', text: 'Bi Zoila sat on that end through a season of long rains. Feet on the stone, and that same red thread on the spine.' },
       { who: 'Mzee Rashid', text: 'One evening she said she might not go home, and nobody argued. People say that on this bench, and one or two of them mean it.' },
-      { text: 'The lane goes on being the lane. You are holding that same book, which means you already know how her sentence ended.' },
+      { text: 'The lane goes on being the lane. The red thread on the spine is the same red thread.' },
     ],
     effects: ['set:c7.rashid.her', 'journal:her.zanzibar'],
   },
@@ -521,7 +521,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.amina.pallay': {
     lines: [
-      { who: 'Bi Amina', text: 'Woven in! So the cloth speaks there too, in thread instead of ink. The sea has been carrying that idea around like cargo.' },
+      { who: 'Bi Amina', text: 'Woven in! So the cloth speaks there too, in thread instead of ink.' },
       { who: 'Bi Amina', text: 'Yours says: Mkono wa Mungu hakuna wa kuushinda. No one can overcome the hand of God. For a traveler, that is a seatbelt.' },
     ],
   },
@@ -682,7 +682,7 @@ export const ZANZIBAR_NODES: NodeMap = {
     lines: [
       { text: 'The vat steams down to its last gold inch. Two customers fed, one apron returned, your wrists smelling of lime and turmeric.' },
       { who: 'Zuberi', text: 'You see what you built? Bhajia from India, mango from the farms, cassava from the mainland, lime off our own trees. One bowl.' },
-      { who: 'Zuberi', text: 'Everything that ever anchored here ended up in the pot, mgeni. Urojo is the island writing its autobiography, and it lets anyone hold the pen.' },
+      { who: 'Zuberi', text: 'Everything that ever anchored here ends up in the pot. Nothing else is required of a soup, mgeni.' },
     ],
     effects: ['clear:c7.cook.start', 'set:c7.cook.done'],
   },
@@ -691,7 +691,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.salma.first': {
     lines: [
       { text: 'Far out on the wet flats, staked lines run like stitched seams. A woman moves along them tying red bunches, skirts knotted high.' },
-      { who: 'Mama Salma', text: 'Mwani. Seaweed. We plant at low tide and the sea farms it for us while we sleep. Women’s crop, women’s money, since my mother’s time.' },
+      { who: 'Mama Salma', text: 'Mwani. Seaweed. We plant at low tide and the sea farms it for us while we sleep. My mother tied lines on this same flat before me.' },
     ],
     effects: ['set:c7.met.salma', 'journal:people.salma'],
     choices: [
@@ -729,7 +729,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.salma.warm': {
     lines: [
       { who: 'Mama Salma', text: 'The rows nearest shore die soft now. The water warms a little, the mwani breaks before it is grown, so we walk farther out each year.' },
-      { who: 'Mama Salma', text: 'My daughter wants nets in the deep water and a boat. Maybe she is right. The sea was our field; the field is moving, so we move.' },
+      { who: 'Mama Salma', text: 'My daughter wants nets in the deep water and a boat. Maybe she is right.' },
     ],
     effects: ['set:c7.salma.warm', 'journal:customs.mwani'],
   },
@@ -745,7 +745,7 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'Above the tide line a man bends a rib of mango wood over his knee, adze marks still bright, an outrigger hull waiting beside him.' },
       { who: 'Fundi Issa', text: 'Ngalawa. Dug from one mango trunk, given two arms so the sea cannot flip her without asking twice.' },
       { who: 'Fundi Issa', text: 'The hull rots, mgeni. Every hull, this one too.' },
-      { who: 'Fundi Issa', text: 'So the boat is not the heirloom. The knowing how is the heirloom, and it only rots if you fail to hand it on.' },
+      { who: 'Fundi Issa', text: 'So the boat is not the heirloom. The knowing how is the heirloom.' },
     ],
     effects: ['set:c7.met.issa', 'journal:people.dhowbuilder', 'journal:customs.dhowknowledge'],
   },
@@ -771,7 +771,7 @@ export const ZANZIBAR_NODES: NodeMap = {
    */
   'c7.bakari.first': {
     lines: [
-      { text: 'Four retired captains around a table, dominoes going down like weather reports. Nobody looks up, which is how you know the game matters.' },
+      { text: 'Four retired captains around a table, dominoes going down like verdicts. Nobody looks up, which is how you know the game matters.' },
       { who: 'Kapteni Bakari', text: 'Sit, mgeni, watch. This table has crossed to Bombay and back more times than it has legs.' },
       { who: 'Kapteni Bakari', text: 'Friday, when the game ends, that pot serves pilau and the table eats together or not at all. Until then, eat what Zuberi gives you.' },
     ],
@@ -839,13 +839,13 @@ export const ZANZIBAR_NODES: NodeMap = {
     lines: [
       { text: 'A counter at the jetty root, a ledger, and a man with the handwriting of someone who has recorded cargo through three currencies.' },
       { who: 'Ali', text: 'Deck passage north, through Suez? It exists, mgeni. Ships call twice a month.' },
-      { who: 'Ali', text: 'But I book people the coast is finished with, and this coast is not finished with you. Come back when Mzee Rashid says you have slowed down.' },
+      { who: 'Ali', text: 'This coast is not finished with you. Come back when Mzee Rashid says you have slowed down.' },
     ],
     effects: ['set:c7.met.ali'],
   },
   'c7.ali.not': {
     lines: [
-      { who: 'Ali', text: 'The ledger is patient, mgeni, and so is the pen. Rashid’s bench decides before I do.' },
+      { who: 'Ali', text: 'Rashid’s bench decides before I do, mgeni.' },
     ],
   },
   'c7.ali.book': {
@@ -981,7 +981,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.ex.dhow': {
     lines: [
-      { text: 'A jahazi rides at anchor, lateen yard crossed like a drawn bow. Boats like her stitched this ocean together for a thousand years.' },
+      { text: 'A jahazi rides at anchor, lateen yard crossed like a drawn bow. Patched sail, oiled planks, a waterline worn pale by two winds.' },
     ],
   },
   'c7.ex.clovemat': {
@@ -1149,7 +1149,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.ex.cat.a': {
     lines: [
-      { text: 'A cat, seated exactly where everyone must step around her. She looks at you the way a landlord looks at a tenant.' },
+      { text: 'A cat, seated exactly where everyone must step around her. Her look suggests your rent is late.' },
     ],
     effects: ['set:c7.cat.one'],
   },

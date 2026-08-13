@@ -115,7 +115,7 @@ export const CHAPTER: ChapterDef = {
       'Thunderheads stack behind the fort, an audience arriving early. The kites climb anyway; paper is brave.',
       'The dhobi line semaphores the forecast: wind rising, rain likely, laundry doomed and cheerful about it.',
       'A monkey commutes the wire below, pauses over the gali, and judges the entire economy before moving on.',
-      'From up here the mohalla is one creature: smoke, bells, ghee, argument. It breathes. You are inside the breath.',
+      'From up here the mohalla is one creature: smoke, bells, ghee, argument. It breathes.',
     ],
     'delhi-langar': [
       'The deg simmers its one continuous sentence. It has never once cooked for fewer than everyone.',

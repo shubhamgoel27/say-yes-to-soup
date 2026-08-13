@@ -62,8 +62,8 @@ export const CHAPTER: ChapterDef = {
   sitLines: {
     village: [
       "The well rope creaks its one note. Rosa's flag decides, slowly, which way the wind is.",
-      'The dog completes a circuit of the plaza and logs you as present and accounted for.',
-      'Smoke from four kitchens, straight as loom threads. You can tell whose fire is whose now.',
+      'The dog completes a circuit of the plaza, pausing at your feet on the way past.',
+      'A door opens across the plaza and lets out the smell of onions frying. You can tell whose kitchen is whose now.',
       'On the bridge, Pilar renegotiates something with a chicken. The chicken appears to be winning.',
       "The terraces climb the hill row by row, a green ledger of somebody's whole life of afternoons.",
       'Two people have already nodded at you like sitting here is a job done well.',
@@ -71,7 +71,7 @@ export const CHAPTER: ChapterDef = {
     chicheria: [
       'Teófilo holds court from the far table. The story has three endings so far and refuses to choose.',
       "The chomba mutters to itself in the corner, fermenting somebody's next Tuesday.",
-      'A cuy crosses the floor with the confidence of a landlord.',
+      'A cuy crosses the floor unhurried, close along the wall.',
       'Someone pours; the first splash finds the packed earth. Nobody looks down. Everybody noticed.',
       'The room laughs a beat before the joke lands. They have heard it for forty years. That is why.',
     ],
@@ -80,7 +80,7 @@ export const CHAPTER: ChapterDef = {
       'A llama hums somewhere up the pass, holding the herd together with one long note.',
       'The ichu bends and recovers, bends and recovers. The wind is reading the pampa aloud.',
       'From here the road runs both ways: back to soup, and down to the whole rest of the world.',
-      'The apacheta stands at the edge of sight, patiently getting taller.',
+      'The apacheta stands at the edge of sight, one stone taller than last week.',
     ],
   },
   // The gate celebration and dig spots keep their bespoke wiring in main.

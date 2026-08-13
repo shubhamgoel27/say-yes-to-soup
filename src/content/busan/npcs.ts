@@ -288,7 +288,6 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Sun-hee', text: 'The clerk called her name across the counter and the whole queue learned it. Zoila.' },
       { who: 'Sun-hee', text: 'She spelled her village for him every month and he wrote it wrong every month. Money going home, same day, same window.' },
       { who: 'Sun-hee', text: 'Half that queue was sending money somewhere. I was small. I thought she worked there.' },
-      { text: 'The heads keep coming off. You have read every page she wrote from this coast, and not one of them stands in a queue.' },
     ],
     effects: ['set:c5.her', 'journal:her.busan'],
   },
@@ -327,8 +326,8 @@ export const BUSAN_NODES: NodeMap = {
     lines: [
       { who: 'Old Man Cho', text: 'The ajumma below gave you one fish too many. What do you call that, where you have walked?' },
       { who: 'Old Man Cho', text: 'Ayni, yapa, deom. You collect names for the same weightless thing.' },
-      { who: 'Old Man Cho', text: 'Tell me what it weighs when you find the last one.' },
-      { who: 'Old Man Cho', text: 'Here the thing has a mother word: jeong. Time, food, small kindnesses, stacked until they hold. Does that weigh?' },
+      { who: 'Old Man Cho', text: 'Here, jeong.' },
+      { text: 'He does not explain it. He refills your cup before it is empty, and nods at the kettle.' },
     ],
     effects: ['set:riddle.cho', 'journal:words.jeong'],
     choices: [
@@ -396,7 +395,7 @@ export const BUSAN_NODES: NodeMap = {
     lines: [
       { text: 'The good ones go into paper cups, seeds spilling at the fold. Nothing that touched the griddle gets thrown away.' },
       { who: 'Mi-ja', text: 'Burnt ones are for the cook. That is the rule: nothing wasted, nobody shamed.' },
-      { text: 'You eat yours too fast and the sugar lava finds your chin. Worth it, entirely.' },
+      { text: 'You eat yours too fast and the sugar lava finds your chin.' },
     ],
     effects: ['clear:c5.hotteok.start', 'set:c5.hotteok.done', 'journal:dishes.hotteok'],
   },
@@ -604,7 +603,7 @@ export const BUSAN_NODES: NodeMap = {
   'c5.hana.kingyo': {
     lines: [
       { who: 'Hana', text: 'Rigged mercy! You found him out. He has bankrupted grown men at that stall and never once let a child walk away empty. Full marks.' },
-      { who: 'Hana', text: 'Taro audits him every festival, for science. The uncle pretends not to know he is being tested. That is the whole town, in one stall.' },
+      { who: 'Hana', text: 'Taro audits him every festival, for science. The uncle pretends not to know he is being tested.' },
     ],
   },
   'c5.hana.wish': {
@@ -647,7 +646,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.chasca.why': {
     lines: [
-      { who: 'Chasca', text: 'Mountain, coast, ship, island, market. The album is turning into a route. Someday somebody will read it backwards and cry.' },
+      { who: 'Chasca', text: 'The album is turning into a route. I have stopped pretending otherwise.' },
     ],
   },
   'c5.chasca.album': {
@@ -744,7 +743,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.crane': {
     lines: [
-      { text: 'Orange giraffes, feeding. The harbor never quite sleeps; it only slows to a graze.' },
+      { text: 'The cranes swing boxes ashore all night. By dawn the ship rides higher, unburdened.' },
     ],
   },
   'c5.ex.teahouse': {
@@ -764,7 +763,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.lamp': {
     lines: [
-      { text: 'A lamp of hanji paper on a wooden post. The light comes through the way morning comes through fog: filtered, patient, warm.' },
+      { text: 'A lamp of hanji paper on a wooden post. The light comes through the way morning comes through fog: filtered and warm.' },
     ],
   },
   'c5.ex.ondol': {
@@ -792,17 +791,17 @@ export const BUSAN_NODES: NodeMap = {
   'c5.ex.pier': {
     lines: [
       { text: 'Quay concrete and old timber, rinsed by decades of tides and hoses. The overnight ferry dwarfs everything, gently.' },
-      { text: 'It has made this crossing for most of a century. The old ones at the rail will tell you it was not always anyone’s choice.' },
+      { text: 'It has made this crossing for most of a century.' },
     ],
   },
   'c5.ex.sea': {
     lines: [
-      { text: 'Harbor water, dawn-grey, an oil-sheen rainbow at the pilings. Gulls patrol it like they are owed money.' },
+      { text: 'Harbor water, dawn-grey, an oil-sheen rainbow at the pilings. Gulls work it end to end.' },
     ],
   },
   'c5.ex.gukbap': {
     lines: [
-      { text: 'One pot the size of weather, a counter, low stools. The menu is the smell, and the smell is generous.' },
+      { text: 'A counter, low stools, one pot going since before dawn. The menu is the smell, and the smell is generous.' },
     ],
   },
   'c5.ex.teatable': {

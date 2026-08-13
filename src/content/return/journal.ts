@@ -90,7 +90,7 @@ export const RETURN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
-    text: 'One page left. The well, where the water is, where it started. Write the last line; the page was never blank, it was waiting.',
+    text: 'One page left. The well, where the water is, where it started.',
   },
   {
     when: { has: ['c10.arrived'], not: ['story.end'] },

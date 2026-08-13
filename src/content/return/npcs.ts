@@ -200,7 +200,7 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'Maestro Félix is partway through his next boat, as promised. The cord walks its long, even wraps.' },
       { who: 'Maestro Félix', text: 'The traveler returns, and the boat is not finished. Good. It means the time was the right length.' },
-      { who: 'Maestro Félix', text: 'The going wears out; the knowing how comes home. I can see you brought the right half.' },
+      { who: 'Maestro Félix', text: 'The going wears out; the knowing how comes home.' },
     ],
     effects: ['set:c10.felix.seen'],
   },
@@ -231,7 +231,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.album.open': {
     lines: [
-      { text: 'The album opens across both your knees. It is heavier than it looks. Most memory is.' },
+      { text: 'The album opens across both your knees. It is heavier than it looks.' },
       { who: 'Chasca', text: 'Turn the pages. I will do the remembering out loud if you get stuck.' },
     ],
     // The engine consumes this signal when the textbox closes and unfolds the
@@ -319,7 +319,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.rosa.reunion': {
     lines: [
       { who: 'Rosa', text: 'You walked up from the valley? Sit, sit. The soup is hot and you look like wind.' },
-      { text: 'A bowl lands in front of you before you can answer. The same steam, the same green sharp something. Your eyes do a thing you did not authorize.' },
+      { text: 'A bowl lands in front of you before you can answer. The same steam, the same green sharp something. Your eyes sting before the spoon is in it.' },
       { who: 'Rosa', text: 'Ha! The whole ocean, and my soup still gets you. Write THAT in your new book, wawa. First page, as agreed.' },
     ],
     effects: ['set:c10.rosa.seen'],
@@ -490,7 +490,7 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'A tan blur detonates across the plaza. The dog has identified you from a distance of one entire village.' },
       { text: 'There is leaning. There is a full-body wag with structural implications. Professional composure is nowhere to be found, and is not missed.' },
-      { text: 'You get down to proper petting altitude. The patrol can wait. The patrol waited the whole time, in its way.' },
+      { text: 'You get down to proper petting altitude. It waited the whole time.' },
     ],
     effects: ['set:c10.allqu.seen'],
   },
@@ -585,14 +585,14 @@ export const RETURN_NODES: NodeMap = {
   'c10.torch.slow': {
     lines: [
       { who: 'Traveler', text: 'Walk slowly? The road is long. I had planned to hurry the flat parts.' },
-      { text: 'They write it down anyway, on the first page, where it belongs. Somewhere, two women who said it first are not surprised.' },
+      { text: 'They write it down anyway, on the first page, where it belongs.' },
     ],
     effects: ['set:c10.torch', 'journal:people.traveler'],
   },
   'c10.torch.soup': {
     lines: [
       { who: 'Traveler', text: 'Yes to soup. That is the advice? The whole advice?' },
-      { text: 'You nod with the calm of someone who has eaten the evidence. They write it on the first page. It will save them someday, in a fog somewhere.' },
+      { text: 'You nod with the calm of someone who has eaten the evidence. They write it on the first page.' },
     ],
     effects: ['set:c10.torch', 'journal:people.traveler'],
   },
@@ -645,6 +645,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.lastpage': {
     lines: [
       { text: 'You take out the journal. Every page is full except one, the last. It was never blank. It was waiting.' },
+      { text: 'The stone for the apacheta sits by your knee, waiting for Sunday.' },
       { text: 'The well rope creaks. Four kitchens send up smoke, straight as loom threads. You uncap the pen.' },
     ],
     choices: [
@@ -655,7 +656,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.lastline.word': {
     lines: [
-      { text: 'You write it in your best hand, which has improved. In the margin, a 1974 pen seems to underline it.' },
+      { text: 'You write it in your best hand, which has improved. In the margin, an old underline in her 1974 ink, already the right length for the sentence.' },
       { text: 'The journal is full. You close it the way Aurelio closes an afternoon: without hurry, without doubt.' },
     ],
     effects: ['set:c10.lastline.word', 'journal:customs.home', 'set:story.end'],
@@ -664,7 +665,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.lastline.trick': {
     lines: [
       { text: 'Three instructions, one grandmother, one grandchild, fifty years. You sign nothing; the handwriting is signature enough.' },
-      { text: 'The journal is full. The village hums on around you, unaware it has been finished. It has not, of course. Books end; villages continue.' },
+      { text: 'The journal is full. The village hums on around you, unaware it has been finished.' },
     ],
     effects: ['set:c10.lastline.trick', 'journal:customs.home', 'set:story.end'],
     next: 'c10.end.hold',
@@ -689,7 +690,7 @@ export const RETURN_NODES: NodeMap = {
       { text: 'You cap the pen. The journal shuts on itself with the sound a full book makes, which is a different sound from an empty one.' },
       { text: 'Nobody comes. The rope creaks. Behind you a bowl goes down on a table, and somebody laughs at a joke you were not told.' },
       { text: 'Fifty years ago a woman sat on this stone with this same book half written, and got up, and went. You got up, and came back.' },
-      { text: 'You stay a while. The smoke goes straight up. There is nowhere else you are meant to be, and that turns out to be the finding.' },
+      { text: 'You stay a while. The smoke goes straight up.' },
     ],
     effects: ['set:end.book', 'set:album.open'],
   },

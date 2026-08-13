@@ -273,7 +273,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.arrive': {
     lines: [
       { text: 'The ship noses past two towers of black stone standing in the sea, and the mole reaches out to meet you.' },
-      { text: 'The heat is a hand on your shoulder. Lemon terraces climb behind the roofs; above everything, a long grey shoulder of mountain smokes gently.' },
+      { text: 'The heat is on you before the gangway is. Lemon terraces climb behind the roofs; above everything, a long grey shoulder of mountain smokes gently.' },
       { text: 'Somewhere in the piazza a bell counts eleven, and a voice is singing about fish.' },
     ],
     effects: ['set:c8.arrived'],
@@ -407,13 +407,13 @@ export const SICILY_NODES: NodeMap = {
   'c8.walk.match': {
     lines: [
       { text: 'You slow down until slow stops being an effort. Somewhere in the third lap it becomes the only sensible speed.' },
-      { who: 'Nonna Concetta', text: 'There. Now you are not watching the passeggiata, you are in it. There is no other way to see it.' },
+      { who: 'Nonna Concetta', text: 'There. You are in it now, bedda. There is no other way to see it.' },
     ],
     next: 'c8.walk.end',
   },
   'c8.walk.end': {
     lines: [
-      { text: 'The sun drops behind the roofs and the faraglioni go from black to blacker to holy.' },
+      { text: 'The sun drops behind the roofs and the faraglioni go from black to blacker, and then the lamps take over.' },
       { text: 'Three laps, no destination, and somehow the whole town has told you goodnight by name.' },
     ],
     effects: ['set:c8.walk.done', 'journal:customs.passeggiata'],
@@ -441,7 +441,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.turi.haggle': {
     lines: [
-      { text: 'A signora in black holds up a swordfish steak like evidence in a murder trial. Turi clutches his chest, mortally wounded by her offer.' },
+      { text: 'A signora in black holds up a swordfish steak like evidence in a murder trial. Turi clutches his chest.' },
       { who: 'Turi', text: 'Signora, at that price I row out and apologize to the fish personally!' },
       { text: 'She doubles it. He halves the difference. They shake hands like old dance partners, which is what they are. A small crowd applauds.' },
     ],
@@ -612,7 +612,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.cook.finish': {
     lines: [
       { text: 'Three shells filled at the moment, no sooner. The counter holds no evidence except one barman licking pistachio from his wrist.' },
-      { who: 'Alfio', text: 'Now you see why the case sits empty on purpose. A filled shell waiting is a soggy lie, and this bar has never once lied about dessert.' },
+      { who: 'Alfio', text: 'Now you see why the case sits empty on purpose. A filled shell waiting is a soggy lie.' },
       { who: 'Alfio', text: 'Cream only when it is asked for; crunch until the last second. If my whole life holds to that standard, friend, I die a happy barman.' },
     ],
     effects: ['clear:c8.cook.start', 'set:c8.cook.done'],
@@ -790,7 +790,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.saro.idle': {
     lines: [
-      { who: 'Don Saro', text: 'Bells at noon, nets at dawn, and everything else as the day decides. Cumu veni si cunta, we say. We tell it as it comes.' },
+      { who: 'Don Saro', text: 'Cumu veni si cunta, we say: we tell it as it comes. Today, so far, there is nothing to tell, grazie a Dio.' },
     ],
   },
 
@@ -816,7 +816,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.nino.go': {
     lines: [
-      { who: 'Nino', text: 'Will it? Talìa the shutters, half this street is closed. Towns are not stones, they are people agreeing to stay.' },
+      { who: 'Nino', text: 'Will it? Talìa the shutters, half this street is closed.' },
       { who: 'Nino', text: 'And still. When I picture Torino, I cannot hear anything. No bells, no water. Maybe that is what a wage sounds like.' },
       { text: 'He shrugs, unconvinced by you and by himself, in equal measure.' },
     ],
@@ -1011,7 +1011,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.lavashore': {
     lines: [
-      { text: 'A beach with no sand, only black rock rounded by patient water. It holds the day’s heat like a grudge, then gives it back at dusk.' },
+      { text: 'A beach with no sand, only black rock rounded by patient water. It holds the day’s heat past midnight, the way the walls do.' },
     ],
   },
   'c8.ex.lavarock': {

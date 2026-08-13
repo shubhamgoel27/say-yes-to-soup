@@ -49,7 +49,7 @@ export const CHAPTER: ChapterDef = {
     busan: [
       'The lane moves like tide: in past your knees, out again, nobody drowned, everybody fed.',
       'Two gulls negotiate over one fish head. A third arrives wearing the face of a lawyer.',
-      'Across the water the cranes keep grazing. Orange necks dip, lift, dip, patient as herons.',
+      'Across the water the cranes keep working. Orange necks dip, lift, dip.',
       'Steam climbs from the grates, the kettles, the broth pots. One town, exhaling.',
       'An awning snaps once in the harbor wind. Sun-hee does not look up. It would not dare.',
     ],
