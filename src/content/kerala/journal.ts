@@ -180,6 +180,15 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     sub: 'A side-to-side tilt meaning yes, okay, I hear you. Looks exactly like no to the untrained.',
     you: 'I misread it once and nearly walked away from tomorrow’s puttu. Appu’s rule: head goes like a boat, the answer is yes. Head goes still, then worry.',
   },
+
+  // ---------------- her ----------------
+  {
+    id: 'her.kerala',
+    tab: 'her',
+    title: 'Sukham, for two weeks',
+    sub: 'Mariamma, who was asked once to keep it out of a letter, and kept it out of every letter.',
+    you: 'There is a page in here about answering sukham until it is true. She wrote it in the fortnight Mariamma spent hearing her say it and knowing better. I have known her by her handwriting my whole life; that is not the same as knowing her.',
+  },
 ];
 
 /** Backwater loose threads; merged ahead of the earlier chapters' lists. */

@@ -168,6 +168,17 @@ export const CROSSING_JOURNAL: JournalEntry[] = [
       note: 'The star she was named for sails too. Mid-ocean I looked up, and the whole plain of them had followed me aboard.',
     },
   },
+
+  // ---------------- her ----------------
+  // No Nani hand here on purpose: this page is not hers, it is the galley's,
+  // and it came down through two cooks before it reached you.
+  {
+    id: 'her.galley',
+    tab: 'her',
+    title: 'The singing in the galley',
+    sub: 'Mang Ben, portioning rice. He had it from the cook who had it from the cook.',
+    you: 'She peeled onions for her supper and sang badly for thirty-one days. I knew her my whole life and I never once heard her sing.',
+  },
 ];
 
 /** Open threads aboard; merged ahead of the coastal list once you sail. */

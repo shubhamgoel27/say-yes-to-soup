@@ -27,6 +27,9 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       { when: { has: ['c7.met.rashid'], not: ['c7.greeting'] }, node: 'c7.rashid.ladder' },
       { when: { has: ['c7.greeting'], not: ['c7.baraza.sat'] }, node: 'c7.rashid.sit' },
       { when: { has: ['c7.baraza.sat'], not: ['c7.rashid.past'] }, node: 'c7.rashid.coffee' },
+      // The bench remembers her. Earned by the coffee, which is earned by
+      // sitting twice: he tells it to people who have stopped being visitors.
+      { when: { has: ['c7.rashid.past'], not: ['c7.rashid.her'] }, node: 'c7.rashid.her' },
       {
         when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.greeting', 'c7.baraza.sat'], not: ['c7.complete'] },
         node: 'c7.rashid.blessing',
@@ -324,6 +327,20 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Mzee Rashid', text: 'Now drink slowly. The cup is small so that the sitting is long.' },
     ],
     effects: ['set:c7.rashid.past'],
+  },
+  /**
+   * Beat eight of the Her thread: the first crack in the myth. He is not
+   * telling you anything, he is passing the time, and the sentence he repeats
+   * has an ending he does not know and you do.
+   */
+  'c7.rashid.her': {
+    lines: [
+      { text: 'He shifts a hand-width along the bench, following the shade, and considers the book on your hip without asking a thing about it.' },
+      { who: 'Mzee Rashid', text: 'Bi Zoila sat on that end through a season of long rains. Feet on the stone, and that same red thread on the spine.' },
+      { who: 'Mzee Rashid', text: 'One evening she said she might not go home, and nobody argued. People say that on this bench, and one or two of them mean it.' },
+      { text: 'The lane goes on being the lane. You are holding that same book, which means you already know how her sentence ended.' },
+    ],
+    effects: ['set:c7.rashid.her', 'journal:her.zanzibar'],
   },
   'c7.rashid.blessing': {
     lines: [

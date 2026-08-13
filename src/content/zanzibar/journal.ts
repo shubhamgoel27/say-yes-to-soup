@@ -176,6 +176,15 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     sub: 'Boatbuilding passes hand to hand at Nungwi: keel first, no drawings.',
     you: 'Issa learned by watching and by being wrong slowly. The boats are mortal; the apprenticeship is the immortal part.',
   },
+
+  // ---------------- her ----------------
+  {
+    id: 'her.zanzibar',
+    tab: 'her',
+    title: 'What she said on the bench',
+    sub: 'Mzee Rashid, moving along the stone to stay in the shade. A season of long rains.',
+    you: 'She sat there and said out loud that she might not go home, and the lane did not blink. I am carrying the book that proves she went.',
+  },
 ];
 
 /** Fukoni's loose threads; written like directions from a friend. */

@@ -76,6 +76,10 @@ export const SICILY_NPCS: NpcDef[] = [
       { when: { has: ['c8.granita'], not: ['c8.arancino'] }, node: 'c8.alfio.lunch' },
       { when: { has: ['c8.arancino'], not: ['c8.cannolo'] }, node: 'c8.alfio.cannolo' },
       { when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] }, node: 'c8.alfio.bag' },
+      // Told to whoever has stood on his side of the counter. The pranzo is
+      // in the gate too, so the page of hers that stops mid sentence is
+      // already in the player's hands when he says this and shrugs it off.
+      { when: { has: ['c8.cook.done', 'c8.pranzo'], not: ['c8.alfio.her'] }, node: 'c8.alfio.her' },
       { when: { has: ['c8.cook.done'] }, node: 'c8.alfio.again' },
       { node: 'c8.alfio.idle' },
     ],
@@ -557,6 +561,21 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Alfio', text: 'No lesson today, friend. Fill them, dress them, and we eat the mistakes ourselves. That is the good half of this trade.' },
     ],
     effects: ['set:replay.mode', 'set:c8.cook.start'],
+  },
+  /**
+   * Beat nine of the Her thread: the silence gets a witness, and the witness
+   * is a boy who was nosy about a stranger's handwriting. He thought nothing
+   * of it in 1975 and thinks nothing of it now. Nothing here explains
+   * anything; only Oaxaca is allowed to do that.
+   */
+  'c8.alfio.her': {
+    lines: [
+      { text: 'He wipes the marble in slow circles, the way a man does when the counter is clean already and his hands still want a job.' },
+      { who: 'Alfio', text: 'La Zoila had that corner table one summer. I was fifteen, clearing glasses, and I used to read her book upside down.' },
+      { who: 'Alfio', text: 'Then a week where she never opened it. I asked her why, and she said she would catch up later and what was in the brioche.' },
+      { text: 'He laughs at his own fifteen-year-old nosiness and goes to see about the almond tub. In your bag her Sunday page still stops mid sentence.' },
+    ],
+    effects: ['set:c8.alfio.her', 'journal:her.sicily'],
   },
   'c8.alfio.idle': {
     lines: [

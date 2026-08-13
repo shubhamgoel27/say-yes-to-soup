@@ -224,6 +224,26 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     nani: 'At four o’clock the market becomes a different institution with the same tables.',
     you: 'Marisol’s arithmetic: nobody gets rich after four, but everybody eats. The numbers that matter, kept.',
   },
+
+  // ---------------- her ----------------
+  // No Nani hand on this page. This tab is not what she wrote; it is what she
+  // left in other people, and the coast kept a week she never mentioned.
+  {
+    id: 'her.passage',
+    tab: 'her',
+    title: 'The passage she did not take',
+    sub: 'Don Simón, coiling a line on the pier. His father took the money either way.',
+    you: 'She paid, then sat on this sand a week and let the boat go north without her. Her coast pages are lime and fog and not one word of it.',
+  },
+  // The player's own thread (owned by Chapter One, filed here so the Her tab
+  // reads in play order). Unlocked by 'her.you.caleta' on Chasca's second visit.
+  {
+    id: 'her.you.leave',
+    tab: 'her',
+    title: 'Six weeks',
+    sub: 'In my own hand, and nobody asked.',
+    you: 'Chasca asked how long they gave me and I told her the dates, the banked days, the folder I left on the desk. She wanted a number. I gave her a defense.',
+  },
 ];
 
 /** Coastal loose threads; merged ahead of the highland list. */

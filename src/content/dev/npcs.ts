@@ -39,8 +39,10 @@ export const NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['met.aurelio'] }, node: 'aurelio.first' },
       {
+        // He will not hand over the letter until somebody has said her name
+        // out loud. Every chapter after this one assumes you are carrying it.
         when: {
-          has: ['bundle.delivered', 'challar.done', 'pallay.done'],
+          has: ['bundle.delivered', 'challar.done', 'pallay.done', 'her.zoila'],
           not: ['nani.letter'],
         },
         node: 'aurelio.nani',
@@ -162,6 +164,9 @@ export const NPCS: NpcDef[] = [
         when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
         node: 'carmen.waiting',
       },
+      // The name, and the half warp. Once you have sat at her loom she is
+      // willing to be annoyed at somebody in front of you.
+      { when: { has: ['pallay.done'], not: ['her.zoila'] }, node: 'carmen.zoila' },
       { when: { has: ['pallay.done'], not: ['riddle.done'] }, node: 'carmen.riddle' },
       { when: { has: ['story.complete'] }, node: 'carmen.epilogue' },
       { when: { has: ['pallay.done'] }, node: 'carmen.after' },
@@ -464,7 +469,7 @@ export const NODES: NodeMap = {
   },
   'teofilo.epilogue': {
     lines: [
-      { who: 'Don Teófilo', text: 'Amara\'s grandchild, they tell me. I owed her a laugh for fifty years. You collected it. We are even.' },
+      { who: 'Don Teófilo', text: 'Zoila\'s grandchild, they tell me. I owed her a laugh for fifty years. You collected it. We are even.' },
     ],
   },
 
@@ -672,8 +677,44 @@ export const NODES: NodeMap = {
   },
   'carmen.epilogue': {
     lines: [
-      { who: 'Doña Carmen', text: 'A finished journal and a crooked row in my cloth. Amara would call that a fair trade. She would be right.' },
+      { who: 'Doña Carmen', text: 'A finished journal and a crooked row in my cloth. Zoila would call that a fair trade. She would be right.' },
     ],
+  },
+
+  // ---- Her, beat one: the name, and the goodbye that was not one ----
+  // Carmen never stops weaving through any of this. She is not telling you
+  // something; she is finishing a complaint she started in 1974.
+  'carmen.zoila': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Your hands hold the shuttle the way Zoila held it. Badly, and entirely unbothered about it.' },
+      { text: 'Zoila. You have called her Nani your whole life, because that is what you called her.' },
+      { text: 'A woman at a loom says it the way you say the name of someone who owes you money.' },
+    ],
+    next: 'carmen.zoila2',
+  },
+  'carmen.zoila2': {
+    lines: [
+      { who: 'Doña Carmen', text: 'We were warping this loom together that week. I slept, and by morning her half was tied off and she was gone down the east road.' },
+      { who: 'Doña Carmen', text: 'She left a note on the post. Fifty years, and I am still not calling that a goodbye.' },
+    ],
+    choices: [
+      { text: '"She meant to come back."', goto: 'carmen.zoila.meant' },
+      { text: 'Say nothing.', goto: 'carmen.zoila.quiet' },
+    ],
+  },
+  'carmen.zoila.meant': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Everyone means to. I kept her side of the warp two years before I used it up on somebody else.' },
+      { text: 'She does not look up. The row grows by exactly as much as it should.' },
+    ],
+    effects: ['set:her.zoila', 'journal:her.chaska'],
+  },
+  'carmen.zoila.quiet': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Good. There is nothing to say. I kept her side of the warp two years before I used it up on somebody else.' },
+      { text: 'Her hands have not stopped once. She reaches past you for the next color.' },
+    ],
+    effects: ['set:her.zoila', 'journal:her.chaska'],
   },
 
   // ---- Carmen's pattern quiz (a riddle from a person, not a system) ----
@@ -766,7 +807,7 @@ export const NODES: NodeMap = {
       { who: 'Don Aurelio', text: 'Sit. The stone is warm and I have been deciding something.' },
       { who: 'Don Aurelio', text: 'That journal you carry. Red thread on the spine. I watched a girl sew that thread, right here, in 1974.' },
       { text: 'The well rope creaks. Somewhere a loom keeps its slow time.' },
-      { who: 'Don Aurelio', text: 'Amara. She greeted everyone, even the dogs. She drank her chicha straight down and the whole room laughed. You have her way of standing.' },
+      { who: 'Don Aurelio', text: 'Zoila. She greeted everyone, even the dogs. She drank her chicha straight down and the whole room laughed. You have her way of standing.' },
     ],
     next: 'aurelio.nani2',
   },
@@ -1018,7 +1059,7 @@ export const NODES: NodeMap = {
   // ---- epilogues: the village knows what you finished ----
   'justina.epilogue': {
     lines: [
-      { who: 'Justina', text: 'The whole journal? Then write this in the margin: the terraces gave their best papa to Amara\'s grandchild, and the terraces do not regret it.' },
+      { who: 'Justina', text: 'The whole journal? Then write this in the margin: the terraces gave their best papa to Zoila\'s grandchild, and the terraces do not regret it.' },
     ],
   },
   'mateo.epilogue': {

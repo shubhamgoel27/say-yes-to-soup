@@ -26,6 +26,9 @@ export const BUSAN_NPCS: NpcDef[] = [
       { when: { not: ['c5.met.sunhee'] }, node: 'c5.sunhee.first' },
       { when: { has: ['c5.met.sunhee', 'c5.met.cook'], not: ['c5.sunhee2'] }, node: 'c5.sunhee.second' },
       { when: { has: ['c5.sunhee2', 'c5.met.mija'], not: ['c5.deom'] }, node: 'c5.sunhee.deom' },
+      // Once the extra fish has made you a regular, the stall talks about the
+      // lane's own business, which once included a foreigner in a queue.
+      { when: { has: ['c5.deom'], not: ['c5.her'] }, node: 'c5.sunhee.her' },
       { node: 'c5.sunhee.idle' },
     ],
   },
@@ -270,6 +273,18 @@ export const BUSAN_NODES: NodeMap = {
     lines: [
       { who: 'Sun-hee', text: 'Mm. Both hands, no fuss. You learn fast for somebody off a ferry.' },
     ],
+  },
+  // She is not telling you a story. She is complaining about a queue.
+  'c5.sunhee.her': {
+    lines: [
+      { text: 'She snaps heads off anchovies into a basin, four a second, without appearing to look at any of them. Her chin points down toward the post window.' },
+      { who: 'Sun-hee', text: 'My mother sent me to that window on the last morning of every month. A foreign woman was always ahead of us, so it always took twice as long.' },
+      { who: 'Sun-hee', text: 'The clerk called her name across the counter and the whole queue learned it. Zoila.' },
+      { who: 'Sun-hee', text: 'She spelled her village for him every month and he wrote it wrong every month. Money going home, same day, same window.' },
+      { who: 'Sun-hee', text: 'Half that queue was sending money somewhere. I was small. I thought she worked there.' },
+      { text: 'The heads keep coming off. You have read every page she wrote from this coast, and not one of them stands in a queue.' },
+    ],
+    effects: ['set:c5.her', 'journal:her.busan'],
   },
   'c5.sunhee.idle': {
     lines: [

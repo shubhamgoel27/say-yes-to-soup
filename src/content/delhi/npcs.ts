@@ -96,6 +96,9 @@ export const DELHI_NPCS: NpcDef[] = [
       { when: { has: ['errand.pigeon-home'], not: ['c11.pigeon.home'] }, node: 'c11.yusuf.begum' },
       { when: { has: ['c11.met.yusuf'], not: ['c11.names'] }, node: 'c11.yusuf.names' },
       { when: { has: ['c11.names'], not: ['c11.kite.done'] }, node: 'c11.yusuf.offer' },
+      // One kite flown makes you a hand he can compare against other hands.
+      // The roof has been holding this comparison since 1974.
+      { when: { has: ['c11.kite.done'], not: ['c11.her'] }, node: 'c11.yusuf.her' },
       { when: { has: ['c11.kite.done', 'c11.rain'], not: ['c11.duel.done'] }, node: 'c11.yusuf.duel' },
       { when: { has: ['c11.duel.done'], not: ['c11.yusuf2'] }, node: 'c11.yusuf.after' },
       { when: { has: ['c11.kite.done'] }, node: 'c11.yusuf.flyagain' },
@@ -589,6 +592,19 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Ustad Yusuf Miyan', text: 'You pulled through no birds and lost no temper. For a first blood, acceptable. The wind will want to see you again; it is nosy about new hands.' },
     ],
     effects: ['clear:c11.kite.start', 'set:c11.kite.done', 'journal:customs.patang', 'journal:words.wohkata'],
+  },
+  // He is grading a hand, not telling a story. The roof keeps records the way
+  // roofs do: by how badly somebody flew, and how much they enjoyed it.
+  'c11.yusuf.her': {
+    lines: [
+      { text: 'He winds dor back onto the charkhi, thumb over finger, watching the roofs rather than his hands. The flock mutters about the wind.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Acceptable hands. Better than the last foreigner who stood on that exact tile. Zoila madam, the rains of seventy-four.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Three days up here and she cut nobody. Not one string, and four of her own patangs gone down the wind.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Every time the line went light she laughed loud enough that the neighbors came up to see who was winning. It was never her.' },
+      { who: 'Ustad Yusuf Miyan', text: 'My ustad was alive then and had no patience for bad hands. He let her back up the stairs on the second day and the third.' },
+      { text: 'The charkhi keeps turning. Two lanes over a kite gets away from somebody, and a whole roof shouts about it.' },
+    ],
+    effects: ['set:c11.her', 'journal:her.delhi'],
   },
   'c11.yusuf.begum': {
     lines: [

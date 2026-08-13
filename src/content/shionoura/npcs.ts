@@ -62,6 +62,9 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       { when: { has: ['c4.taisomen'], not: ['c4.fumi.nani'] }, node: 'c4.fumi.memory' },
       { when: { has: ['c4.ofuro'], not: ['c4.okaeri'] }, node: 'c4.fumi.okaeri' },
       { when: { has: ['page.dishes.dashi'], not: ['c4.cook.done'] }, node: 'c4.fumi.cookinvite' },
+      // A guest who makes breakfast has stopped being a guest, so the guest
+      // book comes out, and the guest book remembers longer than the town.
+      { when: { has: ['c4.cook.done'], not: ['c4.her.told'] }, node: 'c4.fumi.her' },
       { when: { has: ['c4.cook.done'] }, node: 'c4.fumi.cookagain' },
       { node: 'c4.fumi.idle' },
     ],
@@ -361,7 +364,7 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.fumi.memory': {
     lines: [
       { who: 'Fumi', text: 'You eat like someone I heard about. My mother-in-law kept this house before me, and she told a story her whole life.' },
-      { who: 'Fumi', text: 'A laughing foreigner, a girl who bowed too deep to everyone, even the postman. Stayed some nights in the year of the big Tanabata rain. 1974, I think.' },
+      { who: 'Fumi', text: 'A laughing foreigner, a girl who bowed too deep to everyone, even the postman. Stayed a while, the year of the big Tanabata rain. 1974, I think.' },
       { who: 'Fumi', text: 'She wrote in a little book at this very table, and she thanked corrections. Twice, always twice. Why are you looking at me like that?' },
       { text: 'The journal sits in your pack, suddenly weighing more than everything else in it.' },
     ],
@@ -408,6 +411,18 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'And you should know: a guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
     ],
     effects: ['clear:c4.cook.start', 'set:c4.cook.done'],
+  },
+  // The thread about her. The town does not wonder why she stayed; it never
+  // wonders. Two lines in a ledger, three weeks apart, and no one asked once.
+  'c4.fumi.her': {
+    lines: [
+      { text: 'She is writing you into the guest book, which is old, and has to turn back a page to find room for the pen.' },
+      { who: 'Fumi', text: 'Ah. Here she is again, in my mother-in-law’s hand. Zoila-san, written in for one night.' },
+      { who: 'Fumi', text: 'And the next line is three weeks later, and it is her leaving. Nothing in between. She was on her way somewhere.' },
+      { text: 'You wait for the rest of it. There is no rest of it.' },
+      { who: 'Fumi', text: 'People stop here. The ferry goes without them and the town does not ask why. Tea? The pot is still hot.' },
+    ],
+    effects: ['set:c4.her.told', 'journal:her.threeweeks'],
   },
   'c4.fumi.cookagain': {
     lines: [

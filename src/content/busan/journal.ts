@@ -142,6 +142,23 @@ export const BUSAN_JOURNAL: JournalEntry[] = [
     nani: 'The market runs ppalli ppalli until nine, then sits down like it never heard of hurrying. I trust a place that can do both.',
     you: 'Sun-hee was here at five. The lane sleeps late because it can afford to: it has her.',
   },
+
+  // ---------------- her ----------------
+  {
+    id: 'her.busan',
+    tab: 'her',
+    title: 'The last morning of the month',
+    sub: 'Sun-hee, who was small then, and queued behind her at the post window.',
+    you: 'Same window, same morning, money going home, every month she was here. I have read her Busan pages since I was a child and there is no post office in any of them.',
+  },
+  // The player's own thread (Chapter One's). Unlocked by 'her.you.busan'.
+  {
+    id: 'her.you.arithmetic',
+    tab: 'her',
+    title: 'The arithmetic',
+    sub: 'Worked twice, on the back of nothing.',
+    you: 'She asked whether my dates still work. I did the sum twice and got two answers, and neither of them was the reason I have not written to ask for more time.',
+  },
 ];
 
 /** Loose threads in Mulmang-gol, written like directions from a friend. */

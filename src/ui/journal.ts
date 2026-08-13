@@ -194,9 +194,13 @@ export class JournalUI {
         (sel.sub ? `<div class="j-sub">${sel.sub}</div>` : '') +
         (sel.tab === 'dishes' ? `<div class="j-dishart"></div>` : '') +
         ephHtml +
-        (sel.nani
-          ? `<div class="j-nani"><span>Nani, 1974</span>${sel.nani}</div>`
-          : `<div class="j-nani empty"><span>Nani, 1974</span>(she never reached this page)</div>`) +
+        // Her pages have no 1974 hand and are not missing one: she reached
+        // every one of these places, she just did not write this part down.
+        (sel.tab === 'her'
+          ? ''
+          : sel.nani
+            ? `<div class="j-nani"><span>Nani, 1974</span>${sel.nani}</div>`
+            : `<div class="j-nani empty"><span>Nani, 1974</span>(she never reached this page)</div>`) +
         `<div class="j-you"><span>You</span>${sel.you}</div>` +
         (rhyme
           ? `<div class="j-thread"><div class="j-thread-rule"></div>` +

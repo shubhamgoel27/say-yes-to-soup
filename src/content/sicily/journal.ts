@@ -175,6 +175,23 @@ export const SICILY_JOURNAL: JournalEntry[] = [
     nani: 'The market does not shout, it sings. Six stalls, six melodies, one opera every morning with fish for a libretto.',
     you: 'Turi’s is his father’s tune. You could shop blindfolded here, steering by song. Commerce as theater, with encores.',
   },
+
+  // ---------------- her ----------------
+  {
+    id: 'her.sicily',
+    tab: 'her',
+    title: 'The week the book stayed shut',
+    sub: 'Alfio, wiping a counter that was already clean. He was fifteen and it was a summer like any other.',
+    you: 'Somebody noticed her stop writing and asked, and she talked about pastry instead. He tells it as a funny thing about himself.',
+  },
+  // The player's own thread (Chapter One's). Unlocked by 'her.you.sicily'.
+  {
+    id: 'her.you.somewhere',
+    tab: 'her',
+    title: 'Somewhere to be',
+    sub: 'Asked idly, over a pencil.',
+    you: 'When her journal is full, what then. I have said finishing it like it was a duty owed to a dead woman. It was a place to be. I did not have one.',
+  },
 ];
 
 /** Sicilian loose threads; merged ahead of the older chapters' lists. */
@@ -222,6 +239,10 @@ export const SICILY_TASKS: TaskDef[] = [
   {
     when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] },
     text: 'Alfio wants your hands on the pastry bag: three shells, filled at the moment, never before. The signora in black will be the judge, so, no pressure.',
+  },
+  {
+    when: { has: ['c8.cook.done', 'c8.pranzo'], not: ['c8.alfio.her'] },
+    text: 'Alfio started a sentence about the corner table and then went to fetch more shells. Go back to the bar and let him finish it.',
   },
   {
     when: { has: ['c8.ben.met'], not: ['c8.ben.tin', 'c8.complete'] },

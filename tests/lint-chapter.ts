@@ -110,7 +110,9 @@ for (const g of ch.games ?? []) {
 // ---------------- journal / rhymes ----------------
 const declaredRhymes = new Set(ch.recall.rhymes.map(([a, b]) => `${a}->${b}`));
 for (const j of ch.journal) {
-  if (!['words', 'dishes', 'people', 'customs'].includes(j.tab)) bad(`page ${j.id}: bad tab ${j.tab}`);
+  if (!['words', 'dishes', 'people', 'customs', 'her'].includes(j.tab)) bad(`page ${j.id}: bad tab ${j.tab}`);
+  // The Her pages are what she left in other people, not what she wrote.
+  if (j.tab === 'her' && j.nani) bad(`page ${j.id}: a her page must carry no nani entry`);
   if (j.rhyme) {
     if (!declaredRhymes.has(`${j.id}->${j.rhyme.with}`)) bad(`page ${j.id}: rhyme not declared in recall.rhymes`);
     if (!j.rhyme.note) bad(`page ${j.id}: rhyme without Nani's note`);

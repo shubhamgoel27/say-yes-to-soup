@@ -1,6 +1,7 @@
 import type { ChapterDef } from '../schema';
 import type { AudioBus } from '../../engine/audio';
 import { DIG_SPOTS, EVENT_NODES, EXAMINES, NODES, NPCS } from './npcs';
+import { HER_EXTENSIONS, HER_NODES } from './herthread';
 import { ERRANDS, JOURNAL, TASKS } from './journal';
 import { RECALL } from './recall';
 import { VILLAGE_MAP } from './testmap';
@@ -15,7 +16,10 @@ export const CHAPTER: ChapterDef = {
   id: 'chaska-pampa',
   maps: [VILLAGE_MAP, CHICHERIA_MAP, CASA_CARMEN_MAP, EAST_ROAD_MAP, LA_BAJADA_MAP],
   npcs: NPCS,
-  nodes: NODES,
+  // The player's own thread rides on other chapters' Chascas; the pages it
+  // fills live with those chapters, the scenes live here.
+  npcExtensions: HER_EXTENSIONS,
+  nodes: { ...NODES, ...HER_NODES },
   examines: EXAMINES,
   events: EVENT_NODES,
   journal: JOURNAL,

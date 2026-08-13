@@ -27,6 +27,9 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['joseph.letter'], not: ['c6.letter.delivered'] }, node: 'c6.mariamma.letter' },
       { when: { not: ['met.mariamma'] }, node: 'c6.mariamma.nofirst' },
       { when: { has: ['c6.letter.delivered'], not: ['c6.mariamma2'] }, node: 'c6.mariamma.kitchen' },
+      // After the kitchen lesson, once you are sitting in her house the way a
+      // guest of the house sits. She is not planning to say any of this.
+      { when: { has: ['c6.mariamma2'], not: ['c6.her'] }, node: 'c6.mariamma.her' },
       { when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask'] }, node: 'c6.mariamma.sadyaplan' },
       { when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] }, node: 'c6.mariamma.sadyastart' },
       {
@@ -291,6 +294,20 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Mariamma', text: 'One more lesson. Anyone older is chetta or chechi, elder brother, elder sister. Address the village correctly and it is all relatives.' },
     ],
     effects: ['set:c6.mariamma2', 'journal:words.sukhamano', 'journal:words.chetta', 'journal:dishes.meencurry'],
+  },
+  // The one thing this kitchen kept. She does not diagnose it, does not dress
+  // it up, and stops the moment she hears who she is saying it to.
+  'c6.mariamma.her': {
+    lines: [
+      { text: 'She scrapes coconut on the iron blade, half a shell at a time, and nods at the step by the door without stopping.' },
+      { who: 'Mariamma', text: 'A Peru girl sat there in the rain year and wrote in a book all evening. Zoila.' },
+      { who: 'Mariamma', text: 'Every morning I asked sukhamano and every morning she said sukham. For most of two weeks that was not true, and we both knew it.' },
+      { who: 'Mariamma', text: 'She would not let me send for a doctor. She asked me to keep it out of any letter, so I kept it out of any letter.' },
+      { who: 'Mariamma', text: 'She walked onto the boat herself when it came. That is the part I keep.' },
+      { who: 'Mariamma', text: 'Ayyo, my mouth. You have her face when you listen, and I have been talking to it.' },
+      { text: 'She turns back to the blade, faster than before, and asks the pot twice whether it is behaving. Neither of them answers you.' },
+    ],
+    effects: ['set:c6.her', 'journal:her.kerala'],
   },
   'c6.mariamma.sadyaplan': {
     lines: [

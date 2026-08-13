@@ -361,7 +361,7 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { text: 'From under the altar table she brings a notebook, swollen with years, spine mended with cloth. The guelaguetza ledger.' },
       { who: 'Doña Refugio', text: 'What this village lends, this village writes. Weddings, funerals, fiestas. Kindness with a page number.' },
-      { text: 'She finds the line without looking for it. Nani, 1975: one week of shelter, one mole feast. Owed.' },
+      { text: 'She finds the line without looking for it. Zoila, 1975: one week of shelter, one mole feast. Owed.' },
     ],
     effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
     next: 'c9.refugio.telegram',
@@ -372,6 +372,7 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Doña Refugio', text: 'A telegram came up from the town. Her mother was dying in Peru. She left that same night, and the road never brought her back.' },
       { who: 'Doña Refugio', text: 'My mother kept her cup on the shelf a whole year. Then she wrote the line, so we would not be allowed to forget.' },
     ],
+    effects: ['journal:her.oaxaca'],
     choices: [
       {
         text: 'Answer Old Man Cho, half a world late: say what it weighs',
@@ -879,7 +880,7 @@ export const OAXACA_NODES: NodeMap = {
   'c9.vigil2': {
     lines: [
       { text: 'On the south wall, apart from her family’s row, Refugio has set one extra candle facing out, the way a light is set for a traveler.' },
-      { who: 'Doña Refugio', text: 'For Amara, called Nani. She has an altar in my kitchen and a place on my wall. Fifty years owed, both directions, and paid.' },
+      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. She has an altar in my kitchen and a place on my wall. Fifty years owed, both directions, and paid.' },
       { text: 'The petals you laid run gate to lane to doorway. If she is coming, she will not miss the turn.' },
     ],
     next: 'c9.vigil3',

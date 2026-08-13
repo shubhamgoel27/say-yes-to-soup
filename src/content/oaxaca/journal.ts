@@ -185,6 +185,13 @@ export const OAXACA_JOURNAL: JournalEntry[] = [
       note: 'The red in Carmen’s weaving is an insect from a cactus. If a bug can cross an ocean and stay this loud, so can I.',
     },
   },
+  {
+    id: 'her.oaxaca',
+    tab: 'her',
+    title: 'The line in the ledger',
+    sub: 'Doña Refugio, turning pages with a wet thumb, stopping without looking for it.',
+    you: 'She did not choose the silence. A telegram chose it, and she went that night. The book stayed open at Sicily because she meant to come back to it.',
+  },
 ];
 
 /** Valley loose threads; merged ahead of the earlier chapters' lists. */

@@ -7,6 +7,8 @@ what you learned uphill changes how the next coast treats you.
 
 ## Nani canon (the mystery and its answer)
 
+- Her name is Zoila. Nani is what one grandchild called her, and no one
+  outside the family uses it; see `docs/her-thread.md`.
 - 1974: Nani leaves Ch'aska Pampa westward with a new journal. Her entries are
   dense in Peru, confident at sea, delighted in Japan and Korea, thoughtful in
   Kerala and Zanzibar.

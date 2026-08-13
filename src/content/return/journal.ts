@@ -36,6 +36,13 @@ export const RETURN_JOURNAL: JournalEntry[] = [
     you: "They asked what they should know. I heard Nani's letter come out of my own mouth. That is how the trick works: it is a relay, and the baton is soup.",
   },
   {
+    id: 'her.return',
+    tab: 'her',
+    title: 'What the well decided',
+    sub: 'Doña Carmen at the loom, delivering a verdict she did not soften on the way over.',
+    you: 'Not a pardon: she still left the wrong way and this village will keep saying so. Sunday we walk up and lay the stone she never got to lay.',
+  },
+  {
     id: 'customs.album',
     tab: 'customs',
     title: 'The album',
@@ -72,6 +79,10 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.pilar.seen'], not: ['c10.album.seen'] },
     text: 'Chasca is back on La Bajada, where she first stopped you. The album is finished, and it starts with you. Sit on the rock.',
+  },
+  {
+    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen'], not: ['c10.carmen.her'] },
+    text: 'Word came down from the well: they talked about her last night, all of them, and Doña Carmen is the one who says it out loud. She is at her loom.',
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch'] },

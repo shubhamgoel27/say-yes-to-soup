@@ -267,6 +267,23 @@ export const DELHI_JOURNAL: JournalEntry[] = [
     sub: 'Bargaining as affection. First price opens negotiations; paying it instantly is faintly rude, like refusing to dance.',
     you: 'I walked away from a mango and the vendor called me back like a lost nephew: arre suniye toh! The walk-away is a dance step. The call-back is the hug.',
   },
+
+  // ---------------- her ----------------
+  {
+    id: 'her.delhi',
+    tab: 'her',
+    title: 'Nobody, in three days',
+    sub: 'Ustad Yusuf Miyan, grading the hands of everyone who has ever stood on his roof.',
+    you: 'Four kites lost, no strings cut, and by his account she laughed loud enough to bring the neighbors up every single time. I have been reading her as a serious woman, because serious is what survives on paper.',
+  },
+  // The player's own thread (Chapter One's). Unlocked by 'her.you.delhi'.
+  {
+    id: 'her.you.answer',
+    tab: 'her',
+    title: 'What I do',
+    sub: 'A correction that never came.',
+    you: 'Chasca told the kite man I walk. I waited for myself to add the job, the leave, the dates. The roof did not fall in and I did not say it.',
+  },
 ];
 
 /** Delhi loose threads; the HUD picks the first that matches. */

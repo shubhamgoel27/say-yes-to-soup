@@ -98,7 +98,15 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
   },
   {
     npcId: 'carmen',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.carmen.seen'] }, node: 'c10.carmen.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.carmen.seen'] }, node: 'c10.carmen.reunion' },
+      // Beat eleven of the Her thread, and late on purpose: the village can
+      // only decide this after the whole road has been walked back to it.
+      {
+        when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen'], not: ['c10.carmen.her'] },
+        node: 'c10.carmen.decided',
+      },
+    ],
   },
   {
     npcId: 'justina',
@@ -402,6 +410,54 @@ export const RETURN_NODES: NodeMap = {
       { text: 'You sit. The wichuna picks, the colors change, the sun does its slow arithmetic across the courtyard.' },
       { who: 'Doña Carmen', text: 'The granddaughter in Lima wears the other lliclla now. Somewhere down there, your crooked row is keeping a stranger warm.' },
     ],
+  },
+
+  /**
+   * Beat eleven of the Her thread. Chapter one planted the ache: she left in
+   * a hurry, the goodbyes never happened, and a village stayed faintly short
+   * about it for fifty years. This is that said out loud, and answered. It is
+   * deliberately not a pardon; what changes is the bookkeeping, which in this
+   * village is the only thing that was ever going to change.
+   */
+  'c10.carmen.decided': {
+    lines: [
+      { text: 'The wichuna picks, a row closes, another opens. She does not look up, which is how you know this was settled before you walked in.' },
+      { who: 'Doña Carmen', text: 'The well, last night. Half this village around one jug, and your grandmother, who is the argument we never finish.' },
+      { who: 'Doña Carmen', text: 'She went east in a hurry and skipped the goodbyes. Some of us have stayed short about it for fifty years, wawa, and we earned that.' },
+    ],
+    choices: [
+      { text: '"She left badly and she meant to come back. Both are true."', goto: 'c10.her.both' },
+      { text: '"You are allowed to still be angry. I would be."', goto: 'c10.her.angry' },
+      { text: '"Sit down. I can tell you every place she stopped."', goto: 'c10.her.places' },
+    ],
+  },
+  'c10.her.both': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Meaning to is not a road. But you walked the one she meant, so her meaning can stand where I can see it.' },
+    ],
+    next: 'c10.carmen.stone',
+  },
+  'c10.her.angry': {
+    lines: [
+      { who: 'Doña Carmen', text: 'We did not ask permission, wawa. Fifty years of short answers do not undo in one afternoon; they wear down, like a step.' },
+    ],
+    next: 'c10.carmen.stone',
+  },
+  'c10.her.places': {
+    lines: [
+      { text: 'You name them in the order the book has them: a fishing town, a ship, a bay, two markets, a bench in the rain, a mountain that smokes.' },
+      { who: 'Doña Carmen', text: 'Three days you have been telling us where she was. That is more news of her than this village has had in fifty years.' },
+    ],
+    next: 'c10.carmen.stone',
+  },
+  'c10.carmen.stone': {
+    lines: [
+      { text: 'She ties off the row. Then she does something you have not once seen her do: she stops the loom.' },
+      { who: 'Doña Carmen', text: 'So it is decided, and it is not a pardon. She still went the wrong way out of this village, and that stays said.' },
+      { who: 'Doña Carmen', text: 'She put a stone on the apacheta going out. Nobody laid the one that says she arrived, because nobody knew where to say she arrived at.' },
+      { who: 'Doña Carmen', text: 'Sunday we walk up and lay it, and you carry it. You are the only one here who can say the name of the place.' },
+    ],
+    effects: ['set:c10.carmen.her', 'journal:her.return'],
   },
 
   // ---------------- Justina ----------------

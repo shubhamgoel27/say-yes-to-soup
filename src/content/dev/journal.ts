@@ -160,7 +160,7 @@ export const JOURNAL: JournalEntry[] = [
     id: 'people.nani',
     tab: 'people',
     title: 'Nani',
-    sub: 'Amara. 1974. She started this.',
+    sub: 'Zoila. 1974. She started this.',
     you: 'She sat at the same well, misheard the same words, carried bundles up the same hill. The journal was never half finished. It was waiting.',
   },
   {
@@ -249,6 +249,17 @@ export const JOURNAL: JournalEntry[] = [
     nani: 'Take it with both hands. I learned that with one.',
     you: 'So did I. Faustino just waited, holding it out, until my second hand caught up with my manners.',
   },
+
+  // ---- her ----
+  // The Her tab carries no Nani column on purpose: these pages are not what
+  // she wrote, they are what she left behind in other people.
+  {
+    id: 'her.chaska',
+    tab: 'her',
+    title: 'The half warp',
+    sub: 'Doña Carmen, at the loom. Still annoyed, fifty years on.',
+    you: 'Her name is Zoila. She left in the night with her half of a warp tied off and a note on the post, and Carmen kept the rest of it two years before using it up.',
+  },
 ];
 
 export const JOURNAL_BY_ID = new Map(JOURNAL.map((e) => [e.id, e]));
@@ -309,7 +320,14 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
     text: 'Doña Carmen, who weaves near the northeast house, has heard about your carrying legs. Go say allillanchu.',
   },
   {
-    when: { has: ['bundle.delivered', 'challar.done', 'pallay.done'], not: ['nani.letter'] },
+    when: { has: ['pallay.done'], not: ['her.zoila'] },
+    text: 'Doña Carmen went quiet at the end of the weaving, the way people do when they have decided to say something. Sit at her loom again.',
+  },
+  {
+    when: {
+      has: ['bundle.delivered', 'challar.done', 'pallay.done', 'her.zoila'],
+      not: ['nani.letter'],
+    },
     text: 'Don Aurelio has been watching you with a decision in his pocket. Sit with him at the well.',
   },
   {

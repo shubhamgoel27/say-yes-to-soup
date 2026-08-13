@@ -199,6 +199,17 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
     sub: 'Big-catch flags: sunrise, waves, one emphatic fish. Flown when the hold came home full.',
     you: 'Now they fly for launchings, New Year, festivals, homecomings. Fumi raises her late husband\'s for Tanabata, and the pier remembers what full felt like.',
   },
+
+  // ---------------- her ----------------
+  // No Nani hand on this page. She wrote nothing here about the three weeks;
+  // the only record is somebody else's ledger, in somebody else's mother's hand.
+  {
+    id: 'her.threeweeks',
+    tab: 'her',
+    title: 'One night, three weeks',
+    sub: 'The minshuku guest book. One line arriving, one line leaving, and no line between.',
+    you: 'She meant to pass through and stayed twenty-one days. I have a ferry booked and I keep doing the arithmetic against her.',
+  },
 ];
 
 /** Shionoura's open threads; merged ahead of the older chapters' lists. */

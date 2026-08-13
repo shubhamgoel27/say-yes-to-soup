@@ -14,6 +14,8 @@ export const RECALL: RecallManifest = {
     'pilar.sea', // Pilar's standing order: something weird, from the sea
     'story.complete', // the gate flag; the Return gates its scenes on it
     'photo.taken', // Chasca's first photograph, bound for the album
+    'her.zoila', // her name, said out loud by a stranger; every later chapter assumes it
+    'page.her.chaska', // beat one of the Her thread: the half warp, the note on the post
     'page.dishes.papa', // the highland half of the coast trade story
     'page.words.chaska', // the morning star, bound for the star river
   ],

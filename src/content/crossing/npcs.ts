@@ -28,6 +28,9 @@ export const CROSSING_NPCS: NpcDef[] = [
       { when: { has: ['c3.baon'], not: ['c3.baon.done'] }, node: 'c3.ben.wait' },
       { when: { has: ['c3.baon.done'], not: ['c3.cook.done'] }, node: 'c3.ben.cookoffer' },
       { when: { has: ['c3.cook.done'], not: ['c3.ben.messtold', 'c3.shellback'] }, node: 'c3.ben.mess' },
+      // A ship keeps its stories in the crew, not the hull. Once you have
+      // cooked with him you are galley, and the galley's own legend is yours.
+      { when: { has: ['c3.cook.done'], not: ['c3.her.told'] }, node: 'c3.ben.her' },
       { when: { has: ['c3.shellback'], not: ['c3.feast'] }, node: 'c3.ben.feast' },
       { when: { has: ['c3.cook.done'] }, node: 'c3.ben.cookagain' },
       { node: 'c3.ben.idle' },
@@ -331,6 +334,18 @@ export const CROSSING_NODES: NodeMap = {
     ],
     // Said once, and then the galley goes back to offering you an apron.
     effects: ['set:c3.ben.messtold'],
+  },
+  // The thread about her, arriving the way ship stories always do: secondhand,
+  // twice removed, and funnier every time it changes hands.
+  'c3.ben.her': {
+    lines: [
+      { text: 'He is portioning tomorrow’s rice into trays, counting scoops under his breath and losing the count on purpose.' },
+      { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once. The cook who taught me had it from the cook before him.' },
+      { who: 'Mang Ben', text: 'A passenger girl who would not stay out of here. Zoila. Peeled onions for her supper and sang the whole watch.' },
+      { who: 'Mang Ben', text: 'Badly, they say. They hid the ladle from her and she sang anyway. Thirty-one days, and the old cook missed it after.' },
+      { text: 'He laughs at his trays, delighted with a joke fifty years old that was never his.' },
+    ],
+    effects: ['set:c3.her.told', 'journal:her.galley'],
   },
   'c3.ben.feast': {
     lines: [

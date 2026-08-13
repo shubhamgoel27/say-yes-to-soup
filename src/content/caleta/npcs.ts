@@ -50,6 +50,9 @@ export const CALETA_NPCS: NpcDef[] = [
       { when: { not: ['met.simon'] }, node: 'mar.simon.first' },
       { when: { has: ['met.simon'], not: ['c2.trade'] }, node: 'mar.simon.trade' },
       { when: { has: ['c2.trade', 'c2.ride.done'], not: ['c2.nets.done'] }, node: 'mar.simon.nets' },
+      // Once you are somebody's casero the pier talks to you differently, and
+      // an old man remembers a passage his father was paid for twice.
+      { when: { has: ['c2.casero'], not: ['c2.her.told'] }, node: 'mar.simon.her' },
       { when: { has: ['c2.nets.done'] }, node: 'mar.simon.netsAgain' },
       { node: 'mar.simon.idle' },
     ],
@@ -405,6 +408,18 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Don Simón', text: 'No hay horario, hijo. Todo depende de la mar. There is no schedule. There is only her mood.' },
     ],
+  },
+  // The thread about her: the coast remembers a week of hesitation, and finds
+  // it funny. He is telling a story about his father keeping the money.
+  'mar.simon.her': {
+    lines: [
+      { text: 'He is coiling a line into a bucket, loop after loop, and does not stop when you say whose road you are walking.' },
+      { who: 'Don Simón', text: 'Zoila. Red thread on her book. My father took her money for a passage north and sent me down to fetch her at dawn.' },
+      { who: 'Don Simón', text: 'She was on the sand with her bag packed and she would not come. A week of that, then she went back up the road.' },
+      { who: 'Don Simón', text: 'A month later, here she is again, onto the next boat like it was nothing. My father kept the money. She never asked.' },
+      { text: 'He finds this very funny. He goes on coiling, and does not notice that you have stopped breathing quite normally.' },
+    ],
+    effects: ['set:c2.her.told', 'journal:her.passage'],
   },
   'mar.simon.netsAgain': {
     lines: [
