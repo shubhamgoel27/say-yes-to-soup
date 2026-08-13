@@ -177,3 +177,16 @@ processes, ls for fresh output files with recent mtimes), and either adopt the
 running rig or stop it cleanly and say so. Never run a duplicate of a rig an
 agent was asked to run; delegate or take over, not both. And a cleanup that
 kills by process name kills the other rig too; kill by PID you spawned.
+
+## Measure what the eye sees, not what the profiler sees (2026-08-13)
+Three rounds of frame-rate profiling said the game was perfect: 120fps, zero
+dropped presents, 1.7ms of CPU in an 8.3ms budget. The user kept saying the
+player visibly stuttered anyway, and the user was right. The instrument was
+answering a different question: frame INTERVALS were even, but the DISTANCE
+moved per frame wobbled 8 percent, because rAF timestamps jitter while
+presentation does not, and variable-dt integration bakes timestamp noise into
+position. One probe that recorded per-frame camera displacement found in
+thirty seconds what hours of interval histograms could not. Rule: when a
+report says motion looks wrong, measure displacement per presented frame,
+not time per frame; smoothness lives in the first derivative the eye tracks,
+and a clean frame-time histogram proves nothing about it.
