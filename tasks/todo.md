@@ -499,8 +499,8 @@ background music should be present and carry its instruments, not just exist.
 
 ## Phase 3: implement
 - [x] Music agent launched: KS plucks, flutes, drone/pad, reverb send, motif tables, phrase clock, arrangement cycle, all 11 regions, recorded auditions (port 5490)
-- [x] Wave 1 conversion agents launched: delhi, oaxaca, kerala, crossing, village (each owns its folder, no commits; I review, test, commit the batch)
-- [ ] Wave 2 after wave 1 commits: shionoura, busan, zanzibar, sicily, caleta, return
+- [x] Wave 1 committed (606b5ce): delhi, oaxaca, kerala, crossing, village
+- [x] Wave 2 committed (8ffcff6): shionoura, busan, zanzibar, sicily, caleta, return
 - [ ] Engine-dependent patterns after music agent commits (station scheduling for customs-practiced-on-schedule, seated vignettes)
 - [ ] Tests stay green (50), reachability holds after any dialogue restructuring
 
