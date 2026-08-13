@@ -3019,6 +3019,7 @@ function installCheats() {
           'soup.play(flag)      open a minigame right now',
           'soup.pages()         fill the journal, every page',
           "soup.page(id)        grant one page properly (soup.flag can't)",
+          'soup.perf()          frame costs and a log of every hitch over 14ms',
           'soup.photos()        grant every photograph Chasca can take',
           'soup.tod(t)          set time of day, 0 dawn, 0.35 day, 0.57 gold, 0.85 night',
           'soup.rain(on?)       toggle the monsoon and the sawan rain',
@@ -3083,6 +3084,12 @@ function installCheats() {
       if (!JOURNAL.some((e) => e.id === id)) return `no such page: ${id}`;
       state.apply([`journal:${id}`]);
       return `page.${id} granted`;
+    },
+    /** The stutter witness. gapMs far above gameCpuMs points outside the game:
+     * an extension, a screen recorder, the display changing refresh rate. */
+    perf() {
+      const p = (globalThis as unknown as { __soupPerf?: { sample(): unknown } }).__soupPerf;
+      return p ? p.sample() : 'perf meter is dev-only';
     },
     photos() {
       const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
