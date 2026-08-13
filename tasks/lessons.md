@@ -149,3 +149,18 @@ fired after `story.end`, so natural play shadowed it forever while the game
 still announced the journal was complete. Rule: the last five minutes need the
 same deliberate authoring as the first five, and any content gated on an
 endgame flag must be checked in the order a real player will reach it.
+
+## Check what the port is actually serving before believing a measurement (2026-08-12)
+Two probes in a row returned nonsense: a pop-in detector that reported zero
+pops on both the buggy and the fixed build, and a bake counter that came back
+`undefined` after I had just added it. Both had connected to vite servers left
+running on 5400 and 5401 by agents from an earlier session, each serving a
+frozen `git archive` copy of an older commit. The instrument was fine; it was
+pointed at the wrong game. The first probe was reported as inconclusive, which
+was right, but I moved on rather than asking why an instrument I had just
+written could not see itself. Rule: a measurement that cannot see the change
+you just made is a broken rig until proven otherwise, and the first thing to
+check is whether the thing answering on that port is your current source.
+Frozen-copy verification is still the right technique; it just needs its own
+port and a kill afterwards, because a leftover server outlives the session and
+silently answers the next one.
