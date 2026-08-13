@@ -190,3 +190,16 @@ thirty seconds what hours of interval histograms could not. Rule: when a
 report says motion looks wrong, measure displacement per presented frame,
 not time per frame; smoothness lives in the first derivative the eye tracks,
 and a clean frame-time histogram proves nothing about it.
+
+## The dev server hides whole categories of production death (2026-08-13)
+A performance sweep tried to compare dev and prod boot times and discovered
+npm run build had never worked: first a compile failure (top-level await vs
+an es2020 target), then, once building, a silent black-screen hang. The hang
+was a top-level-await deadlock: the index chunk freezes mid-evaluation at the
+await, a dynamically imported chunk needs bindings from that frozen chunk,
+and both wait forever. Dev never showed either failure because Vite serves
+real unbundled modules. Rules: run the production build as part of any
+release-shaped verification, never only the dev server; treat any top-level
+await in an app entry as a loaded gun aimed at the bundler; and when a boot
+hangs silently, bisect with boot beacons before theorizing (three console
+lines found in minutes what stack reading could not).
