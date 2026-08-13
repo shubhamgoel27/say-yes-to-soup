@@ -5,6 +5,7 @@ import { Actor } from '../src/engine/actor';
 import { AudioBus } from '../src/engine/audio';
 import { Camera } from '../src/engine/camera';
 import { CULL, SPRITE_EXTENT } from '../src/engine/renderer';
+import { makeDtSmoother } from '../src/engine/loop';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from '../src/engine/config';
 import { TileMap, type MapData } from '../src/engine/grid';
 import type { Dir } from '../src/engine/input';
@@ -335,5 +336,46 @@ describe('AudioBus KS cache', () => {
       assert.ok(b.ksCache.has(key(f, 1900, 1.5)), `night string for degree ${deg} should be warm`);
     }
     assert.ok(b.ksCache.has(key(b.style.scale[0]!, 2000, 1.1)), 'the door note should be warm');
+  });
+});
+
+describe('the dt smoother absorbs strays and follows real cadence changes', () => {
+  const jitter = (base: number, i: number) => base + Math.sin(i * 2.7) * base * 0.05;
+
+  it('a lone misreported frame causes no burst of raw deltas', () => {
+    const smooth = makeDtSmoother();
+    for (let i = 0; i < 30; i++) smooth(jitter(8.3, i));
+    const out: number[] = [];
+    out.push(smooth(16.6)); // one stray double-interval report
+    for (let i = 0; i < 12; i++) out.push(smooth(jitter(8.3, i)));
+    // The first version reset here and ran raw for twelve frames. Now every
+    // output stays near the cadence: the stray is repaid smoothly, capped at
+    // a quarter step, never echoed as a lurch.
+    for (const v of out) {
+      assert.ok(v > 8.3 * 0.7 && v < 8.3 * 1.3, `output ${v.toFixed(2)}ms strayed from the 8.3ms cadence`);
+    }
+  });
+
+  it('conserves total time across noise, so the sim clock stays true', () => {
+    const smooth = makeDtSmoother();
+    let input = 0;
+    let output = 0;
+    for (let i = 0; i < 400; i++) {
+      const raw = i % 37 === 0 ? 16.6 : jitter(8.3, i);
+      input += raw;
+      output += smooth(raw);
+    }
+    assert.ok(Math.abs(input - output) < 25, `sim drifted ${(input - output).toFixed(1)}ms from wall time over 400 frames`);
+  });
+
+  it('adopts a genuine cadence change within three frames', () => {
+    const smooth = makeDtSmoother();
+    for (let i = 0; i < 30; i++) smooth(jitter(8.3, i));
+    smooth(16.7);
+    smooth(16.7);
+    const adopted = smooth(16.7);
+    assert.ok(Math.abs(adopted - 16.7) < 0.01, `after three 60Hz frames the step was still ${adopted.toFixed(2)}ms`);
+    const settled = smooth(16.7);
+    assert.ok(settled > 15 && settled < 18.5, `the new cadence did not hold: ${settled.toFixed(2)}ms`);
   });
 });

@@ -16,6 +16,59 @@ const MAX_DT = 1 / 20;
 
 export type Loop = { stop: () => void };
 
+/**
+ * Frame intervals arrive noisy: rAF timestamps wobble around the true vsync
+ * cadence, and the odd frame reports half or double its real interval while
+ * the display presents perfectly evenly. Stepping the sim by raw deltas
+ * bakes all of it into motion. This smoother steps by the recent median and
+ * banks the difference, repaying it a quarter at a time, so a lone skipped
+ * or misreported frame becomes a brief, even catch-up instead of a lurch.
+ *
+ * The first version reset its whole window whenever one delta strayed far
+ * from the median, then ran raw for the twelve frames it took to refill.
+ * On a ProMotion display, which strays routinely, that produced exactly
+ * what it was built to prevent: a few shimmering frames, then smooth,
+ * over and over. Now a single stray is absorbed; only three strays in a
+ * row read as a genuine cadence change (120Hz dropping to 60, a stall)
+ * and re-tune the window immediately.
+ */
+export function makeDtSmoother(): (raw: number) => number {
+  const recent: number[] = [];
+  let drift = 0;
+  let strays = 0;
+
+  return (raw: number): number => {
+    if (recent.length >= 6) {
+      const sorted = [...recent].sort((a, b) => a - b);
+      const median = sorted[sorted.length >> 1] ?? raw;
+      const stray = raw > median * 1.45 || raw < median * 0.7;
+      if (stray) {
+        strays++;
+        if (strays >= 3) {
+          // A held new cadence: adopt it now, carry nothing over.
+          recent.length = 0;
+          recent.push(raw);
+          drift = 0;
+          strays = 0;
+          return raw;
+        }
+        // A lone odd frame: move at the usual pace, bank the difference.
+        drift += raw - median;
+      } else {
+        strays = 0;
+        recent.push(raw);
+        if (recent.length > 48) recent.shift();
+        drift += raw - median;
+      }
+      const repay = Math.max(-0.25 * median, Math.min(0.25 * median, drift * 0.25));
+      drift -= repay;
+      return median + repay;
+    }
+    recent.push(raw);
+    return raw;
+  };
+}
+
 export function startLoop(update: (dt: number) => void, render: () => void): Loop {
   let last = performance.now();
   let prevNow = 0;
@@ -57,29 +110,7 @@ export function startLoop(update: (dt: number) => void, render: () => void): Loo
   // speed, an 8% velocity shimmer the eye reads as intermittent stutter.
   // The fix: step by the display's typical interval (rolling median), and
   // nudge toward the real clock so sim time never drifts from wall time.
-  const recent: number[] = [];
-  let drift = 0;
-
-  function smoothDt(raw: number): number {
-    recent.push(raw);
-    if (recent.length > 48) recent.shift();
-    if (recent.length < 12) return raw;
-    const sorted = [...recent].sort((a, b) => a - b);
-    const median = sorted[sorted.length >> 1] ?? raw;
-    // A real cadence change (120Hz to 60Hz, a stall) must be followed, not
-    // smoothed away: a raw delta far from the median resets the window.
-    if (raw > median * 1.6 || raw < median * 0.55) {
-      recent.length = 0;
-      recent.push(raw);
-      drift = 0;
-      return raw;
-    }
-    drift += raw - median;
-    // Repay drift over many frames; imperceptible per frame, exact overall.
-    const repay = Math.max(-0.1 * median, Math.min(0.1 * median, drift * 0.1));
-    drift -= repay;
-    return median + repay;
-  }
+  const smoothDt = makeDtSmoother();
 
   function frame(now: number) {
     if (!running) return;
