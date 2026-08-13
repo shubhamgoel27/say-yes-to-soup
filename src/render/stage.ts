@@ -51,14 +51,42 @@ export class PixiStage {
   private zoomTarget = 1;
   private base = 3;
   private time = 0;
+  private worldCanvas!: HTMLCanvasElement;
+  private host!: HTMLElement;
+  /** Which API the next (re)build asks for. Drops to webgl after a GPU loss. */
+  private preference: 'webgpu' | 'webgl' = 'webgpu';
+  /** Ambient tint survives a rebuild; the sprite holding it does not. */
+  private ambient = 0xffffff;
+  private recovering = false;
+  private renderFails = 0;
 
   static async create(worldCanvas: HTMLCanvasElement, host: HTMLElement): Promise<PixiStage> {
     const s = new PixiStage();
+    s.worldCanvas = worldCanvas;
+    s.host = host;
+    await s.init();
+    s.resize();
+    window.addEventListener('resize', () => s.resize());
+    if (import.meta.env.DEV) (globalThis as unknown as { __soupStage: PixiStage }).__soupStage = s;
+    return s;
+  }
+
+  /**
+   * Build (or rebuild) the entire GPU side. Everything the stage owns lives
+   * on the Application, so recovery after a lost device is: throw the old
+   * one away, run this again. Chrome reclaims WebGPU devices from tabs left
+   * in the background; without this the world went on simulating behind a
+   * frozen last frame, which reads as "the game stopped taking input."
+   */
+  private async init(): Promise<void> {
+    const s = this;
+    const worldCanvas = this.worldCanvas;
+    const host = this.host;
     const app = new Application();
     // WebGPU first: Chrome's newest graphics API; Pixi falls back to WebGL
     // automatically on browsers that lack it.
     await app.init({
-      preference: 'webgpu',
+      preference: this.preference,
       width: VIEW_W * ART,
       height: VIEW_H * ART,
       antialias: true,
@@ -70,6 +98,9 @@ export class PixiStage {
     s.app = app;
     app.canvas.id = 'stagegl';
     host.prepend(app.canvas);
+    s.lightPool = [];
+    s.glowPool = [];
+    s.watchForDeviceLoss();
 
     // The world frame, uploaded from the Canvas2D composer every render.
     s.worldSource = new CanvasSource({ resource: worldCanvas, scaleMode: 'linear' });
@@ -143,10 +174,40 @@ export class PixiStage {
     });
     s.present = new Sprite(s.prescaleRT);
     app.stage.addChild(s.present);
+    s.ambientSprite.tint = s.ambient;
+  }
 
-    s.resize();
-    window.addEventListener('resize', () => s.resize());
-    return s;
+  /** A lost GPUDevice never comes back; the stage has to notice and rebuild. */
+  private watchForDeviceLoss() {
+    const gpu = (this.app.renderer as unknown as { gpu?: { device?: GPUDevice } }).gpu;
+    void gpu?.device?.lost?.then((info) => {
+      // 'destroyed' is the normal teardown of a rebuild we started ourselves.
+      if (info.reason !== 'destroyed' || !this.recovering) {
+        void this.recover(`gpu device lost (${info.reason || 'unknown'})`);
+      }
+    });
+  }
+
+  private async recover(why: string): Promise<void> {
+    if (this.recovering) return;
+    this.recovering = true;
+    console.warn(`[soup] stage rebuilding: ${why}`);
+    // A recovered WebGPU device has lost every resource anyway, and WebGL's
+    // context restoration is the better-worn path; take it on the way back.
+    this.preference = 'webgl';
+    try {
+      this.app.canvas.remove();
+      this.app.destroy(false, { children: true, texture: true });
+    } catch {
+      // The dead renderer may refuse even to be destroyed; the rebuild
+      // replaces every reference either way.
+    }
+    try {
+      await this.init();
+      this.resize();
+    } finally {
+      this.recovering = false;
+    }
   }
 
   /**
@@ -177,6 +238,7 @@ export class PixiStage {
 
   /** Ambient light color: 0xffffff = full day (multiply no-op). */
   setAmbient(color: number) {
+    this.ambient = color;
     this.ambientSprite.tint = color;
   }
 
@@ -197,6 +259,24 @@ export class PixiStage {
 
   /** Called from the game's render step: upload, light, compose, present. */
   render() {
+    if (this.recovering) return;
+    try {
+      this.renderPass();
+      this.renderFails = 0;
+    } catch (err) {
+      // One failed frame is a blink; a run of them means the surface is gone
+      // in a way no lost-device signal reported. Rebuild rather than let the
+      // game keep simulating behind a frozen frame.
+      this.renderFails++;
+      if (this.renderFails === 1) console.warn('[soup] stage render failed:', err);
+      if (this.renderFails >= 30) {
+        this.renderFails = 0;
+        void this.recover('render kept throwing');
+      }
+    }
+  }
+
+  private renderPass() {
     this.worldSource.update();
 
     for (let i = 0; i < MAX_LIGHTS; i++) {
