@@ -297,11 +297,12 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Marisol', text: 'Toasted, it is cancha. You eat it by the fistful waiting for the ceviche. The waiting is part of the recipe.' },
     ],
   },
+  // The yapa is not explained, it is received: one fish more on the scale,
+  // no word said, and the journal page fills from the weight of it.
   'mar.marisol.yapa': {
     lines: [
       { who: 'Marisol', text: 'Three visits, casero. You are officially a habit now.' },
-      { text: 'She weighs the lisa, then drops one more small fish on top without looking at it.' },
-      { who: 'Marisol', text: 'The yapa. The little extra. Regulars do not ask for it, and I do not mention it. It simply happens.' },
+      { text: 'She weighs the lisa, then drops one small fish more on top without looking, and the parcel lands in your bag. Not a word about it.' },
     ],
     effects: ['set:c2.casero', 'journal:words.yapa', 'journal:customs.caserita'],
     choices: [
@@ -506,18 +507,18 @@ export const CALETA_NODES: NodeMap = {
     ],
     effects: ['set:met.felix', 'journal:people.felix'],
   },
+  // The generational lore waits at the pond itself, once he points the eye.
   'mar.felix.ponds': {
     lines: [
       { who: 'Maestro Félix', text: 'The reeds grow in the wachaques, ponds we dig at the desert’s edge until the ground gives up its water.' },
-      { who: 'Maestro Félix', text: 'Bad years, the ponds sicken and there is no totora. No totora, no caballito. So the village digs new ponds together.' },
-      { who: 'Maestro Félix', text: 'My grandfather’s hands, my hands, my nephew’s hands. The pond outlives every one of us. That is the arrangement.' },
+      { who: 'Maestro Félix', text: 'Bad years the ponds sicken: no totora, no caballito. So the village digs new ones together; go stand by the green and see.' },
     ],
     effects: ['set:c2.ponds', 'journal:customs.wachaque'],
   },
   'mar.felix.ride': {
     lines: [
       { who: 'Maestro Félix', text: 'You look at the horses like they might bite. They only throw you, and the water forgives beginners.' },
-      { who: 'Maestro Félix', text: 'Kneel on, paddle out past the break, let a wave carry you home. That is the whole art. Want it?' },
+      { who: 'Maestro Félix', text: 'Kneel on; the horse and the wave teach the rest. Want it?' },
     ],
     choices: [
       { text: 'Kneel onto the caballito', goto: 'mar.felix.ridestart' },
@@ -525,7 +526,7 @@ export const CALETA_NODES: NodeMap = {
     ],
   },
   'mar.felix.ridestart': {
-    lines: [{ who: 'Maestro Félix', text: 'Knees wide. Paddle like you mean it, rest like you mean that too. La mar does the rest.' }],
+    lines: [{ who: 'Maestro Félix', text: 'Knees wide. The horse knows the way home better than you do.' }],
     effects: ['set:wave.start'],
   },
   'mar.felix.ridelater': {
@@ -598,9 +599,8 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.petro.noon': {
     lines: [
-      { who: 'Doña Petro', text: 'Ceviche? Hija, look at the light. It is past three. That fish came ashore at dawn; it is done being ceviche today.' },
-      { who: 'Doña Petro', text: 'Ceviche is a clock, not a dish. Noon to three, dawn-fresh fish, a kiss of lime, done. At night we eat warm things.' },
-      { who: 'Doña Petro', text: 'Come tomorrow at noon. You will see what the fuss has been about for two thousand years.' },
+      { who: 'Doña Petro', text: 'Ceviche? Hija, look at the light. It is past three; that fish came ashore at dawn and is done being ceviche today.' },
+      { who: 'Doña Petro', text: 'Noon to three, that is the whole dish. Come tomorrow and taste two thousand years of fuss; tonight we eat warm things.' },
     ],
     effects: ['set:c2.ceviche', 'journal:customs.noon'],
   },
@@ -863,9 +863,15 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.pier': { lines: [{ text: 'Old sugar-trade planks, grey and salt-cured. They creak in a language of their own.' }] },
   'mar.ex.casa': { lines: [{ text: 'Cane and mud under the paint, rebar hoping on the roof. Every house here is a plan for a bigger house.' }] },
   'mar.ex.net': { lines: [{ text: 'A gillnet drying, corks like beads. Each mended knot is a different evening of talk.' }] },
+  'mar.ex.netmended': {
+    lines: [{ text: 'Last evening’s net, spread to dry with its new knots pale in the old mesh. The circle will find it more holes by tonight.' }],
+  },
   'mar.ex.crate': { lines: [{ text: 'Fish crates, silver tails over the rim. The pelicans study them with the patience of professionals.' }] },
   'mar.ex.caballito': {
     lines: [{ text: 'Reed horses stood on their tails to drain overnight. Born wet, retired in weeks, remembered for three thousand years.' }],
+  },
+  'mar.ex.caballito2': {
+    lines: [{ text: 'Reed horses draining on their tails. One stands a shade darker than the rest, wet to the waterline, and you know exactly which ride that was.' }],
   },
   'mar.ex.boat': { lines: [{ text: 'A wooden chalana, paint peeling into the exact colors of the sky arguing with itself.' }] },
   'mar.ex.reeds': { lines: [{ text: 'Totora, green as a promise, growing where someone’s grandfather dug down to the water table.' }] },
@@ -882,6 +888,9 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.path2': { lines: [{ text: 'Hard-packed sand, swept by wind and brooms in unequal shifts.' }] },
   'mar.ex.plaza2': { lines: [{ text: 'The malecón. In the evening the whole village walks it end to end, slowly, for no reason except every reason.' }] },
   'mar.ex.pond': { lines: [{ text: 'Pond water the color of green glass. Reeds stand in it like a crowd waiting for news.' }] },
+  'mar.ex.pond2': {
+    lines: [{ text: 'Dug by hands that are gone, tended by hands that are here. The pond outlives every digger; that is the arrangement.' }],
+  },
   'mar.ex.tuft2': { lines: [{ text: 'Dry dune grass, hanging on. Everything that lives here has decided to, firmly.' }] },
   'mar.pier.locked': {
     lines: [
@@ -1036,9 +1045,15 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   pierdeck: [{ node: 'mar.ex.pier' }],
   casa: [{ node: 'mar.ex.casa' }],
-  net: [{ node: 'mar.ex.net' }],
+  net: [
+    { map: 'la-caleta', when: { has: ['c2.nets.done'] }, node: 'mar.ex.netmended' },
+    { node: 'mar.ex.net' },
+  ],
   crate: [{ node: 'mar.ex.crate' }],
-  caballito: [{ node: 'mar.ex.caballito' }],
+  caballito: [
+    { map: 'la-caleta', when: { has: ['c2.ride.done'] }, node: 'mar.ex.caballito2' },
+    { node: 'mar.ex.caballito' },
+  ],
   boat: [{ node: 'mar.ex.boat' }],
   reeds: [{ node: 'mar.ex.reeds' }],
   pelican: [{ node: 'mar.ex.pelican' }],
@@ -1056,7 +1071,10 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   sea: [{ map: 'la-caleta', node: 'mar.ex.sea' }],
   path: [{ map: 'la-caleta', node: 'mar.ex.path2' }],
   plaza: [{ map: 'la-caleta', node: 'mar.ex.plaza2' }],
-  water: [{ map: 'la-caleta', node: 'mar.ex.pond' }],
+  water: [
+    { map: 'la-caleta', when: { has: ['c2.ponds'] }, node: 'mar.ex.pond2' },
+    { map: 'la-caleta', node: 'mar.ex.pond' },
+  ],
   tuft: [{ map: 'la-caleta', node: 'mar.ex.tuft2' }],
   // The love layer: every background thing answers when looked at.
   seaweed: [{ node: 'mar.ex.seaweed' }],

@@ -47,7 +47,7 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
     title: 'Otsukaresama',
     script: 'おつかれさま',
     sub: 'You must be tired: untranslatable praise. Your effort was seen; the work happened and you were in it.',
-    you: 'Daisuke said it after the crates, and it landed like a stamped passport. Not thanks for the result. Respect for the tiredness itself.',
+    you: 'Daisuke said it after the crates; they say it after hauling, festivals, anything shared. Not thanks for the result, respect for the tiredness itself.',
     rhyme: {
       with: 'customs.espera',
       note: 'On the coast, the waiting was the work. Here they bow to the tiredness itself. Same truth, facing opposite directions: the work is the work.',
@@ -70,7 +70,7 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
     script: 'だし',
     sub: 'The everyday broth: small dried anchovies, heads pinched off, steeped like the sea\'s own tea.',
     nani: 'The famous books say kombu and katsuobushi. The grandmother here says iriko and laughs at the books. Her soup wins. I have eaten three bowls to be sure.',
-    you: 'Fumi counts the little fish into cold water like coins. The Inland Sea in a saucepan; udon and miso both stand on it.',
+    you: 'Kombu out one breath before the boil, the little fish counted into cold water like coins. The Inland Sea in a saucepan; udon and miso stand on it.',
   },
   {
     id: 'dishes.tai',
@@ -174,7 +174,7 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
     you: 'Vega and Altair stand on opposite banks of the Milky Way; the astronomy checks out. If it rains, the magpies cannot bridge it, so the town watches the sky.',
     rhyme: {
       with: 'customs.starriver',
-      note: 'Two rivers of stars, and tonight they hang wishes on this one.',
+      note: 'Mayu, Milky Way, Amanogawa. The llama drinks from it, magpies bridge it; everyone looks up and thinks water. The oldest agreement there is.',
     },
   },
   {
@@ -235,8 +235,8 @@ export const SHIONOURA_TASKS: TaskDef[] = [
     text: 'The ofuro steams behind its own wall at the minshuku. There is a right order to it, and Fumi can hear a shortcut through the wall.',
   },
   {
-    when: { has: ['page.dishes.dashi'], not: ['c4.cook.done'] },
-    text: 'Now that you know what the broth is, Fumi thinks your hands might be useful at dawn: the morning dashi, before the guests wake. Ask her.',
+    when: { has: ['c4.dashi'], not: ['c4.cook.done'] },
+    text: 'Fumi thinks your hands might be useful at dawn: the morning dashi and the breakfast, before the guests wake. Ask her at the pot.',
   },
   {
     when: { has: ['met.fumi'], not: ['met.sachiko'] },
@@ -264,7 +264,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['met.genji'], not: ['c4.tanzaku'] },
-    text: 'Genji has a story about the seventh night and a strip of paper with your name on it, in his way. Go back up the steps and sit.',
+    text: 'Genji has a strip of paper with your name on it, in his way, and one nod at the sky to go with it. Go back up the steps.',
   },
   {
     when: { has: ['c4.tanzaku'], not: ['c4.wish.hung'] },

@@ -34,6 +34,9 @@ const RECALL: RecallManifest = {
   rhymes: [
     ['words.polepole', 'people.nani'],
     ['customs.kanga', 'customs.pallay'],
+    // Declared from this side: Delhi's kite page lands four chapters later,
+    // so the rhyme can only be found late, never missed.
+    ['customs.lateen', 'customs.patang'],
   ],
 };
 
@@ -85,9 +88,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c7.sail.done',
       title: 'The lateen sail',
       howTo: [
-        'The compass shows where the kaskazi is leaning. Left and right ease the sheet to follow it.',
-        'When the telltale streams flat, the sail is breathing and the ngalawa makes way.',
-        'A luffing sail is only a slow one. Bakari has been in irons a thousand times; you bear away and go again.',
+        'The brass rose shows where the kaskazi leans. Left and right ease the sheet to meet it.',
+        'When the telltale streams, the sail breathes and you make way. A luff only slows you; from irons, Space bears away and you go again.',
       ],
       make: (root, audio) => new SailPanel(root, audio as AudioBus),
     },
@@ -96,9 +98,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c7.cook.finish',
       title: 'Behind the urojo pot',
       howTo: [
-        'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in.',
-        'Build it however you hear it, then choose SERVE and let Zuberi read the bowl aloud.',
-        'There are no wrong bowls here. He said so himself, and he owns the pot.',
+        'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in; choose SERVE when the bowl is a bowl.',
+        'There are no wrong bowls here, only bowls Zuberi gets to describe. He said so himself, and he owns the pot.',
       ],
       make: (root, audio) => new UrojoPanel(root, audio as AudioBus),
     },

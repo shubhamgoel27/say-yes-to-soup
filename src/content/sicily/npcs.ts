@@ -300,15 +300,17 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'Sunday. The table has grown two extra leaves and a bench from the church. Cousins appear like weather.' },
       { who: 'Nonna Concetta', text: 'Sit there, between Nino and the aunts. You are new, so you are family. That is the arithmetic.' },
-      { text: 'Antipasto first: olives, caponata, anchovies shining like knives. The talk is loud and entirely about the talk.' },
     ],
     next: 'c8.pranzo.primo',
   },
+  // The courses arrive as plates, not as a recitation; the dish page fills
+  // the moment the Norma lands, which is where the ingredients now live.
   'c8.pranzo.primo': {
     lines: [
-      { text: 'Then the primo: pasta alla Norma. Fried eggplant, tomato, basil, a snow of salted ricotta.' },
-      { who: 'Nonna Concetta', text: 'Named for an opera by a Catania man. A masterpiece got the name of a masterpiece. Eat it while it is a masterpiece.' },
+      { text: 'Olives, caponata, anchovies, one lap of the table and gone. Then the Norma lands, eggplant under snow, and the talk drops by half.' },
+      { who: 'Nonna Concetta', text: 'Pasta alla Norma, bedda. A masterpiece got the name of a masterpiece, and you eat it while it is one.' },
     ],
+    effects: ['journal:dishes.norma'],
     choices: [
       { text: 'Pass the plates and listen', goto: 'c8.pranzo.listen' },
       {
@@ -347,7 +349,7 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Nonna Concetta', text: 'Sunday is not a meal, picciriddu. It is a roll call. Everyone answers, even the dead, even the ones in Torino.' },
       { text: 'Later, with the journal open, you find Nani’s entry on this page. It stops halfway down, mid sentence. The rest is just paper.' },
     ],
-    effects: ['set:c8.pranzo', 'journal:customs.pranzo', 'journal:dishes.norma', 'journal:words.picciriddu'],
+    effects: ['set:c8.pranzo', 'journal:customs.pranzo', 'journal:words.picciriddu'],
   },
   'c8.concetta.walk': {
     lines: [
@@ -437,7 +439,6 @@ export const SICILY_NODES: NodeMap = {
       { text: 'A signora in black holds up a swordfish steak like evidence in a murder trial. Turi clutches his chest, mortally wounded by her offer.' },
       { who: 'Turi', text: 'Signora, at that price I row out and apologize to the fish personally!' },
       { text: 'She doubles it. He halves the difference. They shake hands like old dance partners, which is what they are. A small crowd applauds.' },
-      { who: 'Turi', text: 'Haggling is not war, friend. It is theater. She knew my price, I knew hers. The argument is the gift we give the audience.' },
     ],
     effects: ['set:c8.haggle', 'journal:customs.abbanniata'],
   },
@@ -594,7 +595,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.alfio.bag.go': {
     lines: [
-      { who: 'Alfio', text: 'Three shells, three customers, zero mercy from the signora. Pipe, stop in time, both ends, then the garnish. The shell will tell your thumb.' },
+      { who: 'Alfio', text: 'Three shells, three customers, zero mercy from the signora. The shell will tell your thumb, friend; listen with it.' },
     ],
     effects: ['set:c8.cook.start'],
   },
@@ -617,7 +618,7 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'Inside: cool dark, cards snapping, an espresso machine that predates the republic. Four faces look up. One chair stands empty.' },
       { who: 'The Elders', text: 'Sit? No, no. The table is full. That chair is not empty, it is occupied by a man who is late by some years.' },
-      { who: 'The Elders', text: 'Watch instead. This is scopa. Match a card, or add table cards up to yours. Sweep the table clean and you shout. That part is mandatory.' },
+      { who: 'The Elders', text: 'Watch, then. Scopa explains itself if you stand there long enough; talìa the table, not our faces.' },
       { text: 'They play a hand slowly, for your benefit, pretending it is for theirs.' },
     ],
     effects: ['set:met.elders', 'set:c8.circolo.watch', 'journal:customs.circolo'],
@@ -647,7 +648,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.elders.deal': {
     lines: [
       { text: 'The chair receives you like it remembers how. Cards land: three down, four faces up on the wood.' },
-      { who: 'The Elders', text: 'Guard the sevens, count the denari, and when you sweep the table, shout like your boat came home. Amunì.' },
+      { who: 'The Elders', text: 'Everything you watched standing up, you now do sitting down. Amunì, picciriddu, cut the deck.' },
     ],
     effects: ['set:c8.scopa.start'],
   },
@@ -659,12 +660,12 @@ export const SICILY_NODES: NodeMap = {
     ],
     effects: ['clear:c8.scopa.start', 'set:c8.scopa.won', 'journal:people.elders'],
   },
+  // The mattanza argument moved off the table and onto the trophy shelf,
+  // where it lives: the second line points the eye, the examine carries it.
   'c8.elders.post': {
     lines: [
       { who: 'The Elders', text: 'The one whose chair you sat in taught half this table to play. He would have hated your luck and liked your shouting.' },
-      { who: 'The Elders', text: 'My grandfather rode the mattanza right here off these rocks, you know. Right here!' },
-      { who: 'The Elders', text: 'Peppino. That was Favignana, the other coast entirely. Your grandfather saw a tuna once from a ferry and never recovered.' },
-      { text: 'The argument settles in for the afternoon, comfortable as a cat.' },
+      { who: 'The Elders', text: 'Now Peppino starts the mattanza story, so you are truly a member. Talìa the shelf while he talks; the trophies keep the honest version.' },
     ],
     effects: ['set:c8.elders.after'],
   },
@@ -748,7 +749,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.saro.launch': {
     lines: [
       { text: 'They dress you in a rower’s sash that smells of last year’s festival and hand you an oar polished by decades of the same excitement.' },
-      { who: 'Don Saro', text: 'Listen for the rais. When he calls, pull. When the fish jumps, do not laugh so hard you miss the stroke. That is the whole liturgy.' },
+      { who: 'Don Saro', text: 'The rais does the thinking and the sea does the arguing. Bring the arms and the laugh; that is the whole liturgy.' },
     ],
     effects: ['set:c8.pisci.start'],
   },
@@ -1224,6 +1225,34 @@ export const SICILY_NODES: NodeMap = {
       { text: 'One chair at the scopa table sits at a slight angle, pushed back years ago and never quite pushed in. Nobody straightens it.' },
     ],
   },
+  'c8.ex.stool.won': {
+    lines: [
+      { text: 'The chair that waited years sits square to the table now, warm most afternoons. A chair in use is not a monument, and the elders prefer it so.' },
+    ],
+  },
+  /**
+   * The elders play on their own schedule, invitation or none. Watching the
+   * table is how scopa gets learned here; the game arrives half-taught.
+   */
+  'c8.ex.scopawatch': {
+    lines: [
+      { text: 'A seven of denari comes down and the table goes quiet around it. Whatever the settebello means, it is what a bride means at a wedding.' },
+      { text: 'One elder feeds the table a small card and studies the ceiling. Another sums three cards into his own, sweeps the wood, and shouts.' },
+    ],
+  },
+  'c8.ex.trofei.mattanza': {
+    lines: [
+      { text: 'Under the swordfish bill, the mattanza argument settles in, comfortable as a cat. Peppino’s grandfather rode the nets right here, off these rocks.' },
+      { text: 'Favignana, rules the rest of the table, the other coast entirely. The man saw one tuna from a ferry and never recovered.' },
+    ],
+    effects: ['set:c8.mattanza.heard'],
+  },
+  'c8.ex.tray': {
+    lines: [
+      { text: 'A rank of fresh shells cools on the little table, blistered and rude from the fryer, empty on purpose. Promises, waiting to be asked for.' },
+    ],
+    effects: ['set:c8.tray.rest'],
+  },
   'c8.ex.shelf': {
     lines: [
       { text: 'Shelves of the circolo’s estate: dominoes, a barometer set permanently to fair, and coffee cups that are members in their own right.' },
@@ -1294,13 +1323,22 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   fontana: [{ node: 'c8.ex.fontana' }],
   bucato: [{ node: 'c8.ex.bucato' }],
   granitabar: [{ node: 'c8.ex.granitabar' }],
-  bartable: [{ node: 'c8.ex.bartable' }],
+  bartable: [
+    // The fryer's work rests here after the pastry-bag lesson, seen once.
+    { when: { has: ['c8.cook.done'], not: ['c8.tray.rest'] }, node: 'c8.ex.tray' },
+    { node: 'c8.ex.bartable' },
+  ],
   barlamp: [{ node: 'c8.ex.barlamp' }],
   barca: [{ node: 'c8.ex.barca' }],
   chiesa: [{ node: 'c8.ex.chiesa' }],
   vespa: [{ node: 'c8.ex.vespa' }],
   macchina: [{ node: 'c8.ex.macchina' }],
-  trofei: [{ node: 'c8.ex.trofei' }],
+  trofei: [
+    // Pointed at by the elders after the first game; heard once, then the
+    // shelf goes back to holding still.
+    { when: { has: ['c8.elders.after'], not: ['c8.mattanza.heard'] }, node: 'c8.ex.trofei.mattanza' },
+    { node: 'c8.ex.trofei' },
+  ],
   banco: [{ node: 'c8.ex.banco' }],
   lampadario: [{ node: 'c8.ex.lampadario' }],
   lemoncrate: [
@@ -1353,8 +1391,15 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   grass: [{ map: 'sicily', node: 'c8.ex.grass' }],
   dirt: [{ map: 'sicily', node: 'c8.ex.dirt' }],
   tuft: [{ map: 'sicily', node: 'c8.ex.tuft' }],
-  table: [{ map: 'circolo', node: 'c8.ex.table' }],
-  stool: [{ map: 'circolo', node: 'c8.ex.stool' }],
+  table: [
+    // Once the elders point you at the table, watching it teaches scopa.
+    { map: 'circolo', when: { has: ['c8.circolo.watch'], not: ['c8.scopa.won'] }, node: 'c8.ex.scopawatch' },
+    { map: 'circolo', node: 'c8.ex.table' },
+  ],
+  stool: [
+    { map: 'circolo', when: { has: ['c8.scopa.won'] }, node: 'c8.ex.stool.won' },
+    { map: 'circolo', node: 'c8.ex.stool' },
+  ],
   shelf: [{ map: 'circolo', node: 'c8.ex.shelf' }],
   rug: [{ map: 'circolo', node: 'c8.ex.rug' }],
   mat: [{ map: 'circolo', node: 'c8.ex.mat' }],

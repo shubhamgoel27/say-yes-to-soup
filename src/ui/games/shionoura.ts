@@ -765,6 +765,7 @@ const PACK_HI = 92;
 const WAIT_LINES = [
   'Fumi, without looking up: "Not yet. The sea takes its time."',
   '"Still not yet. Cold water asks; boiling water demands. We are asking."',
+  '"Rich people buy bonito for this. We are iriko people; we caught our broth ourselves."',
   '"Patience is also an ingredient. The cheapest one, and nobody stocks it."',
 ];
 

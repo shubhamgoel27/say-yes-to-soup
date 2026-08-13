@@ -176,6 +176,20 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     sub: 'Boatbuilding passes hand to hand at Nungwi: keel first, no drawings.',
     you: 'Issa learned by watching and by being wrong slowly. The boats are mortal; the apprenticeship is the immortal part.',
   },
+  {
+    // Filled by the reach itself (c7.sail.done). The rhyme is the designed
+    // symmetry with Delhi's kite: two verbs, one grammar for the hands.
+    id: 'customs.lateen',
+    tab: 'customs',
+    title: 'The lateen sail',
+    sub: 'One yard, one sheet, one telltale. Ease toward the wind and hold where it streams.',
+    nani: 'The old sail of this whole ocean. My hands argued with it for an hour and then, all at once, agreed.',
+    you: 'Ease when the kaskazi leans, hold when the sail breathes. Bakari says the rest is repetition and weather, and my hands believe him.',
+    rhyme: {
+      with: 'customs.patang',
+      note: 'Kheench and dheel on the roof at home, sheet and ease on the kaskazi. Hands remember what heads forget; mine were not confused for a minute.',
+    },
+  },
 
   // ---------------- her ----------------
   {

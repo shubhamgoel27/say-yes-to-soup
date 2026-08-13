@@ -221,7 +221,6 @@ export const BUSAN_NODES: NodeMap = {
     lines: [
       { text: 'The ferry reached the harbor in the dark and then waited politely at anchor for the morning to open. You woke to gulls.' },
       { text: 'Now: diesel, salt, dawn the color of oyster shell. Container cranes stand along the water like orange giraffes at a trough.' },
-      { text: 'An old woman at the rail says this boat has crossed for most of a century, and that the crossing was not always anyone’s choice.' },
       { text: 'Behind the quay, small houses climb the hill in stacked pastels, still holding last night’s lights. Somewhere close, sugar is frying.' },
     ],
     effects: ['set:c5.arrived'],
@@ -263,9 +262,11 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Sun-hee', text: 'Here it is deom. Nobody announces it. If you have to ask for it, it is not deom, it is haggling.' },
     ],
   },
+  // The word arrives on the wrapping, not in a lecture: she wrote it before
+  // you thought to ask. Backfills the yapa rhyme for players without the page.
   'c5.sunhee.deomword': {
     lines: [
-      { who: 'Sun-hee', text: 'Deom, we call it. The little more that rides on top of what you paid for.' },
+      { text: 'She turns the wrapped fish over. 덤 is already there in grease pencil, and she taps it: deom, the little more riding on what you paid for.' },
       { who: 'Sun-hee', text: 'Not charity, not a discount. It means the scale is between friends now.' },
     ],
   },
@@ -440,18 +441,19 @@ export const BUSAN_NODES: NodeMap = {
   },
 
   // ---------------- Emo Byeong-ok, the gukbap counter ----------------
+  // Nobody explains the greeting or the dish: the bowl answers the one and is
+  // the other. The gukbap page fills at the moment it lands.
   'c5.cook.first': {
     lines: [
       { text: 'A low counter under a tented stall, one pot the size of weather. The cook looks up from the ladle.' },
       { who: 'Emo Byeong-ok', text: 'Bap meogeosseo? Have you eaten?' },
-      { text: 'It is a greeting, not a question, except it is also a question. A bowl is already moving toward you.' },
     ],
     effects: ['journal:words.bapmeogeosseo'],
     next: 'c5.cook.meal',
   },
   'c5.cook.meal': {
     lines: [
-      { text: 'Milky pork broth over rice. Then the table crowds itself: kimchi, greens, tiny fish, radish. You ordered one thing.' },
+      { text: 'A bowl lands before your answer does, milky and steaming. Then the table crowds itself: kimchi, greens, tiny fish, radish; you ordered one thing.' },
       { text: 'You park your chopsticks upright in the rice. Without a word, mid-sentence, she lays them flat across the bowl and keeps talking.' },
     ],
     effects: ['set:c5.met.cook', 'journal:dishes.gukbap', 'journal:customs.banchan'],
@@ -578,9 +580,8 @@ export const BUSAN_NODES: NodeMap = {
   'c5.hana.dock': {
     lines: [
       { text: 'A familiar figure stands by the ferry office, sea bag on one shoulder, weighing two paper sacks of dried anchovies like a jeweler.' },
-      { who: 'Hana', text: 'You! Of course you. One strait, two mornings, and here you are, smelling of the same harbor as me.' },
-      { who: 'Hana', text: 'Day boat over from Shimonoseki. I have done this run since cadet days; the ferry and I are old colleagues. Still three minutes early.' },
-      { who: 'Hana', text: 'I am buying Obaachan Busan iriko for her dashi. Busan iriko is a controversial opinion at home, so we call it mine and eat it anyway.' },
+      { who: 'Hana', text: 'You! Of course you. Over on the Shimonoseki day boat, my old cadet run, and here you are, smelling of the same harbor as me.' },
+      { who: 'Hana', text: 'The iriko is for Obaachan’s dashi. Busan iriko is a controversial opinion at home, so we call it mine and eat it anyway.' },
     ],
     effects: ['set:c5.met.hana5'],
   },
@@ -686,6 +687,12 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'Mackerel nose to tail on crushed ice, basins half unpacked underneath, a scale swinging off the post. The morning is run from here.' },
     ],
   },
+  // Once you have received the deom, the stall visibly keeps the habit.
+  'c5.ex.hongawning2': {
+    lines: [
+      { text: 'The red awning, the scale, the ice. At the scale’s elbow one small fish sits already wrapped: somebody’s deom, riding ahead of its buyer.' },
+    ],
+  },
   'c5.ex.barrow': {
     lines: [
       { text: 'A two-wheel barrow, tipped on its legs mid-errand, half its load already off. The lane keeps its middle clear so these can get through.' },
@@ -717,6 +724,12 @@ export const BUSAN_NODES: NodeMap = {
   'c5.ex.griddle': {
     lines: [
       { text: 'The griddle idles between rushes, shining with oil. Three dents in the iron mark thirty years of the same flip.' },
+    ],
+  },
+  // After your batch, the iron shows it: the game leaves a trace on the prop.
+  'c5.ex.griddle2': {
+    lines: [
+      { text: 'The griddle rests wiped and oiled, seasoned a shade darker where your batch went down. One of the three dents knows your wrist now.' },
     ],
   },
   'c5.ex.hill': {
@@ -769,9 +782,12 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'Fish crates packed with chipped ice. Numbers were chanted over these at the dawn auction, hours before you woke.' },
     ],
   },
+  // The century of the crossing lives here now, where the boat itself is the
+  // thing in front of you, instead of in a stranger's speech on arrival.
   'c5.ex.pier': {
     lines: [
       { text: 'Quay concrete and old timber, rinsed by decades of tides and hoses. The overnight ferry dwarfs everything, gently.' },
+      { text: 'It has made this crossing for most of a century. The old ones at the rail will tell you it was not always anyone’s choice.' },
     ],
   },
   'c5.ex.sea': {
@@ -895,6 +911,12 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'One eye opens to a slit, files you under harmless, and closes. You have been processed.' },
     ],
   },
+  // The dressing moves the cat to the stall once the extra fish is a habit.
+  'c5.ex.cat.stall': {
+    lines: [
+      { text: 'The cat has moved offices to Sun-hee’s corner, one eye on the ice. Where extra fish happen, it reasons, more can be arranged.' },
+    ],
+  },
   'c5.ex.gullpost': {
     lines: [
       { text: 'The rope holds the ferry, the bollard holds the rope, and the gull holds the bollard. Everyone on this quay has a job.' },
@@ -927,7 +949,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.yeontan': {
     lines: [
-      { text: 'Yeontan briquettes, grey as old moons, air holes lined up neat. The warm floor is their doing; the whole room is in their debt.' },
+      { text: 'Yeontan briquettes, grey as old moons, air holes lined up neat. Every warm thing here, ondol floor or griddle, is in their debt.' },
     ],
   },
   'c5.ex.tuft': {
@@ -950,7 +972,10 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   wallInt: [{ map: 'teahouse', node: 'c5.ex.wallhanji' }],
   lanepave: [{ node: 'c5.ex.lane' }],
   awning: [{ node: 'c5.ex.awning' }],
-  hongawning: [{ node: 'c5.ex.hongawning' }],
+  hongawning: [
+    { when: { has: ['c5.deom'] }, node: 'c5.ex.hongawning2' },
+    { node: 'c5.ex.hongawning' },
+  ],
   barrow: [{ node: 'c5.ex.barrow' }],
   fishrack: [{ node: 'c5.ex.rack' }],
   basin: [{ node: 'c5.ex.basin' }],
@@ -959,7 +984,10 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { not: ['c5.eomuk'] }, node: 'c5.ex.eomuk1' },
     { node: 'c5.ex.eomuk2' },
   ],
-  hotteokcart: [{ node: 'c5.ex.griddle' }],
+  hotteokcart: [
+    { when: { has: ['c5.hotteok.done'] }, node: 'c5.ex.griddle2' },
+    { node: 'c5.ex.griddle' },
+  ],
   hillhouses: [{ node: 'c5.ex.hill' }],
   crane: [{ node: 'c5.ex.crane' }],
   teahouse: [{ node: 'c5.ex.teahouse' }],
@@ -1010,6 +1038,7 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   handrail: [{ node: 'c5.ex.handrail' }],
   marketcat: [
     { map: 'teahouse', node: 'c5.ex.cat.tea' },
+    { when: { has: ['c5.deom'] }, node: 'c5.ex.cat.stall' },
     { when: { not: ['c5.cat.seen'] }, node: 'c5.ex.cat1' },
     { node: 'c5.ex.cat2' },
   ],

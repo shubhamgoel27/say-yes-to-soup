@@ -662,8 +662,9 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.zuberi.apron.go': {
+    // The corner's rules live in the howTo card; he keeps only his favorite part.
     lines: [
-      { who: 'Zuberi', text: 'Rules of the corner: the customer calls the bowl, you answer it. There are no wrong bowls. There are only bowls I get to describe.' },
+      { who: 'Zuberi', text: 'The customer calls the bowl; you answer it. The rest, mgeni, is bowls I get to describe.' },
     ],
     effects: ['set:c7.cook.start'],
   },
@@ -744,9 +745,10 @@ export const ZANZIBAR_NODES: NodeMap = {
     effects: ['set:c7.met.issa', 'journal:people.dhowbuilder', 'journal:customs.dhowknowledge'],
   },
   'c7.issa.second': {
+    // The two-wind calendar moved onto the anchored jahazi (c7.ex.dhow.winds).
     lines: [
       { who: 'Fundi Issa', text: 'My master learned at Nungwi: keel first, no drawings. I learned by watching his hands and by being wrong slowly.' },
-      { who: 'Fundi Issa', text: 'Kaskazi blows from the northeast until February; kusi answers from the south after April. Boats and weddings are planned by those two.' },
+      { who: 'Fundi Issa', text: 'You want the year’s timetable, mgeni? It is riding at anchor out there. Go read her rig.' },
     ],
     effects: ['set:c7.issa.winds'],
   },
@@ -757,16 +759,18 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
 
   // ---------------- Kapteni Bakari, the domino table ----------------
+  /**
+   * The welcome stays human and short. The pilau moved onto the pot behind
+   * the bones (c7.ex.pilaupot, which grants the page); the pizza claim moved
+   * to the stall griddle; the captains' bickering lives in the idle now.
+   */
   'c7.bakari.first': {
     lines: [
       { text: 'Four retired captains around a table, dominoes going down like weather reports. Nobody looks up, which is how you know the game matters.' },
       { who: 'Kapteni Bakari', text: 'Sit, mgeni, watch. This table has crossed to Bombay and back more times than it has legs.' },
-      { text: 'A bone goes down with a click of finality. Somewhere in it there is a story about a cyclone; you can tell by the silence.' },
-      { who: 'Kapteni Suleiman', text: 'Feed the mgeni Zanzibar pizza, Bakari. Old, old food. From the Sultan’s own kitchen.' },
-      { who: 'Kapteni Bakari', text: 'Suleiman also remembers winning arguments he lost. Eat what Zuberi gives you, mgeni.' },
-      { who: 'Kapteni Bakari', text: 'Friday, when the game ends, there is pilau. Rice that remembers Oman on one side and India on the other. The table eats together or not at all.' },
+      { who: 'Kapteni Bakari', text: 'Friday, when the game ends, that pot serves pilau and the table eats together or not at all. Until then, eat what Zuberi gives you.' },
     ],
-    effects: ['set:c7.met.bakari', 'journal:dishes.pilau'],
+    effects: ['set:c7.met.bakari'],
   },
   'c7.bakari.sail': {
     lines: [
@@ -778,8 +782,9 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.bakari.go': {
+    // The teaching lives in the howTo card and on the trim rose; he just casts off.
     lines: [
-      { who: 'Kapteni Bakari', text: 'Kaskazi today, steady from the northeast. Watch the telltale on the yard: when it streams, the sail is breathing. Keep it breathing.' },
+      { who: 'Kapteni Bakari', text: 'Kaskazi today, steady from the northeast. Hands on the sheet, mgeni; I will mind the tiller and the laughing.' },
     ],
     effects: ['set:c7.sail.start'],
   },
@@ -793,7 +798,7 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'The village comes back to meet you, then the jetty. Your hands have learned a small permanent thing about wind.' },
       { who: 'Kapteni Bakari', text: 'You luffed, you listened, you fixed it. That is the whole trade, mgeni. The rest is repetition and weather.' },
     ],
-    effects: ['clear:c7.sail.start', 'set:c7.sail.ok'],
+    effects: ['clear:c7.sail.start', 'set:c7.sail.ok', 'journal:customs.lateen'],
   },
   'c7.bakari.praise': {
     lines: [
@@ -817,8 +822,10 @@ export const ZANZIBAR_NODES: NodeMap = {
     effects: ['set:replay.mode', 'set:c7.sail.start'],
   },
   'c7.bakari.idle': {
+    // The captains' pizza argument, demoted from the welcome to table talk.
     lines: [
-      { who: 'Kapteni Bakari', text: 'Dominoes are like harbors, mgeni. What matters is not the bone in your hand; it is the one already on the table.' },
+      { who: 'Kapteni Suleiman', text: 'Zanzibar pizza, Bakari. Old, old food, from the Sultan’s own kitchen. Feed the mgeni properly.' },
+      { who: 'Kapteni Bakari', text: 'Suleiman also remembers winning arguments he lost. Your bone, kapteni.' },
     ],
   },
 
@@ -961,6 +968,12 @@ export const ZANZIBAR_NODES: NodeMap = {
       { text: 'A ngalawa: one mango trunk, two outrigger arms, a sail like a folded wing. Nimble as a water strider and about as sinkable.' },
     ],
   },
+  'c7.ex.ngalawa.after': {
+    // Dressing: the boat keeps the lesson after the reach is sailed.
+    lines: [
+      { text: 'The ngalawa rests at her post, the sail furled fat along the yard, still warm from the reach. Your palm remembers where the sheet lives.' },
+    ],
+  },
   'c7.ex.dhow': {
     lines: [
       { text: 'A jahazi rides at anchor, lateen yard crossed like a drawn bow. Boats like her stitched this ocean together for a thousand years.' },
@@ -1038,7 +1051,29 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.ex.table': {
     lines: [
-      { text: 'The domino table. The bones are worn smooth as beach glass. Standing this close without playing feels like eavesdropping.' },
+      { text: 'The domino table. The bones are worn smooth as beach glass, and standing this close without playing feels like eavesdropping.' },
+      { text: 'A bone goes down with a click of finality. Somewhere in it there is a story about a cyclone; you can tell by the silence.' },
+    ],
+  },
+  'c7.ex.pilaupot': {
+    // The plate carries the remembering now; Bakari only pointed at the pot.
+    lines: [
+      { text: 'Behind the bones a covered pot minds a charcoal ring, keeping Friday. The steam slipping the lid is pilau: Oman on one side, India on the other.' },
+    ],
+    effects: ['set:c7.seen.pilau', 'journal:dishes.pilau'],
+  },
+  'c7.ex.stall.pizza': {
+    // The Sultan's-kitchen story, retired from the welcome speech to the griddle.
+    lines: [
+      { text: 'Under the awning, beside the limes, a griddle folds Zanzibar pizza: thin dough, egg, mince, a confident squiggle of mayonnaise.' },
+      { text: 'The captains claim the Sultan’s kitchen; Zuberi claims nowhere at all. The griddle stays out of it and sells out nightly.' },
+    ],
+  },
+  'c7.ex.dhow.winds': {
+    // Issa's two-wind calendar, read off the rig he pointed at.
+    lines: [
+      { text: 'The jahazi rides with her yard set for the kaskazi, the northeast wind that works until February.' },
+      { text: 'After April the kusi answers from the south. Boats and weddings on this coast are planned by those two.' },
     ],
   },
   'c7.ex.shelfshop': {
@@ -1058,6 +1093,12 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.ex.kline.b': {
     lines: [
       { text: 'The cloths have turned in the wind; the message has not. Whoever should let them talk has presumably walked past by now.' },
+    ],
+  },
+  'c7.ex.kline.c': {
+    // Dressing: the shop line remembers your purchase.
+    lines: [
+      { text: 'Sea-blue and rust flies at the end of the line now, twin to the cloth on your shoulder. The lane has been informed.' },
     ],
   },
   'c7.ex.bao.a': {
@@ -1241,8 +1282,14 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   nyumba: [{ node: 'c7.ex.nyumba' }],
   mlango: [{ node: 'c7.ex.mlango' }],
   baraza: [{ node: 'c7.ex.baraza' }],
-  ngalawa: [{ node: 'c7.ex.ngalawa' }],
-  dhow: [{ node: 'c7.ex.dhow' }],
+  ngalawa: [
+    { when: { has: ['c7.sail.ok'] }, node: 'c7.ex.ngalawa.after' },
+    { node: 'c7.ex.ngalawa' },
+  ],
+  dhow: [
+    { when: { has: ['c7.issa.winds'] }, node: 'c7.ex.dhow.winds' },
+    { node: 'c7.ex.dhow' },
+  ],
   clovemat: [{ node: 'c7.ex.clovemat' }],
   kangarack: [{ node: 'c7.ex.kangarack' }],
   spicesack: [{ node: 'c7.ex.spicesack' }],
@@ -1259,6 +1306,7 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   kangaline: [
     { when: { not: ['c7.seen.kline'] }, node: 'c7.ex.kline.a' },
+    { when: { has: ['c7.kanga.done'] }, node: 'c7.ex.kline.c' },
     { node: 'c7.ex.kline.b' },
   ],
   baoboard: [
@@ -1305,11 +1353,17 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   sand: [{ map: 'zanzibar', node: 'c7.ex.sand' }],
   sandWet: [{ map: 'zanzibar', node: 'c7.ex.flats' }],
   sea: [{ map: 'zanzibar', node: 'c7.ex.sea' }],
-  stall: [{ map: 'zanzibar', node: 'c7.ex.stall' }],
+  stall: [
+    { map: 'zanzibar', when: { has: ['c7.met.bakari'] }, node: 'c7.ex.stall.pizza' },
+    { map: 'zanzibar', node: 'c7.ex.stall' },
+  ],
   tree: [{ map: 'zanzibar', node: 'c7.ex.tree' }],
   signpost: [{ map: 'zanzibar', node: 'c7.ex.sign' }],
   pierdeck: [{ map: 'zanzibar', node: 'c7.ex.jetty' }],
-  table: [{ map: 'zanzibar', node: 'c7.ex.table' }],
+  table: [
+    { map: 'zanzibar', when: { has: ['c7.met.bakari'], not: ['c7.seen.pilau'] }, node: 'c7.ex.pilaupot' },
+    { map: 'zanzibar', node: 'c7.ex.table' },
+  ],
   shelf: [{ map: 'kangashop', node: 'c7.ex.shelfshop' }],
 };
 

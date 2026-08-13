@@ -66,8 +66,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c4.kingyo.won',
       title: 'The paper scoop',
       howTo: [
-        'Arrows drift the poi across the tub. Space dips it under a goldfish.',
-        'The shallow ones can be lifted. The deep ones have done this before.',
+        'Arrows drift the poi; Space dips it under a shallow goldfish. The deep ones have done this before.',
         'Paper always loses to water in the end. When it tears, the uncle just hands you another.',
       ],
       make: (root, audio) => new KingyoPanel(root, audio as AudioBus),
@@ -77,10 +76,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c4.cook.finish',
       title: 'The dawn kitchen',
       howTo: [
-        'Space slides the kombu into cold water, and then you wait. The waiting is the step.',
-        'Lift it one breath before the boil, while the meter sits in the pale band.',
-        'Then arrows and Space to skim the grey foam, and press two onigiri.',
-        'Fumi corrects the way she was corrected: once, warmly, and the pot goes back on.',
+        'Space makes each move when the pot asks for it; arrows move your hands over the water.',
+        'Fumi calls the steps, once and warmly. The waiting is one of them.',
       ],
       make: (root, audio) => new DashiPanel(root, audio as AudioBus),
     },
@@ -121,6 +118,7 @@ export const CHAPTER: ChapterDef = {
       'The tairyō-bata lift, fill, and settle. The pier spends all day remembering what full felt like.',
       'Heat lies over the quay like a cat that has chosen it. Nobody argues with either of them.',
       'An old woman bows slightly to the postbox and mails nothing. The postbox receives it well.',
+      'Some towns moved Tanabata to August and its clean skies. This coast stays in tsuyu and hopes; the local sport, undefeated at losing.',
     ],
     minshuku: [
       'The iron kettle noses up toward a boil and thinks better of it.',
@@ -137,6 +135,23 @@ export const CHAPTER: ChapterDef = {
       map: 'shionoura',
       when: { has: ['wish.written'] },
       swap: { from: 'bamboo', to: { t: 'bambooWish', solid: true, tall: true } },
+    },
+    // Otsukaresama has an object: once you helped load the kei truck, the
+    // morning's stray crates are gone from the quay. The work happened.
+    {
+      map: 'shionoura',
+      when: { has: ['c4.otsukare'] },
+      cells: [
+        [15, 22, null],
+        [28, 22, null],
+      ],
+    },
+    // A guest who makes breakfast has stopped being a guest: a fourth zabuton
+    // waits at the low table from that morning on, and it is yours.
+    {
+      map: 'minshuku',
+      when: { has: ['c4.cook.done'] },
+      cells: [[4, 7, { t: 'zabuton', solid: true }]],
     },
   ],
   arrival: { map: 'shionoura', node: 'c4.arrive', flag: 'c4.arrived' },

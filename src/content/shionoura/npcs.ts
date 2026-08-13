@@ -61,7 +61,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       { when: { has: ['c4.tai.got'], not: ['c4.taisomen'] }, node: 'c4.fumi.taisomen' },
       { when: { has: ['c4.taisomen'], not: ['c4.fumi.nani'] }, node: 'c4.fumi.memory' },
       { when: { has: ['c4.ofuro'], not: ['c4.okaeri'] }, node: 'c4.fumi.okaeri' },
-      { when: { has: ['page.dishes.dashi'], not: ['c4.cook.done'] }, node: 'c4.fumi.cookinvite' },
+      { when: { has: ['c4.dashi'], not: ['c4.cook.done'] }, node: 'c4.fumi.cookinvite' },
       // A guest who makes breakfast has stopped being a guest, so the guest
       // book comes out, and the guest book remembers longer than the town.
       { when: { has: ['c4.cook.done'], not: ['c4.her.told'] }, node: 'c4.fumi.her' },
@@ -343,21 +343,21 @@ export const SHIONOURA_NODES: NodeMap = {
     ],
     effects: ['set:c4.meal', 'journal:words.itadakimasu', 'journal:words.gochisosama'],
   },
+  // The broth is learned at the pot, not across it: the dawn kitchen teaches
+  // the steps in hand, and the dashi page fills when the cooking is done.
   'c4.fumi.dashi': {
     lines: [
-      { who: 'Fumi', text: 'Come, the pot. Everyone thinks Japan is kombu and katsuobushi. Here we are iriko people: little dried anchovies, heads pinched off.' },
-      { text: 'She drops a handful into cold water like she is counting coins. The kitchen slowly fills with the smell of the entire sea, concentrated.' },
-      { who: 'Fumi', text: 'Iriko dashi. The Inland Sea in a saucepan. Udon, miso, everything stands on it. Rich people buy bonito; we caught our broth ourselves.' },
+      { who: 'Fumi', text: 'The smell? Iriko, the little dried fish on the shelf there. This house\'s broth; the pot will teach you more than I can say.' },
       { who: 'Fumi', text: 'Now, a favor with flavor in it. Daisuke on the quay holds a tai for me when the catch is good. My knees and that hill disagree. Fetch it?' },
     ],
-    effects: ['set:c4.dashi', 'journal:dishes.dashi', 'errand:fumi-tai', 'set:errand.fumi-tai'],
+    effects: ['set:c4.dashi', 'errand:fumi-tai', 'set:errand.fumi-tai'],
   },
   'c4.fumi.taisomen': {
     lines: [
       { text: 'The tai goes into the pan whole, then over a nest of somen noodles fine as thread. She works without hurry and without one wasted motion.' },
       { who: 'Fumi', text: 'Tai-somen. Celebration food. A whole sea bream means a wedding, a homecoming, a festival. This week we have two of those, so.' },
       { text: 'Hana appears at the smell, exactly like a cat. The three of you eat at the low table while the cicadas saw the evening into lengths.' },
-      { who: 'Fumi', text: 'Tai is the king here, the lucky fish. Ebisu-sama holds one under his arm. Eat the cheek, guest gets the cheek. House rule.' },
+      { who: 'Fumi', text: 'The cheek is yours; the guest gets the cheek. House rule, no appeal.' },
     ],
     effects: ['set:c4.taisomen', 'journal:dishes.tai', 'errand.done', 'clear:errand.fumi-tai'],
   },
@@ -410,7 +410,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'They will say itadakimasu to this and never know your hands are in it. Good. That is how a kitchen keeps its secrets.' },
       { who: 'Fumi', text: 'And you should know: a guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
     ],
-    effects: ['clear:c4.cook.start', 'set:c4.cook.done'],
+    effects: ['clear:c4.cook.start', 'set:c4.cook.done', 'journal:dishes.dashi'],
   },
   // The thread about her. The town does not wonder why she stayed; it never
   // wonders. Two lines in a ledger, three weeks apart, and no one asked once.
@@ -475,10 +475,9 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.dai.udon': {
     lines: [
-      { text: 'Noon. Daisuke waves you onto a crate and sets down two bowls of udon, iriko broth, fat noodles. He inhales his in loud joyful yards.' },
-      { text: 'You eat quietly, politely, the way you were raised. He slows. He watches. His face falls like a barometer.' },
-      { who: 'Daisuke', text: 'Is it bad? It is bad. You eat like a funeral. The broth offended you, tell me straight, I can take it.' },
-      { text: 'Two old men down the quay demonstrate without being asked, slurping like tide over gravel. You try it. The noodles taste warmer, somehow.' },
+      { text: 'Noon. Daisuke waves you onto a crate, sets down two bowls of udon, and inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
+      { who: 'Daisuke', text: 'Is it bad? You eat like a funeral; the broth offended you, tell me straight, I can take it.' },
+      { text: 'You try it his way instead, tide over gravel. The noodles taste warmer, somehow.' },
       { who: 'Daisuke', text: 'THERE it is! Loud means delicious, ne. Silence is for fish still in the water.' },
     ],
     effects: ['set:c4.slurp'],
@@ -487,8 +486,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'The kei truck is backed to the boats, and the morning\'s crates outnumber the morning\'s hands. You join without being asked.' },
       { text: 'Ice, fish, ice, fish. The sun climbs. When the tailgate finally bangs shut, Daisuke claps your shoulder with a hand like a docking fender.' },
-      { who: 'Daisuke', text: 'Otsukaresama! You must be tired, it means, but it means more: your tiredness is seen. The work happened, and you were in it.' },
-      { who: 'Daisuke', text: 'We say it after hauling, after festivals, after anything shared. Now you are inside the word too, ne.' },
+      { who: 'Daisuke', text: 'Otsukaresama! Your tiredness is seen, ne; the work happened and you were in it. Now you are inside the word too.' },
     ],
     effects: ['set:c4.otsukare', 'journal:words.otsukaresama'],
   },
@@ -508,13 +506,14 @@ export const SHIONOURA_NODES: NodeMap = {
     ],
     effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai', 'journal:dishes.lemonyokan'],
   },
+  // The lemon lore rides where the lemons do: on the stenciled crates, found
+  // once Sachiko has nodded at them. The page fills at the noticing.
   'c4.sachi.lemons': {
     lines: [
-      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. Whole hillsides of them above the water: Lemon Valley since the sixties.' },
-      { who: 'Sachiko', text: 'Most of Japan\'s lemons come from these islands. In July the mikan is only juice and jelly, so the lemon does the singing. Sour keeps you honest.' },
+      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. The crates by the counter came across with them; look them over, go on.' },
       { who: 'Sachiko', text: 'Come back when you have thought about your list. Omiyage is chosen slowly and given fast. Both halves matter.' },
     ],
-    effects: ['set:c4.sachiko2', 'journal:dishes.lemon'],
+    effects: ['set:c4.sachiko2'],
   },
   'c4.sachi.shop': {
     lines: [
@@ -588,31 +587,16 @@ export const SHIONOURA_NODES: NodeMap = {
     ],
     effects: ['set:met.genji', 'journal:people.genji'],
   },
+  // The myth is not recited; Genji points and the sky over the water tells it.
+  // The Amanogawa examine holds the story, the journal rhyme the recognition.
   'c4.genji.amanogawa': {
     lines: [
-      { who: 'Genji', text: 'You came back. Fine. Sit. Before the seventh night you should know what the fuss is.' },
-      { who: 'Genji', text: 'Orihime wove, Hikoboshi herded, they fell in love and stopped working. The Sky King split them with a river of stars. The Amanogawa.' },
-      { who: 'Genji', text: 'One night a year, the seventh of the seventh, magpies bridge the river and the two meet. If it rains, no bridge. So we watch the sky like fishermen.' },
-      { text: 'He produces a strip of colored paper from his sleeve, as if he had always been holding it, and puts it in your hands. Both of his.' },
-      { who: 'Genji', text: 'Tanzaku. Write one wish. Bamboo grows straight at heaven, so we hang wishes on it. Do not write a speech. The paper is small on purpose.' },
+      { text: 'The broom stops, which is an event. Genji tips his chin up past the torii, to where the night will be.' },
+      { who: 'Genji', text: 'Orihime and Hikoboshi, the seventh night. Ask the sky over the water after dark; it tells it better than a broom does.' },
+      { text: 'He puts a strip of colored paper in your hands, as if he had always been holding it. Both of his.' },
+      { who: 'Genji', text: 'Tanzaku. Write one wish. The paper is small on purpose.' },
     ],
-    effects: ['set:c4.tanzaku', 'journal:customs.tanabata'],
-    choices: [
-      { text: '"I saw this river from the ocean. They called it a river there too."', goto: 'c4.genji.mayu', when: { has: ['page.customs.starriver'] } },
-      { text: 'Ask what happens if it rains', goto: 'c4.genji.rain' },
-    ],
-  },
-  'c4.genji.mayu': {
-    lines: [
-      { who: 'Genji', text: 'Mm. Sailors, mountain people, us. Everyone looks up at the same spill of stars and thinks: water.' },
-      { who: 'Genji', text: 'Nobody taught anybody. The sky just looks like a river, everywhere on earth. That is either a coincidence or the oldest agreement there is.' },
-    ],
-  },
-  'c4.genji.rain': {
-    lines: [
-      { who: 'Genji', text: 'Rain, no magpies, no bridge. The lovers wait a year. Some towns cheat and hold Tanabata in August for clean skies.' },
-      { who: 'Genji', text: 'We do not cheat. We hope. Hoping in tsuyu season is our local sport, and we are undefeated at losing.' },
-    ],
+    effects: ['set:c4.tanzaku'],
   },
   'c4.genji.hung': {
     lines: [
@@ -994,6 +978,16 @@ export const SHIONOURA_NODES: NodeMap = {
   },
 
   // ---------------- examines: shared kinds, this coast's words ----------------
+  // Where Genji pointed. The Tanabata myth, told by the sky it happened in;
+  // this is also the local locksmith for the star-river knowledge.
+  'c4.ex.amanogawa': {
+    lines: [
+      { text: 'Past the last lantern, where the sky leans on the water, the star river shows itself: the Amanogawa, the river of heaven.' },
+      { text: 'Orihime wove, Hikoboshi herded, and love stopped the work. The Sky King parted them with this river; magpies bridge it one night a year.' },
+      { text: 'The seventh night of the seventh month. If it rains, no bridge, so a whole town is watching the sky like fishermen.' },
+    ],
+    effects: ['set:c4.seen.amanogawa', 'journal:customs.tanabata'],
+  },
   'c4.ex.sea': {
     lines: [
       { text: 'The Seto Inland Sea, flat as poured metal, islands stacked blue on blue to the haze. A sea with the manners of a lake and the memory of an ocean.' },
@@ -1134,6 +1128,14 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'Glass floats in a net bag, green as bottled sea. Plastic took their job years ago; nobody here would dream of letting the old crew go.' },
     ],
+  },
+  // The crates Sachiko nodded at, carrying Lemon Valley in stencil form.
+  'c4.ex.setoda': {
+    lines: [
+      { text: 'SETODA, say the stencils. The crates ride the ferry from Lemon Valley, whole terraced hillsides of it above the water since the sixties.' },
+      { text: 'Most of Japan\'s lemons grow on those slopes. In July the mikan is only juice and jelly, so the lemon does the singing.' },
+    ],
+    effects: ['set:c4.seen.setoda', 'journal:dishes.lemon'],
   },
   'c4.ex.mikanbako': {
     lines: [
@@ -1325,7 +1327,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c4.ex.jihanki2' },
   ],
   ukidama: [{ node: 'c4.ex.ukidama' }],
-  mikanbako: [{ node: 'c4.ex.mikanbako' }],
+  mikanbako: [
+    { map: 'shionoura', when: { has: ['c4.sachiko2'], not: ['c4.seen.setoda'] }, node: 'c4.ex.setoda' },
+    { node: 'c4.ex.mikanbako' },
+  ],
   jitensha: [{ node: 'c4.ex.jitensha' }],
   ittokan: [{ node: 'c4.ex.ittokan' }],
   ajisai: [{ node: 'c4.ex.ajisai' }],
@@ -1366,7 +1371,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c4.meal'], not: ['c4.ofuro'] }, node: 'c4.ofuro.scene' },
     { node: 'c4.ex.ofuro' },
   ],
-  sea: [{ map: 'shionoura', node: 'c4.ex.sea' }],
+  sea: [
+    { map: 'shionoura', when: { has: ['c4.tanzaku'], not: ['c4.seen.amanogawa'] }, node: 'c4.ex.amanogawa' },
+    { map: 'shionoura', node: 'c4.ex.sea' },
+  ],
   sand: [{ map: 'shionoura', node: 'c4.ex.sand' }],
   sandWet: [{ map: 'shionoura', node: 'c4.ex.wet' }],
   pierdeck: [{ map: 'shionoura', node: 'c4.ex.pier' }],

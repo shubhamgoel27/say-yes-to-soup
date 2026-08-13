@@ -211,7 +211,7 @@ const POIS: Record<string, string> = {
   '18,21': 'X',
   '16,22': 'y',
   '16,23': 'y',
-  '17,23': 'C', // the cat that owns the lid
+  '17,23': 'C', // the cat that owns the lid (moves to the stall once c5.deom holds; see index.ts dressings)
   '19,18': 'l', // lotus lanterns, strung alternately over the walk
   '23,17': 'L', // and the lamp that still burns over the path at dawn
   '24,20': 'l',

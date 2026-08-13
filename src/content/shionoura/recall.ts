@@ -27,7 +27,7 @@ export const RECALL: RecallManifest = {
   ],
   backfills: {
     // Knowledge keys have local locksmiths: the no-key branch teaches it anyway.
-    'page.customs.starriver': 'c4.genji.amanogawa',
+    'page.customs.starriver': 'c4.ex.amanogawa',
     'page.words.lamar': 'c4.isao.umi',
   },
   rhymes: [

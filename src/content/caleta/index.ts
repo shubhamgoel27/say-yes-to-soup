@@ -23,9 +23,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.rode',
       title: 'The caballito',
       howTo: [
-        'A swell rolls in. Space to paddle right as it reaches you.',
-        'Too eager and it rolls you back; let the horse meet the water.',
-        'Past the break, hold the middle with the arrows and ride it home.',
+        'Space paddles as each swell reaches you. Too eager and it rolls you back; let the horse meet the water.',
+        'Past the break, hold the middle with the arrows and let the wave carry you home.',
       ],
       make: (root, audio) => new WavePanel(root, audio as AudioBus),
     },
@@ -34,8 +33,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.mended',
       title: 'The net circle',
       howTo: [
-        'Walk the shuttle along the mesh with the arrows.',
-        'Space ties a hole shut wherever a gap gapes.',
+        'The arrows walk the shuttle along the mesh. Space ties a hole shut wherever a gap gapes.',
         'No timer, no losing. The talk mends the evening while you mend the net.',
       ],
       make: (root, audio) => new NetPanel(root, audio as AudioBus),
@@ -45,9 +43,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.cook.finish',
       title: 'Behind the pots',
       howTo: [
-        'Space walks the dish through: cut, salt, lime, onion, the rest.',
-        'Pull the fish out while the bar burns bright, not a beat later.',
-        'The lime kisses, it does not marry. Overcook and Petro eats the proof.',
+        'Space walks the dish through: cut, salt, the lime kiss, onion, the rest.',
+        'Pull the fish while the bar burns bright. The lime kisses, it does not marry; overcook and Petro eats the proof.',
       ],
       make: (root, audio) => new CevichePanel(root, audio as AudioBus),
     },
@@ -78,6 +75,22 @@ export const CHAPTER: ChapterDef = {
     ],
   },
   arrival: { map: 'la-caleta', node: 'mar.arrive', flag: 'c2.arrived' },
+  dressings: [
+    {
+      // After the evening circle, the mended net lies drying at the pier
+      // root: the talk is over, the knots stay.
+      map: 'la-caleta',
+      when: { has: ['c2.nets.done'] },
+      cells: [[21, 26, { t: 'net', solid: true }]],
+    },
+    {
+      // After the ride, one more horse stands bladed in the sand to drain,
+      // dark to the waterline. The beach keeps the score.
+      map: 'la-caleta',
+      when: { has: ['c2.ride.done'] },
+      cells: [[12, 25, { t: 'caballito', solid: true, tall: true }]],
+    },
+  ],
   completion: {
     flag: 'c2.complete',
     plate: 'CHAPTER TWO · COMPLETE',

@@ -60,10 +60,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c8.scopa.done',
       title: 'Scopa at the circolo',
       howTo: [
-        'Left and right choose a card from your hand. Space plays it onto the wood.',
-        'Take a table card of the same number, or several that add up to yours.',
-        'Clear the table and it is a scopa, and you shout, and the shouting is not optional.',
-        'You are allowed to lose. He shows you the hand you missed, then deals again.',
+        'Left and right choose a card, Space plays it. Take a table card of the same number, or several that sum to yours.',
+        'Sweep the table clean and shout scopa. You are allowed to lose; he shows you the hand you missed, then deals again.',
       ],
       make: (root, audio) => new ScopaPanel(root, audio as AudioBus),
     },
@@ -72,9 +70,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c8.pisci.done',
       title: 'U pisci a mari',
       howTo: [
-        'The rais lifts his arm and his call rolls across the water toward the boat.',
-        'Space pulls the oar the moment it arrives. Three good strokes close each pass.',
-        'Rush it and the stroke breaks, which delights the whole harbor. He calls again.',
+        'The rais calls, and the call rolls across the water toward the boat. Space pulls the oar the moment it arrives.',
+        'Three good strokes close each pass. Rush one and the harbor is delighted, and he simply calls again.',
       ],
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
@@ -83,9 +80,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c8.cook.finish',
       title: 'The pastry bag',
       howTo: [
-        'Space starts the ricotta, Space again stops it. The gauge shows the sweet zone.',
-        'Both ends, always. Then the arrows pick a garnish, and every garnish is correct.',
-        'Overfill and the shell splits. Alfio eats the evidence and hands you a fresh one.',
+        'Space starts the ricotta, Space again stops it in the sweet zone. Both ends, always, then the arrows pick a garnish.',
+        'Every garnish is correct. Overfill and the shell splits; Alfio eats the evidence and hands you a fresh one.',
       ],
       make: (root, audio) => new CannoloPanel(root, audio as AudioBus),
     },
@@ -131,6 +127,23 @@ export const CHAPTER: ChapterDef = {
   },
   sitKinds: ['stool'],
   arrival: { map: 'sicily', node: 'c8.arrive', flag: 'c8.arrived' },
+  dressings: [
+    {
+      // After the pastry-bag lesson the fryer's work rests in the shade: one
+      // more little table by the bar, fresh shells cooling on it, empty on
+      // purpose. The bartable examine notices them once.
+      map: 'sicily',
+      when: { has: ['c8.cook.done'] },
+      cells: [[14, 16, { t: 'bartable', solid: true, tall: true }]],
+    },
+    {
+      // The chair you won stops being a monument: after the first game it
+      // stands pushed in at the scopa table, set for whoever comes back.
+      map: 'circolo',
+      when: { has: ['c8.scopa.won'] },
+      cells: [[6, 3, { t: 'stool', solid: true }]],
+    },
+  ],
   completion: {
     flag: 'c8.complete',
     plate: 'CHAPTER EIGHT · COMPLETE',

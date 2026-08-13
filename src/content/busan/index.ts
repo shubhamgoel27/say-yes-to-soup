@@ -23,9 +23,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c5.hotteok.flipped',
       title: 'The hotteok griddle',
       howTo: [
-        'A ball of dough waits on the iron, and the heat sweeps across the gauge above it.',
-        'Space presses and flips in one motion. Time it to the golden middle, three discs running.',
-        'Burn one and nothing is lost. Mi-ja claims the dark one, hands you fresh dough, and Space begins again.',
+        'Space presses and flips in one motion. Time it to the golden middle of the heat gauge, three discs running.',
+        'Burn one and nothing is lost: Mi-ja claims the dark one, hands you fresh dough, and Space begins again.',
       ],
       make: (root, audio) => new HotteokPanel(root, audio as AudioBus),
     },
@@ -62,6 +61,26 @@ export const CHAPTER: ChapterDef = {
       'Steam rises off your cup and unties itself. You watch it the way Cho watches you.',
     ],
   },
+  // Story beats leave marks on the lane itself.
+  dressings: [
+    {
+      // Once the extra fish is a habit, the market cat quits the stack yard
+      // and takes up a post beside Sun-hee's ice. Cats audit generosity.
+      map: 'busan',
+      when: { has: ['c5.deom'] },
+      cells: [
+        [17, 23, null],
+        [18, 11, { t: 'marketcat', solid: true }],
+      ],
+    },
+    {
+      // After your batch, a fresh yeontan delivery stands at the griddle's
+      // back: the iron you fed gets fed in turn, ready for tomorrow.
+      map: 'busan',
+      when: { has: ['c5.hotteok.done'] },
+      cells: [[11, 16, { t: 'yeontan', solid: true }]],
+    },
+  ],
   arrival: { map: 'busan', node: 'c5.arrive', flag: 'c5.arrived' },
   completion: {
     flag: 'c5.complete',
