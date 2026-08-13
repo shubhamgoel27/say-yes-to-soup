@@ -253,6 +253,21 @@ const VOICES: Record<string, VoiceStyle> = {
   delhi: { base: 615, range: 7, drift: 0.25, gait: 2, wave: 'triangle' },
 };
 
+/**
+ * The KS buffer variants each melody voice asks for, as [decay, bright,
+ * freqMul]. Buffers are keyed on (freq, bright, decay) alone (bends and
+ * tremolo ride playbackRate), so prewarming these covers a voice completely.
+ * Kept next to nothing on purpose: only the string voices render buffers;
+ * flutes, marimba, and the hum build their sound from oscillators.
+ */
+const VOICE_KS: Partial<Record<MusicStyle['voice'], [decay: number, bright: number, freqMul: number][]>> = {
+  guitar: [[1.3, 2500, 1]],
+  koto: [[1.6, 3200, 1], [1.4, 3200, 1]],
+  gayageum: [[1.8, 2100, 1], [0.3, 2100, 0.89]],
+  oud: [[1.9, 1400, 1], [0.35, 3000, 2]],
+  mandolin: [[0.35, 3400, 1], [0.5, 3400, 1]],
+};
+
 /** A stable small hash for per-speaker voice identity. */
 function nameHash(s: string): number {
   let h = 2166136261;
@@ -393,6 +408,8 @@ export class AudioBus {
       this.musicGain = musicGain;
       this.sfxGain = sfxGain;
       this.applyScene();
+      // The starting region never goes through setRegion; warm it here.
+      this.queueKsPrewarm();
     } catch {
       // No audio environment (headless, denied). The game plays silent.
     }
@@ -673,6 +690,31 @@ export class AudioBus {
     // The drone swap happens in updateDrone on the next tick.
     this.nextPhraseAt = 0;
     this.nextBellAt = 0;
+    this.queueKsPrewarm();
+  }
+
+  /** Buffers tick() renders a budgeted few at a time, as [freq, bright, decay]. */
+  private ksWarmQueue: [number, number, number][] = [];
+
+  /**
+   * Queue the new region's KS buffers so they render during the arrival
+   * transition, a couple per frame, instead of all at once when the first
+   * phrase lands (a one-frame burst of 4-9 buffer renders otherwise: cheap
+   * on a fast machine, a visibly dropped frame on a slow or busy one).
+   */
+  private queueKsPrewarm() {
+    const s = this.style;
+    const degs = new Set<number>();
+    for (const m of s.motifs) for (const [deg] of m) degs.add(deg);
+    const q: [number, number, number][] = [];
+    for (const deg of degs) {
+      const f = this.degFreq(deg);
+      for (const [decay, bright, mul] of VOICE_KS[s.voice] ?? []) q.push([f * mul, bright, decay]);
+      // After dark every region hands the motif to the same quiet string.
+      if (s.voice !== 'hum') q.push([f, 1900, 1.5]);
+    }
+    q.push([s.scale[0] ?? 220, 2000, 1.1]); // the door's threshold note
+    this.ksWarmQueue = q;
   }
 
   /** Dialogue ducking: the band lowers its voice while someone talks.
@@ -747,10 +789,25 @@ export class AudioBus {
     if (!this.ctx) return null;
     const key = `${Math.round(freq)}:${bright}:${decay}`;
     const hit = this.ksCache.get(key);
-    if (hit) return hit;
+    if (hit) {
+      // Refresh recency (a Map iterates in insertion order), so eviction
+      // below always lands on buffers no region has played in a while.
+      this.ksCache.delete(key);
+      this.ksCache.set(key, hit);
+      return hit;
+    }
     // The cache only ever holds each region's scale at a few timbres, but a
     // long session visits many regions; keep it from growing without bound.
-    if (this.ksCache.size > 96) this.ksCache.clear();
+    // Evict the stalest few rather than clearing: a full clear() made the
+    // next phrase re-render every buffer it touched in one frame, a random
+    // multi-millisecond hitch that measured as the game's residual stutter.
+    if (this.ksCache.size >= 96) {
+      let drop = 8;
+      for (const k of this.ksCache.keys()) {
+        this.ksCache.delete(k);
+        if (--drop === 0) break;
+      }
+    }
     const sr = this.ctx.sampleRate;
     const len = Math.floor(sr * Math.min(2.5, decay + 0.3));
     const buf = this.ctx.createBuffer(1, len, sr);
@@ -1626,6 +1683,16 @@ export class AudioBus {
     const now = this.ctx.currentTime;
     if (this.nextBeatTime === 0 || this.nextBeatTime < now - 1) {
       this.nextBeatTime = now + 0.12;
+    }
+    // Prewarm on a time budget: at most ~1.5ms of string rendering per frame,
+    // so a new region's buffers are ready well before its first phrase but no
+    // single frame ever pays for the whole set.
+    if (this.ksWarmQueue.length > 0) {
+      const t0 = performance.now();
+      do {
+        const [f, bright, decay] = this.ksWarmQueue.shift()!;
+        this.ksBuffer(f, bright, decay);
+      } while (this.ksWarmQueue.length > 0 && performance.now() - t0 < 1.5);
     }
     this.ambientLife(now);
     this.updateDrone();

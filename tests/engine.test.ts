@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { Actor } from '../src/engine/actor';
+import { AudioBus } from '../src/engine/audio';
 import { Camera } from '../src/engine/camera';
 import { CULL, SPRITE_EXTENT } from '../src/engine/renderer';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from '../src/engine/config';
@@ -261,5 +262,78 @@ describe('the draw range covers the art it must draw', () => {
       CULL.right >= Math.ceil(SPRITE_EXTENT.leftOverhang) + 1,
       'right margin must cover a sprite whose art overhangs left of its anchor',
     );
+  });
+});
+
+describe('AudioBus KS cache', () => {
+  /**
+   * The Karplus-Strong buffers are rendered on the main thread; the cache is
+   * what keeps that off the frame budget. Two behaviors matter: overflow must
+   * evict a few stale entries (a wholesale clear() forced the next phrase to
+   * re-render every buffer in one frame, which measured as a random visible
+   * hitch), and a region change must be able to prewarm its buffers a few per
+   * frame so the first phrase in a new place never renders cold in a burst.
+   *
+   * The tests reach into private fields on purpose; the alternative is not
+   * testing the exact mechanism the stutter fix depends on. A minimal fake
+   * AudioContext (sampleRate plus createBuffer) is all ksBuffer needs.
+   */
+  type Internals = {
+    ctx: unknown;
+    ksCache: Map<string, unknown>;
+    ksWarmQueue: [number, number, number][];
+    ksBuffer(freq: number, bright: number, decay: number): unknown;
+    degFreq(deg: number): number;
+    style: { motifs: [number, number][][]; scale: number[] };
+  };
+  const bare = (bus: AudioBus) => bus as unknown as Internals;
+  const fakeCtx = {
+    sampleRate: 4000,
+    createBuffer: (_ch: number, len: number) => ({ getChannelData: () => new Float32Array(len) }),
+  };
+  const key = (f: number, bright: number, decay: number) => `${Math.round(f)}:${bright}:${decay}`;
+
+  it('evicts a stale few on overflow instead of clearing wholesale', () => {
+    const b = bare(new AudioBus());
+    b.ctx = fakeCtx;
+    for (let f = 100; f < 196; f++) b.ksBuffer(f, 2500, 0.4);
+    assert.equal(b.ksCache.size, 96);
+    b.ksBuffer(500, 2500, 0.4); // one past the cap
+    assert.equal(b.ksCache.size, 96 - 8 + 1, 'overflow should shed only a handful');
+    assert.ok(!b.ksCache.has(key(100, 2500, 0.4)), 'the stalest entry should be gone');
+    assert.ok(b.ksCache.has(key(195, 2500, 0.4)), 'recent entries should survive');
+    assert.ok(b.ksCache.has(key(500, 2500, 0.4)), 'the new entry should be cached');
+  });
+
+  it('keeps a recently replayed buffer through an eviction', () => {
+    const b = bare(new AudioBus());
+    b.ctx = fakeCtx;
+    for (let f = 100; f < 196; f++) b.ksBuffer(f, 2500, 0.4);
+    b.ksBuffer(100, 2500, 0.4); // a cache hit must refresh recency
+    b.ksBuffer(500, 2500, 0.4); // overflow evicts the stalest eight
+    assert.ok(b.ksCache.has(key(100, 2500, 0.4)), 'the replayed buffer should survive');
+    assert.ok(!b.ksCache.has(key(101, 2500, 0.4)), 'eviction should fall on the stalest instead');
+  });
+
+  it('prewarms a new region: draining the queue covers its motifs, night string and door', () => {
+    const bus = new AudioBus();
+    const b = bare(bus);
+    b.ctx = fakeCtx;
+    bus.setRegion('busan'); // a string voice (gayageum), so buffers are in play
+    assert.ok(b.ksWarmQueue.length > 0, 'setRegion should queue prewarm work');
+    while (b.ksWarmQueue.length > 0) {
+      const [f, bright, decay] = b.ksWarmQueue.shift()!;
+      b.ksBuffer(f, bright, decay);
+    }
+    const degs = new Set(b.style.motifs.flat().map(([deg]) => deg));
+    for (const deg of degs) {
+      const f = b.degFreq(deg);
+      // The gayageum's sustained note and its grace-note approach.
+      assert.ok(b.ksCache.has(key(f, 2100, 1.8)), `motif degree ${deg} should be warm`);
+      assert.ok(b.ksCache.has(key(f * 0.89, 2100, 0.3)), `grace for degree ${deg} should be warm`);
+      // The shared after-dark string.
+      assert.ok(b.ksCache.has(key(f, 1900, 1.5)), `night string for degree ${deg} should be warm`);
+    }
+    assert.ok(b.ksCache.has(key(b.style.scale[0]!, 2000, 1.1)), 'the door note should be warm');
   });
 });
