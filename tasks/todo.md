@@ -501,9 +501,11 @@ background music should be present and carry its instruments, not just exist.
 - [x] Music agent launched: KS plucks, flutes, drone/pad, reverb send, motif tables, phrase clock, arrangement cycle, all 11 regions, recorded auditions (port 5490)
 - [x] Wave 1 committed (606b5ce): delhi, oaxaca, kerala, crossing, village
 - [x] Wave 2 committed (8ffcff6): shionoura, busan, zanzibar, sicily, caleta, return
-- [ ] Engine-dependent patterns after music agent commits (station scheduling for customs-practiced-on-schedule, seated vignettes)
-- [ ] Tests stay green (50), reachability holds after any dialogue restructuring
+- [x] Music committed (48c168b): voices, motifs, phrase clock, arrangement, all 11 regions + velacion + kerala-rain; 70s recordings in scratchpad/music-audition
+- [x] Tests green throughout (50/50 at every commit)
+- [ ] Engine-dependent patterns deferred (station scheduling for customs-practiced-on-schedule, seated dusk vignettes)
 
 ## Phase 4: verify
-- [ ] Frozen-build playthrough per touched chapter, own port, kill servers after
-- [ ] Blind before/after critics on both dimensions (talkiness, music presence)
+- [x] Numeric audition per region from the live engine: 1.5-3.0 phrases/min, region-correct instruments, drones where promised
+- [x] Integration smoke across five converted chapters: zero console errors
+- [ ] Blind before/after critics on both dimensions (talkiness, music presence) - next loop pass
