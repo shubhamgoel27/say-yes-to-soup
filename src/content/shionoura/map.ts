@@ -212,7 +212,11 @@ const POIS: Record<string, string> = {
   '18,17': 'H',
   '19,18': 'H',
   '21,15': 'y', // a bike laid on its side where a bike gets laid on its side
-  '24,19': 'r',
+  // This rock sat at 24,19 and pushed the bench's evening sitter onto the
+  // minshuku lane at 26,19, the only single-file corridor to the door: at
+  // dusk a seated Hana walled Fumi (and the player) in. One cell west, the
+  // sitter takes 24,19 beside the bench and the lane stays a lane.
+  '23,19': 'r',
   '14,19': 'r',
   '3,19': 'H',
   '4,20': 'H',

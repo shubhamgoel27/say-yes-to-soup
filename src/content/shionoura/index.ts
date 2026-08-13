@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { SHIONOURA_EVENTS, SHIONOURA_EXAMINES, SHIONOURA_NODES, SHIONOURA_NPCS } from './npcs';
 import { SHIONOURA_JOURNAL, SHIONOURA_TASKS } from './journal';
 import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
+import { SHIONOURA_STATION_EVENTS, SHIONOURA_STATION_JOURNAL, SHIONOURA_STATION_NODES } from './stations';
 import { RECALL } from './recall';
 import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
 
@@ -11,10 +12,10 @@ export const CHAPTER: ChapterDef = {
   id: 'shionoura',
   maps: [SHIONOURA_MAP, MINSHUKU_MAP],
   npcs: SHIONOURA_NPCS,
-  nodes: SHIONOURA_NODES,
+  nodes: { ...SHIONOURA_NODES, ...SHIONOURA_STATION_NODES },
   examines: SHIONOURA_EXAMINES,
-  events: SHIONOURA_EVENTS,
-  journal: SHIONOURA_JOURNAL,
+  events: [...SHIONOURA_EVENTS, ...SHIONOURA_STATION_EVENTS],
+  journal: [...SHIONOURA_JOURNAL, ...SHIONOURA_STATION_JOURNAL],
   tasks: SHIONOURA_TASKS,
   errands: [{ id: 'fumi-tai', label: "Fumi's tai, held at Daisuke's stall on the quay" }],
   letters: [

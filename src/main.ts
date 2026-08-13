@@ -41,6 +41,8 @@ import {
 import { pickLetter } from './content/letters';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
+import { DELHI_STATIONS } from './content/delhi/stations';
+import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 
 // ---------------------------------------------------------------- boot
 
@@ -829,6 +831,9 @@ function updateRhythm(dt: number) {
   const nk = nightLevel(dayT);
   for (const v of villagers) {
     if (sceneFor(v.def.map) === 'interior') continue;
+    // A scheduled custom owns some villagers at some hours; while it does,
+    // neither the fade nor the bench-snap may reach across the map at them.
+    if (stationControls(v)) continue;
     const engaged = v === talkingTo || autoGoal?.npc === v;
     const gone = !v.keeper && !engaged && !erranded.has(v) && nk > fadeAt(v);
     const target = gone ? 0 : 1;
@@ -848,6 +853,385 @@ function updateRhythm(dt: number) {
         v.seated = false;
       }
     }
+  }
+}
+
+// ---------------------------------------------------------------- customs on schedule
+//
+// Some customs are not conversations: they are things a village visibly DOES
+// at an hour, together. A chapter declares STATIONS (cells on a map, a band
+// of the evening, who takes part) and the engine derives the rest at boot,
+// in the same idiom as the golden-hour benches above. A 'gather' files in
+// through the real door and sits out the window (the langar's pangat rows);
+// a 'round' walks its cells in order, tending each in turn (the lamplighter
+// and her chochin). Sitting through one is how its page is learned; nobody
+// says a word, because the custom is the sentence.
+
+/** One stop: where a body stands or sits, facing `dir`; `lamp` names the
+ * glow cell this stop tends (rounds only). */
+export type StationCell = { at: [number, number]; dir: Dir; lamp?: [number, number] };
+
+export type StationDef = {
+  id: string;
+  /** The map the custom happens on. */
+  map: string;
+  /** 'gather': every actor claims one cell and sits through the window.
+   *  'round': one actor visits the cells in order, tending each. */
+  mode: 'gather' | 'round';
+  /** nightLevel band [begin, end) that the custom keeps. */
+  window: [number, number];
+  cells: StationCell[];
+  /** Roster ids, wherever they live; the doors between their maps and the
+   * station's are found from the map data at boot. */
+  actors: string[];
+  /** Event node applied, wordlessly, when the player sits through the
+   * custom's heart on its map. `flag` keeps it exactly-once. */
+  grant?: { node: string; flag: string; /** gather: bodies seated first */ min?: number };
+};
+
+type Berth = {
+  v: Villager;
+  cell: StationCell;
+  home: { map: string; pos: [number, number] };
+  /** Small personal delay at each turn of the hour; nobody moves in lockstep. */
+  wait: number;
+  /** Live BFS path being walked, replanned when someone steps into it. */
+  path: [number, number][];
+};
+
+type StationRt = {
+  def: StationDef;
+  berths: Berth[];
+  /** Doorway on each home map that leads to the station map. */
+  doorOut: Map<string, [number, number]>;
+  /** Doorway on the station map that leads back to each home map. */
+  doorIn: Map<string, [number, number]>;
+  wasOn: boolean;
+  round: { idx: number; pauseT: number; done: boolean };
+};
+
+const stationsRt: StationRt[] = [...DELHI_STATIONS, ...SHIONOURA_STATIONS].map((def) => {
+  const berths: Berth[] = [];
+  def.actors.forEach((id, i) => {
+    const v = villagers.find((x) => x.def.id === id);
+    const cell = def.cells[Math.min(i, def.cells.length - 1)];
+    if (v && cell) {
+      berths.push({ v, cell, home: { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]] }, wait: 0, path: [] });
+    }
+  });
+  const doorOut = new Map<string, [number, number]>();
+  const doorIn = new Map<string, [number, number]>();
+  for (const b of berths) {
+    const out = (REGION_MAPS[b.home.map]?.triggers ?? []).find((t) => t.type === 'door' && t.to === def.map);
+    if (out) doorOut.set(b.home.map, [out.at[0], out.at[1]]);
+    const back = (REGION_MAPS[def.map]?.triggers ?? []).find((t) => t.type === 'door' && t.to === b.home.map);
+    if (back) doorIn.set(b.home.map, [back.at[0], back.at[1]]);
+  }
+  return { def, berths, doorOut, doorIn, wasOn: false, round: { idx: 0, pauseT: 0, done: false } };
+});
+
+const gatherOn = (st: StationRt, nk: number) => nk >= st.def.window[0] && nk < st.def.window[1];
+/**
+ * A round STARTS only inside its window, but once the keeper is out on the
+ * map with her taper it runs to the last lamp however fast dusk deepens
+ * (sitting speeds the clock fivefold; her feet keep their own time).
+ */
+const roundRuns = (st: StationRt, nk: number) =>
+  !st.round.done &&
+  nk >= st.def.window[0] &&
+  (st.round.idx > 0 || st.berths[0]?.v.def.map === st.def.map || nk < st.def.window[1]);
+
+/**
+ * Lamp wake per tended glow cell, `map:x,y` -> eased 0..1. The light pass
+ * consults this so a round's lamps hold their daytime ember until the
+ * lamplighter reaches them, instead of all waking with the dusk at once.
+ */
+const stationLampEase = new Map<string, { k: number; lit: boolean }>();
+for (const st of stationsRt) {
+  if (st.def.mode !== 'round') continue;
+  for (const c of st.def.cells) {
+    if (c.lamp) stationLampEase.set(`${st.def.map}:${c.lamp[0]},${c.lamp[1]}`, { k: 0, lit: false });
+  }
+}
+
+/** Wake factor for a tended lamp cell, or null when nothing tends it. */
+function stationLampWake(mapId: string, x: number, y: number): number | null {
+  return stationLampEase.get(`${mapId}:${x},${y}`)?.k ?? null;
+}
+
+/** Whether a station currently owns this villager's whereabouts. */
+function stationControls(v: Villager): boolean {
+  const nk = nightLevel(dayT);
+  for (const st of stationsRt) {
+    for (const b of st.berths) {
+      if (b.v !== v) continue;
+      if (v.def.map === st.def.map) return true; // out at (or leaving) the station
+      if (st.def.mode === 'round' ? roundRuns(st, nk) : gatherOn(st, nk)) return true;
+    }
+  }
+  return false;
+}
+
+/** How a station-seated villager faces when a conversation lets go of them. */
+function stationSeatDir(v: Villager): Dir | null {
+  for (const st of stationsRt) {
+    for (const b of st.berths) {
+      if (b.v === v && v.def.map === st.def.map) return b.cell.dir;
+    }
+  }
+  return null;
+}
+
+/** Step through the doorway onto the station map (visibly, if watched). */
+function stationCross(st: StationRt, b: Berth, target: [number, number]) {
+  const into = st.doorIn.get(b.home.map);
+  b.v.def.map = st.def.map;
+  const [ex, ey] = map.id === st.def.map && into ? into : target;
+  b.v.actor.placeAt(ex, ey, 'down');
+  b.path = [];
+}
+
+/** Back to ordinary hours: home map, home cell, standing. */
+function stationHome(b: Berth) {
+  b.v.def.map = b.home.map;
+  b.v.actor.placeAt(b.home.pos[0], b.home.pos[1], 'down');
+  b.v.actor.pose = 'none';
+  b.v.seated = false;
+  b.path = [];
+}
+
+/**
+ * Walk a berth's villager along a live BFS path toward a cell on the current
+ * map; true once arrived and settled. When someone stands in the plan, it
+ * replans; when no plan exists this frame, a greedy nudge keeps life moving.
+ */
+function stepStation(b: Berth, tx: number, ty: number, dt: number): boolean {
+  const a = b.v.actor;
+  const blocked = blockedFor(a);
+  const [ax, ay] = a.occupies();
+  if (ax === tx && ay === ty) {
+    if (a.isMoving) {
+      a.update(dt, { intent: null, blocked });
+      return false;
+    }
+    return true;
+  }
+  while (b.path.length) {
+    const head = b.path[0];
+    if (head && head[0] === ax && head[1] === ay) b.path.shift();
+    else break;
+  }
+  let next = b.path[0];
+  const tail = b.path[b.path.length - 1];
+  const stale =
+    !next || Math.abs(next[0] - ax) + Math.abs(next[1] - ay) !== 1 || !tail || tail[0] !== tx || tail[1] !== ty;
+  if (stale) {
+    // Plan around bodies first; if bodies seal every route, plan through the
+    // bare map and wait politely wherever someone happens to be standing.
+    b.path = pathBetween([ax, ay], tx, ty, blocked) ?? pathBetween([ax, ay], tx, ty, (x, y) => map.solid(x, y)) ?? [];
+    next = b.path[0];
+  }
+  if (!next) {
+    a.update(dt, { intent: stepToward(a, tx, ty, blocked), blocked });
+    return false;
+  }
+  if (blocked(next[0], next[1])) {
+    if (map.solid(next[0], next[1])) {
+      b.path = [];
+      a.update(dt, { intent: stepToward(a, tx, ty, blocked), blocked });
+    } else {
+      // A neighbor, not a wall: stand and let them pass (or finish sitting).
+      a.update(dt, { intent: null, blocked });
+    }
+    return false;
+  }
+  const dx = next[0] - ax;
+  const dy = next[1] - ay;
+  a.update(dt, { intent: dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up', blocked });
+  return false;
+}
+
+/** Light (or dark) one tended lamp; a watched lighting gets its little flare. */
+function setStationLamp(st: StationRt, c: StationCell, lit: boolean, instant = false) {
+  if (!c.lamp) return;
+  const e = stationLampEase.get(`${st.def.map}:${c.lamp[0]},${c.lamp[1]}`);
+  if (!e) return;
+  e.lit = lit;
+  if (!lit) e.k = 0;
+  else if (instant) e.k = 1;
+  else if (map.id === st.def.map) {
+    renderer.burst(c.lamp[0] * TILE + TILE / 2, c.lamp[1] * TILE + TILE / 2 - 6, 'sparkle', ['#ffd9a8', '#f2e6d0']);
+  }
+}
+
+function updateGatherStation(st: StationRt, nk: number, dt: number) {
+  const on = gatherOn(st, nk);
+  if (on !== st.wasOn) {
+    st.wasOn = on;
+    for (const b of st.berths) b.wait = 0.4 + b.v.jitter * 4;
+  }
+  for (const b of st.berths) {
+    const v = b.v;
+    if (v.actor.frozen || v === talkingTo) continue; // mid-word is sacred
+    if (!state.check(v.def.when)) {
+      // Left town while stationed: quietly restore them before they strand.
+      if (v.def.map !== b.home.map) stationHome(b);
+      continue;
+    }
+    if (on) {
+      if (v.def.map !== st.def.map) {
+        if (b.wait > 0) {
+          b.wait -= dt;
+          continue;
+        }
+        const door = st.doorOut.get(b.home.map);
+        if (v.def.map === map.id && door) {
+          // Watched: walk to the doorway, then step through it.
+          if (stepStation(b, door[0], door[1], dt)) stationCross(st, b, b.cell.at);
+        } else if (v.def.map !== map.id) {
+          stationCross(st, b, b.cell.at);
+        }
+      } else if (map.id === st.def.map) {
+        if (v.seated) continue;
+        if (b.wait > 0) {
+          b.wait -= dt;
+          continue;
+        }
+        if (stepStation(b, b.cell.at[0], b.cell.at[1], dt)) {
+          v.actor.face(b.cell.dir);
+          v.actor.pose = 'sit';
+          v.seated = true;
+        }
+      } else if (!v.seated) {
+        // Unobserved rooms simply hold the hour's shape.
+        v.actor.placeAt(b.cell.at[0], b.cell.at[1], b.cell.dir);
+        v.actor.pose = 'sit';
+        v.seated = true;
+      }
+    } else if (v.def.map === st.def.map) {
+      if (v.seated) {
+        v.actor.pose = 'none';
+        v.seated = false;
+        b.wait = 0.4 + v.jitter * 3;
+      }
+      const out = st.doorIn.get(b.home.map);
+      if (map.id === st.def.map && out) {
+        if (b.wait > 0) {
+          b.wait -= dt;
+          continue;
+        }
+        if (stepStation(b, out[0], out[1], dt)) stationHome(b);
+      } else {
+        stationHome(b);
+      }
+    }
+  }
+  // Sitting into the full rows during the meal fills the page, wordlessly.
+  const g = st.def.grant;
+  if (g && on && sitting && sitTotal > 2 && map.id === st.def.map && !state.has(g.flag)) {
+    const seated = st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).length;
+    if (seated >= (g.min ?? 1)) state.apply(NODES[g.node]?.effects);
+  }
+}
+
+function updateRoundStation(st: StationRt, nk: number, dt: number) {
+  const b = st.berths[0];
+  const cells = st.def.cells;
+  const [w0, w1] = st.def.window;
+  const rt = st.round;
+  // Dawn resets the round; the lamps go back to waiting for their evening.
+  if (nk < w0 && (rt.idx > 0 || rt.done)) {
+    rt.idx = 0;
+    rt.pauseT = 0;
+    rt.done = false;
+    for (const c of cells) setStationLamp(st, c, false);
+    if (b && b.v.def.map === st.def.map && map.id !== st.def.map) stationHome(b);
+  }
+  const free = b && !b.v.actor.frozen && b.v !== talkingTo && state.check(b.v.def.when);
+  if (map.id !== st.def.map) {
+    // Unwatched, the round keeps village time: progress follows the dusk.
+    if (nk >= w0) {
+      const frac = Math.max(0, Math.min(1, (nk - w0) / (w1 - w0)));
+      const derived = Math.min(cells.length, Math.floor(frac * (cells.length + 1)));
+      while (rt.idx < derived) {
+        const c = cells[rt.idx];
+        if (c) setStationLamp(st, c, true, true);
+        rt.idx++;
+      }
+      if (rt.idx >= cells.length) rt.done = true;
+      if (b && free) {
+        if (!rt.done) {
+          const c = cells[Math.min(rt.idx, cells.length - 1)];
+          if (b.v.def.map === map.id) {
+            // The player is where she lives: she leaves through the door.
+            const door = st.doorOut.get(b.home.map);
+            if (!door || stepStation(b, door[0], door[1], dt)) {
+              if (c) stationCross(st, b, c.at);
+            }
+          } else if (c) {
+            b.v.def.map = st.def.map;
+            b.v.actor.placeAt(c.at[0], c.at[1], c.dir);
+            b.path = [];
+          }
+        } else if (b.v.def.map === st.def.map) {
+          stationHome(b);
+        }
+      }
+    }
+    return;
+  }
+  // Watched: she actually walks it, lamp to lamp, in order.
+  if (!b || !free) return;
+  const v = b.v;
+  if (!roundRuns(st, nk)) {
+    // Off duty on the lane: see herself home through the door she came by.
+    if (v.def.map === st.def.map) {
+      const out = st.doorIn.get(b.home.map);
+      if (!out || stepStation(b, out[0], out[1], dt)) stationHome(b);
+    }
+    return;
+  }
+  if (v.def.map !== st.def.map) {
+    const c = cells[0];
+    if (c) stationCross(st, b, c.at);
+    return;
+  }
+  if (rt.pauseT > 0) {
+    rt.pauseT -= dt;
+    if (rt.pauseT <= 0) {
+      const c = cells[rt.idx];
+      if (c) setStationLamp(st, c, true);
+      rt.idx++;
+      if (rt.idx >= cells.length) {
+        rt.done = true;
+        // Seated through the whole small ceremony: the page fills, silently,
+        // at the last lamp. No dialogue; the lane coming on is the sentence.
+        const g = st.def.grant;
+        if (g && sitting && !state.has(g.flag)) state.apply(NODES[g.node]?.effects);
+      }
+    }
+    return;
+  }
+  const c = cells[rt.idx];
+  if (!c) {
+    rt.done = true;
+    return;
+  }
+  if (stepStation(b, c.at[0], c.at[1], dt)) {
+    v.actor.face(c.dir);
+    rt.pauseT = 0.8;
+  }
+}
+
+function updateStations(dt: number) {
+  const nk = nightLevel(dayT);
+  for (const st of stationsRt) {
+    if (st.def.mode === 'gather') updateGatherStation(st, nk, dt);
+    else updateRoundStation(st, nk, dt);
+  }
+  // Tended lamps ease up to their evening glow: a wick taking, not a switch.
+  for (const e of stationLampEase.values()) {
+    if (e.lit && e.k < 1) e.k = Math.min(1, e.k + dt * 1.5);
   }
 }
 
@@ -951,6 +1335,9 @@ function updateVillager(v: Villager, dt: number) {
     });
     return;
   }
+
+  // A stationed villager is walked by the custom's own code, not the leash.
+  if (stationControls(v)) return;
 
   if (v.def.range === 0 || dev.freezeWander) return;
   const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
@@ -1191,8 +1578,12 @@ function endDialogue() {
   if (pendingWelcome) setTimeout(playWelcome, 420);
   if (talkingTo) {
     talkingTo.actor.frozen = false;
-    // A seated villager turned to face the player; they settle back afterward.
-    if (talkingTo.seated && talkingTo.seat) talkingTo.actor.face(talkingTo.seat.dir);
+    // A seated villager turned to face the player; they settle back afterward
+    // (a stationed sitter faces their row, a bench sitter faces their bench).
+    if (talkingTo.seated) {
+      const dir = stationSeatDir(talkingTo) ?? talkingTo.seat?.dir;
+      if (dir) talkingTo.actor.face(dir);
+    }
   }
   talkingTo = null;
 
@@ -1346,6 +1737,8 @@ function celebrate() {
 
 let sitting = false;
 let sitT = 0;
+/** Whole time spent in the current sit; customs want a settled witness. */
+let sitTotal = 0;
 let sitLineIdx = 0;
 
 const DEFAULT_SIT_LINES = [
@@ -1358,6 +1751,7 @@ const DEFAULT_SIT_LINES = [
 function startSitting() {
   sitting = true;
   sitT = 0;
+  sitTotal = 0;
   sitLineIdx = 0;
   player.frozen = true;
   player.pose = 'sit';
@@ -1375,6 +1769,7 @@ function standUp() {
 function updateSitting(dt: number) {
   if (!sitting) return;
   sitT += dt;
+  sitTotal += dt;
   // Sitting is how you watch the light change: the day breathes faster.
   if (!Number.isFinite(todOverride)) dayT = (dayT + (dt * 5) / DAY_LEN) % 1;
   if (sitT > 5.5) {
@@ -1542,6 +1937,9 @@ function update(dt: number) {
   // The world turns.
   if (!Number.isFinite(todOverride) && mode === 'play') dayT = (dayT + dt / DAY_LEN) % 1;
   updateRhythm(dt);
+  // Scheduled customs keep moving even while the player sits and watches;
+  // sitting through one is, in fact, the whole point of two of them.
+  updateStations(dt);
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
   renderer.setSun(dayT);
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
@@ -1844,6 +2242,7 @@ function update(dt: number) {
     howtoOpen: !howtoEl.hidden,
     stripOpen: !stripEl.hidden,
     pages: state.pageCount(),
+    sitting,
     errand: state.errand,
     npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
     rhythm: {
@@ -1854,6 +2253,18 @@ function update(dt: number) {
         .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
         .map((v) => v.def.id),
     },
+    stations: stationsRt.map((st) => ({
+      id: st.def.id,
+      on: st.def.mode === 'gather' ? gatherOn(st, nightLevel(dayT)) : roundRuns(st, nightLevel(dayT)),
+      idx: st.round.idx,
+      done: st.round.done,
+      here: st.berths.filter((b) => b.v.def.map === st.def.map).map((b) => b.v.def.id),
+      seated: st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).map((b) => b.v.def.id),
+      at: st.berths.map((b) => [b.v.def.map, ...b.v.actor.occupies(), b.v.actor.frozen ? 'F' : '']),
+      lamps: [...stationLampEase.entries()]
+        .filter(([k]) => k.startsWith(`${st.def.map}:`))
+        .map(([, e]) => Number(e.k.toFixed(2))),
+    })),
     bumps,
     auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
   });
@@ -1871,7 +2282,11 @@ function render() {
     const def = GLOW_STYLE[kind] ?? { r: 30, color: 0xffb066, flicker: 0.4, lift: 3 };
     const x = cx * TILE + TILE / 2 - camera.x;
     const y = cy * TILE + TILE / 2 - def.lift - camera.y;
-    const core: LightSpec = { x, y, r: def.r * (indoors ? 1.35 : 1) * outdoorK, color: def.color, flicker: def.flicker };
+    // A lamp on a lamplighter's round holds its daytime ember until she
+    // reaches it; every other light wakes with the dusk as it always has.
+    const wake = stationLampWake(map.id, cx, cy);
+    const dayK = wake === null ? outdoorK : 0.25 + Math.max(0, outdoorK - 0.25) * wake;
+    const core: LightSpec = { x, y, r: def.r * (indoors ? 1.35 : 1) * dayK, color: def.color, flicker: def.flicker };
     // Indoors, every fire also pools a broad dim warmth across the room, so
     // the space feels inhabited rather than spot-lit.
     return indoors
@@ -2043,15 +2458,26 @@ function cancelAuto() {
 }
 
 /**
- * Shortest path from the player to (tx,ty) — or to any open cell beside it
+ * Shortest path from the player to (tx,ty), or to any open cell beside it
  * when `adjacentTo` (for talking to someone rather than standing on them).
  * Returns the cells to walk, start excluded, or null when unreachable.
  */
 function findPath(tx: number, ty: number, adjacentTo: boolean): [number, number][] | null {
-  const w = map.w;
-  const blocked = blockedFor(player);
   // Plan from the cell the player is committed to, not the one being left.
-  const [px, py] = player.occupies();
+  return pathBetween(player.occupies(), tx, ty, blockedFor(player), adjacentTo);
+}
+
+/** The BFS itself, over the current map, from any walker's committed cell.
+ * Click-to-walk and the scheduled customs both plan through here. */
+function pathBetween(
+  from: [number, number],
+  tx: number,
+  ty: number,
+  blocked: (x: number, y: number) => boolean,
+  adjacentTo = false,
+): [number, number][] | null {
+  const w = map.w;
+  const [px, py] = from;
   const goals = new Set<number>();
   if (adjacentTo) {
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {

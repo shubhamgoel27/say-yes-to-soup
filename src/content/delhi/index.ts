@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { DELHI_EVENTS, DELHI_EXAMINES, DELHI_LETTERS, DELHI_NODES, DELHI_NPCS } from './npcs';
 import { DELHI_JOURNAL, DELHI_TASKS } from './journal';
 import { DELHI_HAVELI_MAP, DELHI_LANGAR_MAP, DELHI_MAP, DELHI_ROOFTOP_MAP } from './map';
+import { DELHI_STATION_EVENTS, DELHI_STATION_NODES } from './stations';
 import { RECALL } from './recall';
 import { ParanthaPanel, PatangPanel } from '../../ui/games/delhi';
 
@@ -12,9 +13,9 @@ export const CHAPTER: ChapterDef = {
   id: 'delhi',
   maps: [DELHI_MAP, DELHI_ROOFTOP_MAP, DELHI_LANGAR_MAP, DELHI_HAVELI_MAP],
   npcs: DELHI_NPCS,
-  nodes: DELHI_NODES,
+  nodes: { ...DELHI_NODES, ...DELHI_STATION_NODES },
   examines: DELHI_EXAMINES,
-  events: DELHI_EVENTS,
+  events: [...DELHI_EVENTS, ...DELHI_STATION_EVENTS],
   journal: DELHI_JOURNAL,
   tasks: DELHI_TASKS,
   errands: [
