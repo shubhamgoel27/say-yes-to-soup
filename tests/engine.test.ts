@@ -187,17 +187,45 @@ describe('Camera', () => {
     assert.equal(cam.y, 25 * TILE + 2.9 + TILE / 2 - VIEW_H / 2);
   });
 
-  it('lookahead decays to exactly zero at rest (no endless sub-pixel drift)', () => {
+  /**
+   * Standing still must not move the world. The lookahead used to ease back
+   * to zero when the player stopped, which slid the whole scene backwards for
+   * about half a second at the end of every walk, and players read that as
+   * the game lurching in reverse whenever they let go.
+   */
+  it('holds its lookahead at rest instead of sliding the world back', () => {
     const cam = new Camera();
-    for (let i = 0; i < 60; i++) cam.lead(1, 0, 1 / 60); // walk right one second
     const px = 30 * TILE;
     const py = 25 * TILE;
+    for (let i = 0; i < 60; i++) cam.lead(1, 0, 1 / 60); // walk right one second
     cam.follow(px, py, bigW, bigH);
     const ahead = cam.x;
-    for (let i = 0; i < 600; i++) cam.lead(0, 0, 1 / 60); // stand still
+    for (let i = 0; i < 600; i++) cam.lead(0, 0, 1 / 60); // then stand there
     cam.follow(px, py, bigW, bigH);
-    assert.ok(cam.x < ahead, 'camera eased back after stopping');
-    const centered = px + TILE / 2 - VIEW_W / 2;
-    assert.equal(cam.x, centered); // snapped, not asymptotically wandering
+    assert.equal(cam.x, ahead, 'the camera moved while the player stood still');
+  });
+
+  it('re-aims the lookahead when the player sets off the other way', () => {
+    const cam = new Camera();
+    const px = 30 * TILE;
+    const py = 25 * TILE;
+    for (let i = 0; i < 60; i++) cam.lead(1, 0, 1 / 60);
+    cam.follow(px, py, bigW, bigH);
+    const right = cam.x;
+    for (let i = 0; i < 120; i++) cam.lead(-1, 0, 1 / 60); // walk left instead
+    cam.follow(px, py, bigW, bigH);
+    assert.ok(cam.x < right - 20, 'lookahead did not swing to the new direction');
+  });
+
+  it('leaves the idle axis alone when turning a corner', () => {
+    const cam = new Camera();
+    const px = 30 * TILE;
+    const py = 25 * TILE;
+    for (let i = 0; i < 60; i++) cam.lead(1, 0, 1 / 60); // east
+    cam.follow(px, py, bigW, bigH);
+    const eastX = cam.x;
+    for (let i = 0; i < 60; i++) cam.lead(0, 1, 1 / 60); // now south, no x intent
+    cam.follow(px, py, bigW, bigH);
+    assert.equal(cam.x, eastX, 'turning a corner yanked the other axis home');
   });
 });

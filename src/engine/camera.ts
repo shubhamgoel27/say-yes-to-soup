@@ -14,13 +14,20 @@ export class Camera {
 
   /** Ease the lookahead toward the walk direction; call once per update. */
   lead(dirX: number, dirY: number, dt: number) {
+    // Standing still holds the lookahead where walking left it. It used to
+    // ease back to zero, which slid the whole world backwards for about half
+    // a second every single time the player stopped: a reverse drift at the
+    // end of every walk. The offset only matters while you are travelling,
+    // and while you are standing it is invisible, so there is nothing to
+    // take back. It re-aims as soon as you move again, under cover of motion.
+    if (dirX === 0 && dirY === 0) return;
+
     const MAX = 22; // logical px of lookahead at full commitment
     const k = 1 - Math.exp(-dt * 1.6); // slow drift, never a jerk
-    this.leadX += (dirX * MAX - this.leadX) * k;
-    this.leadY += (dirY * MAX - this.leadY) * k;
-    // Fully settled is fully still: no sub-pixel breathing at rest.
-    if (dirX === 0 && Math.abs(this.leadX) < 0.05) this.leadX = 0;
-    if (dirY === 0 && Math.abs(this.leadY) < 0.05) this.leadY = 0;
+    // An axis with no intent keeps its offset; only the axis you are actually
+    // walking re-aims, so turning a corner does not yank the other axis home.
+    if (dirX !== 0) this.leadX += (dirX * MAX - this.leadX) * k;
+    if (dirY !== 0) this.leadY += (dirY * MAX - this.leadY) * k;
   }
 
   /** Drop the lookahead instantly (map changes, cutscenes). */

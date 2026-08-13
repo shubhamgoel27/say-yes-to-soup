@@ -29,6 +29,16 @@ export class Actor {
   /** How long the current direction has been held, for the turn-in-place delay. */
   private turn = 0;
   private bump = 0;
+  /**
+   * How hard this actor is currently leaning into something it cannot pass,
+   * 0 to 1, eased. The lean used to be a sine played over the bump timer,
+   * which meant holding a direction into a wall replayed it about five times
+   * a second and read as a shudder. Pressing against a wall is a pose, not
+   * an animation: ease in, hold, ease out.
+   */
+  private lean = 0;
+  /** Seconds since the last refused step, so a held direction keeps leaning. */
+  private blockedT = 0;
   /** Completed steps, used to pick the walk-cycle foot. */
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
@@ -67,6 +77,13 @@ export class Actor {
     // you present, not absent) snaps it back to zero.
     if (this.moving || this.frozen || (!this.frozen && ctx.intent)) this.idleT = 0;
     else this.idleT += dt;
+
+    // The lean follows whether we are still being refused, not the bump
+    // timer: bumps retrigger every BUMP_DUR while a direction is held.
+    if (this.blockedT > 0) this.blockedT = Math.max(0, this.blockedT - dt);
+    const leaning = this.blockedT > 0 && !!ctx.intent && !this.frozen;
+    this.lean += ((leaning ? 1 : 0) - this.lean) * (1 - Math.exp(-dt * 13));
+    if (this.lean < 0.002) this.lean = 0;
 
     if (this.bump > 0) {
       this.bump -= dt;
@@ -114,6 +131,7 @@ export class Actor {
     const [tx, ty] = stepFrom(this.x, this.y, want);
     if (ctx.blocked(tx, ty)) {
       this.bump = BUMP_DUR;
+      this.blockedT = BUMP_DUR * 1.6;
       this.t = 0;
       return { kind: 'bumped' };
     }
@@ -144,13 +162,11 @@ export class Actor {
 
   /** Sub-pixel render position, interpolated across the current step. */
   renderPos(): [number, number] {
-    if (this.bump > 0) {
-      // A refused step should still be visible. The actor knew it had walked
-      // into something and showed nothing at all, so the most repeated moment
-      // in the game was a silent hard stop: lean into it, then settle back.
-      const k = Math.sin((1 - this.bump / BUMP_DUR) * Math.PI);
+    if (this.lean > 0) {
+      // Pressed against whatever refused the step, and staying pressed for
+      // as long as the direction is held.
       const [bx, by] = stepFrom(0, 0, this.dir);
-      const push = k * 1.8;
+      const push = this.lean * 1.7;
       return [this.x * TILE + bx * push, this.y * TILE + by * push];
     }
     if (!this.moving) return [this.x * TILE, this.y * TILE];

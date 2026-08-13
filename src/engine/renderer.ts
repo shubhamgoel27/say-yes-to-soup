@@ -1746,7 +1746,12 @@ export class Renderer {
     const target =
       a.isMoving && !a.isBumping ? (a.dir === 'left' ? -1 : a.dir === 'right' ? 1 : 0) * 0.03 : 0;
     let cur = this.leans.get(a) ?? 0;
-    cur += (target - cur) * Math.min(1, this.frameDt * 9);
+    // Slow on purpose. At the old rate a single step built the lean and threw
+    // it away again, so a villager wandering one tile at a time rocked back
+    // and forth on every step. A lean should describe travelling, not
+    // stepping: over one step it barely registers, and it only reaches full
+    // tilt when somebody is actually going somewhere.
+    cur += (target - cur) * Math.min(1, this.frameDt * 3.2);
     if (target === 0 && Math.abs(cur) < 0.0015) {
       this.leans.delete(a);
       return 0;
