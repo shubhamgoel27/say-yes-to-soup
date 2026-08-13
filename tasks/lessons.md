@@ -164,3 +164,16 @@ check is whether the thing answering on that port is your current source.
 Frozen-copy verification is still the right technique; it just needs its own
 port and a kill afterwards, because a leftover server outlives the session and
 silently answers the next one.
+
+## One verification rig at a time (2026-08-12)
+The music agent's audition harness and mine ran against the same dev server at
+the same time, and each of us killed the other's headless browsers during our
+own cleanup, twice, before either noticed the other existed. Every crash looked
+like a mysterious "browser closed mid-run" from the inside. The agent also kept
+relaunching runs from a background watcher after being presumed dead, so the
+count of live harnesses was never what I thought it was. Rule: before starting
+a measurement rig, enumerate what is already measuring (ps for harness
+processes, ls for fresh output files with recent mtimes), and either adopt the
+running rig or stop it cleanly and say so. Never run a duplicate of a rig an
+agent was asked to run; delegate or take over, not both. And a cleanup that
+kills by process name kills the other rig too; kill by PID you spawned.
