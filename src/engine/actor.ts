@@ -39,6 +39,14 @@ export class Actor {
   private lean = 0;
   /** Seconds since the last refused step, so a held direction keeps leaning. */
   private blockedT = 0;
+  /**
+   * Momentum, in seconds of grace. While this holds, a change of direction
+   * flows straight into the next step instead of paying TURN_DELAY as if
+   * starting cold. Measured before it existed: every mid-walk steer froze
+   * the walk for the full gate, which the eye reads as the character
+   * catching a foot on nothing about once per corner.
+   */
+  private flow = 0;
   /** Completed steps, used to pick the walk-cycle foot. */
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
@@ -85,9 +93,19 @@ export class Actor {
     this.lean += ((leaning ? 1 : 0) - this.lean) * (1 - Math.exp(-dt * 13));
     if (this.lean < 0.002) this.lean = 0;
 
+    if (this.flow > 0) this.flow = Math.max(0, this.flow - dt);
+
     if (this.bump > 0) {
-      this.bump -= dt;
-      if (this.bump > 0) return null;
+      // Pressing a different way is an escape, not a repeat offense: the
+      // wall refused one direction, and the player has already chosen
+      // another. Holding INTO the wall still knocks and still holds.
+      if (ctx.intent && ctx.intent !== this.dir) {
+        this.bump = 0;
+        this.blockedT = 0;
+      } else {
+        this.bump -= dt;
+        if (this.bump > 0) return null;
+      }
     }
 
     if (this.moving) {
@@ -96,6 +114,7 @@ export class Actor {
       // Carry the overflow into the next step so continuous walking doesn't
       // quantise to the frame rate and visibly stutter every tile.
       this.t -= STEP_DUR;
+      this.flow = 0.12;
       this.x = this.nx;
       this.y = this.ny;
       this.moving = false;
@@ -117,10 +136,12 @@ export class Actor {
       return null;
     }
 
-    // Facing a new way restarts the hold timer, so a tap turns without stepping.
+    // Facing a new way restarts the hold timer, so a tap turns without
+    // stepping. Only from a standstill: mid-walk, the feet have momentum
+    // and a steer flows into the next step without missing a beat.
     if (want !== this.dir) {
       this.dir = want;
-      this.turn = 0;
+      this.turn = this.flow > 0 ? TURN_DELAY : 0;
     }
     this.turn += dt;
     if (this.turn < TURN_DELAY) {
