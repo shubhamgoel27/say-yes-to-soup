@@ -216,6 +216,11 @@ export const BUSAN_NPCS: NpcDef[] = [
 ];
 
 export const BUSAN_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c5.ex.wall': {
+    lines: [{ text: "Painted block, patched and repainted, a ledger of winters. Somebody's phone number is fading under the newest coat." }],
+  },
   // ---------------- arrival ----------------
   'c5.arrive': {
     lines: [
@@ -967,6 +972,7 @@ export const BUSAN_NODES: NodeMap = {
 
 /** Examine arms; shared props keep their coastal words at home via map tags. */
 export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'busan', node: 'c5.ex.wall' }, { map: 'teahouse', node: 'c5.ex.wall' }],
   // Cho's wall is papered hanji, not Andean adobe: skinned in
   // `art/sets/busan.ts`, worded here.
   wallInt: [{ map: 'teahouse', node: 'c5.ex.wallhanji' }],

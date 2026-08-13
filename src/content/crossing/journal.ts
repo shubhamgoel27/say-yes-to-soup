@@ -196,12 +196,14 @@ export const CROSSING_TASKS: TaskDef[] = [
     text: 'Lutong bahay night: Ben wants help with the adobo. The pot is patient, he says. One of them is lying.',
   },
   {
-    when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] },
-    text: 'The karaoke machine in the mess has come out from under its cover. Attendance is not so much optional as inevitable.',
-  },
-  {
+    // Before the karaoke, or the chip advertises the mess through the whole
+    // Neptune arc and the bosun's grin is never seen on the HUD.
     when: { has: ['c3.cook.done'], not: ['c3.shellback'] },
     text: 'The bosun keeps grinning at the chart, which means the equator is close and you are still a pollywog. Find him amid the containers.',
+  },
+  {
+    when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] },
+    text: 'The karaoke machine in the mess has come out from under its cover. Attendance is not so much optional as inevitable.',
   },
   {
     when: { has: ['c3.shellback'], not: ['joseph.letter'] },

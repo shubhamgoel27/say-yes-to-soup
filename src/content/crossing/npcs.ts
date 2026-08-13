@@ -179,6 +179,11 @@ export const CROSSING_NPCS: NpcDef[] = [
 ];
 
 export const CROSSING_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c3.ex.wall': {
+    lines: [{ text: 'White steel, painted so many times the rivets are only soft shapes now. Somewhere under the layers, the sea keeps trying to get in.' }],
+  },
   // ---------------- boarding and arrival ----------------
   'c3.board': {
     lines: [
@@ -824,6 +829,7 @@ export const CROSSING_NODES: NodeMap = {
 
 /** Examine arms: every new kind speaks; shared kinds get map-tagged voices. */
 export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'ship', node: 'c3.ex.wall' }, { map: 'galley', node: 'c3.ex.wall' }],
   deck: [{ node: 'c3.ex.deck' }],
   railing: [{ node: 'c3.ex.railing' }],
   contA: [{ node: 'c3.ex.contA' }],

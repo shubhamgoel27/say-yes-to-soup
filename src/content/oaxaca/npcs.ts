@@ -331,6 +331,11 @@ export const OAXACA_NPCS: NpcDef[] = [
 ];
 
 export const OAXACA_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c9.ex.wall': {
+    lines: [{ text: "Adobe under paint the colour of a parrot's opinion. Where a flake has fallen, an older colour was waiting." }],
+  },
   // ---------------- arrival ----------------
   'c9.arrive': {
     lines: [
@@ -1405,6 +1410,7 @@ export const OAXACA_NODES: NodeMap = {
 
 /** Valley examine arms; shared props keep map tags so other coasts stay themselves. */
 export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'oaxaca', node: 'c9.ex.wall' }, { map: 'cocina', node: 'c9.ex.wall' }, { map: 'camposanto', node: 'c9.ex.wall' }],
   // The cocina is skinned to painted cal, saltillo and petate in
   // `art/sets/oaxaca.ts`. The village's own `floorEarth` cells keep their
   // patio words below.

@@ -235,6 +235,11 @@ export const SHIONOURA_NPCS: NpcDef[] = [
 ];
 
 export const SHIONOURA_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c4.ex.wall': {
+    lines: [{ text: 'Cedar boards silvered by salt wind, each with its own grain of grey. Nobody painted them; the sea did.' }],
+  },
   // ---------------- arrival ----------------
   'c4.arrive': {
     lines: [
@@ -1289,6 +1294,7 @@ export const SHIONOURA_NODES: NodeMap = {
 
 /** Examine arms; shared kinds are map-tagged so this coast keeps its own words. */
 export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'shionoura', node: 'c4.ex.wall' }, { map: 'minshuku', node: 'c4.ex.wall' }],
   machiya: [{ node: 'c4.ex.machiya' }],
   noren: [{ node: 'c4.ex.noren' }],
   hisashi: [{ node: 'c4.ex.hisashi' }],

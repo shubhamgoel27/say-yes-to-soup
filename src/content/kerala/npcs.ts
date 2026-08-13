@@ -242,6 +242,11 @@ export const KERALA_NPCS: NpcDef[] = [
 ];
 
 export const KERALA_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c6.ex.wall': {
+    lines: [{ text: 'Laterite block under lime wash, streaked where every monsoon has signed its name.' }],
+  },
   // ---------------- arrival ----------------
   'c6.arrive': {
     lines: [
@@ -1209,6 +1214,7 @@ export const KERALA_NODES: NodeMap = {
 
 /** Examine arms: new kinds get untagged fallbacks, shared kinds speak only on this map. */
 export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'kerala', node: 'c6.ex.wall' }, { map: 'mariamma-veedu', node: 'c6.ex.wall' }],
   // The veedu is skinned to laterite, red oxide and coir in
   // `art/sets/kerala.ts`; these are the words that go with those surfaces.
   floorEarth: [{ map: 'mariamma-veedu', node: 'c6.ex.flooroxide' }],

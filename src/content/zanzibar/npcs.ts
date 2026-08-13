@@ -233,6 +233,11 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
 ];
 
 export const ZANZIBAR_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c7.ex.wall': {
+    lines: [{ text: 'Coral rag under lime: the reef, standing up as a wall. It keeps the noon out and the cool in.' }],
+  },
   // ---------------- arrival ----------------
   'c7.arrive': {
     lines: [
@@ -1274,6 +1279,7 @@ export const ZANZIBAR_NODES: NodeMap = {
 
 /** Examine arms; shared kinds stay map-tagged so their words stay home. */
 export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'zanzibar', node: 'c7.ex.wall' }, { map: 'kangashop', node: 'c7.ex.wall' }],
   // Bi Amina's shop is skinned to coral rag, lime screed and mkeka in
   // `art/sets/zanzibar.ts`. The words follow the material.
   wallInt: [{ map: 'kangashop', node: 'c7.ex.wallcoral' }],

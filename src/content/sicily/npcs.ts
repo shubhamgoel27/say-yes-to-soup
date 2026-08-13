@@ -264,6 +264,11 @@ export const SICILY_NPCS: NpcDef[] = [
 ];
 
 export const SICILY_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c8.ex.wall': {
+    lines: [{ text: 'Golden limestone, in the sun all day and warm past midnight. Look closely and the grain shows shells.' }],
+  },
   // ---------------- arrival ----------------
   'c8.arrive': {
     lines: [
@@ -1310,6 +1315,7 @@ export const SICILY_NODES: NodeMap = {
 
 /** Sicilian examine arms; shared props keep their words at home via map tags. */
 export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'sicily', node: 'c8.ex.wall' }, { map: 'circolo', node: 'c8.ex.wall' }],
   // The circolo is skinned to calce, graniglia and pezzara in
   // `art/sets/sicily.ts`; each surface says what it is made of.
   wallInt: [{ map: 'circolo', node: 'c8.ex.wallcalce' }],

@@ -271,6 +271,11 @@ export const DELHI_NPCS: NpcDef[] = [
 ];
 
 export const DELHI_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'c11.ex.wall': {
+    lines: [{ text: 'Thin old bricks under lime plaster, laid when the canal still ran. The newest paint is only the top page.' }],
+  },
   // ---------------- arrival ----------------
   'c11.arrive': {
     lines: [
@@ -1632,6 +1637,7 @@ export const DELHI_NODES: NodeMap = {
 
 /** Examine arms: new kinds get untagged fallbacks, shared kinds speak only on these maps. */
 export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'delhi', node: 'c11.ex.wall' }, { map: 'delhi-rooftop', node: 'c11.ex.wall' }, { map: 'delhi-langar', node: 'c11.ex.wall' }, { map: 'delhi-haveli', node: 'c11.ex.wall' }],
   // Both Delhi rooms are skinned in `art/sets/delhi.ts`: terrazzo in the
   // hall, sandstone in the haveli. Two floors, two different lives.
   floorEarth: [

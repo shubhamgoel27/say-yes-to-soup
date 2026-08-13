@@ -256,6 +256,11 @@ export const CALETA_NPCS: NpcDef[] = [
 ];
 
 export const CALETA_NODES: NodeMap = {
+  // The walls themselves; without this arm they fall through to the
+  // village's adobe line, which reads strangely far from the altiplano.
+  'mar.ex.wall': {
+    lines: [{ text: 'Quincha: cane and mud under salt-faded paint. The garua has rounded every corner it could reach.' }],
+  },
   // ---------------- arrival ----------------
   'mar.arrive': {
     lines: [
@@ -1034,6 +1039,7 @@ export const CALETA_NODES: NodeMap = {
 
 /** Coastal examine arms; map-tagged so shared props keep their Andes words at home. */
 export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
+  blocked: [{ map: 'la-caleta', node: 'mar.ex.wall' }, { map: 'picanteria', node: 'mar.ex.wall' }],
   // The picantería's shell is skinned to the chapter's own quincha and
   // cement (`art/sets/caleta.ts`), so it gets the chapter's own words too.
   wallInt: [{ map: 'picanteria', node: 'mar.ex.wallquincha' }],
