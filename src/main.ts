@@ -1930,6 +1930,43 @@ let bumps = 0;
 /** Time until a wall may knock aloud again; see the bumped branch. */
 let bumpQuiet = 0;
 
+/**
+ * The always-armed motion witness (dev builds only). Records the player's
+ * screen displacement every frame and flags micro-freezes: walking, then a
+ * handful of frames without motion, then walking again. Survives reloads
+ * because it lives in the build, not in an injected script. Read it with
+ * soup.witness().
+ */
+type MotionEvent = { at: number; frames: number; gaps: number[] };
+const MW = { ring: [] as [number, number, number, number][], events: [] as MotionEvent[], last: 0 };
+function motionWitness() {
+  if (!import.meta.env.DEV) return;
+  const now = performance.now();
+  const gap = MW.last ? now - MW.last : 0;
+  MW.last = now;
+  const [px, py] = player.renderPos();
+  const r = MW.ring;
+  r.push([now, gap, px, py]);
+  if (r.length > 6000) r.shift();
+  const L = r.length;
+  if (L < 15) return;
+  const d = (i: number) => Math.hypot(r[i]![2] - r[i - 1]![2], r[i]![3] - r[i - 1]![3]);
+  const mid = L - 8;
+  if (d(mid) < 0.01 && d(mid - 1) >= 0.3) {
+    let stillEnd = mid;
+    while (stillEnd < L - 1 && d(stillEnd + 1) < 0.01) stillEnd++;
+    const frozen = stillEnd - mid + 1;
+    if (frozen <= 12 && stillEnd < L - 1 && d(stillEnd + 1) >= 0.3) {
+      MW.events.push({
+        at: now,
+        frames: frozen,
+        gaps: r.slice(mid - 2, stillEnd + 2).map((x) => +x[1].toFixed(1)),
+      });
+      if (MW.events.length > 40) MW.events.shift();
+    }
+  }
+}
+
 function update(dt: number) {
   renderer.tick(dt);
   textbox.tick(dt);
@@ -2231,6 +2268,7 @@ function update(dt: number) {
     }
   }
 
+  motionWitness();
   dev.publish({
     mode,
     map: map.id,
@@ -3028,6 +3066,7 @@ function installCheats() {
           'soup.pages()         fill the journal, every page',
           "soup.page(id)        grant one page properly (soup.flag can't)",
           'soup.perf()          frame costs and a log of every hitch over 14ms',
+          'soup.witness()       micro-freezes seen in the player\'s own motion',
           'soup.photos()        grant every photograph Chasca can take',
           'soup.tod(t)          set time of day, 0 dawn, 0.35 day, 0.57 gold, 0.85 night',
           'soup.rain(on?)       toggle the monsoon and the sawan rain',
@@ -3098,6 +3137,19 @@ function installCheats() {
     perf() {
       const p = (globalThis as unknown as { __soupPerf?: { sample(): unknown } }).__soupPerf;
       return p ? p.sample() : 'perf meter is dev-only';
+    },
+    /** Micro-freezes the motion witness has seen: when, how many frames the
+     * player stood mid-walk, and the frame gaps around it. Normal gaps with
+     * a freeze means the sim stopped the player; big gaps mean the browser
+     * skipped frames; an empty list while the eye saw stutter points below
+     * the browser entirely. */
+    witness() {
+      const now = performance.now();
+      return MW.events.map((e) => ({
+        secondsAgo: +((now - e.at) / 1000).toFixed(1),
+        frozenFrames: e.frames,
+        gapsAroundMs: e.gaps,
+      }));
     },
     photos() {
       const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
