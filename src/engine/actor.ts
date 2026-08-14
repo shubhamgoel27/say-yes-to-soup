@@ -114,7 +114,7 @@ export class Actor {
       // Carry the overflow into the next step so continuous walking doesn't
       // quantise to the frame rate and visibly stutter every tile.
       this.t -= STEP_DUR;
-      this.flow = 0.12;
+      this.flow = 0.25;
       this.x = this.nx;
       this.y = this.ny;
       this.moving = false;
@@ -131,7 +131,12 @@ export class Actor {
   private tryStart(dt: number, ctx: ActorCtx): ActorEvent {
     const want = this.frozen ? null : ctx.intent;
     if (!want) {
-      this.turn = 0;
+      // Fingers rolling between keys leave a frame or two with nothing held.
+      // Zeroing the hold timer here made the re-press pay the standstill
+      // TURN_DELAY mid-stride: a three-to-six frame freeze, caught by the
+      // motion witness against perfectly even frame times. While momentum
+      // holds, a momentary gap keeps the walk ready to continue.
+      this.turn = this.flow > 0 ? TURN_DELAY : 0;
       this.t = 0;
       return null;
     }

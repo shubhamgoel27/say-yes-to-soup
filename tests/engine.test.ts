@@ -390,3 +390,40 @@ describe('paused time is forgiven, not repaid', () => {
     assert.ok(Math.abs(settled - 8.3) < 0.5, `after a pause the step ran ${settled.toFixed(2)}ms instead of 8.3`);
   });
 });
+
+describe('a rolled key transition does not break stride', () => {
+  const walkCtx = (intent: 'right' | 'down' | null) => ({ intent, blocked: () => false });
+
+  const stepFrames = (a: InstanceType<typeof Actor>, intent: 'right' | 'down' | null, frames: number) => {
+    for (let i = 0; i < frames; i++) a.update(1 / 120, walkCtx(intent));
+  };
+
+  it('a two-frame gap between key presses keeps the walk moving', () => {
+    const a = new Actor(5, 5, 'right');
+    stepFrames(a, 'right', 60); // half a second of walking; momentum is live
+    const before = a.x;
+    stepFrames(a, null, 2); // the finger-roll gap
+    stepFrames(a, 'right', 10); // ~83ms of re-held key
+    const [px] = a.renderPos();
+    assert.ok(
+      px > before * 16 + 1,
+      `after a 2-frame key gap the walk should already be moving again, render x ${px} vs tile ${before * 16}`,
+    );
+  });
+
+  it('a gap into a new direction steps without the standstill gate', () => {
+    const a = new Actor(5, 5, 'right');
+    stepFrames(a, 'right', 60);
+    stepFrames(a, null, 2);
+    stepFrames(a, 'down', 10);
+    assert.ok(a.isMoving || a.y > 5, 'the steer after a key gap should flow into a step');
+  });
+
+  it('a tap from a true standstill still turns in place first', () => {
+    const a = new Actor(5, 5, 'right');
+    stepFrames(a, null, 60); // long standstill; momentum long gone
+    stepFrames(a, 'down', 2); // a tap's worth of hold
+    assert.ok(!a.isMoving && a.y === 5, 'a short tap from rest must turn, not step');
+    assert.equal(a.dir, 'down');
+  });
+});
