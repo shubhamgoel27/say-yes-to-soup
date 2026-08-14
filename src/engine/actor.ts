@@ -47,6 +47,13 @@ export class Actor {
    * catching a foot on nothing about once per corner.
    */
   private flow = 0;
+  /** Seconds since the last frame that actually moved. The stride is HELD
+   * through gaps shorter than a beat, so a rolled key or an NPC's one-frame
+   * think between steps does not snap the sprite to the standing pose and
+   * back: five frames of statue mid-walk was the visible half of the
+   * stutter, twice as loud as the 40ms positional pause underneath it. */
+  private sinceMoved = 1;
+  private heldWalkPose = 0;
   /** Completed steps, used to pick the walk-cycle foot. */
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
@@ -107,6 +114,9 @@ export class Actor {
         if (this.bump > 0) return null;
       }
     }
+
+    if (this.moving) this.sinceMoved = 0;
+    else this.sinceMoved += dt;
 
     if (this.moving) {
       this.t += dt;
@@ -215,6 +225,11 @@ export class Actor {
    * 0 = standing, 1 and 2 = the two walk poses. Alternating by step count means
    * the same foot doesn't lead every single tile.
    */
+  /** True while walking or inside the stride-grace window after it. */
+  striding(): boolean {
+    return this.bump <= 0 && (this.moving || this.sinceMoved < 0.12);
+  }
+
   walkFrame(): 0 | 1 | 2 {
     if (this.bump > 0) return 0;
     if (!this.moving) return 0;
@@ -228,9 +243,15 @@ export class Actor {
    * so one full cycle spans a left step and a right step.
    */
   walkFrame6(): number {
-    if (this.bump > 0 || !this.moving) return 0;
+    if (this.bump > 0) return 0;
+    if (!this.moving) {
+      // Inside the grace the sprite keeps its last stride pose; a real stop
+      // outlives the grace and settles to standing via striding().
+      return this.striding() ? this.heldWalkPose : 0;
+    }
     const p = Math.min(this.t / STEP_DUR, 0.999);
-    return (this.steps % 2) * 3 + Math.floor(p * 3);
+    this.heldWalkPose = (this.steps % 2) * 3 + Math.floor(p * 3);
+    return this.heldWalkPose;
   }
 
   /** True during the recoil after walking into something solid. */

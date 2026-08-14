@@ -1846,7 +1846,10 @@ export class Renderer {
   ) {
     const ctx = this.ctx;
     const isPlayer = s.isPlayer ?? index === 0;
-    const idle = !s.actor.isMoving;
+    // Pose-idle includes the stride grace, so a micro-pause between steps
+    // keeps the walk cycle instead of flashing the standing frame. The slow
+    // idle life (blinks, glances, breath) still keys off idleT elsewhere.
+    const idle = !s.actor.striding();
 
     // Idle life. After ten quiet seconds the player glances left, then right,
     // and now and then rolls a small stretch through the shoulders. Idle NPCs

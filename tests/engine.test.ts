@@ -427,3 +427,17 @@ describe('a rolled key transition does not break stride', () => {
     assert.equal(a.dir, 'down');
   });
 });
+
+describe('the stride pose survives micro-pauses', () => {
+  const ctx = (intent: 'right' | null) => ({ intent, blocked: () => false });
+
+  it('holds the walk pose through a rolled-key gap, settles after a real stop', () => {
+    const a = new Actor(5, 5, 'right');
+    for (let i = 0; i < 60; i++) a.update(1 / 120, ctx('right'));
+    assert.ok(a.walkFrame6() !== 0, 'mid-walk the pose is a stride frame');
+    for (let i = 0; i < 3; i++) a.update(1 / 120, ctx(null));
+    assert.ok(a.walkFrame6() !== 0, 'three empty frames must not flash the standing pose');
+    for (let i = 0; i < 30; i++) a.update(1 / 120, ctx(null));
+    assert.equal(a.walkFrame6(), 0, 'a real stop settles to standing after the grace');
+  });
+});
