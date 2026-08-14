@@ -1937,8 +1937,14 @@ let bumpQuiet = 0;
  * because it lives in the build, not in an injected script. Read it with
  * soup.witness().
  */
-type MotionEvent = { at: number; frames: number; gaps: number[] };
-const MW = { ring: [] as [number, number, number, number][], events: [] as MotionEvent[], last: 0 };
+type MotionEvent = { at: number; frames: number; gaps: number[]; gates?: string[] };
+const MW = {
+  ring: [] as [number, number, number, number][],
+  events: [] as MotionEvent[],
+  last: 0,
+  lastIntent: '-' as string,
+  gates: [] as string[],
+};
 function motionWitness() {
   if (!import.meta.env.DEV) return;
   const now = performance.now();
@@ -1947,7 +1953,14 @@ function motionWitness() {
   const [px, py] = player.renderPos();
   const r = MW.ring;
   r.push([now, gap, px, py]);
-  if (r.length > 6000) r.shift();
+  const g = player.debugState();
+  MW.gates.push(
+    `${MW.lastIntent[0] ?? '-'}${g.moving ? 'M' : '.'} t${g.t} turn${g.turn} bump${g.bump} flow${g.flow}`,
+  );
+  if (r.length > 6000) {
+    r.shift();
+    MW.gates.shift();
+  }
   const L = r.length;
   if (L < 15) return;
   const d = (i: number) => Math.hypot(r[i]![2] - r[i - 1]![2], r[i]![3] - r[i - 1]![3]);
@@ -1961,6 +1974,7 @@ function motionWitness() {
         at: now,
         frames: frozen,
         gaps: r.slice(mid - 2, stillEnd + 2).map((x) => +x[1].toFixed(1)),
+        gates: MW.gates.slice(mid - 2, stillEnd + 2),
       });
       if (MW.events.length > 40) MW.events.shift();
     }
@@ -2193,6 +2207,7 @@ function update(dt: number) {
       // A held key or stick always outranks a click-to-walk in progress.
       if (manual && autoGoal) cancelAuto();
       const intent = manual ?? autoIntent();
+      MW.lastIntent = intent ?? '-';
       // The camera leans a little into sustained walking, easing home at rest.
       const lead = intent
         ? { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[intent]
@@ -3149,6 +3164,7 @@ function installCheats() {
         secondsAgo: +((now - e.at) / 1000).toFixed(1),
         frozenFrames: e.frames,
         gapsAroundMs: e.gaps,
+        gates: e.gates,
       }));
     },
     photos() {

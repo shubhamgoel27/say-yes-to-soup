@@ -186,6 +186,14 @@ export class Actor {
     if (!this.moving) this.dir = dir;
   }
 
+  /** Dev-only window into the gates, for the motion witness. */
+  debugState() {
+    return {
+      moving: this.moving, t: +this.t.toFixed(3), turn: +this.turn.toFixed(3),
+      bump: +this.bump.toFixed(3), flow: +this.flow.toFixed(3), dir: this.dir,
+    };
+  }
+
   /** Sub-pixel render position, interpolated across the current step. */
   renderPos(): [number, number] {
     if (this.lean > 0) {
