@@ -379,3 +379,14 @@ describe('the dt smoother absorbs strays and follows real cadence changes', () =
     assert.ok(settled > 15 && settled < 18.5, `the new cadence did not hold: ${settled.toFixed(2)}ms`);
   });
 });
+
+describe('paused time is forgiven, not repaid', () => {
+  it('a long hidden-tab gap does not speed the game up afterward', () => {
+    const smooth = makeDtSmoother();
+    for (let i = 0; i < 30; i++) smooth(8.3);
+    smooth(31 * 60 * 1000); // half an hour hidden
+    for (let i = 0; i < 5; i++) smooth(8.3);
+    const settled = smooth(8.3);
+    assert.ok(Math.abs(settled - 8.3) < 0.5, `after a pause the step ran ${settled.toFixed(2)}ms instead of 8.3`);
+  });
+});

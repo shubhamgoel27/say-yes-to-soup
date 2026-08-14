@@ -42,6 +42,14 @@ export function makeDtSmoother(): (raw: number) => number {
       const sorted = [...recent].sort((a, b) => a - b);
       const median = sorted[sorted.length >> 1] ?? raw;
       const stray = raw > median * 1.45 || raw < median * 0.7;
+      if (raw > 250) {
+        // Not a frame interval; a pause. The tab was hidden, the laptop
+        // slept. Banking it would repay minutes of debt at a 25 percent
+        // speedup for the rest of the session. Paused time is forgiven.
+        drift = 0;
+        strays = 0;
+        return median;
+      }
       if (stray) {
         strays++;
         if (strays >= 3) {
@@ -52,8 +60,9 @@ export function makeDtSmoother(): (raw: number) => number {
           strays = 0;
           return raw;
         }
-        // A lone odd frame: move at the usual pace, bank the difference.
-        drift += raw - median;
+        // A lone odd frame: move at the usual pace and bank the difference,
+        // capped at a few frames' worth so no single gap can indebt the sim.
+        drift += Math.max(-3 * median, Math.min(3 * median, raw - median));
       } else {
         strays = 0;
         recent.push(raw);
