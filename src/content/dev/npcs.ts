@@ -260,7 +260,11 @@ export const NPCS: NpcDef[] = [
     id: 'faustino',
     name: 'Faustino',
     map: 'east-road',
-    pos: [39, 7],
+    // West of the pass gap, on purpose. He camped at the old tambo beyond
+    // the wall once, which put the only man who can whistle Paca aside on
+    // the far side of the llama plugging the only opening: a hard softlock
+    // proven by flood fill and found by a real player standing at it.
+    pos: [26, 7],
     range: 1,
     look: {
       skin: '#a5744a',

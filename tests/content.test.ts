@@ -519,3 +519,30 @@ describe('every seam a map can draw is cut before the map is played', () => {
     }
   });
 });
+
+describe('the key stands on the player side of its lock', () => {
+  it('Faustino is reachable from the east-road entrance while Paca blocks the gap', () => {
+    const m = new TileMap(REGION_MAPS['east-road'] as never);
+    const paca = NPCS.find((n) => n.id === 'paca')!;
+    const faustino = NPCS.find((n) => n.id === 'faustino')!;
+    const solid = (x: number, y: number) =>
+      !m.inBounds(x, y) || m.ground(x, y).solid === true || m.object(x, y)?.solid === true ||
+      (x === paca.pos[0] && y === paca.pos[1]);
+    const seen = new Set<string>([m.spawn.join(',')]);
+    const q: [number, number][] = [m.spawn as [number, number]];
+    while (q.length) {
+      const [x, y] = q.shift()!;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (seen.has(nx + ',' + ny) || solid(nx, ny)) continue;
+        seen.add(nx + ',' + ny);
+        q.push([nx, ny]);
+      }
+    }
+    const [fx, fy] = faustino.pos;
+    const adjacent = [[fx, fy], [fx + 1, fy], [fx - 1, fy], [fx, fy + 1], [fx, fy - 1]]
+      .some(([x, y]) => seen.has(x + ',' + y));
+    assert.ok(adjacent, 'the man who moves the llama must stand where a blocked player can reach him');
+  });
+});
