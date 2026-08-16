@@ -39,6 +39,9 @@ export class Actor {
   private lean = 0;
   /** Seconds since the last refused step, so a held direction keeps leaning. */
   private blockedT = 0;
+  /** Which way the lean points: at the surface that refused the step, held
+   * even if the walker turns away while the lean eases out. */
+  private leanDir: Dir = 'down';
   /**
    * Momentum, in seconds of grace. While this holds, a change of direction
    * flows straight into the next step instead of paying TURN_DELAY as if
@@ -168,6 +171,7 @@ export class Actor {
     if (ctx.blocked(tx, ty)) {
       this.bump = BUMP_DUR;
       this.blockedT = BUMP_DUR * 1.6;
+      this.leanDir = want;
       this.t = 0;
       return { kind: 'bumped' };
     }
@@ -206,19 +210,29 @@ export class Actor {
 
   /** Sub-pixel render position, interpolated across the current step. */
   renderPos(): [number, number] {
-    if (this.lean > 0) {
-      // Pressed against whatever refused the step, and staying pressed for
-      // as long as the direction is held.
-      const [bx, by] = stepFrom(0, 0, this.dir);
-      const push = this.lean * 1.7;
-      return [this.x * TILE + bx * push, this.y * TILE + by * push];
+    let x: number;
+    let y: number;
+    if (this.moving) {
+      const p = Math.min(this.t / STEP_DUR, 1);
+      x = (this.x + (this.nx - this.x) * p) * TILE;
+      y = (this.y + (this.ny - this.y) * p) * TILE;
+    } else {
+      x = this.x * TILE;
+      y = this.y * TILE;
     }
-    if (!this.moving) return [this.x * TILE, this.y * TILE];
-    const p = Math.min(this.t / STEP_DUR, 1);
-    return [
-      (this.x + (this.nx - this.x) * p) * TILE,
-      (this.y + (this.ny - this.y) * p) * TILE,
-    ];
+    if (this.lean > 0) {
+      // Pressed against whatever refused the step: a small push toward it,
+      // ON TOP of any real movement. This used to replace the interpolation
+      // outright, so walking away from a grazed doorframe rendered a frozen
+      // sprite for the frames the lean took to ease out, then snapped to
+      // where the walk had actually gotten to. Doorways are where players
+      // brush walls, which made every house entrance stutter.
+      const [bx, by] = stepFrom(0, 0, this.leanDir);
+      const push = this.lean * 1.7;
+      x += bx * push;
+      y += by * push;
+    }
+    return [x, y];
   }
 
   /**

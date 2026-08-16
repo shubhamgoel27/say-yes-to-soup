@@ -441,3 +441,23 @@ describe('the stride pose survives micro-pauses', () => {
     assert.equal(a.walkFrame6(), 0, 'a real stop settles to standing after the grace');
   });
 });
+
+describe('the wall lean never hides real movement', () => {
+  it('walking away from a graze advances the render position every frame', () => {
+    const a = new Actor(5, 5, 'up');
+    const wallAbove = (x: number, y: number) => y < 5;
+    for (let i = 0; i < 30; i++) a.update(1 / 120, { intent: 'up', blocked: wallAbove });
+    // Leaned into the wall; now walk right while the lean eases out.
+    let prev = a.renderPos()[0];
+    let advanced = 0;
+    for (let i = 0; i < 20; i++) {
+      a.update(1 / 120, { intent: 'right', blocked: () => false });
+      const [px] = a.renderPos();
+      assert.ok(px >= prev - 0.001, `render x went backward: ${prev} -> ${px}`);
+      if (px - prev > 3) assert.fail(`render x jumped ${(px - prev).toFixed(2)}px in one frame`);
+      if (px > prev + 0.05) advanced++;
+      prev = px;
+    }
+    assert.ok(advanced >= 10, `expected steady motion, saw only ${advanced} advancing frames`);
+  });
+});
