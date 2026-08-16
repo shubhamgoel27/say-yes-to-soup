@@ -521,6 +521,69 @@ describe('every seam a map can draw is cut before the map is played', () => {
 });
 
 describe('the key stands on the player side of its lock', () => {
+  // ---- shared spatial helpers (pure map data, no engine, no browser) ----
+  const k = (x: number, y: number) => `${x},${y}`;
+  const solidCell = (m: MapData, x: number, y: number) => {
+    const H = m.ground.length;
+    const W = m.ground[0]?.length ?? 0;
+    if (x < 0 || y < 0 || x >= W || y >= H) return true;
+    const g = m.legend[m.ground[y]?.[x] ?? ' '];
+    const oCh = m.objects?.[y]?.[x] ?? ' ';
+    const o = oCh === ' ' ? undefined : m.legend[oCh];
+    return g?.solid === true || o?.solid === true;
+  };
+  const flood = (m: MapData, starts: [number, number][], extraSolid: ReadonlySet<string>) => {
+    const seen = new Set<string>();
+    const q: [number, number][] = [];
+    const enter = (x: number, y: number) => {
+      if (solidCell(m, x, y) || extraSolid.has(k(x, y)) || seen.has(k(x, y))) return;
+      seen.add(k(x, y));
+      q.push([x, y]);
+    };
+    for (const [x, y] of starts) enter(x, y);
+    while (q.length) {
+      const [x, y] = q.shift() as [number, number];
+      enter(x + 1, y);
+      enter(x - 1, y);
+      enter(x, y + 1);
+      enter(x, y - 1);
+    }
+    return seen;
+  };
+  /** Talkable / examinable: standing on it or on any 4-neighbour. */
+  const adjacent = (seen: ReadonlySet<string>, x: number, y: number) =>
+    seen.has(k(x, y)) || seen.has(k(x + 1, y)) || seen.has(k(x - 1, y)) ||
+    seen.has(k(x, y + 1)) || seen.has(k(x, y - 1));
+  /** Range-0 villagers never move: their bodies are part of the map. */
+  const bodyCells = (mapId: string) =>
+    new Set(NPCS.filter((n) => n.map === mapId && n.range === 0).map((n) => k(n.pos[0], n.pos[1])));
+  /** Every way a player can appear on a map: its spawn, plus the landing of
+   * every door on any other map that leads here. (The village east gate is a
+   * runtime door onto east-road's own spawn, so it is already covered.) */
+  const entriesInto = (mapId: string) => {
+    const m = REGION_MAPS[mapId] as MapData;
+    const list: { label: string; at: [number, number] }[] = [{ label: 'spawn', at: m.spawn }];
+    for (const other of Object.values(REGION_MAPS)) {
+      for (const t of other.triggers ?? []) {
+        if (t.type === 'door' && t.to === mapId) list.push({ label: `door from ${other.id}`, at: t.spawn });
+      }
+    }
+    return list;
+  };
+
+  /**
+   * Story gates: places where a stationary body IS the lock, on purpose.
+   * Each exception names the flag that opens it and the NPC whose dialogue
+   * sets that flag; the tests below then insist the key stands on the locked
+   * player's side of the body, which is exactly the invariant the shipped
+   * Paca/Faustino softlock violated.
+   */
+  const GATES: { map: string; blocker: string; opensWith: string; key: string }[] = [
+    // Paca (range 0) plugs the one-tile pass at [30,6] in the east-road
+    // ridge until faustino.whistle sets paca.moved and she steps to [28,4].
+    { map: 'east-road', blocker: 'paca', opensWith: 'paca.moved', key: 'faustino' },
+  ];
+
   it('Faustino is reachable from the east-road entrance while Paca blocks the gap', () => {
     const m = new TileMap(REGION_MAPS['east-road'] as never);
     const paca = NPCS.find((n) => n.id === 'paca')!;
@@ -544,5 +607,135 @@ describe('the key stands on the player side of its lock', () => {
     const adjacent = [[fx, fy], [fx + 1, fy], [fx - 1, fy], [fx, fy + 1], [fx, fy - 1]]
       .some(([x, y]) => seen.has(x + ',' + y));
     assert.ok(adjacent, 'the man who moves the llama must stand where a blocked player can reach him');
+  });
+
+  /**
+   * The general net for the Paca class of bug. The flood-fill test above
+   * ignores NPC bodies and the task-graph walker ignores geometry; this test
+   * lives exactly between them: with every range-0 villager solid, every door
+   * and every villager a map offers must stay reachable from every way onto
+   * that map. Where a body is a deliberate lock, GATES names the flag that
+   * opens it, and the test insists the KEY is reachable instead.
+   */
+  it('with every stationary villager solid, no door or villager is sealed off', () => {
+    for (const m of Object.values(REGION_MAPS)) {
+      const gate = GATES.find((g) => g.map === m.id);
+      const npcsHere = NPCS.filter((n) => n.map === m.id);
+      const bodies = bodyCells(m.id);
+      const entries = entriesInto(m.id);
+      // Baseline: the bare map, flooded from everywhere at once. What was
+      // never reachable (scenery beyond the ridge) is not a finding.
+      const bare = flood(m, entries.map((e) => e.at), new Set());
+      const doors = (m.triggers ?? []).filter((t) => t.type === 'door');
+      const sealedBy = (seen: ReadonlySet<string>) => {
+        const out: string[] = [];
+        for (const d of doors) {
+          if (bare.has(k(d.at[0], d.at[1])) && !seen.has(k(d.at[0], d.at[1]))) {
+            out.push(`door@${d.at} -> ${(d as { to: string }).to}`);
+          }
+        }
+        for (const n of npcsHere) {
+          if (adjacent(bare, n.pos[0], n.pos[1]) && !adjacent(seen, n.pos[0], n.pos[1])) {
+            out.push(`npc ${n.id}@${n.pos}`);
+          }
+        }
+        return out;
+      };
+      const spawnSide = flood(m, [m.spawn], bodies);
+      for (const e of entries) {
+        const seen = flood(m, [e.at], bodies);
+        const sealed = sealedBy(seen);
+        if (sealed.length === 0) continue;
+        assert.ok(
+          gate,
+          `${m.id} from ${e.label}: stationary bodies seal off ${sealed.join(', ')} ` +
+            '(a range-0 villager is plugging the route; move them a tile or declare a GATES entry)',
+        );
+        // The gate must explain the whole seal: with the blocker stepped
+        // aside (the opensWith state), everything reconnects.
+        const blocker = npcsHere.find((n) => n.id === gate.blocker);
+        assert.ok(blocker && blocker.range === 0, `${m.id}: GATES blocker ${gate.blocker} is not a range-0 villager here`);
+        const open = new Set(bodies);
+        open.delete(k(blocker.pos[0], blocker.pos[1]));
+        const stillSealed = sealedBy(flood(m, [e.at], open));
+        assert.deepEqual(
+          stillSealed,
+          [],
+          `${m.id} from ${e.label}: sealed even after ${gate.opensWith} moves ${gate.blocker}: ${stillSealed.join(', ')}`,
+        );
+        // And the key stands on the player's side of the lock, unless this
+        // entry itself lies behind it (reaching it required the flag already).
+        const keyNpc = npcsHere.find((n) => n.id === gate.key);
+        const entryBehindLock = !spawnSide.has(k(e.at[0], e.at[1]));
+        assert.ok(
+          keyNpc && (adjacent(seen, keyNpc.pos[0], keyNpc.pos[1]) || entryBehindLock),
+          `${m.id} from ${e.label}: the key (${gate.key}, sets ${gate.opensWith}) is on the wrong side of ${gate.blocker}`,
+        );
+      }
+    }
+  });
+
+  it('every gate key really sets the flag that moves its blocker', () => {
+    for (const gate of GATES) {
+      const keyNpc = NPCS.find((n) => n.id === gate.key);
+      assert.ok(keyNpc, `GATES key ${gate.key} does not exist`);
+      // Walk every branch of every entry of the key NPC; some node must
+      // apply set:<opensWith>, or the lock can never open.
+      const eff = `set:${gate.opensWith}`;
+      let found = false;
+      const walk = (id: string, seen: Set<string>) => {
+        if (found || seen.has(id)) return;
+        seen.add(id);
+        const node = NODES[id];
+        if (!node) return;
+        if (node.effects?.includes(eff)) found = true;
+        if (node.next) walk(node.next, seen);
+        for (const c of node.choices ?? []) walk(c.goto, seen);
+      };
+      const seen = new Set<string>();
+      for (const e of keyNpc?.entry ?? []) walk(e.node, seen);
+      assert.ok(found, `${gate.key} never applies ${eff}; ${gate.blocker} would stand forever`);
+    }
+  });
+
+  it('no examine kind loses its every prop to a stationary villager', () => {
+    // Kind-level on purpose: several props of one kind share their words, so
+    // one prop with a body in front of it is composition, not loss. Losing
+    // the LAST reachable prop of a kind is loss.
+    for (const m of Object.values(REGION_MAPS)) {
+      const H = m.ground.length;
+      const W = m.ground[0]?.length ?? 0;
+      const entries = entriesInto(m.id).map((e) => e.at);
+      const bare = flood(m, entries, new Set());
+      const withBodies = flood(m, entries, bodyCells(m.id));
+      const byKind = new Map<string, [number, number][]>();
+      for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+          const oCh = m.objects?.[y]?.[x] ?? ' ';
+          if (oCh === ' ') continue;
+          const kind = m.legend[oCh]?.t;
+          if (kind && EXAMINES[kind]) byKind.set(kind, [...(byKind.get(kind) ?? []), [x, y]]);
+        }
+      }
+      for (const [kind, cells] of byKind) {
+        if (!cells.some(([x, y]) => adjacent(bare, x, y))) continue;
+        assert.ok(
+          cells.some(([x, y]) => adjacent(withBodies, x, y)),
+          `${m.id}: every ${kind} prop is walled off behind a stationary villager`,
+        );
+      }
+    }
+  });
+
+  it('every dig spot keeps its digging spot with stationary villagers solid', () => {
+    const village = REGION_MAPS['village'] as MapData;
+    const bodies = bodyCells('village');
+    for (const e of entriesInto('village')) {
+      const seen = flood(village, [e.at], bodies);
+      for (const s of DIG_SPOTS) {
+        const [x, y] = s.at;
+        assert.ok(seen.has(k(x, y - 1)), `dig spot ${s.at}: nowhere left to stand (from ${e.label})`);
+      }
+    }
   });
 });
