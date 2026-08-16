@@ -203,3 +203,17 @@ release-shaped verification, never only the dev server; treat any top-level
 await in an app entry as a loaded gun aimed at the bundler; and when a boot
 hangs silently, bisect with boot beacons before theorizing (three console
 lines found in minutes what stack reading could not).
+
+## The stutter was five bugs wearing one coat (2026-08-15)
+"The game stutters sometimes" resolved into five distinct causes, fixed one
+per round: the mid-walk turn gate, the bump lockout, timestamp jitter baked
+into motion, the smoother flinching at single strays, the standing-pose flash
+on micro-pauses, and the wall-lean hiding real movement at doorframes. Every
+one was invisible to frame profiling because the frames were always perfect;
+the lie was inside the frames. Two things broke the case: a witness built
+into the dev build (not injected, so reloads cannot wipe it) recording the
+player's displacement plus the actor's gate state every frame, and the user
+as the trigger, saying "now" while the witness held the evidence. When a
+report survives a fix, do not argue with it; instrument deeper and let the
+next capture name the gate. soup.witness() and soup.perf() stay in the dev
+build for the next time.
