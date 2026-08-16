@@ -1929,6 +1929,9 @@ let showDebug = false;
 let bumps = 0;
 /** Time until a wall may knock aloud again; see the bumped branch. */
 let bumpQuiet = 0;
+/** Paca's scripted amble off the pass, and her patience when blocked. */
+let pacaWalk: Dir[] = [];
+let pacaRetry = 0;
 /** Consecutive refused steps with no progress between them; hint fuel. */
 let stuckKnocks = 0;
 let lastStuckHint = -Infinity;
@@ -2267,13 +2270,34 @@ function update(dt: number) {
         const trig = map.triggerAt(ev.x, ev.y);
         if (trig?.type === 'door') startWarp(trig);
       }
-      for (const v of villagersHere()) updateVillager(v, dt);
+      for (const v of villagersHere()) {
+        if (v === paca && pacaWalk.length > 0) continue;
+        updateVillager(v, dt);
+      }
     }
   }
 
-  // Paca yields the pass, one llama-meter, once Faustino whistles.
+  // Paca yields the pass, one llama-meter, once Faustino whistles. If the
+  // player is on the road to see it, she ambles aside like a creature with
+  // legs; the teleport is only for catching up with events nobody watched.
   if (paca && state.has('paca.moved') && paca.actor.x === 30 && paca.actor.y === 6) {
-    paca.actor.placeAt(28, 4, 'down');
+    if (map.id === 'east-road' && pacaRetry <= 0) {
+      if (pacaWalk.length === 0) pacaWalk = ['left', 'left', 'up', 'up'];
+    } else if (map.id !== 'east-road') {
+      paca.actor.placeAt(28, 4, 'down');
+    }
+  }
+  if (pacaRetry > 0) pacaRetry -= dt;
+  if (paca && pacaWalk.length > 0 && map.id === 'east-road' && mode === 'play') {
+    const d = pacaWalk[0]!;
+    const ev = paca.actor.update(dt, { intent: d, blocked: blockedFor(paca.actor) });
+    if (ev?.kind === 'arrived') pacaWalk.shift();
+    else if (ev?.kind === 'bumped') {
+      // Someone is standing in her considered route. She waits them out and
+      // reconsiders shortly; llamas are patient about being right.
+      pacaWalk = [];
+      pacaRetry = 1.2;
+    }
   }
 
   if (mode === 'title') {

@@ -264,7 +264,7 @@ export const NPCS: NpcDef[] = [
     // the wall once, which put the only man who can whistle Paca aside on
     // the far side of the llama plugging the only opening: a hard softlock
     // proven by flood fill and found by a real player standing at it.
-    pos: [26, 7],
+    pos: [24, 8],
     range: 1,
     look: {
       skin: '#a5744a',
