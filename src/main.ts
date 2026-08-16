@@ -1929,6 +1929,9 @@ let showDebug = false;
 let bumps = 0;
 /** Time until a wall may knock aloud again; see the bumped branch. */
 let bumpQuiet = 0;
+/** Consecutive refused steps with no progress between them; hint fuel. */
+let stuckKnocks = 0;
+let lastStuckHint = -Infinity;
 
 /**
  * The always-armed motion witness (dev builds only). Records the player's
@@ -2216,6 +2219,7 @@ function update(dt: number) {
       const prevX = player.x;
       const prevY = player.y;
       const ev = player.update(dt, { intent, blocked: blockedFor(player) });
+      if (ev?.kind === 'arrived') stuckKnocks = 0;
       // The quiet decays whether or not you are still leaning on the wall, so
       // walking off and bumping again later knocks properly.
       if (bumpQuiet > 0) bumpQuiet = Math.max(0, bumpQuiet - dt);
@@ -2227,6 +2231,19 @@ function update(dt: number) {
         if (bumpQuiet <= 0) {
           audio.bump();
           bumpQuiet = 0.5;
+        }
+        // The gentle-hint valve: a player pushing on the same closed door is
+        // asking the game a question. After a few insistent knocks, answer
+        // it with the open thread the chip is already showing, where their
+        // eyes are. Never more than once a minute; stuck, not nagged.
+        stuckKnocks++;
+        if (stuckKnocks >= 4 && performance.now() - lastStuckHint > 60000) {
+          const top = journalUI.activeTasks()[0];
+          if (top) {
+            toasts.show(top);
+            lastStuckHint = performance.now();
+          }
+          stuckKnocks = 0;
         }
         // A villager stepped into the planned path; route around them.
         if (autoGoal) replanAuto();

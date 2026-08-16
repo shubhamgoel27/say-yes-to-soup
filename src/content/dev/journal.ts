@@ -335,6 +335,11 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
     text: "Nani's letter wants opening at the east gate, past the terraces, where she meant to open it.",
   },
   {
+    // The one documented stuck point: a llama wall with an off-screen key.
+    when: { has: ['story.complete'], not: ['paca.moved'] },
+    text: 'A llama holds the pass east of the village and is not persuaded by explanations. The muleteer on that road moves her daily; flag him down.',
+  },
+  {
     when: { has: ['story.complete'], not: ['c2.arrived'] },
     text: 'The east gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
   },

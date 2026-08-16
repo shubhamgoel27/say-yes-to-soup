@@ -1163,7 +1163,7 @@ export const NODES: NodeMap = {
     lines: [
       { text: 'A llama occupies the exact center of the pass, with the calm of a mountain that recently learned to chew.' },
       { text: 'You explain your situation. Paca examines your soul. Paca is unmoved.' },
-      { text: 'Perhaps someone on this road knows the appropriate paperwork.' },
+      { text: 'The muleteer coming up the road files this exact paperwork daily: two fingers, one whistle. Find him.' },
     ],
   },
   'paca.after': {
