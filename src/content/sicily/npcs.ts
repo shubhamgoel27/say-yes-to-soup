@@ -31,6 +31,8 @@ export const SICILY_NPCS: NpcDef[] = [
         when: { has: ['c8.pranzo', 'c8.scopa.won', 'c8.pisci.won'], not: ['c8.walk.done'] },
         node: 'c8.concetta.walk',
       },
+      // Water the Moor's basil and her next hello is a silent promotion.
+      { when: { has: ['egg.c8.basil'], not: ['egg.c8.basil.nod'] }, node: 'c8.egg.concetta' },
       { when: { has: ['c8.walk.done'] }, node: 'c8.concetta.after' },
       { node: 'c8.concetta.idle' },
     ],
@@ -1099,6 +1101,25 @@ export const SICILY_NODES: NodeMap = {
       { text: 'A painted ceramic head with basil growing for hair. The legend: a Moor loved a local girl and meant to sail home to another life.' },
       { text: 'She kept his head for a planter. The basil thrives, and the town considers the matter settled in her favor.' },
     ],
+    effects: ['set:egg.c8.moro'],
+  },
+  'c8.egg.basil1': {
+    lines: [
+      { text: 'The basil hair droops in the glare. There is a cup of fountain water in your hand before you have finished deciding anything.' },
+    ],
+    effects: ['set:egg.c8.basil'],
+  },
+  'c8.egg.basil2': {
+    lines: [
+      { text: 'The Moor\'s basil stands up straight again, and somebody has topped up your watering. The pot keeps two gardeners now, and names neither.' },
+    ],
+  },
+  'c8.egg.concetta': {
+    lines: [
+      { text: 'Concetta passes without a word, pinches one basil leaf from the Moor\'s crown, and crushes it under your nose.' },
+      { who: 'Nonna Concetta', text: 'Mm. You water, it grows, you belong. Now stand in the shade, bedda.' },
+    ],
+    effects: ['set:egg.c8.basil.nod'],
   },
   'c8.ex.edicola': {
     lines: [
@@ -1351,7 +1372,11 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'circolo', node: 'c8.ex.lemoncrate.circolo' },
     { node: 'c8.ex.lemoncrate' },
   ],
-  testadimoro: [{ node: 'c8.ex.testadimoro' }],
+  testadimoro: [
+    { when: { has: ['egg.c8.basil'] }, node: 'c8.egg.basil2' },
+    { when: { has: ['egg.c8.moro'] }, node: 'c8.egg.basil1' },
+    { node: 'c8.ex.testadimoro' },
+  ],
   edicola: [
     { when: { has: ['c8.pisci.won'] }, node: 'c8.ex.edicola2' },
     { node: 'c8.ex.edicola' },

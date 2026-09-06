@@ -1116,6 +1116,18 @@ export const ZANZIBAR_NODES: NodeMap = {
     lines: [
       { text: 'You could move one seed and change two friendships. Do not touch the seeds. Every cat on this lane saw you think it.' },
     ],
+    effects: ['set:egg.c7.bao'],
+  },
+  'c7.egg.bao2': {
+    lines: [
+      { text: 'Four seeds have moved since you last looked, and nobody was seen moving them. The game is being played properly: slowly, between everything else.' },
+    ],
+    effects: ['set:egg.c7.bao2'],
+  },
+  'c7.egg.bao3': {
+    lines: [
+      { text: 'You check the board the way the whole lane does, in passing, pretending not to. Whoever is winning, the barrel keeps it confidential.' },
+    ],
   },
   'c7.ex.tray.after': {
     lines: [
@@ -1317,7 +1329,11 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   baoboard: [
     { when: { not: ['c7.seen.bao'] }, node: 'c7.ex.bao.a' },
-    { node: 'c7.ex.bao.b' },
+    // Keep looking in on the board and the game keeps living its slow life:
+    // seeds move between visits, players never seen. Proper bao.
+    { when: { not: ['egg.c7.bao'] }, node: 'c7.ex.bao.b' },
+    { when: { not: ['egg.c7.bao2'] }, node: 'c7.egg.bao2' },
+    { node: 'c7.egg.bao3' },
   ],
   kahawatray: [
     { when: { has: ['c7.rashid.past'] }, node: 'c7.ex.tray.after' },

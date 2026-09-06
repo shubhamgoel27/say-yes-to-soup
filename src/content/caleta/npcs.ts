@@ -866,6 +866,13 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.sand': { lines: [{ text: 'Sand the color of old paper. The desert walks right down to the water here; they have an arrangement.' }] },
   'mar.ex.wet': { lines: [{ text: 'The wet apron of the beach. Every seventh wave reaches further, like it is checking on you.' }] },
   'mar.ex.pier': { lines: [{ text: 'Old sugar-trade planks, grey and salt-cured. They creak in a language of their own.' }] },
+  'mar.egg.echo': {
+    lines: [
+      { text: 'You line the new print up against the view: same planks, same patient grey horizon, fifty years between two pairs of shoes.' },
+      { text: 'The boards creak their one word under you. They said it to her too.' },
+    ],
+    effects: ['set:egg.c2.echo'],
+  },
   'mar.ex.casa': { lines: [{ text: 'Cane and mud under the paint, rebar hoping on the roof. Every house here is a plan for a bigger house.' }] },
   'mar.ex.net': { lines: [{ text: 'A gillnet drying, corks like beads. Each mended knot is a different evening of talk.' }] },
   'mar.ex.netmended': {
@@ -1049,7 +1056,12 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['pilar.sea'], not: ['c2.gift'] }, node: 'mar.tidepool' },
     { node: 'mar.ex.wet' },
   ],
-  pierdeck: [{ node: 'mar.ex.pier' }],
+  pierdeck: [
+    // Stand where the photo was taken, print in the bag: the view, fifty
+    // years apart, says its one word once.
+    { map: 'la-caleta', when: { has: ['photo.c2.pier'], not: ['egg.c2.echo'] }, node: 'mar.egg.echo' },
+    { node: 'mar.ex.pier' },
+  ],
   casa: [{ node: 'mar.ex.casa' }],
   net: [
     { map: 'la-caleta', when: { has: ['c2.nets.done'] }, node: 'mar.ex.netmended' },

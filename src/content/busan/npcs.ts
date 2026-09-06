@@ -712,6 +712,24 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'A red basin of seawater, fish nosing the rim. The whole market runs on these: one basin, one knife, one formidable woman.' },
     ],
   },
+  'c5.egg.scale': {
+    lines: [
+      { text: 'One bright scale comes away on your thumb. Following market custom, you press it onto the crate corner by the sleeping cat: tax, paid in silver.' },
+    ],
+    effects: ['set:egg.c5.scale'],
+  },
+  'c5.egg.receipt': {
+    lines: [
+      { text: 'The scale is gone from the crate corner. The cat gazes magnificently elsewhere, which is how this office issues receipts.' },
+    ],
+    effects: ['set:egg.c5.scale.paid'],
+  },
+  'c5.egg.echo': {
+    lines: [
+      { text: 'Held up, the print fits the alley exactly: silver on strings then, silver on strings now. Fifty years, and the wind still hangs the same laundry.' },
+    ],
+    effects: ['set:egg.c5.echo'],
+  },
   'c5.ex.vent': {
     lines: [{ text: 'A grate breathing steam up from some kitchen below. The lane wears it like a scarf.' }],
   },
@@ -983,7 +1001,12 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   barrow: [{ node: 'c5.ex.barrow' }],
   fishrack: [{ node: 'c5.ex.rack' }],
-  basin: [{ node: 'c5.ex.basin' }],
+  basin: [
+    // Once the market cat has processed you, a basin offers the customary
+    // tribute; the cat issues its receipt on the next visit.
+    { when: { has: ['c5.cat.seen'], not: ['egg.c5.scale'] }, node: 'c5.egg.scale' },
+    { node: 'c5.ex.basin' },
+  ],
   steamvent: [{ node: 'c5.ex.vent' }],
   eomukcart: [
     { when: { not: ['c5.eomuk'] }, node: 'c5.ex.eomuk1' },
@@ -1015,7 +1038,11 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   stool: [{ map: 'teahouse', node: 'c5.ex.stool' }],
   tuft: [{ map: 'busan', node: 'c5.ex.tuft' }],
   basinstack: [{ node: 'c5.ex.basinstack' }],
-  squidline: [{ node: 'c5.ex.squidline' }],
+  squidline: [
+    // The dried-fish alley, photographed: hold the print against fifty years.
+    { when: { has: ['photo.c5.alley'], not: ['egg.c5.echo'] }, node: 'c5.egg.echo' },
+    { node: 'c5.ex.squidline' },
+  ],
   onggi: [
     { map: 'teahouse', node: 'c5.ex.onggi.tea' },
     { when: { not: ['c5.onggi.looked'] }, node: 'c5.ex.onggi1' },
@@ -1043,6 +1070,7 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   handrail: [{ node: 'c5.ex.handrail' }],
   marketcat: [
     { map: 'teahouse', node: 'c5.ex.cat.tea' },
+    { when: { has: ['egg.c5.scale'], not: ['egg.c5.scale.paid'] }, node: 'c5.egg.receipt' },
     { when: { has: ['c5.deom'] }, node: 'c5.ex.cat.stall' },
     { when: { not: ['c5.cat.seen'] }, node: 'c5.ex.cat1' },
     { node: 'c5.ex.cat2' },

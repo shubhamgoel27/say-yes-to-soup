@@ -291,7 +291,11 @@ export const NPCS: NpcDef[] = [
     look: PLACEHOLDER_LOOK,
     entry: [
       { when: { not: ['paca.moved'] }, node: 'paca.block' },
-      { node: 'paca.after' },
+      // Keep coming back and she keeps having opinions. The third audience
+      // is the one she has been saving.
+      { when: { not: ['egg.paca.one'] }, node: 'paca.after' },
+      { when: { not: ['egg.paca.two'] }, node: 'paca.opinions' },
+      { node: 'paca.medal' },
     ],
   },
   {
@@ -970,6 +974,9 @@ export const NODES: NodeMap = {
   },
   'allqu.pet2': {
     lines: [{ text: 'You pet the dog again. The dog was hoping you would come to this conclusion.' }],
+    // Third pet: the friendship is now official on both sides. Elsewhere in
+    // the village, quietly, a very old rescue mission becomes possible.
+    effects: ['set:egg.allqu.devoted'],
   },
   'allqu.pet3': {
     lines: [{ text: 'Further petting. The dog leans into it with its entire professional weight.' }],
@@ -1174,6 +1181,20 @@ export const NODES: NodeMap = {
     lines: [
       { text: 'Paca has relocated by almost a full meter, an enormous concession, generously given.' },
       { text: 'She hums to herself, low and self-satisfied. If llamas have theme songs, hers is about being right.' },
+    ],
+    effects: ['set:egg.paca.one'],
+  },
+  'paca.opinions': {
+    lines: [
+      { text: 'Paca inspects your bag, your boots, and your intentions, in that order. Her ears file a full written report on each.' },
+      { text: 'The verdict is sealed. She resumes chewing, which is how a llama adjourns.' },
+    ],
+    effects: ['set:egg.paca.two'],
+  },
+  'paca.medal': {
+    lines: [
+      { text: 'This time she leans her long neck down and breathes one warm breath into your hair, deliberately.' },
+      { text: 'From Paca, this is a medal ceremony. The pass is yours for life; tell nobody, everybody already knows.' },
     ],
   },
   'llama.look': {
@@ -1527,6 +1548,12 @@ export const NODES: NodeMap = {
       { text: 'Still up there. Rescue plans exist, but every ladder in the village turns out to be busy.' },
     ],
   },
+  'ex.pelota.down': {
+    lines: [
+      { text: 'The greatest goal ever scored in this valley is down from the roof, lightly toothmarked, parked where a certain dog can guard it.' },
+      { text: 'Every ladder in the village remains busy. Nobody is asking the dog anything.' },
+    ],
+  },
   'ex.gallina': {
     lines: [
       { text: 'A hen works the ground with total confidence. She finds something every third step, or claims to.' },
@@ -1748,6 +1775,9 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   ],
   sapling: [{ node: 'ex.sapling' }],
   pelota: [
+    // Once the dog is truly yours, the ball is off the roof (see the village
+    // dressing). No ladder was involved and none will take credit.
+    { when: { has: ['egg.allqu.devoted'] }, node: 'ex.pelota.down' },
     { when: { has: ['pelota.seen'] }, node: 'ex.pelota.again' },
     { node: 'ex.pelota' },
   ],

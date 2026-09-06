@@ -1065,6 +1065,25 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { text: 'A coconut down since the last big wind. By custom the first to notice it may claim it; you appear to have just noticed it.' },
     ],
+    effects: ['set:egg.c6.nut'],
+  },
+  'c6.egg.thud': {
+    lines: [
+      { text: 'A second nut rests two steps from where you just stood. The tree missed; around here that is the traditional greeting.' },
+    ],
+    effects: ['set:egg.c6.thud'],
+  },
+  'c6.egg.lookup': {
+    lines: [
+      { text: 'You glance up before stepping into the shade, the way everyone born here does it. Somewhere behind you, an auntie approves without looking.' },
+    ],
+    effects: ['set:egg.c6.lookup'],
+  },
+  'c6.egg.echo': {
+    lines: [
+      { text: 'From this exact plank the print matches: silver water, sky mid-argument. In 1974 the monsoon met her here and used the same opening line.' },
+    ],
+    effects: ['set:egg.c6.echo'],
   },
   'c6.ex.kallupalm': {
     lines: [
@@ -1221,7 +1240,10 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   rug: [{ map: 'mariamma-veedu', node: 'c6.ex.rugcoir' }],
   paddy: [{ node: 'c6.ex.paddy' }],
   laterite: [{ node: 'c6.ex.laterite' }],
-  palm: [{ node: 'c6.ex.palm' }],
+  palm: [
+    { when: { has: ['egg.c6.thud'], not: ['egg.c6.lookup'] }, node: 'c6.egg.lookup' },
+    { node: 'c6.ex.palm' },
+  ],
   banana: [{ node: 'c6.ex.banana' }],
   vallam: [
     { when: { has: ['c6.row.done'] }, node: 'c6.ex.vallam.after' },
@@ -1278,7 +1300,12 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   busstop: [{ node: 'c6.ex.busstop' }],
   posterwall: [{ node: 'c6.ex.posterwall' }],
-  fallennut: [{ node: 'c6.ex.fallennut' }],
+  fallennut: [
+    // Come back to the spot and the grove has sent a second one. The tree
+    // missed; that is how this coast says hello.
+    { when: { has: ['egg.c6.nut'], not: ['egg.c6.thud'] }, node: 'c6.egg.thud' },
+    { node: 'c6.ex.fallennut' },
+  ],
   kallupalm: [
     { when: { has: ['c6.seen.tapper'] }, node: 'c6.ex.kallupalm.again' },
     { node: 'c6.ex.kallupalm' },
@@ -1299,7 +1326,11 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c6.ex.cat' },
   ],
   water: [{ map: 'kerala', node: 'c6.ex.water' }],
-  pierdeck: [{ map: 'kerala', node: 'c6.ex.pier' }],
+  pierdeck: [
+    // The jetty from the monsoon photo: the view, fifty years apart.
+    { map: 'kerala', when: { has: ['photo.c6.jetty'], not: ['egg.c6.echo'] }, node: 'c6.egg.echo' },
+    { map: 'kerala', node: 'c6.ex.pier' },
+  ],
   doorShut: [{ map: 'kerala', node: 'c6.ex.door' }],
   chappals: [
     { map: 'mariamma-veedu', node: 'c6.ex.chappals.kitchen' },

@@ -83,6 +83,19 @@ export const CHAPTER: ChapterDef = {
       'The apacheta stands at the edge of sight, one stone taller than last week.',
     ],
   },
+  dressings: [
+    {
+      // The famous roof ball (greatest goal ever scored in this valley) comes
+      // down for players who really befriend the dog. No ladder is involved;
+      // the ball reappears on the plaza where Allqu can keep an eye on it.
+      map: 'village',
+      when: { has: ['egg.allqu.devoted'] },
+      cells: [
+        [33, 25, null],
+        [23, 19, { t: 'pelota', solid: true }],
+      ],
+    },
+  ],
   // The gate celebration and dig spots keep their bespoke wiring in main.
 };
 

@@ -265,6 +265,11 @@ export const DELHI_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c11.met.sheru'] }, node: 'c11.sheru.first' },
       { when: { has: ['c11.rain'], not: ['c11.sheru2'] }, node: 'c11.sheru.rain' },
+      // After the tawa lesson he considers you a colleague, and colleagues
+      // get walked home. Keep coming back; the third visit is his gift.
+      { when: { has: ['c11.cook.done'], not: ['egg.c11.sheru1'] }, node: 'c11.egg.sheru1' },
+      { when: { has: ['egg.c11.sheru1'], not: ['egg.c11.sheru2'] }, node: 'c11.egg.sheru2' },
+      { when: { has: ['egg.c11.sheru2'], not: ['egg.c11.sheru3'] }, node: 'c11.egg.sheru3' },
       { node: 'c11.sheru.idle' },
     ],
   },
@@ -1026,6 +1031,25 @@ export const DELHI_NODES: NodeMap = {
       { text: 'Sheru has relocated under the widest tarpaulin, dead center, dry as a minister. Monsoon veterans recognize each other; he blinks at you slowly.' },
     ],
     effects: ['set:c11.sheru2'],
+  },
+  'c11.egg.sheru1': {
+    lines: [
+      { text: 'Sheru finds you before the smell of your pockets does. The tawa business made you colleagues; the burnt one, he feels, was a signing bonus.' },
+    ],
+    effects: ['set:egg.c11.sheru1'],
+  },
+  'c11.egg.sheru2': {
+    lines: [
+      { text: 'Today he walks with you, one shop ahead, checking back like a hired guide. At Akhtar\'s corner he sits and stares meaningfully at the kettle.' },
+    ],
+    effects: ['set:egg.c11.sheru2'],
+  },
+  'c11.egg.sheru3': {
+    lines: [
+      { text: 'At the chai corner a kulhad is already down off the stack, steam up, unasked for.' },
+      { who: 'Akhtar Bhai', text: 'The dog said you were coming. Regulars here are appointed by Sheru, beta; he has never once been wrong, so sit and drink before the sky does.' },
+    ],
+    effects: ['set:egg.c11.sheru3'],
   },
   'c11.sheru.idle': {
     lines: [

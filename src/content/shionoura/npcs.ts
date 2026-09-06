@@ -1243,6 +1243,19 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Shells and sea glass, the tide\'s small change. Taro\'s exchange rate: white is common, pink is money, blue glass is beyond price.' },
     ],
   },
+  'c4.egg.shell': {
+    lines: [
+      { text: 'One pink shell, real money by Taro\'s exchange, finds its way into your pocket. Two streets later it is at Jizo\'s feet, beside the jelly cup.' },
+      { text: 'Some coins only spend one way.' },
+    ],
+    effects: ['set:egg.c4.shell'],
+  },
+  'c4.egg.jizo': {
+    lines: [
+      { text: 'Your pink shell has been moved front and center, beside the teacup. Whoever tends Jizo has accepted the deposit and adjusted the display.' },
+    ],
+    effects: ['set:egg.c4.shell.seen'],
+  },
   'c4.ex.senpuki': {
     lines: [
       { text: 'An elderly electric fan sweeps the room in slow no\'s, disagreeing with summer on principle. It has outlived three sleeker replacements.' },
@@ -1322,6 +1335,9 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   jizo: [
     { when: { not: ['c4.seen.jizo'] }, node: 'c4.ex.jizo' },
+    // If a pink shell left the beach in your pocket, it surfaces here; the
+    // town's unseen caretaker accepts the deposit by the next visit.
+    { when: { has: ['egg.c4.shell'], not: ['egg.c4.shell.seen'] }, node: 'c4.egg.jizo' },
     { node: 'c4.ex.jizo2' },
   ],
   ema: [{ node: 'c4.ex.ema' }],
@@ -1361,7 +1377,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { not: ['c4.seen.neko3'] }, node: 'c4.ex.neko3' },
     { node: 'c4.ex.neko3b' },
   ],
-  kaigara: [{ node: 'c4.ex.kaigara' }],
+  kaigara: [
+    { when: { has: ['c4.seen.jizo'], not: ['egg.c4.shell'] }, node: 'c4.egg.shell' },
+    { node: 'c4.ex.kaigara' },
+  ],
   zabuton: [{ node: 'c4.ex.zabuton' }],
   senpuki: [{ node: 'c4.ex.senpuki' }],
   mugicha: [{ node: 'c4.ex.mugicha' }],
