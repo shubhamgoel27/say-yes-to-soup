@@ -1129,7 +1129,6 @@ export const NODES: NodeMap = {
       { who: 'Faustino', text: 'Where does this road go? Down, friend, until the air gets thick and the sea starts talking. The cliff past the signpost will show you.' },
     ],
     effects: ['set:met.faustino', 'journal:people.faustino'],
-    next: 'faustino.whistle',
   },
   'faustino.whistle': {
     lines: [
@@ -1330,8 +1329,7 @@ export const NODES: NodeMap = {
   },
   'gate.end': {
     lines: [
-      { text: 'End of Chapter One. The road east continues in the next region, when it is built.' },
-      { text: 'Ch\'aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
+      { text: 'End of Chapter One. Ch\'aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
     ],
   },
   'gate.after': {

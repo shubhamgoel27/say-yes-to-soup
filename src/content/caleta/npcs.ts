@@ -343,10 +343,8 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.marisol.rematar': {
     lines: [
-      { who: 'Marisol', text: 'End of the day, whatever is left, we rematar. Slash the price, call the street, empty the table.' },
-      { who: 'Marisol', text: 'Nobody gets rich after four o’clock, pe. But everybody eats. That is the arithmetic that matters.' },
+      { who: 'Marisol', text: 'Come back when the sun leans, pe. Prices lean with it.' },
     ],
-    effects: ['set:c2.rematar', 'journal:customs.rematar'],
   },
   'mar.marisol.idle': {
     lines: [
@@ -539,10 +537,8 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.felix.fiesta': {
     lines: [
-      { who: 'Maestro Félix', text: 'End of June, San Pedrito. We build the saint a raft of totora, a patacho, and row him out to bless the water.' },
-      { who: 'Maestro Félix', text: 'The year the ponds failed there was no patacho. The saint stayed dry and the whole village felt it in the chest.' },
+      { who: 'Maestro Félix', text: 'The bundles tied apart, under the red cloth? Go look; not every reed is for horses.' },
     ],
-    effects: ['set:c2.sanpedrito', 'journal:customs.sanpedrito'],
   },
   'mar.felix.idle': {
     lines: [
@@ -587,7 +583,7 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Doña Petro', text: 'Sit. There is no menu, hija de la sierra. Today the pots say tortitas de choclo, so that is what the day means.' },
       { text: 'Corn cakes, crisp at the edge, sweet in the middle. The person beside you passes the ají without being asked.' },
     ],
-    effects: ['set:met.petro', 'journal:people.petro', 'journal:dishes.tortitas'],
+    effects: ['set:met.petro', 'journal:people.petro'],
     choices: [
       { text: 'Ask for ceviche, for dinner maybe', goto: 'mar.petro.noon' },
       { text: 'Eat what the pots say', goto: 'mar.petro.eats' },
@@ -597,6 +593,7 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Doña Petro', text: 'Good instinct. Argue with the sea, argue with your mother, never argue with the pot.' },
     ],
+    effects: ['journal:dishes.tortitas'],
   },
   'mar.petro.askceviche': {
     lines: [{ who: 'Doña Petro', text: 'You have the look of someone about to ask for ceviche. Go on, ask. I enjoy this part.' }],
@@ -725,7 +722,21 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Capitana Ríos', text: 'So. Petro says your hands are clean, Marisol calls you casero, and Félix says a wave carried you and gave you back.' },
       { who: 'Capitana Ríos', text: 'They say a woman aboard is bad luck. I have crossed this ocean ninety times. The luck seems fine to me.' },
-      { who: 'Capitana Ríos', text: 'Galley hand. We sail when the tide and the paperwork agree, which is never, so: soon. Go say your goodbyes.' },
+    ],
+    choices: [
+      { text: '"Yes. When do we sail?"', goto: 'mar.rios.accept' },
+      { text: '"Yes, once my goodbyes are said."', goto: 'mar.rios.goodbyes' },
+    ],
+  },
+  'mar.rios.goodbyes': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Good answer. A village that vouches for you deserves a proper goodbye; take the evening for it.' },
+    ],
+    next: 'mar.rios.accept',
+  },
+  'mar.rios.accept': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Galley hand, then. We sail when the tide and the paperwork agree, which is never, so: soon.' },
     ],
     effects: ['set:c2.complete'],
   },
@@ -973,6 +984,29 @@ export const CALETA_NODES: NodeMap = {
   'mar.ex.dryreeds2': {
     lines: [{ text: 'Félix claims he can tell which pond a bundle came from by the smell. Nobody has ever caught him wrong, which proves nothing, pe.' }],
   },
+  // San Pedrito is learned by looking: the fiesta lives in the reed racks,
+  // and Félix only points the eye. The custom fills the page from the prop.
+  'mar.ex.patacho': {
+    lines: [
+      { text: 'One lot stands apart, tied under red cloth: reed saved for San Pedrito, end of June.' },
+      { text: 'The village builds the saint a totora raft, a patacho, and rows him out to bless the water. This grass is already holy; it only has to dry.' },
+    ],
+    effects: ['set:c2.sanpedrito', 'journal:customs.sanpedrito'],
+  },
+  // The remate is learned by watching the stall at the leaning hour, not by
+  // a fifth conversation. Marisol keeps the pointer; the table does the rest.
+  'mar.ex.remate': {
+    lines: [
+      { text: 'The sun leans and the stall turns into a different institution: a chalk slash through every price, Marisol calling the street to the table.' },
+      { text: 'Nobody gets rich after four o’clock, pe. But the table goes home empty and the street goes home fed.' },
+    ],
+    effects: ['set:c2.rematar', 'journal:customs.rematar'],
+  },
+  'mar.ex.stallday': {
+    lines: [
+      { text: 'Marisol’s table: lisa, lorna, a little bonito if the morning was kind. The ledger under the scale runs half the malecón.' },
+    ],
+  },
   'mar.ex.netpoles': {
     lines: [{ text: 'Gillnets hung between poles to dry, corks ticking in the wind. Tonight they will be checked knot by knot, like every night.' }],
   },
@@ -1085,6 +1119,12 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c2.complete'] }, node: 'mar.pier.next' },
     { node: 'mar.pier.locked' },
   ],
+  // The stall is a shared kind: Marisol's table keeps coastal words at home,
+  // and at the leaning hour it teaches the remate all by itself.
+  stall: [
+    { map: 'la-caleta', when: { has: ['c2.casero', 'c2.nets.done'], not: ['c2.rematar'] }, node: 'mar.ex.remate' },
+    { map: 'la-caleta', node: 'mar.ex.stallday' },
+  ],
   signpost: [{ map: 'la-caleta', node: 'mar.ex.sign' }],
   sea: [{ map: 'la-caleta', node: 'mar.ex.sea' }],
   path: [{ map: 'la-caleta', node: 'mar.ex.path2' }],
@@ -1111,6 +1151,7 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   laradio: [{ node: 'mar.ex.laradio' }],
   saltrack: [{ node: 'mar.ex.saltrack' }],
   dryreeds: [
+    { map: 'la-caleta', when: { has: ['c2.ride.done'], not: ['c2.sanpedrito'] }, node: 'mar.ex.patacho' },
     { when: { has: ['c2.ponds'] }, node: 'mar.ex.dryreeds2' },
     { node: 'mar.ex.dryreeds' },
   ],

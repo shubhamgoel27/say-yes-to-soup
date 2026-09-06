@@ -214,7 +214,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     tab: 'customs',
     title: 'San Pedrito',
     sub: 'End of June. The saint rides a totora raft out to bless the water, escorted by caballitos.',
-    you: 'The year there was no totora, the saint stayed dry, and Félix says the whole village felt it in the chest.',
+    you: 'Read it off the reed racks: one lot under red cloth, his raft-to-be. The year the ponds failed he stayed dry, and the village felt it in the chest.',
   },
   {
     id: 'customs.rematar',
