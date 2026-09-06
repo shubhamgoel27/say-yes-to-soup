@@ -1850,9 +1850,16 @@ function beginPlay(freshStart: boolean) {
   renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
   if (freshStart) {
-    setTimeout(() => {
+    // If a mashing player has an examine open when the timer fires, wait for
+    // the box to close instead of dropping the intro forever. Reproduced by
+    // a pacing bot: Enter through the letter, examine the well inside the
+    // 900ms window, and the game's first words never played.
+    const introTry = () => {
+      if (state.has('intro.done')) return;
       if (!textbox.isOpen) startNarration('intro.wake');
-    }, 900);
+      else setTimeout(introTry, 400);
+    };
+    setTimeout(introTry, 900);
     // The welcome waits for the intro to finish. Shown here it was invisible:
     // the narration holds the textbox open for over a minute, quiet-hud fades
     // the plate and the toasts for all of it, and their timers run out behind
