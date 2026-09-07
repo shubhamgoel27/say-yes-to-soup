@@ -1894,6 +1894,7 @@ export class PatangPanel {
     this.hint = `${line} ${warn}`;
     const s = this.scene;
     if (!s) return;
+    s.wobble(5); // the fray felt through the fingers: a sway, not an impact
     const cross = this.crossing();
     if (cross) {
       s.burst(cross[0], cross[1], { n: calmMotion() ? 3 : 6, color: '#ffb070', kind: 'spark', speed: 80, grav: 120, size: 1.8, life: 0.45 });
@@ -1980,6 +1981,8 @@ export class PatangPanel {
       if (!calmMotion()) s.thump(7, 0.07);
       const cross = this.crossing() ?? [this.rkx, this.rky + 30];
       s.burst(cross[0], cross[1], { n: calmMotion() ? 6 : 16, color: '#ffd98a', kind: 'spark', speed: 190, grav: 160, size: 2.6, life: 0.6 });
+      // Patang-paper petals off the cut, in the rooftop kite colors.
+      s.confettiSoft(cross[0], cross[1], ['#c1512f', '#3f7fb0', '#d9a441', '#6b8e4e']);
       s.burst(this.rkx, this.rky, { n: calmMotion() ? 4 : 9, color: look.paper, speed: 90, grav: 40, size: 2.6, life: 0.8 });
       s.burst(360, 140, { n: calmMotion() ? 5 : 14, color: '#8b8798', kind: 'streak', speed: 220, grav: -30, size: 7, life: 0.6 });
       this.cutT = 0;

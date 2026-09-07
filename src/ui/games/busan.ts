@@ -435,6 +435,7 @@ export class HotteokPanel {
       // Mi-ja will not let you lift it yet.
       this.audio.bump();
       this.hint = 'Not yet. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.';
+      this.scene.wobble(4); // the pan says no, gently
       return;
     }
     if (this.t > 0.62) {
@@ -526,8 +527,11 @@ export class HotteokPanel {
       if (prev < T_LAND && this.anim >= T_LAND) {
         if (!calm()) s.thump(3.5, 0.03);
         s.burst(DX, DY + 4, { n: calm() ? 3 : 9, speed: 70, color: '#ffe8c0', kind: 'dot', size: 1.8, life: 0.4, grav: 200 });
-        if (this.animGold) s.flash('#ffe9b0', 0.16);
-        else s.burst(DX, DY - 6, { n: calm() ? 3 : 9, speed: 40, color: '#4a382c', kind: 'puff', size: 5, life: 1.1, grav: -30 });
+        if (this.animGold) {
+          s.flash('#ffe9b0', 0.16);
+          // A clean flip earns a few sugar-gold petals off the griddle.
+          s.confettiSoft(DX, DY - 14, ['#ffd98a', '#e8c86a', '#fff3c8', '#c1512f']);
+        } else s.burst(DX, DY - 6, { n: calm() ? 3 : 9, speed: 40, color: '#4a382c', kind: 'puff', size: 5, life: 1.1, grav: -30 });
         s.waft(DX, DY - 18);
       }
       if (this.anim >= T_SLIDE1) {
@@ -543,6 +547,7 @@ export class HotteokPanel {
         this.winFired = true;
         this.scene.flash('#ffe9b0', 0.34);
         s.burst(TINX, TINY - 24, { n: calm() ? 8 : 24, speed: 120, color: '#ffd98a', kind: 'spark', size: 2, life: 0.8, grav: 90 });
+        s.confettiSoft(TINX, TINY - 30, ['#ffd98a', '#e8c86a', '#fff3c8', '#c1512f']);
       }
       this.biteHold += dt;
       if (this.biteHold > 0.45) this.bite = Math.min(1, this.bite + dt / 0.9);

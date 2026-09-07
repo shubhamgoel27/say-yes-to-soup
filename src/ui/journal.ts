@@ -49,10 +49,21 @@ const TABS: { id: JournalTab | 'tasks' | 'route' | 'photos'; label: string }[] =
 /** The prints land in the journal at slight, believable angles. */
 const PHOTO_TILTS = [-1.9, 1.5, -1.1, 2.1];
 
+/** One key per rhyme regardless of which half the player is looking at. */
+function threadKey(a: string, b: string): string {
+  return [a, b].sort().join('~');
+}
+
 export class JournalUI {
   private tab = 0;
   private opening = false;
   private cursor = 0;
+  /** Pages whose row has already been shown; a page that filled since then
+   * gets a one-time highlight sweep the next time its tab renders. Seeded
+   * from the save at boot so loading a game never sweeps everything. */
+  private seenPages = new Set<string>();
+  /** Rhyme pairs whose stitched thread has already drawn itself in. */
+  private seenThreads = new Set<string>();
 
   constructor(
     private root: HTMLElement,
@@ -60,7 +71,15 @@ export class JournalUI {
     private tasks: WorldTask[],
     private route: RouteStop[],
     private state: GameState,
-  ) {}
+  ) {
+    for (const e of entries) {
+      if (!this.state.hasPage(e.id)) continue;
+      this.seenPages.add(e.id);
+      if (e.rhyme && this.state.hasPage(e.rhyme.with)) {
+        this.seenThreads.add(threadKey(e.id, e.rhyme.with));
+      }
+    }
+  }
 
   /** Every open thread, in priority order. */
   activeTasks(): string[] {
@@ -174,7 +193,9 @@ export class JournalUI {
       unlocked
         .map(
           (e) =>
-            `<div class="j-item${e === sel ? ' sel' : ''}">${e === sel ? '&#9656; ' : ''}${e.title}${
+            `<div class="j-item${e === sel ? ' sel' : ''}${
+              this.seenPages.has(e.id) ? '' : ' j-new'
+            }">${e === sel ? '&#9656; ' : ''}${e.title}${
               this.rhymeFor(e.id) ? ' <span class="j-stitch">&#10087;</span>' : ''
             }</div>`,
         )
@@ -184,6 +205,8 @@ export class JournalUI {
         : '');
 
     const rhyme = sel ? this.rhymeFor(sel.id) : null;
+    // The thread pulls through only the first time this stitch is seen.
+    const freshThread = sel && rhyme && !this.seenThreads.has(threadKey(sel.id, rhyme.other.id));
     const eph = sel ? EPHEMERA[sel.id] : undefined;
     const ephHtml = eph
       ? `<div class="j-eph"><img src="${eph.src}" alt="${eph.alt}" loading="lazy">` +
@@ -203,7 +226,7 @@ export class JournalUI {
             : `<div class="j-nani empty"><span>Nani, 1974</span>(she never reached this page)</div>`) +
         `<div class="j-you"><span>You</span>${sel.you}</div>` +
         (rhyme
-          ? `<div class="j-thread"><div class="j-thread-rule"></div>` +
+          ? `<div class="j-thread"><div class="j-thread-rule${freshThread ? ' draw' : ''}"></div>` +
             `<span>Nani&rsquo;s margin</span>${rhyme.note}` +
             `<div class="j-thread-to">&#10087; stitched to ${rhyme.other.title}</div></div>`
           : '')
@@ -234,6 +257,10 @@ export class JournalUI {
       const art = slot ? makeDishArt(sel.id) : null;
       if (slot && art) slot.appendChild(art);
     }
+    // One-time flourishes stay one-time: whatever this render just showed is
+    // now familiar, so cursor moves and reopens do not replay the sweep.
+    for (const e of unlocked) this.seenPages.add(e.id);
+    if (sel && rhyme) this.seenThreads.add(threadKey(sel.id, rhyme.other.id));
   }
 
   /**

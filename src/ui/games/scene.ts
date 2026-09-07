@@ -44,10 +44,21 @@ type Particle = {
   color: string;
   grav: number;
   drag: number;
-  kind: 'dot' | 'puff' | 'spark' | 'streak';
+  kind: 'dot' | 'puff' | 'spark' | 'streak' | 'petal';
   spin: number;
   rot: number;
 };
+
+/** Warm neutrals for confettiSoft when a panel has no palette of its own. */
+const PETAL_NEUTRALS = ['#e8c86a', '#d9a441', '#c1512f', '#f2e6d0'] as const;
+
+/** True when either the in-game calm toggle or the OS asks for less motion. */
+function calmHere(): boolean {
+  return (
+    (typeof document !== 'undefined' && document.body.classList.contains('reduce-motion')) ||
+    (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  );
+}
 
 export class Scene {
   readonly cv: HTMLCanvasElement;
@@ -62,6 +73,8 @@ export class Scene {
   private parts: Particle[] = [];
   private shakeT = 0;
   private shakeAmp = 0;
+  private wobT = 0;
+  private wobAmp = 0;
   private flashT = 0;
   private flashColor = '#fff7e0';
   private hitstopT = 0;
@@ -89,7 +102,7 @@ export class Scene {
     this.time = 0;
     this.tweens.length = 0;
     this.parts.length = 0;
-    this.shakeT = this.flashT = this.hitstopT = 0;
+    this.shakeT = this.wobT = this.flashT = this.hitstopT = 0;
   }
 
   /** Animate a value; apply receives the eased value every frame. */
@@ -108,6 +121,46 @@ export class Scene {
   flash(color = '#fff7e0', dur = 0.22) {
     this.flashColor = color;
     this.flashT = dur;
+  }
+
+  /**
+   * Near-miss feedback: the whole frame sways side to side and settles, a
+   * head-shake rather than an impact (that is what thump is for). No-op when
+   * motion is reduced. (The exported wobble() below is the idle math helper.)
+   */
+  wobble(amp = 5) {
+    if (calmHere()) return;
+    this.wobAmp = amp;
+    this.wobT = 0.36;
+  }
+
+  /**
+   * Success confetti with the volume turned down: 6 to 10 petal-ish flecks
+   * that drift and tumble rather than explode. Pass the region's petal
+   * palette when you have one; warm neutrals otherwise. Reduced motion
+   * spawns a token three so the beat still reads without the shower.
+   */
+  confettiSoft(x: number, y: number, palette: readonly string[] = PETAL_NEUTRALS) {
+    const n = calmHere() ? 3 : 6 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.9;
+      const sp = 55 + Math.random() * 55;
+      this.parts.push({
+        x: x + (Math.random() - 0.5) * 14,
+        y: y + (Math.random() - 0.5) * 8,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 0.75 + Math.random() * 0.35,
+        age: 0,
+        size: 2.6 + Math.random() * 1.8,
+        color: palette[i % palette.length] ?? '#e8c86a',
+        grav: 70,
+        drag: 1.6,
+        kind: 'petal',
+        spin: (Math.random() - 0.5) * 9,
+        rot: Math.random() * Math.PI * 2,
+      });
+    }
   }
 
   burst(x: number, y: number, opts: Partial<Particle> & { n?: number; spread?: number; speed?: number } = {}) {
@@ -181,6 +234,11 @@ export class Scene {
       const k = (this.shakeT / 0.28) * this.shakeAmp;
       g.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
     }
+    if (this.wobT > 0) {
+      this.wobT -= dt;
+      const k = Math.max(0, this.wobT / 0.36);
+      g.translate(Math.sin(this.wobT * 30) * this.wobAmp * k, 0);
+    }
     paint(g);
 
     for (let i = this.parts.length - 1; i >= 0; i--) {
@@ -204,6 +262,16 @@ export class Scene {
         g.translate(p.x, p.y);
         g.rotate(Math.atan2(p.vy, p.vx));
         g.fillRect(-p.size, -1, p.size * 2, 2);
+        g.restore();
+      } else if (p.kind === 'petal') {
+        // A tumbling fleck: an ellipse rather than a dot, so it reads as a
+        // petal or a shred of paper turning over in the air.
+        g.save();
+        g.translate(p.x, p.y);
+        g.rotate(p.rot);
+        g.beginPath();
+        g.ellipse(0, 0, p.size, p.size * 0.55 * (0.35 + 0.65 * Math.abs(Math.sin(p.rot))), 0, 0, Math.PI * 2);
+        g.fill();
         g.restore();
       } else {
         const r = p.kind === 'puff' ? p.size * (1 + p.age * 0.9) : p.size * k;

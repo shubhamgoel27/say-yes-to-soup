@@ -666,6 +666,8 @@ export class ScopaPanel {
         sc.thump(mine ? 5 : 3, 0.05);
         sc.burst(320, 168, { n: mine ? 16 : 8, kind: 'streak', color: '#e8c86a', speed: 240, life: 0.55, grav: 40, size: 7 });
       }
+      // Your sweep scatters a few denari-gold petals over the cleared wood.
+      if (mine) sc.confettiSoft(320, 160, ['#e8c86a', '#f0dfae', '#c1512f', '#f2e6d0']);
       this.flourishAt = sc.time;
     });
   }
@@ -745,6 +747,8 @@ export class ScopaPanel {
     this.vfxCapture(got, mine);
     let msg = mine ? `You take ${got.length} cards.` : `The elder captures ${got.length}.`;
     if (sette) msg += mine ? ' The settebello is yours!' : ' The settebello slips away to his pile.';
+    // Losing her by a card is the table's near-miss: the frame shakes its head.
+    if (sette && !mine) this.scene?.wobble(5);
     if (this.table.length === 0) {
       if (mine) {
         this.myScope++;

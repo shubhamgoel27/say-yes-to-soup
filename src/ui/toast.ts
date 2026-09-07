@@ -20,7 +20,10 @@ export class Toasts {
     this.busy = true;
 
     const el = document.createElement('div');
-    el.className = 'toast';
+    // Journal moments announce themselves with a pen or a spark glyph; they
+    // get the ink-dot bloom and page-curl entrance instead of the plain slide.
+    const journalish = /^[✎✦]/.test(text);
+    el.className = journalish ? 'toast jt' : 'toast';
     el.textContent = text;
     this.root.appendChild(el);
     // Next frame so the transition actually runs.

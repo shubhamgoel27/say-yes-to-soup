@@ -52,10 +52,28 @@ function welcomeBackLine(): string | null {
   }
 }
 
+/**
+ * Whether the old code lives in this save. Read the same way welcomeBackLine
+ * reads (title renders before the engine restores state); any trouble reading
+ * simply means no shimmer.
+ */
+function savedKonami(): boolean {
+  try {
+    const raw = localStorage.getItem('elsewhere.save');
+    if (!raw) return false;
+    const data = JSON.parse(raw) as { flags?: unknown };
+    return Array.isArray(data.flags) && data.flags.includes('konami');
+  } catch {
+    return false;
+  }
+}
+
 export class TitleScreen {
   private cursor = 0;
   private options: { id: TitleChoice; label: string }[] = [];
   private hasSave = false;
+  /** With the old code in the save, the woven band shimmers once on load. */
+  private konami = false;
   /** "Begin again" over a real save arms first, erases second. */
   private armNew = false;
   /** The welcome-back line under Continue; null when there is nothing to say. */
@@ -77,6 +95,7 @@ export class TitleScreen {
     this.hasSave = hasSave;
     this.armNew = false;
     this.welcomeBack = hasSave ? welcomeBackLine() : null;
+    this.konami = hasSave && savedKonami();
     this.options = hasSave
       ? [
           { id: 'continue', label: 'Continue the journey' },
@@ -167,13 +186,17 @@ export class TitleScreen {
           o.id === 'continue' && this.welcomeBack
             ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
             : '';
-        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${label}${sub}</div>`;
+        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${label}${sub}</div>`;
       })
       .join('');
+    // The shimmer plays once on load; cursor moves rebuild this DOM and must
+    // not replay it, so the flag is spent on the first render.
+    const shimmer = this.konami;
+    this.konami = false;
     this.titleEl.innerHTML = `
       <div class="t-card">
         <div class="t-cover">
-          <div class="t-band"></div>
+          <div class="t-band${shimmer ? ' shimmer' : ''}"></div>
           <div class="t-kicker">a journal, half full</div>
           <div class="t-name">SAY YES<br>TO SOUP</div>
           <div class="t-art">

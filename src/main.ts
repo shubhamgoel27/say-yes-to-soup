@@ -153,6 +153,7 @@ const AMBIENT: Record<string, number> = {
   ...Object.fromEntries(Object.entries(MOODS).map(([k, v]) => [k, v.ambient])),
 };
 renderer.registerMoods(MOODS);
+renderer.setMet((id) => state.has('met.' + id)); // greeting nods for villagers already met
 
 // ---------------------------------------------------------------- day/night
 
@@ -620,6 +621,7 @@ const villagers: Villager[] = NPCS.map((def) => {
     actor: new Actor(def.pos[0], def.pos[1], 'down'),
     sheet,
     rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
+    species: def.sprite, greetId: def.id, // renderer idle life: tail wags, chews, greeting nods
     portrait: def.sprite ? null : makePortrait(def.look),
     think: Math.random() * 2,
     want: null,
@@ -1723,6 +1725,7 @@ function celebrate() {
   celebrateT = 1.6;
   audio.setDucked(true);
   audio.stinger();
+  renderer.celebrateHop(player); // the traveler's own joyful two-hop
   const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
   const [px, py] = player.renderPos();
   for (let i = 0; i < 3; i++) {

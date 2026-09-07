@@ -92,11 +92,13 @@
         border-radius: 2px;
         font-family: var(--display);
         font-size: 14px;
-        letter-spacing: 0.34em;
+        /* Letterpress settle: the name fades in slightly loose, then the
+         * tracking presses tight as if the type were seated in the chase. */
+        letter-spacing: 0.42em;
         text-transform: uppercase;
         white-space: nowrap;
         opacity: 0;
-        transition: opacity 1.1s ease, transform 1.1s ease;
+        transition: opacity 1.1s ease, transform 1.1s ease, letter-spacing 1.1s ease;
       }
       #plate::before, #plate::after {
         content: '';
@@ -108,7 +110,12 @@
       }
       #plate::before { left: 8px; }
       #plate::after { right: 8px; }
-      #plate.show { opacity: 1; transform: translate(-50%, 0); }
+      #plate.show {
+        opacity: 1;
+        transform: translate(-50%, 0);
+        letter-spacing: 0.34em;
+        transition: opacity 1.1s ease, transform 1.1s ease, letter-spacing 0.3s ease-out 0.25s;
+      }
 
       /* ---- toasts: "a page filled" whispers ---- */
       /* Overlays that carry the story mute the ambient HUD around them. */
@@ -140,6 +147,38 @@
         transition: opacity 0.4s ease, transform 0.4s ease;
       }
       .toast.in { opacity: 1; transform: translateX(0); }
+      /* Journal whispers (a page fills, a margin note wakes) arrive with more
+       * ceremony than plain toasts: an ink dot blooms beside the words and the
+       * slip settles like a page laid down, not a chip sliding in. */
+      .toast.jt {
+        position: relative;
+        padding-left: 24px;
+        border-left: 3px solid var(--terracotta);
+      }
+      .toast.jt::before {
+        content: '';
+        position: absolute;
+        left: 8px;
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        margin-top: -3.5px;
+        border-radius: 50% 46% 52% 48%;
+        background: #7a3b22;
+        transform: scale(0);
+      }
+      .toast.jt.in { animation: toastCurl 0.32s ease-out; }
+      .toast.jt.in::before { animation: inkBloom 0.38s ease-out 0.1s both; }
+      @keyframes toastCurl {
+        from { transform: translateX(12px) rotate(1.6deg); }
+        60% { transform: translateX(-1px) rotate(-0.4deg); }
+        to { transform: translateX(0) rotate(0deg); }
+      }
+      @keyframes inkBloom {
+        0% { transform: scale(0); opacity: 0; }
+        55% { transform: scale(1.45); opacity: 0.85; }
+        100% { transform: scale(1); opacity: 1; }
+      }
 
       /* ---- errand chip ---- */
       #errand {
@@ -230,6 +269,22 @@
         box-shadow: none;
         border-radius: 0;
       }
+      /* When a new speaker takes the line the snapshot settles into the tape:
+       * a 2px drop, a touch of over-rotation, then still. Lines spoken with an
+       * exclamation mark give the print a small hop instead. */
+      #tb-portrait.settle { animation: portraitSettle 0.22s ease-out; }
+      @keyframes portraitSettle {
+        from { transform: rotate(-2.8deg) translateY(-2px); }
+        65% { transform: rotate(-1.6deg) translateY(0.5px); }
+        to { transform: rotate(-2deg) translateY(0); }
+      }
+      #tb-portrait.hop { animation: portraitHop 0.26s ease-out; }
+      @keyframes portraitHop {
+        0% { transform: rotate(-2deg) translateY(0); }
+        38% { transform: rotate(-1.1deg) translateY(-3px); }
+        72% { transform: rotate(-2.3deg) translateY(0.6px); }
+        100% { transform: rotate(-2deg) translateY(0); }
+      }
       #tb-main { position: relative; flex: 1; min-width: 0; padding-top: 4px; }
       #tb-name[hidden], #tb-portrait[hidden] { display: none; }
       /* The speaker's name: a small ink chip, hand-cut, pressed into sepia. */
@@ -304,6 +359,17 @@
         left: 5px;
         text-indent: 0;
         color: var(--terracotta);
+      }
+      /* Choices arrive one after another, 30ms apart (delay set inline), and
+       * the picked one presses into the paper before the story moves on. */
+      .tb-choice.in { animation: choiceIn 0.18s ease-out backwards; }
+      @keyframes choiceIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .tb-choice.pick { animation: choicePick 0.12s ease-in-out; }
+      @keyframes choicePick {
+        50% { transform: scale(0.975); background: rgba(43, 33, 24, 0.14); }
       }
       .tb-choice:hover, .tb-choice.sel {
         text-decoration: underline;
@@ -387,6 +453,21 @@
         border-radius: 2px;
         color: var(--ink);
       }
+      /* A page you have not looked at since it filled: a warm sweep runs
+       * across its row once, like a finger finding the new entry. */
+      .j-item.j-new {
+        background-image: linear-gradient(
+          100deg,
+          transparent 18%, rgba(200, 165, 91, 0.42) 50%, transparent 82%
+        );
+        background-size: 220% 100%;
+        background-repeat: no-repeat;
+        animation: jSweep 0.4s ease-out 0.12s both;
+      }
+      @keyframes jSweep {
+        from { background-position: 130% 0; }
+        to { background-position: -130% 0; }
+      }
       .j-locked { margin-top: 8px; font-size: 12.5px; font-style: italic; color: #a08c6b; }
       .j-detail { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; overflow: hidden; }
       .j-title { font-family: var(--display); font-weight: 600; font-size: 19px; text-wrap: balance; }
@@ -434,6 +515,16 @@
           #c1512f 0 10px, #d9a441 10px 20px, #3f7fb0 20px 30px, #6b8e4e 30px 40px
         );
         opacity: 0.75;
+      }
+      /* The first time a freshly stitched rhyme is shown, the woven thread
+       * pulls through the page left to right instead of simply being there. */
+      .j-thread-rule.draw {
+        transform-origin: left center;
+        animation: threadPull 0.38s ease-out both;
+      }
+      @keyframes threadPull {
+        from { transform: scaleX(0); opacity: 0.3; }
+        to { transform: scaleX(1); opacity: 0.75; }
       }
       .j-thread-to { font-size: 12px; font-style: normal; color: #a3542f; margin-top: 6px; }
       .j-native { font-size: 15px; color: #7a5a3a; margin-left: 8px; font-weight: normal; }
@@ -675,6 +766,40 @@
         border-radius: 6px;
         border: 1.5px solid rgba(43, 33, 24, 0.55);
         box-shadow: inset 0 0 0 1.5px rgba(232, 220, 196, 0.18), 0 3px 8px rgba(0, 0, 0, 0.35);
+      }
+      /* The cover painting breathes: a slow 2 to 3px drift, the pace of a
+       * sleeping animal. Ambient by design; everything else stays quick. */
+      .t-art canvas { animation: coverBreath 8s ease-in-out infinite; }
+      @keyframes coverBreath {
+        0%, 100% { transform: translateY(0) scale(1); }
+        50% { transform: translateY(-2.5px) scale(1.004); }
+      }
+      /* The manicule beside the chosen line breathes toward it. */
+      .t-arr {
+        display: inline-block;
+        animation: arrPulse 1.6s ease-in-out infinite;
+      }
+      @keyframes arrPulse {
+        0%, 100% { opacity: 0.55; transform: translateX(0); }
+        50% { opacity: 1; transform: translateX(2px); }
+      }
+      /* Thirty lives remembered: with the old code in the save, the woven
+       * band catches the light once as the cover comes up. */
+      .t-band.shimmer { overflow: hidden; }
+      .t-band.shimmer::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          transparent 22%, rgba(255, 240, 200, 0.8) 50%, transparent 78%
+        );
+        background-size: 100% 300%;
+        animation: bandShimmer 0.9s ease-in-out 0.5s 1 both;
+      }
+      @keyframes bandShimmer {
+        from { background-position: 0 140%; }
+        to { background-position: 0 -140%; }
       }
       .t-art .t-steam { bottom: 30px; }
       .t-art .t-steam.s1 { left: calc(50% - 9px); }
@@ -1441,6 +1566,31 @@
 
       /* ---- reduce motion: calm is also a setting ---- */
       body.reduce-motion * { animation: none !important; transition: none !important; }
+      /* The sweep gradient would sit frozen mid-run without its animation. */
+      body.reduce-motion .j-item.j-new { background-image: none; }
+      /* And an OS-level preference: every flourish added for delight is
+       * optional, so the reduced-motion world simply has things appear. */
+      @media (prefers-reduced-motion: reduce) {
+        .j-item.j-new { background-image: none; }
+        .toast.jt.in,
+        .toast.jt.in::before,
+        .j-item.j-new,
+        .j-thread-rule.draw,
+        #tb-portrait.settle,
+        #tb-portrait.hop,
+        .tb-choice.in,
+        .tb-choice.pick,
+        .t-art canvas,
+        .t-arr,
+        .t-band.shimmer::after {
+          animation: none !important;
+        }
+        .toast.jt.in::before { transform: scale(1); }
+        #plate, #plate.show {
+          transition: opacity 1.1s ease;
+          letter-spacing: 0.34em;
+        }
+      }
 
       /* ---- chapter mini-games (roots created by the engine) ---- */
       .mg-overlay {

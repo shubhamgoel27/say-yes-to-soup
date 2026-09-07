@@ -1,5 +1,6 @@
 import { ART, TILE, VIEW_H, VIEW_W } from './config';
 import type { Actor } from './actor';
+import type { Dir } from './input';
 import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
@@ -98,6 +99,10 @@ export type Sprite = {
   rig?: 'human' | 'animal';
   /** Marks the player for idle-life and NPC-glance logic; index 0 is assumed otherwise. */
   isPlayer?: boolean;
+  /** Which animal this is, for species idle life (tail wags, chewing). */
+  species?: 'dog' | 'llama' | 'llamaBrown';
+  /** Roster id for the greeting nod; paired with the met-check from setMet. */
+  greetId?: string;
 };
 
 /** The species of ambient flier a mood invites across its sky. */
@@ -136,6 +141,32 @@ type Party = { x: number; y: number; vx: number; vy: number; t: number; life: nu
 
 const EMOTE_DUR = 0.8;
 const PUFF_DUR = 0.35;
+
+/** The celebration two-hop: total length, and the two landing beats. */
+const HOP_DUR = 1.0;
+const HOP_LANDS = [0.42, 0.82] as const;
+
+/** Baked set-piece sprites for the regional sky signatures. */
+type RegionalArt = {
+  kites: HTMLCanvasElement[];
+  swift: HTMLCanvasElement[];
+  condor: HTMLCanvasElement[];
+  sail: HTMLCanvasElement;
+  dragonfly: HTMLCanvasElement[];
+};
+
+/** Market fixtures that plausibly breathe steam: pots, griddles, vents. */
+const STEAMY_KINDS = new Set(['stall', 'eomukcart', 'hotteokcart', 'steamvent']);
+
+/** What a map offers its set-pieces to hang from, scanned once per map. */
+type RegionAnchors = {
+  water: [number, number][];
+  stalls: [number, number][];
+  /** The longest open run of sea cells: row, first and last column. */
+  seaRow: number;
+  seaX0: number;
+  seaX1: number;
+};
 
 /** Per-map light. Built-ins below; chapters register their own by name. */
 export type Mood = string;
@@ -256,6 +287,31 @@ export class Renderer {
   /** Chimney anchors per map id, world-logical coords, found once. */
   private chimneyCache = new Map<string, [number, number][]>();
 
+  // -- creature life, settles, greetings -------------------------------
+  /** Celebration two-hop countdowns, per actor; puffs fire on each landing. */
+  private hops = new Map<Actor, number>();
+  /** Last pose seen per actor, for the sit-settle and the stand-up shake. */
+  private settles = new Map<Actor, { pose: 'none' | 'sit'; t: number }>();
+  /** When each villager last dipped a hello, in renderer time. */
+  private greetsAt = new Map<Actor, number>();
+  /** Active greeting-nod countdowns. */
+  private nods = new Map<Actor, number>();
+  /** Asks main whether a roster id carries a met.* flag; set once at boot. */
+  private metCheck: ((id: string) => boolean) | null = null;
+  /** The player's facing and tile this frame, for the dog's play-bow. */
+  private playerDir: Dir = 'down';
+  /** Cached reduce-motion class, polled about once a second. */
+  private reduceMotion = false;
+  private rmPoll = 0;
+
+  // -- regional sky and ambient signatures ------------------------------
+  /** Baked set-piece sprites: kites, swifts, a condor, a sail, dragonflies. */
+  private regionalArt: RegionalArt;
+  /** Per-map anchor scan: water cells, market stalls, the open-sea lane. */
+  private anchorCache = new Map<string, RegionAnchors>();
+  /** Debug knob (`?ambient=1`): keep rare set-pieces (condor, sail) on screen. */
+  private ambientDebug = false;
+
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('2d canvas context unavailable');
@@ -370,6 +426,7 @@ export class Renderer {
     this.bakeSpillMasks();
     this.flierFrames = bakeFliers();
     this.smokePuffs = bakeSmokePuffs();
+    this.regionalArt = bakeRegionalArt();
 
     // Debug knob: `?fliers=2` makes flocks near-constant for screenshots;
     // `?fliers=2,gull` also pins the species.
@@ -383,6 +440,7 @@ export class Renderer {
           this.flierKind = kind;
         }
       }
+      this.ambientDebug = new URLSearchParams(location.search).has('ambient');
     } catch {
       // No location (tests); the default timers stand.
     }
@@ -803,6 +861,30 @@ export class Renderer {
       if (t - dt <= 0) this.bounces.delete(a);
       else this.bounces.set(a, t - dt);
     }
+    for (const [a, t] of this.nods) {
+      if (t - dt <= 0) this.nods.delete(a);
+      else this.nods.set(a, t - dt);
+    }
+    // The celebration two-hop: each landing kicks a little dust, then done.
+    for (const [a, t] of this.hops) {
+      const was = HOP_DUR - t;
+      const now = was + dt;
+      for (const land of HOP_LANDS) {
+        if (was < land && now >= land) {
+          const [px, py] = a.renderPos();
+          this.puffs.push({ x: px + TILE / 2, y: py + TILE - 2, t: 0 });
+        }
+      }
+      if (t - dt <= 0) this.hops.delete(a);
+      else this.hops.set(a, t - dt);
+    }
+    // Reduce-motion is a body class; poll it about once a second, not per frame.
+    this.rmPoll -= dt;
+    if (this.rmPoll <= 0) {
+      this.rmPoll = 1;
+      this.reduceMotion =
+        typeof document !== 'undefined' && document.body.classList.contains('reduce-motion');
+    }
   }
 
   /** A raised-arm hello, played as dialogue opens. */
@@ -813,6 +895,21 @@ export class Renderer {
   /** A happy little hop (petting, gifts, good news). */
   bounce(actor: Actor) {
     this.bounces.set(actor, 0.45);
+  }
+
+  /**
+   * A joyful two-hop for a filled journal page: one real jump, one smaller
+   * echo, dust on each landing. Delight at the scale of this world, which is
+   * to say: small.
+   */
+  celebrateHop(actor: Actor) {
+    if (this.reduceMotion) return;
+    this.hops.set(actor, HOP_DUR);
+  }
+
+  /** Main hands over its met.* roster check so familiar villagers can nod. */
+  setMet(check: (id: string) => boolean) {
+    this.metCheck = check;
   }
 
   /** The actor currently mid-sentence, or null. */
@@ -1132,6 +1229,7 @@ export class Renderer {
     if (pi >= 0) {
       this.playerSX = (this.spriteXY[pi * 2]! - cam.x) * A;
       this.playerSY = (this.spriteXY[pi * 2 + 1]! - cam.y) * A;
+      this.playerDir = sprites[pi]!.actor.dir;
     }
     sprites.forEach((s, i) => {
       const px = this.spriteXY[i * 2]!;
@@ -1211,6 +1309,7 @@ export class Renderer {
       this.drawLeaves(map, cam);
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
       this.drawFliers();
+      this.drawRegional(map, cam);
     }
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
@@ -1803,19 +1902,61 @@ export class Renderer {
 
     // Walk lean: under two degrees into the direction of travel, eased in and
     // out so it reads as weight, never wobble. The rotation pivots at the feet.
+    // The sit-settle shares the same feet pivot: a tiny squash on sitting
+    // down, a small rise-and-shake on standing up.
     const lean = this.updateLean(s.actor);
-    if (lean !== 0) {
+    const st = this.updateSettle(s.actor);
+    if (lean !== 0 || st) {
       const fx = sx + S / 2;
       const fy = sy + S - 2;
       ctx.save();
       ctx.translate(fx, fy);
-      ctx.rotate(lean);
-      ctx.translate(-fx, -fy);
+      if (lean !== 0) ctx.rotate(lean);
+      if (st) ctx.scale(st.sx, st.sy);
+      ctx.translate(-fx + (st?.dx ?? 0), -fy + (st?.dy ?? 0));
       this.drawSpriteBody(s, sx, sy, index, reflect);
       ctx.restore();
     } else {
       this.drawSpriteBody(s, sx, sy, index, reflect);
     }
+  }
+
+  /**
+   * Pose transitions get a body: entering 'sit' plays a 200ms settle, a tiny
+   * squash easing to rest; leaving it plays a small rise with a shake, the
+   * way anyone stands up off a low bench. Returns null once settled.
+   */
+  private updateSettle(a: Actor): { dx: number; dy: number; sx: number; sy: number } | null {
+    let st = this.settles.get(a);
+    if (!st) {
+      // First sight of this actor: adopt the pose already held, no animation,
+      // or every seated villager would flinch on map load.
+      this.settles.set(a, { pose: a.pose, t: 9 });
+      return null;
+    }
+    if (st.pose !== a.pose) {
+      st = { pose: a.pose, t: 0 };
+      this.settles.set(a, st);
+    } else {
+      if (st.t >= 1) return null;
+      st.t += this.frameDt;
+    }
+    if (this.reduceMotion) return null;
+    if (a.pose === 'sit') {
+      if (st.t >= 0.22) return null;
+      const k = st.t / 0.22;
+      // Squash deepest early, then ease out through a whisper of overshoot.
+      const squash = Math.sin(Math.PI * k) * 0.07 * (1 - k * 0.35);
+      return { dx: 0, dy: 0, sx: 1 + squash * 0.6, sy: 1 - squash };
+    }
+    if (st.t >= 0.3) return null;
+    const k = st.t / 0.3;
+    return {
+      dx: Math.sin(k * Math.PI * 3) * 1.8 * (1 - k),
+      dy: -Math.sin(Math.PI * Math.min(1, k * 1.6)) * 2.5,
+      sx: 1,
+      sy: 1,
+    };
   }
 
   /** Ease this actor's lean toward its target; returns radians. */
@@ -1874,6 +2015,31 @@ export class Renderer {
       }
     }
 
+    // Greeting nod: someone the traveler has already met acknowledges her
+    // when she passes within a tile. A glance her way and a small head-dip,
+    // at most once per half minute per villager. Noticed, not needy.
+    let nodT = this.nods.get(s.actor) ?? 0;
+    if (
+      nodT === 0 && !isPlayer && s.greetId && s.rig !== 'animal' && idle &&
+      !s.actor.frozen && s.actor.pose !== 'sit' && this.metCheck && !this.reduceMotion
+    ) {
+      const gdx = this.playerSX - sx;
+      const gdy = this.playerSY - sy;
+      if (
+        Math.abs(gdx) <= S * 1.4 && Math.abs(gdy) <= S * 1.4 &&
+        this.time - (this.greetsAt.get(s.actor) ?? -99) > 30 && this.metCheck(s.greetId)
+      ) {
+        this.greetsAt.set(s.actor, this.time);
+        this.nods.set(s.actor, 0.9);
+        nodT = 0.9;
+      }
+    }
+    if (nodT > 0 && idle) {
+      const gdx = this.playerSX - sx;
+      const gdy = this.playerSY - sy;
+      drawDir = Math.abs(gdx) > Math.abs(gdy) ? (gdx > 0 ? 'right' : 'left') : gdy > 0 ? 'down' : 'up';
+    }
+
     const row = DIR_ROW[drawDir];
     const dx = sx - Math.floor((AW - S) / 2);
     const dy = sy - (AH - S);
@@ -1921,11 +2087,16 @@ export class Renderer {
     const bounceT = this.bounces.get(s.actor) ?? 0;
     const hop = bounceT > 0 ? -Math.sin((1 - bounceT / 0.45) * Math.PI) * 7 : 0;
     const speakBob = this.speaker === s.actor ? Math.sin(this.time * 9) * 1.6 : 0;
-    const lift = hop + speakBob + stretch;
+    const lift = hop + speakBob + stretch + this.hopLift(s.actor);
 
     if (s.rig === 'animal') {
       const col = s.actor.walkFrame();
+      const species = s.species === 'llamaBrown' ? 'llama' : s.species;
       mirror(col);
+      if (species && idle && !this.reduceMotion) {
+        if (species === 'dog' && this.drawDogIdle(s, col, row, drawDir, sx, sy, lift)) return;
+        if (species === 'llama' && this.drawLlamaIdle(s, col, row, sx, sy, lift, index)) return;
+      }
       drawLit(col, lift);
       return;
     }
@@ -1943,6 +2114,14 @@ export class Renderer {
       return;
     }
     mirror(col);
+    // The greeting head-dip: the head slice bows and returns, the body stays.
+    if (nodT > 0 && idle && lift === 0 && col !== 8) {
+      const split = 18 * A;
+      const dip = Math.sin(Math.PI * Math.min(1, (0.9 - nodT) / 0.9)) * 4;
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, split, dx, dy + dip, AW, split);
+      ctx.drawImage(s.sheet, col * AW, row * AH + split, AW, AH - split, dx, dy + split, AW, AH - split);
+      return;
+    }
     if (idle && lift === 0 && col !== 8) {
       const breathe = Math.sin((this.time + index * 0.9) * 2.6) * 1.6;
       if (breathe > 0.4) {
@@ -1969,6 +2148,368 @@ export class Renderer {
       if (!best || k > best.k) best = { dx: ddx, k };
     }
     return best;
+  }
+
+  /** Vertical lift for the celebration two-hop, in device pixels. */
+  private hopLift(a: Actor): number {
+    const t = this.hops.get(a);
+    if (t === undefined) return 0;
+    const p = HOP_DUR - t;
+    if (p < HOP_LANDS[0]) return -Math.sin((Math.PI * p) / HOP_LANDS[0]) * 11;
+    if (p >= 0.5 && p < HOP_LANDS[1]) {
+      return -Math.sin((Math.PI * (p - 0.5)) / (HOP_LANDS[1] - 0.5)) * 6;
+    }
+    return 0;
+  }
+
+  /**
+   * Dog idle life. Near the traveler the tail wags: side-on, the rear slice
+   * of the sprite bobs so the curled tail visibly beats; face-on, the whole
+   * dog does a tiny happy quiver. Stand right beside it, facing it, and every
+   * so often it drops into a play-bow. Fire rim is skipped on these frames;
+   * a wagging dog outshines a warm one.
+   */
+  private drawDogIdle(
+    s: Sprite,
+    col: number,
+    row: number,
+    drawDir: Dir,
+    sx: number,
+    sy: number,
+    lift: number,
+  ): boolean {
+    const pdx = this.playerSX - sx;
+    const pdy = this.playerSY - sy;
+    if (Math.abs(pdx) > S * 2.2 || Math.abs(pdy) > S * 2.2) return false;
+    const ctx = this.ctx;
+    const dx = sx - Math.floor((AW - S) / 2);
+    const dy = sy - (AH - S) + lift;
+
+    // Play-bow: only when the traveler stands adjacent and is facing the dog.
+    const adjacent = Math.abs(pdx) <= S * 1.35 && Math.abs(pdy) <= S * 1.35;
+    const toDog: Dir =
+      Math.abs(pdx) > Math.abs(pdy) ? (pdx < 0 ? 'right' : 'left') : pdy < 0 ? 'down' : 'up';
+    const bowCyc = this.time % 9;
+    if (adjacent && this.playerDir === toDog && bowCyc < 1.2) {
+      const amp = Math.sin((Math.PI * bowCyc) / 1.2);
+      ctx.save();
+      if (drawDir === 'left' || drawDir === 'right') {
+        // Front end dips, rump stays up: rotate about the rear feet.
+        const px = drawDir === 'left' ? dx + AW * 0.72 : dx + AW * 0.28;
+        const py = sy + S - 2;
+        ctx.translate(px, py);
+        ctx.rotate((drawDir === 'left' ? -1 : 1) * 0.13 * amp);
+        ctx.translate(-px, -py + amp * 1.5);
+      } else {
+        // Face-on the bow reads as a little crouch.
+        const fy = sy + S - 2;
+        ctx.translate(0, fy);
+        ctx.scale(1, 1 - 0.07 * amp);
+        ctx.translate(0, -fy);
+      }
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy, AW, AH);
+      ctx.restore();
+      return true;
+    }
+
+    if (drawDir === 'left' || drawDir === 'right') {
+      // The wag: the tail-bearing rear slice bobs a couple of pixels.
+      const wag = Math.sin(this.time * 15) * 2;
+      const rear = 24; // width of the tail slice, in sheet pixels
+      const rx = drawDir === 'left' ? AW - rear : 0;
+      const fx = drawDir === 'left' ? 0 : rear;
+      ctx.drawImage(s.sheet, col * AW + fx, row * AH, AW - rear, AH, dx + fx, dy, AW - rear, AH);
+      ctx.drawImage(s.sheet, col * AW + rx, row * AH, rear, AH, dx + rx, dy + wag, rear, AH);
+    } else {
+      const quiver = -Math.abs(Math.sin(this.time * 6)) * 2;
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, AH, dx, dy + quiver, AW, AH);
+    }
+    return true;
+  }
+
+  /**
+   * Llama idle life: a slow chew that lowers the head a pixel on a lazy sine,
+   * with a rest between mouthfuls, and an ear flick every seven to thirteen
+   * seconds. Llamas are patient about everything, including animation.
+   */
+  private drawLlamaIdle(
+    s: Sprite,
+    col: number,
+    row: number,
+    sx: number,
+    sy: number,
+    lift: number,
+    index: number,
+  ): boolean {
+    const ctx = this.ctx;
+    const dx = sx - Math.floor((AW - S) / 2);
+    const dy = sy - (AH - S) + lift;
+    const ph = index * 1.73;
+
+    // Ear flick: a brief sideways shiver of the very top of the head.
+    const period = 7 + ((index * 2.9) % 6);
+    const fc = (this.time + ph * 5) % period;
+    if (fc < 0.14) {
+      const split = 38;
+      const jx = Math.sin(this.time * 60) * 1.5;
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, split, dx + jx, dy, AW, split);
+      ctx.drawImage(s.sheet, col * AW, row * AH + split, AW, AH - split, dx, dy + split, AW, AH - split);
+      return true;
+    }
+
+    // Chew for a while, rest for a while.
+    if ((this.time + ph) % 11 < 6.5) {
+      const split = 54;
+      const jaw = (Math.sin(this.time * 3.4 + ph) * 0.5 + 0.5) * 1.3;
+      ctx.drawImage(s.sheet, col * AW, row * AH, AW, split, dx, dy + jaw, AW, split);
+      ctx.drawImage(s.sheet, col * AW, row * AH + split, AW, AH - split, dx, dy + split, AW, AH - split);
+      return true;
+    }
+    return false;
+  }
+
+  // -- regional sky and ambient signatures ------------------------------
+  //
+  // Each place gets one small thing that only happens there: kites over
+  // Delhi, swifts at a Sicilian dusk, a sail off Zanzibar, dragonflies on
+  // the Kerala backwater, steam over the Busan market, a condor on an Andean
+  // thermal. A few sprites each, on slow precomputed paths, anchored to what
+  // the map actually contains. Rare on purpose: a signature, not a screensaver.
+
+  /** Scan a map once for the things its set-pieces hang from. */
+  private regionalAnchors(map: TileMap): RegionAnchors {
+    let a = this.anchorCache.get(map.id);
+    if (a) return a;
+    const water: [number, number][] = [];
+    const stalls: [number, number][] = [];
+    let seaRow = -1;
+    let best = 0;
+    let seaX0 = 0;
+    let seaX1 = 0;
+    for (let y = 0; y < map.h; y++) {
+      let run = 0;
+      for (let x = 0; x < map.w; x++) {
+        const t = map.ground(x, y).t;
+        if (t === 'water') water.push([x, y]);
+        if (t === 'sea') {
+          run++;
+          if (x === map.w - 1 && run >= best) {
+            best = run;
+            seaRow = y;
+            seaX1 = x;
+            seaX0 = x - run + 1;
+          }
+        } else {
+          if (run >= best && run > 0) {
+            best = run;
+            seaRow = y;
+            seaX1 = x - 1;
+            seaX0 = x - run;
+          }
+          run = 0;
+        }
+        const o = map.object(x, y);
+        if (o && STEAMY_KINDS.has(o.t)) stalls.push([x, y]);
+      }
+    }
+    a = { water, stalls, seaRow, seaX0, seaX1 };
+    this.anchorCache.set(map.id, a);
+    return a;
+  }
+
+  /** Dispatch by map id; every branch is a handful of drawImages at most. */
+  private drawRegional(map: TileMap, cam: Camera) {
+    if (this.reduceMotion) return;
+    const id = map.id;
+    if (id === 'delhi' || id === 'delhi-rooftop') this.drawKites();
+    else if (id === 'sicily') this.drawSwifts();
+    else if (id === 'zanzibar') this.drawSail(map, cam);
+    else if (id === 'kerala') this.drawDragonflies(map, cam);
+    else if (id === 'busan') this.drawMarketSteam(map, cam);
+    else if (id === 'village' || id === 'east-road' || id === 'la-bajada') this.drawCondor();
+  }
+
+  /** Delhi: paper kites high over the rooftops, each on the end of its string. */
+  private drawKites() {
+    if (this.raining || this.nightK > 0.45) return;
+    const ctx = this.ctx;
+    const arts = this.regionalArt.kites;
+    const t = this.time;
+    for (let i = 0; i < 2; i++) {
+      const img = arts[i % arts.length];
+      if (!img) continue;
+      const sc = i === 0 ? 1.5 : 1.1;
+      const x = W * (0.3 + i * 0.42) + Math.sin(t * 0.11 + i * 2.6) * W * 0.12 + Math.cos(t * 0.05 + i) * 26;
+      const y = H * (0.1 + i * 0.07) + Math.sin(t * 0.17 + i * 1.3) * H * 0.05;
+      const tilt = Math.sin(t * 0.6 + i * 1.9) * 0.2 + Math.sin(t * 0.11 + i * 2.6) * 0.3;
+      // The hint of string: slack, falling away toward an unseen rooftop hand.
+      ctx.strokeStyle = 'rgba(38,26,16,0.15)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 12 * sc);
+      ctx.quadraticCurveTo(x - 34, y + 70, x - 84, y + 150);
+      ctx.stroke();
+      ctx.save();
+      ctx.globalAlpha = (i === 0 ? 0.95 : 0.8) * (1 - this.nightK);
+      ctx.translate(x, y);
+      ctx.rotate(tilt);
+      ctx.drawImage(img, (-img.width * sc) / 2, (-img.height * sc) / 2, img.width * sc, img.height * sc);
+      ctx.restore();
+    }
+  }
+
+  /** Sicily: two swifts chasing each other in tight loops at dusk. */
+  private drawSwifts() {
+    if (this.dayT < 0.5 || this.dayT > 0.75) return;
+    const ctx = this.ctx;
+    const frames = this.regionalArt.swift;
+    const t = this.time;
+    const cx0 = W * 0.55 + Math.sin(t * 0.05) * W * 0.22;
+    const cy0 = H * 0.26 + Math.cos(t * 0.041) * H * 0.07;
+    for (let j = 0; j < 2; j++) {
+      const ang = t * 2.4 - j * 0.85;
+      const rx = 64 + Math.sin(t * 0.7 + j) * 22;
+      const x = cx0 + Math.cos(ang) * rx;
+      const y = cy0 + Math.sin(ang) * rx * 0.42;
+      const img = frames[Math.floor(t * 14 + j * 2) % frames.length];
+      if (!img) continue;
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.translate(x, y);
+      if (Math.sin(ang) > 0) ctx.scale(-1, 1); // face the way it is going
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+      ctx.restore();
+    }
+  }
+
+  /** Zanzibar: a distant lateen sail crossing the open water, then gone. */
+  private drawSail(map: TileMap, cam: Camera) {
+    if (this.nightK > 0.6) return;
+    const an = this.regionalAnchors(map);
+    if (an.seaRow < 0 || an.seaX1 - an.seaX0 < 10) return;
+    const CYCLE = 150;
+    const CROSS = 40;
+    const t0 = this.ambientDebug ? (this.time % CROSS) : this.time % CYCLE;
+    if (t0 > CROSS) return;
+    const ci = Math.floor(this.time / CYCLE);
+    const flip = cellHash(ci, 5, 907) < 0.5;
+    const k = t0 / CROSS;
+    const wx = ((flip ? 1 - k : k) * (an.seaX1 - an.seaX0) + an.seaX0) * TILE;
+    const wy = an.seaRow * TILE;
+    const x = (wx - cam.x) * A;
+    const y = (wy - cam.y) * A + Math.sin(this.time * 0.9) * 1.5;
+    if (x < -60 || x > W + 60 || y < -60 || y > H + 60) return;
+    const ctx = this.ctx;
+    const img = this.regionalArt.sail;
+    const fade = Math.min(1, t0 / 6, (CROSS - t0) / 6);
+    ctx.save();
+    ctx.globalAlpha = 0.85 * fade * (1 - this.nightK * 0.5);
+    ctx.translate(x, y);
+    if (flip) ctx.scale(-1, 1);
+    ctx.drawImage(img, -img.width / 2, -img.height + 6);
+    ctx.restore();
+  }
+
+  /** Kerala: dragonflies skimming the backwater between rains. */
+  private drawDragonflies(map: TileMap, cam: Camera) {
+    if (this.raining || this.nightK > 0.35) return;
+    const an = this.regionalAnchors(map);
+    if (!an.water.length) return;
+    const ctx = this.ctx;
+    const frames = this.regionalArt.dragonfly;
+    const t = this.time;
+    for (let i = 0; i < 4; i++) {
+      // Spread down the scan order (so down the map), with a hashed nudge:
+      // wherever the camera sits over water, one or two are usually in reach.
+      const at = ((i + 0.3 + cellHash(i, 11, 811) * 0.4) / 4) * an.water.length;
+      const cell = an.water[Math.floor(at)];
+      if (!cell) continue;
+      const wx = cell[0] * TILE + TILE / 2 + Math.sin(t * 0.8 + i * 2.2) * 20 + Math.sin(t * 3.1 + i) * 4;
+      const wy = cell[1] * TILE + TILE / 2 + Math.cos(t * 0.6 + i * 1.4) * 8;
+      const x = (wx - cam.x) * A;
+      const y = (wy - cam.y) * A - 10;
+      if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+      const img = frames[Math.floor(t * 24 + i) % frames.length];
+      if (!img) continue;
+      // A fleck of shadow keeps it above the water, not floating in it.
+      ctx.globalAlpha = 0.14;
+      ctx.drawImage(this.shadowBlob, x - 8, y + 14, 16, 6);
+      ctx.globalAlpha = 0.95;
+      ctx.save();
+      ctx.translate(x, y);
+      if (Math.cos(t * 0.8 + i * 2.2) < 0) ctx.scale(-1, 1);
+      const dw = img.width * 1.7;
+      const dh = img.height * 1.7;
+      ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Busan: thin steam wisps working over the market stall cluster. */
+  private drawMarketSteam(map: TileMap, cam: Camera) {
+    const an = this.regionalAnchors(map);
+    if (!an.stalls.length) return;
+    const ctx = this.ctx;
+    const n = Math.min(3, an.stalls.length);
+    for (let i = 0; i < n; i++) {
+      const cell = an.stalls[Math.floor((i * an.stalls.length) / n)];
+      if (!cell) continue;
+      const bx = (cell[0] * TILE + TILE / 2 - cam.x) * A;
+      const by = (cell[1] * TILE - cam.y) * A;
+      if (bx < -60 || bx > W + 60 || by < -60 || by > H + 120) continue;
+      for (let p = 0; p < 2; p++) {
+        const t = (this.time * 0.22 + p / 2 + i * 0.37) % 1;
+        const x = bx + Math.sin(t * 5 + i * 2.3 + p) * (3 + t * 9);
+        const y = by - 44 - t * 62;
+        const r = 6 + t * 13;
+        const a = (t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85) * 0.28;
+        const puff = this.smokePuffs[(i + p) % this.smokePuffs.length];
+        if (!puff || a < 0.01) continue;
+        ctx.globalAlpha = a;
+        ctx.drawImage(puff, x - r, y - r, r * 2, r * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /** Andes: one condor, very high, riding a thermal in slow circles. Rare. */
+  private drawCondor() {
+    if (this.nightK > 0.4) return;
+    const CYC = 160;
+    const ON = 48;
+    let t0 = this.time % CYC;
+    const ci = Math.floor(this.time / CYC);
+    // Never in the first cycle: a condor that greets every session is a
+    // pigeon. It earns its entrance by being absent a while first.
+    let active = ci > 0 && cellHash(ci, 3, 601) < 0.45;
+    if (this.ambientDebug) {
+      active = true;
+      t0 = (t0 % (ON - 12)) + 6;
+    }
+    if (!active || t0 > ON) return;
+    const fade = Math.min(1, t0 / 5, (ON - t0) / 5);
+    const ctx = this.ctx;
+    const t = this.time;
+    const cx0 = W * 0.5 + Math.sin(t * 0.013) * W * 0.28;
+    const cy0 = H * 0.24 + Math.cos(t * 0.017) * H * 0.07;
+    const ang = t * 0.33;
+    const x = cx0 + Math.cos(ang) * 120;
+    const y = cy0 + Math.sin(ang) * 44;
+    const img = this.regionalArt.condor[Math.sin(t * 0.7) > 0 ? 0 : 1];
+    if (!img) return;
+    // A shadow trailing far below is the whole altitude cue: it says the
+    // bird is a hundred meters up, not hovering over somebody's hat.
+    ctx.globalAlpha = 0.07 * fade * this.sunUp;
+    ctx.drawImage(this.shadowBlob, x - 26, y + 150, 52, 16);
+    ctx.save();
+    ctx.globalAlpha = 0.8 * fade * (1 - this.nightK);
+    ctx.translate(x, y);
+    if (-Math.sin(ang) < 0) ctx.scale(-1, 1); // bank into the direction of travel
+    ctx.rotate(Math.sin(t * 0.5) * 0.08);
+    ctx.drawImage(img, -img.width / 2, -img.height / 2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   private drawParty(cam: Camera) {
@@ -2430,6 +2971,170 @@ function bakeSmokePuffs(): HTMLCanvasElement[] {
     return cv;
   };
   return [puff(false), puff(true)];
+}
+
+/**
+ * Bake the regional set-piece sprites once. Same gouache idiom as the fliers:
+ * soft shapes, a whisper of ink edge, all readable at sky distance.
+ */
+function bakeRegionalArt(): RegionalArt {
+  const kite = (c1: string, c2: string): HTMLCanvasElement => {
+    const { cv, g } = surface(26, 30);
+    g.beginPath();
+    g.moveTo(13, 1);
+    g.lineTo(24, 11);
+    g.lineTo(13, 24);
+    g.lineTo(2, 11);
+    g.closePath();
+    g.fillStyle = c1;
+    g.fill();
+    // One bright lune, paper catching the sun.
+    g.beginPath();
+    g.moveTo(13, 1);
+    g.lineTo(24, 11);
+    g.lineTo(13, 11);
+    g.closePath();
+    g.fillStyle = c2;
+    g.fill();
+    // Spine and spar, the patang's bones.
+    g.strokeStyle = 'rgba(38,26,16,0.4)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(13, 1);
+    g.lineTo(13, 24);
+    g.moveTo(2, 11);
+    g.lineTo(24, 11);
+    g.stroke();
+    // A little tail flick.
+    g.strokeStyle = c2;
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.moveTo(13, 24);
+    g.quadraticCurveTo(16, 27, 13, 29);
+    g.stroke();
+    return outlineSheet(cv, 26, 30, 'rgba(38,26,16,0.35)', 1.2);
+  };
+
+  const swift = (up: number): HTMLCanvasElement => {
+    const { cv, g } = surface(22, 14);
+    g.strokeStyle = '#3a332c';
+    g.lineWidth = 2.2;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(4, 7 - up * 4);
+    g.quadraticCurveTo(9, 7 + up * 2, 12, 6);
+    g.quadraticCurveTo(15, 7 + up * 2, 20, 7 - up * 4);
+    g.stroke();
+    g.fillStyle = '#3a332c';
+    g.beginPath();
+    g.ellipse(12, 6.5, 2.6, 1.6, 0, 0, Math.PI * 2);
+    g.fill();
+    return cv;
+  };
+
+  const condor = (dihedral: number): HTMLCanvasElement => {
+    const { cv, g } = surface(88, 32);
+    const cx = 44;
+    const cy = 18;
+    g.fillStyle = '#332a22';
+    for (const sgn of [-1, 1] as const) {
+      g.beginPath();
+      g.moveTo(cx, cy);
+      g.quadraticCurveTo(cx + sgn * 18, cy - 7 - dihedral * 4, cx + sgn * 34, cy - 5 - dihedral * 6);
+      // Fingered wingtips, the condor's signature.
+      for (let f = 0; f < 4; f++) {
+        const fx = cx + sgn * (34 + f * 2.4);
+        g.lineTo(fx, cy - 9 - dihedral * 6 - f * 1.2);
+        g.lineTo(fx + sgn * 1.2, cy - 4 - dihedral * 5);
+      }
+      g.quadraticCurveTo(cx + sgn * 16, cy + 1 - dihedral * 2, cx, cy + 3);
+      g.closePath();
+      g.fill();
+    }
+    g.beginPath();
+    g.ellipse(cx, cy + 1, 7, 3.4, 0, 0, Math.PI * 2);
+    g.fill();
+    g.beginPath();
+    g.moveTo(cx - 3, cy + 2);
+    g.lineTo(cx, cy + 10);
+    g.lineTo(cx + 3, cy + 2);
+    g.closePath();
+    g.fill();
+    // The pale collar that says condor and not crow.
+    g.fillStyle = 'rgba(242,238,228,0.85)';
+    g.beginPath();
+    g.ellipse(cx, cy - 1.6, 3.4, 1.4, 0, 0, Math.PI * 2);
+    g.fill();
+    return cv;
+  };
+
+  const sail = (): HTMLCanvasElement => {
+    const { cv, g } = surface(30, 28);
+    // The hull, a dark sliver riding the haze line.
+    g.fillStyle = '#4a3826';
+    g.beginPath();
+    g.ellipse(15, 24.5, 9, 2.2, 0, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#4a3826';
+    g.lineWidth = 1.4;
+    g.beginPath();
+    g.moveTo(15, 24);
+    g.lineTo(15, 4);
+    g.stroke();
+    // The lateen sail, a curved triangle on a raked yard.
+    g.fillStyle = '#f2e6d0';
+    g.beginPath();
+    g.moveTo(15, 5);
+    g.quadraticCurveTo(24, 12, 25, 22);
+    g.lineTo(16, 22);
+    g.quadraticCurveTo(14, 12, 15, 5);
+    g.closePath();
+    g.fill();
+    g.strokeStyle = 'rgba(74,56,38,0.7)';
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(15, 5);
+    g.quadraticCurveTo(24, 12, 25, 22);
+    g.stroke();
+    return outlineSheet(cv, 30, 28, 'rgba(38,26,16,0.3)', 1);
+  };
+
+  const dragonfly = (shimmer: number): HTMLCanvasElement => {
+    const { cv, g } = surface(18, 12);
+    g.fillStyle = `rgba(236,248,250,${0.65 - shimmer * 0.25})`;
+    for (const [wx, ang] of [[7, -0.5 - shimmer * 0.3], [10, 0.5 + shimmer * 0.3]] as const) {
+      g.save();
+      g.translate(wx, 5);
+      g.rotate(ang);
+      g.beginPath();
+      g.ellipse(0, -3, 1.6, 4.2, 0, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.ellipse(0, 3, 1.6, 4.2, 0, 0, Math.PI * 2);
+      g.fill();
+      g.restore();
+    }
+    g.strokeStyle = '#3f8f8a';
+    g.lineWidth = 1.6;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(3, 6);
+    g.lineTo(14, 5.4);
+    g.stroke();
+    g.fillStyle = '#2f6f6c';
+    g.beginPath();
+    g.arc(15, 5.3, 1.7, 0, Math.PI * 2);
+    g.fill();
+    return cv;
+  };
+
+  return {
+    kites: [kite('#e8556a', '#f2a03c'), kite('#8fcbe8', '#f2e6d0')],
+    swift: [swift(1), swift(0.3), swift(-0.6)],
+    condor: [condor(0), condor(1)],
+    sail: sail(),
+    dragonfly: [dragonfly(0), dragonfly(1)],
+  };
 }
 
 /** One static light pass at full art resolution. */

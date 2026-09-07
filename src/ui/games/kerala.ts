@@ -948,12 +948,15 @@ export class SadyaPanel {
           if (sc) {
             sc.flash('#fff3c8', 0.35);
             this.sweepAt = sc.time + 0.25;
+            // The full leaf earns petals in leaf-and-marigold colors.
+            sc.confettiSoft(320, 176, ['#6b8e4e', '#d9a441', '#ffe9b0', '#c1512f']);
           }
         }
       } else {
         this.audio.blip();
         this.hint = c.oops;
         if (sc && !calm()) sc.thump(1.6, 0);
+        sc?.wobble(3.5); // an auntie's head-shake, not a scolding
       }
     } else if (this.phase === 'fold') {
       this.phase = 'gag';

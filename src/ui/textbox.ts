@@ -35,6 +35,12 @@ export class Textbox {
   private cursor = 0;
   private portraitCv: HTMLCanvasElement | null = null;
   private cps = DEFAULT_CPS;
+  /** Per-line cadence: trailing-off lines ("...") type a little slower. */
+  private lineCpsK = 1;
+  /** Who spoke last, so the portrait settles only when a speaker starts. */
+  private lastWho: string | undefined;
+  /** True during the brief press animation after confirming a choice. */
+  private picking = false;
   private onClose: (() => void) | null = null;
 
   constructor(
@@ -67,6 +73,8 @@ export class Textbox {
     this.nodes = nodes;
     this.portraitCv = portrait;
     this.onClose = onClose ?? null;
+    this.lastWho = undefined;
+    this.picking = false;
     this.els.root.hidden = false;
     // Every other surface in the game unfolds; the dialogue box was the one
     // hard cut, and it is the most repeated moment there is. Retrigger the
@@ -125,6 +133,20 @@ export class Textbox {
     this.els.portrait.innerHTML = '';
     if (!narrator && this.portraitCv) this.els.portrait.appendChild(this.portraitCv);
     this.els.portrait.hidden = narrator || !this.portraitCv;
+    // Portrait personality: an exclaimed line earns a tiny hop; a speaker
+    // taking over the box gets a 2px settle into the tape. CSS keyframes,
+    // so both the reduce-motion setting and the OS preference silence them.
+    if (!narrator && this.portraitCv) {
+      const cls = this.lineText.includes('!') ? 'hop' : line.who !== this.lastWho ? 'settle' : '';
+      this.els.portrait.classList.remove('hop', 'settle');
+      if (cls) {
+        void this.els.portrait.offsetWidth;
+        this.els.portrait.classList.add(cls);
+      }
+    }
+    this.lastWho = line.who;
+    // Trailing-off lines take their time; everything else keeps the pace.
+    this.lineCpsK = /…|\.\.\./.test(this.lineText) ? 0.55 : 1;
 
     this.els.arrow.hidden = true;
     this.shown = 0;
@@ -138,7 +160,7 @@ export class Textbox {
     const line = this.nodes[this.nodeId]?.lines[this.lineIdx];
     if (!line) return;
     const before = Math.floor(this.shown);
-    this.shown = Math.min(this.lineText.length, this.shown + dt * this.cps);
+    this.shown = Math.min(this.lineText.length, this.shown + dt * this.cps * this.lineCpsK);
     const now = Math.floor(this.shown);
     this.els.text.textContent = this.lineText.slice(0, now);
     if (now > before) this.onType?.(line.who);
@@ -160,18 +182,20 @@ export class Textbox {
     const last = this.lineIdx >= node.lines.length - 1;
     if (last && this.activeChoices(node).length) {
       this.cursor = 0;
-      this.renderChoices(node);
+      // The list's first appearance staggers in; cursor moves re-render flat.
+      this.renderChoices(node, true);
     } else {
       this.els.arrow.hidden = false;
     }
   }
 
-  private renderChoices(node: NodeMap[string]) {
+  private renderChoices(node: NodeMap[string], entering = false) {
     this.els.arrow.hidden = true;
     this.els.choices.innerHTML = '';
     this.activeChoices(node).forEach((c, i) => {
       const div = document.createElement('div');
-      div.className = 'tb-choice' + (i === this.cursor ? ' sel' : '');
+      div.className = 'tb-choice' + (i === this.cursor ? ' sel' : '') + (entering ? ' in' : '');
+      if (entering) div.style.animationDelay = `${i * 30}ms`;
       div.textContent = c.text;
       this.els.choices.appendChild(div);
     });
@@ -179,6 +203,7 @@ export class Textbox {
 
   /** The single action button. */
   onAction() {
+    if (this.picking) return;
     const node = this.nodes[this.nodeId];
     if (!node) return;
     const line = node.lines[this.lineIdx];
@@ -198,7 +223,23 @@ export class Textbox {
     const active = this.activeChoices(node);
     if (active.length) {
       const choice = active[this.cursor];
-      if (choice) this.enterNode(choice.goto);
+      if (!choice) return;
+      // A soft press on the chosen line, then the story moves. Reduced
+      // motion (either flavor) skips the beat entirely.
+      const el = this.els.choices.children[this.cursor] as HTMLElement | undefined;
+      const calm =
+        document.body.classList.contains('reduce-motion') ||
+        (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+      if (!el || calm) {
+        this.enterNode(choice.goto);
+        return;
+      }
+      this.picking = true;
+      el.classList.add('pick');
+      window.setTimeout(() => {
+        this.picking = false;
+        if (this.isOpen) this.enterNode(choice.goto);
+      }, 110);
       return;
     }
     if (node.next) {
@@ -210,6 +251,7 @@ export class Textbox {
   }
 
   onDir(dir: Dir) {
+    if (this.picking) return;
     const node = this.nodes[this.nodeId];
     if (!node || this.typing) return;
     if (this.lineIdx < node.lines.length - 1) return;
