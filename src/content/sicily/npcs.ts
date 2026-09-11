@@ -348,6 +348,21 @@ export const SICILY_NODES: NodeMap = {
       { text: 'The table falls silent to watch. Diplomacy fails in four languages. The second helping lands.' },
       { who: 'Nonna Concetta', text: 'There. Refusing is permitted, succeeding is not. Now you know the rules of this house.' },
     ],
+    choices: [
+      { text: 'Eat the second helping', goto: 'c8.pranzo.eat2' },
+      { text: 'Push the plate one inch away', goto: 'c8.pranzo.push' },
+    ],
+  },
+  'c8.pranzo.eat2': {
+    lines: [
+      { text: 'You eat it. It is, infuriatingly, even better than the first.' },
+    ],
+    next: 'c8.pranzo.end',
+  },
+  'c8.pranzo.push': {
+    lines: [
+      { text: 'The plate returns two inches. Physics at this table answers to Concetta.' },
+    ],
     next: 'c8.pranzo.end',
   },
   'c8.pranzo.end': {
@@ -485,6 +500,21 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Alfio', text: 'I can. The machine is right there. But friend, it is July. Milk and steam, in this heat? Your stomach did nothing to deserve it.' },
       { who: 'Alfio', text: 'Let me save your morning instead. Granita. This is not dessert, this is breakfast, and it is the law of the coast.' },
     ],
+    choices: [
+      { text: 'Surrender to the granita', goto: 'c8.alfio.surrender' },
+      { text: 'Hold out for the cappuccino', goto: 'c8.alfio.insist' },
+    ],
+  },
+  'c8.alfio.surrender': {
+    lines: [
+      { who: 'Alfio', text: 'Bravo. The machine thanks you, your stomach thanks you, July thanks you.' },
+    ],
+    next: 'c8.alfio.granita',
+  },
+  'c8.alfio.insist': {
+    lines: [
+      { who: 'Alfio', text: 'Then you get both: the cappuccino for the principle, a granita for the education. Only one goes on the bill.' },
+    ],
     next: 'c8.alfio.granita',
   },
   'c8.alfio.doctrine': {
@@ -515,7 +545,7 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'The bar does not go quiet. It goes loud. Three tables answer at once, delighted, like you pulled a rope attached to all of them.' },
       { who: 'Alfio', text: 'ArancinO, friend. Masculine, pointed like the mountain. In Palermo they say arancina and make it round, and they are wrong with confidence.' },
-      { who: 'Alfio', text: 'They say our cone honors ’a Muntagna herself. Eat it and you will hear no more grammar from me. Welcome to the war, we are glad you enlisted.' },
+      { who: 'Alfio', text: 'They say our cone honors ’a Muntagna herself. Eat it and you hear no more grammar from me. Welcome to the war, we are glad you enlisted.' },
     ],
     next: 'c8.alfio.eat',
   },
@@ -580,6 +610,26 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'He wipes the marble in slow circles, the way a man does when the counter is clean already and his hands still want a job.' },
       { who: 'Alfio', text: 'La Zoila had that corner table one summer. I was fifteen, clearing glasses, and I used to read her book upside down.' },
+    ],
+    choices: [
+      { text: 'Say nothing.', goto: 'c8.alfio.her.quiet' },
+      { text: '"Upside down? What did it say?"', goto: 'c8.alfio.her.read' },
+    ],
+  },
+  'c8.alfio.her.quiet': {
+    lines: [
+      { text: 'You let the circles finish. The marble shines where it already shone.' },
+    ],
+    next: 'c8.alfio.her2',
+  },
+  'c8.alfio.her.read': {
+    lines: [
+      { who: 'Alfio', text: 'Lists, friend. Words with their prices. I was fifteen; I hoped for secrets and got groceries.' },
+    ],
+    next: 'c8.alfio.her2',
+  },
+  'c8.alfio.her2': {
+    lines: [
       { who: 'Alfio', text: 'Then a week where she never opened it. I asked her why, and she said she would catch up later and what was in the brioche.' },
       { text: 'He laughs at his own fifteen-year-old nosiness and goes to see about the almond tub. In your bag her Sunday page still stops mid sentence.' },
     ],
@@ -715,7 +765,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.saro.recruit': {
     lines: [
       { who: 'Don Saro', text: 'You! Providence is efficient today. One of my rowers has a wedding, his own, so his excuse is technically valid.' },
-      { who: 'Don Saro', text: 'U pisci a mari. Four rowers, one rais shouting the stroke, and the strongest boy in town playing the swordfish that will not be caught. Until it is.' },
+      { who: 'Don Saro', text: 'U pisci a mari. Four rowers, one rais shouting the stroke, the strongest boy in town playing the swordfish that will not be caught. Until it is.' },
     ],
     choices: [
       { text: 'Take the oar', goto: 'c8.saro.launch' },
@@ -750,7 +800,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.saro.wait': {
     lines: [
-      { who: 'Don Saro', text: 'The sea is patient and so am I, on my better days. Come back before the bells; the boat will not row itself, believe me, we have asked it.' },
+      { who: 'Don Saro', text: 'The sea is patient and so am I, on my better days. Come back before the bells; the boat will not row itself, we have asked it.' },
     ],
   },
   'c8.saro.launch': {
@@ -786,7 +836,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.saro.pisciReplay': {
     lines: [
-      { who: 'Don Saro', text: 'Go on, no saint watching this time, only the rais and his lungs. Listen for the call and pull with it. That is all rowing has ever been.' },
+      { who: 'Don Saro', text: 'Go on, no saint watching this time, only the rais and his lungs. Listen for the call and pull with it. That is all rowing ever was.' },
     ],
     effects: ['set:replay.mode', 'set:c8.pisci.start'],
   },
@@ -808,7 +858,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.nino.argument': {
     lines: [
       { who: 'Nino', text: 'You saw the chair at the circolo. The empty one. That was my grandfather’s. The sea kept him and the chair keeps his shape.' },
-      { who: 'Nino', text: 'My uncle says the boat is his if I stay. Torino says a wage is mine if I go. Both of them are right, that is the trap of it.' },
+      { who: 'Nino', text: 'My uncle says the boat is his if I stay. Torino says a wage is mine if I go. Both are right; that is the trap.' },
     ],
     choices: [
       { text: '"Go. The town will still be here."', goto: 'c8.nino.go' },
@@ -870,7 +920,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.rosaria.idle': {
     lines: [
-      { who: 'Rosaria', text: 'When she rumbles we sweep the ash off the leaves and say nothing rude where she can hear. She is the neighbor. You do not move away from her.' },
+      { who: 'Rosaria', text: 'When she rumbles we sweep the ash off the leaves and say nothing rude where she can hear. She is the neighbor; you do not move away.' },
     ],
   },
 
@@ -1144,7 +1194,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.gattu': {
     lines: [
-      { text: 'A cat asleep in the fruit bowl by the door, using two lemons as pillows. The household lost this argument years ago and now just buys more bowls.' },
+      { text: 'A cat asleep in the fruit bowl by the door, using two lemons as pillows. The household lost this argument years ago and now buys more bowls.' },
     ],
   },
   'c8.ex.campetto': {
@@ -1198,7 +1248,7 @@ export const SICILY_NODES: NodeMap = {
   // ---------------- examines: shared kinds, this map's voice ----------------
   'c8.ex.sea': {
     lines: [
-      { text: 'The sea here is a hard summer blue with black stones standing in it. Homer put a giant on this shore and the water has been smug since.' },
+      { text: 'The sea here is hard summer blue with black stones standing in it. Homer put a giant on this shore and the water has been smug since.' },
     ],
   },
   'c8.ex.stall': {
@@ -1253,7 +1303,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.stool.won': {
     lines: [
-      { text: 'The chair that waited years sits square to the table now, warm most afternoons. A chair in use is not a monument, and the elders prefer it so.' },
+      { text: 'The chair that waited years sits square to the table now, warm most afternoons. A chair in use is not a monument; the elders prefer it so.' },
     ],
   },
   /**
@@ -1286,7 +1336,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ex.banco': {
     lines: [
-      { text: 'The bar: dark wood, a zinc top worn pale where sixty years of elbows have leaned, and a brass rail nobody has polished since the brass was new.' },
+      { text: 'The bar: dark wood, a zinc top worn pale where sixty years of elbows leaned, and a brass rail nobody has polished since the brass was new.' },
       { text: 'Two cups upended on a folded cloth, a bottle of amaro at the level it is always at, and a saucer of receipts under a lemon.' },
     ],
   },
@@ -1324,7 +1374,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.ex.wallcalce': {
     lines: [
       { text: 'Whitewash over lava block, laid on by hand every spring, and sea-green oil paint to shoulder height because shoulders lean.' },
-      { text: 'Where the calce has come off, the basalt underneath is still black. The mountain is in the wall; the wall would rather you did not dwell on it.' },
+      { text: 'Where the calce has come off, the basalt beneath is still black. The mountain is in the wall; the wall would rather you not dwell on it.' },
     ],
   },
   'c8.ex.floorgraniglia': {

@@ -244,7 +244,6 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.arrive': {
     lines: [
       { text: 'The launch noses in past a stone lantern and the Inland Sea goes glass-flat behind you. Land, after thirty-one days of deck.' },
-      { text: 'The heat is a wet towel. From the dark of the hill comes a wall of sound, sizzling like oil: cicadas, thousands, all of them certain.' },
       { text: 'Up the pier, boats fly bright banners for a festival that has not happened yet. Hana is already ashore, standing very still, looking at her town.' },
     ],
     effects: ['set:c4.arrived'],
@@ -271,7 +270,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Hana', text: 'So you met Obaachan. Did she scold your shoes? She scolded mine, and I grew up in that genkan.' },
       { who: 'Hana', text: 'My grandfather fished tai from this water his whole life. His flags are the ones on the pier. She flies them for Tanabata now.' },
-      { who: 'Hana', text: 'The seventh night is almost here. Bamboo is up, wishes are hanging, and the stalls are creeping onto the quay one by one. Watch the town get younger.' },
+      { who: 'Hana', text: 'The seventh night is almost here. Bamboo up, wishes hanging, stalls creeping onto the quay one by one. Watch the town get younger.' },
     ],
     effects: ['set:c4.hana3'],
   },
@@ -343,17 +342,38 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'A low table, a fish grilled whole, rice, miso soup, pickles the color of stained glass. She sits, waits, and puts her palms together.' },
       { who: 'Fumi', text: 'Itadakimasu. I humbly receive. You say it to the fish, the farmer, the sea, the cook. Mostly the cook, in this house.' },
+    ],
+    effects: ['journal:words.itadakimasu'],
+    choices: [
+      { text: 'Say it back: itadakimasu', goto: 'c4.fumi.meal.say' },
+      { text: 'Copy her hands, palms together', goto: 'c4.fumi.meal.copy' },
+    ],
+  },
+  'c4.fumi.meal.say': {
+    lines: [
+      { text: 'Itadakimasu, you say, to the fish and the cook. The word comes out steadier than you expected.' },
+    ],
+    next: 'c4.fumi.meal2',
+  },
+  'c4.fumi.meal.copy': {
+    lines: [
+      { text: 'You put your palms together the way she does, and bow a little. She nods: the hands said it well enough.' },
+    ],
+    next: 'c4.fumi.meal2',
+  },
+  'c4.fumi.meal2': {
+    lines: [
       { text: 'The fish tastes like the morning it was caught. When the bowls are empty she bows a centimeter, and you copy her: gochisosama.' },
       { who: 'Fumi', text: 'Gochisosama deshita, yes. It was a feast, you say, even for barley tea and a rice ball. Especially then.' },
     ],
-    effects: ['set:c4.meal', 'journal:words.itadakimasu', 'journal:words.gochisosama'],
+    effects: ['set:c4.meal', 'journal:words.gochisosama'],
   },
   // The broth is learned at the pot, not across it: the dawn kitchen teaches
   // the steps in hand, and the dashi page fills when the cooking is done.
   'c4.fumi.dashi': {
     lines: [
       { who: 'Fumi', text: 'The smell? Iriko, the little dried fish on the shelf there. This house\'s broth; the pot will teach you more than I can say.' },
-      { who: 'Fumi', text: 'A small work with lunch inside it: Daisuke holds a tai for me when the catch is good, and the hill got longer this year. Fetch it for me?' },
+      { who: 'Fumi', text: 'A small work with lunch inside it: Daisuke holds a tai for me, and the hill got longer this year. Fetch it for me?' },
     ],
     effects: ['set:c4.dashi', 'errand:fumi-tai', 'set:errand.fumi-tai'],
   },
@@ -371,7 +391,27 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'You eat like someone I heard about. My mother-in-law kept this house before me, and she told a story her whole life.' },
       { who: 'Fumi', text: 'A laughing foreigner, a girl who bowed too deep to everyone, even the postman. Stayed a while, the year of the big Tanabata rain. 1974, I think.' },
       { who: 'Fumi', text: 'She wrote in a little book at this very table, and she thanked corrections. Twice, always twice. Why are you looking at me like that?' },
-      { text: 'The journal is in your pack. You do not take it out.' },
+    ],
+    choices: [
+      { text: 'Take the journal out', goto: 'c4.fumi.memory.show' },
+      { text: 'Leave it in the pack', goto: 'c4.fumi.memory.keep' },
+    ],
+  },
+  'c4.fumi.memory.show': {
+    lines: [
+      { text: 'You lay the little book on the table. Fumi looks at the cover a long moment and does not open it.' },
+    ],
+    next: 'c4.fumi.memory.end',
+  },
+  'c4.fumi.memory.keep': {
+    lines: [
+      { text: 'The journal stays in your pack. Your hand rests on the flap a moment, and Fumi pretends not to see it.' },
+    ],
+    next: 'c4.fumi.memory.end',
+  },
+  'c4.fumi.memory.end': {
+    lines: [
+      { who: 'Fumi', text: 'Mm. The table remembers her weight on its elbows, I think. Tables are sentimental; ask any innkeeper.' },
     ],
     effects: ['set:c4.fumi.nani'],
   },
@@ -424,6 +464,26 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Fumi', text: 'Ah. Here she is again, in my mother-in-law’s hand. Zoila-san, written in for one night.' },
       { who: 'Fumi', text: 'And the next line is three weeks later, and it is her leaving. Nothing in between. She was on her way somewhere.' },
       { text: 'You wait for the rest of it. There is no rest of it.' },
+    ],
+    choices: [
+      { text: 'Say nothing.', goto: 'c4.fumi.her.quiet' },
+      { text: '"Three weeks is a long stop."', goto: 'c4.fumi.her.long' },
+    ],
+  },
+  'c4.fumi.her.quiet': {
+    lines: [
+      { text: 'You let the ledger lie open between you. The pen waits with its cap off.' },
+    ],
+    next: 'c4.fumi.her2',
+  },
+  'c4.fumi.her.long': {
+    lines: [
+      { who: 'Fumi', text: 'Mm. Long for a ferry town, short for a life. The ledger only counts nights.' },
+    ],
+    next: 'c4.fumi.her2',
+  },
+  'c4.fumi.her2': {
+    lines: [
       { who: 'Fumi', text: 'People stop here. The ferry goes without them and the town does not ask why. Tea? The pot is still hot.' },
     ],
     effects: ['set:c4.her.told', 'journal:her.threeweeks'],
@@ -479,7 +539,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.dai.udon': {
     lines: [
-      { text: 'Noon. Daisuke waves you onto a crate, sets down two bowls of udon, and inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
+      { text: 'Noon. Daisuke waves you onto a crate, sets down two bowls of udon, inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
       { who: 'Daisuke', text: 'Is it bad? You eat like a funeral; the broth offended you, tell me straight, I can take it.' },
       { text: 'You try it his way instead, tide over gravel. The noodles taste warmer, somehow.' },
       { who: 'Daisuke', text: 'THERE it is! Loud means delicious, ne. Silence is for fish still in the water.' },
@@ -507,7 +567,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'A pale gold square, cool and dense, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad.' },
       { text: 'Your people. Doña Petro at her pots. Pilar, Aurelio.' },
     ],
-    effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai', 'journal:dishes.lemonyokan'],
+    effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai'],
   },
   // The lemon lore rides where the lemons do: on the stenciled crates, found
   // once Sachiko has nodded at them. The page fills at the noticing.
@@ -516,7 +576,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. The crates by the counter came across with them; look them over, go on.' },
       { who: 'Sachiko', text: 'Come back when you have thought about your list. Omiyage is chosen slowly and given fast. Both halves matter.' },
     ],
-    effects: ['set:c4.sachiko2'],
+    effects: ['set:c4.sachiko2', 'journal:dishes.lemonyokan'],
   },
   'c4.sachi.shop': {
     lines: [
@@ -642,7 +702,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.taro.biggest': {
     lines: [
-      { who: 'Taro', text: 'The biggest... Dad\'s boat. Because if the boat comes back full, Gran gets medicine, and if there are fish there is a town, and a school in it.' },
+      { who: 'Taro', text: 'The biggest... Dad\'s boat. If the boat comes back full, Gran gets medicine, and if there are fish there is a town, and a school in it.' },
       { text: 'He writes it carefully, tongue out, and nods at his own logic. One wish, towing three others like skiffs behind it.' },
       { who: 'Taro', text: 'You are good at this. Do you do weddings?' },
     ],
@@ -681,13 +741,13 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.isao.umi': {
     lines: [
       { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath; a working sea.' },
-      { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You lower your voice, you mind your manners, you say thank you at the rail.' },
+      { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You lower your voice, mind your manners, say thank you at the rail.' },
     ],
   },
   'c4.isao.ferry': {
     lines: [
       { who: 'Captain Isao', text: 'So. The festival is hung, the wishes are up, and your pack smells of lemon and wrapping paper. That is a traveler ready to travel.' },
-      { who: 'Captain Isao', text: 'I run you to Shimonoseki on the morning boat. From there the Busan ferry crosses the strait, as it has since before either of us. Say the word.' },
+      { who: 'Captain Isao', text: 'I run you to Shimonoseki on the morning boat. From there the Busan ferry crosses the strait, as it has since before us both. Say the word.' },
     ],
     choices: [
       { text: 'Board for Busan', goto: 'c4.depart' },
@@ -738,7 +798,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'A familiar figure stands at the end of the quay in shore clothes that fit like a disguise, holding a glass jar up toward the green hills.' },
       { who: 'Olena', text: 'The galley hand. Do not look amazed; the Yacana unloads until tomorrow and I am on shore leave. It is an ancient maritime right.' },
-      { who: 'Olena', text: 'The starter came ashore with me. Six oceans in this jar, and it has never once seen a mountain. Today it sees a mountain. Look at it bubble.' },
+      { who: 'Olena', text: 'The starter came ashore with me. Six oceans in this jar, and it has never seen a mountain. Today it sees a mountain. Look at it bubble.' },
       { who: 'Olena', text: 'That is happiness. I have it on good authority. Mine.' },
     ],
     effects: ['set:c4.met.olena'],
@@ -993,7 +1053,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.sea': {
     lines: [
-      { text: 'The Seto Inland Sea, flat as poured metal, islands stacked blue on blue to the haze. A sea with the manners of a lake and the memory of an ocean.' },
+      { text: 'The Seto Inland Sea, flat as poured metal, islands stacked blue on blue. A sea with the manners of a lake and the memory of an ocean.' },
     ],
   },
   'c4.ex.sand': {
@@ -1010,6 +1070,14 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { text: 'Concrete and old timber, ringed with truck tires for fenders. The ferry kisses here three times a day, exactly on time.' },
     ],
+  },
+  // The first stand on the quay carries what the gangway used to narrate:
+  // the heat and the cicadas, met at your own pace instead of in a corridor.
+  'c4.ex.quay.heat': {
+    lines: [
+      { text: 'The heat is a wet towel. From the dark of the hill comes a wall of sound, sizzling like oil: cicadas, thousands, all of them certain.' },
+    ],
+    effects: ['set:c4.quay.heat'],
   },
   'c4.ex.quay': {
     lines: [
@@ -1028,7 +1096,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.hisashi': {
     lines: [
-      { text: 'A shop awning on steel arms, cloth bleached on the seaward half only. No two on this street hang at the same height, and no two ever did.' },
+      { text: 'A shop awning on steel arms, cloth bleached on the seaward half only. No two on this street hang at the same height; no two ever did.' },
     ],
   },
   'c4.ex.stall': {
@@ -1193,7 +1261,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.neko1b': {
     lines: [
-      { text: 'The loaf has not moved, but the eyes track you with the calm of middle management. This stretch of quay is hers, and the paperwork is in order.' },
+      { text: 'The loaf has not moved, but the eyes track you with the calm of middle management. This stretch of quay is hers; the paperwork is in order.' },
     ],
   },
   'c4.neko2.tai': {
@@ -1401,7 +1469,10 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   sand: [{ map: 'shionoura', node: 'c4.ex.sand' }],
   sandWet: [{ map: 'shionoura', node: 'c4.ex.wet' }],
   pierdeck: [{ map: 'shionoura', node: 'c4.ex.pier' }],
-  plaza: [{ map: 'shionoura', node: 'c4.ex.quay' }],
+  plaza: [
+    { map: 'shionoura', when: { not: ['c4.quay.heat'] }, node: 'c4.ex.quay.heat' },
+    { map: 'shionoura', node: 'c4.ex.quay' },
+  ],
   path: [{ map: 'shionoura', node: 'c4.ex.path' }],
   dirt: [{ map: 'shionoura', node: 'c4.ex.yard' }],
   stall: [{ map: 'shionoura', node: 'c4.ex.stall' }],

@@ -608,7 +608,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.petro.noonmeal': {
     lines: [
-      { text: 'Noon. The fish was swimming at dawn. Lime, red onion, ají, a scatter of cancha, camote glowing orange at the rim.' },
+      { text: 'Tomorrow arrives, and with it noon. The fish was swimming at dawn. Lime, red onion, ají, a scatter of cancha, camote glowing orange at the rim.' },
       { text: 'It is bright as a slap and gentler. On the side, a small glass of the marinade itself: leche de tigre.' },
       { who: 'Doña Petro', text: 'Tiger’s milk. For courage, for hangovers, for existing. Drink it. Everything in this house works twice.' },
     ],

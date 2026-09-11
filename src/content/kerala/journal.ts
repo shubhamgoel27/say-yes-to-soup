@@ -55,7 +55,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     tab: 'words',
     title: 'Adipoli',
     sub: 'Excellent. Top class. Appu’s rating system, license granted free.',
-    you: 'Appu rates everything: the jetty (okay), his brother’s ship (adipoli), the first rain (ADIPOLI). It is a philosophy small enough to carry.',
+    you: 'Appu rates everything: the jetty (okay), his brother’s ship (adipoli), the returning rain (ADIPOLI). It is a philosophy small enough to carry.',
   },
 
   // ---------------- dishes ----------------
@@ -145,7 +145,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     title: 'Edavappathi',
     sub: 'The monsoon’s arrival, around the first of June. Not weather; a relative who keeps the promised day.',
     nani: 'The first rain hit the tile roofs like applause for no one. Everyone came out to hear it anyway.',
-    you: 'I planned around the rain. The village plans with it: boats bailed, umbrellas at every door, kids running OUT of cover. I stood in it and understood.',
+    you: 'The rains took a dry week, then walked back in over the lagoon. Boats bailed, umbrellas ready, kids running OUT of cover. I stood in it and understood.',
   },
   {
     id: 'customs.vallamkali',

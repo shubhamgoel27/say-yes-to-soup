@@ -2,8 +2,9 @@ import type { JournalEntry } from '../schema';
 import type { TaskDef } from '../../ui/journal';
 
 /**
- * The Zanzibar pages. Nani's 1974 hand is thoughtful here: long sittings,
- * short sentences, ink the humidity tried to argue with. This coast is
+ * The Zanzibar pages. Nani's hand is thoughtful here: long sittings, short
+ * sentences, ink the humidity tried to argue with. The long rains held her,
+ * so these margins run out of 1974 and into early 1975. This coast is
  * where her trick, walk slowly, turns out to be a whole civilization.
  */
 

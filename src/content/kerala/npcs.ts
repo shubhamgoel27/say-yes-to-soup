@@ -253,7 +253,7 @@ export const KERALA_NODES: NodeMap = {
       { text: 'The cargo ship left you at Kochi; a chugging boat left you here, on a jetty one handcart wide, argued daily.' },
       { text: 'Green water, green banks, green light. The air leans on you, wet, smelling of mud, smoke, and something frying.' },
       { text: 'In your pocket: a letter and a small parcel, carried across one whole ocean. Joseph said: the house with the open door.' },
-      { text: 'Above the palms, the sky is stacking dark clouds like cargo. Everyone walks as if they know the schedule.' },
+      { text: 'Above the palms, the sky is stacking dark clouds like cargo. The rains have taken a week off; everyone walks like they know the schedule.' },
     ],
     effects: ['set:c6.arrived'],
   },
@@ -283,12 +283,27 @@ export const KERALA_NODES: NodeMap = {
       { text: 'She laughs, wipes her eyes with the end of her mundu, and keeps reading. The page trembles a little, like the palms outside.' },
     ],
     effects: ['set:c6.letter.heard'],
+    choices: [
+      { text: 'Hand her the parcel now', goto: 'c6.mariamma.hand' },
+      { text: 'Wait until she finishes the letter', goto: 'c6.mariamma.waitread' },
+    ],
+  },
+  'c6.mariamma.hand': {
+    lines: [
+      { text: 'You slide the parcel across the table. She weighs it in one hand, eyes still on her son’s handwriting.' },
+    ],
+    next: 'c6.mariamma.gift',
+  },
+  'c6.mariamma.waitread': {
+    lines: [
+      { text: 'You keep the parcel in your lap while she reads to the end, twice. Only then does she hold out her hand.' },
+    ],
     next: 'c6.mariamma.gift',
   },
   'c6.mariamma.gift': {
     lines: [
       { text: 'The parcel: a folding umbrella from Japan, small as a mango, black as a crow. She opens it indoors without one flicker of worry.' },
-      { who: 'Mariamma', text: 'An umbrella, before edavappathi! The boy remembers the sky. Ha! He forgets my birthday and remembers the sky.' },
+      { who: 'Mariamma', text: 'An umbrella, in the middle of the rains! The boy remembers the sky. Ha! He forgets my birthday and remembers the sky.' },
       { text: 'She laughs again, properly this time, and stands the little umbrella by the door like a guest of honor.' },
     ],
     next: 'c6.mariamma.adopt',
@@ -312,9 +327,15 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Mariamma', text: 'Sukhamano, mone? It means, are you well. You answer: sukham! Say it until it is true; that is how it works.' },
       { text: 'She lifts the lid on a clay pot. Meen curry, dark red, sour with kudampuli. It has been resting since yesterday.' },
       { who: 'Mariamma', text: 'Fish curry is better on the second day. The pot thinks about it overnight. People also improve if you let them sit.' },
+    ],
+    effects: ['set:c6.mariamma2', 'journal:words.sukhamano', 'journal:dishes.meencurry'],
+    next: 'c6.mariamma.kitchen2',
+  },
+  'c6.mariamma.kitchen2': {
+    lines: [
       { who: 'Mariamma', text: 'One more lesson. Anyone older is chetta or chechi, elder brother, elder sister. Address the village correctly and it is all relatives.' },
     ],
-    effects: ['set:c6.mariamma2', 'journal:words.sukhamano', 'journal:words.chetta', 'journal:dishes.meencurry'],
+    effects: ['journal:words.chetta'],
   },
   // The one thing this kitchen kept. She does not diagnose it, does not dress
   // it up, and stops the moment she hears who she is saying it to.
@@ -324,6 +345,26 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Mariamma', text: 'A Peru girl sat there in the rain year and wrote in a book all evening. Zoila.' },
       { who: 'Mariamma', text: 'Every morning I asked sukhamano and every morning she said sukham. For most of two weeks that was not true, and we both knew it.' },
       { who: 'Mariamma', text: 'She would not let me send for a doctor. She asked me to keep it out of any letter, so I kept it out of any letter.' },
+    ],
+    choices: [
+      { text: 'Say nothing.', goto: 'c6.mariamma.her.quiet' },
+      { text: '"Why did you agree?"', goto: 'c6.mariamma.her.why' },
+    ],
+  },
+  'c6.mariamma.her.quiet': {
+    lines: [
+      { text: 'You keep quiet. The scraper keeps the time neither of you wants to name.' },
+    ],
+    next: 'c6.mariamma.her2',
+  },
+  'c6.mariamma.her.why': {
+    lines: [
+      { who: 'Mariamma', text: 'Because she asked the way you ask for salt, mone. Some things you only argue with after the boat has gone.' },
+    ],
+    next: 'c6.mariamma.her2',
+  },
+  'c6.mariamma.her2': {
+    lines: [
       { who: 'Mariamma', text: 'She walked onto the boat herself when it came. That is the part I keep.' },
       { who: 'Mariamma', text: 'Ayyo, my mouth. You have her face when you listen, and I have been talking to it.' },
       { text: 'She turns back to the blade, faster than before, and asks the pot twice whether it is behaving. Neither of them answers you.' },
@@ -372,7 +413,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.blessing': {
     lines: [
-      { who: 'Mariamma', text: 'Come here. Rowed with the club, served at my sadya, stood in the first rain like a local fool. Mone, you are done arriving.' },
+      { who: 'Mariamma', text: 'Come here. Rowed with the club, served at my sadya, stood in the returning rain like a local fool. Mone, you are done arriving.' },
       { text: 'She holds your face in both hands, the way you handle something you intend to keep. Her eyes shine; the good kind, this time.' },
       { who: 'Mariamma', text: 'The sea took my son and sends me letters. Now it takes you too. Go to Moosa at the jetty; the wind is already asking about you.' },
     ],
@@ -431,7 +472,7 @@ export const KERALA_NODES: NodeMap = {
       { text: 'On a steel plate: puttu, a soft white cylinder of rice and coconut, with kadala curry. Beside it a parotta, flaking into ribbons.' },
       { who: 'Shaji', text: 'Puttu for the morning, parotta for the soul. Tear it with the fingers, sir. Cutlery is for people in a hurry to be elsewhere.' },
     ],
-    effects: ['set:c6.chaya', 'journal:words.chaya', 'journal:dishes.puttu', 'journal:dishes.parotta'],
+    effects: ['set:c6.chaya', 'journal:words.chaya', 'journal:dishes.puttu'],
     choices: [
       { text: '"In Busan the ajumma always added a little extra. Deom, she called it."', goto: 'c6.shaji.deom', when: { has: ['page.words.deom'] } },
       { text: 'Ask why the glass is only three-quarters full', goto: 'c6.shaji.extra' },
@@ -439,9 +480,10 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.shaji.deom': {
     lines: [
-      { who: 'Shaji', text: 'Deom! A name for it! Here it has no name, sir. I pour short, you notice, I top it up, we are both pleased. Naming it would spoil the aim.' },
+      { who: 'Shaji', text: 'Deom! A name for it! Here it has no name, sir. I pour short, you notice, I top it up. Naming it would spoil the aim.' },
       { text: 'He tops your glass with a flourish. The extra is always poured last, so it stays the extra.' },
     ],
+    effects: ['journal:dishes.parotta'],
     next: 'c6.shaji.wobble',
   },
   'c6.shaji.extra': {
@@ -450,11 +492,12 @@ export const KERALA_NODES: NodeMap = {
       { text: 'He tops the glass with one more pull, unasked. It is a small ceremony: the short pour, the noticing, the topping-up.' },
       { who: 'Shaji', text: 'The last splash is not chaya, sir. It is the message. Regulars get it without asking; that is what regular means.' },
     ],
+    effects: ['journal:dishes.parotta'],
     next: 'c6.shaji.wobble',
   },
   'c6.shaji.wobble': {
     lines: [
-      { text: 'You ask if there will be puttu again tomorrow. Shaji tilts his head side to side, side to side. You take it as a no and start to stand.' },
+      { text: 'You ask if there will be puttu tomorrow. Shaji tilts his head side to side. You take it as a no and start to stand.' },
       { who: 'Appu', text: 'Where are you GOING? That means yes! Head goes like a boat, answer is yes. Head goes still, THEN you worry.' },
       { who: 'Shaji', text: 'The boy translates for tourists and crows. Yes, puttu tomorrow, sir. The head said so plainly.' },
     ],
@@ -579,7 +622,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.kuttan.smell': {
     lines: [
       { who: 'Kuttan', text: 'Stand still. Breathe through the nose. Wet earth, hot tin, something green waking up. You smell it?' },
-      { who: 'Kuttan', text: 'From the top of a palm you can watch it walking in across the lagoon, grey as an elephant, twice as sure of itself.' },
+      { who: 'Kuttan', text: 'From the top of a palm you can watch it walking back in across the lagoon, grey as an elephant, twice as sure of itself.' },
     ],
     next: 'c6.rain.arrives',
   },
@@ -589,7 +632,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.rain.arrives': {
     lines: [
       { who: 'Kuttan', text: 'HA! There she is.' },
-      { who: 'Kuttan', text: 'Edavappathi, mone. Stand in it a minute; introductions matter here.' },
+      { who: 'Kuttan', text: 'Edavappathi, mone, back from her dry week. Stand in it a minute; reunions matter here.' },
     ],
     effects: ['set:c6.rain', 'journal:customs.monsoon'],
   },
@@ -646,14 +689,14 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.lib.rain': {
     lines: [
-      { who: 'Divakaran Master', text: 'First rain always fills the room. Half come for the roof, half for the paper, all stay for the argument.' },
+      { who: 'Divakaran Master', text: 'The rain coming back always fills the room. Half come for the roof, half for the paper, all stay for the argument.' },
       { who: 'Divakaran Master', text: 'Travelers shelter here too, every monsoon, for fifty years. They dry off between the poets and the sports page. Some of them even sign the register.' },
     ],
     effects: ['set:c6.lib2'],
   },
   'c6.lib.idle': {
     lines: [
-      { who: 'Divakaran Master', text: 'The mural is new paint on an old habit. The book pours out readers; the wall has been saying so since before I had this many white hairs.' },
+      { who: 'Divakaran Master', text: 'The mural is new paint on an old habit. The book pours out readers; the wall said so before my hair went white.' },
     ],
   },
 
@@ -699,7 +742,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.rowed': {
     lines: [
       { text: 'The song swallows you. Call, answer, strike; call, answer, strike.' },
-      { text: 'The boat surges each time a hundred blades bite at once, a muscle the length of a street. The bank blurs green; the crowd is one long vowel.' },
+      { text: 'The boat surges as a hundred blades bite at once, a muscle the length of a street. The bank blurs green; the crowd is one long vowel.' },
       { who: 'Captain Varkey', text: 'Ragged twice, on the beat the rest. For a first row in a chundan, I have seen worse from cousins.' },
       { text: 'Raghavan the stroke caller, who has not once looked at you, looks at you. One nod. It weighs more than the trophy would.' },
     ],
@@ -707,7 +750,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.varkey.after': {
     lines: [
-      { who: 'Captain Varkey', text: 'Race day is after the rains settle in. We will row wet and win wet; the trophy dries the same either way.' },
+      { who: 'Captain Varkey', text: 'Race day is when the rains steady again. We will row wet and win wet; the trophy dries the same either way.' },
       { who: 'Captain Varkey', text: 'The lake gives less fish every year; the houseboats churn it like soup. But race week, the water is only ours again.' },
     ],
     effects: ['set:c6.varkey2'],
@@ -739,7 +782,7 @@ export const KERALA_NODES: NodeMap = {
       { text: 'A duffel bag hits the kitchen floor with the sound of nine months ending. In the doorway, salt-stained and grinning, stands Joseph.' },
       { who: 'Mariamma', text: 'Joseph! The pot nearly went over! Come, come here, let me look at all of you at once.' },
       { text: 'His letter stands folded on the shelf, read soft at the creases. He sees it there and stops, an able seaman suddenly unable.' },
-      { who: 'Joseph', text: 'You beat me home, friend. I told you to take the slow road so I would win the race to my own kitchen, and you still beat me.' },
+      { who: 'Joseph', text: 'You beat me home, friend. I sent you the slow road so I would win the race to my own kitchen, and you still beat me.' },
       { who: 'Joseph', text: 'Contract paid off at Kochi. Three monsoons of wages in my pocket, and Amma already planning to spend them on feeding me.' },
     ],
     effects: ['set:c6.joseph.met'],
@@ -779,7 +822,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.joseph.ocean': {
     lines: [
       { text: 'He goes quiet for a moment, glass in hand, looking at nothing the way sailors look at nothing.' },
-      { who: 'Joseph', text: 'Some watches I stood the bow and found the Mayu, your star river, running bank to bank. I watched it from the other side of the same ocean.' },
+      { who: 'Joseph', text: 'Some watches I stood the bow and found the Mayu, your star river, running bank to bank from the far side of the same ocean.' },
       { who: 'Joseph', text: 'It made the distance one room. The letter said that badly; I am saying it better with my boots under Amma’s table.' },
     ],
     effects: ['set:c6.joseph.quizzed'],
@@ -1087,7 +1130,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.ex.kallupalm': {
     lines: [
-      { text: 'A palm notched all the way up, two hands apart, and a pot lashed under the cut spathe. The rope loop is coiled at the foot, still damp.' },
+      { text: 'A palm notched all the way up, two hands apart, a pot lashed under the cut spathe. The rope loop waits at the foot, still damp.' },
       { text: 'Whoever climbed it was up there before you woke. Sweet by breakfast, sour by evening: the same pot tells the time twice.' },
     ],
     effects: ['set:c6.seen.tapper'],
@@ -1188,7 +1231,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.ex.umbrella.gift': {
     lines: [
-      { text: 'Three tall umbrellas, and one from Japan, small as a mango, standing by the door like a guest of honor. It came early for the sky on purpose.' },
+      { text: 'Three tall umbrellas, and one from Japan, small as a mango, standing by the door like a guest of honor. It arrived knowing the sky here.' },
     ],
   },
   'c6.ex.shrub': {

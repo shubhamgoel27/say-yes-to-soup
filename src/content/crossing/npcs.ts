@@ -283,10 +283,16 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { text: 'The galley frames a man mid-stir: three pots going, a towel over one shoulder like a sash of office.' },
       { who: 'Mang Ben', text: 'Ah, the new hands! Kain na, come and eat. Nobody stands in my doorway hungry; on this ship that is the entire constitution.' },
+    ],
+    effects: ['set:c3.met.ben', 'journal:people.ben', 'journal:words.kainna'],
+    next: 'c3.ben.first2',
+  },
+  'c3.ben.first2': {
+    lines: [
       { text: 'Rice, fried fish, and a mug of coffee strong enough to stand the spoon up. He watches you eat like it is the evening news.' },
       { who: 'Mang Ben', text: 'Mang Ben. Just Ben makes the bosun smirk, so use the Mang. Kumusta? No, eat first, answer after. House rule two.' },
     ],
-    effects: ['set:c3.met.ben', 'journal:words.kainna', 'journal:people.ben', 'journal:dishes.galleycoffee'],
+    effects: ['journal:dishes.galleycoffee'],
   },
   'c3.ben.baon': {
     lines: [
@@ -347,6 +353,26 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'He is portioning tomorrow’s rice into trays, counting scoops under his breath and losing the count.' },
       { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once. The cook who taught me had it from the cook before him.' },
       { who: 'Mang Ben', text: 'A passenger girl who would not stay out of here. Zoila. Peeled onions for her supper and sang the whole watch.' },
+    ],
+    choices: [
+      { text: 'Say nothing.', goto: 'c3.ben.her.quiet' },
+      { text: '"Could she sing?"', goto: 'c3.ben.her.sing' },
+    ],
+  },
+  'c3.ben.her.quiet': {
+    lines: [
+      { text: 'You keep chopping. The knife holds the beat the song once kept.' },
+    ],
+    next: 'c3.ben.her2',
+  },
+  'c3.ben.her.sing': {
+    lines: [
+      { text: 'You ask it before you can stop yourself: could she sing?' },
+    ],
+    next: 'c3.ben.her2',
+  },
+  'c3.ben.her2': {
+    lines: [
       { who: 'Mang Ben', text: 'Badly, they say. They hid the ladle from her and she sang anyway. Thirty-one days, and the old cook missed it after.' },
       { text: 'He laughs at his trays, delighted with a joke fifty years old that was never his.' },
     ],
@@ -393,18 +419,22 @@ export const CROSSING_NODES: NodeMap = {
   'c3.jos.baon': {
     lines: [
       { who: 'Joseph', text: 'Ben sent the baon? Then you are my favorite person on this watch. Joseph, by the way. Able seaman, Kerala.' },
+    ],
+    effects: ['set:c3.met.joseph', 'journal:people.joseph'],
+    next: 'c3.jos.baon2',
+  },
+  'c3.jos.baon2': {
+    lines: [
       { text: 'He eats standing at the rail, plate balanced like it grew there. Somewhere aft, the bell strikes twice, bright as a coin.' },
+    ],
+    effects: ['journal:words.bells'],
+    next: 'c3.jos.baon3',
+  },
+  'c3.jos.baon3': {
+    lines: [
       { who: 'Joseph', text: 'Two bells. One hour of the watch down, and it went down better fed. Tell Ben the plate came home warm, will you?' },
     ],
-    effects: [
-      'set:c3.baon.done',
-      'set:c3.met.joseph',
-      'errand.done',
-      'clear:errand.ben-baon',
-      'journal:words.bells',
-      'journal:customs.watches',
-      'journal:people.joseph',
-    ],
+    effects: ['set:c3.baon.done', 'errand.done', 'clear:errand.ben-baon', 'journal:customs.watches'],
   },
   'c3.jos.entrust': {
     lines: [
@@ -717,7 +747,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [{ text: 'A rust bloom, wire-brushed at the edges where somebody fought back. The bosun is losing this one politely, a few square inches per week.' }],
   },
   'c3.ex.ropecoil': {
-    lines: [{ text: 'A mooring line flemished into a perfect flat spiral. There is no sign saying do not step on it; you just know, the way you know about altars.' }],
+    lines: [{ text: 'A mooring line flemished into a perfect flat spiral. No sign says do not step on it; you just know, the way you know about altars.' }],
   },
   'c3.ex.flyingfish': {
     lines: [{ text: 'A flying fish, stranded on deck overnight, wings folded like a closed umbrella. Ben calls this room service and the pan is already warm.' }],

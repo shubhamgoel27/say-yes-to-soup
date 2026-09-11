@@ -116,8 +116,10 @@ export const CHAPTER: ChapterDef = {
     'mariamma-veedu': { scene: 'interior', mood: 'interior' },
   },
   moods: {
-    // The held breath before edavappathi: white heat, heavy air, a haze
-    // that flattens the light without cooling anything.
+    // The held breath of a mid-season dry week: white heat, heavy air, a
+    // haze that flattens the light without cooling anything. (Timeline:
+    // Tanabata two chapters back pins early July; edavappathi broke in late
+    // May, so the player-facing rain is the rains returning, not the first.)
     premonsoon: {
       top: 'rgba(240,234,205,0.16)',
       mid: 'rgba(235,224,190,0.07)',
@@ -157,7 +159,7 @@ export const CHAPTER: ChapterDef = {
   dressings: [
     {
       // Joseph's umbrella takes its post by the door, a guest of honor
-      // standing with the household three, waiting for edavappathi.
+      // standing with the household three, waiting for the rains' return.
       map: 'mariamma-veedu',
       when: { has: ['c6.letter.delivered'] },
       cells: [[11, 8, { t: 'umbrellas', solid: true }]],

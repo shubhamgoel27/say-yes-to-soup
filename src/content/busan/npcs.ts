@@ -286,6 +286,26 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'She snaps heads off anchovies into a basin, four a second, without appearing to look at any of them. Her chin points down toward the post window.' },
       { who: 'Sun-hee', text: 'My mother sent me to that window on the last morning of every month. A foreign woman was always ahead of us, so it always took twice as long.' },
       { who: 'Sun-hee', text: 'The clerk called her name across the counter and the whole queue learned it. Zoila.' },
+    ],
+    choices: [
+      { text: 'Say nothing.', goto: 'c5.sunhee.her.quiet' },
+      { text: '"What was she sending?"', goto: 'c5.sunhee.her.ask' },
+    ],
+  },
+  'c5.sunhee.her.quiet': {
+    lines: [
+      { text: 'You let the anchovies keep the count. Her chin stays pointed at the window.' },
+    ],
+    next: 'c5.sunhee.her2',
+  },
+  'c5.sunhee.her.ask': {
+    lines: [
+      { text: 'You ask what a foreign woman posted every month, that it took so long.' },
+    ],
+    next: 'c5.sunhee.her2',
+  },
+  'c5.sunhee.her2': {
+    lines: [
       { who: 'Sun-hee', text: 'She spelled her village for him every month and he wrote it wrong every month. Money going home, same day, same window.' },
       { who: 'Sun-hee', text: 'Half that queue was sending money somewhere. I was small. I thought she worked there.' },
     ],
@@ -956,7 +976,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.onggi.tea': {
     lines: [
-      { text: 'A single onggi at the end of the counter, lid weighted with a river stone. Not kimchi: this one holds last spring’s leaves, and he is rationing them.' },
+      { text: 'A single onggi at the end of the counter, lid weighted with a river stone. Not kimchi: this one holds last spring’s leaves; he is rationing them.' },
     ],
   },
   'c5.ex.cat.tea': {
