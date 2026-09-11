@@ -71,21 +71,32 @@ function glowCv(color: string): HTMLCanvasElement {
   return cv;
 }
 
-function paintArrow(g: CanvasRenderingContext2D, x: number, y: number, dir: Dir) {
+function paintArrow(g: CanvasRenderingContext2D, x: number, y: number, dir: Dir, scale = 1, halo = false) {
   g.save();
   g.translate(x, y);
   const rot = dir === 'up' ? -Math.PI / 2 : dir === 'down' ? Math.PI / 2 : dir === 'left' ? Math.PI : 0;
   g.rotate(rot);
+  g.scale(scale, scale);
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  const stroke = () => {
+    g.beginPath();
+    g.moveTo(-5, 0);
+    g.lineTo(5, 0);
+    g.moveTo(1.5, -3.8);
+    g.lineTo(5.5, 0);
+    g.lineTo(1.5, 3.8);
+    g.stroke();
+  };
+  // A cream halo under the ink keeps the glyph legible on any yarn color.
+  if (halo) {
+    g.strokeStyle = PAL.cream;
+    g.lineWidth = 4.6;
+    stroke();
+  }
   g.strokeStyle = PAL.ink;
   g.lineWidth = 2.4;
-  g.lineCap = 'round';
-  g.beginPath();
-  g.moveTo(-5, 0);
-  g.lineTo(5, 0);
-  g.moveTo(1.5, -3.8);
-  g.lineTo(5.5, 0);
-  g.lineTo(1.5, 3.8);
-  g.stroke();
+  stroke();
   g.restore();
 }
 
@@ -255,7 +266,7 @@ function diamond(g: CanvasRenderingContext2D, x: number, y: number, r: number, c
 }
 
 const LOOM_LEGEND = [
-  { keys: ['left', 'up', 'right', 'down'], does: 'call the colors back, as the basket shows' },
+  { keys: ['left', 'up', 'right', 'down'], does: 'call the sequence back, as the basket shows' },
   { keys: ['space'], does: 'the next row' },
 ] as const;
 
@@ -320,7 +331,7 @@ export class WeavePanel {
     this.t = 0;
     this.lit = null;
     this.slotK = this.seq.map(() => 0);
-    this.hint = 'Watch the colors Carmen calls...';
+    this.hint = 'Watch which ball lights as Carmen calls...';
   }
 
   /** Driven by the fixed-timestep loop so it behaves under the dev sim too. */
@@ -593,6 +604,8 @@ export class WeavePanel {
         g.globalAlpha = 1;
         diamond(g, p.x, p.y, r, c);
         diamond(g, p.x, p.y - r * 0.28, r * 0.4, shade(c, 0.35));
+        // Each lit chip wears its arrow, so the call never rides on color alone.
+        paintArrow(g, p.x, p.y, COLORS[this.seq[i] ?? 0]!.dir, 0.85, true);
       } else {
         g.strokeStyle = 'rgba(43,33,24,0.4)';
         g.lineWidth = 1.8;

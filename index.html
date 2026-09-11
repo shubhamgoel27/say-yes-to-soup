@@ -48,6 +48,37 @@
         --hand: 'Caveat', 'Segoe Script', cursive;
         --shadow-card: 0 2px 3px rgba(31, 22, 12, 0.28), 0 10px 28px rgba(31, 22, 12, 0.34),
           0 24px 70px rgba(20, 14, 8, 0.4);
+        /* The small-print tier. Named for their normal size; the Large text
+         * setting (body.text-large) floors them near 14px and scales the
+         * reading sizes about 1.15x, so nothing on the page stays squint-small. */
+        --fs-11: 11px;
+        --fs-115: 11.5px;
+        --fs-12: 12px;
+        --fs-125: 12.5px;
+        --fs-13: 13px;
+        --fs-135: 13.5px;
+        --fs-14: 14px;
+        --fs-145: 14.5px;
+        --fs-15: 15px;
+        --fs-body: 16.5px;
+        --fs-hand16: 16px;
+        --fs-hand17: 17px;
+        --fs-hand175: 17.5px;
+      }
+      body.text-large {
+        --fs-11: 14px;
+        --fs-115: 14px;
+        --fs-12: 14px;
+        --fs-125: 14px;
+        --fs-13: 14.5px;
+        --fs-135: 15px;
+        --fs-14: 16px;
+        --fs-145: 16.5px;
+        --fs-15: 17px;
+        --fs-body: 19px;
+        --fs-hand16: 18.5px;
+        --fs-hand17: 19.5px;
+        --fs-hand175: 20px;
       }
       html, body {
         margin: 0;
@@ -140,7 +171,7 @@
         border: 1px solid var(--ink);
         border-radius: 2px;
         box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.45);
-        font-size: 13.5px;
+        font-size: var(--fs-135);
         font-style: italic;
         opacity: 0;
         transform: translateX(10px);
@@ -191,7 +222,7 @@
         color: #e8dcc4;
         border: 1px solid rgba(200, 165, 91, 0.4);
         border-radius: 3px;
-        font-size: 12.5px;
+        font-size: var(--fs-125);
         font-style: italic;
         line-height: 1.4;
         display: -webkit-box;
@@ -304,7 +335,7 @@
         box-shadow: inset 0 1px 0 rgba(255, 252, 244, 0.4);
       }
       #tb-text {
-        font-size: 16.5px;
+        font-size: var(--fs-body);
         min-height: 48px; /* two lines: the box breathes but never yawns */
         text-wrap: pretty;
       }
@@ -346,7 +377,7 @@
       .tb-choice {
         padding: 1px 8px 1px 26px;
         text-indent: -8px;
-        font-size: 15px;
+        font-size: var(--fs-15);
         position: relative;
       }
       .tb-choice.sel {
@@ -420,7 +451,7 @@
       }
       .j-head { display: flex; justify-content: space-between; align-items: baseline; }
       .j-name { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: 0.01em; }
-      .j-progress { font-size: 12.5px; font-style: italic; color: #6b5a44; font-variant-numeric: tabular-nums; }
+      .j-progress { font-size: var(--fs-125); font-style: italic; color: #5d4b35; font-variant-numeric: tabular-nums; }
       /* Physical index tabs, cut into the page edge like a real notebook. */
       .j-tabs {
         display: flex;
@@ -430,8 +461,10 @@
       }
       .j-tab {
         padding: 4px 12px 3px;
-        font-size: 13px;
-        color: #8a755a;
+        font-size: var(--fs-13);
+        /* Darker than the paper tier: the tab's own tinted gradient eats a
+         * quarter of the contrast, so the ink starts deeper to stay >= 4.5:1. */
+        color: #5f4c31;
         background: linear-gradient(180deg, rgba(43, 33, 24, 0.06), rgba(43, 33, 24, 0.12));
         border: 1.5px solid rgba(43, 33, 24, 0.3);
         border-bottom: none;
@@ -446,7 +479,7 @@
         transform: translateY(1.5px) scale(1.04);
       }
       .j-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
-      .j-list { flex: 0 0 38%; overflow-y: auto; min-height: 0; font-size: 14.5px; }
+      .j-list { flex: 0 0 38%; overflow-y: auto; min-height: 0; font-size: var(--fs-145); }
       .j-item { padding: 2px 6px; color: #57452f; }
       .j-item.sel {
         background: rgba(43, 33, 24, 0.09);
@@ -468,16 +501,16 @@
         from { background-position: 130% 0; }
         to { background-position: -130% 0; }
       }
-      .j-locked { margin-top: 8px; font-size: 12.5px; font-style: italic; color: #a08c6b; }
+      .j-locked { margin-top: 8px; font-size: var(--fs-125); font-style: italic; color: #6f5c40; }
       .j-detail { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; overflow: hidden; }
       .j-title { font-family: var(--display); font-weight: 600; font-size: 19px; text-wrap: balance; }
-      .j-sub { font-size: 13px; font-style: italic; color: #6b5a44; margin-bottom: 8px; }
-      .j-nani, .j-you { font-size: 14px; margin-top: 8px; }
+      .j-sub { font-size: var(--fs-13); font-style: italic; color: #5d4b35; margin-bottom: 8px; }
+      .j-nani, .j-you { font-size: var(--fs-14); margin-top: 8px; }
       .j-nani {
         font-family: var(--hand);
-        font-size: 17.5px;
+        font-size: var(--fs-hand175);
         line-height: 1.3;
-        color: #8a7455;
+        color: #6b5334;
         transform: rotate(-0.4deg);
       }
       .j-nani.empty { opacity: 0.55; }
@@ -494,9 +527,9 @@
       /* Every entry separates her hand from yours the same way. */
       .j-nani { border-top: 1px dashed rgba(43, 33, 24, 0.18); padding-top: 8px; }
       .j-nani.empty { border-top: 1px dashed rgba(43, 33, 24, 0.12); }
-      .j-empty { font-style: italic; color: #7a6749; margin-top: 20px; font-size: 14.5px; }
-      .j-stitch { color: #c1512f; font-size: 12px; }
-      .j-thread { font-family: var(--hand); font-size: 17px; line-height: 1.3; margin-top: 10px; color: #7a5a3a; transform: rotate(-0.5deg); }
+      .j-empty { font-style: italic; color: #6f5c40; margin-top: 20px; font-size: var(--fs-145); }
+      .j-stitch { color: #c1512f; font-size: var(--fs-12); }
+      .j-thread { font-family: var(--hand); font-size: var(--fs-hand17); line-height: 1.3; margin-top: 10px; color: #6a4c2e; transform: rotate(-0.5deg); }
       .j-thread span {
         display: block;
         font-family: 'Literata', Georgia, serif;
@@ -526,8 +559,8 @@
         from { transform: scaleX(0); opacity: 0.3; }
         to { transform: scaleX(1); opacity: 0.75; }
       }
-      .j-thread-to { font-size: 12px; font-style: normal; color: #a3542f; margin-top: 6px; }
-      .j-native { font-size: 15px; color: #7a5a3a; margin-left: 8px; font-weight: normal; }
+      .j-thread-to { font-size: var(--fs-12); font-style: normal; color: #a3542f; margin-top: 6px; }
+      .j-native { font-size: var(--fs-15); color: #6a4c2e; margin-left: 8px; font-weight: normal; }
       .j-dishart { margin: 6px 0 8px; }
       .j-dishart canvas { display: block; width: 165px; height: auto; border-radius: 4px; }
       .j-route { flex: 1; overflow-y: auto; padding-right: 8px; }
@@ -538,8 +571,8 @@
       .j-route-glyph { width: 16px; text-align: center; color: #c1512f; }
       .j-route-name { font-size: 15.5px; }
       .j-route-stop.here .j-route-name { color: var(--ink); font-weight: 600; }
-      .j-route-hop { font-size: 12px; font-style: italic; color: #8a7455; }
-      .j-route-nani { font-family: var(--hand); font-size: 16px; color: #8a7455; margin: 0 0 2px 24px; }
+      .j-route-hop { font-size: var(--fs-12); font-style: italic; color: #6b5334; }
+      .j-route-nani { font-family: var(--hand); font-size: var(--fs-hand16); color: #6b5334; margin: 0 0 2px 24px; }
       .j-route-nani.empty { opacity: 0.6; }
       .j-route-stitch {
         width: 2px; height: 8px; margin-left: 9px;
@@ -547,7 +580,7 @@
       }
       .j-tasks { flex: 1; overflow-y: auto; padding-right: 6px; }
       .j-task {
-        font-size: 14px;
+        font-size: var(--fs-14);
         line-height: 1.5;
         padding: 8px 10px 8px 26px;
         margin-bottom: 8px;
@@ -560,14 +593,14 @@
         position: absolute;
         left: 8px;
         top: 7px;
-        color: #a08c6b;
+        color: #6f5c40;
       }
       .j-task.now {
         background: rgba(193, 81, 47, 0.09);
         color: var(--ink);
       }
       .j-task.now::before { content: '\25B8'; color: #c1512f; }
-      .j-hint { font-size: 11px; color: #8a7455; text-align: center; padding-top: 6px; }
+      .j-hint { font-size: var(--fs-11); color: #6b5334; text-align: center; padding-top: 6px; }
 
       /* ---- journal photos: Chasca's prints, pasted where you can visit them ---- */
       .j-ph-grid {
@@ -641,7 +674,7 @@
       .j-ph-corner.c2 { top: 3px; right: 3px; border-top-color: rgba(58, 44, 30, 0.4); border-right-color: rgba(58, 44, 30, 0.4); }
       .j-ph-corner.c3 { bottom: 3px; left: 3px; border-bottom-color: rgba(58, 44, 30, 0.4); border-left-color: rgba(58, 44, 30, 0.4); }
       .j-ph-corner.c4 { bottom: 3px; right: 3px; border-bottom-color: rgba(58, 44, 30, 0.4); border-right-color: rgba(58, 44, 30, 0.4); }
-      .j-ph-name { font-size: 11px; font-style: italic; color: #a08c6b; padding: 0 6px; text-align: center; }
+      .j-ph-name { font-size: var(--fs-11); font-style: italic; color: #6f5c40; padding: 0 6px; text-align: center; }
       /* The selected print, larger, in the detail pane. */
       .j-ph-big {
         margin: 8px auto 0;
@@ -853,7 +886,7 @@
         .t-steam { animation: none; opacity: 0.45; transform: none; }
       }
       .t-sub {
-        font-size: 13.5px;
+        font-size: var(--fs-135);
         font-style: italic;
         color: #c4ac83;
         max-width: 300px;
@@ -871,10 +904,10 @@
       /* Under Continue: where the journey paused, and how far the journal is. */
       .t-opt-sub {
         font-family: 'Literata', Georgia, serif;
-        font-size: 11.5px;
+        font-size: var(--fs-115);
         font-style: italic;
         letter-spacing: 0.02em;
-        color: #8a7455;
+        color: #b8a077;
         margin-top: -3px;
       }
       .t-opt.sel .t-opt-sub { color: #c4ac83; }
@@ -883,8 +916,8 @@
         gap: 22px;
         justify-content: center;
         margin-top: 22px;
-        font-size: 12px;
-        color: #8a7455;
+        font-size: var(--fs-12);
+        color: #a58e68;
       }
       .t-controls b { color: #c8a55b; font-weight: normal; }
 
@@ -953,12 +986,15 @@
       .letter-sign { text-align: right; margin: 0 0 0; }
       .letter-hint {
         text-align: center;
-        font-size: 11.5px;
-        color: #a08c6b;
+        font-size: var(--fs-115);
+        color: #6f5c40;
         padding-top: 6px;
         animation: pulse 1.6s ease-in-out infinite;
       }
       @keyframes pulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .letter-hint { animation: none; opacity: 0.85; }
+      }
 
       /* ---- cc: the flyleaf card (name + the traveler's look) ---- */
       #cc-card {
@@ -997,11 +1033,11 @@
       }
       .cc-kicker {
         font-family: var(--display);
-        font-size: 12.5px;
+        font-size: var(--fs-125);
         font-weight: 600;
         letter-spacing: 0.26em;
         text-transform: uppercase;
-        color: #8a755a;
+        color: #6b5637;
         margin-bottom: 12px;
       }
       .cc-copy {
@@ -1066,7 +1102,7 @@
         align-items: center;
         padding: 3px 4px;
         border-radius: 3px;
-        color: #6b5a44;
+        color: #5d4b35;
       }
       .cc-row.sel { background: rgba(43, 33, 24, 0.07); color: var(--ink); }
       .cc-arr {
@@ -1113,8 +1149,8 @@
         text-underline-offset: 4px;
       }
       .cc-hint {
-        font-size: 11.5px;
-        color: #a08c6b;
+        font-size: var(--fs-115);
+        color: #6f5c40;
         padding-top: 6px;
       }
 
@@ -1159,7 +1195,7 @@
       }
       .w-row { display: flex; gap: 2px; }
       .w-row span { width: 22px; height: 9px; border-radius: 1px; display: inline-block; }
-      .w-empty { font-size: 12px; font-style: italic; color: #a08c6b; }
+      .w-empty { font-size: var(--fs-12); font-style: italic; color: #6f5c40; }
       .w-seq { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
       .w-cell {
         width: 30px;
@@ -1169,7 +1205,7 @@
         transition: transform 0.12s ease;
       }
       .w-cell.on { transform: scale(1.12); }
-      .w-hint { font-size: 13.5px; font-style: italic; min-height: 20px; margin-bottom: 10px; }
+      .w-hint { font-size: var(--fs-135); font-style: italic; min-height: 20px; margin-bottom: 10px; }
       /* The key legend: the how-to card leaves, the keys stay. One row, the
        * same shape in every panel, quiet enough to sit under the painting. */
       .w-legend {
@@ -1185,7 +1221,7 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        font-size: 11.5px;
+        font-size: var(--fs-115);
         font-style: normal;
         letter-spacing: 0.01em;
         color: rgba(43, 33, 24, 0.72);
@@ -1246,7 +1282,7 @@
       .p-opt {
         font-family: var(--hand);
         font-size: 23px;
-        color: #8a755a;
+        color: #6b5637;
         transition: color 0.15s ease, transform 0.15s ease;
       }
       .p-opt.sel { color: var(--ink); transform: rotate(-0.8deg) scale(1.03); }
@@ -1256,22 +1292,22 @@
         align-items: baseline;
         gap: 12px;
         padding: 4px 2px;
-        font-size: 15px;
-        color: #6b5a44;
+        font-size: var(--fs-15);
+        color: #5d4b35;
       }
       .p-row.sel { color: var(--ink); }
       .p-label { font-family: var(--hand); font-size: 20px; }
       .p-value { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
-      .p-hint-line { margin-top: 10px; font-size: 12px; font-style: italic; color: #8a7455; }
+      .p-hint-line { margin-top: 10px; font-size: var(--fs-12); font-style: italic; color: #6b5334; }
       .p-note {
         margin-top: 14px;
         font-family: var(--hand);
         font-size: 18px;
         line-height: 1.35;
-        color: #7a5a3a;
+        color: #6a4c2e;
         transform: rotate(-0.4deg);
       }
-      .p-credits { font-size: 14px; line-height: 1.5; }
+      .p-credits { font-size: var(--fs-14); line-height: 1.5; }
       .p-credits p { margin: 0 0 8px; }
       .p-c-head { font-family: var(--display); font-weight: 600; font-size: 17px; }
       .p-c-sec { color: #57452f; }
@@ -1413,7 +1449,7 @@
         background: rgba(217, 194, 152, 0.3);
       }
       .al-dot.on { background: rgba(217, 194, 152, 0.95); }
-      .al-hint { margin-top: 8px; font-size: 11.5px; color: #8a7455; }
+      .al-hint { margin-top: 8px; font-size: var(--fs-115); color: #a58e68; }
 
       /* ---- the closing book: the journal's own last spreads, once ---- */
       .end-leaf {
@@ -1461,7 +1497,7 @@
         margin: 0;
       }
       .end-note {
-        font-size: 13.5px;
+        font-size: var(--fs-135);
         line-height: 1.55;
         color: #57452f;
         margin: 0;
@@ -1482,7 +1518,7 @@
       .end-num {
         display: inline-block;
         width: 26px;
-        font-size: 11px;
+        font-size: var(--fs-11);
         color: #9a8768;
       }
       .end-inked {
@@ -1523,7 +1559,7 @@
       .end-backleaf { font-family: var(--hand); color: #57452f; text-align: left; }
       .end-hand { font-size: 19px; line-height: 1.35; margin: 0 0 10px; }
       .end-sign { font-size: 19px; text-align: right; color: #8a6a3c; margin: 0; }
-      .end-envoi { font-size: 13.5px; line-height: 1.55; color: #3a2c1e; margin: 0 0 8px; }
+      .end-envoi { font-size: var(--fs-135); line-height: 1.55; color: #3a2c1e; margin: 0 0 8px; }
       .end-last-word { font-family: var(--hand); font-size: 17px; color: #57452f; }
 
       /* ---- journal ephemera: clippings taped in beside Nani's notes ---- */
@@ -1559,13 +1595,17 @@
         font-family: var(--hand);
         font-size: 13.5px;
         line-height: 1.1;
-        color: #7a5a3a;
+        color: #6a4c2e;
         padding: 4px 1px 2px;
         transform: rotate(-0.6deg);
       }
 
       /* ---- reduce motion: calm is also a setting ---- */
       body.reduce-motion * { animation: none !important; transition: none !important; }
+      /* Pseudo-elements are not matched by *; without this the title stars
+       * kept drifting and the quill dot kept breathing in calm mode. */
+      body.reduce-motion *::before,
+      body.reduce-motion *::after { animation: none !important; transition: none !important; }
       /* The sweep gradient would sit frozen mid-run without its animation. */
       body.reduce-motion .j-item.j-new { background-image: none; }
       /* And an OS-level preference: every flourish added for delight is
@@ -1633,7 +1673,7 @@
       .ht-kicker {
         font-family: var(--hand);
         font-size: 16px;
-        color: #8a7455;
+        color: #6b5334;
         transform: rotate(-1deg);
         margin-bottom: 2px;
       }
@@ -1657,7 +1697,7 @@
         margin-bottom: 10px;
       }
       .ht-line {
-        font-size: 15px;
+        font-size: var(--fs-15);
         color: var(--ink-soft);
         margin: 4px 0;
         padding-left: 14px;
@@ -1675,15 +1715,15 @@
         font-family: var(--display);
         font-size: 17px;
         padding: 3px 4px;
-        color: #8a755a;
+        color: #6b5637;
         cursor: pointer;
       }
       .ht-opt.sel { color: var(--ink); font-weight: 600; }
       .ht-keys {
         margin-top: 10px;
-        font-size: 12.5px;
+        font-size: var(--fs-125);
         font-style: italic;
-        color: #6b5a44;
+        color: #5d4b35;
       }
       .ht-strip {
         position: absolute;
@@ -1709,10 +1749,10 @@
       }
       .ht-row {
         font-family: var(--display);
-        font-size: 15px;
+        font-size: var(--fs-15);
         padding: 4px 12px;
         border-radius: 4px;
-        color: #8a755a;
+        color: #6b5637;
         cursor: pointer;
         white-space: nowrap;
       }
@@ -1757,7 +1797,7 @@
         background: linear-gradient(#f2fbff, #8fcbe8);
         border: 2px solid rgba(43, 33, 24, 0.55);
       }
-      .c-count { font-size: 13px; letter-spacing: 0.3em; margin-bottom: 6px; color: #57452f; }
+      .c-count { font-size: var(--fs-13); letter-spacing: 0.3em; margin-bottom: 6px; color: #57452f; }
       .n-grid { display: grid; gap: 3px; margin: 8px 2px 10px; }
       .n-cell {
         aspect-ratio: 1;

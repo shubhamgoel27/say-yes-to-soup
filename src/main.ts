@@ -1608,6 +1608,10 @@ let pets = 0;
 let sloshes = 0;
 /** White camera-flash timer, in seconds remaining. */
 let flashT = 0;
+/** Either reduced-motion signal: the in-game calm toggle or the OS setting. */
+const calmFlash = () =>
+  document.body.classList.contains('reduce-motion') ||
+  (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
 function endDialogue() {
   player.frozen = false;
@@ -1670,7 +1674,7 @@ function endDialogue() {
   if (takeTravel()) return;
   if (state.has('photo.flash')) {
     state.clearFlag('photo.flash');
-    flashT = 0.5;
+    flashT = calmFlash() ? 0.25 : 0.5;
     audio.shutter();
   }
   if (state.has('carry.chicha') && sloshes === 0 && !state.has('chicha.hinted')) {
@@ -2111,8 +2115,9 @@ function update(dt: number) {
   if (flashT > 0) {
     flashT = Math.max(0, flashT - dt);
     const a = flashT > 0.35 ? 1 : flashT / 0.35;
+    // Calm mode (either reduced-motion signal) caps the blink at a glow.
     fadeEl.style.background = '#f8f4ea';
-    fadeEl.style.opacity = String(a * 0.9);
+    fadeEl.style.opacity = String(calmFlash() ? Math.min(a * 0.9, 0.25) : a * 0.9);
     if (flashT === 0) {
       fadeEl.style.opacity = '0';
       fadeEl.style.background = '#17120e';

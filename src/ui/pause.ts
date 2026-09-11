@@ -30,17 +30,22 @@ export function openCredits() {
 
 const journeyDone = () => flags?.has('story.end') ?? false;
 
-type Prefs = { textSpeed: 'cozy' | 'brisk' | 'instant'; reduceMotion: boolean };
+type Prefs = { textSpeed: 'cozy' | 'brisk' | 'instant'; reduceMotion: boolean; textSize: 'normal' | 'large' };
 const PREFS_KEY = 'soup.prefs';
 
 function loadPrefs(): Prefs {
+  // On the very first boot the OS-level preference seeds the calm toggle;
+  // once anything has been saved, the player's explicit choice wins.
+  const osCalm =
+    typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const defaults: Prefs = { textSpeed: 'cozy', reduceMotion: osCalm, textSize: 'normal' };
   try {
     const raw = localStorage.getItem(PREFS_KEY);
-    if (raw) return { textSpeed: 'cozy', reduceMotion: false, ...JSON.parse(raw) };
+    if (raw) return { ...defaults, reduceMotion: false, ...JSON.parse(raw) };
   } catch {
     /* defaults */
   }
-  return { textSpeed: 'cozy', reduceMotion: false };
+  return defaults;
 }
 
 export const TEXT_CPS: Record<Prefs['textSpeed'], number> = { cozy: 60, brisk: 110, instant: 2000 };
@@ -98,6 +103,7 @@ export class PauseMenu {
   private applyPrefs() {
     this.hooks.onTextSpeed(TEXT_CPS[this.prefs.textSpeed]);
     document.body.classList.toggle('reduce-motion', this.prefs.reduceMotion);
+    document.body.classList.toggle('text-large', this.prefs.textSize === 'large');
   }
 
   // ---------------------------------------------------------------- items
@@ -148,6 +154,14 @@ export class PauseMenu {
           const order: Prefs['textSpeed'][] = ['cozy', 'brisk', 'instant'];
           const i = (order.indexOf(this.prefs.textSpeed) + d + order.length) % order.length;
           this.prefs.textSpeed = order[i] ?? 'cozy';
+          this.savePrefs();
+        },
+      },
+      {
+        label: 'Text size',
+        value: () => (this.prefs.textSize === 'large' ? 'large' : 'normal'),
+        adjust: () => {
+          this.prefs.textSize = this.prefs.textSize === 'large' ? 'normal' : 'large';
           this.savePrefs();
         },
       },

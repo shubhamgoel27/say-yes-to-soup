@@ -117,10 +117,11 @@ export class Scene {
     this.hitstopT = freeze;
   }
 
-  /** A soft full-frame glow, for wins and flashes of ghee-light. */
+  /** A soft full-frame glow, for wins and flashes of ghee-light. Calm mode
+   *  keeps the cue but takes the sting out: half as long, dimmer (see frame). */
   flash(color = '#fff7e0', dur = 0.22) {
     this.flashColor = color;
-    this.flashT = dur;
+    this.flashT = calmHere() ? dur * 0.5 : dur;
   }
 
   /**
@@ -284,7 +285,8 @@ export class Scene {
 
     if (this.flashT > 0) {
       this.flashT -= dt;
-      g.globalAlpha = Math.max(0, this.flashT / 0.22) * 0.5;
+      const a = Math.max(0, this.flashT / 0.22) * 0.5;
+      g.globalAlpha = calmHere() ? Math.min(a, 0.25) : a;
       g.fillStyle = this.flashColor;
       g.fillRect(-20, -20, this.W + 40, this.H + 40);
       g.globalAlpha = 1;
