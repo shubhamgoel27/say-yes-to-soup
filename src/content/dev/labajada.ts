@@ -2,7 +2,10 @@ import type { MapData } from '../../engine/grid';
 import { cellHash } from '../../art/pix';
 
 /**
- * La Bajada: the switchback descent west of the pass. The puna gives way to
+ * La Bajada: the switchback descent on the seaward, westward side of the
+ * pass. In map wiring it hangs off the far end of the east-road map (the id
+ * keeps its old name); in fiction the road runs west, down to the Pacific.
+ * The puna gives way to
  * cactus and shrub, and at the bottom of the map the land simply stops, and
  * there it is, for the first time: the sea, far below, exactly where Faustino
  * said it would start talking. Chapter Two's front porch.

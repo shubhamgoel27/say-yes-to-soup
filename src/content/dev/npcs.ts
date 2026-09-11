@@ -345,7 +345,7 @@ export const NODES: NodeMap = {
   },
   'ex.bag.card1': {
     lines: [
-      { text: 'The first postcard: a camel with opinions, mid-opinion. On the back she swears the camel started it.' },
+      { text: 'The first postcard: a camel she never met, mid-opinion. On the back she swears the camel started it.' },
     ],
     effects: ['set:bag.card1'],
   },
@@ -680,7 +680,7 @@ export const NODES: NodeMap = {
   'carmen.weaveOffer': {
     lines: [
       { who: 'Doña Carmen', text: 'Now. A returned tool must work the same day; that is its thanks.' },
-      { who: 'Doña Carmen', text: 'Sit at the loom. Watch the colors I call, then call them back with your hands. The cloth forgives; I mostly do too.' },
+      { who: 'Doña Carmen', text: 'Sit at the loom. Watch which ball lights when I call, then call them back with your hands. The cloth forgives; I mostly do too.' },
     ],
     choices: [
       { text: 'Sit at the loom', goto: 'carmen.weaveStart' },
@@ -739,7 +739,7 @@ export const NODES: NodeMap = {
   },
   'carmen.zoila2': {
     lines: [
-      { who: 'Doña Carmen', text: 'We were warping this loom together that week. I slept, and by morning her half was tied off and she was gone down the east road.' },
+      { who: 'Doña Carmen', text: 'We were warping this loom together that week. I slept, and by morning her half was tied off and she was gone down the west road.' },
       { who: 'Doña Carmen', text: 'She left a note on the post. Fifty years, and I am still not calling that a goodbye.' },
     ],
     choices: [
@@ -833,14 +833,14 @@ export const NODES: NodeMap = {
     lines: [
       { text: 'Carmen looks at you for a long, level moment.' },
       { who: 'Doña Carmen', text: 'The llamas GROW the wool. If they also knitted it, wawa, what exactly would be left for us to do?' },
-      { text: 'Somewhere on the east road, a llama sneezes with what can only be pride.' },
+      { text: 'Somewhere out on the pass road, a llama sneezes with what can only be pride.' },
     ],
     next: 'carmen.riddleEnd',
   },
   'carmen.riddleEnd': {
     lines: [
       { who: 'Doña Carmen', text: 'Enough. You pass, roughly. Hold out your wrist.' },
-      { text: 'She ties on a thin woven band: terracotta, sky, gold, violet. The colors of your crooked row.' },
+      { text: 'She takes your wrist and turns the band once, reading it. Terracotta, sky, gold, violet.' },
       { who: 'Doña Carmen', text: 'So the next village knows somebody already started on you.' },
     ],
     effects: ['set:riddle.done'],
@@ -860,14 +860,14 @@ export const NODES: NodeMap = {
   'aurelio.nani2': {
     lines: [
       { text: 'From inside his poncho he brings out a letter, soft with fifty years of being carried.' },
-      { who: 'Don Aurelio', text: 'She left it for the road east and never came back for it. She helped my mother with the harvest; ayni does not expire.' },
-      { who: 'Don Aurelio', text: 'You have her way of standing. Take it to the east gate. The road will tell you the rest.' },
+      { who: 'Don Aurelio', text: 'She left it for the road west and never came back for it. She helped my mother with the harvest; ayni does not expire.' },
+      { who: 'Don Aurelio', text: 'You have her way of standing. Take it to the gate. The road will tell you the rest.' },
     ],
     effects: ['set:nani.letter', 'errand:nani-letter', 'set:errand.nani-letter'],
   },
   'aurelio.go': {
     lines: [
-      { who: 'Don Aurelio', text: 'The gate, wawa. East, past the terraces. Letters are patient, but not forever.' },
+      { who: 'Don Aurelio', text: 'The gate, wawa. Past the terraces. Letters are patient, but not forever.' },
     ],
   },
   'aurelio.done': {
@@ -1223,7 +1223,7 @@ export const NODES: NodeMap = {
   },
   'ex.signpost': {
     lines: [
-      { text: 'The board points east, carved by many hands over many years. Distances have been added, argued with, crossed out.' },
+      { text: 'The board points west, carved by many hands over many years. Distances have been added, argued with, crossed out.' },
       { text: 'Someone has simply written: "MORE." The road agrees, and keeps going to prove it.' },
       { text: 'Past this sign the road drops to the sea, and to a village that smells of salt and fried things. The caleta is real. Keep walking.' },
     ],
@@ -1313,14 +1313,14 @@ export const NODES: NodeMap = {
   // ---------------- the east gate ----------------
   'gate.closed': {
     lines: [
-      { text: 'A wooden gate across the east road, gray with weather. Beyond it, the ridge, and beyond that, everything else.' },
+      { text: 'A wooden gate across the pass road, gray with weather. Beyond it, the ridge, and beyond that, everything else.' },
       { text: 'It is not locked. It is just not yet.' },
     ],
   },
   'gate.final': {
     lines: [
       { text: 'You unfold Nani\'s letter at the gate, where she meant to open it.' },
-      { text: '"To whoever I become next: the village taught me everything except how to leave it. Go east anyway. Say yes to soup. Start where the water is."' },
+      { text: '"To whoever I become next: the village taught me everything except how to leave it. Go west anyway. Say yes to soup. Start where the water is."' },
       { text: 'The wind combs through the ichu. Below, smoke rises from four kitchens, straight as loom threads.' },
       { text: 'You write her name into the journal, on the page it was always waiting for.' },
     ],
@@ -1334,7 +1334,7 @@ export const NODES: NodeMap = {
   },
   'gate.after': {
     lines: [
-      { text: 'The gate stands easy on its hinges now. The road east hums quietly to itself, waiting for its chapter.' },
+      { text: 'The gate stands easy on its hinges now. The road west hums quietly to itself, waiting for its chapter.' },
     ],
   },
 

@@ -78,16 +78,27 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
   },
   {
     npcId: 'faustino',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.faustino.seen'] }, node: 'c10.faustino.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.faustino.seen'] }, node: 'c10.faustino.reunion' },
+      // Post-end epilogue arms sit above the chapter-one chains, which would
+      // otherwise replay their stranger-era first meetings after story.end.
+      { when: { has: ['story.end'] }, node: 'c10.faustino.post' },
+    ],
   },
   {
     npcId: 'paca',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.paca.seen'] }, node: 'c10.paca.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.paca.seen'] }, node: 'c10.paca.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.paca.post' },
+    ],
   },
   // ---- Ch'aska Pampa ----
   {
     npcId: 'rosa',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.rosa.seen'] }, node: 'c10.rosa.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.rosa.seen'] }, node: 'c10.rosa.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.rosa.post' },
+    ],
   },
   {
     npcId: 'aurelio',
@@ -106,23 +117,36 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
         when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen'], not: ['c10.carmen.her'] },
         node: 'c10.carmen.decided',
       },
+      { when: { has: ['story.end'] }, node: 'c10.carmen.post' },
     ],
   },
   {
     npcId: 'justina',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.justina.seen'] }, node: 'c10.justina.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.justina.seen'] }, node: 'c10.justina.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.justina.post' },
+    ],
   },
   {
     npcId: 'mateo',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.mateo.seen'] }, node: 'c10.mateo.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.mateo.seen'] }, node: 'c10.mateo.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.mateo.post' },
+    ],
   },
   {
     npcId: 'teofilo',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.teofilo.seen'] }, node: 'c10.teofilo.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.teofilo.seen'] }, node: 'c10.teofilo.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.teofilo.post' },
+    ],
   },
   {
     npcId: 'allqu',
-    entry: [{ when: { has: ['c10.arrived'], not: ['c10.allqu.seen'] }, node: 'c10.allqu.reunion' }],
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.allqu.seen'] }, node: 'c10.allqu.reunion' },
+      { when: { has: ['story.end'] }, node: 'c10.allqu.post' },
+    ],
   },
   {
     npcId: 'pilar',
@@ -357,7 +381,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.aurelio.ledger': {
     lines: [
-      { text: 'You tell him about Doña Refugio, and a guelaguetza book, and a line that waited fifty years: Nani, 1975. Owed.' },
+      { text: 'You tell him about Doña Refugio, and a guelaguetza book, and a line that waited fifty years: Zoila, 1975. Owed.' },
       { who: 'Don Aurelio', text: 'And you paid it. So the seed came up after all.' },
       { who: 'Don Aurelio', text: 'A debt does not expire, I told you once. I did not tell you the other half: neither does the thanks.' },
     ],
@@ -417,7 +441,7 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'The wichuna picks, a row closes, another opens. She does not look up, which is how you know this was settled before you walked in.' },
       { who: 'Doña Carmen', text: 'The well, last night. Half this village around one jug, and your grandmother, who is the argument we never finish.' },
-      { who: 'Doña Carmen', text: 'She went east in a hurry and skipped the goodbyes. Some of us have stayed short about it for fifty years, wawa, and we earned that.' },
+      { who: 'Doña Carmen', text: 'She went west in a hurry and skipped the goodbyes. Some of us have stayed short about it for fifty years, wawa, and we earned that.' },
     ],
     choices: [
       { text: '"She left badly and she meant to come back. Both are true."', goto: 'c10.her.both' },
@@ -439,7 +463,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.her.places': {
     lines: [
-      { text: 'You name them in the order the book has them: a fishing town, a ship, a bay, two markets, a bench in the rain, a mountain that smokes.' },
+      { text: "You name them in the book's order: a fishing town, a ship, a bay, two markets, a green backwater, a bench in the long rains, a mountain that smokes." },
       { who: 'Doña Carmen', text: 'Three days you have been telling us where she was. That is more news of her than this village has had in fifty years.' },
     ],
     next: 'c10.carmen.stone',
@@ -619,6 +643,50 @@ export const RETURN_NODES: NodeMap = {
   'c10.traveler.idle': {
     lines: [
       { text: 'The traveler paces the gate, checking the signpost against a hand-drawn map that is mostly hope.' },
+    ],
+  },
+
+  // ---------------- after the last page: epilogue texture ----------------
+  // One warm line each, gated on story.end, so nobody greets a stranger who
+  // finished the book in front of them.
+  'c10.rosa.post': {
+    lines: [
+      { who: 'Rosa', text: 'The flag is up, wawa, and you know exactly what that means. The pot never believed you left; do not argue with the pot.' },
+    ],
+  },
+  'c10.justina.post': {
+    lines: [
+      { who: 'Justina', text: 'You are standing near my potatoes again. Good; Sunday there will be digging, and your legs still owe the terraces.' },
+    ],
+  },
+  'c10.mateo.post': {
+    lines: [
+      { who: 'Mateo', text: 'The ridge already knows the journal is finished. Signal speed, like I said; I may have been the signal.' },
+    ],
+  },
+  'c10.carmen.post': {
+    lines: [
+      { who: 'Doña Carmen', text: 'The loom keeps its slow time and so do you now, wawa. Sit when you like; a straight row is still a pleasure.' },
+    ],
+  },
+  'c10.teofilo.post': {
+    lines: [
+      { who: 'Don Teófilo', text: 'The seat is yours forever; the room heard me say it. Tomakusunchis, friend of the house.' },
+    ],
+  },
+  'c10.allqu.post': {
+    lines: [
+      { text: 'The dog falls in beside you for a slow lap of the plaza. Colleagues, permanent, with nothing left to inspect.' },
+    ],
+  },
+  'c10.faustino.post': {
+    lines: [
+      { who: 'Faustino', text: 'The fire is honest and the wind has conceded nothing. Sit, walker; home roads still count as roads.' },
+    ],
+  },
+  'c10.paca.post': {
+    lines: [
+      { text: 'Paca holds her pass, ears at half diplomacy. You are inventory now, and inventory may pass.' },
     ],
   },
 

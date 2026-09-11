@@ -14,7 +14,7 @@ export const OAXACA_JOURNAL: JournalEntry[] = [
     tab: 'words',
     title: 'Guelaguetza',
     sub: 'Zapotec: reciprocity, recorded. Kindness with a page number, repaid across generations.',
-    you: 'The ledger line: Nani, 1975: one week of shelter, one mole feast. Owed. A village held that page open for fifty years. I closed it with my hands.',
+    you: 'The ledger line: Zoila, 1975: one week of shelter, one mole feast. Owed. A village held that page open for fifty years. I closed it with my hands.',
     rhyme: {
       with: 'customs.ayni',
       note: 'If I ever learn what the valley people across the water call ayni, I will owe this book a finished sentence.',

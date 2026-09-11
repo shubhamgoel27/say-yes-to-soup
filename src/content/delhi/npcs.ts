@@ -1042,7 +1042,7 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'One frame, whole sky, no reshoots. The album grows by exactly one truth per country; this one is loud and wet and full of paper birds.' },
+      { who: 'Chasca', text: 'One frame, whole sky, no reshoots. The album grows by exactly one truth per stop; this one is loud and wet and full of paper birds.' },
       { who: 'Chasca', text: 'Where the album ends, it develops. Whose end? The journey is still deciding. I only press the button at the right seconds.' },
     ],
   },

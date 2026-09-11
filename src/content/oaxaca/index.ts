@@ -71,7 +71,7 @@ export const CHAPTER: ChapterDef = {
       body: [
         'The granita season closed the week you sailed, which is how I know time is passing. The mountain still smokes politely. She says nothing about you, but she is like that with everyone.',
         'Your chair at the circolo is being sat in wrong by my nephew. He loses at scopa with none of your style.',
-        'Light a candle where you are going. We do that here too, in our own month. The sea between us is just a very wide table.',
+        'Light a candle where you are going. We do that here too, the same days, in our own way. The sea between us is just a very wide table.',
       ],
     },
     // The 1975 telegram, kept folded at the ledger's last page for fifty

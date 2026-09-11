@@ -62,7 +62,7 @@ export const RETURN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
-    text: "The road up is the same road down, older now: La Bajada, the pass, the east gate. Ch'aska Pampa is at the top, and the flag will be up.",
+    text: "The road up is the same road down, older now: La Bajada, the pass, the gate. Ch'aska Pampa is at the top, and the flag will be up.",
   },
   {
     when: { has: ['c10.rosa.seen'], not: ['c10.aurelio.seen'] },
@@ -86,7 +86,7 @@ export const RETURN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch'] },
-    text: 'Someone new is at the east gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
+    text: 'Someone new is at the gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
@@ -98,7 +98,7 @@ export const RETURN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['story.end'], not: ['c10.traveler.mail'] },
-    text: 'A young traveler at the east gate is holding mail that chased you across an ocean. Collect it before they leave with the first light.',
+    text: 'A young traveler at the signboard on the pass road is holding mail that chased you across an ocean. Collect it before they leave with the first light.',
   },
   {
     when: { has: ['story.end'] },

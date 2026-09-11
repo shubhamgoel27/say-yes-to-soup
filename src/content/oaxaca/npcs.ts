@@ -378,6 +378,7 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'From the back of the ledger she takes a folded paper, soft as cloth at the creases, and puts it in your hands.' },
       { who: 'Doña Refugio', text: 'She left that same night, and the road never brought her back.' },
       { who: 'Doña Refugio', text: 'My mother kept her cup on the shelf a whole year. Then she wrote the line, so we would not be allowed to forget.' },
+      { text: 'You say the name you called her: Nani. Refugio repeats it once, and now the village has it too.' },
     ],
     effects: ['set:c9.telegram', 'letter:oax.telegram', 'journal:her.oaxaca'],
     choices: [

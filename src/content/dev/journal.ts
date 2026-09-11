@@ -305,7 +305,7 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
   },
   {
     when: { has: ['wichuna.returned'], not: ['pallay.done'] },
-    text: 'Carmen offered to sit you at the loom and call the colors. Go back when your hands feel steady.',
+    text: 'Carmen offered to sit you at the loom and call the rows. Go back when your hands feel steady.',
   },
   {
     when: { has: ['met.rosa'], not: ['errand.rosa-bundle', 'bundle.delivered'] },
@@ -332,16 +332,16 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
   },
   {
     when: { has: ['errand.nani-letter'], not: ['story.complete'] },
-    text: "Nani's letter wants opening at the east gate, past the terraces, where she meant to open it.",
+    text: "Nani's letter wants opening at the gate, past the terraces, where she meant to open it.",
   },
   {
     // The one documented stuck point: a llama wall with an off-screen key.
     when: { has: ['story.complete'], not: ['paca.moved'] },
-    text: 'A llama holds the pass east of the village and is not persuaded by explanations. The muleteer on that road moves her daily; flag him down.',
+    text: 'A llama holds the pass out of the village and is not persuaded by explanations. The muleteer on that road moves her daily; flag him down.',
   },
   {
     when: { has: ['story.complete'], not: ['c2.arrived'] },
-    text: 'The east gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
+    text: 'The gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
   },
   {
     when: { not: ['met.rosa'] },
@@ -352,7 +352,7 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
 export const ERRANDS: ErrandDef[] = [
   { id: 'rosa-bundle', label: "Rosa's bundle, for Justina in the terraces" },
   { id: 'carmen-wichuna', label: "Carmen's wichuna, on loan to Justina" },
-  { id: 'nani-letter', label: "Nani's unsent letter, for the road east" },
+  { id: 'nani-letter', label: "Nani's unsent letter, for the road west" },
 ];
 
 export const ERRAND_BY_ID = new Map(ERRANDS.map((e) => [e.id, e]));

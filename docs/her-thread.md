@@ -7,7 +7,7 @@ her. Counted across NPC dialogue: home mentions her 13 times and Oaxaca 26,
 because those are the chapters the story already needed her in. Everywhere
 between: La Caleta 0, Busan 0, Zanzibar 0, the ship 1, Kerala 1, Sicily 1.
 
-Her journal entries taper by design (18, 13, 6, 6, 5, 6, 5, 6, 6, then
+Her journal entries taper by design (18, 13, 6, 6, 5, 6, 5, 7, 6, then
 silence from mid-Sicily), and that silence is the mystery whose answer waits
 in Oaxaca. But between the first page and the answer, the player learns
 almost nothing new about *who she was*. She is a voice in the margins with

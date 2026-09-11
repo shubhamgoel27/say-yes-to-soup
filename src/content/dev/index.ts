@@ -31,7 +31,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'carmen.woven',
       title: 'The loom',
       howTo: [
-        'Watch the colors Carmen calls, one row at a time.',
+        'Watch which yarn ball lights as Carmen calls, one row at a time.',
         'Then call them back with the arrows, in order.',
         'A slipped thread is nothing. She just calls the row again.',
       ],
