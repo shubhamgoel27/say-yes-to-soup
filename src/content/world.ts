@@ -64,13 +64,43 @@ export const NPCS: NpcDef[] = (() => {
   return npcs;
 })();
 
-/** Map-tagged arms come first so a chapter's props speak its own words. */
-export const EXAMINES: Record<string, ExamineArm[]> = (() => {
-  const merged: Record<string, ExamineArm[]> = {};
+/** An examine arm as the merged world carries it: stamped with the chapter
+ * that authored it, so tests can prove no chapter steals another's props. */
+export type WorldExamineArm = ExamineArm & { chapter: string };
+
+/**
+ * Map-scoped arms come first so a chapter's props always speak its own words.
+ * An arm the author tagged with a map keeps that tag. An UNTAGGED arm serves
+ * two roles: on its own chapter's maps it is that chapter's voice (merged
+ * here as map-tagged copies, one per chapter map), and everywhere else it is
+ * a pure fallback (the untagged original, kept after every scoped arm).
+ * Without the split, one chapter's untagged unconditional arm permanently
+ * shadowed another chapter's arms for the same kind: Kerala's postbox spoke
+ * over Shionoura's, and two letters were unreachable for a whole chapter.
+ * Within each group, chapters stay newest-first and authored order holds, so
+ * a later chapter may still deliberately override an earlier chapter's map
+ * by tagging an arm with it (the Return's well), and still front-runs older
+ * fallbacks.
+ */
+export const EXAMINES: Record<string, WorldExamineArm[]> = (() => {
+  const scoped: Record<string, WorldExamineArm[]> = {};
+  const fallbacks: Record<string, WorldExamineArm[]> = {};
   for (const c of newestFirst) {
+    const ownMaps = c.maps.map((m) => m.id);
     for (const [kind, arms] of Object.entries(c.examines)) {
-      merged[kind] = [...(merged[kind] ?? []), ...arms];
+      for (const arm of arms) {
+        if (arm.map) {
+          (scoped[kind] ??= []).push({ ...arm, chapter: c.id });
+        } else {
+          for (const mapId of ownMaps) (scoped[kind] ??= []).push({ ...arm, map: mapId, chapter: c.id });
+          (fallbacks[kind] ??= []).push({ ...arm, chapter: c.id });
+        }
+      }
     }
+  }
+  const merged: Record<string, WorldExamineArm[]> = {};
+  for (const kind of new Set([...Object.keys(scoped), ...Object.keys(fallbacks)])) {
+    merged[kind] = [...(scoped[kind] ?? []), ...(fallbacks[kind] ?? [])];
   }
   return merged;
 })();

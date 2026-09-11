@@ -65,6 +65,8 @@ export class PixiStage {
 
   /** True from the end of init() until a recovery tears the app down. */
   private live = false;
+  /** Whether THIS boot planted the WebGPU crash canary (see init/render). */
+  private canaryArmed = false;
   /** Callers who need the live canvas (pointer bindings); re-run per build. */
   private canvasHooks: ((c: HTMLCanvasElement) => void)[] = [];
 
@@ -99,6 +101,21 @@ export class PixiStage {
     const worldCanvas = this.worldCanvas;
     const host = this.host;
     const app = new Application();
+    // The crash canary. A WebGPU device creation that takes the whole tab
+    // down cannot be caught in-page: no exception, no device-lost, just a
+    // dead tab. So the attempt leaves a note in sessionStorage before it
+    // jumps, and clears it after the first frame lands. Finding the note
+    // still there on boot means the last attempt never came back; this
+    // session takes WebGL instead. (?gl in the URL already forced WebGL
+    // above, and never plants a canary.)
+    if (this.preference === 'webgpu') {
+      if (readCanary()) {
+        console.info('[soup] previous webgpu boot never completed; using webgl this session');
+        this.preference = 'webgl';
+      } else {
+        this.canaryArmed = setCanary();
+      }
+    }
     console.info(`[soup] boot: stage init (${this.preference})`);
     // WebGPU first: Chrome's newest graphics API; Pixi falls back to WebGL
     // automatically on browsers that lack it.
@@ -292,6 +309,12 @@ export class PixiStage {
     try {
       this.renderPass();
       this.renderFails = 0;
+      // First frame on screen: the WebGPU attempt survived; stand down the
+      // crash canary so the next boot tries WebGPU again.
+      if (this.canaryArmed) {
+        this.canaryArmed = false;
+        clearCanary();
+      }
     } catch (err) {
       // One failed frame is a blink; a run of them means the surface is gone
       // in a way no lost-device signal reported. Rebuild rather than let the
@@ -337,6 +360,37 @@ export class PixiStage {
     this.app.renderer.render({ container: this.scene, target: this.prescaleRT, clear: true });
     this.layout();
     this.app.render();
+  }
+}
+
+/** sessionStorage key for the WebGPU crash canary; storage can be walled off
+ * (private windows, storage pressure), and a canary that cannot be written
+ * must not be trusted, so every access is wrapped. */
+const CANARY_KEY = 'soup.gpu.canary';
+
+function readCanary(): boolean {
+  try {
+    return sessionStorage.getItem(CANARY_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+/** True only if the note verifiably landed; otherwise nothing to clear. */
+function setCanary(): boolean {
+  try {
+    sessionStorage.setItem(CANARY_KEY, String(Date.now()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function clearCanary() {
+  try {
+    sessionStorage.removeItem(CANARY_KEY);
+  } catch {
+    // Nothing to do; the read path treats an unreadable canary as absent.
   }
 }
 

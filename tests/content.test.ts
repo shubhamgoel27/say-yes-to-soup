@@ -4,6 +4,7 @@ import { describe, it } from 'node:test';
 
 import { GameState } from '../src/engine/state';
 import {
+  CHAPTERS,
   DIG_SPOTS,
   ERRAND_BY_ID,
   EVENT_NODES,
@@ -108,6 +109,106 @@ describe('dialogue graph', () => {
       for (const line of node.lines) {
         assert.ok(line.text.length <= 150, `${id}: line too long (${line.text.length}): "${line.text.slice(0, 50)}..."`);
       }
+    }
+  });
+});
+
+/**
+ * Examine shadowing: EXAMINES merges every chapter's arms into one list per
+ * kind, and main.ts dispatches with the first arm passing
+ * `(!a.map || a.map === map.id) && state.check(a.when)`. Before the merge
+ * learned to scope arms, one chapter's untagged unconditional arm sat ahead
+ * of another chapter's arms for the same kind and won on that chapter's own
+ * maps: Kerala's postbox spoke over Shionoura's (two letters unreachable),
+ * Sicily's postsign over Kerala's, Oaxaca's cantaros/gallina/nicho over
+ * Chapter One's, Zanzibar's doormat over Delhi's. This suite replays the
+ * exact dispatch on every map and kind and insists a map's own chapter
+ * speaks first whenever it has anything to say.
+ */
+describe('no chapter shadows another chapter\'s examines', () => {
+  /** Owning chapter per map id (the Return declares no maps, on purpose). */
+  const chapterOf = new Map<string, string>();
+  for (const c of CHAPTERS) for (const m of c.maps) chapterOf.set(m.id, c.id);
+
+  /** Kinds actually standing on a map: objects, and the ground the dispatch
+   * falls back to when the faced cell holds no object. */
+  const kindsOn = (m: MapData): Set<string> => {
+    const kinds = new Set<string>();
+    for (const row of m.ground) {
+      for (const ch of row) {
+        const k = m.legend[ch]?.t;
+        if (k) kinds.add(k);
+      }
+    }
+    for (const row of m.objects ?? []) {
+      for (const ch of row) {
+        if (ch === ' ') continue;
+        const k = m.legend[ch]?.t;
+        if (k) kinds.add(k);
+      }
+    }
+    return kinds;
+  };
+
+  /** Two probe states: a fresh journey, and every flag any arm ever asks for. */
+  const fresh = new GameState();
+  const everything = new GameState();
+  for (const arms of Object.values(EXAMINES)) {
+    for (const a of arms) {
+      for (const f of a.when?.has ?? []) everything.apply([`set:${f}`]);
+    }
+  }
+
+  it("a map's own chapter wins its own kinds; other chapters only override by naming the map", () => {
+    const wrong: string[] = [];
+    for (const m of Object.values(REGION_MAPS)) {
+      const own = chapterOf.get(m.id);
+      const ownChapter = CHAPTERS.find((c) => c.id === own);
+      if (!ownChapter) continue;
+      for (const kind of kindsOn(m)) {
+        const arms = EXAMINES[kind];
+        if (!arms) continue;
+        for (const [label, state] of [['no flags', fresh], ['all flags', everything]] as const) {
+          // The exact dispatch main.ts runs when the player examines.
+          const winner = arms.find((a) => (!a.map || a.map === m.id) && state.check(a.when));
+          if (!winner || winner.chapter === own) continue;
+          // An arm the OTHER chapter authored with this map's tag is a
+          // deliberate override (the Return re-voicing the village well).
+          // The merge only tags a chapter's arms with its own maps, so a
+          // cross-chapter winner tagged with this map must be authored.
+          if (winner.map === m.id) continue;
+          // Untagged winner from another chapter: shadowing, if this map's
+          // own chapter had an eligible arm for the kind.
+          const ownSpeaks = (ownChapter.examines[kind] ?? []).some(
+            (a) => (!a.map || a.map === m.id) && state.check(a.when),
+          );
+          if (ownSpeaks) {
+            wrong.push(`${m.id}/${kind} (${label}): ${winner.chapter}'s ${winner.node} shadows ${own}`);
+          }
+        }
+      }
+    }
+    assert.deepEqual(wrong, [], `cross-chapter examine shadowing:\n${wrong.join('\n')}`);
+  });
+
+  it('the four letter counters hand over their own letters', () => {
+    // The concrete casualties the general test above must forbid forever:
+    // each post point's first letter, on its own map, on a fresh visit.
+    const cases: [string, string, string][] = [
+      ['shionoura', 'postbox', 'c4.post.pilar'],
+      ['kerala', 'postbox', 'c6.ex.postbox'],
+      ['kerala', 'postsign', 'c6.post.pilar'],
+      ['sicily', 'postsign', 'c8.post.pilar'],
+      ['village', 'gallina', 'ex.gallina'],
+      ['chicheria', 'cantaros', 'ex.cantaros.chicheria'],
+      ['village', 'nicho', 'ex.nicho'],
+      ['oaxaca', 'nicho', 'c9.ex.nicho'],
+      ['delhi', 'doormat', 'c11.ex.doormat'],
+      ['zanzibar', 'doormat', 'c7.ex.doormat'],
+    ];
+    for (const [mapId, kind, node] of cases) {
+      const winner = EXAMINES[kind]?.find((a) => (!a.map || a.map === mapId) && fresh.check(a.when));
+      assert.equal(winner?.node, node, `${mapId}/${kind}: expected ${node}, got ${winner?.node}`);
     }
   });
 });

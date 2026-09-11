@@ -538,8 +538,11 @@ function stripActivate() {
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
   const top = journalUI.activeTasks()[0];
-  // The chip shows whole thoughts; CSS clamps politely at two lines.
-  if (top && !state.has('story.end')) {
+  // The chip shows whole thoughts; CSS clamps politely at two lines. It kept
+  // hiding outright once story.end was set, which orphaned the epilogue task
+  // (the traveler's mail): post-end the chip stays as long as any task does,
+  // and only an empty task list retires it.
+  if (top) {
     errandEl.textContent = top;
     errandEl.hidden = false;
   } else {
@@ -1526,15 +1529,49 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
 }
 
+/**
+ * The hour each arrival narration was written in, as dayT. Chapters arrive at
+ * whatever time the clock happens to hold, but their first words are staged:
+ * Shionoura's cicadas are a noon sound, Busan wakes to gulls at dawn. Applied
+ * exactly once, when the arrival narration fires, so the first minute on a
+ * new coast matches the text; the clock runs normally from there. Hours read
+ * off each arrive node's own imagery:
+ *   la-caleta  the garúa "sits on the village like a lid": grey morning
+ *              (also the Return's docking, out of the same garúa)
+ *   ship       garlic frying below decks, full working daylight
+ *   shionoura  "the heat is a wet towel", a wall of cicadas: noon
+ *   busan      "dawn the color of oyster shell", last night's lights still on
+ *   kerala     green daylight with the monsoon stacking dark clouds
+ *   delhi      a chowk in full swing under a golden dome: afternoon
+ *   zanzibar   the tide out, the sea floor "drying in the sun": midday
+ *   sicily     "a bell counts eleven" and the heat is already on
+ *   oaxaca     cohetes, copal, woodsmoke over the valley: golden hour
+ */
+const ARRIVAL_HOUR: Record<string, number> = {
+  'la-caleta': 0.2,
+  ship: 0.3,
+  shionoura: 0.35,
+  busan: 0.05,
+  kerala: 0.4,
+  delhi: 0.45,
+  zanzibar: 0.38,
+  sicily: 0.3,
+  oaxaca: 0.55,
+};
+
 function endWarp() {
   warp = null;
   player.frozen = false;
   fadeEl.style.opacity = '0';
   journeyEl.classList.remove('show');
   setIris(1);
-  // First footfall in a new chapter gets its narration.
+  // First footfall in a new chapter gets its narration, at its written hour.
   const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
-  if (arr && !textbox.isOpen) startNarration(arr.node);
+  if (arr && !textbox.isOpen) {
+    const hour = ARRIVAL_HOUR[map.id];
+    if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
+    startNarration(arr.node);
+  }
 }
 
 function updateWarp(dt: number) {
@@ -1891,6 +1928,12 @@ function beginPlay(freshStart: boolean) {
   renderer.setRaining(rainingOn(map.id));
   renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
   stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
+  // A session starts with the traveler free to move, whatever state the save
+  // was written in (the autosave also fires mid-warp and mid-letter, when
+  // frozen is legitimately true). Every freeze after this point is paired
+  // with a live release path; a stale one from before it must not survive
+  // into play, where nothing would ever release it.
+  player.frozen = false;
   if (freshStart) {
     // If a mashing player has an examine open when the timer fires, wait for
     // the box to close instead of dropping the intro forever. Reproduced by
@@ -3128,18 +3171,25 @@ if (dev.enabled && new URLSearchParams(location.search).has('skiptitle')) {
 function installCheats() {
   if (!dev.enabled) return;
 
-  /** Chapter order, with the flag that says you got there and where it is. */
-  const CHAPTERS_CHEAT: { n: number; id: string; map: string; flag: string }[] = [
-    { n: 1, id: 'chaska-pampa', map: 'village', flag: 'intro.done' },
-    { n: 2, id: 'la-caleta', map: 'la-caleta', flag: 'c2.arrived' },
-    { n: 3, id: 'crossing', map: 'ship', flag: 'c3.arrived' },
-    { n: 4, id: 'shionoura', map: 'shionoura', flag: 'c4.arrived' },
-    { n: 5, id: 'busan', map: 'busan', flag: 'c5.arrived' },
-    { n: 6, id: 'kerala', map: 'kerala', flag: 'c6.arrived' },
-    { n: 7, id: 'delhi', map: 'delhi', flag: 'c11.arrived' },
-    { n: 8, id: 'zanzibar', map: 'zanzibar', flag: 'c7.arrived' },
-    { n: 9, id: 'sicily', map: 'sicily', flag: 'c8.arrived' },
-    { n: 10, id: 'oaxaca', map: 'oaxaca', flag: 'c9.arrived' },
+  /**
+   * Chapter order, with the flag that says you got there, where it is, and
+   * the flag that says it is finished. Flag numbers follow authorship, not
+   * play order (Delhi is c11, wedged between Kerala's c6 and Zanzibar's c7),
+   * so each completion is spelled out rather than derived from `n`: deriving
+   * it once handed Zanzibar c8.complete, Sicily c9.complete, and so on for
+   * every chapter after Delhi. The Return has no complete flag; it ends.
+   */
+  const CHAPTERS_CHEAT: { n: number; id: string; map: string; flag: string; complete?: string }[] = [
+    { n: 1, id: 'chaska-pampa', map: 'village', flag: 'intro.done', complete: 'story.complete' },
+    { n: 2, id: 'la-caleta', map: 'la-caleta', flag: 'c2.arrived', complete: 'c2.complete' },
+    { n: 3, id: 'crossing', map: 'ship', flag: 'c3.arrived', complete: 'c3.complete' },
+    { n: 4, id: 'shionoura', map: 'shionoura', flag: 'c4.arrived', complete: 'c4.complete' },
+    { n: 5, id: 'busan', map: 'busan', flag: 'c5.arrived', complete: 'c5.complete' },
+    { n: 6, id: 'kerala', map: 'kerala', flag: 'c6.arrived', complete: 'c6.complete' },
+    { n: 7, id: 'delhi', map: 'delhi', flag: 'c11.arrived', complete: 'c11.complete' },
+    { n: 8, id: 'zanzibar', map: 'zanzibar', flag: 'c7.arrived', complete: 'c7.complete' },
+    { n: 9, id: 'sicily', map: 'sicily', flag: 'c8.arrived', complete: 'c8.complete' },
+    { n: 10, id: 'oaxaca', map: 'oaxaca', flag: 'c9.arrived', complete: 'c9.complete' },
     { n: 11, id: 'home', map: 'village', flag: 'c10.arrived' },
   ];
 
@@ -3196,11 +3246,12 @@ function installCheats() {
           : CHAPTERS_CHEAT.find((c) => c.id === which || c.map === which);
       if (!target) return `no such chapter: ${which}. try soup.chapters()`;
       state.set('intro.done');
+      // Every chapter BEFORE the target is arrived-at and completed, each
+      // with its own flags from the table; the target itself only arrives.
       for (const c of CHAPTERS_CHEAT) {
         if (c.n >= target.n) break;
         state.set(c.flag);
-        const num = c.id === 'delhi' ? 11 : c.n === 1 ? 0 : c.n;
-        if (num) state.set(`c${num}.complete`);
+        if (c.complete) state.set(c.complete);
       }
       state.set(target.flag);
       return jump(target.map);
@@ -3283,9 +3334,10 @@ function installCheats() {
     end() {
       api.pages();
       api.photos();
-      for (const c of CHAPTERS_CHEAT) state.set(c.flag);
-      for (const n of [2, 3, 4, 5, 6, 7, 8, 9, 11]) state.set(`c${n}.complete`);
-      state.set('story.complete');
+      for (const c of CHAPTERS_CHEAT) {
+        state.set(c.flag);
+        if (c.complete) state.set(c.complete);
+      }
       return jump('village');
     },
     wipe() {

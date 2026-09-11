@@ -232,6 +232,15 @@
         transition: opacity 0.25s ease;
       }
       #errand::before { content: '\2709\00a0\00a0'; font-style: normal; }
+      /* On narrow windows the chip's corner ran into the centered nameplate
+       * and the journey card's stamp. Below ~1100px it steps down out of the
+       * plate's band and narrows, so the top-left stays one column. */
+      @media (max-width: 1100px) {
+        #errand {
+          top: calc(7% + 52px);
+          max-width: min(44vw, 330px);
+        }
+      }
 
       /* ---- dialogue box ---- */
       /* It arrives rather than appearing. Kept short: this happens hundreds
