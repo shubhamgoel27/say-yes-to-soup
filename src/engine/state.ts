@@ -27,8 +27,26 @@ function parseSave(raw: string | null): SaveData | null {
   if (!raw) return null;
   try {
     const data = JSON.parse(raw) as SaveData;
-    // A save is only credible if it carries the shape we wrote.
+    // A save is only credible if it carries the WHOLE shape we wrote. The
+    // shallow check here once accepted a save whose journal was an object:
+    // load() then threw halfway, kept the flags, dropped everything else,
+    // and the next save copied the wreck over a perfectly good backup. A
+    // malformed field must reject the file so the backup chain engages.
     if (!data || typeof data !== 'object' || !Array.isArray(data.flags)) return null;
+    if (!data.flags.every((f) => typeof f === 'string')) return null;
+    if (data.journal !== undefined && data.journal !== null) {
+      if (!Array.isArray(data.journal)) return null;
+      if (!data.journal.every((j) => typeof j === 'string')) return null;
+    }
+    if (data.place !== undefined && data.place !== null) {
+      const pl = data.place;
+      if (
+        typeof pl !== 'object' || typeof pl.map !== 'string' ||
+        !Number.isFinite(pl.x) || !Number.isFinite(pl.y) || typeof pl.dir !== 'string'
+      ) return null;
+    }
+    if (data.errand !== undefined && data.errand !== null && typeof data.errand !== 'string') return null;
+    if (data.name !== undefined && data.name !== null && typeof data.name !== 'string') return null;
     return data;
   } catch {
     return null;
@@ -153,10 +171,16 @@ export class GameState {
           for (const fn of this.onErrand) fn(null);
           break;
         case 'letter':
-          // Mail from a previous chapter: mark it read (so the counter clerk
-          // stops offering it) and let the UI unfold the page.
-          this.flags.add(`letter.read.${arg}`);
+          // Mail from a previous chapter: the UI unfolds the page, and the
+          // read flag is set only when the player closes it. Marking it here
+          // meant a reload between the handover and the unfolding lost the
+          // letter forever; the clerk never offered it again and no re-read
+          // path exists anywhere.
           for (const fn of this.onLetter) fn(arg);
+          break;
+
+        case 'letterread':
+          this.flags.add(`letter.read.${arg}`);
           break;
         case 'travel': {
           // "travel:map,x,y,dir" or just "travel:map" (arrive at the map's
@@ -197,10 +221,23 @@ export class GameState {
       const prev = localStorage.getItem(SAVE_KEY);
       if (prev && parseSave(prev)) localStorage.setItem(BACKUP_KEY, prev);
       localStorage.setItem(SAVE_KEY, payload);
+      this.persistenceLost = false;
     } catch {
-      // Private browsing or full storage: play on without persistence.
+      // Private browsing or full storage: play on without persistence, but
+      // SAY SO, once. A 30-hour journey silently unsaved from here on is
+      // the cruelest failure this file could produce. onPersistenceLost is
+      // wired by main to a toast; save() keeps retrying on later calls.
+      if (!this.persistenceLost) {
+        this.persistenceLost = true;
+        this.onPersistenceLost?.();
+      }
     }
   }
+
+  /** True after a save failed; cleared by the next save that lands. */
+  persistenceLost = false;
+  /** Fired once when saving stops working, so the UI can warn the player. */
+  onPersistenceLost: (() => void) | null = null;
 
   /** Wipe everything for a fresh journey. Fires no events; callers reset UI. */
   reset() {
@@ -213,6 +250,9 @@ export class GameState {
     try {
       localStorage.removeItem(SAVE_KEY);
       localStorage.removeItem(BACKUP_KEY);
+      // "Erase the journal" must also erase the pre-rename save, or the old
+      // journey resurrects as Continue on the next boot.
+      localStorage.removeItem(OLD_SAVE_KEY);
     } catch {
       // Nothing to remove is fine.
     }
@@ -246,6 +286,10 @@ export class GameState {
         parseSave(localStorage.getItem(OLD_SAVE_KEY));
       if (!data) return;
       for (const f of data.flags ?? []) this.flags.add(f);
+      // Session-scoped state that must never survive a reload: replay.mode
+      // marks "this panel run is a replay", and orphaned across a reload it
+      // made the next first-time completion skip its own done narration.
+      this.flags.delete('replay.mode');
       for (const j of data.journal ?? []) this.journal.add(j);
       this.errand = data.errand ?? null;
       this.place = data.place ?? null;

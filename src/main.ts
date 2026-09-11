@@ -96,7 +96,21 @@ if (override) {
 } else if (state.place && maps[state.place.map]) {
   // The title screen idles over wherever the journey paused, not always home.
   map = maps[state.place.map] as TileMap;
-  player.placeAt(state.place.x, state.place.y, state.place.dir as import('./engine/input').Dir);
+  const [sx, sy] = safeStand(map, state.place.x, state.place.y);
+  player.placeAt(sx, sy, state.place.dir as import('./engine/input').Dir);
+}
+
+/**
+ * A saved position is a claim, not a fact: a bad write once booted a player
+ * to tile 9999,9999, standing in the void with every direction refused, and
+ * the next save made it permanent. Off the map or inside something solid,
+ * the journey resumes at the map's own spawn instead.
+ */
+function safeStand(m: TileMap, x: number, y: number): [number, number] {
+  const ok =
+    Number.isFinite(x) && Number.isFinite(y) && m.inBounds(x, y) &&
+    m.ground(x, y).solid !== true && m.object(x, y)?.solid !== true;
+  return ok ? [x, y] : (m.spawn as [number, number]);
 }
 
 function sceneFor(id: string): 'outdoor' | 'interior' | 'road' {
@@ -556,11 +570,29 @@ state.on('journal', (id) => {
   if (rhymed) toasts.show('✦ a margin note of Nani’s has become legible');
 });
 
-/** Mail raised by a `letter:` effect opens once the conversation ends. */
+/** Mail raised by a `letter:` effect opens once the conversation ends. The
+ * read flag waits for the player to close the page: set any earlier, a
+ * reload in between lost the letter forever with no re-read path. */
 let pendingLetter: string | null = null;
+let openLetterId: string | null = null;
 state.on('letter', (id) => {
   pendingLetter = id;
 });
+// When saving stops working (full storage, private browsing), the player
+// hears about it once instead of losing every session from there on.
+state.onPersistenceLost = () => {
+  toasts.show('⚠ the journal cannot be written here; this session will not be remembered');
+};
+// Bound mid-walk loss: the save also fires when the tab hides or closes,
+// and every 30 seconds of play, not only on story beats.
+window.addEventListener('pagehide', () => state.save());
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') state.save();
+});
+setInterval(() => {
+  if (mode === 'play') state.save();
+}, 30000);
+
 state.on('changed', () => {
   applyDressings();
   // Tasks are flag gated, so any change to the world can retire the top one.
@@ -1595,6 +1627,7 @@ function endDialogue() {
   // Mail handed over during the conversation unfolds now.
   if (pendingLetter) {
     const def = pickLetter(LETTERS, pendingLetter, (w) => state.check(w));
+    openLetterId = pendingLetter;
     pendingLetter = null;
     if (def) {
       player.frozen = true;
@@ -1602,6 +1635,7 @@ function endDialogue() {
       title.showLetter({ from: def.from, body: def.body });
       return;
     }
+    openLetterId = null;
   }
 
   // Chasca's album unfolds once the conversation has stepped back from it.
@@ -1841,7 +1875,8 @@ function beginPlay(freshStart: boolean) {
   } else if (!freshStart && !override && state.place && maps[state.place.map]) {
     // Continue resumes the journey where it paused, anywhere in the world.
     map = maps[state.place.map] as TileMap;
-    player.placeAt(state.place.x, state.place.y, state.place.dir as Dir);
+    const [sx, sy] = safeStand(map, state.place.x, state.place.y);
+    player.placeAt(sx, sy, state.place.dir as Dir);
     const [px, py] = player.renderPos();
     camera.follow(px, py, map.w, map.h);
   }
@@ -1928,6 +1963,10 @@ function letterAdvance() {
   } else if (title.letterOpen) {
     audio.confirm();
     title.hideLetter();
+    if (openLetterId) {
+      state.apply([`letterread:${openLetterId}`]);
+      openLetterId = null;
+    }
     player.frozen = false;
     takeTravel();
   }
