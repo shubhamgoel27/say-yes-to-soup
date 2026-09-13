@@ -2,7 +2,18 @@ import type { Dir } from '../engine/input';
 import { makeCoverArt } from '../art/cover';
 import { CHAR_H, CHAR_W, DIR_ROW, PLAYER_LOOK, makeSheet } from '../art/character';
 import { ART } from '../engine/config';
-import type { PlayerLook } from '../engine/state';
+import type { PlayerLook, SaveData } from '../engine/state';
+import {
+  SLOT_COUNT,
+  activeSlot,
+  eraseSlot,
+  packSlot,
+  peekSlot,
+  setActiveSlot,
+  slotOccupied,
+  unpackJournal,
+  writeSlotRaw,
+} from '../engine/state';
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
 
@@ -12,7 +23,7 @@ import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
  * softly behind them like an attract screen.
  */
 
-export type TitleChoice = 'new' | 'continue' | 'settings' | 'credits';
+export type TitleChoice = 'new' | 'continue' | 'journals' | 'settings' | 'credits';
 
 /**
  * One quiet line under Continue: where the journey paused and how far the
@@ -22,12 +33,8 @@ export type TitleChoice = 'new' | 'continue' | 'settings' | 'credits';
  */
 function welcomeBackLine(): string | null {
   try {
-    const raw = localStorage.getItem('elsewhere.save');
-    if (!raw) return null;
-    const data = JSON.parse(raw) as {
-      journal?: unknown;
-      place?: { map?: unknown } | null;
-    };
+    const data = peekSlot(activeSlot());
+    if (!data) return null;
     const mapId = typeof data.place?.map === 'string' ? data.place.map : '';
     const mapName = REGION_MAPS[mapId]?.name;
     const chapter = CHAPTERS.find((c) => c.maps.some((m) => m.id === mapId));
@@ -59,14 +66,49 @@ function welcomeBackLine(): string | null {
  */
 function savedKonami(): boolean {
   try {
-    const raw = localStorage.getItem('elsewhere.save');
-    if (!raw) return false;
-    const data = JSON.parse(raw) as { flags?: unknown };
-    return Array.isArray(data.flags) && data.flags.includes('konami');
+    const data = peekSlot(activeSlot());
+    return (data?.flags ?? []).includes('konami');
   } catch {
     return false;
   }
 }
+
+/**
+ * A journal's flyleaf, summed up for the shelf: who signed it, where the
+ * journey paused, how many pages are filled. Null means a blank journal.
+ */
+function flyleafLine(data: SaveData | null): string | null {
+  if (!data) return null;
+  const name = data.name && data.name.trim() ? data.name : 'unsigned';
+  const mapId = typeof data.place?.map === 'string' ? data.place.map : '';
+  const where = REGION_MAPS[mapId]?.name ?? REGION_MAPS['village']?.name ?? 'the star plain';
+  const n = Array.isArray(data.journal) ? data.journal.length : 0;
+  return `${name} &middot; ${where} &middot; ${n} page${n === 1 ? '' : 's'}`;
+}
+
+/** Hand a packed journal to the browser as a small download. */
+function downloadPack(name: string | null, text: string) {
+  const slug =
+    (name ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\p{L}\p{N}-]/gu, '') || 'unsigned';
+  const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `zoila-journal-${slug}.soup`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revoked on a delay so slower browsers finish reading the blob first.
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/** What each shelf row can do. Blank journals only open or receive. */
+type ShelfVerb = 'open' | 'pack' | 'unpack' | 'erase';
+const VERBS_FULL: ShelfVerb[] = ['open', 'pack', 'unpack', 'erase'];
+const VERBS_BLANK: ShelfVerb[] = ['open', 'unpack'];
 
 export class TitleScreen {
   private cursor = 0;
@@ -79,10 +121,27 @@ export class TitleScreen {
   /** The welcome-back line under Continue; null when there is nothing to say. */
   private welcomeBack: string | null = null;
 
+  // ---- the shelf: three journals, one open on the table ----
+  private shelf = false;
+  private shelfRow = 0;
+  private shelfVerb = 0;
+  /** Destructive shelf verbs arm first, act second, like Begin again. */
+  private shelfArmed: 'erase' | 'replace' | null = null;
+  /** A valid unpacked journal waiting on a confirm over an occupied slot. */
+  private pendingImport: { row: number; raw: string } | null = null;
+  /** One quiet line under the rows: gentle rejections and confirmations. */
+  private shelfNote: string | null = null;
+
   constructor(
     private titleEl: HTMLElement,
     private letterEl: HTMLElement,
-  ) {}
+    /** Called when the journal on the table changed under the engine's feet:
+     * a different slot chosen, or the active slot erased or unpacked over. */
+    private onShelfChange?: () => void,
+  ) {
+    this.titleEl.addEventListener('click', this.onShelfClick);
+    this.titleEl.addEventListener('mouseover', this.onShelfHover);
+  }
 
   get titleOpen(): boolean {
     return !this.titleEl.hidden;
@@ -94,17 +153,20 @@ export class TitleScreen {
   showTitle(hasSave: boolean) {
     this.hasSave = hasSave;
     this.armNew = false;
+    this.shelf = false;
     this.welcomeBack = hasSave ? welcomeBackLine() : null;
     this.konami = hasSave && savedKonami();
     this.options = hasSave
       ? [
           { id: 'continue', label: 'Continue the journey' },
           { id: 'new', label: 'Begin again' },
+          { id: 'journals', label: 'Journals' },
           { id: 'settings', label: 'Settings' },
           { id: 'credits', label: 'Credits' },
         ]
       : [
           { id: 'new', label: 'Begin the journey' },
+          { id: 'journals', label: 'Journals' },
           { id: 'settings', label: 'Settings' },
           { id: 'credits', label: 'Credits' },
         ];
@@ -114,6 +176,7 @@ export class TitleScreen {
   }
 
   hideTitle() {
+    this.shelf = false;
     this.titleEl.hidden = true;
   }
 
@@ -153,7 +216,7 @@ export class TitleScreen {
   }
 
   onDir(dir: Dir) {
-    if (!this.titleOpen || this.options.length < 2) return;
+    if (!this.titleOpen || this.shelf || this.options.length < 2) return;
     const n = this.options.length;
     if (dir === 'up') this.cursor = (this.cursor + n - 1) % n;
     else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
@@ -175,6 +238,249 @@ export class TitleScreen {
       return 'none';
     }
     return id;
+  }
+
+  // ------------------------------------------------------------- the shelf
+
+  get shelfOpen(): boolean {
+    return this.titleOpen && this.shelf;
+  }
+
+  openShelf() {
+    this.shelf = true;
+    this.shelfRow = activeSlot();
+    this.shelfVerb = 0;
+    this.shelfArmed = null;
+    this.pendingImport = null;
+    this.shelfNote = null;
+    this.renderShelf();
+  }
+
+  /** Back to the cover, with Continue and Begin reflecting the shelf. */
+  closeShelf() {
+    if (this.shelfArmed || this.pendingImport) {
+      // First Esc stands down a pending erase or unpack, like moving does.
+      this.standDownShelf();
+      this.renderShelf();
+      return;
+    }
+    this.showTitle(slotOccupied(activeSlot()));
+  }
+
+  private standDownShelf() {
+    this.shelfArmed = null;
+    this.pendingImport = null;
+  }
+
+  private shelfVerbs(row: number): ShelfVerb[] {
+    return slotOccupied(row) ? VERBS_FULL : VERBS_BLANK;
+  }
+
+  shelfDir(dir: Dir) {
+    if (dir === 'up' || dir === 'down') {
+      const d = dir === 'down' ? 1 : SLOT_COUNT - 1;
+      this.shelfRow = (this.shelfRow + d) % SLOT_COUNT;
+      this.shelfVerb = 0;
+      this.standDownShelf();
+      this.shelfNote = null;
+    } else {
+      const verbs = this.shelfVerbs(this.shelfRow);
+      const d = dir === 'right' ? 1 : verbs.length - 1;
+      this.shelfVerb = (this.shelfVerb + d) % verbs.length;
+      this.standDownShelf();
+    }
+    this.renderShelf();
+  }
+
+  /**
+   * Confirm the shelf's current verb. Returns which sound the moment earns:
+   * 'confirm' for a deed done, 'warn' for an armed warning, 'none' for quiet.
+   */
+  shelfActivate(): 'confirm' | 'warn' | 'none' {
+    const row = this.shelfRow;
+    // An unpack waiting on its confirm takes the press, whatever the verb.
+    if (this.pendingImport && this.shelfArmed === 'replace') {
+      const p = this.pendingImport;
+      this.standDownShelf();
+      this.commitImport(p.row, p.raw);
+      return 'confirm';
+    }
+    const verb = this.shelfVerbs(row)[this.shelfVerb] ?? 'open';
+    if (verb === 'open') {
+      setActiveSlot(row);
+      this.onShelfChange?.();
+      this.showTitle(slotOccupied(row));
+      return 'confirm';
+    }
+    if (verb === 'pack') {
+      const packed = packSlot(row);
+      if (!packed) {
+        this.shelfNote = 'there is nothing here to pack.';
+        this.renderShelf();
+        return 'none';
+      }
+      downloadPack(packed.name, packed.text);
+      this.shelfNote = 'packed; your browser is keeping the copy safe.';
+      this.renderShelf();
+      return 'confirm';
+    }
+    if (verb === 'unpack') {
+      this.pickPack(row);
+      return 'confirm';
+    }
+    // erase: arm first, act second, exactly like Begin again on the cover.
+    if (this.shelfArmed !== 'erase') {
+      this.shelfArmed = 'erase';
+      this.shelfNote = null; // a stale note under a warning reads wrong
+      this.renderShelf();
+      return 'warn';
+    }
+    this.standDownShelf();
+    eraseSlot(row);
+    if (row === activeSlot()) this.onShelfChange?.();
+    this.shelfVerb = 0;
+    this.shelfNote = 'erased; the pages are blank again.';
+    this.renderShelf();
+    return 'confirm';
+  }
+
+  /** Open the browser's file picker for a packed journal. The input lives
+   * in the document while the picker is up; some browsers ignore detached
+   * ones. It is invisible and removed as soon as the picker settles. */
+  private pickPack(row: number) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.soup,application/json,text/plain';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+    input.addEventListener('change', () => {
+      const file = input.files?.[0];
+      input.remove();
+      if (!file) return;
+      void file.text().then((text) => this.receivePack(row, text));
+    });
+    input.addEventListener('cancel', () => input.remove());
+    input.click();
+  }
+
+  /** A picked file arrives here: seal and parse checked, then the confirm. */
+  private receivePack(row: number, text: string) {
+    if (!this.shelfOpen) return; // the shelf closed while the picker was up
+    const raw = unpackJournal(text);
+    if (!raw) {
+      this.shelfNote = 'this journal&rsquo;s ink has run; it cannot be read.';
+      this.renderShelf();
+      return;
+    }
+    if (slotOccupied(row)) {
+      this.shelfRow = row;
+      this.pendingImport = { row, raw };
+      this.shelfArmed = 'replace';
+      this.shelfNote = 'a journal already rests here. press again to shelve the new one over it.';
+      this.renderShelf();
+      return;
+    }
+    this.commitImport(row, raw);
+  }
+
+  private commitImport(row: number, raw: string) {
+    if (!writeSlotRaw(row, raw)) {
+      this.shelfNote = 'the shelf would not take it; nothing was changed.';
+    } else {
+      if (row === activeSlot()) this.onShelfChange?.();
+      // A blank row just grew more verbs; the cursor starts them over.
+      this.shelfVerb = 0;
+      this.shelfNote = 'unpacked; the journal is back on the shelf.';
+    }
+    this.renderShelf();
+  }
+
+  // ---- shelf pointer support, in the title's own hover-then-click idiom ----
+
+  private onShelfClick = (e: MouseEvent) => {
+    if (!this.shelfOpen) return;
+    const t = e.target as HTMLElement;
+    const verbEl = t.closest<HTMLElement>('.sh-verb');
+    if (verbEl) {
+      this.steerShelf(verbEl);
+      this.shelfActivate();
+      return;
+    }
+    const rowEl = t.closest<HTMLElement>('.sh-row');
+    if (rowEl) {
+      // Clicking the journal itself is the primary deed: open it.
+      this.shelfRow = Number.parseInt(rowEl.dataset.row ?? '0', 10);
+      this.shelfVerb = 0;
+      this.standDownShelf();
+      this.shelfActivate();
+    }
+  };
+
+  private onShelfHover = (e: MouseEvent) => {
+    if (!this.shelfOpen) return;
+    const el = (e.target as HTMLElement).closest<HTMLElement>('.sh-verb, .sh-row');
+    if (el) this.steerShelf(el);
+  };
+
+  /** Move the cursor to a hovered row or verb without acting on it. */
+  private steerShelf(el: HTMLElement) {
+    const rowEl = el.closest<HTMLElement>('.sh-row');
+    const row = Number.parseInt(rowEl?.dataset.row ?? `${this.shelfRow}`, 10);
+    const verb = el.classList.contains('sh-verb')
+      ? Number.parseInt(el.dataset.verb ?? '0', 10)
+      : this.shelfVerb;
+    if (row === this.shelfRow && verb === this.shelfVerb) return;
+    if (row !== this.shelfRow) {
+      this.shelfVerb = el.classList.contains('sh-verb') ? verb : 0;
+      this.standDownShelf();
+      this.shelfNote = null;
+    } else if (verb !== this.shelfVerb) {
+      this.shelfVerb = verb;
+      this.standDownShelf();
+    }
+    this.shelfRow = row;
+    this.renderShelf();
+  }
+
+  private renderShelf() {
+    const open = activeSlot();
+    const rows = Array.from({ length: SLOT_COUNT }, (_, i) => {
+      const line = flyleafLine(peekSlot(i));
+      const sel = i === this.shelfRow;
+      const verbs = sel
+        ? this.shelfVerbs(i)
+            .map((v, j) => {
+              const on = j === this.shelfVerb;
+              const armed = on && this.shelfArmed;
+              const label =
+                armed === 'erase'
+                  ? 'erase it? press again'
+                  : armed === 'replace'
+                    ? 'shelve it over? press again'
+                    : v;
+              return `<span class="sh-verb${on ? ' on' : ''}${armed ? ' warn' : ''}" data-verb="${j}">${label}</span>`;
+            })
+            .join('<span class="sh-dot">&middot;</span>')
+        : '';
+      return `
+        <div class="sh-row${sel ? ' sel' : ''}${line ? '' : ' blank'}" data-row="${i}">
+          <span class="sh-band"></span>
+          <div class="sh-body">
+            <div class="sh-fly">${sel ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${line ?? 'a blank journal'}${i === open ? '<span class="sh-mark">open on the table</span>' : ''}</div>
+            ${sel ? `<div class="sh-verbs">${verbs}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+    this.titleEl.innerHTML = `
+      <div class="t-card">
+        <div class="sh-card">
+          <div class="sh-kicker">the shelf by the stove</div>
+          <div class="sh-heading">Nani&rsquo;s journals</div>
+          <div class="sh-rows">${rows}</div>
+          <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
+          <div class="sh-hint">&#8593;&#8595; choose a journal &nbsp;&middot;&nbsp; &#8592;&#8594; choose what to do &nbsp;&middot;&nbsp; Space does it &nbsp;&middot;&nbsp; Esc back</div>
+        </div>
+      </div>`;
   }
 
   private render() {

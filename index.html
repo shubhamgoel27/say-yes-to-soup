@@ -930,6 +930,121 @@
       }
       .t-controls b { color: #c8a55b; font-weight: normal; }
 
+      /* ---- the shelf: three journals, one open on the table ---- */
+      .sh-card {
+        position: relative;
+        width: min(88vw, 430px);
+        padding: 26px 26px 20px;
+        border-radius: 8px;
+        text-align: left;
+        background:
+          url('assets/textures/bookcloth-weave.jpg') repeat,
+          linear-gradient(160deg, #55432f 0%, #443626 52%, #382c1f 100%);
+        background-blend-mode: multiply, normal;
+        background-size: 420px, auto;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 230, 190, 0.12),
+          inset 0 -2px 6px rgba(0, 0, 0, 0.35),
+          var(--shadow-card);
+      }
+      .sh-kicker {
+        font-family: var(--hand);
+        font-size: 21px;
+        color: #d9c298;
+        text-align: center;
+        transform: rotate(-1.6deg);
+        margin-bottom: 2px;
+      }
+      .sh-heading {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 24px;
+        letter-spacing: 0.06em;
+        color: #efd9a8;
+        text-align: center;
+        margin-bottom: 16px;
+        text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.55);
+      }
+      .sh-rows { display: flex; flex-direction: column; gap: 10px; }
+      /* Each row is a journal lying on its side: cloth, band, flyleaf. */
+      .sh-row {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 4px 8px 8px 4px;
+        background:
+          url('assets/textures/bookcloth-weave.jpg') repeat,
+          linear-gradient(160deg, #7a4c38, #4e2f23);
+        background-blend-mode: multiply, normal;
+        background-size: 420px, auto;
+        border: 1px solid rgba(0, 0, 0, 0.35);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 230, 190, 0.1);
+        color: #d9c298;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        cursor: pointer;
+      }
+      .sh-row.sel {
+        transform: translateX(4px) rotate(-0.4deg);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 230, 190, 0.14);
+        color: #f4e6c8;
+      }
+      /* A blank journal: no cloth yet, just the promise of one. */
+      .sh-row.blank {
+        background: rgba(0, 0, 0, 0.18);
+        border: 1.5px dashed rgba(232, 220, 196, 0.28);
+        color: #a8906a;
+        box-shadow: none;
+      }
+      .sh-band {
+        flex: 0 0 8px;
+        border-radius: 2px;
+        background: repeating-linear-gradient(
+          180deg,
+          #c1512f 0 7px, #d9a441 7px 14px, #3f7fb0 14px 21px, #6b8e4e 21px 28px
+        );
+        box-shadow: inset 0 0 0 1px rgba(43, 33, 24, 0.35);
+      }
+      .sh-row.blank .sh-band { opacity: 0.25; filter: grayscale(0.4); }
+      .sh-body { flex: 1; min-width: 0; }
+      .sh-fly { font-family: var(--hand); font-size: 20px; line-height: 1.15; }
+      .sh-row.blank .sh-fly { font-style: italic; }
+      /* The journal currently open on the table says so, quietly. */
+      .sh-mark {
+        font-family: 'Literata', Georgia, serif;
+        font-size: var(--fs-11);
+        font-style: italic;
+        letter-spacing: 0.02em;
+        color: #c8a55b;
+        margin-left: 10px;
+      }
+      .sh-verbs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: baseline;
+        margin-top: 3px;
+        font-family: 'Literata', Georgia, serif;
+        font-size: var(--fs-125);
+        color: #a8906a;
+      }
+      .sh-dot { color: rgba(168, 144, 106, 0.6); }
+      .sh-verb { cursor: pointer; padding: 0 1px; border-bottom: 1px solid transparent; }
+      .sh-verb.on { color: #f4e6c8; border-bottom-color: #c8a55b; }
+      .sh-verb.warn { color: #e0784f; border-bottom-color: #c1512f; }
+      .sh-note {
+        min-height: 24px;
+        margin-top: 14px;
+        text-align: center;
+        font-family: var(--hand);
+        font-size: 19px;
+        color: #d9c298;
+        transform: rotate(-0.6deg);
+      }
+      .sh-note.empty { visibility: hidden; }
+      .sh-hint { margin-top: 4px; text-align: center; font-size: var(--fs-11); color: #a58e68; }
+
       /* ---- Nani's letter ---- */
       /* The clip below eats box-shadow, so the fold wrapper casts it instead,
          hugging the deckled silhouette. */

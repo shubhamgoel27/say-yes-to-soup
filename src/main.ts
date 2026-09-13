@@ -7,7 +7,7 @@ import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState } from './engine/state';
+import { GameState, activeSlot, peekSlot } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
@@ -371,7 +371,7 @@ const textbox = new Textbox(
   (who) => audio.speak(who),
 );
 const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
-const title = new TitleScreen($('title'), $('letter'));
+const title = new TitleScreen($('title'), $('letter'), () => reloadJourney());
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
 const pauseMenu = new PauseMenu($('pause'), audio, {
@@ -1954,6 +1954,38 @@ function beginPlay(freshStart: boolean) {
   }
 }
 
+/**
+ * A different journal was put on the table (chosen, erased, or unpacked
+ * over): the loaded journey is forgotten wholesale and the new slot is read
+ * from a clean slate, exactly like a boot. The world is stood back up for
+ * the title's attract drift; Continue and Begin then travel the usual paths.
+ */
+function reloadJourney() {
+  state.forget();
+  state.load();
+  for (const tm of Object.values(maps)) tm.clearOverrides();
+  applyGateState();
+  applyDressings();
+  refreshTaskChip();
+  refreshPlayerSheet();
+  // The title idles over wherever this journal's journey paused, like boot.
+  if (state.place && maps[state.place.map]) {
+    map = maps[state.place.map] as TileMap;
+    const [sx, sy] = safeStand(map, state.place.x, state.place.y);
+    player.placeAt(sx, sy, state.place.dir as Dir);
+  } else {
+    map = startMap;
+    player.placeAt(startMap.spawn[0], startMap.spawn[1], startMap.spawnFacing);
+  }
+  camera.resetLead();
+  audio.setScene(sceneFor(map.id));
+  audio.setRegion(regionFor(map.id));
+  renderer.setMood(moodFor(map.id));
+  renderer.setRaining(rainingOn(map.id));
+  renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
+  stage.setAmbient(AMBIENT[moodFor(map.id)] ?? 0xfdf6ea);
+}
+
 /** The opening's stagecraft, held until the player can actually see it. */
 let pendingWelcome = false;
 function playWelcome() {
@@ -1972,6 +2004,11 @@ function titleActivate() {
     return;
   }
   audio.confirm();
+  if (choice === 'journals') {
+    // The shelf: the cover steps aside, the three journals come down.
+    title.openShelf();
+    return;
+  }
   if (choice === 'settings' || choice === 'credits') {
     title.hideTitle();
     pauseMenu.open(choice, true);
@@ -2207,15 +2244,31 @@ function update(dt: number) {
       audio.back();
     }
   } else if (mode === 'title') {
-    if (pauseKey) {
-      // Nothing to pause yet; Esc on the title is a no-op.
+    if (title.shelfOpen) {
+      // The shelf owns the keys: arrows browse, Space acts, Esc backs out.
+      if (menuDir) {
+        title.shelfDir(menuDir);
+        audio.select();
+      }
+      if (act) {
+        const did = title.shelfActivate();
+        if (did === 'confirm') audio.confirm();
+        else if (did === 'warn') audio.denied();
+      } else if (back || pauseKey) {
+        title.closeShelf();
+        audio.back();
+      }
+    } else {
+      if (pauseKey) {
+        // Nothing to pause yet; Esc on the title is a no-op.
+      }
+      if (menuDir) {
+        title.onDir(menuDir);
+        feedKonami(menuDir);
+        audio.select();
+      }
+      if (act) titleActivate();
     }
-    if (menuDir) {
-      title.onDir(menuDir);
-      feedKonami(menuDir);
-      audio.select();
-    }
-    if (act) titleActivate();
   } else if (mode === 'naming') {
     // The flyleaf card owns the keyboard entirely (capture-phase listener);
     // any stray edges from other devices drain here without effect.
@@ -3263,14 +3316,10 @@ function installCheats() {
       else state.clearFlag(f);
       return `${f} = ${on}`;
     },
-    /** Flags currently set, read back out of the save the game just wrote. */
+    /** Flags currently set, read back out of the save the game just wrote
+     * (whichever journal on the shelf is open on the table). */
     flags(sub?: string) {
-      let set: string[] = [];
-      try {
-        set = JSON.parse(localStorage.getItem('elsewhere.save') ?? '{}').flags ?? [];
-      } catch {
-        return [];
-      }
+      const set = peekSlot(activeSlot())?.flags ?? [];
       return set.filter((f) => !sub || f.includes(sub)).sort();
     },
     games: () => GAMES.map((g) => `${g.title ?? g.flag}  ->  soup.play('${g.flag}')`),

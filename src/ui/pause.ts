@@ -269,6 +269,10 @@ export class PauseMenu {
         the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).
         Everything else, the art, the music, the weather and the gulls, is cooked
         fresh by the game at runtime.</p>
+        <p class="p-c-sec">Special thanks. To Angli, for the idea underneath everything here:
+        that language and food are how strangers become people to each other.
+        And to Nishant, who helped shape the game, its villages, and the
+        traveler&rsquo;s long arc home.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>
         ${done ? '<p class="end-envoi end-last-word">The pot is still on. It is always on. Come back whenever.</p>' : ''}
       </div>`;

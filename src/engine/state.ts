@@ -9,10 +9,44 @@ import type { Cond } from '../content/schema';
 const SAVE_KEY = 'elsewhere.save';
 /** Saves written before the game was renamed still load. */
 const OLD_SAVE_KEY = 'wayfare.save';
-/** The previous known-good save, kept so a bad write is survivable. */
-const BACKUP_KEY = 'elsewhere.save.bak';
+/** Which journal on the shelf is open on the table right now. */
+const SHELF_KEY = 'elsewhere.shelf';
+/** The shelf holds three journals. */
+export const SLOT_COUNT = 3;
 
-type SaveData = {
+/**
+ * Every stored key for one journal on the shelf. Slot 0 keeps the exact keys
+ * the game has always used ('elsewhere.save', its '.bak' twin, and the
+ * pre-rename key), so a journey that predates the shelf sits on it untouched.
+ * The later slots suffix the same names ('elsewhere.save.2', '.2.bak', '.3',
+ * '.3.bak'); they get no legacy key because nothing old ever wrote there.
+ * All save, load, backup and erase logic below goes through this one function.
+ */
+function slotKeys(slot: number): { save: string; bak: string; legacy: string | null } {
+  const base = slot > 0 ? `${SAVE_KEY}.${slot + 1}` : SAVE_KEY;
+  return { save: base, bak: `${base}.bak`, legacy: slot === 0 ? OLD_SAVE_KEY : null };
+}
+
+/** The journal open on the table: 0 unless the player chose another. */
+export function activeSlot(): number {
+  try {
+    const n = Number.parseInt(localStorage.getItem(SHELF_KEY) ?? '0', 10);
+    return Number.isInteger(n) && n >= 0 && n < SLOT_COUNT ? n : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Put a different journal on the table. Remembered across sessions. */
+export function setActiveSlot(slot: number) {
+  try {
+    localStorage.setItem(SHELF_KEY, String(slot));
+  } catch {
+    // Where nothing can be written, nothing needed switching either.
+  }
+}
+
+export type SaveData = {
   flags?: string[];
   journal?: string[];
   errand?: string | null;
@@ -50,6 +84,151 @@ function parseSave(raw: string | null): SaveData | null {
     return data;
   } catch {
     return null;
+  }
+}
+
+/**
+ * The raw stored save for a slot, trusted in the same order load() trusts:
+ * primary first, then the last known-good backup, then the pre-rename key.
+ * Only a string that passes parseSave is ever returned.
+ */
+function readSlotRaw(slot: number): string | null {
+  try {
+    const k = slotKeys(slot);
+    const keys = k.legacy ? [k.save, k.bak, k.legacy] : [k.save, k.bak];
+    for (const key of keys) {
+      const raw = localStorage.getItem(key);
+      if (raw && parseSave(raw)) return raw;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Read a slot's save straight off the shelf, for flyleaf summaries: the
+ * title renders before the engine restores state. Trouble means null. */
+export function peekSlot(slot: number): SaveData | null {
+  return parseSave(readSlotRaw(slot));
+}
+
+/**
+ * Whether anything at all sits in this slot. Deliberately the same judgement
+ * hasSave() has always made for slot 0: even an unreadable pre-rename save
+ * counts, so nothing that used to say Continue stops saying it.
+ */
+export function slotOccupied(slot: number): boolean {
+  try {
+    const k = slotKeys(slot);
+    return (
+      parseSave(localStorage.getItem(k.save)) !== null ||
+      parseSave(localStorage.getItem(k.bak)) !== null ||
+      (k.legacy !== null && localStorage.getItem(k.legacy) !== null)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Erase one journal from the shelf: primary, backup, and (slot 0) the
+ * pre-rename key, or the old journey resurrects as Continue on next boot. */
+export function eraseSlot(slot: number) {
+  try {
+    const k = slotKeys(slot);
+    localStorage.removeItem(k.save);
+    localStorage.removeItem(k.bak);
+    if (k.legacy) localStorage.removeItem(k.legacy);
+  } catch {
+    // Nothing to remove is fine.
+  }
+}
+
+// ------------------------------------------------------------ pack & unpack
+//
+// A journal can be packed into a small file and carried to another browser.
+// The file is JSON around a base64 copy of the exact stored save string, so
+// a pack-then-unpack round trip is byte-for-byte. The checksum is not
+// security, only a seal on the envelope: it tells a truncated download or a
+// stray edit apart from a journal worth trusting to parseSave.
+
+const PACK_KIND = 'zoila-journal';
+const PACK_VERSION = 1;
+
+/** djb2-xor over the base64 payload; small, stable, dependency-free. */
+function checksum(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h * 33) ^ s.charCodeAt(i)) >>> 0;
+  return h.toString(16);
+}
+
+/** Base64 that survives any name a player could write on a flyleaf. */
+function toB64(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let bin = '';
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+function fromB64(b: string): string {
+  const bin = atob(b);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+/** Fold one journal into file text, or null when the slot holds nothing
+ * readable. `name` is whatever the flyleaf says, for the filename. */
+export function packSlot(slot: number): { name: string | null; text: string } | null {
+  const raw = readSlotRaw(slot);
+  if (!raw) return null;
+  const data = toB64(raw);
+  const text = JSON.stringify(
+    { kind: PACK_KIND, version: PACK_VERSION, checksum: checksum(data), data },
+    null,
+    2,
+  );
+  const parsed = parseSave(raw);
+  return { name: parsed?.name ?? null, text };
+}
+
+/**
+ * Open a packed journal: seal checked first, then the full parseSave the
+ * loader itself trusts. Returns the exact save string that was packed, or
+ * null for anything torn, tampered with, or simply not a journal.
+ */
+export function unpackJournal(text: string): string | null {
+  try {
+    const obj = JSON.parse(text) as {
+      kind?: unknown;
+      version?: unknown;
+      checksum?: unknown;
+      data?: unknown;
+    };
+    if (!obj || obj.kind !== PACK_KIND) return null;
+    if (typeof obj.version !== 'number' || obj.version > PACK_VERSION) return null;
+    if (typeof obj.data !== 'string' || obj.checksum !== checksum(obj.data)) return null;
+    const raw = fromB64(obj.data);
+    return parseSave(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Put an unpacked journal into a slot. Only a string parseSave accepts is
+ * written, and a readable journal already there becomes the slot's backup
+ * first, exactly as save() would treat it: one mistake stays survivable.
+ */
+export function writeSlotRaw(slot: number, raw: string): boolean {
+  if (!parseSave(raw)) return false;
+  try {
+    const k = slotKeys(slot);
+    const prev = localStorage.getItem(k.save);
+    if (prev && parseSave(prev)) localStorage.setItem(k.bak, prev);
+    localStorage.setItem(k.save, raw);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -218,9 +397,10 @@ export class GameState {
       });
       // Keep the last known-good copy before overwriting. A journey can be
       // thirty hours long; a single torn write must never be able to end it.
-      const prev = localStorage.getItem(SAVE_KEY);
-      if (prev && parseSave(prev)) localStorage.setItem(BACKUP_KEY, prev);
-      localStorage.setItem(SAVE_KEY, payload);
+      const k = slotKeys(activeSlot());
+      const prev = localStorage.getItem(k.save);
+      if (prev && parseSave(prev)) localStorage.setItem(k.bak, prev);
+      localStorage.setItem(k.save, payload);
       this.persistenceLost = false;
     } catch {
       // Private browsing or full storage: play on without persistence, but
@@ -239,51 +419,50 @@ export class GameState {
   /** Fired once when saving stops working, so the UI can warn the player. */
   onPersistenceLost: (() => void) | null = null;
 
-  /** Wipe everything for a fresh journey. Fires no events; callers reset UI. */
-  reset() {
+  /**
+   * Put down the loaded journey without touching the shelf: every in-memory
+   * field returns to its blank-boot value, storage stays exactly as it is.
+   * This is how switching journals starts clean; load() then reads the one
+   * now on the table. Fires no events; callers rebuild UI themselves.
+   */
+  forget() {
     this.flags.clear();
     this.journal.clear();
     this.errand = null;
     this.place = null;
     this.playerName = null;
     this.playerLook = null;
-    try {
-      localStorage.removeItem(SAVE_KEY);
-      localStorage.removeItem(BACKUP_KEY);
-      // "Erase the journal" must also erase the pre-rename save, or the old
-      // journey resurrects as Continue on the next boot.
-      localStorage.removeItem(OLD_SAVE_KEY);
-    } catch {
-      // Nothing to remove is fine.
-    }
+    this.persistenceLost = false;
+  }
+
+  /** Wipe everything for a fresh journey in the active slot. Fires no
+   * events; callers reset UI. Other journals on the shelf are untouched. */
+  reset() {
+    this.forget();
+    // eraseSlot also clears the pre-rename save for slot 0, or the old
+    // journey resurrects as Continue on the next boot.
+    eraseSlot(activeSlot());
   }
 
   hasSave(): boolean {
-    try {
-      return (
-        parseSave(localStorage.getItem(SAVE_KEY)) !== null ||
-        parseSave(localStorage.getItem(BACKUP_KEY)) !== null ||
-        localStorage.getItem(OLD_SAVE_KEY) !== null
-      );
-    } catch {
-      return false;
-    }
+    return slotOccupied(activeSlot());
   }
 
   load() {
     try {
+      const k = slotKeys(activeSlot());
       if (new URLSearchParams(location.search).has('fresh')) {
-        localStorage.removeItem(SAVE_KEY);
-        localStorage.removeItem(BACKUP_KEY);
-        localStorage.removeItem(OLD_SAVE_KEY);
+        localStorage.removeItem(k.save);
+        localStorage.removeItem(k.bak);
+        if (k.legacy) localStorage.removeItem(k.legacy);
         return;
       }
       // Primary first, then the last known-good copy, then the old key.
       // Silently starting a fresh journey is the one unacceptable outcome.
       const data =
-        parseSave(localStorage.getItem(SAVE_KEY)) ??
-        parseSave(localStorage.getItem(BACKUP_KEY)) ??
-        parseSave(localStorage.getItem(OLD_SAVE_KEY));
+        parseSave(localStorage.getItem(k.save)) ??
+        parseSave(localStorage.getItem(k.bak)) ??
+        (k.legacy ? parseSave(localStorage.getItem(k.legacy)) : null);
       if (!data) return;
       for (const f of data.flags ?? []) this.flags.add(f);
       // Session-scoped state that must never survive a reload: replay.mode
