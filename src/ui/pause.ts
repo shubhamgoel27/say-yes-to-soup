@@ -83,8 +83,15 @@ export class PauseMenu {
     this.fromTitle = fromTitle;
     this.cursor = 0;
     this.root.hidden = false;
+    // The entrance animation belongs to opening, not to every re-render:
+    // render() rebuilds the card on each cursor move, and replaying the
+    // book-open there made the whole panel flicker on every arrow press.
+    this.justOpened = true;
     this.render();
   }
+
+  /** True for exactly the first render after open(); gates the entrance. */
+  private justOpened = false;
 
   close() {
     this.root.hidden = true;
@@ -287,10 +294,18 @@ export class PauseMenu {
             : journeyDone()
               ? 'The end of it'
               : 'Credits';
+    // A rebuilt card resets its own scroll; carry the reading position over
+    // so adjusting a low setting does not bounce the list back to the top.
+    const prevScroll = this.root.querySelector('.p-card')?.scrollTop ?? 0;
     this.root.innerHTML = `
-      <div class="p-card">
+      <div class="p-card${this.justOpened ? ' opening' : ''}">
         <div class="p-title">${title}</div>
         ${body}
       </div>`;
+    this.justOpened = false;
+    if (prevScroll > 0) {
+      const card = this.root.querySelector('.p-card');
+      if (card) card.scrollTop = prevScroll;
+    }
   }
 }
