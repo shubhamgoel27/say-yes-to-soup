@@ -511,7 +511,7 @@
         to { background-position: -130% 0; }
       }
       .j-locked { margin-top: 8px; font-size: var(--fs-125); font-style: italic; color: #6f5c40; }
-      .j-detail { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; overflow: hidden; }
+      .j-detail { flex: 1; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto; border-left: 1px solid rgba(43,33,24,0.25); padding-left: 16px; }
       .j-title { font-family: var(--display); font-weight: 600; font-size: 19px; text-wrap: balance; }
       .j-sub { font-size: var(--fs-13); font-style: italic; color: #5d4b35; margin-bottom: 8px; }
       .j-nani, .j-you { font-size: var(--fs-14); margin-top: 8px; }
@@ -1394,6 +1394,8 @@
         box-shadow: var(--shadow-card);
         color: var(--ink);
         padding: 20px 28px 22px;
+        max-height: 86vh;
+        overflow-y: auto;
         animation: bookOpen 0.22s ease-out;
       }
       .p-title {

@@ -116,6 +116,9 @@ export class TitleScreen {
   private hasSave = false;
   /** With the old code in the save, the woven band shimmers once on load. */
   private konami = false;
+  /** Spent after the first shimmer so returning from the shelf, settings,
+   * or credits does not replay it. */
+  private shimmered = false;
   /** "Begin again" over a real save arms first, erases second. */
   private armNew = false;
   /** The welcome-back line under Continue; null when there is nothing to say. */
@@ -155,7 +158,8 @@ export class TitleScreen {
     this.armNew = false;
     this.shelf = false;
     this.welcomeBack = hasSave ? welcomeBackLine() : null;
-    this.konami = hasSave && savedKonami();
+    this.konami = !this.shimmered && hasSave && savedKonami();
+    if (this.konami) this.shimmered = true;
     this.options = hasSave
       ? [
           { id: 'continue', label: 'Continue the journey' },

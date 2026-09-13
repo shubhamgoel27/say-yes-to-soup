@@ -588,9 +588,14 @@ state.onPersistenceLost = () => {
 };
 // Bound mid-walk loss: the save also fires when the tab hides or closes,
 // and every 30 seconds of play, not only on story beats.
-window.addEventListener('pagehide', () => state.save());
+// Only while playing: a fresh visitor idling at the title has no journey
+// yet, and saving there wrote an empty journal whose Continue skipped the
+// flyleaf and Nani's letter for every player who closed the tab early.
+window.addEventListener('pagehide', () => {
+  if (mode === 'play') state.save();
+});
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') state.save();
+  if (document.visibilityState === 'hidden' && mode === 'play') state.save();
 });
 setInterval(() => {
   if (mode === 'play') state.save();
@@ -2939,6 +2944,19 @@ glCanvas.addEventListener('pointermove', (e) => {
 
 // ---- menu steering: drive each component's own cursor to the hovered row ----
 
+// A keyboard re-render puts a fresh element under a resting pointer and the
+// browser re-fires mouseover at the exact same coordinates, which snapped the
+// cursor back to the hovered row and made arrow keys feel dead until the
+// mouse moved. An echo carries the same pixel; real hovering does not.
+let lastHoverX = -9;
+let lastHoverY = -9;
+function hoverEcho(e: MouseEvent): boolean {
+  if (e.clientX === lastHoverX && e.clientY === lastHoverY) return true;
+  lastHoverX = e.clientX;
+  lastHoverY = e.clientY;
+  return false;
+}
+
 /**
  * Move a menu's selection to the given row using its public onDir, reading
  * the current position straight from the rendered classes ('sel' or 'on').
@@ -2979,6 +2997,7 @@ tbRoot.addEventListener('pointerdown', (e) => {
   textbox.onAction();
 });
 tbRoot.addEventListener('mouseover', (e) => {
+  if (hoverEcho(e)) return;
   if (!textbox.isOpen) return;
   const row = (e.target as HTMLElement).closest('.tb-choice');
   if (row && steerTo(choicesEl, '.tb-choice', row, (d) => textbox.onDir(d))) audio.select();
@@ -2995,6 +3014,7 @@ titleRoot.addEventListener('click', (e) => {
   titleActivate();
 });
 titleRoot.addEventListener('mouseover', (e) => {
+  if (hoverEcho(e)) return;
   if (!title.titleOpen) return;
   const opt = (e.target as HTMLElement).closest('.t-opt');
   if (opt && steerTo(titleRoot, '.t-opt', opt, (d) => title.onDir(d))) audio.select();
@@ -3040,6 +3060,7 @@ pauseRoot.addEventListener('click', (e) => {
   }
 });
 pauseRoot.addEventListener('mouseover', (e) => {
+  if (hoverEcho(e)) return;
   if (!pauseMenu.isOpen) return;
   const t = e.target as HTMLElement;
   const opt = t.closest('.p-opt');
@@ -3075,6 +3096,7 @@ journalRoot.addEventListener('click', (e) => {
   }
 });
 journalRoot.addEventListener('mouseover', (e) => {
+  if (hoverEcho(e)) return;
   if (!journalUI.isOpen) return;
   const item = (e.target as HTMLElement).closest('.j-item');
   if (item && steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
