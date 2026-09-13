@@ -18,6 +18,7 @@ import {
   REGION_MAPS,
   TASKS,
 } from '../src/content/world';
+import { ROUTE } from '../src/content/route';
 import { TileMap } from '../src/engine/grid';
 import { seamKinds } from '../src/engine/renderer';
 import type { ExamineArm } from '../src/content/schema';
@@ -838,5 +839,31 @@ describe('the key stands on the player side of its lock', () => {
         assert.ok(seen.has(k(x, y - 1)), `dig spot ${s.at}: nowhere left to stand (from ${e.label})`);
       }
     }
+  });
+});
+
+/**
+ * The chapter-close spread: when a chapter completes, the journal shows the
+ * next stop on Nani's route. Every completing chapter must therefore sit on
+ * the route with a stop after it, or the ceremony would have nowhere to
+ * point; and the Return must never complete, because it ends instead.
+ */
+describe('the chapter close', () => {
+  it('every completing chapter has a resolvable next stop on the route', () => {
+    const closing = CHAPTERS.filter((c, i) => i === 0 || c.completion);
+    assert.ok(closing.length >= 10, 'the road lost chapters');
+    for (const c of closing) {
+      const at = ROUTE.findIndex((s) => s.id === c.id);
+      assert.ok(at >= 0, `${c.id} completes but has no stop on the route`);
+      const next = ROUTE[at + 1];
+      assert.ok(next, `${c.id} completes but the route ends at its stop`);
+      assert.ok(next.name && next.hop, `${c.id} -> next stop is missing its name or its hop`);
+    }
+  });
+
+  it('the Return does not complete; it ends', () => {
+    const last = CHAPTERS.at(-1);
+    assert.equal(last?.id, 'return');
+    assert.equal(last?.completion, undefined);
   });
 });

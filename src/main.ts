@@ -18,6 +18,7 @@ import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
+import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
@@ -374,6 +375,7 @@ const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
 const title = new TitleScreen($('title'), $('letter'), () => reloadJourney());
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
+const chapterClose = new ChapterCloseUI($('chapterclose'), state);
 const pauseMenu = new PauseMenu($('pause'), audio, {
   onTextSpeed: (cps) => textbox.setSpeed(cps),
   onToTitle: () => {
@@ -1625,6 +1627,22 @@ let talkingTo: Villager | null = null;
 let celebrated = state.has('story.complete');
 const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map((c) => c.flag));
 
+/**
+ * The guards above keep a loaded journal from re-firing plates and the
+ * chapter-close spread. They are read from whichever journal was on the
+ * table at boot, so whenever the journal under us changes (another slot
+ * chosen on the shelf, or Begin again wiping the flags), they resync here;
+ * stale guards re-celebrated finished chapters one way and swallowed fresh
+ * ones the other.
+ */
+function resyncCelebrations() {
+  window.clearTimeout(ceremonyTimer);
+  chapterClose.close();
+  celebrated = state.has('story.complete');
+  celebratedFlags.clear();
+  for (const c of COMPLETIONS) if (state.has(c.flag)) celebratedFlags.add(c.flag);
+}
+
 /** A journey taken from inside a conversation; the warp runs when it ends. */
 let pendingTravel: { map: string; x: number; y: number; dir: string } | null = null;
 state.on('travel', (d) => {
@@ -1733,6 +1751,7 @@ applyDressings();
     showPlate('CHAPTER ONE · COMPLETE', 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
+    scheduleCeremony('story.complete');
   }
   for (const c of COMPLETIONS) {
     if (state.has(c.flag) && !celebratedFlags.has(c.flag)) {
@@ -1740,6 +1759,7 @@ applyDressings();
       showPlate(c.plate, 5200);
       for (const t of c.toasts) toasts.show(t);
       celebrate();
+      scheduleCeremony(c.flag);
     }
   }
 }
@@ -1813,6 +1833,47 @@ function celebrate() {
       renderer.burst(px + TILE / 2 + (i - 1) * 20, py - 10 - i * 8, 'petal', hues);
     }, i * 180);
   }
+}
+
+// ------------------------------------------------------- the chapter close
+
+/** The pending unfold, if a chapter just finished; one moment at a time. */
+let ceremonyTimer = 0;
+
+/** True while another page, card, or transition owns the screen. */
+function ceremonyMustWait(): boolean {
+  return (
+    mode !== 'play' || !!warp || sitting || textbox.isOpen || title.letterOpen ||
+    journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen || anyGameOpen() || uiCardOpen()
+  );
+}
+
+/**
+ * The journal closes a chapter: once the completion dialogue has ended and
+ * the petals have had their moment, the spread unfolds like a letter. If
+ * something else holds the screen when the moment comes, it waits politely
+ * and tries again; and if the road has already moved on to another chapter's
+ * ground, the moment is let go rather than forced.
+ */
+function scheduleCeremony(flag: string) {
+  if (!closingChapter(flag, map.id)) return;
+  const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
+  let patience = 20;
+  const tryOpen = () => {
+    const chapter = closingChapter(flag, map.id);
+    if (!chapter) return;
+    if (ceremonyMustWait()) {
+      if (patience-- > 0) ceremonyTimer = window.setTimeout(tryOpen, 900);
+      return;
+    }
+    player.frozen = true;
+    audio.pageFlip();
+    chapterClose.open(chapter, hues, () => {
+      player.frozen = false;
+    });
+  };
+  window.clearTimeout(ceremonyTimer);
+  ceremonyTimer = window.setTimeout(tryOpen, 1800);
 }
 
 // ---------------------------------------------------------------- sitting
@@ -1969,6 +2030,7 @@ function reloadJourney() {
   state.forget();
   state.load();
   for (const tm of Object.values(maps)) tm.clearOverrides();
+  resyncCelebrations();
   applyGateState();
   applyDressings();
   refreshTaskChip();
@@ -2023,6 +2085,7 @@ function titleActivate() {
   if (choice === 'new') {
     state.reset();
     for (const tm of Object.values(maps)) tm.clearOverrides();
+    resyncCelebrations();
     applyGateState();
     applyDressings();
     refreshTaskChip();
@@ -2158,7 +2221,7 @@ function update(dt: number) {
   // Story surfaces quiet the ambient HUD (toasts, chip, plate) around them.
   {
     const quiet =
-      mode !== 'play' || textbox.isOpen || title.letterOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen || albumUI.isOpen;
+      mode !== 'play' || textbox.isOpen || title.letterOpen || chapterClose.isOpen || journalUI.isOpen || anyGameOpen() || pauseMenu.isOpen || albumUI.isOpen;
     if (quiet !== quietHud) {
       quietHud = quiet;
       document.body.classList.toggle('quiet-hud', quiet);
@@ -2282,6 +2345,12 @@ function update(dt: number) {
   } else if (title.letterOpen) {
     // Mail from home, read mid-journey.
     if (act || back) letterAdvance();
+  } else if (chapterClose.isOpen) {
+    // The chapter-close spread: any affirmative puts it down. Onward.
+    if (act || back || pauseKey) {
+      audio.pageFlip();
+      chapterClose.close();
+    }
   } else if (!howtoEl.hidden) {
     // The how-to card: begin, or not yet. Either way, no harm done.
     if (menuDir === 'up' || menuDir === 'down' || menuDir === 'left' || menuDir === 'right') {
@@ -2911,7 +2980,7 @@ glCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (mode !== 'play' || warp || celebrateT > 0) return;
-  if (pauseMenu.isOpen || journalUI.isOpen || anyGameOpen() || uiCardOpen() || title.letterOpen || albumUI.isOpen) return;
+  if (pauseMenu.isOpen || journalUI.isOpen || anyGameOpen() || uiCardOpen() || title.letterOpen || albumUI.isOpen || chapterClose.isOpen) return;
   if (sitting) {
     standUp();
     return;
@@ -3022,6 +3091,13 @@ titleRoot.addEventListener('mouseover', (e) => {
 
 $('letter').addEventListener('click', () => {
   if (title.letterOpen) letterAdvance();
+});
+
+$('chapterclose').addEventListener('click', () => {
+  if (chapterClose.isOpen) {
+    audio.pageFlip();
+    chapterClose.close();
+  }
 });
 
 // ---- pause: options click, settings rows adjust by clicked half ----
@@ -3329,6 +3405,9 @@ function installCheats() {
         if (c.complete) state.set(c.complete);
       }
       state.set(target.flag);
+      // Chapters skipped over are already celebrated; without this, the
+      // next dialogue to end replayed every plate and chapter-close at once.
+      resyncCelebrations();
       return jump(target.map);
     },
     warp: (mapId: string, x?: number, y?: number) =>
@@ -3409,6 +3488,8 @@ function installCheats() {
         state.set(c.flag);
         if (c.complete) state.set(c.complete);
       }
+      // The endgame has its own authored ending; nothing here celebrates.
+      resyncCelebrations();
       return jump('village');
     },
     wipe() {
