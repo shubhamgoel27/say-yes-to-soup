@@ -24,12 +24,12 @@ export type { TaskDef };
  */
 const EPHEMERA: Record<string, { src: string; alt: string; caption: string }> = {
   'dishes.sadya': {
-    src: '/assets/games/pomological-mango-mulgoba.jpg',
+    src: 'assets/games/pomological-mango-mulgoba.jpg',
     alt: 'watercolor of a mulgoba mango, whole and halved',
     caption: 'from a seed catalogue, she says. the mango the pickle used to be',
   },
   'dishes.aam': {
-    src: '/assets/games/pomological-mango-mulgoba.jpg',
+    src: 'assets/games/pomological-mango-mulgoba.jpg',
     alt: 'watercolor of a mulgoba mango, whole and halved',
     caption: 'a painted mango, taped in. sweet, and only one; Ghalib wanted many',
   },

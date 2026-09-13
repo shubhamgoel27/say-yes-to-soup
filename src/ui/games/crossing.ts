@@ -1048,7 +1048,7 @@ function makeChartCard(): HTMLCanvasElement {
     chartLoaded = true;
     paintChartCard(im);
   };
-  im.src = '/assets/games/uranias-mirror-orion.jpg';
+  im.src = 'assets/games/uranias-mirror-orion.jpg';
   return cv;
 }
 

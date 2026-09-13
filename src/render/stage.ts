@@ -178,7 +178,7 @@ export class PixiStage {
     // (Done on the 2D canvas this same blend forced Chrome off the GPU and
     // tripled frame times; the look is identical here.)
     try {
-      const grainTex = await Assets.load<Texture>('/assets/textures/paper-grain-white.jpg');
+      const grainTex = await Assets.load<Texture>('assets/textures/paper-grain-white.jpg');
       grainTex.source.addressMode = 'repeat';
       const grain = new TilingSprite({ texture: grainTex, width: VIEW_W * ART, height: VIEW_H * ART });
       grain.blendMode = 'multiply';
