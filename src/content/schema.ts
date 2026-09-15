@@ -114,7 +114,15 @@ export type RecallManifest = {
 };
 
 /** One open thread in the Tasks tab; first matching entry is the HUD chip. */
-export type TaskDef = { when: Cond; text: string };
+export type TaskDef = {
+  when: Cond;
+  text: string;
+  /** Where this thread continues: an NPC the player should find. Nani's red
+   * thread (the band Carmen tied) unspools toward them when asked. */
+  who?: string;
+  /** Or a fixed spot: [mapId, x, y]. Wins over `who` when both are given. */
+  at?: [string, number, number];
+};
 
 /** A screen-space light pass tinting a whole map's mood. */
 export type MoodSpec = {
