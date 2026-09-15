@@ -585,6 +585,19 @@ export const NODES: NodeMap = {
       { who: 'Mateo', text: 'Everyone says the village is emptying. But the signal is best on the ridge, and from up there the pampa looks full.' },
       { who: 'Mateo', text: 'Also: the little kids swear something legendary sleeps under the bridge. The little kids swear a lot of things.' },
     ],
+    choices: [
+      { text: '"Remind me where I was headed?"', when: { has: ['pallay.done'] }, goto: 'mateo.thread' },
+      { text: 'Leave him to the signal', goto: 'mateo.threadNo' },
+    ],
+  },
+  'mateo.thread': {
+    lines: [
+      { who: 'Mateo', text: 'You have GPS on your wrist and I climb a ridge for one bar. Hold it out; the old network still beats mine.' },
+    ],
+    effects: ['thread:'],
+  },
+  'mateo.threadNo': {
+    lines: [{ who: 'Mateo', text: 'Say hi to the ridge if you pass it. The ridge and I are close.' }],
   },
 
   // ---------------- Doña Carmen ----------------
@@ -702,6 +715,7 @@ export const NODES: NodeMap = {
       { who: 'Doña Carmen', text: 'Ha! Look at that row. Crooked as the river. Good. Now the cloth has you in it too.' },
       { who: 'Doña Carmen', text: 'My granddaughter will wear this in Lima and carry a stranger who tried. That is pallay. Nothing written down; everything written in.' },
       { text: 'She knots your practice rows into a narrow band and ties it at your wrist. "So your hands remember the mountain."' },
+      { who: 'Doña Carmen', text: 'One more thing, wawa. Red runs through the band; when you lose the way, ask your wrist, and walk where it spools.' },
     ],
     effects: ['clear:weave.start', 'set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay'],
   },
@@ -967,6 +981,16 @@ export const NODES: NodeMap = {
   },
   'allqu.idle': {
     lines: [{ text: 'The dog noses your hand, finds everything approximately correct, and moves on.' }],
+    choices: [
+      { text: '"Which way was I headed, colleague?"', when: { has: ['pallay.done'] }, goto: 'allqu.thread' },
+      { text: 'A quick pat', goto: 'allqu.pet1' },
+    ],
+  },
+  'allqu.thread': {
+    lines: [
+      { text: 'The dog hears the question, sniffs the band once, and points its entire body the way the red goes. Colleagues share leads.' },
+    ],
+    effects: ['thread:'],
   },
   // Petting escalates, because the game should always out-commit the player.
   'allqu.pet1': {
@@ -1068,6 +1092,19 @@ export const NODES: NodeMap = {
     lines: [
       { who: 'Pilar', text: 'The toll stands. The economy of the bridge is strong. Membership renewal is automatic and free, you are welcome.' },
     ],
+    choices: [
+      { text: '"Which way was I going, mayor?"', when: { has: ['pallay.done'] }, goto: 'pilar.thread' },
+      { text: 'Just admiring the bridge', goto: 'pilar.threadNo' },
+    ],
+  },
+  'pilar.thread': {
+    lines: [
+      { who: 'Pilar', text: 'Directions are one fact each. ...Fine, co-owners navigate free. Wrist out, follow the red, tell it the bridge sent you.' },
+    ],
+    effects: ['thread:'],
+  },
+  'pilar.threadNo': {
+    lines: [{ who: 'Pilar', text: 'Correct. It is a very good bridge. Admission is free today only.' }],
   },
 
   // ---- Chasca, the traveling photographer ----

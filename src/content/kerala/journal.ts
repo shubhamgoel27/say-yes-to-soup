@@ -196,58 +196,72 @@ export const KERALA_TASKS: TaskDef[] = [
   {
     when: { has: ['c6.arrived'], not: ['c6.letter.delivered'] },
     text: 'Joseph’s letter and parcel have crossed an ocean in your pocket. His mother Mariamma is up from the jetty, the veedu with the open door.',
+    who: 'mariamma',
   },
   {
     when: { has: ['c6.letter.delivered'], not: ['c6.letter.heard'] },
     text: 'The letter is in Mariamma’s hands and her eyes are already shining. Stay in the kitchen; some readings need a witness.',
+    who: 'mariamma',
   },
   {
     when: { has: ['c6.letter.delivered'], not: ['c6.chaya'] },
     text: 'Mariamma’s orders: chaya at Shaji’s thattukada, and tell him whose guest you are. The village will do the rest.',
+    who: 'shaji',
   },
   {
     when: { has: ['errand.coir-rope'], not: ['c6.rope.given'] },
     text: 'Omana’s coil of good three-strand rides on your shoulder. Captain Varkey drills his crew on the bank by the vallams.',
+    who: 'varkey',
   },
   {
     when: { has: ['c6.rope.given'], not: ['c6.row.done'] },
     text: 'Varkey’s chundan vallam is short one rower, and he has decided your hands will do. The song does the steering; you only have to be on time.',
+    who: 'varkey',
   },
   {
     when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask'] },
     text: 'Something is bubbling in Mariamma’s kitchen besides the curry. Go back; the questions there are decorations.',
+    who: 'mariamma',
   },
   {
     when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] },
     text: 'Sunday’s sadya needs serving hands: banana leaves, ten dishes, two aunties, one right hand. Mariamma’s kitchen, whenever you are ready.',
+    who: 'mariamma',
   },
   {
     when: { has: ['c6.cook.start'], not: ['c6.cook.done'] },
     text: 'Behind Shaji’s kettle: let the milk-tea boil at its own pace, then pull it high. Froth is the grade, and the counter forgives.',
+    who: 'shaji',
   },
   {
     when: { has: ['page.words.chaya'], not: ['c6.cook.done'] },
     text: 'Shaji has been looking at your wrists like a coach. He thinks they are ready for the meter-long pour; report to the thattukada.',
+    who: 'shaji',
   },
   {
     when: { has: ['c6.joseph.met'], not: ['c6.joseph.quizzed'] },
     text: 'Joseph is home, feet under his mother’s table, taking testimony about his own ship. Give your report; bring an appetite.',
+    who: 'josephC6',
   },
   {
     when: { has: ['c6.chaya'], not: ['c6.rain'] },
     text: 'Kuttan by the eastern palms keeps sniffing the air like it owes him news. Ask him what the sky is planning.',
+    who: 'kuttan',
   },
   {
     when: { has: ['c6.rain'], not: ['photo.c6.jetty'] },
     text: 'Chasca is at the end of the jetty under a big black umbrella, not one drop on her. The album wants you mid-downpour.',
+    who: 'chascaC6',
   },
   {
     when: { has: ['c6.letter.delivered'], not: ['letter.read.kochi.pilar'] },
     text: 'Mail waits at the jetty office window, held under a tin of cardamom. One envelope looks suspiciously like an invoice.',
+    at: ['kerala', 21, 22],
   },
   {
     when: { has: ['c6.row.done', 'c6.sadya.done', 'c6.rain'], not: ['c6.complete'] },
     text: 'Rowed, served, rained on. Go and stand in Mariamma’s kitchen; she will know what that adds up to before you do.',
+    who: 'mariamma',
   },
   {
     when: { has: ['c6.complete'] },

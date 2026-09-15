@@ -1,4 +1,4 @@
-import type { ErrandDef, JournalEntry } from '../schema';
+import type { ErrandDef, JournalEntry, TaskDef } from '../schema';
 
 /**
  * The journal is the game's Pokédex: four kinds of page, filled by noticing.
@@ -231,7 +231,7 @@ export const JOURNAL: JournalEntry[] = [
     tab: 'customs',
     title: 'Pallay',
     sub: 'The patterns picked into the cloth, held only in memory.',
-    you: 'Carmen reads her mother in a border, her village in a color. Nothing is written down. Everything is written in. She let me weave a row. It is the crooked one. She says that makes it mine.',
+    you: 'Carmen reads her mother in a border, her village in a color. Nothing is written down. Everything is written in. She let me weave a row. It is the crooked one. She says that makes it mine. One red thread runs the whole band; I did not weave it, and it seems to know where I am going.',
   },
   {
     id: 'customs.apacheta',
@@ -270,58 +270,71 @@ export const JOURNAL_BY_ID = new Map(JOURNAL.map((e) => [e.id, e]));
  * journal's Tasks tab; the first one becomes the HUD chip. Written as
  * directions a villager would give, not quest-log bark.
  */
-export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[] = [
+export const TASKS: TaskDef[] = [
   {
     when: { has: ['carry.chicha'] },
     text: "You are carrying Teófilo's caporal, full to the brim. It goes INTO the chichería: Rosa's house under the red flag, south side of the village. Walk gently; three bumps and the floor drinks it.",
+    who: 'teofilo',
   },
   {
     when: { has: ['chicha.spilled'] },
     text: 'The caporal is empty and the floor is very pleased with itself. Ask Rosa for a refill and try again, slower.',
+    who: 'rosa',
   },
   {
     when: { has: ['errand.rosa-bundle'], not: ['bundle.delivered'] },
     text: "Rosa's bundle goes to her sister Justina, up in the potato terraces at the village's southeast corner.",
+    who: 'justina',
   },
   {
     when: { has: ['dig.invite'], not: ['dig.done'] },
     text: 'Justina pointed out glinting mounds among the terrace rows. Dig every one; she promises each papa has a name worth hearing.',
+    at: ['village', 36, 24],
   },
   {
     when: { has: ['watia.start'] },
     text: 'The watia is half-born among the rows: stack the clods into a little house, feed the fire until they glow, then bring the whole thing down on the papas.',
+    who: 'justina',
   },
   {
     when: { has: ['dig.done'], not: ['watia.start', 'watia.done'] },
     text: 'The harvest is out of the ground and Justina is eyeing the dry clods. She wants to build the watia with you in the terraces, while the papas still remember the soil.',
+    who: 'justina',
   },
   {
     when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
     text: "Carmen's wichuna, a llama-bone weaving pick, is on loan to Justina in the terraces. Retrieve it.",
+    who: 'justina',
   },
   {
     when: { has: ['wichuna.have'], not: ['wichuna.returned'] },
     text: 'The wichuna is in your bag, wrapped like something precious. Bring it home to Doña Carmen, near the northeast house.',
+    who: 'carmen',
   },
   {
     when: { has: ['wichuna.returned'], not: ['pallay.done'] },
     text: 'Carmen offered to sit you at the loom and call the rows. Go back when your hands feel steady.',
+    who: 'carmen',
   },
   {
     when: { has: ['met.rosa'], not: ['errand.rosa-bundle', 'bundle.delivered'] },
     text: 'Rosa mentioned a bundle for her sister. Talk to her again before she rescinds the soup.',
+    who: 'rosa',
   },
   {
     when: { has: ['bundle.delivered'], not: ['challar.done'] },
     text: 'People keep mentioning the chichería under the red flag. Step through the doorway of Rosa\'s house; someone inside has been holding a seat for forty years.',
+    at: ['village', 12, 25],
   },
   {
     when: { has: ['bundle.delivered'], not: ['errand.carmen-wichuna', 'pallay.done'] },
     text: 'Doña Carmen, who weaves near the northeast house, has heard about your carrying legs. Go say allillanchu.',
+    who: 'carmen',
   },
   {
     when: { has: ['pallay.done'], not: ['her.zoila'] },
     text: 'Doña Carmen went quiet at the end of the weaving, the way people do when they have decided to say something. Sit at her loom again.',
+    who: 'carmen',
   },
   {
     when: {
@@ -329,23 +342,28 @@ export const TASKS: { when: { has?: string[]; not?: string[] }; text: string }[]
       not: ['nani.letter'],
     },
     text: 'Don Aurelio has been watching you with a decision in his pocket. Sit with him at the well.',
+    who: 'aurelio',
   },
   {
     when: { has: ['errand.nani-letter'], not: ['story.complete'] },
     text: "Nani's letter wants opening at the gate, past the terraces, where she meant to open it.",
+    at: ['village', 40, 16],
   },
   {
     // The one documented stuck point: a llama wall with an off-screen key.
     when: { has: ['story.complete'], not: ['paca.moved'] },
     text: 'A llama holds the pass out of the village and is not persuaded by explanations. The muleteer on that road moves her daily; flag him down.',
+    who: 'faustino',
   },
   {
     when: { has: ['story.complete'], not: ['c2.arrived'] },
     text: 'The gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
+    at: ['la-bajada', 19, 16],
   },
   {
     when: { not: ['met.rosa'] },
     text: 'Meet the village. Someone near the red-flag house is already ladling soup for you.',
+    who: 'rosa',
   },
 ];
 

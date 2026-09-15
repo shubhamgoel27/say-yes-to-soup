@@ -608,6 +608,19 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Appu', text: 'Practice with me. I wobble, you answer.' },
       { text: 'He wobbles his head. You wobble back. He grades it with a fisherman’s squint: passable, improving, adipoli.' },
     ],
+    choices: [
+      { text: '"Appu, where was I supposed to be?"', goto: 'c6.appu.thread' },
+      { text: 'One more wobble', goto: 'c6.appu.threadNo' },
+    ],
+  },
+  'c6.appu.thread': {
+    lines: [
+      { who: 'Appu', text: 'You forgot? Adipoli. Even the herons here know your schedule. Ask the red string; it gossips less than the aunties.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c6.appu.threadNo': {
+    lines: [{ text: 'He wobbles approvingly. Some appointments can wait for a good wobble.' }],
   },
 
   // ---------------- Kuttan, toddy tapper and philosopher ----------------
@@ -876,6 +889,19 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { who: 'Moosa', text: 'Forty sacks yesterday, forty sacks today. On this jetty, boring news is the good kind.' },
     ],
+    choices: [
+      { text: '"Moosa, remind me where I was going?"', goto: 'c6.moosa.thread' },
+      { text: 'Leave him to the manifest', goto: 'c6.moosa.threadNo' },
+    ],
+  },
+  'c6.moosa.thread': {
+    lines: [
+      { who: 'Moosa', text: 'A cargo that forgets its port. I have shipped stranger. Check the wrist, friend; red thread clears customs everywhere.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c6.moosa.threadNo': {
+    lines: [{ who: 'Moosa', text: 'Good. Stand there and be boring news with me a while.' }],
   },
 
   // ---------------- Chasca, under the umbrella ----------------

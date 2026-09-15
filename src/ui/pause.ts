@@ -249,6 +249,7 @@ export class PauseMenu {
         <div class="p-row"><span class="p-label">Walk</span><span class="p-value">arrows / WASD / stick / click a spot</span></div>
         <div class="p-row"><span class="p-label">Talk, touch, sit</span><span class="p-value">Space / Z / A / click it</span></div>
         <div class="p-row"><span class="p-label">The journal</span><span class="p-value">J / Tab / Y</span></div>
+        <div class="p-row"><span class="p-label">Ask the thread</span><span class="p-value">N, once the band is on your wrist</span></div>
         <div class="p-row"><span class="p-label">Pause</span><span class="p-value">Esc / Start</span></div>
         <div class="p-row"><span class="p-label">Mute</span><span class="p-value">M</span></div>
         <div class="p-note">Nani&rsquo;s actual instructions: say yes to soup, ask about the bread,

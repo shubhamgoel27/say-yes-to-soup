@@ -374,6 +374,19 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Bantu', text: 'Aur batao! Tell me more. Where did you go, what did you eat, who fed you extra? These are the three news categories of this kucha.' },
     ],
     effects: ['journal:words.aurbatao'],
+    choices: [
+      { text: '"Which way was I headed, bhaiya?"', goto: 'c11.bantu.thread' },
+      { text: 'Trade news instead', goto: 'c11.bantu.threadNo' },
+    ],
+  },
+  'c11.bantu.thread': {
+    lines: [
+      { who: 'Bantu', text: 'Lost? In MY mohalla? Impossible; the mohalla is never lost, only you. Hold out the wrist, the aunty-network knows.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c11.bantu.threadNo': {
+    lines: [{ who: 'Bantu', text: 'Correct choice. News first, destinations later. That is journalism.' }],
   },
 
   // ---------------- Kamla Chachi, the griddle ----------------
@@ -848,6 +861,19 @@ export const DELHI_NODES: NodeMap = {
     lines: [
       { who: 'Akhtar Bhai', text: 'You look like someone between errands, which is my entire clientele. Sit; the kettle was already expecting you.' },
     ],
+    choices: [
+      { text: '"Remind me which errand, Akhtar Bhai?"', goto: 'c11.akhtar.thread' },
+      { text: 'Just the chai', goto: 'c11.akhtar.threadNo' },
+    ],
+  },
+  'c11.akhtar.thread': {
+    lines: [
+      { who: 'Akhtar Bhai', text: 'Breaking news: traveler mislays own morning. Sources say the wrist knows. This corner reported it first, remember that.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c11.akhtar.threadNo': {
+    lines: [{ who: 'Akhtar Bhai', text: 'Wiser still. All roads pass this kettle eventually; you can wait for yours here.' }],
   },
 
   // ---------------- Mehr Aapa, the attar lane ----------------

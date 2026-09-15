@@ -240,6 +240,7 @@ type Events = {
   journal: (id: string) => void;
   errand: (id: string | null) => void;
   letter: (id: string) => void;
+  thread: () => void;
   travel: (dest: { map: string; x: number; y: number; dir: string }) => void;
   changed: () => void;
 };
@@ -260,6 +261,7 @@ export class GameState {
   private onJournal: Events['journal'][] = [];
   private onErrand: Events['errand'][] = [];
   private onLetter: Events['letter'][] = [];
+  private onThread: Events['thread'][] = [];
   private onTravel: Events['travel'][] = [];
   private onChanged: Events['changed'][] = [];
 
@@ -267,6 +269,7 @@ export class GameState {
     if (ev === 'journal') this.onJournal.push(fn as Events['journal']);
     else if (ev === 'errand') this.onErrand.push(fn as Events['errand']);
     else if (ev === 'letter') this.onLetter.push(fn as Events['letter']);
+    else if (ev === 'thread') this.onThread.push(fn as Events['thread']);
     else if (ev === 'travel') this.onTravel.push(fn as Events['travel']);
     else this.onChanged.push(fn as Events['changed']);
   }
@@ -358,6 +361,12 @@ export class GameState {
           for (const fn of this.onLetter) fn(arg);
           break;
 
+        case 'thread':
+          // A villager offers to show the way: Nani's red thread unspools
+          // from their feet once the conversation closes. Mirrors 'letter':
+          // the effect only raises the intent, main draws it afterward.
+          for (const fn of this.onThread) fn();
+          break;
         case 'letterread':
           this.flags.add(`letter.read.${arg}`);
           break;

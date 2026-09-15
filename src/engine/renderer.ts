@@ -142,6 +142,24 @@ type Party = { x: number; y: number; vx: number; vy: number; t: number; life: nu
 const EMOTE_DUR = 0.8;
 const PUFF_DUR = 0.35;
 
+/**
+ * Nani's red thread: the band Carmen tied, asked which way the story goes.
+ * It unspools from the player's feet along the walk path, holds with one
+ * settling sway (yarn coming to rest, not a cursor), and fades. Timings are
+ * named here so main, tests, and any dev hook agree on the same clock.
+ */
+export const THREAD_TIMING = { unspool: 0.7, hold: 1.6, fade: 0.8 } as const;
+
+/** The thread's baked polyline: world-px points, cumulative lengths, and the
+ * loose end-loop's center when the path actually reaches its target. */
+type ThreadFx = {
+  pts: [number, number][];
+  cum: number[];
+  total: number;
+  loop: [number, number] | null;
+  t: number;
+};
+
 /** The celebration two-hop: total length, and the two landing beats. */
 const HOP_DUR = 1.0;
 const HOP_LANDS = [0.42, 0.82] as const;
@@ -187,6 +205,8 @@ export class Renderer {
   private emotes: Emote[] = [];
   private puffs: Puff[] = [];
   private party: Party[] = [];
+  /** Nani's red thread, while it is out of the band. */
+  private thread: ThreadFx | null = null;
 
   /**
    * Per-frame gradients are the silent frame killer: at 60fps every
@@ -838,6 +858,11 @@ export class Renderer {
     }
     for (const e of this.emotes) e.t += dt;
     this.emotes = this.emotes.filter((e) => e.t < EMOTE_DUR);
+    if (this.thread) {
+      this.thread.t += dt;
+      const { unspool, hold, fade } = THREAD_TIMING;
+      if (this.thread.t >= unspool + hold + fade) this.thread = null;
+    }
     for (const p of this.puffs) p.t += dt;
     this.puffs = this.puffs.filter((p) => p.t < PUFF_DUR);
     for (const p of this.party) {
@@ -955,6 +980,149 @@ export class Renderer {
   /** Kick up dust at a tile a foot just left. */
   puffAt(cx: number, cy: number) {
     this.puffs.push({ x: cx * TILE + TILE / 2, y: cy * TILE + TILE - 2, t: 0 });
+  }
+
+  /**
+   * Lay Nani's red thread along a walk path. `tiles` is the whole route in
+   * tile coords, the player's own tile first; `loopTile` is where the loose
+   * end-loop rests when the path reaches its target (null when the thread
+   * runs out before arriving). The wavy polyline is baked here, once, so the
+   * per-frame cost is a handful of line segments.
+   */
+  showThread(tiles: [number, number][], loopTile: [number, number] | null) {
+    if (tiles.length === 0) return;
+    const ctr = tiles.map(
+      ([tx, ty]) => [tx * TILE + TILE / 2, ty * TILE + TILE / 2 + 3] as [number, number],
+    );
+    // Two soft sines push each sample sideways: yarn that fell where it fell,
+    // never a ruler line. Amplitudes are world px (about 3 screen px peak).
+    const ph1 = Math.random() * Math.PI * 2;
+    const ph2 = Math.random() * Math.PI * 2;
+    const pts: [number, number][] = [];
+    let dist = 0;
+    if (ctr.length === 1) pts.push(ctr[0]!);
+    for (let i = 0; i < ctr.length - 1; i++) {
+      const [ax, ay] = ctr[i]!;
+      const [bx, by] = ctr[i + 1]!;
+      const segLen = Math.hypot(bx - ax, by - ay) || 1;
+      const nx = -(by - ay) / segLen;
+      const ny = (bx - ax) / segLen;
+      const steps = Math.max(1, Math.round(segLen / 3));
+      for (let s = i === 0 ? 0 : 1; s <= steps; s++) {
+        const k = s / steps;
+        const d = dist + segLen * k;
+        const wob = Math.sin(d * 0.85 + ph1) * 0.5 + Math.sin(d * 2.2 + ph2) * 0.28;
+        pts.push([ax + (bx - ax) * k + nx * wob, ay + (by - ay) * k + ny * wob]);
+      }
+      dist += segLen;
+    }
+    const cum: number[] = [0];
+    for (let i = 1; i < pts.length; i++) {
+      cum.push(cum[i - 1]! + Math.hypot(pts[i]![0] - pts[i - 1]![0], pts[i]![1] - pts[i - 1]![1]));
+    }
+    this.thread = {
+      pts,
+      cum,
+      total: cum[cum.length - 1] ?? 0,
+      loop: loopTile ? [loopTile[0] * TILE + TILE / 2, loopTile[1] * TILE + TILE / 2 + 3] : null,
+      t: 0,
+    };
+  }
+
+  /** True while the thread is still out of the band. */
+  get threadOut(): boolean {
+    return this.thread !== null;
+  }
+
+  /** Wind the thread back in early (a door swallows it, the map changes). */
+  clearThread() {
+    this.thread = null;
+  }
+
+  /** The thread on the ground: under every actor, above the ground's wear. */
+  private drawThread(cam: Camera) {
+    const th = this.thread;
+    if (!th) return;
+    const { unspool, hold, fade } = THREAD_TIMING;
+    const ctx = this.ctx;
+    const calm = this.reduceMotion;
+    let alpha = 1;
+    let drawn = th.total;
+    let sway = 0;
+    if (calm) {
+      // Calm mode: the whole stitch at once, held, then let go. No motion.
+      const fadeT = th.t - (unspool + hold);
+      if (fadeT > 0) alpha = Math.max(0, 1 - fadeT / fade);
+    } else if (th.t < unspool) {
+      const k = th.t / unspool;
+      drawn = th.total * (1 - (1 - k) ** 3);
+    } else if (th.t < unspool + hold) {
+      // One settling sway, middle of the yarn only, dying out as it lands.
+      const hk = (th.t - unspool) / hold;
+      sway = Math.sin(hk * Math.PI * 2) * (1 - hk) * 0.5;
+    } else {
+      alpha = Math.max(0, 1 - (th.t - unspool - hold) / fade);
+    }
+    if (alpha <= 0) return;
+
+    const pts = th.pts;
+    let n = pts.length;
+    let tip: [number, number] | null = null;
+    if (drawn < th.total) {
+      let i = 1;
+      while (i < pts.length && th.cum[i]! < drawn) i++;
+      n = i;
+      if (i < pts.length) {
+        const a = pts[i - 1]!;
+        const b = pts[i]!;
+        const k = (drawn - th.cum[i - 1]!) / (th.cum[i]! - th.cum[i - 1]! || 1);
+        tip = [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+      }
+    }
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (calm) ctx.setLineDash([7, 6]);
+    const last = Math.max(1, pts.length - 1);
+    const stroke = (color: string, width: number, dy: number, a: number) => {
+      if (n < 2 && !tip) return;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.globalAlpha = Math.min(1, a * alpha);
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) {
+        const env = Math.sin((i / last) * Math.PI);
+        const x = (pts[i]![0] + sway * env - cam.x) * A;
+        const y = (pts[i]![1] - cam.y) * A + dy;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      if (tip) ctx.lineTo((tip[0] - cam.x) * A, (tip[1] - cam.y) * A + dy);
+      ctx.stroke();
+    };
+    // Ground shadow, terracotta body, then the light catching the twist.
+    stroke('rgba(46,26,15,0.55)', 4.2, 1.6, 0.4);
+    stroke('#c1512f', 2.6, 0, 0.92);
+    stroke('rgba(235,148,102,0.8)', 1.1, -0.9, 0.85);
+    // The target is near: the thread ends in a tiny loose loop at its tile.
+    if (th.loop && drawn >= th.total - 0.01) {
+      const lx = (th.loop[0] - cam.x) * A;
+      const ly = (th.loop[1] - cam.y) * A;
+      const ring = (color: string, width: number, dy: number, a: number) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = width;
+        ctx.globalAlpha = Math.min(1, a * alpha);
+        ctx.beginPath();
+        ctx.arc(lx, ly + dy, 6.5, 0.7, 6.1);
+        ctx.stroke();
+      };
+      ring('rgba(46,26,15,0.55)', 4.2, 1.6, 0.4);
+      ring('#c1512f', 2.6, 0, 0.92);
+    }
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 
   /**
@@ -1211,6 +1379,10 @@ export class Renderer {
         else this.tiles.drawFlat(ctx, obj.t, sx, sy, cx, cy, this.time);
       }
     }
+
+    // Pass 1d: Nani's red thread lies on the ground, so it goes down with
+    // the ground: above wear and decor, under every actor and tall thing.
+    this.drawThread(cam);
 
     // Pass 2: actors and tall objects, interleaved by depth.
     type Layer = { sort: number; draw: () => void };

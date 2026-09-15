@@ -199,74 +199,92 @@ export const OAXACA_TASKS: TaskDef[] = [
   {
     when: { has: ['errand.chela-chiles'], not: ['c9.chiles'] },
     text: 'Chela’s chiles wait at Eugenia’s stall on the market lane: chilhuacle, mulato, pasilla. Say it is for the fiesta mole, and do not shake the bag.',
+    who: 'eugenia',
   },
   {
     when: { has: ['c9.chiles'], not: ['c9.chiles.done'] },
     text: 'The chiles ride in your bag, bruising like opinions. Back to Chela at the comal patio, west of the plaza.',
+    who: 'chela',
   },
   {
     when: { has: ['errand.chela-choco'], not: ['c9.choco'] },
     text: 'Chocolate next: Tacho at the panadería grinds cacao when the bread lets him. Ask for the good disc, not the tourist disc.',
+    who: 'tacho',
   },
   {
     when: { has: ['c9.choco'], not: ['c9.choco.done'] },
     text: 'The chocolate disc is warm in your pocket, which feels backwards. Chela is waiting at the comal.',
+    who: 'chela',
   },
   {
     when: { has: ['c9.choco.done'], not: ['c9.mole.done'] },
     text: 'The mole wants its hour of stirring and Chela’s shoulder is older than the pot. Take the spoon. Nani was promised this exact hour.',
+    who: 'chela',
   },
   {
     when: { has: ['errand.pan-refugio'], not: ['c9.bread.done'] },
     text: 'A basket of pan de muerto, still warm, promised to Refugio’s altar. Her kitchen is through the open door above the comal patio. Carry it warm.',
+    who: 'refugio',
   },
   {
     when: { has: ['c9.path.task'], not: ['c9.path.laid'] },
     text: 'Melitón’s costal of petals is over your shoulder. Walk the lane below the camposanto gate and lay the marigold path, thick where it bends.',
+    at: ['oaxaca', 40, 2],
   },
   {
     when: { has: ['c9.ledger.out'], not: ['c9.ledger'] },
     text: 'The guelaguetza ledger lies open on Refugio’s table: fifty years of kindness with page numbers. Read until a name stops you.',
+    who: 'refugio',
   },
   {
     when: { has: ['c9.ledger'], not: ['c9.telegram'] },
     text: 'The line in the ledger: Zoila, 1975. Owed. Refugio watched you find it. Ask her what happened that year.',
+    who: 'refugio',
   },
   {
     when: { has: ['c9.ledger'], not: ['c9.mole.ask'] },
     text: 'Repay the week she never finished. Start where she would have: Chela’s mole, at the big comal on Refugio’s patio.',
+    who: 'chela',
   },
   {
     when: { has: ['c9.ledger'], not: ['c9.bread.ask'] },
     text: 'The fiesta bread wants carrying. Tacho at the panadería has a basket with Refugio’s name on it.',
+    who: 'tacho',
   },
   {
     when: { has: ['c9.ledger'], not: ['c9.path.task'] },
     text: 'The camposanto path wants petals. Don Melitón is sweeping between the graves, through the marigold arch at the village’s north edge.',
+    who: 'meliton',
   },
   {
     when: { has: ['c9.mole.done', 'c9.bread.done', 'c9.path.laid'], not: ['c9.family.done'] },
     text: 'Mole resting, bread delivered, path laid. Go to Refugio’s kitchen and help raise the family ofrenda. The ledger line is almost closed.',
+    who: 'refugio',
   },
   {
     when: { has: ['c9.family.done'], not: ['c9.ofrenda.done'] },
     text: 'The village is building Nani an ofrenda of her own, in Refugio’s kitchen. Bring what the road put in your hands, and your hands.',
+    who: 'refugio',
   },
   {
     when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.complete'] },
     text: 'Tonight the camposanto is lit. Follow your own petals through the marigold arch. Don Melitón says the night knows its business.',
+    at: ['oaxaca', 40, 2],
   },
   {
     when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger.out'] },
     text: 'Refugio keeps looking at the journal on your hip like a face she knows. Go back to her kitchen and show it to her.',
+    who: 'refugio',
   },
   {
     when: { has: ['met.refugio'], not: ['met.chela'] },
     text: 'Refugio said to meet her village. Start with the smell: someone is working a comal the size of a wagon wheel on her own patio.',
+    who: 'chela',
   },
   {
     when: { has: ['met.chela'], not: ['met.elias'] },
     text: 'A loom clacks in a doorway on the east lane, walking red up the warp. The weaver says hello in Zapotec first.',
+    who: 'elias',
   },
   {
     when: { has: ['c9.complete'] },

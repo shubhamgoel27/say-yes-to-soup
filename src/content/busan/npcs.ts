@@ -375,6 +375,19 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.cho.idle': {
     lines: [{ who: 'Old Man Cho', text: 'More tea? The kettle is patient. Are you?' }],
+    choices: [
+      { text: '"Where was I going, Mr. Cho?"', goto: 'c5.cho.thread' },
+      { text: 'More tea, then', goto: 'c5.cho.threadNo' },
+    ],
+  },
+  'c5.cho.thread': {
+    lines: [
+      { who: 'Old Man Cho', text: 'A question with an answer. How refreshing. Your wrist knows; whether you follow it is the real tea.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c5.cho.threadNo': {
+    lines: [{ who: 'Old Man Cho', text: 'Mm. The kettle wins again.' }],
   },
 
   // ---------------- Mi-ja and Dae-ho, the griddle ----------------
@@ -462,6 +475,19 @@ export const BUSAN_NODES: NodeMap = {
     lines: [
       { who: 'Dae-ho', text: 'I count seeds and coins. Only one of the two is allowed to be approximate.' },
     ],
+    choices: [
+      { text: '"Dae-ho, where was I off to?"', goto: 'c5.daeho.thread' },
+      { text: 'Just smelling the sugar', goto: 'c5.daeho.threadNo' },
+    ],
+  },
+  'c5.daeho.thread': {
+    lines: [
+      { who: 'Dae-ho', text: 'You ask a man who has stood at one griddle for thirty years. Hold out the wrist; some threads travel for both of us.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c5.daeho.threadNo': {
+    lines: [{ who: 'Dae-ho', text: 'That part is free. The second smell costs a hotteok.' }],
   },
 
   // ---------------- Emo Byeong-ok, the gukbap counter ----------------
@@ -534,6 +560,19 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Mr. Bak', text: 'Still here? The ice is not.' },
       { text: 'The cart takes the corner on one wheel. Somewhere ahead, a fish is urgently expected.' },
     ],
+    choices: [
+      { text: '"Which way was I rushing, Mr. Bak?"', goto: 'c5.bak.thread' },
+      { text: 'Step out of the lane', goto: 'c5.bak.threadNo' },
+    ],
+  },
+  'c5.bak.thread': {
+    lines: [
+      { who: 'Mr. Bak', text: 'Wrong question! Direction is for people who slow down. Wrist out, follow the red, ppalli ppalli!' },
+    ],
+    effects: ['thread:'],
+  },
+  'c5.bak.threadNo': {
+    lines: [{ text: 'You step aside. The cart is already a rumor two stalls down.' }],
   },
 
   // ---------------- Mr. Gong, ferry and freight ----------------

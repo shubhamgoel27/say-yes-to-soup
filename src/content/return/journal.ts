@@ -59,6 +59,7 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.arrived'], not: ['c10.marisol.seen'] },
     text: 'La Caleta first: the stall on the malecón. A caserita has been keeping your side of the friendship warm; go collect it.',
+    who: 'marisol',
   },
   {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
@@ -67,30 +68,37 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.rosa.seen'], not: ['c10.aurelio.seen'] },
     text: 'The letter said the soup is always on. Don Aurelio is at the well, where else. Honor it.',
+    who: 'aurelio',
   },
   {
     when: { has: ['c10.aurelio.seen'], not: ['c10.carmen.seen'] },
     text: 'Doña Carmen will want the wrist first, words after. The band has a journey woven into it now; bring it to the one person who can read it.',
+    who: 'carmen',
   },
   {
     when: { has: ['c10.carmen.seen'], not: ['c10.pilar.seen'] },
     text: 'The bridge has new signage and its magnate is nine and a half. The museum received a certain parcel from the sea. Attend the exhibit.',
+    who: 'pilar',
   },
   {
     when: { has: ['c10.pilar.seen'], not: ['c10.album.seen'] },
     text: 'Chasca is back on La Bajada, where she first stopped you. The album is finished, and it starts with you. Sit on the rock.',
+    who: 'chasca',
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen'], not: ['c10.carmen.her'] },
     text: 'Word came down from the well: they talked about her last night, all of them, and Doña Carmen is the one who says it out loud. She is at her loom.',
+    who: 'carmen',
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch'] },
     text: 'Someone new is at the gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
+    who: 'traveler',
   },
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
     text: 'One page left. The well, where the water is, where it started.',
+    at: ['village', 21, 16],
   },
   {
     when: { has: ['c10.arrived'], not: ['story.end'] },
@@ -99,6 +107,7 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['story.end'], not: ['c10.traveler.mail'] },
     text: 'A young traveler at the signboard on the pass road is holding mail that chased you across an ocean. Collect it before they leave with the first light.',
+    who: 'traveler',
   },
   {
     when: { has: ['story.end'] },

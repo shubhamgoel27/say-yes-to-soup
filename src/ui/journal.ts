@@ -81,13 +81,19 @@ export class JournalUI {
     }
   }
 
-  /** Every open thread, in priority order. */
-  activeTasks(): string[] {
+  /** Every open thread's full definition, in priority order. The red thread
+   * asks for the first one's `who`/`at`, so the defs are the real currency
+   * here and the chip's text list is derived from them. */
+  activeTaskDefs(): WorldTask[] {
     return this.tasks
       // A chapter stops advising you the moment you have moved on past it.
       .filter((t) => !t.supersededBy.some((f) => this.state.has(f)))
-      .filter((t) => this.state.check(t.when))
-      .map((t) => t.text);
+      .filter((t) => this.state.check(t.when));
+  }
+
+  /** Every open thread, in priority order. */
+  activeTasks(): string[] {
+    return this.activeTaskDefs().map((t) => t.text);
   }
 
   /**

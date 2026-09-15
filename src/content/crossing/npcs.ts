@@ -470,6 +470,19 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { who: 'Joseph', text: 'Rust never sleeps, so the chipping hammer cannot either. Honest work. The sea just permanently disagrees with it.' },
     ],
+    choices: [
+      { text: '"Which way was I headed, Joseph?"', goto: 'c3.jos.thread' },
+      { text: 'Leave him to the rust', goto: 'c3.jos.threadNo' },
+    ],
+  },
+  'c3.jos.thread': {
+    lines: [
+      { who: 'Joseph', text: 'On a ship there is only forward, aft, and overboard. For the fourth direction, ask your wrist; string outranks hammers.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c3.jos.threadNo': {
+    lines: [{ who: 'Joseph', text: 'The rust and I will be right here. We are inseparable.' }],
   },
 
   // ---------------- Hana, cadet, bound for Shionoura ----------------
@@ -569,6 +582,19 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { who: 'Olena', text: 'The engine hum? You stop hearing it in week one. Then in port, the silence wakes you like an alarm. The sea keeps you either way.' },
     ],
+    choices: [
+      { text: '"Remind me where I was going?"', goto: 'c3.olena.thread' },
+      { text: 'Share the sun break', goto: 'c3.olena.threadNo' },
+    ],
+  },
+  'c3.olena.thread': {
+    lines: [
+      { who: 'Olena', text: 'A machine with one moving part and no manual. Hold it out. If my engine ran on grandmother-thread, I would sleep better.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c3.olena.threadNo': {
+    lines: [{ who: 'Olena', text: 'Good decision. The sun is free, and the company cannot invoice it.' }],
   },
 
   // ---------------- the Bosun, and the court of Neptune ----------------
@@ -619,6 +645,19 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { who: 'The Bosun', text: 'Lashings, turnbuckles, twist-locks. La mar tries every knot all day, and I answer for all of them all night.' },
     ],
+    choices: [
+      { text: '"Bosun, which way was I bound?"', goto: 'c3.bosun.thread' },
+      { text: 'Keep walking the lane', goto: 'c3.bosun.threadNo' },
+    ],
+  },
+  'c3.bosun.thread': {
+    lines: [
+      { who: 'The Bosun', text: 'Lost between the bays? Cadets manage it weekly. Out with the wrist: red line, fair lead, no chafe. That is good rigging.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c3.bosun.threadNo': {
+    lines: [{ who: 'The Bosun', text: 'One hand for the ship as you go. The other one is your business.' }],
   },
 
   // ---------------- Chasca, amidships ----------------

@@ -726,6 +726,19 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { who: 'Doña Eugenia', text: 'Tomorrow the tianguis is in the next town, and I go where the tianguis goes. Today, lucky for you, it is my patio.' },
     ],
+    choices: [
+      { text: '"Doña Eugenia, where was I headed?"', goto: 'c9.eugenia.thread' },
+      { text: 'Smell the chiles a moment longer', goto: 'c9.eugenia.threadNo' },
+    ],
+  },
+  'c9.eugenia.thread': {
+    lines: [
+      { who: 'Doña Eugenia', text: 'Ay, marchanta. In this market even the chiles know where they are going. Ask your wrist; it shops smarter than you.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c9.eugenia.threadNo': {
+    lines: [{ who: 'Doña Eugenia', text: 'Take your time. The pasilla waited fifty years for its pot; it can wait for you.' }],
   },
 
   // ---------------- Tacho, the panadero ----------------
@@ -763,6 +776,19 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { who: 'Tacho', text: 'Flour at four, ovens at five, caritas at six. The dead eat better than the living this month and nobody complains.' },
     ],
+    choices: [
+      { text: '"Tacho, what was I meant to be doing?"', goto: 'c9.pan.thread' },
+      { text: 'Breathe the oven air', goto: 'c9.pan.threadNo' },
+    ],
+  },
+  'c9.pan.thread': {
+    lines: [
+      { who: 'Tacho', text: 'My bread never forgets its oven, and look at you. Follow the red, amigo; dough and travelers both rise where they are put.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c9.pan.threadNo': {
+    lines: [{ who: 'Tacho', text: 'Best smell in the valley, and it is free. Stay as long as your errands allow.' }],
   },
 
   // ---------------- Silvino, the alebrije carver ----------------

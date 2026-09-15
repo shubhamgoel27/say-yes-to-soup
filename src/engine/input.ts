@@ -41,6 +41,8 @@ export class Input {
   private actionEdge = false;
   private backEdge = false;
   private journalEdge = false;
+  /** N: ask the band's red thread which way the story continues. */
+  private threadEdge = false;
   private debugEdge = false;
   private muteEdge = false;
   private pauseEdge = false;
@@ -87,6 +89,9 @@ export class Input {
     } else if (JOURNAL_KEYS.has(e.code)) {
       e.preventDefault();
       this.journalEdge = true;
+    } else if (e.code === 'KeyN') {
+      e.preventDefault();
+      this.threadEdge = true;
     } else if (e.code === 'KeyM') {
       e.preventDefault();
       this.muteEdge = true;
@@ -262,6 +267,11 @@ export class Input {
   takeJournal(): boolean {
     const v = this.journalEdge;
     this.journalEdge = false;
+    return v;
+  }
+  takeThread(): boolean {
+    const v = this.threadEdge;
+    this.threadEdge = false;
     return v;
   }
   takeDebug(): boolean {

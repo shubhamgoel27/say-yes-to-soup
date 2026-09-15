@@ -270,6 +270,58 @@ describe('the task list never leaves the player stuck', () => {
   });
 });
 
+describe("nani's red thread finds real places", () => {
+  // Tasks may carry a `who` (an NPC the thread unspools toward) or an `at`
+  // (a fixed spot). The thread refuses to guess, so bad data would not crash
+  // the game; it would silently point at nothing, which is worse. These pass
+  // vacuously while a chapter has not yet named its targets.
+  it('every task.who names a villager on the roster', () => {
+    const ids = new Set(NPCS.map((n) => n.id));
+    for (const t of TASKS) {
+      if (t.who === undefined) continue;
+      assert.ok(ids.has(t.who), `task "${t.text.slice(0, 50)}..." points at unknown npc ${t.who}`);
+    }
+  });
+
+  it('every task.at names a real map, in bounds, with ground to stand on', () => {
+    for (const t of TASKS) {
+      if (t.at === undefined) continue;
+      const [mapId, x, y] = t.at;
+      const data = REGION_MAPS[mapId];
+      assert.ok(data, `task "${t.text.slice(0, 50)}..." points at unknown map ${mapId}`);
+      if (!data) continue;
+      const tm = new TileMap(data);
+      assert.ok(tm.inBounds(x, y), `task at [${mapId},${x},${y}] is out of bounds`);
+      // The spot itself, or at least one side of it, must be walkable: the
+      // thread ends in a loop there, and the player has to be able to arrive.
+      const standable =
+        !tm.solid(x, y) ||
+        [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !tm.solid(x + (dx ?? 0), y + (dy ?? 0)));
+      assert.ok(standable, `task at [${mapId},${x},${y}] is sealed solid on every side`);
+    }
+  });
+
+  it("a who target's home map is stitched into the door graph", () => {
+    // The thread leads to a door when the person is elsewhere, so the map a
+    // named villager lives on must be reachable through doors from somewhere.
+    const doorsInto = new Set<string>();
+    for (const data of Object.values(REGION_MAPS)) {
+      for (const trig of data.triggers ?? []) {
+        if (trig.type === 'door') doorsInto.add(trig.to);
+      }
+    }
+    for (const t of TASKS) {
+      if (t.who === undefined) continue;
+      const npc = NPCS.find((n) => n.id === t.who);
+      if (!npc || npc.map === 'village') continue; // the village is the root
+      assert.ok(
+        doorsInto.has(npc.map),
+        `task npc ${t.who} lives on ${npc.map}, which no door leads into`,
+      );
+    }
+  });
+});
+
 describe('map integrity', () => {
   const solidAt = (m: MapData, x: number, y: number) => {
     const g = m.legend[m.ground[y]?.[x] ?? ' '];

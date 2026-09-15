@@ -217,81 +217,101 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   {
     when: { has: ['met.hana'], not: ['met.fumi'] },
     text: 'Hana\'s grandmother keeps the minshuku past the shotengai, the door wearing the noren. Your room is already aired; arguing is useless.',
+    who: 'fumi',
   },
   {
     when: { has: ['met.fumi'], not: ['c4.meal'] },
     text: 'Fumi is laying the low table. Sit when she says sit; the words that bracket a meal here are worth learning by mouth.',
+    who: 'fumi',
   },
   {
     when: { has: ['errand.fumi-tai'], not: ['c4.tai.got'] },
     text: 'Fumi\'s tai waits at Daisuke\'s stall on the quay, the best one, held back. Her knees and the hill disagree, so your legs are the favor.',
+    who: 'daisuke',
   },
   {
     when: { has: ['c4.tai.got'], not: ['c4.taisomen'] },
     text: 'A whole tai rides in your arms, proud as a diploma. Back up the lane to the minshuku before the celebration outruns its centerpiece.',
+    who: 'fumi',
   },
   {
     when: { has: ['c4.taisomen'], not: ['c4.ofuro'] },
     text: 'The ofuro steams behind its own wall at the minshuku. There is a right order to it, and Fumi can hear a shortcut through the wall.',
+    at: ['minshuku', 10, 2],
   },
   {
     when: { has: ['c4.dashi'], not: ['c4.cook.done'] },
     text: 'Fumi thinks your hands might be useful at dawn: the morning dashi and the breakfast, before the guests wake. Ask her at the pot.',
+    who: 'fumi',
   },
   {
     when: { has: ['met.fumi'], not: ['met.sachiko'] },
     text: 'The shotengai keeps a sweet shop under the noren, Kadoya, with the town\'s famous lemon thing. Taste first, questions after.',
+    who: 'sachiko',
   },
   {
     when: { has: ['c4.sachiko2'], not: ['c4.omiyage'] },
     text: 'Sachiko\'s counter is waiting on your list: Petro, Pilar, Aurelio. Omiyage is chosen slowly and given fast; start the slow half.',
+    who: 'sachiko',
   },
   {
     when: { has: ['c4.omiyage'], not: ['omiyage.aurelio'] },
     text: 'The omiyage list is longer than one parcel. Sachiko wraps while you talk; the people who fed you deserve the full inventory.',
+    who: 'sachiko',
   },
   {
     when: { has: ['c4.omiyage'], not: ['omiyage.pilar'] },
     text: 'Somewhere a museum director expects tribute. Sachiko has opinions about what a bridge-and-sea museum needs from this coast.',
+    who: 'sachiko',
   },
   {
     when: { has: ['c4.omiyage'], not: ['omiyage.petro'] },
     text: 'A cook who feeds strangers is still unaccounted for on the omiyage list. Sachiko suggests sour, wrapped sharp.',
+    who: 'sachiko',
   },
   {
     when: { has: ['met.fumi'], not: ['met.genji'] },
     text: 'Stone steps climb from the shotengai\'s east end, under a vermilion gate, to the little Ebisu shrine. The keeper sweeps; the god smiles.',
+    who: 'genji',
   },
   {
     when: { has: ['met.genji'], not: ['c4.tanzaku'] },
     text: 'Genji has a strip of paper with your name on it, in his way, and one nod at the sky to go with it. Go back up the steps.',
+    who: 'genji',
   },
   {
     when: { has: ['c4.tanzaku'], not: ['c4.wish.hung'] },
     text: 'The tanzaku waits in your pocket, small on purpose. Find the wishing bamboo and write the one wish that fits.',
+    at: ['shionoura', 13, 10],
   },
   {
     when: { has: ['met.taro'], not: ['c4.taro.wish'] },
     text: 'Taro is besieged by his own wish at the shrine steps: too big for the paper. He believes you are a professional. Do not disappoint him.',
+    who: 'taro',
   },
   {
     when: { has: ['met.hana'], not: ['c4.kingyo.done'] },
     text: 'A red and white stall on the quay holds a tub of goldfish and an uncle with paper scoops. Taro insists he has never let a kid leave empty. Test it.',
+    at: ['shionoura', 24, 21],
   },
   {
     when: { has: ['c4.arrived'], not: ['letter.read.c4.pilar'] },
     text: 'A red pillar box stands by the ferry office, and the clerk has been holding mail for a traveler answering your description.',
+    at: ['shionoura', 31, 22],
   },
   {
     when: { has: ['c4.omiyage', 'c4.wish.hung', 'c4.kingyo.done'], not: ['c4.complete'] },
     text: 'Omiyage wrapped, wish hung, goldfish bagged. Find Hana on the quay at dusk; the chochin are about to come on, and the seventh night keeps no spares.',
+    who: 'hana',
   },
   {
     when: { has: ['c4.arrived'], not: ['c4.complete'] },
     text: 'Shionoura is small and loud with cicadas: the quay market at dawn, the shotengai under its noren, the shrine up the steps. Meet it before the seventh night.',
+    who: 'hana',
   },
   {
     when: { has: ['c4.complete'] },
     text: 'The festival is folded away and the morning boat waits: Captain Isao, Shimonoseki, then the Busan ferry. Say your goodbyes slowly; the town prefers it.',
+    who: 'isao',
   },
 ];

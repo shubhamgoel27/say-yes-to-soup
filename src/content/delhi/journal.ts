@@ -295,42 +295,52 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.arrived'], not: ['c11.met.bantu'] },
     text: 'Three days of rail and one rickshaw ride end in a chowk full of bells and pigeons. The boy grinning by the rickshaw stand seems to know everyone.',
+    who: 'bantu',
   },
   {
     when: { has: ['c11.met.bantu'], not: ['c11.bhaiya'] },
     text: 'Bantu is showing you his mohalla one shout at a time. He keeps calling people bhaiya and didi; there is clearly a system. Ask him.',
+    who: 'bantu',
   },
   {
     when: { has: ['c11.bhaiya'], not: ['c11.met.kamla'] },
     text: 'Bantu\'s orders: report to Kamla Chachi at the griddle in Gali Tawe Wali, and arrive hungry. The gali feeds first and asks later.',
+    who: 'kamla',
   },
   {
     when: { has: ['c11.met.kamla'], not: ['c11.dance'] },
     text: 'Kamla Chachi fed you once and is not finished. Refusing a second helping is apparently a dance with steps. Learn them at the griddle.',
+    who: 'kamla',
   },
   {
     when: { has: ['c11.cook.start'], not: ['c11.cook.done'] },
     text: 'Behind Kamla\'s tawa: roll even, seal gently, flip when the ghee sings. Aloo forgives, mooli tests, rabri graduates.',
+    who: 'kamla',
   },
   {
     when: { has: ['c11.dance', 'c11.met.kamla'], not: ['c11.cook.done'] },
     text: 'Kamla has been watching your hands the way she watches dough. She thinks they are ready for the tawa. Report to the griddle.',
+    who: 'kamla',
   },
   {
     when: { has: ['c11.arrived'], not: ['c11.met.jog'] },
     text: 'The golden dome belongs to the gurdwara; the open door under it belongs to everyone. Go in hungry. A basket of rumals waits by the door.',
+    who: 'joginder',
   },
   {
     when: { has: ['errand.seva-atta'], not: ['c11.seva.done'] },
     text: 'Tuesday, the langar kitchen: sleeves up, atta ready. Joginder said repayment is made with hands here, not coins.',
+    who: 'joginder',
   },
   {
     when: { has: ['c11.met.jog'], not: ['c11.met.yusuf'] },
     text: 'A whole second city lives on the rooftops. The stair climbs from the alcove off the gali. The pigeon man up there dislikes visitors; visit anyway.',
+    who: 'yusuf',
   },
   {
     when: { has: ['c11.met.yusuf'], not: ['c11.kite.done'] },
     text: 'Yusuf Miyan will teach the patang to anyone who learns the birds\' names first. Dheel is slack, kheench is the pull. The wind is in season.',
+    who: 'yusuf',
   },
   {
     when: { has: ['errand.pigeon-home'], not: ['c11.pigeon.home'] },
@@ -339,6 +349,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.met.mehr'], not: ['c11.attar.mitti'] },
     text: 'Mehr Aapa sells bottled monsoon to people who can describe rain properly. Practice describing rain. She will know if you rehearsed; rehearse anyway.',
+    who: 'mehr',
   },
   {
     when: { has: ['c11.cook.done', 'c11.seva.done', 'c11.kite.done'], not: ['c11.chit.bombay'] },
@@ -347,14 +358,17 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.met.akhtar'], not: ['c11.rain'] },
     text: 'Akhtar Bhai keeps looking at the sky like it owes him a headline. Stay near the chai corner; he announces the rain the way other men announce cricket.',
+    who: 'akhtar',
   },
   {
     when: { has: ['c11.kite.done', 'c11.rain'], not: ['c11.duel.done'] },
     text: 'The mohalla\'s rooftop tournament flies at dusk, and Yusuf has entered you for the kucha. Cotton dor, three rivals, and weather with opinions.',
+    who: 'yusuf',
   },
   {
     when: { has: ['c11.duel.done'], not: ['photo.c11.kites'] },
     text: 'Chasca is on the rooftop with her camera and the storm, both fully charged. She wants you in the frame before the sky finishes arriving.',
+    who: 'chascaC11',
   },
   {
     when: { has: ['c11.arrived'], not: ['letter.read.delhi.pilar'] },
@@ -363,6 +377,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.duel.done', 'c11.chit.bombay'], not: ['c11.complete'] },
     text: 'Flown, fed, served, vouched, soaked. Go and stand in front of Kamla Chachi; she has been packing something and pretending she is not.',
+    who: 'kamla',
   },
   {
     when: { has: ['c11.complete'] },
@@ -375,6 +390,7 @@ export const DELHI_TASKS: TaskDef[] = [
     // to the moon story or its page.
     when: { has: ['c11.jog2'], not: ['page.customs.chandni'] },
     text: 'Joginder said the silver street rumor is wrong and would not say more. The bricks of the chowk have been asked before; ask them yourself.',
+    at: ['delhi', 30, 15],
   },
   {
     when: { has: ['c11.arrived'], not: ['c11.complete'] },

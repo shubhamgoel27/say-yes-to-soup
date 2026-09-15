@@ -469,6 +469,19 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Nilda', text: 'If the fog feels heavy, wait for noon. The garúa is a lid, but every pot gets lifted eventually.' },
     ],
+    choices: [
+      { text: '"Remind me where I was going?"', goto: 'mar.nilda.thread' },
+      { text: 'Wait for noon together', goto: 'mar.nilda.threadNo' },
+    ],
+  },
+  'mar.nilda.thread': {
+    lines: [
+      { who: 'Nilda', text: 'The fog eats directions and the sierra spits them back. Ask your wrist, and tell the mountain my mother says hola.' },
+    ],
+    effects: ['thread:'],
+  },
+  'mar.nilda.threadNo': {
+    lines: [{ who: 'Nilda', text: 'Good company shortens fog. Proven fact, no citation.' }],
   },
 
   // ---------------- Rafa, surf kid ----------------
@@ -499,6 +512,19 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Rafa', text: 'The sets are small today, but small waves are still waves, causa. Same as small good days.' },
     ],
+    choices: [
+      { text: '"Which way was I paddling, causa?"', goto: 'mar.rafa.thread' },
+      { text: 'Watch the sets a while', goto: 'mar.rafa.threadNo' },
+    ],
+  },
+  'mar.rafa.thread': {
+    lines: [
+      { who: 'Rafa', text: 'Lost on land? Chévere, the sea does it to me daily. Wrist out, causa; the red reads the break better than I do, pe.' },
+    ],
+    effects: ['thread:'],
+  },
+  'mar.rafa.threadNo': {
+    lines: [{ who: 'Rafa', text: 'Watching counts as surfing if you do it with respect, pe.' }],
   },
 
   // ---------------- Maestro Félix, boat-builder ----------------
@@ -702,6 +728,19 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Don Wili', text: 'The garúa is good for business. Nobody refuses a hot glass inside a cloud.' },
     ],
+    choices: [
+      { text: '"Where was I headed, Don Wili?"', goto: 'mar.wili.thread' },
+      { text: 'Just warming your hands', goto: 'mar.wili.threadNo' },
+    ],
+  },
+  'mar.wili.thread': {
+    lines: [
+      { who: 'Don Wili', text: 'Everyone who stops at this cart forgot something, pe. Hold your wrist over the steam; the red remembers while you sip.' },
+    ],
+    effects: ['thread:'],
+  },
+  'mar.wili.threadNo': {
+    lines: [{ who: 'Don Wili', text: 'The cart is open. The cart is always open. That is the whole secret of the cart.' }],
   },
 
   // ---------------- Capitana Ríos, the barrier ----------------

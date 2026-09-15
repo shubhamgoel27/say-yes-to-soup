@@ -199,38 +199,47 @@ export const SICILY_TASKS: TaskDef[] = [
   {
     when: { has: ['errand.turi-pisci'], not: ['c8.fish.delivered'] },
     text: 'Turi’s parcel is sweating through its paper: the belly cut, promised to Nonna Concetta by the church steps. The ice is losing. Amunì.',
+    who: 'concetta',
   },
   {
     when: { has: ['c8.pranzo.invite'], not: ['c8.pranzo'] },
     text: 'Sunday, Concetta’s table, between Nino and the aunts. It is not an invitation, it is a schedule. Arrive hungry or be made hungry.',
+    who: 'concetta',
   },
   {
     when: { has: ['met.alfio'], not: ['c8.granita'] },
     text: 'Alfio’s granita is waiting and the morning is not getting cooler. Almond with coffee is legal; tear the tuppo off first.',
+    who: 'alfio',
   },
   {
     when: { has: ['c8.granita'], not: ['c8.arancino'] },
     text: 'The fryer at the bar sings around midday. Order the rice cone, and mind the last vowel: this is an arancinO town.',
+    who: 'alfio',
   },
   {
     when: { has: ['met.turi'], not: ['c8.haggle'] },
     text: 'Turi’s stall does its best theater mid-morning. Go watch a haggle performed properly; the audience is part of the cast.',
+    who: 'turi',
   },
   {
     when: { has: ['c8.circolo.watch', 'c8.pranzo'], not: ['c8.scopa.won'] },
     text: 'Word of Sunday has reached the circolo. The empty chair at the scopa table is being looked at, and so are you. Go sit when they wave.',
+    who: 'c8elders',
   },
   {
     when: { has: ['c8.circolo.watch'], not: ['c8.pranzo'] },
     text: 'The circolo seats no strangers. In this town names travel by kitchen; eat where you are told to eat and the cards will hear about it.',
+    who: 'concetta',
   },
   {
     when: { has: ['met.saro', 'c8.pranzo'], not: ['c8.pisci.won'] },
     text: 'Don Saro is short one rower for U pisci a mari and considers your arrival a scheduling decision by Providence. The boat is by the church.',
+    who: 'donsaro',
   },
   {
     when: { has: ['met.nino', 'c8.circolo.watch'], not: ['c8.nino.talk'] },
     text: 'Nino saw you notice the empty chair. He is on the mole with a packed bag and an argument nobody is winning. Go hold the net taut.',
+    who: 'nino',
   },
   {
     when: { has: ['c8.pranzo', 'c8.scopa.won', 'c8.pisci.won'], not: ['c8.walk.done'] },
@@ -239,22 +248,27 @@ export const SICILY_TASKS: TaskDef[] = [
   {
     when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] },
     text: 'Alfio wants your hands on the pastry bag: three shells, filled at the moment, never before. The signora in black will be the judge, so, no pressure.',
+    who: 'alfio',
   },
   {
     when: { has: ['c8.cook.done', 'c8.pranzo'], not: ['c8.alfio.her'] },
     text: 'Alfio started a sentence about the corner table and then went to fetch more shells. Go back to the bar and let him finish it.',
+    who: 'alfio',
   },
   {
     when: { has: ['c8.ben.met'], not: ['c8.ben.tin', 'c8.complete'] },
     text: 'Mang Ben is loose in the pescheria while the Yacana provisions, adopting fish vendors. He had something in his pocket he was too pleased about. Go back.',
+    who: 'mangbenC8',
   },
   {
     when: { has: ['c8.walk.done'], not: ['c8.complete'] },
     text: 'Fed, dealt in, rowed, and walked: the town may be ready to sign you out. Signor Patanè keeps the ledger at the end of the mole.',
+    who: 'patane',
   },
   {
     when: { has: ['c8.arrived'], not: ['letter.read.sicily.pilar'] },
     text: 'The POSTE window in the piazza is open, technically. Mail from home crosses two oceans slower than gossip; there should be some waiting.',
+    at: ['sicily', 27, 18],
   },
   {
     when: { has: ['c8.complete'] },

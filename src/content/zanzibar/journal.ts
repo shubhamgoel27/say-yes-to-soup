@@ -207,66 +207,82 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   {
     when: { has: ['c7.met.rashid'], not: ['c7.greeting'] },
     text: 'Mzee Rashid restarts the greeting every time you rush it. Answer the habari ladder all the way down, then ask back. There is no shortcut on purpose.',
+    who: 'rashid',
   },
   {
     when: { has: ['c7.greeting'], not: ['c7.baraza.sat'] },
     text: 'Rashid patted the stone beside him. Sit on the baraza and let a whole nothing happen. Stay for the second sitting; it is easier.',
+    who: 'rashid',
   },
   {
     when: { has: ['c7.baraza.sat'], not: ['c7.rashid.past'] },
     text: 'There is kahawa coming down the lane in a tall brass pot. Have a cup with Rashid; the cup is small so the sitting is long.',
+    who: 'rashid',
   },
   {
     when: { has: ['c7.met.juma'], not: ['c7.saa'] },
     text: 'Juma expects you at saa mbili to rake the cloves. Your watch and his clock are six hours apart, and one of you is about to learn something.',
+    who: 'juma',
   },
   {
     when: { has: ['c7.saa'], not: ['c7.juma.cardamom'] },
     text: 'Saa mbili is eight in the morning, sunrise math. Be at the drying mats while the mats are still full.',
+    who: 'juma',
   },
   {
     when: { has: ['c7.met.amina'], not: ['c7.kanga.game'] },
     text: 'Bi Amina wants to play before she sells: she describes the day, you pick the kanga that answers it. Expect cackling either way.',
+    who: 'amina',
   },
   {
     when: { has: ['c7.kanga.game'], not: ['c7.kanga.done'] },
     text: 'You can hear cloth now, says Bi Amina. Go back to the shop for the pair: one to wear, and one that was never going to be yours.',
+    who: 'amina',
   },
   {
     when: { has: ['c7.met.bakari'], not: ['c7.sail.ok'] },
     text: 'Kapteni Bakari offered the ngalawa and the kaskazi. Keep the telltale streaming; luffing only slows you, and irons costs nothing but the reach.',
+    who: 'bakari',
   },
   {
     when: { has: ['c7.met.salma'], not: ['c7.salma.helped'] },
     text: 'Mama Salma is out on the flats with a wet sack and a back full of opinions. Low tide is her office hours; lend your arms.',
+    who: 'salma',
   },
   {
     when: { has: ['c7.salma.helped'], not: ['c7.salma.warm'] },
     text: 'Salma had more to say about the rows nearest the shore, if you stand still on the flats long enough to hear it.',
+    who: 'salma',
   },
   {
     when: { has: ['c7.met.zuberi'], not: ['c7.zuberi.dusk'] },
     text: 'Come back to the market corner at dusk, when the lamps kindle and the pweza meets the coconut.',
+    who: 'zuberi',
   },
   {
     when: { has: ['page.dishes.urojo'], not: ['c7.cook.done'] },
     text: 'Zuberi keeps a spare apron tied to the cart handle, and it has your name on it. Go behind the pot and build bowls to order. There are no wrong bowls.',
+    who: 'zuberi',
   },
   {
     when: { has: ['c7.rios.met'], not: ['c7.rios.sat', 'c7.complete'] },
     text: 'The Yacana rides past the reef and her Capitana is ashore at the jetty, off watch and slightly at sea about it. She has findings to report. Hear them.',
+    who: 'riosC7',
   },
   {
     when: { has: ['c7.arrived'], not: ['letter.read.c7.pilar'] },
     text: 'Mail waits at the shipping counter by the jetty: an envelope in the unmistakable handwriting of local government.',
+    who: 'ali',
   },
   {
     when: { has: ['letter.read.c7.pilar'], not: ['letter.read.c7.mangben'] },
     text: 'Ali was digging for a second envelope, the one that smells like a galley. Ask at the counter again.',
+    who: 'ali',
   },
   {
     when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.baraza.sat', 'c7.greeting'], not: ['c7.complete'] },
     text: 'The sail is sailed, the cloth chosen, the bench sat. Go greet Mzee Rashid, all the way down, and hear what the coast decides.',
+    who: 'rashid',
   },
   {
     when: { has: ['c7.complete'] },

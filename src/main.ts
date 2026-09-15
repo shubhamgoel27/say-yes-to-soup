@@ -42,6 +42,7 @@ import {
 import { pickLetter } from './content/letters';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
+import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 
@@ -1523,6 +1524,8 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
     if (free) dog.actor.placeAt(free[0], free[1], player.dir);
   }
   camera.resetLead();
+  // The thread stays on the floor it was laid on; a door winds it back in.
+  renderer.clearThread();
   const [px, py] = player.renderPos();
   camera.follow(px, py, map.w, map.h);
   state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
@@ -1675,6 +1678,8 @@ const calmFlash = () =>
 
 function endDialogue() {
   player.frozen = false;
+  // Whoever just finished speaking, for the ask-a-villager thread below.
+  const speaker = talkingTo;
   // The intro has let go; now the village may introduce itself.
   if (pendingWelcome) setTimeout(playWelcome, 420);
   if (talkingTo) {
@@ -1687,6 +1692,14 @@ function endDialogue() {
     }
   }
   talkingTo = null;
+
+  // A villager offered to show the way: the same red thread, from their
+  // feet, once their words have closed. Mirrors how pendingLetter works.
+  if (pendingThread) {
+    pendingThread = false;
+    if (speaker) threadFromNpc(speaker);
+    else summonThread();
+  }
 
   // Mail handed over during the conversation unfolds now.
   if (pendingLetter) {
@@ -1958,6 +1971,207 @@ function tryInteract(): boolean {
     return true;
   }
   return false;
+}
+
+// ---------------------------------------------------------------- nani's red thread
+//
+// The band Carmen ties in chapter one carries the same red thread Zoila
+// sewed into the journal's spine. Ask it (N) and it unspools from your feet
+// a short way along the ground toward where the story continues, sways once
+// like settling yarn, and fades. Her hand pointing, not a quest arrow: when
+// nothing resolves, the thread simply rests, because a wrong thread would be
+// worse than none.
+
+/** How far the thread unspools, in tiles of actual walking. */
+const THREAD_MAX_TILES = 7;
+/** The resting whisper may repeat at most this often, in ms. */
+const THREAD_TOAST_COOLDOWN = 60000;
+/** The band's glint: an invitation to press N, never a spoiler. Seconds;
+ * mutable so the dev desk (soup.glintTune) can hurry them for automation. */
+const GLINT = {
+  /** How long no task may progress before the band considers stirring. */
+  taskIdleS: 60,
+  /** Quiet time after any thread or glint. */
+  cooldownS: 180,
+  /** A fresh session is left entirely alone this long. */
+  sessionGraceS: 300,
+};
+
+/** Doors out of a map, from the authored data plus the runtime east gate. */
+function doorsFrom(mapId: string): { to: string; at: [number, number] }[] {
+  const doors = (REGION_MAPS[mapId]?.triggers ?? [])
+    .filter((t): t is TriggerDef & { type: 'door' } => t.type === 'door')
+    .map((t) => ({ to: t.to, at: [t.at[0], t.at[1]] as [number, number] }));
+  if (mapId === 'village' && state.has('story.complete')) {
+    doors.push({ to: 'east-road', at: [41, 16] }, { to: 'east-road', at: [42, 16] });
+  }
+  return doors;
+}
+
+/** BFS over the door graph: the next map to step into on the way to `target`,
+ * or null when no chain of doors connects here to there. */
+function nextMapToward(target: string): string | null {
+  if (target === map.id) return null;
+  const prev = new Map<string, string>();
+  const queue = [map.id];
+  const seen = new Set([map.id]);
+  for (let head = 0; head < queue.length; head++) {
+    const cur = queue[head]!;
+    for (const d of doorsFrom(cur)) {
+      if (seen.has(d.to)) continue;
+      seen.add(d.to);
+      prev.set(d.to, cur);
+      if (d.to === target) {
+        let at = target;
+        while (prev.get(at) !== map.id) at = prev.get(at) ?? map.id;
+        return at;
+      }
+      queue.push(d.to);
+    }
+  }
+  return null;
+}
+
+/** Where the active task continues, as a cell on the current map. `at` wins;
+ * else `who` at their live position if they are here; else the door the
+ * player should take toward wherever the target actually is. */
+function threadTargetFor(task: WorldTask): { cell: [number, number]; adjacent: boolean } | null {
+  let targetMap: string | null = null;
+  if (task.at) {
+    const [m, x, y] = task.at;
+    if (m === map.id) return { cell: [x, y], adjacent: false };
+    targetMap = m;
+  } else if (task.who) {
+    const v = villagers.find((n) => n.def.id === task.who);
+    if (!v) return null;
+    if (v.def.map === map.id) {
+      // Named but not present (gated away, faded for the night): no thread.
+      if (!state.check(v.def.when) || v.fade <= 0.02) return null;
+      return { cell: v.actor.occupies(), adjacent: true };
+    }
+    targetMap = v.def.map;
+  }
+  if (!targetMap) return null;
+  const hop = nextMapToward(targetMap);
+  if (!hop) return null;
+  // Several doors can lead the same way; the thread takes the closest one.
+  let best: number = Infinity;
+  let bestAt: [number, number] | null = null;
+  for (const d of doorsFrom(map.id)) {
+    if (d.to !== hop) continue;
+    const p = pathBetween(player.occupies(), d.at[0], d.at[1], (x, y) => map.solid(x, y));
+    if (p && p.length < best) {
+      best = p.length;
+      bestAt = d.at;
+    }
+  }
+  return bestAt ? { cell: bestAt, adjacent: false } : null;
+}
+
+/**
+ * The walk path the thread would lie along, from `from` toward the active
+ * task, capped at THREAD_MAX_TILES. Walkable ground only, bodies ignored:
+ * the thread is yarn on the floor, not a route around whoever is passing.
+ * Null when nothing resolves; absence is better than noise.
+ */
+function threadPathFrom(
+  from: [number, number],
+): { tiles: [number, number][]; loop: [number, number] | null } | null {
+  const task = journalUI.activeTaskDefs()[0];
+  if (!task || (!task.who && !task.at)) return null;
+  const aim = threadTargetFor(task);
+  if (!aim) return null;
+  const solid = (x: number, y: number) => map.solid(x, y);
+  let path = pathBetween(from, aim.cell[0], aim.cell[1], solid, aim.adjacent);
+  // A fixed spot can be a prop with no floor of its own; point beside it.
+  if (!path && !aim.adjacent) path = pathBetween(from, aim.cell[0], aim.cell[1], solid, true);
+  if (!path) return null;
+  const reaches = path.length <= THREAD_MAX_TILES;
+  return { tiles: [from, ...path.slice(0, THREAD_MAX_TILES)], loop: reaches ? aim.cell : null };
+}
+
+let threadToastAt = -Infinity;
+/** When the thread last actually unspooled (performance.now ms). */
+let threadShownAt = -Infinity;
+
+/** Ask the thread, from the player's feet or from a helpful villager's. */
+function summonThread(from: [number, number] = player.occupies()): boolean {
+  const found = threadPathFrom(from);
+  if (!found) {
+    const now = performance.now();
+    if (now - threadToastAt > THREAD_TOAST_COOLDOWN) {
+      threadToastAt = now;
+      toasts.show('the thread rests; the journal’s ribbon knows more');
+    }
+    return false;
+  }
+  renderer.showThread(found.tiles, found.loop);
+  // One soft note from Carmen's loom: the terracotta string, same as the band.
+  audio.weaveNote(0);
+  threadShownAt = performance.now();
+  return true;
+}
+
+/** The engine half of ask-a-villager: the same thread, from their feet. */
+function threadFromNpc(v: Villager): boolean {
+  return summonThread(v.actor.occupies());
+}
+
+/** A 'thread:' effect raised mid-conversation; drawn once the words close. */
+let pendingThread = false;
+state.on('thread', () => {
+  pendingThread = true;
+});
+
+// -- the auto-breathe glint -------------------------------------------------
+
+const sessionStart = performance.now();
+let glintShownAt = -Infinity;
+let glintPoll = 0;
+let taskSig = '';
+let taskProgressAt = performance.now();
+/** Last moment the player was actually walking (performance.now ms). */
+let walkAt = -Infinity;
+
+function watchTaskProgress() {
+  const sig = journalUI.activeTasks().join('|');
+  if (sig !== taskSig) {
+    taskSig = sig;
+    taskProgressAt = performance.now();
+  }
+}
+watchTaskProgress();
+state.on('changed', watchTaskProgress);
+
+/**
+ * If a task with a resolvable target has sat untouched for a minute while
+ * the player wanders, the band glints once at the wrist: a half-second red
+ * shimmer, no thread, no sound. An invitation to press N, not a spoiler.
+ * Never during dialogue, panels, ceremonies, or a session's first minutes.
+ */
+function maybeGlint(dt: number) {
+  glintPoll -= dt;
+  if (glintPoll > 0) return;
+  glintPoll = 1;
+  if (mode !== 'play' || !state.has('keepsake.band')) return;
+  const now = performance.now();
+  if (now - sessionStart < GLINT.sessionGraceS * 1000) return;
+  if (now - taskProgressAt < GLINT.taskIdleS * 1000) return;
+  if (now - threadShownAt < GLINT.cooldownS * 1000) return;
+  if (now - glintShownAt < GLINT.cooldownS * 1000) return;
+  if (now - walkAt > 2500) return; // for the wandering, not the idle
+  if (
+    textbox.isOpen || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ||
+    anyGameOpen() || uiCardOpen() || chapterClose.isOpen || title.letterOpen ||
+    sitting || warp !== null || celebrateT > 0 || player.frozen
+  ) {
+    return;
+  }
+  if (!threadPathFrom(player.occupies())) return; // nothing resolvable: stay quiet
+  glintShownAt = now;
+  // A soft shimmer where the band sits, tinted the thread's own red.
+  const [px, py] = player.renderPos();
+  renderer.burst(px + TILE / 2 + 3, py + 10, 'sparkle', ['#c1512f', '#e08a5e', '#f2d9c8']);
 }
 
 // ---------------------------------------------------------------- modes
@@ -2286,6 +2500,8 @@ function update(dt: number) {
   const back = input.takeBack();
   const pauseKey = input.takePause();
   const journalKey = input.takeJournal() || dev.takeJournal();
+  const threadKey = input.takeThread();
+  maybeGlint(dt);
 
   // Any deliberate input or story freeze cancels a click-to-walk in flight.
   if (autoGoal && (player.frozen || warp || textbox.isOpen || act || back || pauseKey || journalKey || menuDir)) {
@@ -2423,6 +2639,10 @@ function update(dt: number) {
     } else if (journalKey) {
       journalUI.open();
       audio.pageFlip();
+    } else if (threadKey && state.has('keepsake.band') && !player.frozen && celebrateT <= 0) {
+      // Ask the band. Before Carmen ties it, the key simply does nothing:
+      // chapter one's opening is guided enough, and the reveal is hers.
+      summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
     } else if (act) {
@@ -2446,6 +2666,8 @@ function update(dt: number) {
       const prevX = player.x;
       const prevY = player.y;
       const ev = player.update(dt, { intent, blocked: blockedFor(player) });
+      // Feet in motion: the band's glint only invites people mid-wander.
+      if (intent && player.isMoving) walkAt = performance.now();
       if (ev?.kind === 'arrived') stuckKnocks = 0;
       // The quiet decays whether or not you are still leaning on the wall, so
       // walking off and bumping again later knocks properly.
@@ -2588,6 +2810,11 @@ function update(dt: number) {
     })),
     bumps,
     auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
+    thread: {
+      out: renderer.threadOut,
+      shownAt: Math.round(threadShownAt),
+      glintAt: Math.round(glintShownAt),
+    },
   });
 }
 
@@ -3380,6 +3607,9 @@ function installCheats() {
           'soup.witness()       micro-freezes seen in the player\'s own motion',
           'soup.photos()        grant every photograph Chasca can take',
           'soup.tod(t)          set time of day, 0 dawn, 0.35 day, 0.57 gold, 0.85 night',
+          'soup.band()          tie Carmen\'s band on now (unlocks the red thread, N)',
+          'soup.thread()        ask the thread right now, exactly like pressing N',
+          'soup.glintTune(i,c,g) hurry the band\'s glint: idle, cooldown, grace, seconds',
           'soup.rain(on?)       toggle the monsoon and the sawan rain',
           'soup.end()           set up the endgame at the well',
           'soup.wipe()          erase the save and return to the title',
@@ -3473,6 +3703,20 @@ function installCheats() {
     tod(t: number) {
       dayT = Math.max(0, Math.min(0.999, t));
       return `time of day = ${dayT.toFixed(2)}`;
+    },
+    band() {
+      state.set('keepsake.band');
+      return 'the band is on your wrist';
+    },
+    thread() {
+      return summonThread() ? 'the thread unspools' : 'the thread rests';
+    },
+    /** Hurry the band's glint so automation does not wait out real minutes. */
+    glintTune(taskIdleS = 2, cooldownS = 5, sessionGraceS = 0) {
+      GLINT.taskIdleS = taskIdleS;
+      GLINT.cooldownS = cooldownS;
+      GLINT.sessionGraceS = sessionGraceS;
+      return `glint: idle ${taskIdleS}s, cooldown ${cooldownS}s, grace ${sessionGraceS}s`;
     },
     rain(on = true) {
       for (const f of ['c6.rain', 'c11.rain']) {

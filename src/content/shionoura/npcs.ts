@@ -558,6 +558,19 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Daisuke', text: 'Morning market is gone by eight, ne. The whole ocean, sold before the town brushes its teeth. Come earlier tomorrow!' },
     ],
+    choices: [
+      { text: '"Daisuke, which way was I going?"', goto: 'c4.dai.thread' },
+      { text: 'Eye the last crates', goto: 'c4.dai.threadNo' },
+    ],
+  },
+  'c4.dai.thread': {
+    lines: [
+      { who: 'Daisuke', text: 'Ha! Even the fish know where they are going, and they are dead, ne. Wrist out; red thread beats a tide table.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c4.dai.threadNo': {
+    lines: [{ who: 'Daisuke', text: 'The ocean restocks tonight. Best supplier in the business, ne.' }],
   },
 
   // ---------------- Sachiko, the omiyage counter ----------------
@@ -672,6 +685,19 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Genji', text: 'The cicadas shout for seven years underground and one summer above. Make of that what you like. I sweep.' },
     ],
+    choices: [
+      { text: '"Which way was I going, Genji-san?"', goto: 'c4.genji.thread' },
+      { text: 'Leave him to the sweeping', goto: 'c4.genji.threadNo' },
+    ],
+  },
+  'c4.genji.thread': {
+    lines: [
+      { who: 'Genji', text: 'The steps go up and the steps go down. For everything in between, ask your wrist. I sweep.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c4.genji.threadNo': {
+    lines: [{ who: 'Genji', text: 'Mm.' }],
   },
 
   // ---------------- Taro, whose wish is too big ----------------
@@ -717,6 +743,19 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [
       { who: 'Taro', text: 'Seventh night soon! If it rains I am personally complaining to the Sky King. Genji-san says get in line.' },
     ],
+    choices: [
+      { text: '"Taro, remind me where I was headed?"', goto: 'c4.taro.thread' },
+      { text: 'Leave him to his campaign', goto: 'c4.taro.threadNo' },
+    ],
+  },
+  'c4.taro.thread': {
+    lines: [
+      { who: 'Taro', text: 'A grown-up, lost? AMAZING. Okay, okay: hold your wrist up like a hero and follow the red. I do this all the time.' },
+    ],
+    effects: ['thread:'],
+  },
+  'c4.taro.threadNo': {
+    lines: [{ who: 'Taro', text: 'Tell the Sky King I am WAITING.' }],
   },
 
   // ---------------- Captain Isao, the timetable ----------------

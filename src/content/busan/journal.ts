@@ -166,53 +166,66 @@ export const BUSAN_TASKS: TaskDef[] = [
   {
     when: { has: ['c5.met.cook'], not: ['c5.sticks.why'] },
     text: 'Byeong-ok moved your chopsticks without a word. Ask her why; she corrects warmly, but only if you ask.',
+    who: 'byeongok',
   },
   {
     when: { has: ['c5.sticks.why'], not: ['c5.sikhye'] },
     text: 'Eat at Byeong-ok’s counter again. There is a saying to learn before the meal and its twin to say after.',
+    who: 'byeongok',
   },
   {
     when: { has: ['c5.met.sunhee', 'c5.met.cook'], not: ['c5.sunhee2'] },
     text: 'Go back to Sun-hee’s stall. A face turns into a person around the second visit, and hers is the stall under the red awning.',
+    who: 'sunhee',
   },
   {
     when: { has: ['c5.sunhee2'], not: ['c5.met.mija'] },
     text: 'Follow the frying-sugar smell to the hotteok cart on the lane’s south side. The couple behind the griddle are half the neighborhood.',
+    who: 'mija',
   },
   {
     when: { has: ['c5.sunhee2', 'c5.met.mija'], not: ['c5.deom'] },
     text: 'One more visit to Sun-hee should make it a habit. Habits have privileges at a Korean market too.',
+    who: 'sunhee',
   },
   {
     when: { has: ['c5.met.mija'], not: ['c5.hotteok.done'] },
     text: 'Mi-ja’s spatula is waiting. Press when the edge goes gold; the griddle will tell you, and the burnt ones feed the cook.',
+    who: 'mija',
   },
   {
     when: { has: ['c5.deom'], not: ['riddle.cho'] },
     text: 'Carry the extra fish and the question it raised up the stairs to the tea house. The old man there trades in questions.',
+    who: 'cho',
   },
   {
     when: { has: ['c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.complete'] },
     text: 'The lane knows you now. Mr. Gong at the ferry window, down by the quay, arranges berths for the vouched-for. He will want it done ppalli ppalli.',
+    who: 'gong',
   },
   {
     when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed'] },
     text: 'Hana is on the quay until the evening boat, armed with one examination question about Shionoura. Sit the exam before six.',
+    who: 'hanaC5',
   },
   {
     when: { has: ['c5.arrived'], not: ['c5.met.sunhee'] },
     text: 'The market lane is waking above the quay: awnings, basins, steam. Start where the red awning is; the woman under it runs the morning.',
+    who: 'sunhee',
   },
   {
     when: { has: ['c5.arrived'], not: ['letter.read.c5.pilar'] },
     text: 'A postal window the size of a biscuit tin sits by the ferry office. Mail crosses oceans faster than you do; ask.',
+    at: ['busan', 40, 24],
   },
   {
     when: { has: ['c5.complete'] },
     text: 'The Malabar Star loads at dusk for Kochi. Until then Mulmang-gol is yours: broth on the honor system, tea upstairs, goodbyes to make.',
+    who: 'gong',
   },
   {
     when: { has: ['c5.arrived'], not: ['c5.complete'] },
     text: 'One warm lane between the hillside and the harbor: fish stalls, a griddle, a tea house up the stairs. Meet it slowly; it moves fast.',
+    who: 'sunhee',
   },
 ];

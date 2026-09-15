@@ -186,44 +186,54 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     when: { has: ['errand.ben-baon'], not: ['c3.baon.done'] },
     text: 'Joseph’s night lunch is cooling under its cloth. Port rail, forward, where the chipping hammer is complaining. Walk it steady.',
+    who: 'joseph',
   },
   {
     when: { has: ['c3.met.ben'], not: ['c3.baon'] },
     text: 'Ben will find work for any hands that show up twice. The galley is through the house door; follow the garlic.',
+    who: 'mangben',
   },
   {
     when: { has: ['c3.baon.done'], not: ['c3.cook.done'] },
     text: 'Lutong bahay night: Ben wants help with the adobo. The pot is patient, he says. One of them is lying.',
+    who: 'mangben',
   },
   {
     // Before the karaoke, or the chip advertises the mess through the whole
     // Neptune arc and the bosun's grin is never seen on the HUD.
     when: { has: ['c3.cook.done'], not: ['c3.shellback'] },
     text: 'The bosun keeps grinning at the chart, which means the equator is close and you are still a pollywog. Find him amid the containers.',
+    who: 'bosun',
   },
   {
     when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] },
     text: 'The karaoke machine in the mess has come out from under its cover. Attendance is not so much optional as inevitable.',
+    at: ['galley', 11, 1],
   },
   {
     when: { has: ['c3.shellback'], not: ['joseph.letter'] },
     text: 'Joseph has been patting his jacket pocket like it holds something that wants a road. Find him at the port rail.',
+    who: 'joseph',
   },
   {
     when: { has: ['c3.shellback'], not: ['letter.read.c3.pilar'] },
     text: 'The captain has a canvas sack marked MAIL and two envelopes with your name on them. She stands on deck, forward of the house.',
+    who: 'riosC3',
   },
   {
     when: { has: ['letter.read.c3.pilar'], not: ['letter.read.c3.petro'] },
     text: 'There was a second envelope stuck to the first, the kind with a grease spot on the flap. Ask the captain again.',
+    who: 'riosC3',
   },
   {
     when: { has: ['c3.met.hana'], not: ['c3.stars.done'] },
     text: 'Hana keeps the bow after dark, where the working lights end and the sky begins. Three names for one river; bring yours.',
+    who: 'hana',
   },
   {
     when: { has: ['c3.met.olena'], not: ['c3.olena.bread'] },
     text: 'Olena takes her sun break at the starboard rail aft, with a glass jar she treats like a passenger. Ask about it.',
+    who: 'olena',
   },
   {
     when: {
@@ -231,13 +241,16 @@ export const CROSSING_TASKS: TaskDef[] = [
       not: ['c3.complete'],
     },
     text: 'The crossing is nearly crossed. Report to Capitana Ríos; she has a habit of knowing when land is about to happen.',
+    who: 'riosC3',
   },
   {
     when: { has: ['c3.complete'] },
     text: 'Land birds lead the bow now. Go stand at the very point of it, by the jackstaff, and let Japan happen to you.',
+    at: ['ship', 21, 3],
   },
   {
     when: { has: ['c3.arrived'], not: ['c3.complete'] },
     text: 'The ship is a village of two dozen: the galley under the house, the bow past the containers, the rail all the way around. Meet her.',
+    who: 'mangben',
   },
 ];
