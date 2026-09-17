@@ -525,3 +525,11 @@ Two-wave merge of 11 parallel agents; no agent work lost across three
 infrastructure stalls (checkpoint files + transcript resumes). Fail/win split
 solved without a win channel: a hard run that files no coach line is clean by
 definition, so the coach ledger doubles as the outcome signal.
+
+## 2026-09-17b: real-device mobile round (S26 Ultra feedback)
+
+- [x] Stutter: dt smoother now steps display-cadence multiples as vsyncs (speed error 47.6% -> 2.9% at 6x throttle); ground bakes to chunks (~70% of draw bill); bloom lighter on touch; ?perf prod overlay
+- [x] Taps: pointer.ts; arm at pointerdown, act at pointerup; hover ignores touch; backdrop-back gated during entrances; title shelf 8/8 dead taps -> 0/8; mouse parity byte-identical
+- [x] Orientation: phones landscape-first; Android fullscreen+lock via journal card, iOS rotate page, decline-twice corner pin; tablets/desktop untouched
+- [x] Gate: tsc clean, 118/118, prod build boots, hard-telling e2e ALL GREEN on merged tree
+- [x] Shipped: d641773, fb755e3, 20fa5bd

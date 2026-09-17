@@ -217,3 +217,30 @@ as the trigger, saying "now" while the witness held the evidence. When a
 report survives a fix, do not argue with it; instrument deeper and let the
 next capture name the gate. soup.witness() and soup.perf() stay in the dev
 build for the next time.
+
+## Emulated touch passing is not a phone passing (2026-09-17)
+
+The mobile pass shipped with 24/24 emulated play checks, and the first real
+device (S26 Ultra) still hit unreliable taps, stutter, and unusable portrait
+zoom. Three gaps between emulation and glass:
+
+1. Touch taps fire a synthetic event chain (pointerdown, pointerup, mouseover,
+   mousedown, mouseup, click). Any hover-then-click menu that re-renders its
+   innerHTML on hover destroys the node between the finger landing and the
+   click dispatching; the click then hit-tests rebuilt DOM and sometimes lands
+   on the backdrop (reads as "back"). Playwright taps rarely hit the race;
+   fingers on animating cards hit it often. Rule: on touch, steer and activate
+   together on pointerdown with preventDefault, exactly like the textbox
+   already did. Never trust hover idioms under a finger.
+2. Frame-time emulation (CPU throttle) does not reproduce phone cadence
+   oscillation (120Hz/60Hz flips from thermal and touch-boost). Rule: ship a
+   prod-reachable diagnostic (?perf) so the report from real glass comes with
+   numbers, not adjectives.
+3. "Playable in portrait" was judged from screenshots where a 26% view slice
+   looks fine at desk distance. Rule: for a landscape-native game, phones are
+   landscape-first; force it kindly rather than shipping a technically-working
+   keyhole.
+
+Meta-rule: the first real-device report outranks any emulated ALL GREEN.
+Treat it like a witness capture from the motion saga: never argue with it,
+instrument and fix.
