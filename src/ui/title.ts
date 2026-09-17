@@ -105,10 +105,22 @@ function downloadPack(name: string | null, text: string) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-/** What each shelf row can do. Blank journals only open or receive. */
-type ShelfVerb = 'open' | 'pack' | 'unpack' | 'erase';
+/** What each shelf row can do. Blank journals only open or receive; a
+ * finished journal also offers a second reading. */
+type ShelfVerb = 'open' | 'read again' | 'pack' | 'unpack' | 'erase';
 const VERBS_FULL: ShelfVerb[] = ['open', 'pack', 'unpack', 'erase'];
+const VERBS_ENDED: ShelfVerb[] = ['open', 'read again', 'pack', 'unpack', 'erase'];
 const VERBS_BLANK: ShelfVerb[] = ['open', 'unpack'];
+
+/** Whether this journal's journey reached its last page. Read straight off
+ * the shelf, the way the flyleaf lines are; trouble reading means no verb. */
+function journeyEnded(row: number): boolean {
+  try {
+    return (peekSlot(row)?.flags ?? []).includes('story.end');
+  } catch {
+    return false;
+  }
+}
 
 export class TitleScreen {
   private cursor = 0;
@@ -128,8 +140,9 @@ export class TitleScreen {
   private shelf = false;
   private shelfRow = 0;
   private shelfVerb = 0;
-  /** Destructive shelf verbs arm first, act second, like Begin again. */
-  private shelfArmed: 'erase' | 'replace' | null = null;
+  /** Shelf verbs that change a journal arm first, act second, like Begin
+   * again: erase, unpack-over, and the second reading. */
+  private shelfArmed: 'erase' | 'replace' | 'second' | null = null;
   /** A valid unpacked journal waiting on a confirm over an occupied slot. */
   private pendingImport: { row: number; raw: string } | null = null;
   /** One quiet line under the rows: gentle rejections and confirmations. */
@@ -141,6 +154,10 @@ export class TitleScreen {
     /** Called when the journal on the table changed under the engine's feet:
      * a different slot chosen, or the active slot erased or unpacked over. */
     private onShelfChange?: () => void,
+    /** Called when a finished journal's second reading is confirmed. The
+     * engine owns everything after: the fresh journey, the inherited words,
+     * the flyleaf. The shelf only carries the request. */
+    private onSecondReading?: (row: number) => void,
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
@@ -277,7 +294,8 @@ export class TitleScreen {
   }
 
   private shelfVerbs(row: number): ShelfVerb[] {
-    return slotOccupied(row) ? VERBS_FULL : VERBS_BLANK;
+    if (!slotOccupied(row)) return VERBS_BLANK;
+    return journeyEnded(row) ? VERBS_ENDED : VERBS_FULL;
   }
 
   shelfDir(dir: Dir) {
@@ -330,6 +348,20 @@ export class TitleScreen {
     }
     if (verb === 'unpack') {
       this.pickPack(row);
+      return 'confirm';
+    }
+    if (verb === 'read again') {
+      // A second reading: the same fresh journey Begin again starts, except
+      // the words come along. Arm first, act second, like everything here
+      // that changes a journal.
+      if (this.shelfArmed !== 'second') {
+        this.shelfArmed = 'second';
+        this.shelfNote = null;
+        this.renderShelf();
+        return 'warn';
+      }
+      this.standDownShelf();
+      this.onSecondReading?.(row);
       return 'confirm';
     }
     // erase: arm first, act second, exactly like Begin again on the cover.
@@ -461,7 +493,9 @@ export class TitleScreen {
                   ? 'erase it? press again'
                   : armed === 'replace'
                     ? 'shelve it over? press again'
-                    : v;
+                    : armed === 'second'
+                      ? 'begin a second reading? the words come with you. press again'
+                      : v;
               return `<span class="sh-verb${on ? ' on' : ''}${armed ? ' warn' : ''}" data-verb="${j}">${label}</span>`;
             })
             .join('<span class="sh-dot">&middot;</span>')

@@ -7,7 +7,7 @@ import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState, activeSlot, peekSlot } from './engine/state';
+import { GameState, activeSlot, peekSlot, setActiveSlot } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
@@ -374,8 +374,29 @@ const textbox = new Textbox(
   state,
   (who) => audio.speak(who),
 );
-const journalUI = new JournalUI($('journal'), JOURNAL, TASKS, ROUTE, state);
-const title = new TitleScreen($('title'), $('letter'), () => reloadJourney());
+/**
+ * A second reading arrives already knowing the words, and a task whose only
+ * key is a words page would vault the chip whole chapters ahead: Shaji's
+ * pour offer, gated on page.words.chaya alone, surfaced in Ch'aska Pampa on
+ * minute one. Any such task also waits for its own chapter's arrival. On a
+ * first journey this changes nothing, because a word is always learned after
+ * its chapter is reached.
+ */
+const TASKS_GUARDED: WorldTask[] = TASKS.map((t) => {
+  if (!(t.when.has ?? []).some((f) => f.startsWith('page.words.'))) return t;
+  const owner = CHAPTERS.find((c) => c.tasks.some((x) => x.text === t.text));
+  const gate = owner?.arrival?.flag;
+  if (!gate || (t.when.has ?? []).includes(gate)) return t;
+  return { ...t, when: { ...t.when, has: [...(t.when.has ?? []), gate] } };
+});
+
+const journalUI = new JournalUI($('journal'), JOURNAL, TASKS_GUARDED, ROUTE, state);
+const title = new TitleScreen(
+  $('title'),
+  $('letter'),
+  () => reloadJourney(),
+  (row) => beginSecondReading(row),
+);
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
 const chapterClose = new ChapterCloseUI($('chapterclose'), state);
@@ -390,6 +411,17 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     // Closed over the title: bring the cover back with a fresh cursor, so
     // the next press does exactly what it looks like it will do.
     if (mode === 'title') title.showTitle(state.hasSave());
+  },
+  onReplay: (flag) => {
+    // The games shelf chose one. Same road a villager's replay offer takes:
+    // replay.mode plus the start flag, then the how-to card. The panels are
+    // overlays with no idea what map is under them, so the loom opens as
+    // readily in Delhi as it does at Carmen's door.
+    const g = games.find((x) => x.def.flag === flag);
+    if (!g) return;
+    state.set('replay.mode');
+    state.set(flag);
+    showHowto(g);
   },
 });
 
@@ -532,10 +564,17 @@ function stripActivate() {
     // Every panel's open() resets its state; same completion, fresh hands.
     openPanel(g);
   } else if (pick === 'Step away') {
-    // Unfinished is allowed. The start flag stays set, so the how-to card
-    // re-offers whenever the player is ready again.
     g.root.hidden = true;
     player.frozen = false;
+    if (state.has('replay.mode')) {
+      // A replay stepped away from is simply over: nothing in the story
+      // needs the offer kept, and a lingering replay.mode would make the
+      // next first-time completion skip its own narration.
+      state.clearFlag('replay.mode');
+      state.clearFlag(g.def.flag);
+    }
+    // Otherwise unfinished is allowed. The start flag stays set, so the
+    // how-to card re-offers whenever the player is ready again.
   }
   // "Keep at it": the panel is still there, exactly as it was.
 }
@@ -2393,27 +2432,60 @@ function titleActivate() {
   }
   title.hideTitle();
   if (choice === 'new') {
-    state.reset();
-    for (const tm of Object.values(maps)) tm.clearOverrides();
-    resyncCelebrations();
-    applyGateState();
-    applyDressings();
-    refreshTaskChip();
-    refreshPlayerSheet();
-    // The flyleaf first: a name (or not) and the traveler's look, then the
-    // letter. Continue never passes through here, so it never asks.
-    mode = 'naming';
-    naming.open((res) => {
-      state.playerName = res.name;
-      state.playerLook = res.look;
-      state.save();
-      refreshPlayerSheet();
-      mode = 'letter';
-      title.showLetter(undefined, state.playerName);
-    });
+    freshSlate();
+    openFlyleaf();
   } else {
     beginPlay(false);
   }
+}
+
+/** Begin again's clean slate: wipe the active slot, stand the world back up. */
+function freshSlate() {
+  state.reset();
+  for (const tm of Object.values(maps)) tm.clearOverrides();
+  resyncCelebrations();
+  applyGateState();
+  applyDressings();
+  refreshTaskChip();
+  refreshPlayerSheet();
+}
+
+/** The flyleaf first: a name (or not) and the traveler's look, then the
+ * letter. Continue never passes through here, so it never asks. */
+function openFlyleaf() {
+  mode = 'naming';
+  naming.open((res) => {
+    state.playerName = res.name;
+    state.playerLook = res.look;
+    state.save();
+    refreshPlayerSheet();
+    mode = 'letter';
+    title.showLetter(undefined, state.playerName);
+  });
+}
+
+/**
+ * A second reading: a finished journal begins again in its own slot, and
+ * exactly one thing crosses over, the words. That is what travel does; the
+ * languages stay in you when everything else becomes a story. The flyleaf
+ * runs again (a new name is allowed), Nani's letter plays again, and every
+ * page that is not a word starts blank. The old code, being only a shimmer,
+ * comes along too.
+ */
+function beginSecondReading(row: number) {
+  // The inheritance is read off the shelf before the slot goes blank.
+  const data = peekSlot(row);
+  const words = (data?.journal ?? []).filter((p) => p.startsWith('words.'));
+  const konami = (data?.flags ?? []).includes('konami');
+  setActiveSlot(row);
+  freshSlate();
+  // Quietly: two dozen toasts and chimes at once would bury the moment the
+  // player actually chose. The pages are not news; they came with you.
+  state.grantPagesQuietly(words);
+  state.set('second.reading');
+  if (konami) state.set('konami');
+  title.hideTitle();
+  openFlyleaf();
 }
 
 /** Put down whichever letter is open; shared by Space and click. */

@@ -1,5 +1,7 @@
 import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
+import { CHAPTERS, NODES } from '../content/world';
+import { ROUTE } from '../content/route';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -30,6 +32,44 @@ export function openCredits() {
 
 const journeyDone = () => flags?.has('story.end') ?? false;
 
+// ------------------------------------------------------------ the games shelf
+//
+// Every hands-on thing the journey taught, offered again from the pause menu
+// once it has been done once. Selection hands the start flag back to the
+// engine, which runs it down the exact replay path a villager's own offer
+// takes: replay.mode set, the how-to card, no narration at the end, only joy.
+
+export type ReplayGame = { flag: string; title: string; chapter: string; doneFlag: string };
+
+/**
+ * Which flag proves a game was won: its doneNode narration always clears the
+ * start flag and sets the game's durable done flag as its FIRST `set:`
+ * effect (pallay.done for the loom, c2.ride.done for the caballito, c7.sail.ok
+ * for the ngalawa). The replay arms in dialogue gate on exactly these flags,
+ * so the shelf and the villagers can never disagree about what counts as won.
+ * A test in tests/metagame.test.ts holds the convention honest.
+ */
+export const REPLAY_GAMES: ReplayGame[] = CHAPTERS.flatMap((c) => {
+  const stop = ROUTE.find((r) => r.id === c.id);
+  return (c.games ?? [])
+    .filter((g) => g.replayable !== false)
+    .flatMap((g) => {
+      const done = (NODES[g.doneNode]?.effects ?? []).find((e) => e.startsWith('set:'));
+      if (!done) return [];
+      return [{
+        flag: g.flag,
+        title: g.title ?? g.flag,
+        chapter: stop?.name ?? c.id,
+        doneFlag: done.slice('set:'.length),
+      }];
+    });
+});
+
+/** The games this journey has actually won, in chapter order. */
+export function wonGames(src: FlagSource): ReplayGame[] {
+  return REPLAY_GAMES.filter((g) => src.has(g.doneFlag));
+}
+
 type Prefs = { textSpeed: 'cozy' | 'brisk' | 'instant'; reduceMotion: boolean; textSize: 'normal' | 'large' };
 const PREFS_KEY = 'soup.prefs';
 
@@ -50,12 +90,15 @@ function loadPrefs(): Prefs {
 
 export const TEXT_CPS: Record<Prefs['textSpeed'], number> = { cozy: 60, brisk: 110, instant: 2000 };
 
-type Screen = 'menu' | 'settings' | 'help' | 'credits';
+type Screen = 'menu' | 'settings' | 'help' | 'credits' | 'games';
 
 type Hooks = {
   onTextSpeed: (cps: number) => void;
   onToTitle: () => void;
   onClosed?: () => void;
+  /** A won game chosen from the shelf: the engine reopens it the way a
+   * villager's own replay offer would, replay.mode and all. */
+  onReplay?: (flag: string) => void;
 };
 
 export class PauseMenu {
@@ -124,10 +167,28 @@ export class PauseMenu {
       // says so, because otherwise nothing in the game ever points here.
       { label: journeyDone() ? 'The end of it' : 'Credits', act: () => this.goto('credits') },
     ];
+    // The games shelf earns its row with the first game won, and only while
+    // actually playing: opened from the title there is no world to return to.
+    if (!this.fromTitle && flags && wonGames(flags).length > 0) {
+      items.splice(3, 0, { label: 'Play a game again', act: () => this.goto('games') });
+    }
     if (!this.fromTitle) {
       items.push({ label: 'Rest here (back to title)', act: () => { this.close(); this.hooks.onToTitle(); } });
     }
     return items;
+  }
+
+  /** The games shelf's rows: every won game, grouped by the route's order. */
+  private gamesItems() {
+    const won = flags ? wonGames(flags) : [];
+    return won.map((g) => ({
+      label: g.title,
+      tag: g.chapter,
+      act: () => {
+        this.close();
+        this.hooks.onReplay?.(g.flag);
+      },
+    }));
   }
 
   private settingsItems() {
@@ -201,8 +262,9 @@ export class PauseMenu {
   // ---------------------------------------------------------------- input
 
   onDir(dir: Dir) {
-    if (this.screen === 'menu') {
-      const n = this.menuItems().length;
+    if (this.screen === 'menu' || this.screen === 'games') {
+      const n = this.screen === 'menu' ? this.menuItems().length : this.gamesItems().length;
+      if (n === 0) return;
       if (dir === 'up') this.cursor = (this.cursor + n - 1) % n;
       else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
       this.render();
@@ -217,6 +279,7 @@ export class PauseMenu {
 
   onAction() {
     if (this.screen === 'menu') this.menuItems()[this.cursor]?.act();
+    else if (this.screen === 'games') this.gamesItems()[this.cursor]?.act();
     else if (this.screen === 'settings') this.settingsItems()[this.cursor]?.adjust(1), this.render();
     else this.goto('menu');
   }
@@ -234,6 +297,21 @@ export class PauseMenu {
       body = `<div class="p-menu">${this.menuItems()
         .map((it, i) => `<div class="p-opt${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`)
         .join('')}</div>`;
+    } else if (this.screen === 'games') {
+      // The games shelf: every won game with the village that taught it.
+      // The .p-menu wrapper matters: rows keep the menu's hover-and-click
+      // steering, and a stray click on the paper does not turn the page.
+      let lastChapter = '';
+      const rows = this.gamesItems()
+        .map((it, i) => {
+          const head =
+            it.tag !== lastChapter ? `<div class="p-g-chapter">${it.tag}</div>` : '';
+          lastChapter = it.tag;
+          return `${head}<div class="p-opt p-g-row${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`;
+        })
+        .join('');
+      body = `<div class="p-menu p-games">${rows}
+        <div class="p-hint-line">no lesson this time, nothing to keep &nbsp; &middot; &nbsp; Esc back</div></div>`;
     } else if (this.screen === 'settings') {
       body = `<div class="p-settings">${this.settingsItems()
         .map(
@@ -288,13 +366,15 @@ export class PauseMenu {
     const title =
       this.screen === 'menu'
         ? 'A rest'
-        : this.screen === 'settings'
-          ? 'Settings'
-          : this.screen === 'help'
-            ? 'How to play'
-            : journeyDone()
-              ? 'The end of it'
-              : 'Credits';
+        : this.screen === 'games'
+          ? 'Again, for the joy of it'
+          : this.screen === 'settings'
+            ? 'Settings'
+            : this.screen === 'help'
+              ? 'How to play'
+              : journeyDone()
+                ? 'The end of it'
+                : 'Credits';
     // A rebuilt card resets its own scroll; carry the reading position over
     // so adjusting a low setting does not bounce the list back to the top.
     const prevScroll = this.root.querySelector('.p-card')?.scrollTop ?? 0;

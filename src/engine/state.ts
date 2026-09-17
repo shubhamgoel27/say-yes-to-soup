@@ -394,6 +394,27 @@ export class GameState {
     this.emitChanged();
   }
 
+  /**
+   * A second reading's inheritance: journal pages granted in bulk, without
+   * the per-page ceremony. The pages fill and their paired page.<id> flags
+   * rise exactly as apply() would raise them, but no onJournal listener
+   * fires: no toast, no chime, no sparkle, because these pages are not
+   * news. They are what the last journey already wrote in you. One save
+   * and one changed event, however many pages come along.
+   */
+  grantPagesQuietly(ids: string[]) {
+    let grew = false;
+    for (const id of ids) {
+      if (this.journal.has(id)) continue;
+      this.journal.add(id);
+      this.flags.add(`page.${id}`);
+      grew = true;
+    }
+    if (!grew) return;
+    this.save();
+    this.emitChanged();
+  }
+
   save() {
     try {
       const payload = JSON.stringify({

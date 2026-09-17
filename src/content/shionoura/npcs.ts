@@ -256,7 +256,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Hana', text: 'And the town answers okaeri. Welcome back. You can be gone four years and the word waits for you. It waited for me.' },
       { who: 'Hana', text: 'Come. My grandmother keeps the minshuku past the shotengai, the one with the noren. She already made up your room, so arguing is useless.' },
     ],
-    effects: ['set:met.hana', 'journal:people.hana', 'journal:words.tadaima'],
+    effects: ['set:met.hana', 'journal:people.hanahome', 'journal:words.tadaima'],
   },
   'c4.hana.onigiri': {
     lines: [

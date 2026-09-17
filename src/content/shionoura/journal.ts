@@ -106,9 +106,9 @@ export const SHIONOURA_JOURNAL: JournalEntry[] = [
 
   // ---------------- people ----------------
   {
-    id: 'people.hana',
+    id: 'people.hanahome',
     tab: 'people',
-    title: 'Hana',
+    title: 'Hana, home',
     sub: 'Cadet of the MV Yacana, daughter of this harbor. Came home the long way around the planet.',
     you: 'She said tadaima quietly, like testing thin ice, and the whole town answered okaeri. She walks her own streets like a tourist for one day only.',
   },

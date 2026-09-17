@@ -1574,6 +1574,17 @@
         transition: color 0.15s ease, transform 0.15s ease;
       }
       .p-opt.sel { color: var(--ink); transform: rotate(-0.8deg) scale(1.03); }
+      /* The games shelf: won games under small chapter headings. */
+      .p-games { gap: 3px; }
+      .p-g-chapter {
+        margin: 8px 0 1px;
+        font-size: var(--fs-12);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #8a7350;
+      }
+      .p-games .p-g-chapter:first-child { margin-top: 2px; }
+      .p-g-row { font-size: 21px; }
       .p-row {
         display: flex;
         justify-content: space-between;
