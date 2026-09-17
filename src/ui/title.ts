@@ -16,6 +16,7 @@ import {
 } from '../engine/state';
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
+import { onTouchTap, touchActive } from './pointer';
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -166,6 +167,11 @@ export class TitleScreen {
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
+    // A finger cannot hover first: the tapped element is taken on
+    // pointerdown, before the steer's re-render can move the verbs line
+    // under the point, and acted on at pointerup so the unpack verb's file
+    // picker still carries the browser's user activation.
+    onTouchTap(this.titleEl, () => this.shelfOpen, (t) => this.shelfTap(t));
   }
 
   get titleOpen(): boolean {
@@ -439,8 +445,12 @@ export class TitleScreen {
   // ---- shelf pointer support, in the title's own hover-then-click idiom ----
 
   private onShelfClick = (e: MouseEvent) => {
-    if (!this.shelfOpen) return;
-    const t = e.target as HTMLElement;
+    if (touchActive() || !this.shelfOpen) return;
+    this.shelfTap(e.target as HTMLElement);
+  };
+
+  /** One tap or click on the shelf, mouse and touch alike. */
+  private shelfTap(t: HTMLElement) {
     const verbEl = t.closest<HTMLElement>('.sh-verb');
     if (verbEl) {
       this.steerShelf(verbEl);
@@ -455,10 +465,10 @@ export class TitleScreen {
       this.standDownShelf();
       this.shelfActivate();
     }
-  };
+  }
 
   private onShelfHover = (e: MouseEvent) => {
-    if (!this.shelfOpen) return;
+    if (touchActive() || !this.shelfOpen) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('.sh-verb, .sh-row');
     if (el) this.steerShelf(el);
   };

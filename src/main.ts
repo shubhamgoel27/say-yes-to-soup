@@ -21,6 +21,7 @@ import { AlbumUI } from './ui/album';
 import { RUN, peekCoach, takeCoach } from './ui/games/run';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { initRotateNudge, isCoarseTouch } from './ui/responsive';
+import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
@@ -3562,6 +3563,26 @@ glCanvas.addEventListener('pointermove', (e) => {
 }
 
 // ---- menu steering: drive each component's own cursor to the hovered row ----
+//
+// Two pointer worlds, one contract. A mouse hovers first, so mouseover steers
+// (with the select sound) and click activates. A finger cannot hover: the
+// browser replays mouseover just before click, the steer re-renders the menu,
+// and the click hit-tests a rebuilt DOM, landing wrong or vanishing. Touch
+// therefore runs through onTouchTap (target taken at pointerdown, action at
+// pointerup, compat chain suppressed), and every mouseover/click handler
+// below ignores events while touchActive(). See src/ui/pointer.ts.
+
+/**
+ * True while a menu card is still sliding in. A finger aimed at where the
+ * card is arriving must not be read as a backdrop tap: mid-entrance the
+ * card has not reached the touched point yet, and closing the menu for it
+ * is exactly the misfire being fixed. Mouse clicks are unaffected.
+ */
+function entranceRunning(root: HTMLElement, cardSel: string): boolean {
+  const card = root.querySelector(cardSel);
+  if (!card || typeof card.getAnimations !== 'function') return false;
+  return card.getAnimations().some((a) => a.playState !== 'finished');
+}
 
 // A keyboard re-render puts a fresh element under a resting pointer and the
 // browser re-fires mouseover at the exact same coordinates, which snapped the
@@ -3616,7 +3637,7 @@ tbRoot.addEventListener('pointerdown', (e) => {
   textbox.onAction();
 });
 tbRoot.addEventListener('mouseover', (e) => {
-  if (hoverEcho(e)) return;
+  if (touchActive() || hoverEcho(e)) return;
   if (!textbox.isOpen) return;
   const row = (e.target as HTMLElement).closest('.tb-choice');
   if (row && steerTo(choicesEl, '.tb-choice', row, (d) => textbox.onDir(d))) audio.select();
@@ -3625,37 +3646,46 @@ tbRoot.addEventListener('mouseover', (e) => {
 // ---- title: hover moves the hand, click chooses ----
 
 const titleRoot = $('title');
-titleRoot.addEventListener('click', (e) => {
-  if (!title.titleOpen) return;
-  const opt = (e.target as HTMLElement).closest('.t-opt');
+function titleTap(target: HTMLElement) {
+  const opt = target.closest('.t-opt');
   if (!opt) return;
   steerTo(titleRoot, '.t-opt', opt, (d) => title.onDir(d));
   titleActivate();
+}
+titleRoot.addEventListener('click', (e) => {
+  if (touchActive() || !title.titleOpen) return;
+  titleTap(e.target as HTMLElement);
 });
+onTouchTap(titleRoot, () => title.titleOpen, (t) => titleTap(t));
 titleRoot.addEventListener('mouseover', (e) => {
-  if (hoverEcho(e)) return;
+  if (touchActive() || hoverEcho(e)) return;
   if (!title.titleOpen) return;
   const opt = (e.target as HTMLElement).closest('.t-opt');
   if (opt && steerTo(titleRoot, '.t-opt', opt, (d) => title.onDir(d))) audio.select();
 });
 
 $('letter').addEventListener('click', () => {
+  if (touchActive()) return;
   if (title.letterOpen) letterAdvance();
 });
+onTouchTap($('letter'), () => title.letterOpen, () => letterAdvance());
 
 $('chapterclose').addEventListener('click', () => {
+  if (touchActive()) return;
   if (chapterClose.isOpen) {
     audio.pageFlip();
     chapterClose.close();
   }
 });
+onTouchTap($('chapterclose'), () => chapterClose.isOpen, () => {
+  audio.pageFlip();
+  chapterClose.close();
+});
 
 // ---- pause: options click, settings rows adjust by clicked half ----
 
 const pauseRoot = $('pause');
-pauseRoot.addEventListener('click', (e) => {
-  if (!pauseMenu.isOpen) return;
-  const t = e.target as HTMLElement;
+function pauseTap(t: HTMLElement, clientX: number, viaTouch: boolean) {
   const opt = t.closest('.p-opt');
   if (opt) {
     steerTo(pauseRoot, '.p-opt', opt, (d) => pauseMenu.onDir(d));
@@ -3667,14 +3697,17 @@ pauseRoot.addEventListener('click', (e) => {
   const row = t.closest('.p-row');
   if (inSettings && row) {
     // Left half of the row nudges down, right half nudges up: the same
-    // gesture the arrow keys make, aimed with the mouse.
+    // gesture the arrow keys make, aimed with the pointer.
     const r = row.getBoundingClientRect();
     steerTo(pauseRoot, '.p-row', row, (d) => pauseMenu.onDir(d));
-    pauseMenu.onDir(e.clientX > r.left + r.width / 2 ? 'right' : 'left');
+    pauseMenu.onDir(clientX > r.left + r.width / 2 ? 'right' : 'left');
     audio.select();
     return;
   }
   if (!t.closest('.p-card')) {
+    // A finger that lands beside a card still sliding in was aiming at the
+    // card, not at the dark; only a settled backdrop tap means "back".
+    if (viaTouch && entranceRunning(pauseRoot, '.p-card')) return;
     pauseMenu.onBack();
     audio.back();
     return;
@@ -3684,9 +3717,14 @@ pauseRoot.addEventListener('click', (e) => {
     pauseMenu.onAction();
     audio.back();
   }
+}
+pauseRoot.addEventListener('click', (e) => {
+  if (touchActive() || !pauseMenu.isOpen) return;
+  pauseTap(e.target as HTMLElement, e.clientX, false);
 });
+onTouchTap(pauseRoot, () => pauseMenu.isOpen, (t, x) => pauseTap(t, x, true));
 pauseRoot.addEventListener('mouseover', (e) => {
-  if (hoverEcho(e)) return;
+  if (touchActive() || hoverEcho(e)) return;
   if (!pauseMenu.isOpen) return;
   const t = e.target as HTMLElement;
   const opt = t.closest('.p-opt');
@@ -3703,9 +3741,7 @@ pauseRoot.addEventListener('mouseover', (e) => {
 // ---- journal: tabs click, entries hover/click, wheel turns pages ----
 
 const journalRoot = $('journal');
-journalRoot.addEventListener('click', (e) => {
-  if (!journalUI.isOpen) return;
-  const t = e.target as HTMLElement;
+function journalTap(t: HTMLElement, viaTouch: boolean) {
   const tab = t.closest('.j-tab');
   if (tab) {
     if (steerTo(journalRoot, '.j-tab', tab, (d) => journalUI.onDir(d), 'h')) audio.select();
@@ -3717,12 +3753,20 @@ journalRoot.addEventListener('click', (e) => {
     return;
   }
   if (!t.closest('.j-book')) {
+    // Same entrance rule as the pause card: while the book is still
+    // arriving, a finger beside it was aiming at the book.
+    if (viaTouch && entranceRunning(journalRoot, '.j-book')) return;
     journalUI.close();
     audio.pageFlip();
   }
+}
+journalRoot.addEventListener('click', (e) => {
+  if (touchActive() || !journalUI.isOpen) return;
+  journalTap(e.target as HTMLElement, false);
 });
+onTouchTap(journalRoot, () => journalUI.isOpen, (t) => journalTap(t, true));
 journalRoot.addEventListener('mouseover', (e) => {
-  if (hoverEcho(e)) return;
+  if (touchActive() || hoverEcho(e)) return;
   if (!journalUI.isOpen) return;
   const item = (e.target as HTMLElement).closest('.j-item');
   if (item && steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
@@ -3777,6 +3821,9 @@ attachPanelPointer($('album'), albumUI);
 // row, click to take it. Keyboard and pointer stay in step through the same
 // selection index each render reads.
 howtoEl.addEventListener('pointermove', (e) => {
+  // A touch tap fires pointermove before pointerdown; steering there would
+  // re-render the card under the finger. Fingers act on pointerdown alone.
+  if (e.pointerType === 'touch') return;
   const row = (e.target as HTMLElement).closest('[data-ht]');
   if (!row) return;
   const i = Number((row as HTMLElement).dataset.ht);
@@ -3795,6 +3842,8 @@ howtoEl.addEventListener('pointerdown', (e) => {
   closeHowto(howtoOpts[howtoSel] ?? null);
 });
 stripEl.addEventListener('pointermove', (e) => {
+  // Same guard as the how-to card: no steer-and-rebuild under a tap.
+  if (e.pointerType === 'touch') return;
   const row = (e.target as HTMLElement).closest('[data-ht]');
   if (!row) return;
   const i = Number((row as HTMLElement).dataset.ht);
