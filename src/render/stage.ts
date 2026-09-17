@@ -85,6 +85,11 @@ export class PixiStage {
     s.host = host;
     void s.init().then(() => s.resize());
     window.addEventListener('resize', () => s.resize());
+    // Phones resize the visible viewport without always firing a window
+    // resize (URL bar collapse, on-screen keyboard, rotation quirks); track
+    // the visual viewport too so the world never sits letterboxed. Desktop
+    // fires both for the same window resize; resize() is idempotent.
+    window.visualViewport?.addEventListener('resize', () => s.resize());
     if (import.meta.env.DEV) (globalThis as unknown as { __soupStage: PixiStage }).__soupStage = s;
     return s;
   }

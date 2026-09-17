@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content"
+    />
     <title>Say Yes to Soup</title>
     <meta name="theme-color" content="#f4ead6" />
     <meta property="og:title" content="Say Yes to Soup" />
@@ -99,6 +102,13 @@
         background: #17120e;
         overflow: hidden;
         font-family: 'Literata', Georgia, 'Times New Roman', serif;
+        /* Phones inflate text they judge too small; the journal sets its own
+         * sizes deliberately. No effect on desktop browsers. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
+        /* No rubber-banding, no pull-to-refresh escaping the game. The page
+         * never scrolls (overflow: hidden above), so desktop feels nothing. */
+        overscroll-behavior: none;
       }
       ::selection { background: rgba(200, 165, 91, 0.4); color: #1c1410; }
       #stage {
@@ -109,6 +119,9 @@
         position: relative;
         width: 100vw;
         height: 100vh;
+        /* Mobile browsers shrink the visible viewport under their URL bar;
+         * dvh tracks it. On desktop 100dvh === 100vh, so nothing changes. */
+        height: 100dvh;
         line-height: 0;
         overflow: hidden;
       }
@@ -1990,6 +2003,23 @@
         margin: -2px 0 8px;
         transform: rotate(-0.5deg);
       }
+      .ht-coach {
+        font-family: var(--hand);
+        font-size: 17px;
+        color: #8a4a2b;
+        background: rgba(217, 164, 65, 0.14);
+        border-left: 3px solid var(--gold);
+        border-radius: 3px;
+        padding: 5px 8px 6px;
+        margin: 0 0 9px;
+        transform: rotate(-0.4deg);
+      }
+      .ht-hard {
+        font-size: var(--fs-125);
+        font-style: italic;
+        color: #7a5a33;
+        margin: -2px 0 8px;
+      }
       .ht-lines {
         border-top: 1.5px solid rgba(43, 33, 24, 0.28);
         padding-top: 9px;
@@ -2196,6 +2226,224 @@
         display: none;
       }
       #debug[data-on='1'] { display: block; }
+
+      /* ================= the pocket edition: phones in the hand ============
+       * The desktop page is the reference print and must not move: every rule
+       * below lives behind a media query that can never match at widths of
+       * 1100px and up (or, for touch niceties, behind a coarse pointer that
+       * desktop mice never present). Same pages, refolded for a pocket. */
+
+      /* Touch niceties, any size: no double-tap zoom fighting the taps, no
+       * blue flash on the paper. Mouse and keyboard never feel these. */
+      @media (pointer: coarse) {
+        html, body { touch-action: manipulation; }
+        #hud, #title, #letter, #journal, #pause, #weave, .mg-overlay {
+          -webkit-tap-highlight-color: transparent;
+        }
+        /* A held tap must never start selecting dialogue text or summon the
+         * copy magnifier; nothing in the game is meant to be selected. */
+        #stage {
+          -webkit-user-select: none;
+          user-select: none;
+          -webkit-touch-callout: none;
+        }
+      }
+
+      /* Phone-wide landscape: a short room, the same furniture, lower. */
+      @media (max-width: 1099.98px) and (max-height: 520px) {
+        .j-book { width: min(92vw, 760px); height: calc(100% - 14px); max-height: none; box-sizing: border-box; }
+        #title, #letter, #chapterclose, #cc-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          overflow-y: auto;
+          padding: 10px 0;
+        }
+        #title[hidden], #letter[hidden], #chapterclose[hidden], #cc-card[hidden] { display: none; }
+        .t-card, .letter-fold, .cx-card, .cc-paper { margin: auto; }
+        .cx-card { max-height: none; }
+        #textbox { bottom: 8px; }
+      }
+
+      /* The phone tier proper. */
+      @media (max-width: 700px) {
+        /* ---- ambient HUD: one column of bands under the notch ----
+         * Desktop spreads plate, chip, and toasts across a wide top edge; a
+         * phone has one narrow one, so they stack: nameplate, then the errand
+         * chip, then whispers, each in its own band, nothing overprinting. */
+        #plate {
+          top: calc(8px + env(safe-area-inset-top));
+          max-width: calc(100vw - 24px);
+          box-sizing: border-box;
+          padding: 7px 16px 6px 20px;
+          font-size: 12px;
+          letter-spacing: 0.3em;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        #plate.show { letter-spacing: 0.22em; }
+        #errand {
+          top: calc(52px + env(safe-area-inset-top));
+          left: calc(10px + env(safe-area-inset-left));
+          right: calc(10px + env(safe-area-inset-right));
+          max-width: none;
+        }
+        #toasts {
+          top: calc(148px + env(safe-area-inset-top));
+          right: calc(10px + env(safe-area-inset-right));
+          left: calc(10px + env(safe-area-inset-left));
+        }
+        .toast { max-width: 100%; box-sizing: border-box; }
+        .toast.wh { max-width: min(84vw, 380px); }
+
+        /* ---- the dialogue box: full width, riding the home bar ---- */
+        #textbox {
+          width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+          box-sizing: border-box;
+          bottom: calc(10px + env(safe-area-inset-bottom));
+          gap: 10px;
+          padding: 10px 10px 8px;
+        }
+        #tb-portrait { margin-top: 6px; }
+        #tb-portrait canvas { width: 48px; height: 48px; }
+        #tb-text { min-height: 44px; }
+        /* Choice rows grow to finger height without changing their look. */
+        .tb-choice { padding-top: 8px; padding-bottom: 8px; }
+
+        /* ---- the journal: near-fullscreen book, tabs that scroll ---- */
+        .j-book {
+          width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right));
+          height: calc(100% - 14px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+          box-sizing: border-box;
+          max-width: none;
+          max-height: none;
+          padding: 12px 12px 8px;
+        }
+        .j-tabs {
+          overflow-x: auto;
+          overscroll-behavior-x: contain;
+          margin: 8px -12px 10px;
+          padding: 0 12px;
+          scrollbar-width: none;
+        }
+        .j-tabs::-webkit-scrollbar { display: none; }
+        .j-tab { flex: 0 0 auto; padding: 8px 13px 7px; }
+        /* One column: the page list above, the open page below. */
+        .j-body { flex-direction: column; gap: 8px; }
+        .j-list { flex: 0 0 auto; max-height: 32%; }
+        .j-item { padding: 6px 6px; }
+        .j-detail {
+          border-left: none;
+          padding-left: 2px;
+          border-top: 1px solid rgba(43, 33, 24, 0.25);
+          padding-top: 8px;
+        }
+        .j-ph-grid { flex: 0 0 auto; max-height: 44%; }
+        .j-task { padding-top: 10px; padding-bottom: 10px; }
+        .j-eph { width: 90px; margin: 4px 0 4px 10px; }
+
+        /* ---- overlays taller than a phone: center small, scroll tall ---- */
+        #title, #letter, #chapterclose, #cc-card {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          overflow-y: auto;
+          padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+        }
+        #title[hidden], #letter[hidden], #chapterclose[hidden], #cc-card[hidden] { display: none; }
+        .t-card, .letter-fold, .cx-card, .cc-paper { margin: auto; }
+
+        /* ---- the cover, the shelf, the letter, the flyleaf ---- */
+        .t-card { padding: 0 12px; }
+        .t-cover { width: min(100%, 430px); box-sizing: border-box; padding: 26px 20px 20px; }
+        /* On the narrow cover the band slides toward the fore-edge so it
+         * stops shading the subtitle's last letters. */
+        .t-band { right: 18px; width: 12px; }
+        /* And the subtitle stops short of the band instead of running under it. */
+        .t-sub { max-width: min(300px, calc(100% - 56px)); margin-bottom: 14px; }
+        .t-controls { flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; padding: 0 6px; }
+        .sh-card { width: min(100%, 430px); box-sizing: border-box; padding: 20px 14px 14px; }
+        .sh-row { padding: 12px 12px; }
+        .letter-fold { width: min(100vw - 24px, 538px); }
+        .letter-paper { padding: 25px 22px 6px; }
+        .cx-card { width: min(100vw - 24px, 440px); box-sizing: border-box; padding: 20px 18px 12px; max-height: none; }
+        .cc-paper { width: min(100vw - 24px, 430px); box-sizing: border-box; padding: 22px 20px 14px; }
+        .cc-input { width: 80%; }
+
+        /* ---- paper panels that must fit a narrow page ---- */
+        .w-panel { width: min(100vw - 16px, 700px); box-sizing: border-box; padding: 12px 10px 10px; }
+        .g-stage canvas { max-width: 100%; height: auto !important; }
+        .ht-card { width: min(100vw - 24px, 440px); box-sizing: border-box; }
+        .p-card { width: min(100vw - 24px, 460px); box-sizing: border-box; padding: 16px 18px 18px; }
+        .al-spread { width: calc(100vw - 12px); }
+        .al-page { padding: 14px 8px 12px; }
+      }
+
+      /* ---- touch tap comfort: last word on row heights ----
+       * After the size tiers above so a finger always gets the taller row.
+       * Coarse-gated: desktop mice never match, whatever the window size. */
+      @media (pointer: coarse) {
+        .t-opt { padding: 5px 0; }
+        .p-opt { padding: 6px 0; }
+        .p-row { padding-top: 8px; padding-bottom: 8px; }
+        .j-tab { padding-top: 12px; padding-bottom: 12px; }
+        .j-item { padding-top: 8px; padding-bottom: 8px; }
+        .ht-opt { padding: 9px 4px; }
+        .ht-row { padding: 10px 12px; }
+        .sh-verb { padding: 6px 3px; }
+        .cc-arr { padding: 6px 10px; }
+      }
+
+      /* ---- readable floor for small touch screens ----
+       * The small-print tier was sized for a desk. On a phone in the hand it
+       * floors near 13.5px. Set on :root, so the Large text setting (vars on
+       * body.text-large, closer to the text) still wins when chosen. */
+      @media (pointer: coarse) and (max-width: 740px) {
+        :root {
+          --fs-11: 13px;
+          --fs-115: 13px;
+          --fs-12: 13.5px;
+          --fs-125: 13.5px;
+          --fs-13: 14px;
+          --fs-135: 14.5px;
+          --fs-14: 15px;
+          --fs-145: 15.5px;
+          --fs-15: 16px;
+          --fs-body: 17.5px;
+          --fs-hand16: 17.5px;
+          --fs-hand17: 18.5px;
+          --fs-hand175: 19px;
+        }
+      }
+
+      /* ---- landscape phones: minigame panels fit a short room ----
+       * The paper panel was taller than a phone lying down (its 640px scene
+       * plus title and hint). Cap the scene by the room's height, keep the
+       * panel clear of the touch pad in the corners, and let anything left
+       * over scroll. Coarse-gated: a short desktop window never changes. */
+      @media (pointer: coarse) and (max-height: 500px) {
+        .w-panel {
+          width: min(96vw, 700px);
+          max-width: calc(100vw - 2 * (152px + env(safe-area-inset-left, 0px)));
+          max-height: calc(100vh - 8px);
+          box-sizing: border-box;
+          overflow-y: auto;
+          padding: 8px 12px 8px;
+        }
+        .g-stage { margin: 6px 0 4px; }
+        .g-stage canvas {
+          width: auto !important;
+          height: auto !important;
+          max-width: 100%;
+          max-height: min(62vh, 400px);
+        }
+        .w-title { margin-bottom: 4px; }
+        .w-hint { margin-bottom: 4px; min-height: 0; }
+        /* The key legend is desk furniture; the pad and taps replace it. */
+        .w-legend { display: none; }
+        .ht-strip-card { margin-top: 2%; }
+        .p-card, .ht-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+      }
     </style>
   </head>
   <body>

@@ -49,6 +49,23 @@ const TABS: { id: JournalTab | 'tasks' | 'route' | 'photos'; label: string }[] =
 /** The prints land in the journal at slight, believable angles. */
 const PHOTO_TILTS = [-1.9, 1.5, -1.1, 2.1];
 
+/** Touch-first devices read tap hints; desktop pointers are never coarse,
+ * so the keyboard wording there stays exactly as it was. */
+const COARSE =
+  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
+/** The one-line hint at the book's foot, per tab flavor. */
+function hintLine(kind: 'pages' | 'photos' | 'flat'): string {
+  if (COARSE) {
+    if (kind === 'pages') return 'tap a tab &nbsp; tap a page &nbsp; &#9998; closes';
+    if (kind === 'photos') return 'tap a tab &nbsp; tap a print &nbsp; &#9998; closes';
+    return 'tap a tab for sections &nbsp; &#9998; closes';
+  }
+  if (kind === 'pages') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close';
+  if (kind === 'photos') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close';
+  return '&#8592;&#8594; sections &nbsp; J close';
+}
+
 /** One key per rhyme regardless of which half the player is looking at. */
 function threadKey(a: string, b: string): string {
   return [a, b].sort().join('~');
@@ -255,7 +272,7 @@ export class JournalUI {
           <div class="j-list">${listHtml}</div>
           <div class="j-detail">${detailHtml}</div>
         </div>
-        <div class="j-hint">&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close</div>
+        <div class="j-hint">${hintLine('pages')}</div>
       </div>`;
     // The dish gets its little painting, mounted after the HTML lands.
     if (sel?.tab === 'dishes') {
@@ -319,7 +336,7 @@ export class JournalUI {
           <div class="j-ph-grid">${cells}</div>
           <div class="j-detail">${detailHtml}</div>
         </div>
-        <div class="j-hint">&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close</div>
+        <div class="j-hint">${hintLine('photos')}</div>
       </div>`;
     // Mount copies of the cached prints: the album owns the originals, and a
     // canvas can only live in one place, so each slot gets its own repaint.
@@ -383,7 +400,7 @@ export class JournalUI {
           <div class="j-sub" style="margin-bottom:8px">Inside the front cover, in pencil, 1974:</div>
           ${rows}
         </div></div>
-        <div class="j-hint">&#8592;&#8594; sections &nbsp; J close</div>
+        <div class="j-hint">${hintLine('flat')}</div>
       </div>`;
   }
 
@@ -412,7 +429,7 @@ export class JournalUI {
             ${items}
           </div>
         </div>
-        <div class="j-hint">&#8592;&#8594; sections &nbsp; J close</div>
+        <div class="j-hint">${hintLine('flat')}</div>
       </div>`;
   }
 }

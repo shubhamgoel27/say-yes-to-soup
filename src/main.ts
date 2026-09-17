@@ -18,7 +18,9 @@ import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
+import { RUN, peekCoach, takeCoach } from './ui/games/run';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
+import { initRotateNudge, isCoarseTouch } from './ui/responsive';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
@@ -463,6 +465,11 @@ $('frame').appendChild(stripEl);
 
 let howtoFor: GameEntry | null = null;
 let howtoSel = 0;
+/** The card's rows; grows a middle row when a hard telling is on offer. */
+let howtoOpts: string[] = ['Begin', 'Not yet'];
+/** Coach's advice, drawn once per card: takeCoach consumes, render repeats. */
+let howtoCoach: string | null = null;
+const HARD_OPT = 'The hard telling';
 let stripFor: GameEntry | null = null;
 let stripSel = 1;
 const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
@@ -479,11 +486,32 @@ function openPanel(g: GameEntry) {
   player.frozen = true;
   g.panel.open(() => {
     player.frozen = false;
+    const wasHard = RUN.hard;
+    RUN.hard = false;
     if (state.has('replay.mode')) {
       // A return visit: no narration to repeat, just the doing of the thing.
       state.clearFlag('replay.mode');
       state.clearFlag(g.def.flag);
-      toasts.show('Just for the joy of it.');
+      if (wasHard && peekCoach(g.def.flag)) {
+        // The hard telling filed advice, so the run was not clean: the panel
+        // already told that story in its own voice. Out here, the card comes
+        // straight back holding the coach's line, cursor on the rematch.
+        state.set('replay.mode');
+        state.set(g.def.flag);
+        showHowto(g);
+        howtoSel = howtoOpts.indexOf(HARD_OPT);
+        if (howtoSel < 0) howtoSel = 0;
+        renderHowto();
+        return;
+      }
+      if (wasHard) {
+        // Nothing for the coach to say: the hard telling, done properly.
+        // The shelf remembers with a small star.
+        state.set(`hard.${g.def.flag}`);
+        toasts.show('The hard telling, done properly. ✶');
+      } else {
+        toasts.show('Just for the joy of it.');
+      }
       audio.chime();
       const [px, py] = player.renderPos();
       renderer.burst(px + TILE / 2, py + 2, 'sparkle', ['#f2e6d0', '#d9a441']);
@@ -500,15 +528,19 @@ function renderHowto() {
     .map((l) => `<div class="ht-line">${l}</div>`)
     .join('');
   const replaying = state.has('replay.mode');
+  const hardOffered = howtoOpts.includes(HARD_OPT);
+  const hardDone = state.has(`hard.${g.def.flag}`);
   howtoEl.innerHTML = `
     <div class="ht-card">
       <div class="ht-kicker">hands, not homework</div>
       <div class="ht-title">${g.def.title ?? 'Something to try'}</div>
       ${replaying ? '<div class="ht-replay">Again, for the joy of it.</div>' : ''}
+      ${howtoCoach ? `<div class="ht-coach">${howtoCoach}</div>` : ''}
       ${lines ? `<div class="ht-lines">${lines}</div>` : ''}
+      ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${g.def.hardHow}</div>` : ''}
       <div class="ht-opts">
-        ${['Begin', 'Not yet']
-          .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}</div>`)
+        ${howtoOpts
+          .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}${t === HARD_OPT && hardDone ? '&nbsp;&#10038;' : ''}</div>`)
           .join('')}
       </div>
       <div class="ht-keys">Space to begin &middot; Esc, not yet</div>
@@ -518,6 +550,13 @@ function renderHowto() {
 function showHowto(g: GameEntry) {
   howtoFor = g;
   howtoSel = 0;
+  // Drawn once here, not in renderHowto: takeCoach consumes on read, and
+  // the render re-runs on every cursor move.
+  howtoCoach = takeCoach(g.def.flag);
+  // The hard telling is a return visit's offer only: the first, story-side
+  // meeting with any game stays gentle.
+  howtoOpts =
+    state.has('replay.mode') && g.def.hardHow ? ['Begin', HARD_OPT, 'Not yet'] : ['Begin', 'Not yet'];
   player.frozen = true;
   howtoEl.hidden = false;
   renderHowto();
@@ -525,13 +564,25 @@ function showHowto(g: GameEntry) {
 }
 
 /** Close the card: into the panel, or back to the world with the flag kept. */
-function closeHowto(begin: boolean) {
+function closeHowto(pick: string | null) {
   const g = howtoFor;
   howtoEl.hidden = true;
   howtoFor = null;
+  howtoCoach = null;
   if (!g) return;
-  if (begin) openPanel(g);
-  else player.frozen = false; // the start flag stays; the offer keeps
+  if (pick === 'Begin' || pick === HARD_OPT) {
+    RUN.hard = pick === HARD_OPT;
+    openPanel(g);
+  } else if (state.has('replay.mode')) {
+    // Declining a replay offer ends it, the same way stepping away does: a
+    // lingering replay.mode would make the next first-time completion skip
+    // its own narration. The shelf and the villagers will offer again.
+    state.clearFlag('replay.mode');
+    state.clearFlag(g.def.flag);
+    player.frozen = false;
+  } else {
+    player.frozen = false; // the story's start flag stays; the offer keeps
+  }
 }
 
 function renderStrip() {
@@ -566,6 +617,9 @@ function stripActivate() {
   } else if (pick === 'Step away') {
     g.root.hidden = true;
     player.frozen = false;
+    // A walked-away hard run must not haunt the next open. ("Start over"
+    // keeps it: the panel's open() reads RUN.hard again, same telling.)
+    RUN.hard = false;
     if (state.has('replay.mode')) {
       // A replay stepped away from is simply over: nothing in the story
       // needs the offer kept, and a lingering replay.mode would make the
@@ -2628,6 +2682,8 @@ function update(dt: number) {
       document.body.classList.toggle('quiet-hud', quiet);
     }
   }
+  // The touch pad follows the same rhythm: overlays up, pad away.
+  syncVpad();
 
   // Whoever is mid-sentence leans into it.
   renderer.setSpeaker(textbox.isTyping && talkingTo ? talkingTo.actor : null);
@@ -2758,16 +2814,17 @@ function update(dt: number) {
   } else if (!howtoEl.hidden) {
     // The how-to card: begin, or not yet. Either way, no harm done.
     if (menuDir === 'up' || menuDir === 'down' || menuDir === 'left' || menuDir === 'right') {
-      howtoSel = 1 - howtoSel;
+      const fwd = menuDir === 'down' || menuDir === 'right';
+      howtoSel = (howtoSel + (fwd ? 1 : howtoOpts.length - 1)) % howtoOpts.length;
       renderHowto();
       audio.select();
     }
     if (act) {
       audio.confirm();
-      closeHowto(howtoSel === 0);
+      closeHowto(howtoOpts[howtoSel] ?? null);
     } else if (back || pauseKey) {
       audio.back();
-      closeHowto(false);
+      closeHowto(null);
     }
   } else if (!stripEl.hidden) {
     // The in-panel pause strip: start over, keep at it, or step away.
@@ -2944,9 +3001,11 @@ function update(dt: number) {
     const wx = (map.w * TILE) / 2 + Math.sin(attractT * 0.045) * map.w * TILE * 0.32 - TILE / 2;
     const wy = (map.h * TILE) / 2 + Math.sin(attractT * 0.031 + 1.7) * map.h * TILE * 0.32 - TILE / 2;
     camera.follow(wx, wy, map.w, map.h);
+    fitCameraToCrop(wx, wy);
   } else {
     const [ppx, ppy] = player.renderPos();
     camera.follow(ppx, ppy, map.w, map.h);
+    fitCameraToCrop(ppx, ppy);
   }
 
   // Remember where we stand; persisted alongside the next save. Mutated in
@@ -3103,6 +3162,39 @@ function worldToScreen(wx: number, wy: number): [number, number] {
   ];
 }
 
+/**
+ * Cover-fit crops the long axis: a portrait phone shows only the middle ~83
+ * of the 320 logical px the camera frames. The engine camera clamps to the
+ * full 320x180 view, so within a few tiles of a map edge the player could
+ * stand entirely outside the visible slice. After each follow, re-center the
+ * followed point inside what is actually on screen, letting the camera run
+ * into the cropped margin, which is off-screen by definition. On 16:9
+ * desktops the crop is zero and this never fires; the threshold also spares
+ * mild ratios (16:10, 21:9) so their camera lead stays exactly as it was.
+ */
+function fitCameraToCrop(tx: number, ty: number) {
+  const s = viewScale();
+  const cropX = (VIEW_W - window.innerWidth / s) / 2;
+  const cropY = (VIEW_H - window.innerHeight / s) / 2;
+  const SIG = 24; // logical px of one-sided crop before recentering matters
+  if (cropX > SIG) {
+    const worldW = map.w * TILE;
+    const want = tx + TILE / 2 - VIEW_W / 2;
+    camera.x =
+      worldW <= VIEW_W - 2 * cropX
+        ? (worldW - VIEW_W) / 2
+        : Math.min(Math.max(want, -cropX), worldW - VIEW_W + cropX);
+  }
+  if (cropY > SIG) {
+    const worldH = map.h * TILE;
+    const want = ty + TILE / 2 - VIEW_H / 2;
+    camera.y =
+      worldH <= VIEW_H - 2 * cropY
+        ? (worldH - VIEW_H) / 2
+        : Math.min(Math.max(want, -cropY), worldH - VIEW_H + cropY);
+  }
+}
+
 // Injected styles: overlays become clickable (the HUD layer is pointer-inert
 // by design), menu rows advertise themselves, and the walk marker + touch
 // pad get their journal-ink dress. index.html stays untouched.
@@ -3129,12 +3221,22 @@ function worldToScreen(wx: number, wy: number): [number, number] {
       70% { transform: scale(1); opacity: 0.5; }
       100% { transform: scale(1.2); opacity: 0.1; }
     }
-    #vpad { position: absolute; inset: 0; pointer-events: none; }
+    #vpad {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
     #vpad[hidden] { display: none; }
+    /* A paper overlay is up (dialogue, journal, pause, a card, the title):
+     * every one of those is tap-first, so the pad steps out of the light. */
+    #vpad.vp-quiet { opacity: 0; }
+    #vpad.vp-quiet .vp-b { pointer-events: none; }
     .vp-pad {
-      position: absolute; left: 16px; bottom: 16px;
-      width: 152px; height: 152px;
-      display: grid; gap: 4px;
+      position: absolute;
+      left: calc(14px + env(safe-area-inset-left, 0px));
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      width: 168px; height: 168px;
+      display: grid; gap: 5px;
       grid-template-areas: '. u .' 'l . r' '. d .';
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: 1fr 1fr 1fr;
@@ -3145,25 +3247,54 @@ function worldToScreen(wx: number, wy: number): [number, number] {
       -webkit-user-select: none; user-select: none;
       -webkit-tap-highlight-color: transparent;
       min-width: 44px; min-height: 44px; padding: 0;
-      border: 1.5px solid rgba(242, 230, 208, 0.4);
-      border-radius: 9px;
-      background: rgba(43, 33, 24, 0.36);
-      color: rgba(242, 230, 208, 0.85);
-      font-size: 15px;
+      border: 1.5px solid rgba(242, 230, 208, 0.38);
+      border-radius: 12px;
+      background: rgba(23, 18, 14, 0.34);
+      color: rgba(242, 230, 208, 0.9);
+      font-size: 16px;
       font-family: inherit;
       line-height: 1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 240, 210, 0.08);
     }
-    .vp-b:active { background: rgba(43, 33, 24, 0.62); }
+    .vp-b:active {
+      background: rgba(122, 59, 34, 0.55);
+      border-color: rgba(242, 230, 208, 0.6);
+    }
     .vp-pad [data-dir='up'] { grid-area: u; }
     .vp-pad [data-dir='left'] { grid-area: l; }
     .vp-pad [data-dir='right'] { grid-area: r; }
     .vp-pad [data-dir='down'] { grid-area: d; }
     .vp-side {
-      position: absolute; right: 16px; bottom: 16px;
-      display: flex; flex-direction: column; align-items: flex-end; gap: 10px;
+      position: absolute;
+      right: calc(14px + env(safe-area-inset-right, 0px));
+      bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+      display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
     }
-    .vp-act { width: 64px; height: 64px; border-radius: 50%; font-size: 22px; }
-    .vp-small { width: 44px; height: 44px; border-radius: 50%; opacity: 0.9; }
+    .vp-act {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      font-size: 24px;
+      border-color: rgba(200, 165, 91, 0.55);
+    }
+    .vp-small { width: 48px; height: 48px; border-radius: 50%; opacity: 0.92; }
+    .vp-small[hidden] { display: none; }
+    /* A phone lying down is a short room: the pad hugs the corners tighter
+     * so the minigame panels keep the middle of the stage. */
+    @media (pointer: coarse) and (max-height: 500px) {
+      .vp-pad {
+        left: calc(10px + env(safe-area-inset-left, 0px));
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        width: 140px; height: 140px; gap: 4px;
+      }
+      .vp-pad .vp-b { min-width: 42px; min-height: 42px; }
+      .vp-side {
+        right: calc(10px + env(safe-area-inset-right, 0px));
+        bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+        gap: 8px;
+      }
+      .vp-act { width: 60px; height: 60px; }
+      .vp-small { width: 44px; height: 44px; }
+    }
   `;
   document.head.appendChild(style);
 }
@@ -3661,7 +3792,7 @@ howtoEl.addEventListener('pointerdown', (e) => {
   e.preventDefault();
   howtoSel = Number((row as HTMLElement).dataset.ht);
   audio.confirm();
-  closeHowto(howtoSel === 0);
+  closeHowto(howtoOpts[howtoSel] ?? null);
 });
 stripEl.addEventListener('pointermove', (e) => {
   const row = (e.target as HTMLElement).closest('[data-ht]');
@@ -3682,7 +3813,14 @@ stripEl.addEventListener('pointerdown', (e) => {
   stripActivate();
 });
 
-// ---- the touch pad: held movement + action, only once a finger is seen ----
+// ---- the touch pad ----
+//
+// On a touch-first device (coarse pointer, no hover: capability, never UA)
+// the pad is simply there from boot; on hybrids it waits for the first
+// finger. Every frame, syncVpad() steps it out of the light whenever a paper
+// overlay is up: those are all tap-first, and the pad was sitting on the
+// dialogue text. It stays for free roam and for the minigame panels, which
+// its directions and action drive.
 
 const vpad = document.createElement('div');
 vpad.id = 'vpad';
@@ -3695,18 +3833,41 @@ vpad.innerHTML = `
     <button class="vp-b" data-dir="down" aria-label="walk down">&#9660;</button>
   </div>
   <div class="vp-side">
+    <button class="vp-b vp-small" data-act="thread" aria-label="ask the thread which way" hidden>&#10547;</button>
     <button class="vp-b vp-small" data-act="journal" aria-label="journal">&#9998;</button>
-    <button class="vp-b vp-small" data-act="pause" aria-label="pause">&#9776;</button>
+    <button class="vp-b vp-small" data-act="pause" aria-label="pause / back">&#9776;</button>
     <button class="vp-b vp-act" data-act="action" aria-label="talk / touch">&#10022;</button>
   </div>`;
 frameEl.appendChild(vpad);
+const threadBtn = vpad.querySelector<HTMLElement>('[data-act="thread"]')!;
 
-const revealVpad = (e: PointerEvent) => {
-  if (e.pointerType !== 'touch') return;
+if (isCoarseTouch()) {
   vpad.hidden = false;
-  window.removeEventListener('pointerdown', revealVpad, true);
-};
-window.addEventListener('pointerdown', revealVpad, true);
+} else {
+  const revealVpad = (e: PointerEvent) => {
+    if (e.pointerType !== 'touch') return;
+    vpad.hidden = false;
+    window.removeEventListener('pointerdown', revealVpad, true);
+  };
+  window.addEventListener('pointerdown', revealVpad, true);
+}
+
+/**
+ * Once per frame: the pad belongs to the world and the minigame panels; any
+ * paper overlay (dialogue, journal, pause, cards, title, album) is tap-first
+ * and the pad only obscured it. The thread button appears with the band,
+ * standing in for N exactly as the pause button stands in for Escape.
+ */
+function syncVpad() {
+  if (vpad.hidden) return;
+  const wanted =
+    mode === 'play' &&
+    !textbox.isOpen && !journalUI.isOpen && !pauseMenu.isOpen && !albumUI.isOpen &&
+    !chapterClose.isOpen && !title.letterOpen && !uiCardOpen();
+  vpad.classList.toggle('vp-quiet', !wanted);
+  const band = state.has('keepsake.band');
+  if (threadBtn.hidden === band) threadBtn.hidden = !band;
+}
 
 for (const btn of vpad.querySelectorAll<HTMLElement>('.vp-b')) {
   const dir = btn.dataset.dir as Dir | undefined;
@@ -3727,6 +3888,11 @@ for (const btn of vpad.querySelectorAll<HTMLElement>('.vp-b')) {
       input.injectJournal();
     } else if (act === 'pause') {
       input.injectPause();
+    } else if (act === 'thread') {
+      // The band's N key, spoken through the same keyboard path so the
+      // engine's edge handling stays the single source of truth.
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyN' }));
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyN' }));
     }
   });
   if (dir) {
@@ -3735,6 +3901,8 @@ for (const btn of vpad.querySelectorAll<HTMLElement>('.vp-b')) {
     btn.addEventListener('pointercancel', release);
   }
 }
+
+initRotateNudge();
 
 // ---------------------------------------------------------------- start
 

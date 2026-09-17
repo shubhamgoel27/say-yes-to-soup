@@ -25,6 +25,11 @@ import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
 
 export type TitleChoice = 'new' | 'continue' | 'journals' | 'settings' | 'credits';
 
+/** A touch-first device: the hints speak of taps, not of Space and arrows.
+ * Desktop pointers are fine, never coarse, so nothing changes there. */
+const COARSE =
+  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 /**
  * One quiet line under Continue: where the journey paused and how far the
  * journal has come. Read straight from the save on disk (the title renders
@@ -227,7 +232,7 @@ export class TitleScreen {
             ${paragraphs}
             <p class="letter-sign">${sign}</p>
           </div>
-          <div class="letter-hint">press Space</div>
+          <div class="letter-hint">${COARSE ? 'tap to put the letter down' : 'press Space'}</div>
         </div>
       </div>`;
   }
@@ -516,7 +521,11 @@ export class TitleScreen {
           <div class="sh-heading">Nani&rsquo;s journals</div>
           <div class="sh-rows">${rows}</div>
           <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
-          <div class="sh-hint">&#8593;&#8595; choose a journal &nbsp;&middot;&nbsp; &#8592;&#8594; choose what to do &nbsp;&middot;&nbsp; Space does it &nbsp;&middot;&nbsp; Esc back</div>
+          <div class="sh-hint">${
+            COARSE
+              ? 'tap a journal to open it &nbsp;&middot;&nbsp; tap a word beneath it to act'
+              : '&#8593;&#8595; choose a journal &nbsp;&middot;&nbsp; &#8592;&#8594; choose what to do &nbsp;&middot;&nbsp; Space does it &nbsp;&middot;&nbsp; Esc back'
+          }</div>
         </div>
       </div>`;
   }
@@ -549,10 +558,17 @@ export class TitleScreen {
           <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
           <div class="t-menu">${menu}</div>
         </div>
-        <div class="t-controls">
+        <div class="t-controls">${
+          COARSE
+            ? `
+          <span><b>tap the ground</b>&nbsp; walk</span>
+          <span><b>tap people</b>&nbsp; talk</span>
+          <span><b>&#9998;</b>&nbsp; the journal</span>`
+            : `
           <span><b>&#8592;&#8593;&#8595;&#8594;</b> / WASD / click&nbsp; walk</span>
           <span><b>Space</b> / Z / click&nbsp; talk &amp; touch things</span>
-          <span><b>J</b>&nbsp; the journal</span>
+          <span><b>J</b>&nbsp; the journal</span>`
+        }
         </div>
       </div>`;
     const art = this.titleEl.querySelector('.t-art');
@@ -727,7 +743,11 @@ export class NamingCard {
           <input class="cc-input" type="text" maxlength="14" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>
-          <div class="cc-hint">Enter writes it in &middot; Esc leaves it blank</div>
+          <div class="cc-hint">${
+            COARSE
+              ? 'leave it blank and you are &ldquo;traveler&rdquo;'
+              : 'Enter writes it in &middot; Esc leaves it blank'
+          }</div>
         </div>`;
       const input = this.root.querySelector<HTMLInputElement>('.cc-input');
       if (input) {
@@ -756,7 +776,9 @@ export class NamingCard {
         <div class="cc-fig"><canvas width="${CHAR_W * ART * 2}" height="${CHAR_H * ART * 2}"></canvas></div>
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
-        <div class="cc-hint">arrows choose &middot; Enter sets out</div>
+        <div class="cc-hint">${
+          COARSE ? 'tap &lsaquo; &rsaquo; to choose' : 'arrows choose &middot; Enter sets out'
+        }</div>
       </div>`;
     this.renderRows();
     this.startWalk();

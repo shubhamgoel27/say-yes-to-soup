@@ -47,6 +47,11 @@ const POCKETS: { tab: JournalTab; one: string; many: string }[] = [
 const esc = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/** Touch-first devices read a tap hint; desktop pointers are never coarse,
+ * so the keyboard wording there stays exactly as it was. */
+const COARSE =
+  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+
 export class ChapterCloseUI {
   private onClose: (() => void) | null = null;
 
@@ -117,7 +122,7 @@ export class ChapterCloseUI {
           ${note}
         </div>
         <div class="cx-go">Onward</div>
-        <div class="cx-hint">Space, Enter, or Esc</div>
+        <div class="cx-hint">${COARSE ? 'tap anywhere' : 'Space, Enter, or Esc'}</div>
       </div>`;
     this.root.hidden = false;
   }
