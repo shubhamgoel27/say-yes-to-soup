@@ -210,6 +210,20 @@
         55% { transform: scale(1.45); opacity: 0.85; }
         100% { transform: scale(1); opacity: 1; }
       }
+      /* Nani's whisper: the thread's once-per-chapter line, in her hand.
+       * Same paper and slide as every toast (nothing new for reduced motion
+       * to mind), tinted the thread's own red and set in the margin script. */
+      .toast.wh {
+        max-width: min(46vw, 380px);
+        font-family: var(--hand);
+        font-style: normal;
+        font-size: var(--fs-hand175);
+        line-height: 1.25;
+        color: #7c2f18;
+        border-left: 3px solid var(--terracotta);
+        transform: translateX(10px) rotate(-0.6deg);
+      }
+      .toast.wh.in { transform: translateX(0) rotate(-0.6deg); }
 
       /* ---- errand chip ---- */
       #errand {
@@ -232,6 +246,18 @@
         transition: opacity 0.25s ease;
       }
       #errand::before { content: '\2709\00a0\00a0'; font-style: normal; }
+      /* The band's one-time reminder: a quieter last line on the chip until
+       * the first manual N, then gone for the rest of the journey. */
+      #errand.nudged { -webkit-line-clamp: 4; }
+      .errand-nudge {
+        display: block;
+        margin-top: 3px;
+        font-size: 0.85em;
+        font-style: normal;
+        letter-spacing: 0.04em;
+        opacity: 0.6;
+      }
+      .errand-nudge::before { content: '\00B7\00a0'; color: var(--terracotta); opacity: 0.9; }
       /* On narrow windows the chip's corner ran into the centered nameplate
        * and the journey card's stamp. Below ~1100px it steps down out of the
        * plate's band and narrows, so the top-left stays one column. */

@@ -19,6 +19,7 @@ import {
   TASKS,
 } from '../src/content/world';
 import { ROUTE } from '../src/content/route';
+import { WHISPERS } from '../src/content/threadwhispers';
 import { TileMap } from '../src/engine/grid';
 import { seamKinds } from '../src/engine/renderer';
 import type { ExamineArm } from '../src/content/schema';
@@ -1079,6 +1080,35 @@ describe('the thread never lies', () => {
         }
         checkState(`completing task ${k}`, false);
       }
+    }
+  });
+});
+
+describe("nani's whispers along the thread", () => {
+  it('every chapter that gives the thread work has one line of hers', () => {
+    for (const c of CHAPTERS) {
+      if (c.tasks.length === 0) continue;
+      assert.ok(
+        typeof WHISPERS[c.id] === 'string' && WHISPERS[c.id]!.trim().length > 0,
+        `chapter '${c.id}' has tasks but no whisper; its first summon would arrive mute`,
+      );
+    }
+  });
+
+  it('every whisper belongs to a real chapter', () => {
+    const ids = new Set(CHAPTERS.map((c) => c.id));
+    for (const key of Object.keys(WHISPERS)) {
+      assert.ok(ids.has(key), `whisper key '${key}' matches no chapter; it could never be heard`);
+    }
+  });
+
+  it('every whisper fits the toast and keeps her hand', () => {
+    for (const [id, line] of Object.entries(WHISPERS)) {
+      assert.ok(
+        line.length < 110,
+        `[${id}] whisper is ${line.length} chars; the toast holds fewer than 110`,
+      );
+      assert.ok(!line.includes('—'), `[${id}] whisper contains an em dash; she never used one`);
     }
   });
 });

@@ -717,7 +717,10 @@ export const NODES: NodeMap = {
       { text: 'She knots your practice rows into a narrow band and ties it at your wrist. "So your hands remember the mountain."' },
       { who: 'Doña Carmen', text: 'One more thing, wawa. Red runs through the band; when you lose the way, ask your wrist, and walk where it spools.' },
     ],
-    effects: ['clear:weave.start', 'set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay'],
+    // The trailing 'thread:' makes her teach line literal: the moment her
+    // words close, the thread spools once from the loom, unasked, so the
+    // player has seen it work before ever pressing N.
+    effects: ['clear:weave.start', 'set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay', 'thread:'],
   },
   'carmen.after': {
     lines: [

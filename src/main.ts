@@ -22,6 +22,7 @@ import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
   ARRIVALS,
+  CHAPTERS,
   COMPLETIONS,
   DIG_SPOTS,
   DRESSINGS,
@@ -40,6 +41,7 @@ import {
   TASKS,
 } from './content/world';
 import { pickLetter } from './content/letters';
+import { WHISPERS } from './content/threadwhispers';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -547,6 +549,17 @@ function refreshTaskChip() {
   // and only an empty task list retires it.
   if (top) {
     errandEl.textContent = top;
+    // Until the first time the player ever asks the band themselves, the
+    // chip carries one quiet reminder that Carmen's lesson is a key. The
+    // first manual N sets thread.used and retires this line for good.
+    const nudged = state.has('keepsake.band') && !state.has('thread.used');
+    errandEl.classList.toggle('nudged', nudged);
+    if (nudged) {
+      const nudge = document.createElement('span');
+      nudge.className = 'errand-nudge';
+      nudge.textContent = 'press N when the way is lost';
+      errandEl.appendChild(nudge);
+    }
     errandEl.hidden = false;
   } else {
     errandEl.hidden = true;
@@ -2125,6 +2138,7 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
     end: found.tiles[found.tiles.length - 1] ?? from,
     loop: found.loop,
   };
+  queueWhisper();
   return true;
 }
 
@@ -2138,6 +2152,72 @@ let pendingThread = false;
 state.on('thread', () => {
   pendingThread = true;
 });
+
+// -- her whispers -------------------------------------------------------
+//
+// The first time the thread is asked in each chapter, one line of Nani's
+// arrives a breath after the unspool, in her hand. Once per chapter, ever.
+
+/** The journey's live chapter: the last stop whose arrival flag is set.
+ * Progress-based on purpose; the return walks the old maps, and a map
+ * lookup would hand its whisper to chapter one. */
+function currentChapterId(): string {
+  let cur = CHAPTERS[0]?.id ?? 'chaska-pampa';
+  for (const c of CHAPTERS) {
+    if (c.arrival?.flag && state.has(c.arrival.flag)) cur = c.id;
+  }
+  return cur;
+}
+
+/** One whisper waiting for the unspool to finish and the screen to be hers. */
+let pendingWhisper: { chapter: string; text: string } | null = null;
+let whisperDelay = 0;
+
+function queueWhisper() {
+  if (pendingWhisper) return;
+  const chapter = currentChapterId();
+  const text = WHISPERS[chapter];
+  if (!text || state.has(`thread.whisper.${chapter}`)) return;
+  pendingWhisper = { chapter, text };
+  whisperDelay = 1.1;
+}
+
+/** Nothing may talk over the story: the whisper waits out dialogue, panels,
+ * ceremonies and doors, the way a held letter does. */
+function whisperMustWait(): boolean {
+  return (
+    textbox.isOpen || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ||
+    anyGameOpen() || uiCardOpen() || chapterClose.isOpen || title.letterOpen ||
+    sitting || warp !== null || celebrateT > 0 || player.frozen
+  );
+}
+
+function tickWhisper(dt: number) {
+  if (!pendingWhisper || mode !== 'play') return;
+  whisperDelay -= dt;
+  if (whisperDelay > 0 || whisperMustWait()) return;
+  // The flag is written only when the words actually land, so a moment
+  // interrupted by a reload still owes her the line.
+  state.set(`thread.whisper.${pendingWhisper.chapter}`);
+  showWhisper(pendingWhisper.text);
+  pendingWhisper = null;
+}
+
+/** Her line, toast-shaped but in her hand. It steps around the toast queue
+ * on purpose: it is timed to the thread, not to whatever page-fill slips
+ * happen to be waiting. Opacity-only motion, so reduced motion needs no
+ * special case beyond what every toast already gets. */
+function showWhisper(text: string) {
+  const el = document.createElement('div');
+  el.className = 'toast wh';
+  el.textContent = text;
+  $('toasts').appendChild(el);
+  requestAnimationFrame(() => el.classList.add('in'));
+  window.setTimeout(() => {
+    el.classList.remove('in');
+    window.setTimeout(() => el.remove(), 450);
+  }, 4600);
+}
 
 // -- the auto-breathe glint -------------------------------------------------
 
@@ -2518,6 +2598,7 @@ function update(dt: number) {
   const journalKey = input.takeJournal() || dev.takeJournal();
   const threadKey = input.takeThread();
   maybeGlint(dt);
+  tickWhisper(dt);
 
   // Any deliberate input or story freeze cancels a click-to-walk in flight.
   if (autoGoal && (player.frozen || warp || textbox.isOpen || act || back || pauseKey || journalKey || menuDir)) {
@@ -2658,6 +2739,9 @@ function update(dt: number) {
     } else if (threadKey && state.has('keepsake.band') && !player.frozen && celebrateT <= 0) {
       // Ask the band. Before Carmen ties it, the key simply does nothing:
       // chapter one's opening is guided enough, and the reveal is hers.
+      // The first deliberate press, ever, also retires the chip's nudge:
+      // only a manual N counts, never a villager's offer or an effect.
+      state.set('thread.used');
       summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
