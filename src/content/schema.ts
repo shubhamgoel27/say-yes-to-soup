@@ -183,6 +183,9 @@ export type GameDef = {
    * and celebrates quietly instead.
    */
   replayable?: boolean;
+  /** One line for the hard telling's how-to card; its presence declares the
+   * game HAS a hard telling. Panels read RUN.hard and tighten accordingly. */
+  hardHow?: string;
   make: (root: HTMLElement, audio: unknown) => GamePanel;
 };
 
