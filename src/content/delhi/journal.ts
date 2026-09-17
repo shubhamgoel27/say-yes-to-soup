@@ -345,6 +345,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['errand.pigeon-home'], not: ['c11.pigeon.home'] },
     text: 'Begum rides in your jacket, splinted wing and one unimpressed eye. Sushila\'s instructions: straight up the stairs, no detours, no chai.',
+    at: ['delhi-rooftop', 9, 4],
   },
   {
     when: { has: ['c11.met.mehr'], not: ['c11.attar.mitti'] },
@@ -354,6 +355,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.cook.done', 'c11.seva.done', 'c11.kite.done'], not: ['c11.chit.bombay'] },
     text: 'Kamla vouches you can feed people, Joginder that you can serve, Yusuf that you can read the wind. Carry all three names to Sethji at the spice end.',
+    who: 'sethji',
   },
   {
     when: { has: ['c11.met.akhtar'], not: ['c11.rain'] },
@@ -373,6 +375,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.arrived'], not: ['letter.read.delhi.pilar'] },
     text: 'A red post box stands on the chowk, imperially confident. Mail has a way of finding you; it found this box first.',
+    at: ['delhi', 38, 10],
   },
   {
     when: { has: ['c11.duel.done', 'c11.chit.bombay'], not: ['c11.complete'] },
@@ -382,6 +385,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.complete'] },
     text: 'Sethji\'s chit is in your pocket; Bantu\'s rickshaw waits at the stand. Rail south to Bombay, then the sea road west. The gali keeps your mornings.',
+    who: 'bantu',
   },
   {
     // Late in the list on purpose: a quiet trail for an idle moment, not a

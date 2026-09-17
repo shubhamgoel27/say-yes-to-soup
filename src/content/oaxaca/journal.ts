@@ -289,6 +289,7 @@ export const OAXACA_TASKS: TaskDef[] = [
   {
     when: { has: ['c9.complete'] },
     text: 'The ledger is closed, both directions. The colectivo at the plaza’s south corner leaves ahorita, whenever that is. The village stays warm until then.',
+    at: ['oaxaca', 23, 29],
   },
   {
     when: { has: ['c9.arrived'], not: ['c9.complete'] },

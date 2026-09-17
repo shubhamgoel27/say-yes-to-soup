@@ -266,6 +266,7 @@ export const KERALA_TASKS: TaskDef[] = [
   {
     when: { has: ['c6.complete'] },
     text: 'Moosa has named you a train and a spice street in Delhi: Khari Baoli, three days north. Until then, Kaithappuram keeps your mornings.',
+    who: 'moosa',
   },
   {
     when: { has: ['c6.arrived'], not: ['c6.complete'] },

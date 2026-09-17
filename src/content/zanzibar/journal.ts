@@ -287,6 +287,7 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   {
     when: { has: ['c7.complete'] },
     text: 'Ali has a freighter, Suez, the middle sea. Until the tide serves, the bench is yours too; that is what it is for.',
+    who: 'ali',
   },
   {
     when: { has: ['c7.arrived'], not: ['c7.complete'] },

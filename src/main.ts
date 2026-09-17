@@ -3518,7 +3518,11 @@ journalRoot.addEventListener(
   { passive: false },
 );
 
-// ---- minigame panels: middle third acts, outer thirds steer ----
+// ---- minigame panels: the center acts, the edges steer all four ways ----
+//
+// The old scheme was three vertical bands, so a mouse could never send Up or
+// Down and the loom was unplayable by pointer. Now the card is a compass:
+// whichever edge band the click lands in wins by depth, the middle acts.
 
 function attachPanelPointer(
   root: HTMLElement,
@@ -3529,9 +3533,17 @@ function attachPanelPointer(
     e.preventDefault();
     const card = root.querySelector('.w-panel') ?? root;
     const r = card.getBoundingClientRect();
-    if (e.clientX < r.left + r.width / 3) panel.onDir('left');
-    else if (e.clientX > r.right - r.width / 3) panel.onDir('right');
-    else panel.onAction();
+    const fromLeft = (e.clientX - r.left) / r.width;
+    const fromTop = (e.clientY - r.top) / r.height;
+    const dx = fromLeft - 0.5;
+    const dy = fromTop - 0.5;
+    const EDGE = 1 / 6; // beyond a third from center in either axis steers
+    if (Math.abs(dx) < EDGE + 0.0 && Math.abs(dy) < EDGE) {
+      panel.onAction();
+      return;
+    }
+    if (Math.abs(dx) >= Math.abs(dy)) panel.onDir(dx < 0 ? 'left' : 'right');
+    else panel.onDir(dy < 0 ? 'up' : 'down');
   });
 }
 for (const g of games) attachPanelPointer(g.root, g.panel);

@@ -64,6 +64,7 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
     text: "The road up is the same road down, older now: La Bajada, the pass, the gate. Ch'aska Pampa is at the top, and the flag will be up.",
+    at: ['la-caleta', 8, 1],
   },
   {
     when: { has: ['c10.rosa.seen'], not: ['c10.aurelio.seen'] },
