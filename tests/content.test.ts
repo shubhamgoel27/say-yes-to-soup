@@ -919,3 +919,166 @@ describe('the chapter close', () => {
     assert.equal(last?.completion, undefined);
   });
 });
+
+/**
+ * The red thread is only as honest as the task list under it. Three ways it
+ * lied in the field, three permanent guards:
+ *   - two villagers sharing one id made `who` resolve to a ship no door
+ *     reaches (crossing's hana shadowing Shionoura's), so the thread rested
+ *     for a whole chapter;
+ *   - a task outliving its own villager (Hana sails on Busan's evening boat,
+ *     the quiz task stayed) pointed players back at an empty quay;
+ *   - and any `who` living on a map the chapter's doors cannot reach is a
+ *     thread that can never unspool.
+ */
+describe('the thread never lies', () => {
+  it('every villager id is unique across the world', () => {
+    const seen = new Map<string, string>();
+    for (const c of CHAPTERS) {
+      for (const n of c.npcs) {
+        const prior = seen.get(n.id);
+        assert.ok(
+          !prior,
+          `npc id '${n.id}' in ${c.id} already belongs to ${prior}; ` +
+            `who-lookups take the first match, so the thread would follow the wrong one`,
+        );
+        seen.set(n.id, c.id);
+      }
+    }
+  });
+
+  it("every task.who's map is door-reachable from its chapter's arrival map", () => {
+    // Mirrors main.ts doorsFrom/nextMapToward, including the runtime east
+    // gate (village -> east-road once story.complete): every task that can
+    // point at the gate era is gated behind chapter one's completion.
+    const edges = new Map<string, Set<string>>();
+    const edge = (a: string, b: string) => {
+      (edges.get(a) ?? edges.set(a, new Set()).get(a)!).add(b);
+    };
+    for (const [id, data] of Object.entries(REGION_MAPS)) {
+      for (const t of data.triggers ?? []) if (t.type === 'door') edge(id, t.to);
+    }
+    edge('village', 'east-road');
+    const reaches = (from: string, to: string): boolean => {
+      if (from === to) return true;
+      const seen = new Set([from]);
+      const queue = [from];
+      for (let head = 0; head < queue.length; head++) {
+        for (const next of edges.get(queue[head]!) ?? []) {
+          if (seen.has(next)) continue;
+          if (next === to) return true;
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+      return false;
+    };
+    for (const c of CHAPTERS) {
+      const home = c.arrival?.map ?? 'village';
+      for (const t of c.tasks) {
+        if (!t.who) continue;
+        const npc = NPCS.find((n) => n.id === t.who);
+        assert.ok(npc, `[${c.id}] task who '${t.who}' is not on the roster`);
+        assert.ok(
+          reaches(home, npc!.map),
+          `[${c.id}] task "${t.text.slice(0, 50)}..." points at ${t.who} on ` +
+            `'${npc!.map}', which no door chain reaches from '${home}'`,
+        );
+      }
+    }
+  });
+
+  it('walking each chapter task by task, the active task never goes stale', () => {
+    // Simulate every chapter's progression in authored order: reach a task
+    // (set its when.has), then complete it (set its when.not). At every
+    // state, the world's first matching task is what the chip and the
+    // thread follow, so it must exist, belong to the live chapter, never be
+    // a task already completed, and never name a villager the flags have
+    // sent away. Retiring flags that content also clears (minigame starts)
+    // never coexist with the durable done flag, so completion prefers the
+    // durable ones; a task with only transient has-flags is a carry, ended
+    // by dropping them.
+    const clearable = new Set<string>();
+    for (const node of Object.values(NODES)) {
+      for (const e of node.effects ?? []) if (e.startsWith('clear:')) clearable.add(e.slice(6));
+    }
+    const arrivalFlags = new Set(
+      CHAPTERS.map((c) => c.arrival?.flag).filter((f): f is string => !!f),
+    );
+    const npcById = new Map(NPCS.map((n) => [n.id, n] as const));
+
+    for (const c of CHAPTERS) {
+      const own = CHAPTERS.indexOf(c);
+      const state = new GameState();
+      state.set('intro.done');
+      for (let i = 0; i < own; i++) {
+        const p = CHAPTERS[i]!;
+        if (p.arrival?.flag) state.set(p.arrival.flag);
+        if (p.completion?.flag) state.set(p.completion.flag);
+      }
+      if (own > 0) state.set('story.complete');
+      if (c.arrival?.flag) state.set(c.arrival.flag);
+
+      const ownTexts = new Set(c.tasks.map((t) => t.text));
+      const completed = new Set<string>();
+      // `mustExist` holds at reach states. Completion states may sit in an
+      // authored gap the sim cannot see across (dialogue grants the done
+      // flag and the successor's errand in one effects list); the existing
+      // mid-story fixpoint test already polices the real effect-driven
+      // states for dead air.
+      const checkState = (where: string, mustExist: boolean) => {
+        const active = TASKS.find(
+          (t) => !t.supersededBy.some((f) => state.has(f)) && state.check(t.when),
+        );
+        if (!active) {
+          assert.ok(!mustExist, `[${c.id}] no active task ${where}; the chip would go dark mid-story`);
+          return;
+        }
+        assert.ok(
+          ownTexts.has(active!.text),
+          `[${c.id}] ${where}: active task belongs to another chapter: "${active!.text.slice(0, 60)}"`,
+        );
+        assert.ok(
+          !completed.has(active!.text),
+          `[${c.id}] ${where}: the thread points back at a step already done: "${active!.text.slice(0, 60)}"`,
+        );
+        if (active!.who) {
+          const npc = npcById.get(active!.who);
+          assert.ok(npc, `[${c.id}] ${where}: active task names unknown npc ${active!.who}`);
+          // Only the not-direction of the villager's gate is checked: a set
+          // not-flag means the flags themselves sent them away (Hana sails on
+          // c5.complete), so a task still pointing at them is stale. Their
+          // when.has may rest on prerequisites the sim never granted (meeting
+          // Joseph implies the delivery that summons him), which play implies
+          // but a task-list walk cannot see.
+          const gone = (npc!.when?.not ?? []).filter((f) => state.has(f));
+          assert.ok(
+            gone.length === 0,
+            `[${c.id}] ${where}: active task points at ${active!.who}, who left town on ` +
+              `${gone.join('+')}: "${active!.text.slice(0, 60)}"`,
+          );
+        }
+      };
+
+      checkState('on arrival', true);
+      for (let k = 0; k < c.tasks.length; k++) {
+        const t = c.tasks[k]!;
+        for (const f of t.when.has ?? []) state.set(f);
+        checkState(`reaching task ${k}`, true);
+        let nots = (t.when.not ?? []).filter((f) => !state.has(f));
+        const durable = nots.filter((f) => !clearable.has(f));
+        if (durable.length) nots = durable;
+        // Setting another chapter's arrival flag is crossing the border;
+        // those states belong to the next chapter's own walk.
+        if (nots.some((f) => arrivalFlags.has(f) && f !== c.arrival?.flag)) break;
+        if (nots.length) {
+          for (const f of nots) state.set(f);
+          completed.add(t.text);
+        } else if (!t.when.not?.length) {
+          for (const f of (t.when.has ?? []).filter((x) => clearable.has(x))) state.clearFlag(f);
+        }
+        checkState(`completing task ${k}`, false);
+      }
+    }
+  });
+});

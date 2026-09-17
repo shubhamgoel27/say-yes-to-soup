@@ -204,7 +204,9 @@ export const BUSAN_TASKS: TaskDef[] = [
     who: 'gong',
   },
   {
-    when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed'] },
+    // c5.complete is the evening boat: she sails on it, so the task must
+    // sail too, or the thread points at a quay she is no longer standing on.
+    when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed', 'c5.complete'] },
     text: 'Hana is on the quay until the evening boat, armed with one examination question about Shionoura. Sit the exam before six.',
     who: 'hanaC5',
   },

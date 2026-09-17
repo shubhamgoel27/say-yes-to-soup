@@ -61,7 +61,11 @@ export const CROSSING_NPCS: NpcDef[] = [
     ],
   },
   {
-    id: 'hana',
+    // Suffixed like every villager who appears in more than one chapter
+    // (hanaC5, chascaC3): Shionoura's homecoming Hana owns the plain id,
+    // and a duplicate here made the red thread aim at a ship no door
+    // reaches, so it rested for every Shionoura task that named her.
+    id: 'hanaC3',
     name: 'Hana',
     map: 'ship',
     pos: [21, 5],

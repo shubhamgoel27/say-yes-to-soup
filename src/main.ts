@@ -606,6 +606,10 @@ setInterval(() => {
 
 state.on('changed', () => {
   applyDressings();
+  // The east gate is a pure function of story.complete, so it opens on the
+  // flag itself, not only on the ceremony that usually sets it. Idempotent
+  // (keyed trigger map, object override), so re-applying costs nothing.
+  applyGateState();
   // Tasks are flag gated, so any change to the world can retire the top one.
   // Refreshing only on errands left the chip advising work already finished.
   refreshTaskChip();
@@ -2076,7 +2080,7 @@ function threadTargetFor(task: WorldTask): { cell: [number, number]; adjacent: b
  */
 function threadPathFrom(
   from: [number, number],
-): { tiles: [number, number][]; loop: [number, number] | null } | null {
+): { tiles: [number, number][]; loop: [number, number] | null; task: WorldTask } | null {
   const task = journalUI.activeTaskDefs()[0];
   if (!task || (!task.who && !task.at)) return null;
   const aim = threadTargetFor(task);
@@ -2087,12 +2091,19 @@ function threadPathFrom(
   if (!path && !aim.adjacent) path = pathBetween(from, aim.cell[0], aim.cell[1], solid, true);
   if (!path) return null;
   const reaches = path.length <= THREAD_MAX_TILES;
-  return { tiles: [from, ...path.slice(0, THREAD_MAX_TILES)], loop: reaches ? aim.cell : null };
+  return {
+    tiles: [from, ...path.slice(0, THREAD_MAX_TILES)],
+    loop: reaches ? aim.cell : null,
+    task,
+  };
 }
 
 let threadToastAt = -Infinity;
 /** When the thread last actually unspooled (performance.now ms). */
 let threadShownAt = -Infinity;
+/** What the last summon resolved, published on the dev bridge so automation
+ * can hold the thread honest: the task it followed and where it pointed. */
+let threadLast: { task: string; end: [number, number]; loop: [number, number] | null } | null = null;
 
 /** Ask the thread, from the player's feet or from a helpful villager's. */
 function summonThread(from: [number, number] = player.occupies()): boolean {
@@ -2109,6 +2120,11 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
   // One soft note from Carmen's loom: the terracotta string, same as the band.
   audio.weaveNote(0);
   threadShownAt = performance.now();
+  threadLast = {
+    task: found.task.text,
+    end: found.tiles[found.tiles.length - 1] ?? from,
+    loop: found.loop,
+  };
   return true;
 }
 
@@ -2814,6 +2830,7 @@ function update(dt: number) {
       out: renderer.threadOut,
       shownAt: Math.round(threadShownAt),
       glintAt: Math.round(glintShownAt),
+      last: threadLast,
     },
   });
 }

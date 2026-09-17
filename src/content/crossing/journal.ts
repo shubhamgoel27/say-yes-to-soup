@@ -228,7 +228,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     when: { has: ['c3.met.hana'], not: ['c3.stars.done'] },
     text: 'Hana keeps the bow after dark, where the working lights end and the sky begins. Three names for one river; bring yours.',
-    who: 'hana',
+    who: 'hanaC3',
   },
   {
     when: { has: ['c3.met.olena'], not: ['c3.olena.bread'] },
