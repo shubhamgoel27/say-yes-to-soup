@@ -265,6 +265,21 @@ export class Renderer {
   private dWater = new Uint8Array(0);
   private fSeam = new Uint8Array(0);
   private fKind: string[] = [];
+  /**
+   * Baked ground chunks: pass 1a (seamless ground plus feathered seams) is
+   * static per map, because ground kinds never mutate at runtime (dressings
+   * only touch the object layer) and every hash in it is keyed by cell. So
+   * it is painted once per 8x8-tile chunk and blitted, which removes several
+   * hundred per-cell draws from every frame; measured under a 6x CPU
+   * throttle this pass was ~70% of drawWorld. Only living water (sea/water
+   * kinds animate with time) is left out of the bake and drawn fresh.
+   * Keyed by map id and chunk coords; LRU-capped with canvas reuse.
+   */
+  private groundChunks = new Map<string, GroundChunk>();
+  private chunkClock = 0;
+  /** ?nobake keeps the old per-cell path, for A/B parity checks. */
+  private groundCacheOn =
+    typeof location === 'undefined' || !new URLSearchParams(location.search).has('nobake');
   /** Fires on the current map (tile coords), for the warm-side sprite pass. */
   private fires: [number, number][] = [];
   private fireScreen: [number, number][] = [];
@@ -1259,6 +1274,12 @@ export class Renderer {
     }
 
     // Pass 1a: seamless ground, then the seams between materials broken.
+    // The whole pass is static per map, so it normally comes in as baked
+    // chunk blits (see bakeGroundChunk, which mirrors the loop below); the
+    // per-cell path remains for ?nobake A/B parity checks.
+    if (this.groundCacheOn) {
+      this.drawBakedGround(map, cam, x0, y0, x1, y1, kindAt);
+    } else {
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
         const sx = (cx * TILE - cam.x) * A;
@@ -1302,6 +1323,7 @@ export class Renderer {
           ctx.globalAlpha = 1;
         }
       }
+    }
     }
 
     // Pass 1b: large soft tonal patches spanning many tiles, so the land
@@ -1488,6 +1510,142 @@ export class Renderer {
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
     if (atm) ctx.drawImage(atm, 0, 0);
 
+  }
+
+  /** Blit the visible baked chunks, then draw their living water fresh. */
+  private drawBakedGround(
+    map: TileMap,
+    cam: Camera,
+    x0: number,
+    y0: number,
+    x1: number,
+    y1: number,
+    kindAt: (x: number, y: number) => string,
+  ) {
+    const ctx = this.ctx;
+    const gx0 = Math.floor(x0 / GCHUNK);
+    const gy0 = Math.floor(y0 / GCHUNK);
+    const gx1 = Math.floor(x1 / GCHUNK);
+    const gy1 = Math.floor(y1 / GCHUNK);
+    for (let gy = gy0; gy <= gy1; gy++) {
+      for (let gx = gx0; gx <= gx1; gx++) {
+        const e = this.groundChunk(map, gx, gy, kindAt);
+        ctx.drawImage(e.cv, (gx * GCHUNK * TILE - cam.x) * A, (gy * GCHUNK * TILE - cam.y) * A);
+        for (let i = 0; i < e.water.length; i += 2) {
+          const wx = e.water[i]!;
+          const wy = e.water[i + 1]!;
+          const sx = (wx * TILE - cam.x) * A;
+          const sy = (wy * TILE - cam.y) * A;
+          const conn = (dx: number, dy: number) => WATERY.has(kindAt(wx + dx, wy + dy));
+          this.tiles.drawGround(ctx, kindAt(wx, wy), sx, sy, wx, wy, conn, this.time);
+        }
+      }
+    }
+  }
+
+  /** Fetch a chunk, baking it on first sight; LRU-evicted with canvas reuse. */
+  private groundChunk(
+    map: TileMap,
+    gx: number,
+    gy: number,
+    kindAt: (x: number, y: number) => string,
+  ): GroundChunk {
+    const key = `${map.id}|${gx},${gy}`;
+    let e = this.groundChunks.get(key);
+    if (!e) {
+      if (this.groundChunks.size >= GCHUNK_CAP) {
+        let oldest: string | null = null;
+        let oldestUsed = Infinity;
+        for (const [k, v] of this.groundChunks) {
+          if (v.used < oldestUsed) {
+            oldestUsed = v.used;
+            oldest = k;
+          }
+        }
+        if (oldest) {
+          e = this.groundChunks.get(oldest);
+          this.groundChunks.delete(oldest);
+        }
+      }
+      if (e) {
+        e.g.clearRect(0, 0, GCHUNK * S, GCHUNK * S);
+        e.water.length = 0;
+      } else {
+        const { cv, g } = surface(GCHUNK * S, GCHUNK * S);
+        e = { cv, g, water: [], used: 0 };
+      }
+      this.bakeGroundChunk(e, gx, gy, kindAt);
+      this.groundChunks.set(key, e);
+    }
+    e.used = ++this.chunkClock;
+    return e;
+  }
+
+  /**
+   * Paint one chunk's ground and seams. This mirrors the per-cell pass in
+   * drawWorld exactly (same hashes, same alpha, same spill picks), with two
+   * deliberate differences: watery cells are recorded instead of painted,
+   * because their frames animate, and the seam gate tests neighbours
+   * directly instead of going through the frame window's fSeam field, which
+   * does not exist at bake time. Both gates answer the same question: does
+   * any 4-neighbour hold a different ground kind.
+   */
+  private bakeGroundChunk(
+    e: GroundChunk,
+    gx: number,
+    gy: number,
+    kindAt: (x: number, y: number) => string,
+  ) {
+    const g = e.g;
+    const bx0 = gx * GCHUNK;
+    const by0 = gy * GCHUNK;
+    const wasWarming = this.warming;
+    // A bake is a warm pass: a truncated seam would freeze into the chunk.
+    this.warming = true;
+    for (let j = 0; j < GCHUNK; j++) {
+      for (let i = 0; i < GCHUNK; i++) {
+        const cx = bx0 + i;
+        const cy = by0 + j;
+        const sx = i * S;
+        const sy = j * S;
+        const kind = kindAt(cx, cy);
+        if (WATERY.has(kind)) {
+          e.water.push(cx, cy);
+          continue;
+        }
+        const group = PATHY.has(kind) ? PATHY : null;
+        const conn = group
+          ? (dx: number, dy: number) => group.has(kindAt(cx + dx, cy + dy))
+          : NEVER;
+        this.tiles.drawGround(g, kind, sx, sy, cx, cy, conn, 0);
+        if (kind === 'void' || kind === 'scree') continue;
+        for (let d = 0; d < 4; d++) {
+          const nx = cx + (d === 1 ? 1 : d === 3 ? -1 : 0);
+          const ny = cy + (d === 0 ? -1 : d === 2 ? 1 : 0);
+          const other = kindAt(nx, ny);
+          if (other === kind) continue;
+          const pick = cellHash(cx, cy, 201 + d * 13);
+          if (pick > 0.88) continue; // a few cells hold their line
+          const img = this.spillTile(
+            other,
+            d,
+            Math.floor(pick * 1.14 * SPILL_DEPTHS.length) % SPILL_DEPTHS.length,
+            cellHash(cx, cy, 251 + d * 7) < 0.5 ? 0 : 1,
+          );
+          if (!img) continue;
+          g.globalAlpha = 0.82;
+          g.drawImage(img, sx, sy);
+          g.globalAlpha = 1;
+        }
+      }
+    }
+    this.warming = wasWarming;
+  }
+
+  /** A/B escape hatch: live per-cell ground vs baked chunks (dev probes). */
+  setGroundCache(on: boolean) {
+    this.groundCacheOn = on;
+    if (!on) this.groundChunks.clear();
   }
 
   /**
@@ -2996,6 +3154,17 @@ export class Renderer {
 }
 
 const NEVER = () => false;
+
+/** Baked ground chunks: 8x8 tiles each; ~20 cover the view plus margins. */
+const GCHUNK = 8;
+const GCHUNK_CAP = 30;
+type GroundChunk = {
+  cv: HTMLCanvasElement;
+  g: CanvasRenderingContext2D;
+  /** Watery cells in this chunk (cx,cy interleaved), drawn live each frame. */
+  water: number[];
+  used: number;
+};
 
 /**
  * Bake the ambient flier frames once: tiny painted birds (three wing beats,

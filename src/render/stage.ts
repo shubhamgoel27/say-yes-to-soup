@@ -134,6 +134,9 @@ export class PixiStage {
       background: '#17120e',
     });
     console.info(`[soup] renderer: ${app.renderer.name}`);
+    // The ?perf overlay (engine/perfhud) reports which renderer actually won;
+    // a global keeps the engine free of any import back into the stage.
+    (globalThis as { __soupRenderer?: string }).__soupRenderer = app.renderer.name;
     s.app = app;
     app.canvas.id = 'stagegl';
     host.prepend(app.canvas);
@@ -200,9 +203,21 @@ export class PixiStage {
     const grade = new ColorMatrixFilter();
     grade.saturate(0.08, true);
     grade.resolution = 1; // pure color math; no need to pay retina cost
+    // Phone GPUs pay for every blur pass over the full 1280x720 frame, and a
+    // phone that misses vsync stutters where a desktop shrugs. Coarse-touch
+    // devices (capability, never user agent) take the bloom at half the
+    // passes: same threshold, same radius, same glow, less strain.
+    const coarseTouch =
+      typeof matchMedia === 'function' && matchMedia('(pointer: coarse) and (hover: none)').matches;
     s.scene.filters = [
       grade,
-      new AdvancedBloomFilter({ threshold: 0.66, bloomScale: 0.5, brightness: 1, blur: 6, quality: 4 }),
+      new AdvancedBloomFilter({
+        threshold: 0.66,
+        bloomScale: 0.5,
+        brightness: 1,
+        blur: 6,
+        quality: coarseTouch ? 2 : 4,
+      }),
     ];
 
     // Compose at native art resolution, then scale smoothly to the window.
