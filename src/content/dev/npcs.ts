@@ -1172,7 +1172,7 @@ export const NODES: NodeMap = {
   },
   'faustino.whistle': {
     lines: [
-      { who: 'Faustino', text: 'But first: Paca holds the pass like she pays rent on it. One moment.' },
+      { who: 'Faustino', text: 'Paca holds the pass like she pays rent on it. One moment.' },
       { text: 'Two fingers, one short whistle, one long. Up the road, a llama begins making a large decision, slowly.' },
     ],
     effects: ['set:paca.moved'],

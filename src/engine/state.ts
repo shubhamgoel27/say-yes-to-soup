@@ -246,6 +246,8 @@ type Events = {
 };
 
 export class GameState {
+  /** ?fresh may clear storage once per page load; see load(). */
+  static freshConsumed = false;
   private flags = new Set<string>();
   private journal = new Set<string>();
   errand: string | null = null;
@@ -481,7 +483,11 @@ export class GameState {
   load() {
     try {
       const k = slotKeys(activeSlot());
-      if (new URLSearchParams(location.search).has('fresh')) {
+      // ?fresh serves automation; it must fire once per page load, not on
+      // every journal switch (reloadJourney re-enters load(), and a shared
+      // link with ?fresh once ate the active slot on every shelf browse).
+      if (new URLSearchParams(location.search).has('fresh') && !GameState.freshConsumed) {
+        GameState.freshConsumed = true;
         localStorage.removeItem(k.save);
         localStorage.removeItem(k.bak);
         if (k.legacy) localStorage.removeItem(k.legacy);

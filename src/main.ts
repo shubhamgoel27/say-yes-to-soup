@@ -1927,14 +1927,21 @@ function ceremonyMustWait(): boolean {
 function scheduleCeremony(flag: string) {
   if (!closingChapter(flag, map.id)) return;
   const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
-  let patience = 20;
+  // Patience is not a count. A player who reads the journal for a minute
+  // after the final scene has not left; the moment is let go only when the
+  // road moves on (closingChapter returns null off the chapter's ground).
+  // A counted retry once starved the spread forever for a 20-second read.
   const tryOpen = () => {
     const chapter = closingChapter(flag, map.id);
-    if (!chapter) return;
-    if (ceremonyMustWait()) {
-      if (patience-- > 0) ceremonyTimer = window.setTimeout(tryOpen, 900);
+    if (!chapter) {
+      ceremonyTimer = 0;
       return;
     }
+    if (ceremonyMustWait()) {
+      ceremonyTimer = window.setTimeout(tryOpen, 900);
+      return;
+    }
+    ceremonyTimer = 0;
     player.frozen = true;
     audio.pageFlip();
     chapterClose.open(chapter, hues, () => {
@@ -2227,6 +2234,9 @@ function whisperMustWait(): boolean {
   return (
     textbox.isOpen || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ||
     anyGameOpen() || uiCardOpen() || chapterClose.isOpen || title.letterOpen ||
+    // A SCHEDULED ceremony counts too: the spread once opened over a landing
+    // whisper and her line spent its once-ever life unreadable behind it.
+    ceremonyTimer !== 0 ||
     sitting || warp !== null || celebrateT > 0 || player.frozen
   );
 }
@@ -2376,6 +2386,15 @@ function beginPlay(freshStart: boolean) {
  * the title's attract drift; Continue and Begin then travel the usual paths.
  */
 function reloadJourney() {
+  // Everything queued for the OLD journey dies here: a pending whisper once
+  // crossed this seam and stamped its once-ever flag into the wrong save; a
+  // fading toast once followed the player into another journal's morning.
+  pendingWhisper = null;
+  pendingWelcome = false;
+  pendingLetter = null;
+  window.clearTimeout(ceremonyTimer);
+  ceremonyTimer = 0;
+  toasts.dismissAll();
   state.forget();
   state.load();
   for (const tm of Object.values(maps)) tm.clearOverrides();

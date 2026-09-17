@@ -13,6 +13,14 @@ export class Toasts {
     this.pump();
   }
 
+  /** Drop everything queued and showing. A journal switch must not carry
+   * the old journey's announcements into the new one's morning. */
+  dismissAll() {
+    this.queue.length = 0;
+    this.busy = false;
+    this.root.replaceChildren();
+  }
+
   private pump() {
     if (this.busy) return;
     const text = this.queue.shift();
