@@ -509,3 +509,19 @@ background music should be present and carry its instruments, not just exist.
 - [x] Numeric audition per region from the live engine: 1.5-3.0 phrases/min, region-correct instruments, drones where promised
 - [x] Integration smoke across five converted chapters: zero console errors
 - [ ] Blind before/after critics on both dimensions (talkiness, music presence) - next loop pass
+
+## 2026-09-17: hard tellings + pocket edition
+
+- [x] Shared contract (src/ui/games/run.ts: RUN.hard, coach/peek/takeCoach; GameDef.hardHow)
+- [x] 10 parallel agents: hard v2 for every minigame, all with real fail states and specific coaching; story runs proven unchanged per chapter; ofrenda deliberately exempt
+- [x] Mobile: pocket-edition CSS tier (desktop >=1100px byte-identical), rebuilt vpad, portrait camera crop fix, responsive.ts nudge; desktop parity by layout fingerprint, zero visible change
+- [x] Card wiring: Begin / The hard telling / Not yet on replays; lost hard run returns the card with the coach line, cursor on rematch; clean win earns "done properly" + shelf star
+- [x] Bug found by testing: declining a replay offer left replay.mode set, poisoning the next first-time completion's narration; fixed
+- [x] Verified: 18/18 live e2e on the card loop, 24/24 iPhone-landscape play probe, tsc clean, 118/118 tests, prod build boots
+- [x] Shipped: 516f168 (hard tellings), 15724e0 (pocket edition + wiring), pushed to main
+
+### Review
+Two-wave merge of 11 parallel agents; no agent work lost across three
+infrastructure stalls (checkpoint files + transcript resumes). Fail/win split
+solved without a win channel: a hard run that files no coach line is clean by
+definition, so the coach ledger doubles as the outcome signal.
