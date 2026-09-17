@@ -2444,6 +2444,157 @@
         .ht-strip-card { margin-top: 2%; }
         .p-card, .ht-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
       }
+
+      /* ---- landscape-first: the journal reads best sideways ----
+       * Phones upright see a quarter of a page drawn wide, so responsive.ts
+       * steers them sideways: an offer card where the browser can lock
+       * orientation, a full rotate page where it cannot, and a quiet corner
+       * pin once the offer has been waved off twice. The elements only ever
+       * mount on phones (screen's short side under 600px), and every rule
+       * here is coarse-and-hoverless gated besides, so desktop mice and
+       * narrow desktop windows can never feel any of it. */
+      @media (pointer: coarse) and (hover: none) {
+        /* The veils: the rotate page outranks everything (it is the door),
+         * the offer sits above the HUD but under nothing of its own. */
+        #sideways, #rotatehold {
+          position: fixed;
+          inset: 0;
+          display: grid;
+          place-items: center;
+          padding: 18px;
+          box-sizing: border-box;
+          background: rgba(23, 18, 14, 0.82);
+          backdrop-filter: blur(3px);
+          z-index: 190;
+        }
+        #rotatehold { z-index: 200; }
+        #sideways[hidden], #rotatehold[hidden], #sidewayspin[hidden] { display: none; }
+
+        /* The card is a journal page like every other surface. */
+        .sw-card {
+          width: min(84vw, 340px);
+          box-sizing: border-box;
+          padding: 22px 20px 18px;
+          background: linear-gradient(120deg, var(--paper), var(--paper-dark));
+          border: 2px solid var(--ink);
+          border-radius: 3px;
+          box-shadow: var(--shadow-card);
+          color: var(--ink);
+          text-align: center;
+        }
+        .sw-title {
+          font-family: var(--hand);
+          font-size: 26px;
+          line-height: 1.15;
+          color: #7c2f18;
+          transform: rotate(-0.8deg);
+          margin-bottom: 8px;
+        }
+        .sw-line {
+          font-size: var(--fs-135);
+          font-style: italic;
+          line-height: 1.45;
+          color: var(--ink-soft);
+          margin-bottom: 14px;
+        }
+
+        /* The glyph: a small phone drawn in ink, turning itself sideways.
+         * Its resting pose is already turned, so when motion is calmed (the
+         * OS preference or the in-game setting) it simply lies on its side. */
+        .sw-glyph {
+          height: 46px;
+          display: grid;
+          place-items: center;
+          margin-bottom: 8px;
+        }
+        .sw-phone {
+          display: block;
+          width: 18px;
+          height: 30px;
+          border: 2px solid var(--ink);
+          border-radius: 4px;
+          position: relative;
+          transform: rotate(90deg);
+          animation: swTurn 2.8s ease-in-out infinite;
+        }
+        .sw-phone::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          bottom: 2px;
+          width: 4px;
+          height: 2px;
+          margin-left: -2px;
+          border-radius: 1px;
+          background: var(--terracotta);
+        }
+        @keyframes swTurn {
+          0%, 18% { transform: rotate(0deg); }
+          52%, 84% { transform: rotate(90deg); }
+          100% { transform: rotate(0deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .sw-phone { animation: none; }
+        }
+
+        /* One big yes, one soft not-now. */
+        .sw-go {
+          display: block;
+          width: 100%;
+          padding: 12px 10px;
+          box-sizing: border-box;
+          background: var(--ink);
+          color: var(--paper);
+          border: 1px solid var(--ink);
+          border-radius: 2px;
+          box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.45);
+          font-family: var(--display);
+          font-weight: 600;
+          font-size: 16px;
+          letter-spacing: 0.06em;
+          cursor: pointer;
+        }
+        .sw-go:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(43, 33, 24, 0.45); }
+        .sw-stay {
+          display: block;
+          margin: 10px auto 0;
+          padding: 8px 12px;
+          background: none;
+          border: none;
+          font-family: var(--hand);
+          font-size: 18px;
+          color: #6b5334;
+          text-decoration: underline dashed rgba(107, 83, 52, 0.5);
+          text-underline-offset: 3px;
+          cursor: pointer;
+        }
+
+        /* The corner pin: a paper scrap that remembers the offer quietly. */
+        #sidewayspin {
+          position: fixed;
+          right: calc(10px + env(safe-area-inset-right, 0px));
+          bottom: calc(224px + env(safe-area-inset-bottom, 0px));
+          width: 40px;
+          height: 40px;
+          display: grid;
+          place-items: center;
+          padding: 0;
+          background: rgba(244, 234, 214, 0.95);
+          border: 1px solid var(--ink);
+          border-left: 3px solid var(--terracotta);
+          border-radius: 2px;
+          box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.45);
+          cursor: pointer;
+          z-index: 60;
+        }
+        .sw-phone-small {
+          width: 12px;
+          height: 20px;
+          border-width: 1.5px;
+          border-radius: 3px;
+          animation: none;
+        }
+      }
     </style>
   </head>
   <body>
