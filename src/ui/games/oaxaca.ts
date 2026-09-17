@@ -1,5 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
+import { RUN, coach } from './run';
 import { Scene, mountScene, wobble, easeOutCubic, keyCap } from './scene';
 import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot } from '../../art/pix';
 
@@ -100,6 +101,35 @@ const SCORCHED =
   '<b>Chela:</b> I have burnt this mole twice, hija, and once with my mother watching. Space, and we begin the pot again.';
 const SECOND_POT = 'Fresh chiles, a washed pot, the same hour ahead. The second one is always better. She would know.';
 const OPENING = 'The spoon stands up in the pot by itself. Stir in circles: up, right, down, left.';
+
+// ----- the hard telling: the fiesta pot ------------------------------------
+//
+// A replay may ask for the fiesta pot (RUN.hard). Same circle, less mercy:
+// nine rounds instead of six, a comal that catches sooner and gives less
+// warning, and a pace band the story pot never had. Press faster than
+// HARD_HURRY and the stroke only sloshes; let the spoon rest past HARD_REST
+// and the bottom starts to catch, with HARD_REST_GRACE seconds to get it
+// walking again. A fair share of fiesta pots burn. Chela burns hers too.
+const HARD_ROUNDS = 9;
+const HARD_SMOKE_FIRST = 6;
+const HARD_SMOKE_GRACE = 2.6;
+const HARD_SMOKE_GAP = 6.5;
+const HARD_HURRY = 0.24;
+const HARD_REST = 1.9;
+const HARD_REST_GRACE = 2.2;
+
+const HARD_OPENING =
+  'Chela: The fiesta pot, hija. Same circle, more of it, and the comal in a mood. The pot catches the moment the spoon rests, so keep it walking.';
+const HARD_LINES = [
+  'Chela: A fiesta pot feeds the whole village, and the village can taste a tired arm. Do not have one.',
+  'Chela: My mother stirred nine rounds the night of the boda. Ninety guests, one spoon. This spoon.',
+  'Chela: Last round. The chocolate is listening for the gloss. Walk it home.',
+];
+const HURRY_HINT = 'It sloshes over the rim. Chela: Slower. Mole can smell a hurry, even at fiesta.';
+const REST_WARN =
+  '<b>The bottom is catching.</b> The spoon rested too long. Stir, keep it walking.';
+const HARD_SECOND_POT =
+  'Fresh chiles, a washed pot, the same long hour. Chela: A fiesta forgives a burnt pot. It only remembers a cook who stopped.';
 
 const POT_X = 300;
 const POT_Y = 184;
@@ -216,6 +246,16 @@ export class MolePanel {
   /** Seconds until the chiles next catch; -1 while they already are. */
   private comalT = SMOKE_FIRST;
   private smoke = -1;
+  /** The fiesta pot. Read from RUN.hard at open; a scorch restart keeps it. */
+  private hard = false;
+  private goalRounds = STIR_ROUNDS;
+  /** Seconds since the last accepted stir stroke (the pace band's clock). */
+  private sinceStir = 0;
+  /** Seconds the pot bottom has been catching (hard only); -1 while calm. */
+  private potCatch = -1;
+  // What this run actually did, so a scorch can be coached specifically.
+  private sloshes = 0;
+  private hurries = 0;
 
   private scene: Scene | null = null;
   private setHint: ((h: string) => void) | null = null;
@@ -240,13 +280,25 @@ export class MolePanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.begin(RUN.hard);
+  }
+
+  /** (Re)start a pot. Kept apart from open() so a scorch restart can hold on
+   * to the telling it began with, whatever RUN.hard says by then. */
+  private begin(hard: boolean) {
+    this.hard = hard;
+    this.goalRounds = hard ? HARD_ROUNDS : STIR_ROUNDS;
     this.step = 0;
     this.rounds = 0;
     this.done = false;
     this.failed = false;
-    this.comalT = SMOKE_FIRST;
+    this.comalT = hard ? HARD_SMOKE_FIRST : SMOKE_FIRST;
     this.smoke = -1;
-    this.hint = this.againHint || OPENING;
+    this.sinceStir = 0;
+    this.potCatch = -1;
+    this.sloshes = 0;
+    this.hurries = 0;
+    this.hint = this.againHint || (hard ? HARD_OPENING : OPENING);
     this.againHint = '';
     this.spoonA = this.spoonTarget = -Math.PI / 2;
     this.swirl = 0;
@@ -269,15 +321,32 @@ export class MolePanel {
     if (this.done || this.failed) return;
     const sc = this.scene;
     if (dir === STIR_ORDER[this.step]) {
+      // The fiesta pot's pace band has a fast edge: a stroke crowding the
+      // last one does not stir, it splashes. The story pot never minds, and
+      // the first stroke of a fresh pot is always free.
+      if (this.hard && (this.step > 0 || this.rounds > 0) && this.sinceStir < HARD_HURRY) {
+        this.hurries++;
+        this.audio.bump();
+        this.sloshT = 0.45;
+        if (sc) {
+          sc.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 5, color: this.moleColor(), speed: 62, grav: 320, life: 0.4, size: 2.6 });
+          if (!reduceMotion()) sc.thump(2.5, 0.02);
+        }
+        this.hint = HURRY_HINT;
+        return;
+      }
+      this.sinceStir = 0;
+      this.potCatch = -1; // a walking spoon lifts whatever was catching
       this.step = (this.step + 1) % 4;
       this.audio.slosh();
       this.spoonTarget += Math.PI / 2;
       if (this.step === 0) {
         this.rounds++;
-        this.hint = STIR_LINES[Math.min(this.rounds - 1, STIR_LINES.length - 1)] ?? '';
+        const lines = this.hard ? [...STIR_LINES, ...HARD_LINES] : STIR_LINES;
+        this.hint = lines[Math.min(this.rounds - 1, lines.length - 1)] ?? '';
         if (sc) for (let i = 0; i < 3; i++) sc.waft(POT_X - 30 + i * 30, POT_Y - 8, 'rgba(250,244,232,0.4)', 9);
-        if (this.rounds === 5) this.chocoT = 0;
-        if (this.rounds >= STIR_ROUNDS) {
+        if (this.rounds === this.goalRounds - 1) this.chocoT = 0;
+        if (this.rounds >= this.goalRounds) {
           this.done = true;
           this.audio.weaveDone();
           sc?.flash('#ffdda8', 0.3);
@@ -285,6 +354,7 @@ export class MolePanel {
         }
       }
     } else {
+      this.sloshes++;
       this.audio.bump();
       this.sloshT = 0.45;
       if (sc) {
@@ -299,11 +369,10 @@ export class MolePanel {
   onAction() {
     if (this.failed) {
       // A burnt pot is not the end of the evening, only of this pot. Same
-      // hands, same hour, second try, and the story flag is still unset.
-      const done = this.onDone;
-      this.onDone = null;
-      this.againHint = SECOND_POT;
-      if (done) this.open(done);
+      // hands, same hour, same telling, second try; the story flag is still
+      // unset, so there is no auto-pass hiding in the restart.
+      this.againHint = this.hard ? HARD_SECOND_POT : SECOND_POT;
+      this.begin(this.hard);
       return;
     }
     if (this.done) {
@@ -316,7 +385,7 @@ export class MolePanel {
     if (this.smoke >= 0) {
       // The save: bare fingers, one sweep, the chiles land on the cloth.
       this.smoke = -1;
-      this.comalT = SMOKE_GAP + Math.random() * 3;
+      this.comalT = this.hard ? HARD_SMOKE_GAP + Math.random() * 2 : SMOKE_GAP + Math.random() * 3;
       this.audio.blip();
       this.scene?.burst(505, 236, { n: reduceMotion() ? 3 : 8, color: '#7c2e1c', speed: 96, grav: 300, life: 0.5, size: 2.6 });
       this.scene?.waft(505, 228, 'rgba(240,232,220,0.3)', 7);
@@ -328,17 +397,41 @@ export class MolePanel {
     this.hint = 'No shortcuts. The hour is an ingredient. Keep the spoon walking.';
   }
 
+  /** One sentence about this run's dominant miss, in the game's warm voice. */
+  private diagnose(cause: 'comal' | 'rest'): string {
+    if (cause === 'rest') {
+      const k = this.rounds / this.goalRounds;
+      if (k < 1 / 3)
+        return 'You let the spoon rest before the pot had even darkened; the pot catches when the spoon rests, keep it walking from the first round.';
+      if (k < 2 / 3) return 'You stirred too slow through the middle; the pot catches when the spoon rests, keep it walking.';
+      return 'You slowed at the very end, when the chocolate wants the most walking; keep the spoon moving until the gloss comes.';
+    }
+    if (this.sloshes >= 5 && this.sloshes >= this.hurries)
+      return 'You fought the circle more than you walked it; up, right, down, left, the pot sets the order, and the comal waits for nobody lost.';
+    if (this.hurries >= 5)
+      return 'You hurried the spoon until it only sloshed, and the comal spent the time you wasted; steady beats fast, every hour of it.';
+    return 'You kept stirring while the comal smoked; when the chiles catch, Space answers first, the pot forgives a short pause.';
+  }
+
   /** The chiles win. Bitter all the way down, and nobody in the room minds. */
-  private scorch() {
+  private scorch(cause: 'comal' | 'rest' = 'comal') {
     this.failed = true;
     this.smoke = -1;
-    this.hint = SCORCHED;
+    this.potCatch = -1;
+    // The lesson is owed either way; the next how-to offer carries it.
+    const why = this.diagnose(cause);
+    coach('c9.mole.start', why);
+    this.hint = this.hard
+      ? 'The pot goes to carbon and the smoke turns bitter. Chela lifts it off the fire, unhurried even now.<br>' +
+        `<i>${why}</i><br><b>Chela:</b> Even at fiesta, a pot is only a pot. Space, and we begin again.`
+      : SCORCHED;
     this.audio.denied();
     const sc = this.scene;
     if (sc) {
       sc.flash('#2a1710', 0.35);
       if (!reduceMotion()) sc.thump(4, 0.05);
-      for (let i = 0; i < 3; i++) sc.waft(485 + i * 20, 232, 'rgba(38,30,26,0.55)', 12);
+      const sx = cause === 'rest' ? POT_X - 20 : 485;
+      for (let i = 0; i < 3; i++) sc.waft(sx + i * 20, cause === 'rest' ? POT_Y - 8 : 232, 'rgba(38,30,26,0.55)', 12);
     }
   }
 
@@ -366,9 +459,11 @@ export class MolePanel {
     }
     if (this.done && this.restT < 1) this.restT = Math.min(1, this.restT + dt / 0.8);
 
-    // The comal's own clock: the chiles catch, you get five seconds of smoke
-    // and a growing complaint before the pot turns bitter.
+    // The comal's own clock: the chiles catch, you get a few seconds of smoke
+    // and a growing complaint before the pot turns bitter. The fiesta pot
+    // gives less warning and comes back to the boil sooner.
     if (!this.done && !this.failed) {
+      const grace = this.hard ? HARD_SMOKE_GRACE : SMOKE_GRACE;
       if (this.smoke < 0) {
         this.comalT -= dt;
         if (this.comalT <= 0) {
@@ -379,10 +474,27 @@ export class MolePanel {
       } else {
         this.smoke += dt;
         if (Math.random() < dt * (5 + this.smoke * 3)) {
-          const k = Math.min(1, this.smoke / SMOKE_GRACE);
+          const k = Math.min(1, this.smoke / grace);
           sc.waft(490 + Math.random() * 32, 232, `rgba(48,38,30,${(0.2 + k * 0.35).toFixed(2)})`, 8 + k * 6);
         }
-        if (this.smoke >= SMOKE_GRACE) this.scorch();
+        if (this.smoke >= grace) this.scorch('comal');
+      }
+      // The fiesta pot's slow edge: a resting spoon lets the bottom catch.
+      if (this.hard && !this.failed) {
+        this.sinceStir += dt;
+        if (this.potCatch < 0 && this.sinceStir >= HARD_REST) {
+          this.potCatch = 0;
+          this.audio.bump();
+          sc.waft(POT_X, POT_Y - 6, 'rgba(60,48,40,0.45)', 10);
+        }
+        if (this.potCatch >= 0) {
+          this.potCatch += dt;
+          if (Math.random() < dt * (4 + this.potCatch * 3)) {
+            const k = Math.min(1, this.potCatch / HARD_REST_GRACE);
+            sc.waft(POT_X + (Math.random() - 0.5) * 90, POT_Y - 6, `rgba(48,38,30,${(0.2 + k * 0.35).toFixed(2)})`, 8 + k * 6);
+          }
+          if (this.potCatch >= HARD_REST_GRACE) this.scorch('rest');
+        }
       }
     }
     if (this.failed && Math.random() < dt * 6) {
@@ -405,13 +517,14 @@ export class MolePanel {
     }
 
     sc.frame(dt, (g) => this.paint(g));
-    const warn = this.smoke >= 0 ? `${SMOKE_WARN}<br>` : '';
+    let warn = this.smoke >= 0 ? `${SMOKE_WARN}<br>` : '';
+    if (this.potCatch >= 0) warn += `${REST_WARN}<br>`;
     this.setHint?.(warn + this.hint);
   }
 
   private moleColor(): string {
     if (this.failed) return '#332a22';
-    return ramp(MOLE_RAMP, Math.min(1, (this.rounds + this.step / 4) / STIR_ROUNDS));
+    return ramp(MOLE_RAMP, Math.min(1, (this.rounds + this.step / 4) / this.goalRounds));
   }
 
   private paint(g: CanvasRenderingContext2D) {
@@ -436,7 +549,7 @@ export class MolePanel {
 
     // Chiles toasting on the comal, darkening round by round, charring late.
     // While they are catching the comal glows hot and they blacken fast.
-    const smokeK = this.smoke >= 0 ? Math.min(1, this.smoke / SMOKE_GRACE) : 0;
+    const smokeK = this.smoke >= 0 ? Math.min(1, this.smoke / (this.hard ? HARD_SMOKE_GRACE : SMOKE_GRACE)) : 0;
     if (smokeK > 0 || this.failed) {
       emberGlow ??= bakeGlow('rgba(255,154,60,0.85)');
       g.globalAlpha = this.failed ? 0.2 : 0.3 + 0.3 * smokeK + 0.08 * wobble(t, 9);
@@ -444,7 +557,7 @@ export class MolePanel {
       g.drawImage(emberGlow.cv, 505 - w / 2, 214, w, 74);
       g.globalAlpha = 1;
     }
-    const toast = Math.min(1, this.rounds / STIR_ROUNDS + 0.08);
+    const toast = Math.min(1, this.rounds / this.goalRounds + 0.08);
     const chileC = this.failed ? '#120a08' : mix('#b03524', '#2e1410', Math.min(1, toast + smokeK * 0.55));
     const spots: [number, number, number][] = [[483, 239, 0.5], [508, 234, -0.4], [530, 241, 0.9]];
     for (const [cx, cy, rot] of spots) {
@@ -632,8 +745,9 @@ export class MolePanel {
       }
     }
 
-    // The six rounds, told as six little chiles on the hearth edge.
-    for (let i = 0; i < STIR_ROUNDS; i++) {
+    // The rounds, told as little chiles on the hearth edge: six for the
+    // story pot, nine for the fiesta pot.
+    for (let i = 0; i < this.goalRounds; i++) {
       const cx = 66 + i * 25;
       if (i < this.rounds) {
         oval(g, cx, 305, 8, 4.4, '#7c2e1c', 0.35);

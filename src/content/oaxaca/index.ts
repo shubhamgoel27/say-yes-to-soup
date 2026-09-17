@@ -97,6 +97,8 @@ export const CHAPTER: ChapterDef = {
         'Chiles toast on the comal beside you. When they start to smoke, Space sweeps them off the heat.',
         'Burn them and the pot goes bitter. Chela has done it twice herself. You wash the pot and begin again.',
       ],
+      hardHow:
+        'The fiesta pot: nine rounds, a quicker comal, and a bottom that catches the moment the spoon rests. Somewhere between hurry and rest there is a pace, and Chela swears you have it.',
       make: (root, audio) => new MolePanel(root, audio as AudioBus),
     },
     {

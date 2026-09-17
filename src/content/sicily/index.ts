@@ -63,6 +63,7 @@ export const CHAPTER: ChapterDef = {
         'Left and right choose a card, Space plays it. Take a table card of the same number, or several that sum to yours.',
         'Sweep the table clean and shout scopa. You are allowed to lose; he shows you the hand you missed, then deals again.',
       ],
+      hardHow: 'The hard telling: he plays to eight and plays properly, sevens guarded, nothing light left on the wood. Lose the match and the evening is his.',
       make: (root, audio) => new ScopaPanel(root, audio as AudioBus),
     },
     {
@@ -73,6 +74,7 @@ export const CHAPTER: ChapterDef = {
         'The rais calls, and the call rolls across the water toward the boat. Space pulls the oar the moment it arrives.',
         'Three good strokes close each pass. Rush one and the harbor is delighted, and he simply calls again.',
       ],
+      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Two slapped blades in one pass and the fish keeps the sea.',
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
     {
@@ -83,6 +85,7 @@ export const CHAPTER: ChapterDef = {
         'Space starts the ricotta, Space again stops it in the sweet zone. Both ends, always, then the arrows pick a garnish.',
         'Every garnish is correct. Overfill and the shell splits; Alfio eats the evidence and hands you a fresh one.',
       ],
+      hardHow: 'The hard telling: five customers at feast pace, the gold worn thin, a hungry end counted like a wreck. The third wrecked shell and Alfio takes the bag back.',
       make: (root, audio) => new CannoloPanel(root, audio as AudioBus),
     },
   ],

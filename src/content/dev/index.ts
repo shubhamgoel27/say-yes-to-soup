@@ -35,6 +35,7 @@ export const CHAPTER: ChapterDef = {
         'Then call them back with the arrows, in order.',
         'A slipped thread is nothing. She just calls the row again.',
       ],
+      hardHow: 'The fine cloth: rows of five, six, seven, called quick; answer inside a breath, and the third slipped thread sets the cloth aside.',
       make: (root, audio) => new WeavePanel(root, audio as AudioBus),
     },
     {
@@ -46,6 +47,7 @@ export const CHAPTER: ChapterDef = {
         'Arrows pick a spot; Space sets the clod where a gap waits.',
         'Close the earthen oven and the papas cook themselves.',
       ],
+      hardHow: 'The true watia: build in order, feed the fire on a true heartbeat before the fuel spends, and bring the dome down while the clods still blaze.',
       make: (root, audio) => new WatiaPanel(root, audio as AudioBus),
     },
   ],

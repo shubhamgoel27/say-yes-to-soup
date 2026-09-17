@@ -2,6 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
+import { RUN, coach } from './run';
 
 /**
  * The Yacana's two hands-on verbs.
@@ -16,6 +17,12 @@ import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
  * StarPanel: the dark bow after lights-out. One river of stars, three names.
  * Walk a reticle across the sky and find each reading; a miss only nudges
  * you warmer. No timer, no failure, no hurry. The stars rise on schedule.
+ *
+ * Both games also keep a HARD TELLING behind RUN.hard, offered only on
+ * replay: Ben steps back and the pot runs on clocks; Hana shrinks the marks,
+ * holds her tongue, and gives you till eight bells. A run that falls short
+ * fails gracefully in-panel (one press restarts) and leaves one specific
+ * coach() line, built from the run's own ledger, for the next how-to card.
  *
  * Both scenes ride the ship's roll: a slow global sway on everything drawn,
  * so the pot rocks on its burner and the sky leans against the rail.
@@ -92,6 +99,43 @@ const SIMMER_CALM = 15;
 /** Below this the sauce is still sharp; past the edge it is a near thing. */
 const SIMMER_READY = 0.6;
 const SIMMER_EDGE = 0.86;
+
+/**
+ * The hard telling: Ben steps back from his own stove. He calls each thing
+ * by riddle, not name; the pot waits only so long for each; a wrong jar is
+ * simply wrong; and the gold band at the end is one breath wide. Two more
+ * steps too, the way the aunties actually make it: double garlic up front,
+ * and a second splash of vinegar before the lid.
+ */
+const HARD_STEPS: { name: string; call: string }[] = [
+  { name: 'Garlic', call: '"The thing that wakes the pot up."' },
+  { name: 'Garlic', call: '"Again. Double it, pare; we are not cowards tonight."' },
+  { name: 'Chicken', call: '"Now the one that goes in skin down."' },
+  { name: 'Soy sauce', call: '"Half the argument."' },
+  { name: 'Cane vinegar', call: '"The other half. Still no stirring."' },
+  { name: 'Bay leaves', call: '"Three loud leaves."' },
+  { name: 'Peppercorns', call: '"A rattling spoonful, whole."' },
+  { name: 'Cane vinegar', call: '"One more splash of the pale one. The aunties insist."' },
+];
+
+/** Hard telling numbers: each step on a short fuse, wrong jars burn time. */
+const HARD_STEP_TIME = 5;
+const HARD_STEP_TIME_CALM = 6.5;
+const HARD_WRONG_COST = 1;
+/** Hard reduction: faster fire, later window, thinner edge. */
+const HARD_SIMMER_DUR = 7.5;
+const HARD_SIMMER_CALM = 10;
+const HARD_READY = 0.75;
+const HARD_EDGE = 0.9;
+
+/** Where a pantry item lives, in words a coach can point with. */
+function shelfSpot(name: string): string {
+  const idx = PANTRY.indexOf(name);
+  if (idx < 0) return 'on the shelf';
+  const col = ['first', 'second', 'third', 'fourth'][idx % COLS] ?? 'first';
+  const row = idx < COLS ? 'top shelf' : 'lower shelf';
+  return `${col} on the ${row}`;
+}
 
 /**
  * Esc raises the engine's own strip over an open panel. The pot has the
@@ -339,6 +383,14 @@ export class GalleyPanel {
   /** -1 while the pot is still being fed; 0..1 once the lid is on. */
   private simmer = -1;
   private burnt = false;
+  /** What went wrong, when something did: over the fire, over the clock, off too soon. */
+  private failMode: 'burn' | 'scorch' | 'thin' | null = null;
+  /** The hard telling, read once at open. First story runs are never hard. */
+  private hard = false;
+  /** Hard only: seconds the pot will wait for the current step. */
+  private stepLeft = 0;
+  /** Wrong reaches per step, for the coach's pointed finger. */
+  private wrongBy: number[] = [];
 
   constructor(
     private root: HTMLElement,
@@ -352,6 +404,26 @@ export class GalleyPanel {
   /** True only while the pantry is live: not simmering, not burnt, not finished. */
   private get feeding(): boolean {
     return !this.done && !this.burnt && this.simmer < 0;
+  }
+
+  private get total(): number {
+    return this.hard ? HARD_STEPS.length : STEPS.length;
+  }
+
+  private get ready(): number {
+    return this.hard ? HARD_READY : SIMMER_READY;
+  }
+
+  private get edge(): number {
+    return this.hard ? HARD_EDGE : SIMMER_EDGE;
+  }
+
+  private get stepTime(): number {
+    return calm() ? HARD_STEP_TIME_CALM : HARD_STEP_TIME;
+  }
+
+  private wantName(i: number): string | null {
+    return (this.hard ? HARD_STEPS[i]?.name : STEPS[i]?.name) ?? null;
   }
 
   open(onDone: () => void) {
@@ -371,7 +443,13 @@ export class GalleyPanel {
     this.simmer = -1;
     this.burnt = false;
     this.steamAcc = 0;
-    this.hint = 'Ben ties your apron. "First: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
+    this.failMode = null;
+    this.hard = RUN.hard;
+    this.wrongBy = [];
+    this.stepLeft = this.stepTime;
+    this.hint = this.hard
+      ? 'Ben ties your apron and steps back, arms folded. "Your pot tonight, pare. I only watch." ' + (HARD_STEPS[0]?.call ?? '')
+      : 'Ben ties your apron. "First: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
     makeGalleyBg();
     makePantrySheet();
     galleyGlow ??= bakeGlow('rgba(255,214,150,0.9)', 44);
@@ -411,42 +489,82 @@ export class GalleyPanel {
       this.liftOff();
       return;
     }
-    const want = STEPS[this.step];
+    const want = this.wantName(this.step);
     if (!want) return;
     const picked = PANTRY[this.cur] ?? '';
-    if (picked === want.name) {
+    if (picked === want) {
       this.audio.weaveNote(this.step % 7);
-      this.hint = want.note;
-      this.launch(want.name);
+      if (this.hard) {
+        const next = HARD_STEPS[this.step + 1];
+        this.hint = next ? `A nod from Ben. ${next.call}` : 'A nod from Ben.';
+        this.stepLeft = this.stepTime;
+      } else {
+        this.hint = STEPS[this.step]?.note ?? '';
+      }
+      this.launch(want);
+    } else if (this.hard) {
+      // The hard telling: no hand-over. A wrong reach only costs the pot's patience.
+      this.audio.blip();
+      this.wrongBy[this.step] = (this.wrongBy[this.step] ?? 0) + 1;
+      this.misses++;
+      this.stepLeft -= HARD_WRONG_COST;
+      this.hint = 'Ben does not move. "Not that one, pare." The pot does not wait for second guesses.';
+      this.wobIdx = this.cur;
+      this.sc.tween(0, 1, 0.38, easeOutCubic, (v) => {
+        this.wobT = v;
+      }, () => {
+        this.wobIdx = -1;
+      });
+      if (this.stepLeft <= 0) this.scorch();
+      return;
     } else {
       // No failing in this galley. Ben hands you the right thing, laughing.
       this.audio.blip();
       const chuckle = CHUCKLES[this.misses % CHUCKLES.length] ?? CHUCKLES[0] ?? '';
+      this.wrongBy[this.step] = (this.wrongBy[this.step] ?? 0) + 1;
       this.misses++;
-      this.hint = `${chuckle} ${want.name.toLowerCase()}. ${want.note}`;
-      this.wiggleThenLaunch(this.cur, want.name);
+      const note = STEPS[this.step]?.note ?? '';
+      this.hint = `${chuckle} ${want.toLowerCase()}. ${note}`;
+      this.wiggleThenLaunch(this.cur, want);
     }
     this.step++;
-    if (this.step >= STEPS.length) {
+    if (this.step >= this.total) {
       this.lidding = true;
-      this.hint = 'Six things and no more. Ben slides the lid over. "Now she argues with herself, pare. Watch the sauce go down."';
+      this.hint = this.hard
+        ? 'Ben slides the lid over without a word. The sauce goes down fast tonight; the gold band is one breath wide.'
+        : 'Six things and no more. Ben slides the lid over. "Now she argues with herself, pare. Watch the sauce go down."';
     }
   }
 
   /** Lid on: the only part of adobo that cannot be hurried begins. */
   private startSimmer() {
     this.simmer = 0;
-    this.hint = 'The sarsa starts going down under the lid. Ben: "When the smell turns sweet and dark, off the heat." Space lifts the pot.';
+    this.hint = this.hard
+      ? 'The sarsa goes down in a hurry. Ben watches you, not the pot. Space lifts it off; too soon is thin, too late is ash.'
+      : 'The sarsa starts going down under the lid. Ben: "When the smell turns sweet and dark, off the heat." Space lifts the pot.';
   }
 
-  /** Space during the simmer. Too early is only a shake of the head. */
+  /** Space during the simmer. Too early is a headshake, or in the hard telling, a thin dinner. */
   private liftOff() {
-    if (this.simmer < SIMMER_READY) {
+    if (this.simmer < this.ready) {
+      if (this.hard) {
+        this.failPot('thin');
+        return;
+      }
       this.audio.blip();
       this.hint = 'Ben leans over and sniffs. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
       return;
     }
     this.done = true;
+    // A pass that leaned on lucky reaching still earns one pointed line for next time.
+    if (this.misses >= 3) {
+      let worst = 0;
+      for (let i = 1; i < this.total; i++) {
+        if ((this.wrongBy[i] ?? 0) > (this.wrongBy[worst] ?? 0)) worst = i;
+      }
+      const name = (this.wantName(worst) ?? 'garlic').toLowerCase();
+      coach('c3.cook.start', `You kept reaching past the ${name}; it sits ${shelfSpot(this.wantName(worst) ?? '')}. Go straight to it and the pot stays calm.`);
+    }
     this.audio.weaveDone();
     this.sc.flash('#ffe2b0', 0.3);
     this.sc.tween(1, 0.58, 0.45, easeOutCubic, (v) => {
@@ -462,19 +580,57 @@ export class GalleyPanel {
 
   /** The pot catches. Ben has burnt more dinners than you will ever cook. */
   private burn() {
+    this.failPot('burn');
+  }
+
+  /** Hard telling only: the pot lost patience waiting on one thing too long. */
+  private scorch() {
+    this.failPot('scorch');
+  }
+
+  /**
+   * The three ways a dinner goes wrong, each with its own face and its own
+   * coaching. One press and the garlic starts over; nothing is lost but tonight.
+   */
+  private failPot(mode: 'burn' | 'scorch' | 'thin') {
     this.burnt = true;
-    this.simmer = 1;
+    this.failMode = mode;
+    if (mode !== 'thin') this.simmer = Math.max(this.simmer, 1);
     this.audio.blip();
-    this.sc.flash('#3a2410', 0.4);
+    this.sc.flash(mode === 'thin' ? '#26343c' : '#3a2410', 0.4);
     if (!calm()) this.sc.thump(5, 0.05);
-    this.sc.tween(1, 0.55, 0.4, easeOutCubic, (v) => {
+    this.sc.tween(mode === 'thin' ? 1 : this.lidT, 0.55, 0.4, easeOutCubic, (v) => {
       this.lidT = v;
     });
+    const smoke = mode === 'thin' ? 'rgba(230,235,238,0.4)' : 'rgba(46,38,30,0.55)';
     for (let i = 0; i < (calm() ? 3 : 7); i++) {
-      this.sc.waft(POT_X + (Math.random() - 0.5) * 74, POT_MOUTH_Y - 4, 'rgba(46,38,30,0.55)', 11);
+      this.sc.waft(POT_X + (Math.random() - 0.5) * 74, POT_MOUTH_Y - 4, smoke, 11);
     }
-    this.hint =
-      'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, pare. Every cook owes the pot a few." Press Space and the garlic goes back in.';
+    if (mode === 'burn') {
+      this.hint =
+        'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, pare. Every cook owes the pot a few." Press Space and the garlic goes back in.';
+      coach(
+        'c3.cook.start',
+        'You let the sarsa argue past dark; lift the pot the moment the gauge finds the gold band, on the first sweet-and-dark breath.',
+      );
+    } else if (mode === 'scorch') {
+      const want = this.wantName(this.step) ?? 'garlic';
+      const fumbled = (this.wrongBy[this.step] ?? 0) >= 2;
+      this.hint = `The garlic scorches while the pot waits. Ben lifts it off. "She lost patience at the ${want.toLowerCase()}, pare." Press Space and it starts over.`;
+      coach(
+        'c3.cook.start',
+        fumbled
+          ? `You reached past the ${want.toLowerCase()} twice while the pot burned; it sits ${shelfSpot(want)}. Go straight to it.`
+          : `The pot lost patience waiting on the ${want.toLowerCase()}; it sits ${shelfSpot(want)}. Reach for it before the ember bar dies.`,
+      );
+    } else {
+      this.hint =
+        'Ben tastes it and winces. "Labnaw. All vinegar still, pare; she had not finished arguing." Press Space and the garlic goes back in.';
+      coach(
+        'c3.cook.start',
+        'You pulled the pot while the sauce was still all vinegar; hold on until the gauge enters the gold band, then lift.',
+      );
+    }
   }
 
   tick(dt: number) {
@@ -484,14 +640,24 @@ export class GalleyPanel {
     // by menus. Ben calls it twice before it ever catches.
     if (this.simmer >= 0 && !this.done && !this.burnt && !stripUp()) {
       const was = this.simmer;
-      this.simmer = Math.min(1, this.simmer + simDt / (calm() ? SIMMER_CALM : SIMMER_DUR));
-      if (was < SIMMER_READY && this.simmer >= SIMMER_READY) {
+      const dur = this.hard ? (calm() ? HARD_SIMMER_CALM : HARD_SIMMER_DUR) : calm() ? SIMMER_CALM : SIMMER_DUR;
+      this.simmer = Math.min(1, this.simmer + simDt / dur);
+      if (was < this.ready && this.simmer >= this.ready) {
         this.audio.chime();
-        this.hint = 'The whole galley goes sweet and dark at once. Ben, not looking up: "Ngayon na. Now, pare." Space lifts the pot off.';
-      } else if (was < SIMMER_EDGE && this.simmer >= SIMMER_EDGE) {
-        this.hint = 'A thin sharp note arrives under the sweet. Ben stops wiping the counter. "Ay. Now now now." Space, off the heat.';
+        this.hint = this.hard
+          ? 'The galley turns sweet and dark. Ben says nothing, but his eyebrows say now. Space lifts the pot off.'
+          : 'The whole galley goes sweet and dark at once. Ben, not looking up: "Ngayon na. Now, pare." Space lifts the pot off.';
+      } else if (was < this.edge && this.simmer >= this.edge) {
+        this.hint = this.hard
+          ? 'A thin sharp note under the sweet. Off. Now.'
+          : 'A thin sharp note arrives under the sweet. Ben stops wiping the counter. "Ay. Now now now." Space, off the heat.';
       }
       if (this.simmer >= 1) this.burn();
+    }
+    // The hard telling's other clock: each step, the pot waits only so long.
+    if (this.hard && this.feeding && !this.lidding && !stripUp()) {
+      this.stepLeft -= simDt;
+      if (this.stepLeft <= 0) this.scorch();
     }
     // Steam keeps pace with the pot: more in it, more of it.
     if (this.landed >= 2 && !this.burnt) {
@@ -535,12 +701,12 @@ export class GalleyPanel {
     this.fly = null;
     const name = PANTRY[f.icon] ?? '';
     this.used.add(name);
-    this.landed = Math.min(STEPS.length, this.landed + 1);
+    this.landed = Math.min(this.total, this.landed + 1);
     if (!calm()) this.sc.thump(3, 0.03);
     const splash = this.landed >= 3 ? '#6b4522' : '#c9a06a';
     this.sc.burst(POT_X, POT_MOUTH_Y + 2, { n: calm() ? 4 : 10, color: splash, speed: 75, size: 2.6, life: 0.5, grav: 260 });
     this.sc.waft(POT_X, POT_MOUTH_Y - 4, 'rgba(255,252,244,0.4)', 9);
-    if (this.lidding && this.landed >= STEPS.length && !this.lidGoing) {
+    if (this.lidding && this.landed >= this.total && !this.lidGoing) {
       this.lidGoing = true;
       this.sc.tween(0, 1, 0.55, easeOutBack, (v) => {
         this.lidT = v;
@@ -634,10 +800,11 @@ export class GalleyPanel {
     }
   }
 
-  /** Six chalk boxes on Ben's board, checked as the pot fills. */
+  /** Chalk boxes on Ben's board, one per step, checked as the pot fills. */
   private chalkTicks(g: CanvasRenderingContext2D) {
-    for (let i = 0; i < STEPS.length; i++) {
-      const bx = 256 + i * 20;
+    const dx = this.total > 6 ? 17 : 20;
+    for (let i = 0; i < this.total; i++) {
+      const bx = 256 + i * dx;
       g.strokeStyle = 'rgba(238,234,220,0.65)';
       g.lineWidth = 1.4;
       g.strokeRect(bx, 72, 13, 13);
@@ -726,6 +893,15 @@ export class GalleyPanel {
     const cy = POT_MOUTH_Y + 1;
     const n = this.landed;
     if (this.burnt) {
+      if (this.failMode === 'thin') {
+        // Pulled too soon: pale, watery, the chicken swimming instead of glazed.
+        oval(g, cx, cy, 55, 10.5, '#9a7a50');
+        for (const [ox, oy, r] of [[-26, 1, 9], [-2, -2, 11], [24, 2, 8.5]] as const) {
+          oval(g, cx + ox, cy + oy, r, r * 0.55, '#c9a06a');
+        }
+        oval(g, cx - 8, cy - 3, 30, 3.5, 'rgba(230,235,238,0.25)', -0.05);
+        return;
+      }
       // Black, dry, and stuck to the bottom. It happens to every galley.
       oval(g, cx, cy, 55, 10.5, '#2a1c10');
       for (let i = 0; i < 8; i++) dot(g, cx - 36 + i * 10, cy + Math.sin(i * 1.7) * 3.5, 2.6, '#150e07');
@@ -776,29 +952,55 @@ export class GalleyPanel {
    * has gone. The gold band is the window where the pot should come off.
    */
   private simmerGauge(g: CanvasRenderingContext2D, t: number) {
-    if (this.simmer < 0) return;
+    if (this.simmer < 0) {
+      this.stepGauge(g);
+      return;
+    }
     const x = 62;
     const y = 314;
     const w = 240;
     const h = 14;
-    const bx = x + w * SIMMER_READY;
+    const ready = this.ready;
+    const bx = x + w * ready;
     rr(g, x - 3, y - 3, w + 6, h + 6, 4, '#8a6a44');
     rr(g, x - 1.5, y - 1.5, w + 3, h + 3, 3, '#c9a35f');
     rr(g, x, y, w, h, 3, '#241a12');
-    rect(g, bx, y, w * (1 - SIMMER_READY), h, 'rgba(232,192,99,0.24)');
+    rect(g, bx, y, w * (1 - ready), h, 'rgba(232,192,99,0.24)');
     const k = Math.min(1, this.simmer);
-    const col = this.burnt ? '#3a2a1c' : k >= SIMMER_EDGE ? '#c1512f' : k >= SIMMER_READY ? '#e8c063' : '#a8703a';
+    const col = this.burnt ? '#3a2a1c' : k >= this.edge ? '#c1512f' : k >= ready ? '#e8c063' : '#a8703a';
     rr(g, x, y, Math.max(4, w * k), h, 3, col);
-    if (!this.burnt && !this.done && k >= SIMMER_READY) {
+    if (!this.burnt && !this.done && k >= ready) {
       g.globalAlpha = 0.3 + Math.sin(t * 7) * 0.22;
-      rr(g, bx, y - 1.5, w * (1 - SIMMER_READY), h + 3, 3, '#ffe2b0');
+      rr(g, bx, y - 1.5, w * (1 - ready), h + 3, 3, '#ffe2b0');
       g.globalAlpha = 1;
     }
     rect(g, bx - 1, y - 5, 2, h + 10, 'rgba(238,234,220,0.85)');
     g.font = "18px Caveat, 'Segoe Script', cursive";
     g.textAlign = 'left';
     g.fillStyle = this.burnt ? '#d98a6a' : 'rgba(238,234,220,0.9)';
-    g.fillText(this.burnt ? 'nasunog' : this.done ? 'tapos na' : 'sarsa', x, y - 8);
+    const label = this.burnt ? (this.failMode === 'thin' ? 'labnaw' : 'nasunog') : this.done ? 'tapos na' : 'sarsa';
+    g.fillText(label, x, y - 8);
+  }
+
+  /**
+   * The hard telling's ember bar, same mount as the reduction gauge: how much
+   * patience the pot has left for the thing Ben just called.
+   */
+  private stepGauge(g: CanvasRenderingContext2D) {
+    if (!this.hard || !this.feeding || this.lidding) return;
+    const x = 62;
+    const y = 314;
+    const w = 240;
+    const h = 14;
+    const k = Math.max(0, Math.min(1, this.stepLeft / this.stepTime));
+    rr(g, x - 3, y - 3, w + 6, h + 6, 4, '#8a6a44');
+    rr(g, x - 1.5, y - 1.5, w + 3, h + 3, 3, '#c9a35f');
+    rr(g, x, y, w, h, 3, '#241a12');
+    rr(g, x, y, Math.max(4, w * k), h, 3, k < 0.3 ? '#c1512f' : '#e08a2e');
+    g.font = "18px Caveat, 'Segoe Script', cursive";
+    g.textAlign = 'left';
+    g.fillStyle = 'rgba(238,234,220,0.9)';
+    g.fillText('the pot waits', x, y - 8);
   }
 
   /** The pantry: eight painted things on two boards, one warmed by choice. */
@@ -936,6 +1138,33 @@ const LINES: [number, number][][][] = [
     // The Amanogawa: the river's own line, northeast along the bright dust.
     [[0.60, 0.40], [0.655, 0.33], [0.70, 0.25], [0.76, 0.185], [0.83, 0.125], [0.895, 0.075], [0.945, 0.05]],
   ],
+];
+
+/**
+ * The hard telling's marks: the same three skies, but only the heart of each
+ * counts. The belt itself, the llama's dark belly, the river's bright bend.
+ * Two grid cells each, against eight or nine in the story telling.
+ */
+const HARD_RECTS: [number, number, number, number][] = [
+  [0.1, 0.6, 0.24, 0.78],
+  [0.42, 0.17, 0.6, 0.33],
+  [0.72, 0.05, 0.92, 0.21],
+];
+/** Hard telling: the sky is yours only until the watch turns. */
+const HARD_TIME = 45;
+const HARD_TIME_CALM = 60;
+/** Hana relents with one single-axis hint only every third miss. */
+const HARD_HINT_EVERY = 3;
+/** Where each reading actually lives, in the coach's mouth. */
+const WHERE_HOME = [
+  'the Hunter stands low to the southwest, three belt stars in a row',
+  'Yacana drinks near the zenith, where the river is darkest',
+  'the Amanogawa bends high to the northeast, along the bright dust',
+];
+const HARD_SILENCE = [
+  'Hana watches the water. "The sky does not answer twice."',
+  'Hana says nothing. The glass is yours.',
+  'A gull, somewhere. No word from Hana.',
 ];
 
 const LABEL_AT: [number, number][] = [[0.155, 0.545], [0.485, 0.565], [0.79, 0.27]];
@@ -1138,6 +1367,19 @@ export class StarPanel {
   private missT = 1;
   private shoot: Shoot | null = null;
   private shootIn = 5;
+  /** The hard telling, read once at open. First story runs are never hard. */
+  private hard = false;
+  /** Hard only: seconds left until eight bells. */
+  private left = 0;
+  /** Hard only: the watch turned with readings still unnamed. */
+  private failed = false;
+  /** Per-target miss ledger: count and summed offsets from the mark's heart. */
+  private missBy = [
+    { n: 0, dx: 0, dy: 0 },
+    { n: 0, dx: 0, dy: 0 },
+    { n: 0, dx: 0, dy: 0 },
+  ];
+  private missesTotal = 0;
 
   constructor(
     private root: HTMLElement,
@@ -1159,7 +1401,18 @@ export class StarPanel {
     this.missT = 1;
     this.shoot = null;
     this.shootIn = 5;
-    this.hint = `${TARGETS[0]?.ask ?? ''} Arrows steer your eyes; Space says "there."`;
+    this.hard = RUN.hard;
+    this.left = calm() ? HARD_TIME_CALM : HARD_TIME;
+    this.failed = false;
+    this.missBy = [
+      { n: 0, dx: 0, dy: 0 },
+      { n: 0, dx: 0, dy: 0 },
+      { n: 0, dx: 0, dy: 0 },
+    ];
+    this.missesTotal = 0;
+    this.hint = this.hard
+      ? `Hana: "Second telling. Smaller marks, and I keep my counsel. Till eight bells." ${TARGETS[0]?.ask ?? ''}`
+      : `${TARGETS[0]?.ask ?? ''} Arrows steer your eyes; Space says "there."`;
     makeSkyBg();
     makeRailFg();
     makeChartCard();
@@ -1175,14 +1428,25 @@ export class StarPanel {
   }
 
   onDir(dir: Dir) {
-    if (this.done) return;
+    if (this.done || this.failed) return;
     if (dir === 'left') this.cx = Math.max(0, this.cx - 1);
     if (dir === 'right') this.cx = Math.min(GRID_W - 1, this.cx + 1);
     if (dir === 'up') this.cy = Math.max(0, this.cy - 1);
     if (dir === 'down') this.cy = Math.min(GRID_H - 1, this.cy + 1);
   }
 
+  /** The mark that counts for target `i`: the story rect, or its hard heart. */
+  private activeRect(i: number): [number, number, number, number] {
+    return (this.hard ? HARD_RECTS[i] : TARGETS[i]?.rect) ?? [0, 0, 1, 1];
+  }
+
   onAction() {
+    if (this.failed) {
+      // Eight bells came and went. Same sky tomorrow night; same telling now.
+      const again = this.onDone;
+      if (again) this.open(again);
+      return;
+    }
     if (this.done) {
       this.root.hidden = true;
       const done = this.onDone;
@@ -1194,7 +1458,7 @@ export class StarPanel {
     if (!t) return;
     const fx = (this.cx + 0.5) / GRID_W;
     const fy = (this.cy + 0.5) / GRID_H;
-    const [x0, y0, x1, y1] = t.rect;
+    const [x0, y0, x1, y1] = this.activeRect(this.target);
     if (fx >= x0 && fx <= x1 && fy >= y0 && fy <= y1) {
       this.audio.chime();
       this.target++;
@@ -1206,19 +1470,79 @@ export class StarPanel {
         this.done = true;
         this.audio.weaveDone();
         this.hint = `${t.found} Three skies, one river. Press Space.`;
+        // Found them all, but by long wandering: one pointed line for next time.
+        if (this.missesTotal >= 5) {
+          let worst = 0;
+          for (let i = 1; i < this.missBy.length; i++) {
+            if ((this.missBy[i]?.n ?? 0) > (this.missBy[worst]?.n ?? 0)) worst = i;
+          }
+          coach('c3.stars.start', this.starCoach(worst));
+        }
       }
     } else {
-      // A miss only warms you up; the sky is not going anywhere.
+      // A miss: the ledger remembers where you looked instead.
       this.audio.blip();
-      const dx = fx < x0 ? 'more to starboard' : fx > x1 ? 'more to port' : '';
-      const dy = fy < y0 ? 'lower' : fy > y1 ? 'higher' : '';
-      const nudge = [dy, dx].filter(Boolean).join(' and ');
-      this.hint = `Hana tilts her head. "Warm. Look ${nudge || 'again, slower'}."`;
+      const m = this.missBy[this.target];
+      if (m) {
+        m.n++;
+        m.dx += fx - (x0 + x1) / 2;
+        m.dy += fy - (y0 + y1) / 2;
+      }
+      this.missesTotal++;
+      if (this.hard) {
+        // Hana keeps her counsel, mostly. Every third miss, one axis only.
+        const n = m?.n ?? 1;
+        if (n % HARD_HINT_EVERY === 0) {
+          const offX = fx < x0 ? 'to starboard' : fx > x1 ? 'to port' : '';
+          const offY = fy < y0 ? 'lower' : fy > y1 ? 'higher' : '';
+          const big = Math.abs((m?.dx ?? 0) / n) >= Math.abs((m?.dy ?? 0) / n) ? offX || offY : offY || offX;
+          this.hint = big ? `Hana relents, once. "Look ${big}."` : 'Hana almost smiles. "Close. Say it like you mean it."';
+        } else {
+          this.hint = HARD_SILENCE[(this.missesTotal - 1) % HARD_SILENCE.length] ?? '';
+        }
+      } else {
+        // The story telling only warms you up; the sky is not going anywhere.
+        const dx = fx < x0 ? 'more to starboard' : fx > x1 ? 'more to port' : '';
+        const dy = fy < y0 ? 'lower' : fy > y1 ? 'higher' : '';
+        const nudge = [dy, dx].filter(Boolean).join(' and ');
+        this.hint = `Hana tilts her head. "Warm. Look ${nudge || 'again, slower'}."`;
+      }
       this.missT = 0;
       this.sc.tween(0, 1, 0.4, easeOutCubic, (v) => {
         this.missT = v;
       });
     }
+  }
+
+  /**
+   * One pointed sentence from the run's own ledger: where they kept looking,
+   * and where the reading actually lives.
+   */
+  private starCoach(i: number): string {
+    const m = this.missBy[i];
+    const home = WHERE_HOME[i] ?? '';
+    if (!m || m.n === 0) {
+      return 'You walked the glass but never named a thing; when it rests where the chart says, say "there" with Space.';
+    }
+    const adx = m.dx / m.n;
+    const ady = m.dy / m.n;
+    const looked: string[] = [];
+    if (ady > 0.05) looked.push('low');
+    else if (ady < -0.05) looked.push('high');
+    if (adx < -0.05) looked.push('to port');
+    else if (adx > 0.05) looked.push('to starboard');
+    if (looked.length === 0) return `You circled it close but never landed; ${home}. Trust the chart and hold still.`;
+    return `You kept searching ${looked.join(' and ')}; ${home}.`;
+  }
+
+  /** Eight bells: the watch turns with readings still unnamed. */
+  private failWatch() {
+    this.failed = true;
+    this.audio.blip();
+    this.sc.flash('#1a2438', 0.5);
+    this.hint =
+      'Eight bells; the watch turns. Hana stretches. "The sky will keep, and so will we." Press Space and the glass is yours again.';
+    coach('c3.stars.start', this.starCoach(Math.min(this.target, TARGETS.length - 1)));
   }
 
   tick(dt: number) {
@@ -1243,7 +1567,16 @@ export class StarPanel {
         if (this.shoot.age > 0.7) this.shoot = null;
       }
     }
-    this.sc.frame(dt, (g) => this.paint(g));
+    const simDt = this.sc.frame(dt, (g) => this.paint(g));
+    // Hard telling: the watch glass runs while the strip is down and the sky
+    // is still owed readings. The story telling has no clock at all.
+    if (this.hard && !this.done && !this.failed && !stripUp()) {
+      this.left -= simDt;
+      if (this.left <= 0) {
+        this.left = 0;
+        this.failWatch();
+      }
+    }
     this.ui?.setHint(this.hint);
   }
 
@@ -1252,8 +1585,9 @@ export class StarPanel {
     const t = TARGETS[i];
     if (!t) return;
     this.sc.flash('#ffe9b8', 0.28);
-    const cx = fpx((t.rect[0] + t.rect[2]) / 2);
-    const cy = fpy((t.rect[1] + t.rect[3]) / 2);
+    const [rx0, ry0, rx1, ry1] = this.activeRect(i);
+    const cx = fpx((rx0 + rx1) / 2);
+    const cy = fpy((ry0 + ry1) / 2);
     this.sc.burst(cx, cy, { n: calm() ? 5 : 14, color: '#e8c063', speed: 60, size: 2, life: 0.8, grav: -10, kind: 'spark' });
     this.sc.tween(0, 1, 1.15, easeInOutSine, (v) => {
       this.foundP[i] = v;
@@ -1298,6 +1632,7 @@ export class StarPanel {
     if (railFg) g.drawImage(railFg, -30 + roll * 3, 188);
     g.restore();
     this.tracker(g);
+    this.watchBar(g);
     const card = makeChartCard();
     g.save();
     g.translate(548, 244);
@@ -1443,6 +1778,23 @@ export class StarPanel {
       g.stroke();
     }
     dot(g, x, y, 1.5, '#e8c063');
+  }
+
+  /** Hard telling only: the watch glass on the rail, running out toward eight bells. */
+  private watchBar(g: CanvasRenderingContext2D) {
+    if (!this.hard) return;
+    const max = calm() ? HARD_TIME_CALM : HARD_TIME;
+    const k = Math.max(0, Math.min(1, this.left / max));
+    const x = 352;
+    const y = 318;
+    const w = 112;
+    const h = 5;
+    g.font = "13px Caveat, 'Segoe Script', cursive";
+    g.textAlign = 'left';
+    g.fillStyle = 'rgba(232,211,160,0.75)';
+    g.fillText('till eight bells', x, y - 5);
+    rr(g, x - 1.5, y - 1.5, w + 3, h + 3, 3, 'rgba(12,17,26,0.85)');
+    rr(g, x, y, Math.max(3, w * k), h, 2.5, k < 0.25 ? '#c1512f' : '#c9a35f');
   }
 
   /** Three names on the rail; the found ones get their star back. */

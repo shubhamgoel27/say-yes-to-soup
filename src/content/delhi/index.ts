@@ -33,6 +33,8 @@ export const CHAPTER: ChapterDef = {
         'Cup the stuffing, seal it, roll again. Then the tawa: Space on the bright band, when the ghee starts to sing.',
         'Burn one and Kamla laughs and slaps down fresh dough. The burnt one goes to Sheru, who is always available.',
       ],
+      hardHow:
+        'The hard telling is the dinner rush: Kamla steps back, the batch runs four and rabri-heavy, the singing band is a breath wide, and the atta bowl has a bottom. Feed Sheru twice and the evening is his.',
       make: (root, audio) => new ParanthaPanel(root, audio as AudioBus),
     },
     {
@@ -46,6 +48,8 @@ export const CHAPTER: ChapterDef = {
         'Space launches her when the breeze leans in. After that, Up is kheench, the pull; Down is dheel, the slack.',
         'The wind will tell you which it wants. Whatever the sky takes, Yusuf\'s charkhi replaces: paper is cheap, the wind is free.',
       ],
+      hardHow:
+        'The hard telling: the black patang flies waxed dor and saws back on its own, the birds cross oftener, the gusts mean it, and Yusuf ties exactly three patangs to the evening. The sky keeps what it takes.',
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, false),
     },
     {
@@ -56,6 +60,8 @@ export const CHAPTER: ChapterDef = {
         'Three rivals, a rising wind, and a storm queueing behind the fort. The same two hands: kheench and dheel.',
         'A cut costs you that round and nothing else. Yusuf hands you the next kite and the roofs shout you back up.',
       ],
+      hardHow:
+        'The hard telling: waxed dor on every rival roof, rivals that saw while you hesitate, more pigeons than sky, and three patangs on the charkhi with not one more behind them. The kucha will remember either way.',
       make: (root, audio) => new PatangPanel(root, audio as AudioBus, true),
     },
   ],

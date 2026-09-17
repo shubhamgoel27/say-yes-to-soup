@@ -3,6 +3,7 @@ import type { AudioBus } from '../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag } from './games/scene';
 import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
+import { RUN, coach } from './games/run';
 
 /**
  * The coast's two hands-on verbs, plus the noon kitchen. Same logic as ever;
@@ -14,12 +15,22 @@ import { PAL } from '../engine/config';
  *
  * NetPanel: the evening net circle. No timer, no failure. Walk the shuttle to
  * each hole and tie it shut; the day mends alongside.
+ *
+ * All three panels also carry a hard telling (RUN.hard, replay only): faster
+ * swells and a strike a handsbreadth wide, dusk that runs out on the net, a
+ * lime sliver and only two lisas. The hard telling can be lost; losing costs
+ * nothing but leaves one honest coach() line for the next how-to card. The
+ * first story run never reads these numbers.
  */
 
 const calm = () => document.body.classList.contains('reduce-motion');
 
 /** The shared .w-hint style collapses wrapped lines; restore breathing room. */
 const hintHtml = (h: string) => `<span style="display:inline-block;line-height:1.45">${h}</span>`;
+
+/** For coach lines that name the swell that got away. */
+const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth'] as const;
+const ord = (n: number) => ORDINAL[Math.min(ORDINAL.length, Math.max(1, n)) - 1]!;
 
 /** Baked radial glow sprites, one per color, so no per-frame gradients. */
 const glowCache = new Map<string, Surface>();
@@ -52,7 +63,7 @@ function gull(g: CanvasRenderingContext2D, x: number, y: number, r: number, c: s
 
 // ---------------------------------------------------------------- the ride
 
-type WavePhase = 'paddle' | 'ride' | 'done';
+type WavePhase = 'paddle' | 'ride' | 'done' | 'lost';
 
 type WaveBake = { sky: Surface; bands: Surface[]; hull: Surface; rider: Surface };
 let waveBaked: WaveBake | null = null;
@@ -305,6 +316,27 @@ export class WavePanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The hard telling, read once from RUN at open. The first story run keeps
+  // the numbers it has always had; only a replay can tighten them.
+  private hard = false;
+  private zoneLo = -0.06; // strike zone, in wave-track units
+  private zoneHi = 0.22;
+  private speedUp = 0.12; // per punched wave
+  private driftMul = 1.4;
+  private rideTol = 0.45;
+  private rideNeed = 4;
+  private railT = 0; // hard only: time spent pinned to a rail
+  private railSide = 0;
+
+  // The run's own record, for the coach line it may owe the next card.
+  private swellIdx = 1; // which swell is arriving, 1-based
+  private earlyOnSwell = false; // paddled too soon at the current swell
+  private earlyMisses = 0;
+  private lateMisses = 0;
+  private lastEarlySwell = 0;
+  private lastLateSwell = 0;
+  private escapes = 0; // swells that rolled past unpunched
+
   // Visual state only; game logic never reads these.
   private scene: Scene | null = null;
   private ui: { setHint: (h: string) => void } | null = null;
@@ -329,10 +361,29 @@ export class WavePanel {
     this.phase = 'paddle';
     this.waves = 0;
     this.x = 1;
-    this.speed = 0.55;
+    this.hard = RUN.hard;
+    this.speed = this.hard ? 0.72 : 0.55;
+    this.speedUp = this.hard ? 0.16 : 0.12;
+    this.zoneLo = this.hard ? -0.04 : -0.06;
+    this.zoneHi = this.hard ? 0.12 : 0.22;
+    this.driftMul = this.hard ? 2.2 : 1.4;
+    this.rideTol = this.hard ? 0.34 : 0.45;
+    this.rideNeed = this.hard ? 5 : 4;
+    this.railT = 0;
+    this.railSide = 0;
+    this.swellIdx = 1;
+    this.earlyOnSwell = false;
+    this.earlyMisses = 0;
+    this.lateMisses = 0;
+    this.lastEarlySwell = 0;
+    this.lastLateSwell = 0;
+    this.escapes = 0;
     this.balance = 0;
+    this.drift = 0; // a fresh sea; the last run's chop does not carry over
     this.rideT = 0;
-    this.hint = 'A swell rolls in. Space to paddle as it reaches you.';
+    this.hint = this.hard
+      ? 'The hard water. The swells run fast and the strike is a handsbreadth. Space, exactly as one reaches you.'
+      : 'A swell rolls in. Space to paddle as it reaches you.';
     this.root.hidden = false;
     this.scene ??= new Scene();
     this.ui = mountScene(this.root, 'The Caballito', this.scene, WAVE_LEGEND);
@@ -348,25 +399,60 @@ export class WavePanel {
     if (this.phase === 'paddle') {
       this.x -= dt * this.speed;
       if (this.x < -0.08) {
-        // The wave passed; it shoves, it does not punish.
+        // The wave passed. In the story telling it shoves, it does not
+        // punish; the hard water only offers so many swells. An early stroke
+        // was already counted at the press; a swell nobody swung at is late.
+        if (!this.earlyOnSwell) {
+          this.lateMisses++;
+          this.lastLateSwell = this.swellIdx;
+        }
+        this.escapes++;
+        this.swellIdx++;
+        this.earlyOnSwell = false;
         this.audio.slosh();
         this.x = 1;
-        this.hint = 'It rolls you back a little. Again: Space right as it arrives.';
         const sc = this.scene!;
         sc.thump(calm() ? 0 : 3, 0.03);
         if (!calm()) sc.burst(this.hx + 36, 262, { n: 12, color: 'rgba(246,240,226,0.9)', speed: 110, grav: 200, size: 3 });
         this.hx = 120; // shoved back; eases home in paint
+        if (this.hard && this.escapes >= 3) {
+          this.lose('Three swells got away, and the set is done. The sea shrugs you shoreward. Press Space.');
+          return;
+        }
+        this.hint =
+          this.hard
+            ? `It shoulders past. ${this.escapes === 1 ? 'Two more escapes and the set is spent.' : 'One more escape and the set is spent.'}`
+            : 'It rolls you back a little. Again: Space right as it arrives.';
       }
     } else if (this.phase === 'ride') {
       this.drift += (Math.random() - 0.5) * 2.6 * dt;
       this.drift = Math.max(-1, Math.min(1, this.drift));
-      this.balance += this.drift * dt * 1.4;
+      this.balance += this.drift * dt * this.driftMul;
       this.balance = Math.max(-1, Math.min(1, this.balance));
-      if (Math.abs(this.balance) < 0.45) this.rideT += dt;
-      if (this.rideT >= 4) {
+      if (Math.abs(this.balance) < this.rideTol) this.rideT += dt;
+      if (this.hard) {
+        // A rail held under is a swim; the story telling never wipes.
+        if (Math.abs(this.balance) >= 0.98) {
+          this.railT += dt;
+          this.railSide = Math.sign(this.balance);
+          if (this.railT > 0.6) {
+            const side = this.railSide < 0 ? 'left' : 'right';
+            this.lose(
+              'The rail goes under and the sea takes the rest. You surface laughing anyway. Press Space.',
+              `You held the lean until the ${side} rail went under; tap against the drift early, while it is still small.`,
+            );
+            return;
+          }
+        } else {
+          this.railT = 0;
+        }
+      }
+      if (this.rideT >= this.rideNeed) {
         this.phase = 'done';
         this.audio.weaveDone();
         this.hint = 'The wave sets you down on the sand like a parcel. Press Space.';
+        // Won, but not clean: the next how-to card owes the specific fix.
+        if (this.earlyMisses + this.lateMisses > 0) coach('wave.start', this.paddleAdvice());
         const sc = this.scene!;
         sc.thump(calm() ? 0 : 4, 0.04);
         sc.flash('#f7e9c8', 0.3);
@@ -379,6 +465,27 @@ export class WavePanel {
       }
     }
     this.paintFrame(dt);
+  }
+
+  /** The dominant paddle mistake, named with the swell it happened on. */
+  private paddleAdvice(): string {
+    if (this.earlyMisses >= this.lateMisses && this.earlyMisses > 0) {
+      return `You paddled early on the ${ord(this.lastEarlySwell)} swell; wait until it lifts the bow, then strike.`;
+    }
+    return `The ${ord(this.lastLateSwell)} swell rolled under you before the stroke; paddle the moment the foam reaches the horse.`;
+  }
+
+  /** The hard telling's graceful end: no penalty, one honest line owed. */
+  private lose(hint: string, advice?: string) {
+    this.phase = 'lost';
+    this.hint = hint;
+    coach('wave.start', advice ?? this.paddleAdvice());
+    this.audio.bump();
+    const sc = this.scene;
+    if (sc) {
+      sc.thump(calm() ? 0 : 4, 0.04);
+      if (!calm()) sc.burst(this.hx + 20, 260, { n: 16, color: 'rgba(246,240,226,0.85)', speed: 120, grav: 220, size: 3 });
+    }
   }
 
   onDir(dir: Dir) {
@@ -396,8 +503,10 @@ export class WavePanel {
   onAction() {
     if (this.phase === 'paddle') {
       // The strike zone: the wave is on top of you.
-      if (this.x <= 0.22 && this.x >= -0.06) {
+      if (this.x <= this.zoneHi && this.x >= this.zoneLo) {
         this.waves++;
+        this.swellIdx++;
+        this.earlyOnSwell = false;
         this.audio.slosh();
         const sc = this.scene!;
         this.paddleK = 0;
@@ -410,21 +519,32 @@ export class WavePanel {
         this.lunge = 1;
         if (this.waves >= 3) {
           this.phase = 'ride';
-          this.hint = 'Past the break. Now the wave home: hold the middle with the arrows.';
+          this.hint = this.hard
+            ? 'Past the break. The chop wants a rail; hold the middle with the arrows, and never let a lean grow old.'
+            : 'Past the break. Now the wave home: hold the middle with the arrows.';
           this.hx = 320;
         } else {
           this.x = 1;
-          this.speed += 0.12;
+          this.speed += this.speedUp;
           this.hint = `Through! ${3 - this.waves} more between you and open water.`;
         }
       } else {
+        // A mistimed stroke; remember which way it missed, and on which swell.
+        if (this.x > this.zoneHi) {
+          this.earlyOnSwell = true;
+          this.earlyMisses++;
+          this.lastEarlySwell = this.swellIdx;
+        } else {
+          this.lateMisses++;
+          this.lastLateSwell = this.swellIdx;
+        }
         this.audio.bump();
         this.paddleK = 0;
         this.scene!.thump(calm() ? 0 : 2, 0.02);
         if (!calm()) this.scene!.burst(this.hx + 70, 244, { n: 5, color: 'rgba(246,240,226,0.7)', speed: 60, grav: 200, size: 2.4, life: 0.4 });
-        this.hint = 'Too eager. Let the swell reach the horse first.';
+        this.hint = this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.';
       }
-    } else if (this.phase === 'done') {
+    } else if (this.phase === 'done' || this.phase === 'lost') {
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
@@ -455,7 +575,7 @@ export class WavePanel {
     band(b.bands[0]!, 148, 9, 1.2);
     band(b.bands[1]!, 178, 18, 2);
 
-    const riding = this.phase !== 'paddle';
+    const riding = this.phase === 'ride' || this.phase === 'done';
     // Horse target position and posture.
     let targetX = 170;
     let tilt = wobble(t, 1.6) * 0.05;
@@ -468,6 +588,11 @@ export class WavePanel {
     } else if (this.phase === 'done') {
       // Set down on the sand, level and dripping.
       targetX = 476;
+      this.leanV += (0 - this.leanV) * Math.min(1, dt * 3);
+      tilt = this.leanV * 0.28;
+    } else if (this.phase === 'lost') {
+      // Washed back toward the shallows, upright and unhurt.
+      targetX = 120;
       this.leanV += (0 - this.leanV) * Math.min(1, dt * 3);
       tilt = this.leanV * 0.28;
     }
@@ -539,7 +664,11 @@ export class WavePanel {
       g.fillStyle = 'rgba(250,246,236,0.85)';
       g.font = '12px system-ui, sans-serif';
       g.textAlign = 'right';
-      g.fillText(this.phase === 'done' ? 'ashore' : `${Math.max(0, 4 - this.rideT).toFixed(1)}s`, 622, 28);
+      g.fillText(
+        this.phase === 'done' ? 'ashore' : this.phase === 'lost' ? 'the sea keeps it' : `${Math.max(0, this.rideNeed - this.rideT).toFixed(1)}s`,
+        622,
+        28,
+      );
       g.textAlign = 'left';
     }
   }
@@ -663,6 +792,17 @@ export class NetPanel {
   private done = false;
   private onDone: (() => void) | null = null;
 
+  // The hard telling: more gaps, and only so much light. The story telling
+  // keeps its promise of no timer and no losing.
+  private hard = false;
+  private holesTotal = 6;
+  private light = 0; // seconds of dusk left, hard only
+  private lost = false;
+
+  // The run's own record, for the coach line.
+  private misties = 0; // knots spent on mesh that held
+  private steps = 0; // shuttle walks
+
   // Visual state only.
   private scene: Scene | null = null;
   private ui: { setHint: (h: string) => void } | null = null;
@@ -686,12 +826,20 @@ export class NetPanel {
   open(onDone: () => void) {
     this.onDone = onDone;
     this.done = false;
+    this.hard = RUN.hard;
+    this.holesTotal = this.hard ? 8 : 6;
+    this.light = 32;
+    this.lost = false;
+    this.misties = 0;
+    this.steps = 0;
     this.holes.clear();
-    while (this.holes.size < 6) {
+    while (this.holes.size < this.holesTotal) {
       this.holes.add(Math.floor(Math.random() * NET_W * NET_H));
     }
     this.cur = Math.floor(NET_H / 2) * NET_W;
-    this.hint = 'Walk the shuttle with the arrows. Space ties a hole shut.';
+    this.hint = this.hard
+      ? 'Eight gaps and the light is going. Arrows walk, Space ties; a knot wasted on whole mesh spends the dusk faster.'
+      : 'Walk the shuttle with the arrows. Space ties a hole shut.';
     this.root.hidden = false;
     this.scene ??= new Scene();
     this.ui = mountScene(this.root, 'The Net Circle', this.scene, NET_LEGEND);
@@ -705,10 +853,30 @@ export class NetPanel {
     this.sagK = 1;
   }
 
+  /** The run's diagnosis: what actually ate the evening. */
+  private netAdvice(): string {
+    const ties = this.holesTotal - this.holes.size;
+    if (this.misties >= 3) {
+      return `You spent ${this.misties} knots on mesh that held; read the dark gaps before the shuttle moves.`;
+    }
+    return `You walked ${this.steps} meshes for ${ties} ${ties === 1 ? 'tie' : 'ties'}; round on the nearest gap first, the light does not wait.`;
+  }
+
   tick(dt: number) {
     if (!this.isOpen) return;
     const sc = this.scene;
     if (!sc) return;
+    if (this.hard && !this.done && !this.lost) {
+      this.light -= dt;
+      if (this.light <= 0) {
+        this.light = 0;
+        this.lost = true;
+        this.audio.bump();
+        coach('net.start', this.netAdvice());
+        this.hint = `The dark gets there first; ${this.holes.size} ${this.holes.size === 1 ? 'gap' : 'gaps'} wait for morning. The circle talks on anyway. Press Space.`;
+        sc.thump(calm() ? 0 : 3, 0.03);
+      }
+    }
     this.tieT = Math.max(0, this.tieT - dt);
     this.mistT += dt;
     if (this.mistT > 0.8 && !calm()) {
@@ -720,16 +888,17 @@ export class NetPanel {
   }
 
   onDir(dir: Dir) {
-    if (this.done) return;
+    if (this.done || this.lost) return;
     const x = this.cur % NET_W;
     const y = Math.floor(this.cur / NET_W);
     const nx = Math.max(0, Math.min(NET_W - 1, x + (dir === 'left' ? -1 : dir === 'right' ? 1 : 0)));
     const ny = Math.max(0, Math.min(NET_H - 1, y + (dir === 'up' ? -1 : dir === 'down' ? 1 : 0)));
+    if (ny * NET_W + nx !== this.cur) this.steps++;
     this.cur = ny * NET_W + nx;
   }
 
   onAction() {
-    if (this.done) {
+    if (this.done || this.lost) {
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
@@ -754,15 +923,19 @@ export class NetPanel {
         this.done = true;
         this.audio.weaveDone();
         this.hint = 'The net is whole. So, somehow, is the evening. Press Space.';
+        // Whole, but the hands fumbled along the way: owe the honest tip.
+        if (this.misties >= 3) coach('net.start', this.netAdvice());
         // The whole net pulls taut.
         sc.tween(this.sagK, 0.12, 0.8, easeOutBack, (v) => (this.sagK = v));
         sc.flash('#ffe6b8', 0.3);
         sc.thump(calm() ? 0 : 3, 0.03);
       }
     } else {
+      this.misties++;
+      if (this.hard) this.light = Math.max(0, this.light - 2);
       this.audio.blip();
       this.scene?.thump(calm() ? 0 : 1.5, 0);
-      this.hint = 'That mesh holds. Find the gaps.';
+      this.hint = this.hard ? 'That mesh holds, and the knot cost you dusk. Find the gaps.' : 'That mesh holds. Find the gaps.';
     }
   }
 
@@ -815,7 +988,7 @@ export class NetPanel {
 
     // Current cell, lit like the last of the sun found it.
     const cc = this.cellCenter(this.cur, t);
-    stampGlow(g, cc[0], cc[1], 52, '#ffdf9e', this.done ? 0 : 0.5 + wobble(t, 4) * 0.08);
+    stampGlow(g, cc[0], cc[1], 52, '#ffdf9e', this.done || this.lost ? 0 : 0.5 + wobble(t, 4) * 0.08);
 
     // The headrope ties the whole net to its posts.
     const hl = this.node(0, 0, t);
@@ -962,7 +1135,14 @@ export class NetPanel {
     g.fillStyle = 'rgba(255,240,214,0.8)';
     g.font = '12px system-ui, sans-serif';
     g.textAlign = 'right';
-    g.fillText(this.done ? 'whole' : `${this.holes.size} to mend`, 622, 28);
+    const tally = this.done
+      ? 'whole'
+      : this.lost
+        ? 'dark'
+        : this.hard
+          ? `${this.holes.size} to mend · ${Math.ceil(this.light)}s of light`
+          : `${this.holes.size} to mend`;
+    g.fillText(tally, 622, 28);
     g.textAlign = 'left';
   }
 }
@@ -974,7 +1154,8 @@ export class NetPanel {
  * one true order. The clock is the enemy that isn't: the only timing that
  * matters is the lime "kiss," a bar you must pull the fish out of while it is
  * bright. Leave it too long and the fish is "cooked to death, hija"; Petro
- * hands you more fish, warmly, forever. Nothing else can go wrong.
+ * hands you more fish, warmly, forever. Nothing else can go wrong. In the
+ * hard telling the forever runs out: two lisas, then the noon moves on.
  */
 
 type CevicheStep = 'cut' | 'salt' | 'lime' | 'onion' | 'aji' | 'sides' | 'pour' | 'done';
@@ -1161,6 +1342,18 @@ export class CevichePanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The hard telling: the lime works faster, the bright bar is a sliver, and
+  // Petro's patience has a bottom. The story telling keeps its endless fish.
+  private hard = false;
+  private kissRate = 0.22; // bar fill per second
+  private zoneLo = 0.5; // where the bar brightens
+  private zoneHi = 0.8; // where the kiss becomes a marriage
+  private lost = false;
+
+  // The run's own record, for the coach line.
+  private earlies = 0; // pulls before the bar brightened
+  private lastEarlyKiss = 0;
+
   // Visual state only.
   private scene: Scene | null = null;
   private ui: { setHint: (h: string) => void } | null = null;
@@ -1192,6 +1385,13 @@ export class CevichePanel {
     this.kiss = 0;
     this.spoiled = 0;
     this.pour = 0;
+    this.hard = RUN.hard;
+    this.kissRate = this.hard ? 0.3 : 0.22;
+    this.zoneLo = this.hard ? 0.65 : 0.5;
+    this.zoneHi = 0.8;
+    this.lost = false;
+    this.earlies = 0;
+    this.lastEarlyKiss = 0;
     this.hint = 'The dawn lisa, the board, the knife. Space to cut: even pieces, no ceremony.';
     this.root.hidden = false;
     this.scene ??= new Scene();
@@ -1208,8 +1408,8 @@ export class CevichePanel {
     if (!this.isOpen) return;
     const sc = this.scene;
     if (!sc) return;
-    if (this.step === 'lime') {
-      this.kiss += dt * 0.22;
+    if (this.step === 'lime' && !this.lost) {
+      this.kiss += dt * this.kissRate;
       if (this.kiss >= 1) {
         // Too long in the lime. Petro's verdict is warm and non-negotiable.
         this.spoiled++;
@@ -1217,10 +1417,18 @@ export class CevichePanel {
         this.audio.bump();
         sc.thump(calm() ? 0 : 4, 0.05);
         if (!calm()) sc.burst(BOWL_X, BOWL_Y - 20, { n: 12, kind: 'puff', color: 'rgba(214,208,196,0.7)', speed: 40, grav: -30, size: 6, life: 0.8 });
+        if (this.hard && this.spoiled >= 2) {
+          // The hard telling has two lisas and no third.
+          this.lost = true;
+          coach('c2.cook.start', this.cevAdvice());
+          this.hint = '"Two lisas cooked to death is enough for one noon, hija." She takes the board back, kindly, and feeds you anyway. Press Space.';
+          return;
+        }
         this.dropAt = sc.time; // more fish arrives, tumbling in fresh
         this.milk = Math.min(this.milk, 0.3);
-        this.hint =
-          this.spoiled === 1
+        this.hint = this.hard
+          ? '"Cooked to death, hija." She hands you the LAST lisa. "The lime kisses. It does not marry." Out in the bright sliver, or the noon goes on without you.'
+          : this.spoiled === 1
             ? '"Cooked to death, hija." She eats the evidence and hands you more fish. "The lime kisses. It does not marry."'
             : '"Again dead! Good, I was hungry." More fish arrives. Pull it OUT while the bar burns bright.';
       }
@@ -1236,8 +1444,25 @@ export class CevichePanel {
     this.step = CEVICHE_ORDER[CEVICHE_ORDER.indexOf(this.step) + 1] as CevicheStep;
   }
 
+  /** The run's own verdict on the lime: early hands or married fish. */
+  private cevAdvice(): string {
+    if (this.earlies > this.spoiled) {
+      const at = (this.lastEarlyKiss / this.kissRate).toFixed(1);
+      const brightens = (this.zoneLo / this.kissRate).toFixed(1);
+      return `You pulled at ${at} seconds; the bar only brightens at ${brightens}. Wait for it.`;
+    }
+    return `The lime had the fish for the whole bar${this.spoiled > 1 ? `, ${this.spoiled} times` : ''}; pull the instant it brightens. A kiss, not a marriage.`;
+  }
+
   onAction() {
     const sc = this.scene;
+    if (this.lost) {
+      this.root.hidden = true;
+      const done = this.onDone;
+      this.onDone = null;
+      done?.();
+      return;
+    }
     switch (this.step) {
       case 'cut': {
         this.cuts++;
@@ -1263,18 +1488,22 @@ export class CevichePanel {
           this.saltAt = sc.time;
           if (!calm()) sc.burst(BOWL_X, BOWL_Y - 70, { n: 16, color: 'rgba(255,255,255,0.95)', speed: 55, grav: 320, size: 1.6, life: 0.6 });
         }
-        this.hint = 'Now the lime. The fish goes IN, and comes OUT while the bar is bright. A kiss, not a marriage. Space when it burns.';
+        this.hint = this.hard
+          ? 'Now the lime, and it works fast today. The bright bar is a sliver and Petro has TWO lisas, no third. Space in the sliver, exactly.'
+          : 'Now the lime. The fish goes IN, and comes OUT while the bar is bright. A kiss, not a marriage. Space when it burns.';
         this.kiss = 0;
         break;
       }
       case 'lime': {
-        if (this.kiss >= 0.5 && this.kiss < 0.8) {
+        if (this.kiss >= this.zoneLo && this.kiss < this.zoneHi) {
           this.audio.weaveNote(4);
           this.advance();
           sc?.flash('rgba(214,255,140,0.5)', 0.25);
           if (sc && !calm()) sc.burst(BOWL_X, BOWL_Y - 24, { n: 10, color: 'rgba(230,242,176,0.9)', speed: 70, grav: 200, size: 2.4 });
           this.hint = 'OUT, at the exact bright second. The flesh has turned white at the edges only. Petro says nothing, loudly. Now the onion.';
-        } else if (this.kiss < 0.5) {
+        } else if (this.kiss < this.zoneLo) {
+          this.earlies++;
+          this.lastEarlyKiss = this.kiss;
           this.audio.bump();
           sc?.thump(calm() ? 0 : 2, 0.02);
           this.hint = 'Too soon; the lime has barely said hello. Back in. Wait for the bright zone, then pull.';
@@ -1314,6 +1543,8 @@ export class CevichePanel {
         this.pour = 1;
         this.audio.weaveDone();
         this.advance();
+        // Done, but the lime run was not clean: the next card owes the fix.
+        if (this.spoiled + this.earlies > 0) coach('c2.cook.start', this.cevAdvice());
         if (sc) {
           this.pourAt = sc.time;
           sc.flash('#ffe9c0', 0.3);
@@ -1586,7 +1817,7 @@ export class CevichePanel {
     }
 
     // Two lime halves squeeze over the bowl while the kiss runs.
-    if (this.step === 'lime') {
+    if (this.step === 'lime' && !this.lost) {
       const cycle = (t * 0.85) % 1;
       const sq = Math.max(0, Math.sin(cycle * Math.PI * 2 - Math.PI / 2) * 0.5 + 0.5);
       const n = Math.floor(t * 0.85 * 2);
@@ -1728,15 +1959,18 @@ export class CevichePanel {
     g.ellipse(gx, gTop, 22, 5, 0, 0, Math.PI * 2);
     g.stroke();
 
-    // The lime bar, same zone as ever: out while it burns bright.
-    if (this.step === 'lime') {
+    // The lime bar: out while it burns bright. The hard telling brightens
+    // later and for barely a second; the zone is wherever this run put it.
+    if (this.step === 'lime' && !this.lost) {
+      const zx = 130 + 380 * this.zoneLo;
+      const zw = 380 * (this.zoneHi - this.zoneLo);
       rr(g, 130, 306, 380, 12, 6, 'rgba(20,14,10,0.5)');
-      rr(g, 130 + 380 * 0.5, 306, 380 * 0.3, 12, 3, `rgba(214,255,140,${0.3 + wobble(t, 5) * 0.08})`);
+      rr(g, zx, 306, zw, 12, 3, `rgba(214,255,140,${0.3 + wobble(t, 5) * 0.08})`);
       g.strokeStyle = '#d6ff8c';
       g.lineWidth = 1.4;
-      g.strokeRect(130 + 380 * 0.5, 306, 380 * 0.3, 12);
+      g.strokeRect(zx, 306, zw, 12);
       const cx = 130 + Math.min(0.99, this.kiss) * 380;
-      const hot = this.kiss >= 0.5 && this.kiss < 0.8;
+      const hot = this.kiss >= this.zoneLo && this.kiss < this.zoneHi;
       rr(g, cx - 2, 302, 4, 20, 2, hot ? '#d6ff8c' : '#f2e6d0');
       if (hot) stampGlow(g, cx, 312, 20, '#d6ff8c', 0.5);
     }

@@ -91,6 +91,8 @@ export const CHAPTER: ChapterDef = {
         'The brass rose shows where the kaskazi leans. Left and right ease the sheet to meet it.',
         'When the telltale streams, the sail breathes and you make way. A luff only slows you; from irons, Space bears away and you go again.',
       ],
+      hardHow:
+        'The hard telling: the kaskazi gusts, the good sector narrows to a hand-width, and the tide gives you thirty breaths to make the whole reach. Irons ends the run outright.',
       make: (root, audio) => new SailPanel(root, audio as AudioBus),
     },
     {
@@ -101,6 +103,8 @@ export const CHAPTER: ChapterDef = {
         'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in; choose SERVE when the bowl is a bowl.',
         'There are no wrong bowls here, only bowls Zuberi gets to describe. He said so himself, and he owns the pot.',
       ],
+      hardHow:
+        'The hard telling: the evening rush calls exact bowls. Add what is called, in the order it is called, before the broth closes over. Three slips and the line drifts to the other cart.',
       make: (root, audio) => new UrojoPanel(root, audio as AudioBus),
     },
   ],

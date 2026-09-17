@@ -26,6 +26,8 @@ export const CHAPTER: ChapterDef = {
         'Space presses and flips in one motion. Time it to the golden middle of the heat gauge, three discs running.',
         'Burn one and nothing is lost: Mi-ja claims the dark one, hands you fresh dough, and Space begins again.',
       ],
+      hardHow:
+        'The hard telling: five discs on a hotter iron, a thinner band of gold, and the heat climbs with every flip. Mi-ja pardons exactly one dark one; the second ends the batch.',
       make: (root, audio) => new HotteokPanel(root, audio as AudioBus),
     },
   ],

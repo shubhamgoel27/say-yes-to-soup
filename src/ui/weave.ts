@@ -3,6 +3,7 @@ import type { AudioBus } from '../engine/audio';
 import { PAL } from '../engine/config';
 import { surface, rect, rr, oval, dot, vgrad, shade, mute, glowSpot, softShadow, Rng, type Surface } from '../art/pix';
 import { Scene, mountScene, easeOutCubic, easeInCubic, easeOutBack, wobble } from './games/scene';
+import { RUN, coach } from './games/run';
 
 /**
  * The weaving mini-game: Carmen calls a color sequence, you call it back with
@@ -25,7 +26,21 @@ const COLORS = [
 const ROWS = [3, 4, 5];
 const SHOW_STEP = 0.55;
 
-type Phase = 'show' | 'input' | 'row-done' | 'done';
+/**
+ * The hard telling, reached only by replaying: longer rows called fast, a
+ * breath to answer each colour, and only two slipped threads in hand. The
+ * first, story sit at the loom never reads any of these numbers.
+ */
+const HARD_ROWS = [5, 6, 7];
+const HARD_SHOW_STEP = 0.32;
+const HARD_ANSWER = 1.2; // seconds allowed per call-back press
+const HARD_SLIPS = 2; // slips forgiven; the next one sets the cloth aside
+
+/** This game's start flag, for coach(); must match its GameDef in content. */
+const WEAVE_FLAG = 'weave.start';
+const ORDINAL = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh'];
+
+type Phase = 'show' | 'input' | 'row-done' | 'done' | 'lost';
 
 // ------------------------------------------------------------- loom geometry
 const TOP_Y = 74;
@@ -280,6 +295,15 @@ export class WeavePanel {
   private woven: number[][] = [];
   private onDone: (() => void) | null = null;
 
+  // The telling and its ledger. `slips` logs every miss this run, in both
+  // difficulties: {step, want, got} with got -1 when the row outwaited the
+  // hand. diagnose() reads the log to name the dominant failure for coach().
+  private hard = false;
+  private live = false; // an open run that has not ended; catches step-aways
+  private inputT = 0; // hard only: seconds since the last correct press
+  private recalls = 0; // hard only: forgiven slips already spent
+  private slips: { step: number; want: number; got: number }[] = [];
+
   // Visual state only; game logic never reads any of this.
   private scene = new Scene();
   private setHintFn: ((h: string) => void) | null = null;
@@ -308,6 +332,11 @@ export class WeavePanel {
     this.onDone = onDone;
     this.row = 0;
     this.woven = [];
+    this.hard = RUN.hard;
+    this.live = true;
+    this.slips = [];
+    this.recalls = 0;
+    this.inputT = 0;
     this.root.hidden = false;
     this.scene.restart();
     this.setHintFn = mountScene(this.root, 'The Loom', this.scene, LOOM_LEGEND).setHint;
@@ -324,22 +353,36 @@ export class WeavePanel {
   }
 
   private startRow() {
-    const len = ROWS[this.row] ?? 3;
+    const rows = this.hard ? HARD_ROWS : ROWS;
+    const len = rows[this.row] ?? 3;
     this.seq = Array.from({ length: len }, () => Math.floor(Math.random() * COLORS.length));
     this.phase = 'show';
     this.at = 0;
     this.t = 0;
     this.lit = null;
+    this.inputT = 0;
     this.slotK = this.seq.map(() => 0);
-    this.hint = 'Watch which ball lights as Carmen calls...';
+    this.hint = this.hard
+      ? 'Watch the basket; the calls come quick, and the cloth counts every slip.'
+      : 'Watch which ball lights as Carmen calls...';
   }
 
   /** Driven by the fixed-timestep loop so it behaves under the dev sim too. */
   tick(dt: number) {
-    if (!this.isOpen) return;
+    if (!this.isOpen) {
+      // Stepped away mid-run: if the run had already taught something, the
+      // cloth keeps the lesson for the next how-to card.
+      if (this.live) {
+        this.live = false;
+        if (this.slips.length && this.phase !== 'done' && this.phase !== 'lost') {
+          coach(WEAVE_FLAG, this.diagnose());
+        }
+      }
+      return;
+    }
     if (this.phase === 'show') {
       this.t += dt;
-      const step = Math.floor(this.t / SHOW_STEP);
+      const step = Math.floor(this.t / (this.hard ? HARD_SHOW_STEP : SHOW_STEP));
       if (step < this.seq.length) {
         const idx = this.seq[step] ?? 0;
         if (this.lit !== step) {
@@ -351,8 +394,14 @@ export class WeavePanel {
         this.phase = 'input';
         this.at = 0;
         this.lit = null;
-        this.hint = 'Now you. Call them back with the arrows.';
+        this.inputT = 0;
+        this.hint = this.hard
+          ? 'Now you, and quickly; the shed will not stay open.'
+          : 'Now you. Call them back with the arrows.';
       }
+    } else if (this.phase === 'input' && this.hard) {
+      this.inputT += dt;
+      if (this.inputT > HARD_ANSWER) this.slip(-1);
     }
     if (this.phase === 'done' && !calm() && Math.random() < dt * 2.2) {
       this.scene.burst(200 + Math.random() * 110, 150 + Math.random() * 60, {
@@ -374,12 +423,13 @@ export class WeavePanel {
     if (picked === want) {
       this.audio.weaveNote(COLORS[picked]?.note ?? 0);
       this.at++;
+      this.inputT = 0;
       this.animPick(picked, this.at - 1);
       if (this.at >= this.seq.length) {
         this.woven.push([...this.seq]);
         this.row++;
         this.animLock();
-        if (this.row >= ROWS.length) {
+        if (this.row >= (this.hard ? HARD_ROWS : ROWS).length) {
           this.phase = 'done';
           this.audio.weaveDone();
           this.animWin();
@@ -390,20 +440,85 @@ export class WeavePanel {
         }
       }
     } else {
-      this.audio.weaveNote(0, false);
-      this.at = 0;
-      this.phase = 'show';
-      this.t = 0;
-      this.lit = null;
-      this.animMiss();
+      this.slip(picked);
+    }
+  }
+
+  /** One miss: log it, then re-call the row, or in the hard telling maybe
+   * end the run. `got` is the colour the hand went to, -1 for a timeout. */
+  private slip(got: number) {
+    this.slips.push({ step: this.at, want: this.seq[this.at] ?? 0, got });
+    this.audio.weaveNote(0, false);
+    this.animMiss();
+    if (this.hard && this.recalls >= HARD_SLIPS) {
+      this.phase = 'lost';
+      coach(WEAVE_FLAG, this.diagnose());
+      this.hint = 'Three slipped threads. Carmen lifts the cloth away, kind about it. Press Space.';
+      return;
+    }
+    this.at = 0;
+    this.phase = 'show';
+    this.t = 0;
+    this.lit = null;
+    this.inputT = 0;
+    if (this.hard) {
+      this.recalls++;
+      const left = HARD_SLIPS - this.recalls;
+      const base = got < 0 ? 'Too slow; the shed closed on your call.' : 'The thread slips.';
+      this.hint =
+        left > 0
+          ? `${base} Carmen calls it again; ${left === 1 ? 'one slip' : `${left} slips`} left in hand.`
+          : `${base} Carmen calls it again; the next slip sets the cloth aside.`;
+    } else {
       this.hint = 'The thread slips. Carmen chuckles and calls it again.';
     }
+  }
+
+  /** Name the dominant failure of this run from the slip log, warmly. */
+  private diagnose(): string {
+    const timeouts = this.slips.filter((s) => s.got < 0);
+    const wrongs = this.slips.filter((s) => s.got >= 0);
+    const cname = (i: number) => COLORS[i]?.name ?? 'that colour';
+    const cdir = (i: number) => COLORS[i]?.dir ?? 'right';
+    const common = (xs: number[]): number => {
+      const counts = new Map<number, number>();
+      let best = xs[0] ?? 0;
+      for (const x of xs) {
+        const n = (counts.get(x) ?? 0) + 1;
+        counts.set(x, n);
+        if (n > (counts.get(best) ?? 0)) best = x;
+      }
+      return best;
+    };
+    if (!this.slips.length) {
+      return 'Watch the basket, not the cloth, while Carmen calls; the balls light in order.';
+    }
+    if (timeouts.length > wrongs.length) {
+      const step = common(timeouts.map((s) => s.step));
+      return `Your colours were true but your hands hung back; the ${ORDINAL[step] ?? 'next'} call died waiting. Answer while the note still rings.`;
+    }
+    // A repeated confusion: the same call kept drawing the same wrong ball.
+    const pairCount = new Map<string, number>();
+    let pair: { want: number; got: number } | null = null;
+    for (const s of wrongs) {
+      const key = `${s.want}:${s.got}`;
+      const n = (pairCount.get(key) ?? 0) + 1;
+      pairCount.set(key, n);
+      if (n >= 2) pair = { want: s.want, got: s.got };
+    }
+    if (pair) {
+      return `The call was ${cname(pair.want)} and your hand kept going to ${cname(pair.got)}; ${cname(pair.want)} is the ${cdir(pair.want)} ball in the basket.`;
+    }
+    const step = common(wrongs.map((s) => s.step));
+    const want = wrongs.find((s) => s.step === step)?.want ?? 0;
+    return `You lost it at the ${ORDINAL[step] ?? 'late'} colour; the call there was ${cname(want)}, the ${cdir(want)} ball. The early colours keep; spend your care on the tail.`;
   }
 
   onAction() {
     if (this.phase === 'row-done') {
       this.startRow();
-    } else if (this.phase === 'done') {
+    } else if (this.phase === 'done' || this.phase === 'lost') {
+      this.live = false;
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
@@ -590,8 +705,10 @@ export class WeavePanel {
     g.lineTo(edgeR(y) + 14, y);
     g.stroke();
     for (let i = 0; i < this.seq.length; i++) {
+      // In the hard telling the call rides on the basket and the note alone;
+      // no chip lights on the stick until your own hand answers.
       const on =
-        (this.phase === 'show' && this.lit === i) ||
+        (this.phase === 'show' && this.lit === i && !this.hard) ||
         (this.phase === 'input' && i < this.at) ||
         this.phase === 'row-done' ||
         this.phase === 'done';
@@ -615,7 +732,9 @@ export class WeavePanel {
       }
       if (this.phase === 'input' && i === this.at) {
         const r = 10 + wobble(time, 5) * 1.6;
-        g.strokeStyle = 'rgba(242,230,208,0.9)';
+        // Hard telling: the waiting ring fades as the answer window closes.
+        const a = this.hard ? Math.max(0.2, 0.9 * (1 - this.inputT / HARD_ANSWER)) : 0.9;
+        g.strokeStyle = `rgba(242,230,208,${a})`;
         g.lineWidth = 2;
         g.beginPath();
         g.arc(p.x, p.y, r, 0, Math.PI * 2);

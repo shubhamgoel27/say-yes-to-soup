@@ -1,6 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
+import { RUN, coach } from './run';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art/pix';
 
 /**
@@ -28,6 +29,22 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art
  * the flock scatters, and Yusuf unwinds another off the charkhi. Kaghaz
  * sasta hai, hawa muft. Neither failure ever costs more than the round, and
  * neither can end the panel; only finishing does.
+ *
+ * THE HARD TELLING. Both panels read RUN.hard once at open (set by the
+ * replay flow; a first story run is never hard). Hard on the tawa is the
+ * dinner rush: Kamla steps back, the batch runs four and rabri-heavy, the
+ * singing band narrows to a breath, and the atta has a bottom; feed Sheru
+ * twice and the evening is his, warmly, and the panel closes on it. Hard on
+ * the roof is waxed dor weather: rivals that saw back on their own, more
+ * birds, meaner gusts, and only three patangs on the charkhi. Failing the
+ * hard telling never scolds; Kamla laughs, Yusuf pours chai, and the coach
+ * line under the next how-to card says the one true thing about why.
+ *
+ * COACHING. Every run keeps a small honest ledger of its misses (early
+ * flips, split seals, pulls through pigeons, slack in steady air...). When
+ * a finished run fell short anywhere, in either mode, the panel tells
+ * coach() the single dominant miss, named specifically, so the next how-to
+ * card can re-arm the player instead of just re-inviting them.
  */
 
 const linear = (t: number) => t;
@@ -126,6 +143,58 @@ const COURSES: Course[] = [
     flecks: ['#7a9e5a', '#c98a2e'],
   },
 ];
+
+/**
+ * The dinner-rush batch. No aloo, no forgiveness course: it opens at mooli
+ * and climbs through three rabris, each rolled thinner and flipped more,
+ * because the queue tonight ordered like it knew you were learning.
+ */
+const HARD_COURSES: Course[] = [
+  {
+    name: 'mooli parantha',
+    stuffing: 'grated radish, squeezed dry, ajwain',
+    zone: 0.2,
+    flips: 3,
+    intro: 'The dinner rush, and Kamla steps back from the tawa with her arms folded. Mooli first, and the queue is watching.',
+    fill: '#e8e0cc',
+    flecks: ['#4d7440', '#8a6238'],
+  },
+  {
+    name: 'rabri parantha',
+    stuffing: 'thickened sweet milk, pistachio, nerve',
+    zone: 0.14,
+    flips: 3,
+    intro: 'Rabri, straight away, no ladder to it. The tawa runs hotter tonight; the song will be short.',
+    fill: '#f0e0b8',
+    flecks: ['#7a9e5a', '#c98a2e'],
+  },
+  {
+    name: 'second rabri parantha',
+    stuffing: 'the same sweet milk, a thinner disc',
+    zone: 0.12,
+    flips: 4,
+    intro: 'Another rabri, for the sisters sharing one umbrella. Thinner this time; the ghee is singing faster than it was.',
+    fill: '#f0e0b8',
+    flecks: ['#7a9e5a', '#c98a2e'],
+  },
+  {
+    name: "the ustad's rabri parantha",
+    stuffing: 'sweet milk, pistachio, a reputation',
+    zone: 0.1,
+    flips: 4,
+    intro: 'The last one is for Ustad Yusuf, sent down from the roof by name. The whole gali has gone quiet enough to hear the tawa.',
+    fill: '#f0e0b8',
+    flecks: ['#7a9e5a', '#c98a2e'],
+  },
+];
+
+/** Sheru's hard-telling allowance. The second burnt parantha ends the rush. */
+const HARD_BURN_LIMIT = 2;
+
+/** The start flags these panels answer to; coach() files advice under them. */
+const COOK_FLAG = 'c11.cook.start';
+const KITE_FLAG = 'c11.kite.start';
+const DUEL_FLAG = 'c11.duel.start';
 
 const OOPS_ROLL = [
   'Lopsided. Kamla flattens it with one pass, no comment. The comment is the silence.',
@@ -524,6 +593,24 @@ function drawSheru(
 
 type PPhase = 'roll' | 'stuff' | 'tawa' | 'burnt' | 'served' | 'done';
 
+/** The ways one parantha goes wrong, for the run's honest ledger. */
+type PFault = 'held' | 'late' | 'early' | 'rollSecond' | 'rollFirst';
+const P_FAULTS: PFault[] = ['held', 'late', 'early', 'rollSecond', 'rollFirst'];
+
+/** One warm specific sentence per fault; `where` is the stuffing it named. */
+const P_COACH: Record<PFault, (where: string) => string> = {
+  held: (w) =>
+    `You waited out the song on the ${w} and the tawa decided for you; when the band lights, flip on its first breath, not its last.`,
+  late: (w) =>
+    `You flipped after the song on the ${w}; past the band the ring only darkens. Move on the first note, not the memory of it.`,
+  early: (w) =>
+    `You flipped before the tawa sang on the ${w}; a pale side is a shy one. Hold your hand until the bright band, then go.`,
+  rollSecond: (w) =>
+    `Your seal split on the ${w}; press the edge, not the center, before the first flip, and catch the parcel roll dead even.`,
+  rollFirst: (w) =>
+    `Your discs came out lopsided on the ${w}; watch the pin, not the dough, and stop it dead in the middle of the meter.`,
+};
+
 const TAWA_LEGEND = [{ keys: ['space'], does: 'stop the pin, turn the parantha, lift it off' }] as const;
 
 export class ParanthaPanel {
@@ -539,6 +626,14 @@ export class ParanthaPanel {
   private burnt = 0; // burnt paranthas, for the caption's honest arithmetic
   private hint = '';
   private onDone: (() => void) | null = null;
+
+  // The hard telling, and the run's honest ledger of misses.
+  private hard = false;
+  private spent = false; // hard only: the atta bowl found its bottom
+  private winLo = 0.62; // the singing band, in sizzle 0..1
+  private winHi = 0.88;
+  private faults: Record<PFault, number> = { held: 0, late: 0, early: 0, rollSecond: 0, rollFirst: 0 };
+  private faultWhere: Record<PFault, string> = { held: '', late: '', early: '', rollSecond: '', rollFirst: '' };
 
   // Visual layer only, from here down.
   private scene: Scene | null = null;
@@ -567,14 +662,29 @@ export class ParanthaPanel {
     return !this.root.hidden;
   }
 
+  /** The batch on tonight's slate: the story's three, or the rush's four. */
+  private get courses(): Course[] {
+    return this.hard ? HARD_COURSES : COURSES;
+  }
+
   open(onDone: () => void) {
     this.onDone = onDone;
+    // The hard telling is read once here, never mid-batch. A first story run
+    // arrives with RUN.hard false and plays exactly as it always has.
+    this.hard = RUN.hard;
+    this.spent = false;
+    this.winLo = this.hard ? 0.7 : 0.62;
+    this.winHi = this.hard ? 0.86 : 0.88;
+    for (const k of P_FAULTS) {
+      this.faults[k] = 0;
+      this.faultWhere[k] = '';
+    }
     this.course = 0;
     this.burnt = 0;
     this.stacked = 0;
     this.slideA = 1;
     this.servedT = 0;
-    this.freshDough(`${COURSES[0]?.intro} Space stops the pin when the disc is even: the middle of the meter.`);
+    this.freshDough(`${this.courses[0]?.intro} Space stops the pin when the disc is even: the middle of the meter.`);
     this.root.hidden = false;
     if (!this.scene) this.scene = new Scene();
     this.scene.restart();
@@ -587,7 +697,8 @@ export class ParanthaPanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     if (this.phase === 'roll') {
-      const speed = 0.9 + this.course * 0.35;
+      // The rush pin never dawdles; the story pin keeps its original gait.
+      const speed = this.hard ? 1.15 + this.course * 0.2 : 0.9 + this.course * 0.35;
       this.meter += dt * speed * this.dir;
       if (this.meter > 1) {
         this.meter = 1;
@@ -600,12 +711,16 @@ export class ParanthaPanel {
       this.render();
     } else if (this.phase === 'tawa') {
       // The sizzle climbs; flip inside the singing window near the top.
-      this.sizzle = Math.min(1, this.sizzle + dt * (0.34 + this.course * 0.1));
+      // The hard tawa is hotter: the climb is faster and the band, set at
+      // open(), is a breath wide instead of a bar.
+      const climb = this.hard ? 0.52 + this.course * 0.07 : 0.34 + this.course * 0.1;
+      this.sizzle = Math.min(1, this.sizzle + dt * climb);
       if (this.sizzle >= 1) {
         // Held too long. Once is a scorch ring and a warning; twice on the
         // same parantha and the tawa has made its decision without you.
         this.sizzle = 0;
         this.overheld++;
+        this.fault('held');
         const s = this.scene;
         if (this.overheld >= 2) {
           this.burnIt();
@@ -640,12 +755,18 @@ export class ParanthaPanel {
   }
 
   onAction() {
-    // Clamped: after the last course this.course is 3, and the served and
-    // done presses must still land or the panel can never close.
-    const c = COURSES[Math.min(this.course, COURSES.length - 1)];
+    // Clamped: after the last course this.course runs past the end, and the
+    // served and done presses must still land or the panel can never close.
+    const c = this.courses[Math.min(this.course, this.courses.length - 1)];
     if (!c) return;
     const s = this.scene;
     if (this.phase === 'burnt') {
+      if (this.spent) {
+        // The hard telling's one true ending short of the plate: the rush
+        // is Sheru's now, and the panel closes on Kamla's laugh, not a loss.
+        this.finish();
+        return;
+      }
       // Fresh atta, same parantha, no ledger kept. Nothing here can be lost
       // except a parantha, and a parantha was never the point.
       this.audio.blip();
@@ -687,6 +808,9 @@ export class ParanthaPanel {
         }
       } else {
         this.audio.blip();
+        // The ledger: a lopsided first disc is a pin problem; a lopsided
+        // second one strains the seal, and the coach line should know which.
+        this.fault(this.rolled >= 2 ? 'rollSecond' : 'rollFirst');
         this.hint = OOPS_ROLL[Math.min(2, this.course)] as string;
         if (s) {
           this.wobA = 0;
@@ -723,8 +847,8 @@ export class ParanthaPanel {
     }
     if (this.phase === 'roll' as PPhase) return;
     if (this.phase === 'tawa') {
-      const onTheWord = this.sizzle >= 0.62 && this.sizzle <= 0.88;
-      const early = this.sizzle < 0.62;
+      const onTheWord = this.sizzle >= this.winLo && this.sizzle <= this.winHi;
+      const early = this.sizzle < this.winLo;
       this.sizzle = 0;
       if (onTheWord) {
         this.audio.slosh();
@@ -735,6 +859,7 @@ export class ParanthaPanel {
         // past the band it turns anyway with a dark ring, because a hand
         // that acted is always answered. Only ignoring the tawa can burn.
         this.audio.bump();
+        this.fault(early ? 'early' : 'late');
         this.hint = early ? OOPS_EARLY : OOPS_LATE;
         if (s) {
           if (!calmMotion()) s.thump(2, 0.02);
@@ -756,15 +881,45 @@ export class ParanthaPanel {
     if (this.phase === 'served') {
       this.phase = 'done';
       this.audio.weaveDone();
-      this.hint = 'Silence, the good kind, three plates deep. In this gali that is a standing ovation. Press Space.';
+      this.hint = this.hard
+        ? 'Silence, four plates deep, in the middle of a dinner rush. Kamla will be telling this one for a week. Press Space.'
+        : 'Silence, the good kind, three plates deep. In this gali that is a standing ovation. Press Space.';
       this.scene?.flash('#fff3d8', 0.35);
       this.render();
       return;
     }
+    this.finish();
+  }
+
+  /** Close the panel, filing the run's one honest coach line on the way out. */
+  private finish() {
+    this.reportCoach();
     this.root.hidden = true;
     const done = this.onDone;
     this.onDone = null;
     done?.();
+  }
+
+  /** One miss counted, stamped with the parantha it happened to. */
+  private fault(kind: PFault) {
+    this.faults[kind]++;
+    const c = this.courses[Math.min(this.course, this.courses.length - 1)];
+    this.faultWhere[kind] = (c?.name ?? 'parantha').replace(' parantha', '');
+  }
+
+  /**
+   * The run fell short somewhere and the next how-to card should say where.
+   * The dominant miss wins; ties fall to the costlier habit (a waited-out
+   * song before a late hand, a late hand before an early one, the seal
+   * before the first roll). A clean run files nothing.
+   */
+  private reportCoach() {
+    let top: PFault | null = null;
+    for (const k of P_FAULTS) {
+      if (this.faults[k] > 0 && (!top || this.faults[k] > this.faults[top])) top = k;
+    }
+    if (!top) return;
+    coach(COOK_FLAG, P_COACH[top](this.faultWhere[top] || 'parantha'));
   }
 
   /**
@@ -802,7 +957,17 @@ export class ParanthaPanel {
     this.brownUp = 1;
     this.brownDown = 1;
     this.audio.bump();
-    this.hint = `${BURNT_LINES[this.burntLine]} Sheru is already sitting, ears forward, being extremely good. Press Space for fresh atta.`;
+    // In the hard telling the atta bowl has a bottom. The second burn is
+    // still Kamla's favorite kind of evening; it is just the end of this one.
+    if (this.hard && this.burnt >= HARD_BURN_LIMIT) {
+      this.spent = true;
+      this.hint =
+        `${BURNT_LINES[this.burntLine]} And that is the rush: the queue is real tonight and the bowl is scraped. ` +
+        'Kamla takes the palta back, still laughing. "Enough, beta. Sheru has eaten like a wedding guest. ' +
+        'The tawa keeps; come back and we go again." Press Space.';
+    } else {
+      this.hint = `${BURNT_LINES[this.burntLine]} Sheru is already sitting, ears forward, being extremely good. Press Space for fresh atta.`;
+    }
     const s = this.scene;
     if (!s) return;
     if (!calmMotion()) s.thump(5, 0.05);
@@ -824,7 +989,7 @@ export class ParanthaPanel {
     }
     this.audio.weaveNote(this.course + 2);
     this.course++;
-    const next = COURSES[this.course];
+    const next = this.courses[this.course];
     if (next) {
       this.hint = `${late ? 'It goes out anyway; nobody in this gali has ever sent a parantha back.' : 'Golden, blistered, correct.'} ${next.intro} Back to the pin: Space stops it even.`;
       this.phase = 'roll';
@@ -846,8 +1011,9 @@ export class ParanthaPanel {
       return;
     }
     this.phase = 'served';
-    this.hint =
-      'The rabri parantha goes to the porter in the corner. He takes one bite and stops talking entirely. Kamla nods once. Press Space.';
+    this.hint = this.hard
+      ? 'The last rabri goes up the stairs by name, and word comes back down that the ustad stopped mid-couplet. Kamla unfolds her arms. Press Space.'
+      : 'The rabri parantha goes to the porter in the corner. He takes one bite and stops talking entirely. Kamla nods once. Press Space.';
     this.servedT = 0;
     if (s) {
       s.flash('#ffe9c0', 0.3);
@@ -896,7 +1062,7 @@ export class ParanthaPanel {
       this.flourT = 0.55;
       s.waft(62 + this.meter * 156 + (Math.random() - 0.5) * 40, CHAKLA.y - 18, 'rgba(240,232,210,0.3)', 5);
     }
-    if (this.phase === 'tawa' && this.sizzle >= 0.62 && this.sizzle <= 0.88 && this.singT <= 0 && heavy) {
+    if (this.phase === 'tawa' && this.sizzle >= this.winLo && this.sizzle <= this.winHi && this.singT <= 0 && heavy) {
       this.singT = 0.1;
       const a = Math.random() * Math.PI * 2;
       const bx = TAWA.x + Math.cos(a) * 66;
@@ -906,7 +1072,7 @@ export class ParanthaPanel {
   }
 
   private caption(): string {
-    const c = COURSES[Math.min(this.course, COURSES.length - 1)];
+    const c = this.courses[Math.min(this.course, this.courses.length - 1)];
     let count: string;
     if (this.phase === 'roll') {
       count = `${c?.name} &middot; ${this.rolled === 0 ? 'first roll' : 'second roll, thinner'}`;
@@ -915,13 +1081,16 @@ export class ParanthaPanel {
     } else if (this.phase === 'tawa') {
       count = `${c?.name} &middot; flip ${this.flipsDone + 1} of ${c?.flips} &middot; listen for the singing band`;
     } else if (this.phase === 'burnt') {
-      count = `${c?.name} &middot; one for the dog &middot; Space for fresh atta`;
+      count = this.spent
+        ? `${c?.name} &middot; the rush is Sheru's &middot; Space`
+        : `${c?.name} &middot; one for the dog &middot; Space for fresh atta`;
     } else {
       count = 'the plate goes out';
     }
     if (this.burnt > 0 && this.phase !== 'burnt') {
       count += ` &middot; Sheru fed ${this.burnt}`;
     }
+    if (this.hard) count += ' &middot; the hard telling';
     return `${this.hint}<div class="c-count">${count}</div>`;
   }
 
@@ -973,7 +1142,7 @@ export class ParanthaPanel {
   }
 
   private paintBoard(g: CanvasRenderingContext2D, t: number) {
-    const c = COURSES[Math.min(this.course, COURSES.length - 1)] ?? COURSES[0];
+    const c = this.courses[Math.min(this.course, this.courses.length - 1)] ?? this.courses[0];
     if (!c) return;
     const rolling = this.phase === 'roll';
     const skew = rolling ? (this.meter - 0.5) * 2 : 0;
@@ -1111,9 +1280,11 @@ export class ParanthaPanel {
     g.restore();
 
     // The sizzle arc: the tawa's voice, climbing toward the singing band.
+    // The band is drawn from the same numbers the flip is judged by, so the
+    // hard telling's breath-wide window is a breath wide on screen too.
     const a0 = Math.PI * 1.05;
     const span = Math.PI * 0.9;
-    const inWin = this.sizzle >= 0.62 && this.sizzle <= 0.88;
+    const inWin = this.sizzle >= this.winLo && this.sizzle <= this.winHi;
     g.strokeStyle = 'rgba(30,20,13,0.4)';
     g.lineWidth = 5;
     g.beginPath();
@@ -1121,14 +1292,14 @@ export class ParanthaPanel {
     g.stroke();
     g.strokeStyle = 'rgba(200,165,91,0.6)';
     g.beginPath();
-    g.ellipse(TAWA.x, TAWA.y, TAWA.rx + 16, TAWA.ry + 14, 0, a0 + span * 0.62, a0 + span * 0.88);
+    g.ellipse(TAWA.x, TAWA.y, TAWA.rx + 16, TAWA.ry + 14, 0, a0 + span * this.winLo, a0 + span * this.winHi);
     g.stroke();
     g.strokeStyle = inWin ? '#ffd98a' : '#e8b04a';
     g.lineWidth = 5;
     g.beginPath();
     g.ellipse(TAWA.x, TAWA.y, TAWA.rx + 16, TAWA.ry + 14, 0, a0, a0 + span * this.sizzle);
     g.stroke();
-    const wm = a0 + span * 0.75;
+    const wm = a0 + span * ((this.winLo + this.winHi) / 2);
     const wmx = TAWA.x + Math.cos(wm) * (TAWA.rx + 16);
     const wmy = TAWA.y + Math.sin(wm) * (TAWA.ry + 14);
     stampGlow(g, wmx, wmy, 30, 'rgba(255,214,130,1)', inWin ? 0.65 + Math.sin(t * 9) * 0.25 : 0.2);
@@ -1311,6 +1482,27 @@ const TOURNAMENT_RIVALS: Rival[] = [
     line: 'The red patang hangs, saws back hard, and then lets go into the rain. From his roof the shahgird salutes his teacher through you.',
   },
 ];
+
+/** Yusuf's hard-telling spool: three patangs for the evening, not one more. */
+const HARD_DOR_LIMIT = 3;
+
+/** The ways a dor gets sawed, for the run's honest ledger. */
+type KFault = 'pigeon' | 'gust' | 'slack' | 'sawed';
+const K_FAULTS: KFault[] = ['pigeon', 'gust', 'slack', 'sawed'];
+
+const timesWord = (n: number) => (n === 1 ? 'once' : n === 2 ? 'twice' : `${n} times`);
+
+/** One warm specific sentence per fault, in the roof's own voice. */
+const K_COACH: Record<KFault, (n: number) => string> = {
+  pigeon: (n) =>
+    `You pulled through the pigeons ${timesWord(n)}; the birds own the sky first, ease off until they pass.`,
+  gust: (n) =>
+    `You pulled into the gust ${timesWord(n)}; a gust is not a rival, it cannot be beaten. Dheel, and she climbs it like a stair.`,
+  slack: (n) =>
+    `You gave slack in steady air ${timesWord(n)}; slack on a taut wind is an invitation, and he accepts it every time. Kheench, and keep sawing.`,
+  sawed: (n) =>
+    `He sawed you ${timesWord(n)} while you waited; in steady air the first pull has to be yours, the moment the line comes taut.`,
+};
 
 const PRACTICE_LOOKS = [{ paper: '#332b36', patch: '#8a7f98' }];
 const TOURNAMENT_LOOKS = [
@@ -1626,6 +1818,12 @@ export class PatangPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The hard telling, and the run's honest ledger of misses.
+  private hard = false;
+  private spent = false; // hard only: the charkhi gave its last patang
+  private rivalSawT = 0; // hard only: how long he lets a taut line idle
+  private faults: Record<KFault, number> = { pigeon: 0, gust: 0, slack: 0, sawed: 0 };
+
   // Visual layer only, from here down.
   private scene: Scene | null = null;
   private setHint: ((h: string) => void) | null = null;
@@ -1668,7 +1866,10 @@ export class PatangPanel {
   }
 
   private get rivals(): Rival[] {
-    return this.tournament ? TOURNAMENT_RIVALS : PRACTICE_RIVALS;
+    const base = this.tournament ? TOURNAMENT_RIVALS : PRACTICE_RIVALS;
+    // The hard telling flies waxed dor on every rival roof: two more passes
+    // of the saw per cut, which is two more turns of weather to survive.
+    return this.hard ? base.map((r) => ({ ...r, need: r.need + 2 })) : base;
   }
 
   private get looks() {
@@ -1677,6 +1878,12 @@ export class PatangPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    // The hard telling is read once here, never mid-flight. A first story
+    // run arrives with RUN.hard false and flies exactly as it always has.
+    this.hard = RUN.hard;
+    this.spent = false;
+    this.rivalSawT = 0;
+    for (const k of K_FAULTS) this.faults[k] = 0;
     this.phase = 'launch';
     this.wind = 'steady';
     this.windT = 0;
@@ -1725,24 +1932,39 @@ export class PatangPanel {
       this.windT += dt;
       if (this.phase !== 'launch' && this.windT >= this.windDur) {
         this.windT = 0;
-        // Weather schedule: mostly steady, gusts often, pigeons on their own clock.
+        // Weather schedule: mostly steady, gusts often, pigeons on their own
+        // clock. The hard telling crowds the sky (more birds, meaner gusts)
+        // and shortens every window, so no answer gets to be leisurely.
         const roll = Math.random();
-        const gustChance = this.tournament && this.rivalIdx === 2 ? 0.5 : 0.32;
-        const birdChance = this.tournament ? 0.22 : 0.16;
+        const stormRow = this.tournament && this.rivalIdx === 2;
+        const gustChance = this.hard ? (stormRow ? 0.58 : 0.42) : stormRow ? 0.5 : 0.32;
+        const birdChance = this.hard ? (this.tournament ? 0.34 : 0.3) : this.tournament ? 0.22 : 0.16;
         if (roll < birdChance) {
           this.wind = 'birds';
-          this.windDur = 2.4;
+          this.windDur = this.hard ? 2 : 2.4;
           this.hint = 'PIGEONS. A flock crosses your line, wings everywhere. Dheel, Down, give the sky back. Yusuf is watching.';
         } else if (roll < birdChance + gustChance) {
           this.wind = 'gust';
-          this.windDur = 1.6 + Math.random();
-          this.hint = this.tournament && this.rivalIdx === 2
+          this.windDur = this.hard ? 1.2 + Math.random() * 0.7 : 1.6 + Math.random();
+          this.hint = stormRow
             ? 'The storm front SHOVES. Dheel, Down, ride it or the dor sings itself apart.'
             : 'A gust leans hard on the line. Dheel, Down; let her drink some slack.';
         } else {
           this.wind = 'steady';
-          this.windDur = 1.8 + Math.random() * 1.4;
+          this.windDur = this.hard ? 1.3 + Math.random() * 0.9 : 1.8 + Math.random() * 1.4;
+          this.rivalSawT = this.hard ? (stormRow ? 2 : 2.6) : 0;
           this.hint = 'The line comes taut and steady. Kheench, Up: saw, saw, the cotton knows its work.';
+        }
+      }
+      // The hard telling's rival does not wait out a taut line. Let steady
+      // air idle and his saw takes a pass across YOUR dor; your own pull is
+      // the only thing that resets his patience.
+      if (this.hard && this.phase === 'duel' && this.wind === 'steady') {
+        this.rivalSawT -= dt;
+        if (this.rivalSawT <= 0) {
+          this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
+          this.faults.sawed++;
+          this.fray('His patang dips and his line takes a quick pass across yours while you watch the sky.');
         }
       }
       this.render();
@@ -1815,6 +2037,8 @@ export class PatangPanel {
       if (this.wind === 'steady') {
         this.progress += 1;
         this.altitude = Math.min(1, this.altitude + 0.08);
+        // Your pull is also your answer to his saw: his patience restarts.
+        this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
         this.audio.blip();
         this.hint = 'The dor bites. You feel the other line through your fingers like a pulse.';
         if (s) {
@@ -1831,6 +2055,7 @@ export class PatangPanel {
       } else if (this.wind === 'gust') {
         this.progress = Math.max(0, this.progress - 1);
         this.altitude = Math.max(0.12, this.altitude - 0.1);
+        this.faults.gust++;
         if (s) {
           this.kvx += 210;
           this.kvy += 60;
@@ -1841,6 +2066,7 @@ export class PatangPanel {
       } else {
         // Pulling through pigeons: the one real sin, and even it is warm.
         this.progress = Math.max(0, this.progress - 2);
+        this.faults.pigeon++;
         this.audio.bump();
         this.hint = 'Yusuf\'s hand closes on the dor. "Not through birds. Never through birds." The flock passes; the duel waits.';
         if (s) {
@@ -1867,6 +2093,7 @@ export class PatangPanel {
         }
       } else {
         this.progress = Math.max(0, this.progress - 1);
+        this.faults.slack++;
         if (s) this.kvy += 70;
         // Slack in steady air is an invitation, and he accepts it every time.
         this.fray('Slack in steady air, and the rival line saws YOU. His dor takes the offer without thanking you for it.');
@@ -1918,7 +2145,17 @@ export class PatangPanel {
     this.audio.bump();
     const cry = CUT_LINES[(this.lost - 1) % CUT_LINES.length];
     const ustad = YUSUF_AFTER_CUT[(this.lost - 1) % YUSUF_AFTER_CUT.length];
-    this.hint = `${line} ${cry} ${ustad} Press Space and take it up again.`;
+    // The hard telling's spool has a bottom. The third cut ends the evening
+    // the way everything on this roof ends: warmly, and with chai.
+    if (this.hard && this.lost >= HARD_DOR_LIMIT) {
+      this.spent = true;
+      this.hint =
+        `${line} ${cry} Yusuf winds in the bare charkhi, unhurried, and folds your fingers around a warm kulhad ` +
+        'instead of a new dor. "Three to the sky is a fed sky, beta. It flew our paper better than we did tonight. ' +
+        'Chai now; the roofs will keep." Press Space.';
+    } else {
+      this.hint = `${line} ${cry} ${ustad} Press Space and take it up again.`;
+    }
     if (!s) return;
     s.flash('#e2d8e8', 0.28);
     if (!calmMotion()) s.thump(8, 0.08);
@@ -2020,6 +2257,12 @@ export class PatangPanel {
   onAction() {
     const s = this.scene;
     if (this.phase === 'cut') {
+      if (this.spent) {
+        // The charkhi is bare; the evening belongs to the chai now. Close
+        // the panel on Yusuf's terms, coach line filed for the next climb.
+        this.finish();
+        return;
+      }
       this.relaunch();
       this.render();
       return;
@@ -2030,6 +2273,7 @@ export class PatangPanel {
       this.windT = 0;
       this.windDur = 2;
       this.wind = 'steady';
+      this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
       // The current rival, not the first: after a cut you meet him again.
       this.hint = `${this.rivals[this.rivalIdx]?.name ?? 'A rival'} crosses your line. Up is kheench, Down is dheel. The sharper line wins.`;
       if (s) {
@@ -2050,6 +2294,7 @@ export class PatangPanel {
         this.phase = 'duel';
         this.windT = 0;
         this.wind = 'steady';
+        this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
         this.hint = `${this.rivals[this.rivalIdx]?.name} rises to meet you. Kheench on taut, dheel on gusts, and mind the birds.`;
         this.rkx = 700;
         this.rky = 30;
@@ -2069,18 +2314,41 @@ export class PatangPanel {
       return;
     }
     if (this.phase === 'done') {
-      this.root.hidden = true;
-      const done = this.onDone;
-      this.onDone = null;
-      done?.();
+      this.finish();
     }
+  }
+
+  /** Close the panel, filing the run's one honest coach line on the way out. */
+  private finish() {
+    this.reportCoach();
+    this.root.hidden = true;
+    const done = this.onDone;
+    this.onDone = null;
+    done?.();
+  }
+
+  /**
+   * The run fell short somewhere and the next how-to card should say where.
+   * The dominant miss wins; ties fall to the order of the roof's own laws
+   * (birds before gusts, gusts before slack habits, the rival's saw last).
+   * A clean flight files nothing.
+   */
+  private reportCoach() {
+    let top: KFault | null = null;
+    for (const k of K_FAULTS) {
+      if (this.faults[k] > 0 && (!top || this.faults[k] > this.faults[top])) top = k;
+    }
+    if (!top) return;
+    coach(this.tournament ? DUEL_FLAG : KITE_FLAG, K_COACH[top](this.faults[top]));
   }
 
   private caption(): string {
     const alt = Math.round(this.altitude * 100);
     let count: string;
     if (this.phase === 'cut') {
-      count = 'the dor is gone &middot; the charkhi is already turning &middot; Space';
+      count = this.spent
+        ? 'the charkhi is bare &middot; chai on the parapet &middot; Space'
+        : 'the dor is gone &middot; the charkhi is already turning &middot; Space';
     } else if (this.phase === 'launch') {
       count = 'the charkhi is wound with plain cotton dor';
     } else {
@@ -2088,6 +2356,7 @@ export class PatangPanel {
       count = `altitude ${alt} &middot; cuts ${this.cuts}${this.tournament ? ' of 3' : ''} &middot; flocks honored ${this.blessed} &middot; ${dor}`;
     }
     if (this.lost > 0 && this.phase !== 'cut') count += ` &middot; given to the sky ${this.lost}`;
+    if (this.hard) count += ` &middot; the hard telling &middot; patangs left ${Math.max(0, HARD_DOR_LIMIT - this.lost)}`;
     return `${this.hint}<div class="c-count">${count}</div>`;
   }
 

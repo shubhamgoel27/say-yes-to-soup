@@ -26,6 +26,8 @@ export const CHAPTER: ChapterDef = {
         'Space paddles as each swell reaches you. Too eager and it rolls you back; let the horse meet the water.',
         'Past the break, hold the middle with the arrows and let the wave carry you home.',
       ],
+      hardHow:
+        'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. On the ride home, a rail held under is a swim.',
       make: (root, audio) => new WavePanel(root, audio as AudioBus),
     },
     {
@@ -36,6 +38,8 @@ export const CHAPTER: ChapterDef = {
         'The arrows walk the shuttle along the mesh. Space ties a hole shut wherever a gap gapes.',
         'No timer, no losing. The talk mends the evening while you mend the net.',
       ],
+      hardHow:
+        'The dusk telling: eight gaps and the light is going. A knot spent on whole mesh costs you dusk; the net is whole before dark, or it waits for morning.',
       make: (root, audio) => new NetPanel(root, audio as AudioBus),
     },
     {
@@ -46,6 +50,8 @@ export const CHAPTER: ChapterDef = {
         'Space walks the dish through: cut, salt, the lime kiss, onion, the rest.',
         'Pull the fish while the bar burns bright. The lime kisses, it does not marry; overcook and Petro eats the proof.',
       ],
+      hardHow:
+        'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. The kiss, exactly, or the noon goes on without you.',
       make: (root, audio) => new CevichePanel(root, audio as AudioBus),
     },
   ],

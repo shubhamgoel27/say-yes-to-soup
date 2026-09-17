@@ -2,6 +2,21 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
+import { RUN, coach, takeCoach } from './run';
+
+/** The start flags these panels answer to; coach() files advice under them. */
+const SAIL_FLAG = 'c7.sail.start';
+const UROJO_FLAG = 'c7.cook.start';
+
+// The dev desk's reach-in: automation flips the hard telling the same way the
+// replay flow does in production, by writing RUN.hard before a panel opens.
+// Guarded softly: node-side tests import this module with no import.meta.env.
+const devEnv = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
+if (devEnv?.DEV) {
+  const g = globalThis as unknown as { __soupRun?: typeof RUN; __soupTakeCoach?: typeof takeCoach };
+  g.__soupRun = RUN;
+  g.__soupTakeCoach = takeCoach;
+}
 
 /**
  * The coast's hands-on verb: trimming a ngalawa's lateen sail on the kaskazi.
@@ -181,11 +196,16 @@ function villageCard(): Cv {
   return cv;
 }
 
-type SailPhase = 'sail' | 'irons' | 'done';
+type SailPhase = 'sail' | 'irons' | 'lost' | 'done';
 
 /** Seconds of unbroken luffing before the boat gives up and rounds up. */
 const IRONS_WARN = 5.5;
 const IRONS_AT = 9;
+// The hard telling forgives less flogging, and in it irons ends the run.
+const IRONS_WARN_HARD = 3.5;
+const IRONS_AT_HARD = 6;
+/** Hard telling only: seconds of tide left to make the whole reach. */
+const TIDE_S = 30;
 
 const SAIL_LEGEND = [
   { keys: ['left', 'right'], does: 'ease the sheet' },
@@ -193,6 +213,12 @@ const SAIL_LEGEND = [
   // when the boat is in irons. A legend that promises otherwise is worse than
   // no legend, because the player presses it and learns the game is lying.
   { keys: ['space'], does: 'bear away, if she comes up into the wind' },
+] as const;
+
+// In the hard telling irons is not a restart, so the legend keeps its word.
+const SAIL_LEGEND_HARD = [
+  { keys: ['left', 'right'], does: 'ease the sheet' },
+  { keys: ['space'], does: 'come ashore, when the tide calls the reach' },
 ] as const;
 
 /**
@@ -219,6 +245,23 @@ export class SailPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The hard telling, read once from RUN at open. Normal runs keep every
+  // number they have always had; hard tightens the band, gusts the wind,
+  // and puts a tide window on the reach.
+  private hard = false;
+  private band = 0.11; // half-width of the wind's good sector
+  private tideLeft = Infinity;
+  private runT = 0;
+  private gustAt = -99; // runT of the last gust, for slew and for blame
+  private stripText = ''; // the paper strip's words in irons / lost
+
+  // The fault ledger: where the flogging seconds actually went, so the coach
+  // line afterward can name the dominant miss instead of shrugging.
+  private luffHaul = 0; // luffing with the sheet hauled past the kaskazi
+  private luffEase = 0; // luffing with the sheet eased below it
+  private gustHaul = 0; // those same seconds, when they landed inside a gust
+  private gustEase = 0;
+
   // The painted layer. Nothing below touches the sailing itself.
   private scene = new Scene();
   private setHint: (h: string) => void = () => {};
@@ -244,6 +287,14 @@ export class SailPanel {
   open(onDone: () => void) {
     this.onDone = onDone;
     this.phase = 'sail';
+    this.hard = RUN.hard;
+    this.band = this.hard ? 0.07 : 0.11;
+    this.need = this.hard ? 18 : 12;
+    this.tideLeft = this.hard ? TIDE_S : Infinity;
+    this.runT = 0;
+    this.gustAt = -99;
+    this.stripText = '';
+    this.luffHaul = this.luffEase = this.gustHaul = this.gustEase = 0;
     this.wind = 0.5;
     this.windTarget = 0.62;
     this.shiftT = 3;
@@ -251,13 +302,16 @@ export class SailPanel {
     this.dist = 0;
     this.wasTrim = false;
     // A negative start is three seconds of grace: the first moments of a reach
-    // are for reading the water, not for being punished by it.
-    this.luffT = -3;
+    // are for reading the water, not for being punished by it. The hard
+    // telling grants two; the tide is already going.
+    this.luffT = this.hard ? -2 : -3;
     this.ironsT = 0;
-    this.hint = 'The kaskazi fills in from the northeast. Ease the sail with the arrows until the telltale streams.';
+    this.hint = this.hard
+      ? 'The kaskazi is up and gusting, and the tide gives you thirty breaths to make the reach. Narrow trim today; ease small, ease early.'
+      : 'The kaskazi fills in from the northeast. Ease the sail with the arrows until the telltale streams.';
     this.root.hidden = false;
     this.root.style.lineHeight = '1.45'; // the #frame ancestor zeroes line-height; hints need it back
-    const m = mountScene(this.root, 'The Kaskazi', this.scene, SAIL_LEGEND);
+    const m = mountScene(this.root, 'The Kaskazi', this.scene, this.hard ? SAIL_LEGEND_HARD : SAIL_LEGEND);
     this.setHint = m.setHint;
     this.scene.restart();
     this.sailVis = visAng(this.sail);
@@ -276,17 +330,40 @@ export class SailPanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     if (this.phase === 'sail') {
-      // The wind wanders, pole pole, and sometimes picks a new opinion.
+      this.runT += dt;
+      // The wind wanders, pole pole, and sometimes picks a new opinion. In
+      // the hard telling it wanders faster, further, and about half its
+      // shifts arrive as gusts that shove the whole sector across the rose.
       this.shiftT -= dt;
       if (this.shiftT <= 0) {
-        this.windTarget = 0.18 + Math.random() * 0.64;
-        this.shiftT = 2.6 + Math.random() * 2.6;
+        if (this.hard) {
+          this.windTarget = 0.1 + Math.random() * 0.8;
+          this.shiftT = 1.5 + Math.random() * 1.7;
+          if (Math.random() < 0.5) this.gustAt = this.runT;
+        } else {
+          this.windTarget = 0.18 + Math.random() * 0.64;
+          this.shiftT = 2.6 + Math.random() * 2.6;
+        }
       }
+      const gusting = this.hard && this.runT - this.gustAt < 1.0;
+      const slew = this.hard ? (gusting ? 0.34 : 0.16) : 0.09;
+      const jitter = this.hard ? 0.04 : 0.02;
       const d = this.windTarget - this.wind;
-      this.wind += Math.max(-0.09 * dt, Math.min(0.09 * dt, d)) + (Math.random() - 0.5) * 0.02 * dt;
+      this.wind += Math.max(-slew * dt, Math.min(slew * dt, d)) + (Math.random() - 0.5) * jitter * dt;
       this.wind = Math.max(0.05, Math.min(0.95, this.wind));
 
       const trimmed = this.isTrim();
+      // The ledger: flogging seconds filed by which side of the wind the
+      // sheet was on, and whether a gust had just come through.
+      if (!trimmed && this.luffT > 0) {
+        const hauled = this.sail > this.wind;
+        if (hauled) this.luffHaul += dt;
+        else this.luffEase += dt;
+        if (this.hard && this.runT - this.gustAt < 2.5) {
+          if (hauled) this.gustHaul += dt;
+          else this.gustEase += dt;
+        }
+      }
       if (trimmed && !this.wasTrim) {
         this.audio.slosh();
         this.scene.flash('#eaf8ff', 0.12);
@@ -296,12 +373,19 @@ export class SailPanel {
       this.wasTrim = trimmed;
       this.luffT = trimmed ? 0 : this.luffT + dt;
       this.dist += dt * (trimmed ? 1 : 0.15);
+      const warnAt = this.hard ? IRONS_WARN_HARD : IRONS_WARN;
       this.hint = trimmed
         ? 'The telltale streams. The hull hums; the outriggers barely kiss the water.'
-        : this.luffT >= IRONS_WARN
+        : this.luffT >= warnAt
           ? 'The sail is flogging and the bow is creeping up into the wind. Trim to the arrow now, before she stops answering.'
-          : 'The sail luffs and grumbles. No harm done; you just slow. Follow the wind arrow with the arrows.';
-      if (this.luffT >= IRONS_AT) this.goIrons();
+          : this.hard
+            ? 'The sail luffs and the tide keeps its own count. Small moves; meet the arrow, do not chase it.'
+            : 'The sail luffs and grumbles. No harm done; you just slow. Follow the wind arrow with the arrows.';
+      if (this.hard) this.tideLeft -= dt;
+      if (this.luffT >= (this.hard ? IRONS_AT_HARD : IRONS_AT)) {
+        if (this.hard) this.loseRun('irons');
+        else this.goIrons();
+      } else if (this.hard && this.tideLeft <= 0) this.loseRun('tide');
       else if (this.dist >= this.need) {
         this.phase = 'done';
         this.audio.weaveDone();
@@ -313,7 +397,14 @@ export class SailPanel {
     this.animate(dt);
     this.scene.frame(dt, (g) => this.paint(g));
     const pct = Math.min(100, Math.round((this.dist / this.need) * 100));
-    this.setHint(this.phase === 'sail' ? `${this.hint} <em>${pct}% of the reach sailed.</em>` : this.hint);
+    const tide = this.hard ? ` ${Math.max(0, Math.ceil(this.tideLeft))} breaths of tide left.` : '';
+    this.setHint(this.phase === 'sail' ? `${this.hint} <em>${pct}% of the reach sailed.${tide}</em>` : this.hint);
+    if (devEnv?.DEV) {
+      // The dev desk's window into the reach, so automation can crew honestly.
+      (globalThis as unknown as { __soupSail?: object }).__soupSail = {
+        phase: this.phase, hard: this.hard, wind: this.wind, sail: this.sail, dist: this.dist, need: this.need, tide: this.tideLeft,
+      };
+    }
   }
 
   onDir(dir: Dir) {
@@ -330,7 +421,7 @@ export class SailPanel {
       if (done) this.open(done);
       return;
     }
-    if (this.phase === 'done') {
+    if (this.phase === 'done' || this.phase === 'lost') {
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
@@ -340,7 +431,7 @@ export class SailPanel {
 
   /** The sail sits inside the wind's good zone, so the telltale streams. */
   private isTrim(): boolean {
-    return this.phase !== 'irons' && Math.abs(this.sail - this.wind) < 0.11;
+    return this.phase !== 'irons' && this.phase !== 'lost' && Math.abs(this.sail - this.wind) < this.band;
   }
 
   /**
@@ -351,12 +442,58 @@ export class SailPanel {
   private goIrons() {
     this.phase = 'irons';
     this.ironsT = this.scene.time;
+    // Even the gentle telling files what went wrong, so the next how-to card
+    // can hand the advice back before the next attempt.
+    coach(SAIL_FLAG, this.coachLine('irons'));
     this.audio.blip();
     this.scene.flash('#dfe9ee', 0.18);
     if (!calm()) this.scene.thump(2.5, 0.05);
+    this.stripText = 'in irons · Space to bear away';
     this.hint =
       'In irons. The bow swings into the wind, the sail slats, and the ngalawa simply stops. ' +
       'Bakari laughs. "Every sailor sleeps here once, mgeni." Space to bear away and take the reach again.';
+  }
+
+  /**
+   * The hard telling's graceful end short of the bar: irons with no free
+   * bear-away, or a tide window that closes first. The run is over, Bakari is
+   * kind about it, and the coach line remembers the dominant miss.
+   */
+  private loseRun(why: 'irons' | 'tide') {
+    this.phase = 'lost';
+    this.ironsT = this.scene.time;
+    coach(SAIL_FLAG, this.coachLine(why));
+    this.audio.blip();
+    this.scene.flash('#dfe9ee', 0.18);
+    if (!calm()) this.scene.thump(2.5, 0.05);
+    this.stripText = why === 'irons' ? 'in irons · the tide wins · Space' : 'the tide turns · Space, ashore';
+    this.hint =
+      why === 'irons'
+        ? 'In irons, and this tide will not wait for the bow to fall off. Bakari takes the sheet back, easy about it. ' +
+          '"The kaskazi wins this one, mgeni. It wins most of them." Space to come ashore.'
+        : 'The tide window closes with the village still small on the bow. Bakari eases the sheet and shrugs. ' +
+          '"Short today. The reef does not negotiate." Space to come ashore.';
+  }
+
+  /** One sentence for the coach: the dominant miss, read out of the ledger. */
+  private coachLine(why: 'irons' | 'tide'): string {
+    const gust = this.gustHaul + this.gustEase;
+    const chronic = this.luffHaul + this.luffEase;
+    if (gust > 1.5 && gust >= chronic * 0.45) {
+      return this.gustHaul >= this.gustEase
+        ? 'You sheeted in through the gust; ease when the telltale lifts, do not haul.'
+        : 'You threw the sheet away through the gust; hold your trim and let the puff pass before you move.';
+    }
+    if (this.luffHaul > this.luffEase * 1.6) {
+      return 'You kept the sheet hauled in past the kaskazi; when the arrow falls away, ease early and small instead of waiting for the flog.';
+    }
+    if (this.luffEase > this.luffHaul * 1.6) {
+      return 'You left the sheet eased below the wind; haul to meet the arrow the moment it climbs, small pulls, not one big one.';
+    }
+    if (why === 'tide') {
+      return 'Your trim was honest but your hands were late; start the sheet moving the moment the arrow moves, and the tide will still be there.';
+    }
+    return 'You chased the arrow past the sector from both sides; make one small correction, then wait a breath for the telltale before the next.';
   }
 
   // ------------------------------------------------------------ painted sea
@@ -364,7 +501,7 @@ export class SailPanel {
   /** Eases the rig, spawns spray and wake, and thumps the boom across tacks. */
   private animate(dt: number) {
     const trimmed = this.isTrim();
-    const irons = this.phase === 'irons';
+    const irons = this.phase === 'irons' || this.phase === 'lost';
     // In irons the reef stops sliding past, which is how a stop looks from aboard.
     const sp = irons ? -0.28 : this.phase === 'done' ? 0.4 : trimmed ? 1 : 0.25;
     this.scroll += dt * (26 + sp * 84);
@@ -462,7 +599,7 @@ export class SailPanel {
     this.paintBoat(g, t);
     waveBand(g, W, 302, 4, 70, t * 1.8 + 3, '#a8e0da', 0.22, 5);
     this.paintCompass(g);
-    if (this.phase === 'irons') this.paintIrons(g, t, W);
+    if (this.phase === 'irons' || this.phase === 'lost') this.paintIrons(g, t, W);
   }
 
   /** A paper strip that names the stop, so the screen says what the boat says. */
@@ -481,7 +618,7 @@ export class SailPanel {
     g.fillStyle = '#2b2118';
     g.font = '600 13px Literata, Georgia, serif';
     g.textAlign = 'center';
-    g.fillText('in irons · Space to bear away', W / 2, y + 21);
+    g.fillText(this.stripText || 'in irons · Space to bear away', W / 2, y + 21);
     g.globalAlpha = 1;
   }
 
@@ -719,8 +856,8 @@ export class SailPanel {
       g.stroke();
     }
     // The wind's good sector, lit: put the sheet in here and the sail breathes.
-    const lo = roseAng(this.wind - 0.11);
-    const hi = roseAng(this.wind + 0.11);
+    const lo = roseAng(this.wind - this.band);
+    const hi = roseAng(this.wind + this.band);
     g.lineCap = 'butt';
     g.strokeStyle = 'rgba(43,33,24,0.5)';
     g.lineWidth = 19;
@@ -860,7 +997,45 @@ const UROJO_ROUNDS: UrojoRound[] = [
   { call: 'Bi Mwana the teacher is next: "Gentle for me, and extra crunch. I am grading essays tonight; I need courage, not heartburn."', want: 'crunch' },
 ];
 
-type UrojoPhase = 'build' | 'served' | 'done';
+type UrojoPhase = 'build' | 'served' | 'lost' | 'done';
+
+/** Chalk-short names, for the hard telling's call slate and its coach lines. */
+const UROJO_CHALK = ['mango', 'potato', 'bhajia', 'egg', 'cassava', 'coconut', 'chili'];
+
+/**
+ * The hard telling: the evening rush. Three customers who call exact bowls,
+ * in order, while the broth is at a rolling boil; each addition has to land
+ * before the surface closes over. Indices are UROJO_ITEMS positions.
+ */
+type UrojoHardRound = { call: string; seq: number[]; window: number; done: string };
+
+const UROJO_HARD: UrojoHardRound[] = [
+  {
+    call: 'The dock crew arrive four abreast, still salted. The first one: "Potato, bhajia, chili, and the mango last, so it bites going down."',
+    seq: [1, 2, 6, 0],
+    window: 8,
+    done: 'The docker drinks half the bowl standing up. "The mango bites," he reports, satisfied, and pays for the man behind him.',
+  },
+  {
+    call: 'A mother with a sleeping child on her back: "Egg, potato, coconut, cassava, bhajia on top. And softly. If he wakes, we all pay."',
+    seq: [3, 1, 5, 4, 2],
+    window: 7,
+    done: 'She takes the bowl one-handed without breaking her sway. The child sleeps on. Zuberi bows to the better balancing act.',
+  },
+  {
+    call: 'Old Mzee Salim, who taught Zuberi the pot: "Mango, chili, bhajia, potato, cassava, coconut. The full ladder. In order, or it is soup, not urojo."',
+    seq: [0, 6, 2, 1, 4, 5],
+    window: 6,
+    done: 'Mzee Salim tastes it in silence long enough to reorganize the weather. Then one nod. Zuberi exhales for the first time all evening.',
+  },
+];
+
+/** Slips the rush allows before the line drifts to the chip cart. */
+const RUSH_SLIPS = 3;
+/** Extra seconds of grace at the top of each bowl, while the call settles. */
+const RUSH_GRACE = 3;
+
+type UrojoSlip = { type: 'order' | 'slow' | 'early'; got?: number; need?: number; short?: number };
 
 type Float = { kind: number; sx: number; sy: number; fx: number; fy: number; born: number; landed: boolean; spin: number; phase: number };
 type Ring = { x: number; y: number; t0: number };
@@ -1010,6 +1185,13 @@ export class UrojoPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The hard telling, read once from RUN at open: the evening rush.
+  private hard = false;
+  private seqPos = 0; // how far down the called order this bowl has come
+  private slips = 0;
+  private slipLog: UrojoSlip[] = [];
+  private addT = Infinity; // seconds before the broth closes over
+
   // The painted layer: everything from here down is bowls, steam, and light.
   private scene = new Scene();
   private setHint: (h: string) => void = () => {};
@@ -1035,9 +1217,15 @@ export class UrojoPanel {
   open(onDone: () => void) {
     this.onDone = onDone;
     this.phase = 'build';
+    this.hard = RUN.hard;
     this.round = 0;
+    this.slips = 0;
+    this.slipLog = [];
     this.startRound();
-    this.hint = `Zuberi hands you the ladle. ${UROJO_ROUNDS[0]?.call ?? ''} Arrows choose, Space adds; choose SERVE when the bowl is a bowl.`;
+    this.hint = this.hard
+      ? 'Zuberi hands you the ladle and does not quite let go. "The evening rush, mgeni. They call the bowl; you build it in the order they say it, ' +
+        `while the broth is open. ${RUSH_SLIPS} slips and the line walks." ${UROJO_HARD[0]?.call ?? ''}`
+      : `Zuberi hands you the ladle. ${UROJO_ROUNDS[0]?.call ?? ''} Arrows choose, Space adds; choose SERVE when the bowl is a bowl.`;
     this.root.hidden = false;
     this.root.style.lineHeight = '1.45'; // the #frame ancestor zeroes line-height; hints need it back
     const m = mountScene(this.root, 'Behind the Urojo Pot', this.scene, UROJO_LEGEND);
@@ -1057,6 +1245,13 @@ export class UrojoPanel {
     this.counts = UROJO_ITEMS.map(() => 0);
     this.floats = [];
     this.rings = [];
+    this.seqPos = 0;
+    this.addT = this.hard ? (UROJO_HARD[this.round]?.window ?? 7) + RUSH_GRACE : Infinity;
+  }
+
+  /** The active hard round, when there is one. */
+  private hardRound(): UrojoHardRound | null {
+    return this.hard ? (UROJO_HARD[this.round] ?? null) : null;
   }
 
   private total(): number {
@@ -1066,6 +1261,22 @@ export class UrojoPanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     if (this.splashT > 0) this.splashT = Math.max(0, this.splashT - dt);
+    // The rush clock: in the hard telling, every addition has to land before
+    // the broth closes over the last one's splash.
+    const hr = this.hardRound();
+    if (hr && this.phase === 'build' && this.seqPos < hr.seq.length) {
+      this.addT -= dt;
+      if (this.addT <= 0) {
+        const need = hr.seq[this.seqPos] ?? 0;
+        this.recordSlip({ type: 'slow', need });
+        if (this.phase === 'build') {
+          this.addT = hr.window;
+          this.hint =
+            `The broth closes over while your hand hovers. Zuberi taps the slate: "${UROJO_CHALK[need]}, mgeni. It was ${UROJO_CHALK[need]}. ` +
+            `${this.slipsLeft()}"`;
+        }
+      }
+    }
     this.bowlOff += ((this.phase === 'build' ? 0 : 8) - this.bowlOff) * Math.min(1, dt * 6);
     this.steamT -= dt;
     if (this.steamT <= 0) {
@@ -1083,7 +1294,51 @@ export class UrojoPanel {
       this.bubbleT = 0.5 + Math.random() * 0.5;
     }
     this.scene.frame(dt, (g) => this.paint(g));
-    this.setHint(this.hint);
+    const rushed = this.hardRound();
+    const ticking = rushed && this.phase === 'build' && this.seqPos < rushed.seq.length && this.addT < 900;
+    this.setHint(ticking ? `${this.hint} <em>${Math.max(0, Math.ceil(this.addT))}s before the broth closes over.</em>` : this.hint);
+  }
+
+  /** How much patience the rush has left, phrased the way Zuberi phrases it. */
+  private slipsLeft(): string {
+    const left = RUSH_SLIPS - this.slips;
+    if (left <= 0) return '';
+    return left === 1 ? 'One more slip and the line walks.' : `${left === 2 ? 'Two' : left} slips left in the evening.`;
+  }
+
+  /** File a slip; at RUSH_SLIPS the rush moves on and the run ends, gently. */
+  private recordSlip(slip: UrojoSlip) {
+    this.slips++;
+    this.slipLog.push(slip);
+    this.audio.blip();
+    this.nudgeT = this.scene.time;
+    if (this.slips >= RUSH_SLIPS) {
+      this.phase = 'lost';
+      coach(UROJO_FLAG, this.coachLine());
+      this.hint =
+        'The end of the line drifts toward the chip cart, the way tides do. Zuberi takes back the ladle, kind about it. ' +
+        '"The rush is a drum, mgeni. Tonight it played you. Next market night, you play it." Space to come out.';
+    }
+  }
+
+  /** One sentence for the coach: the dominant slip, with its actual names. */
+  private coachLine(): string {
+    const order = this.slipLog.filter((s) => s.type === 'order');
+    const slow = this.slipLog.filter((s) => s.type === 'slow');
+    const early = this.slipLog.filter((s) => s.type === 'early');
+    const last = <T>(a: T[]) => a[a.length - 1];
+    if (order.length >= slow.length && order.length >= early.length && order.length > 0) {
+      const s = last(order);
+      const got = UROJO_CHALK[s?.got ?? 0] ?? 'wrong saucer';
+      const need = UROJO_CHALK[s?.need ?? 0] ?? 'called one';
+      return `You reached for the ${got} while the call said ${need}; say the order back to yourself once before your hand moves.`;
+    }
+    if (slow.length >= early.length && slow.length > 0) {
+      const need = UROJO_CHALK[last(slow)?.need ?? 0] ?? 'next thing';
+      return `The broth closed over while you hunted for the ${need}; find the next saucer with your eyes while the last one is still splashing.`;
+    }
+    const short = last(early)?.short ?? 1;
+    return `You served ${short} thing${short === 1 ? '' : 's'} short of the call; the bowl leaves when the slate is empty, not when your nerve is.`;
   }
 
   onDir(dir: Dir) {
@@ -1113,15 +1368,36 @@ export class UrojoPanel {
 
   onAction() {
     if (this.phase === 'build') {
+      const hr = this.hardRound();
       if (this.cur === UROJO_ITEMS.length) {
-        if (this.total() < 3) {
+        if (hr && this.seqPos < hr.seq.length) {
+          // The rush does not accept air: serving mid-call is a slip.
+          const short = hr.seq.length - this.seqPos;
+          this.recordSlip({ type: 'early', short });
+          if (this.phase === 'build') {
+            this.hint =
+              `Zuberi's hand closes over the rim. "${short} thing${short === 1 ? ' is' : 's are'} still called and you hand me air? ` +
+              `The slate first, mgeni. ${this.slipsLeft()}"`;
+          }
+          return;
+        }
+        if (!hr && this.total() < 3) {
           this.audio.blip();
           this.nudgeT = this.scene.time;
+          // The gentle telling's one shortfall still teaches: the coach line
+          // names what was actually aboard when the bowl came up short.
+          const aboard = UROJO_CHALK.filter((_, i) => (this.counts[i] ?? 0) > 0);
+          coach(
+            UROJO_FLAG,
+            aboard.length === 0
+              ? 'You offered Zuberi bare broth; broth is a floor, not a meal. Put three things in the bowl before you reach for the slate.'
+              : `You went for the slate with only the ${aboard.join(' and the ')} aboard; a bowl wants three things in it before it counts as an answer.`,
+          );
           this.hint = 'Zuberi covers the bowl with one hand. "That is not urojo yet, that is a puddle with promise. Two or three more things, mgeni."';
           return;
         }
         this.audio.chime();
-        this.hint = `${this.verdict()} Space for the next bowl.`;
+        this.hint = `${hr ? hr.done : this.verdict()} Space for the next bowl.`;
         this.phase = 'served';
         this.limeT = this.scene.time;
         this.limeDropped = false;
@@ -1129,12 +1405,35 @@ export class UrojoPanel {
       }
       const item = UROJO_ITEMS[this.cur];
       if (!item) return;
+      if (hr) {
+        if (this.seqPos >= hr.seq.length) {
+          // The call is complete; the only thing left to add is the handing over.
+          this.audio.blip();
+          this.nudgeT = this.scene.time;
+          this.hint = 'Zuberi angles the bowl away. "The call is complete, mgeni. Nothing more goes in. SERVE, while it steams."';
+          return;
+        }
+        const need = hr.seq[this.seqPos] ?? 0;
+        if (this.cur !== need) {
+          // Zuberi's ladle bars the saucer before the wrong thing can land.
+          this.recordSlip({ type: 'order', got: this.cur, need });
+          if (this.phase === 'build') {
+            this.addT = hr.window;
+            this.hint =
+              `Zuberi's ladle bars the saucer. "Not the ${UROJO_CHALK[this.cur]}. The call says ${UROJO_CHALK[need]}. ` +
+              `The order is the recipe, mgeni. ${this.slipsLeft()}"`;
+          }
+          return;
+        }
+        this.seqPos++;
+        this.addT = this.seqPos >= hr.seq.length ? Infinity : hr.window;
+      }
       this.counts[this.cur] = (this.counts[this.cur] ?? 0) + 1;
       this.dropFloat(this.cur);
       this.splashT = 0.6;
       this.audio.slosh();
-      this.hint = item.splash;
-      if (this.total() >= 10) {
+      this.hint = hr && this.seqPos >= hr.seq.length ? `${item.splash} The call is complete; SERVE while it steams.` : item.splash;
+      if (!hr && this.total() >= 10) {
         this.audio.chime();
         this.hint = `The bowl declines further cargo. ${this.verdict()} Space for the next bowl.`;
         this.phase = 'served';
@@ -1143,13 +1442,16 @@ export class UrojoPanel {
       }
     } else if (this.phase === 'served') {
       this.round++;
-      const next = UROJO_ROUNDS[this.round];
+      const next = this.hard ? UROJO_HARD[this.round] : UROJO_ROUNDS[this.round];
       if (next) {
         this.startRound();
         this.phase = 'build';
         this.hint = `A clean bowl lands in your hands. ${next.call}`;
       } else {
         this.phase = 'done';
+        // A rush survived with slips still coaches: the next how-to hands the
+        // dominant miss back, so a pass with a wobble is re-armed too.
+        if (this.hard && this.slips > 0) coach(UROJO_FLAG, this.coachLine());
         this.audio.weaveDone();
         this.scene.flash('#ffe9b8', 0.3);
         this.scene.burst(BOWL_X, BOWL_Y - 30, { n: calm() ? 6 : 14, color: '#f2d98a', speed: 90, grav: 140, size: 3, life: 0.8 });
@@ -1521,6 +1823,10 @@ export class UrojoPanel {
    */
   private paintOrder(g: CanvasRenderingContext2D) {
     if (this.phase !== 'build') return;
+    if (this.hard) {
+      this.paintCall(g);
+      return;
+    }
     const want = UROJO_ROUNDS[this.round]?.want;
     if (!want) return;
     const asked = want === 'brave' ? 'brave' : 'crunchy';
@@ -1544,8 +1850,71 @@ export class UrojoPanel {
     g.restore();
   }
 
+  /**
+   * The hard telling's slate: the whole call in chalk, in order, done items
+   * dimmed and the next one bright. The pressure is the clock and your hands,
+   * not your memory; Zuberi repeats an order for anyone who asks.
+   */
+  private paintCall(g: CanvasRenderingContext2D) {
+    const hr = this.hardRound();
+    if (!hr) return;
+    g.save();
+    g.translate(452, 10);
+    g.rotate(0.02);
+    rr(g, 0, 0, 178, 62, 4, 'rgba(38,32,28,0.9)');
+    g.strokeStyle = 'rgba(226,214,188,0.5)';
+    g.lineWidth = 1.6;
+    g.beginPath();
+    g.roundRect(2, 2, 174, 58, 3);
+    g.stroke();
+    g.fillStyle = 'rgba(238,230,212,0.72)';
+    g.font = 'italic 10px Literata, Georgia, serif';
+    g.textAlign = 'left';
+    g.fillText('the call, in order', 10, 15);
+    // Three chalk marks of patience, rubbed out one slip at a time.
+    for (let i = 0; i < RUSH_SLIPS; i++) {
+      const spent = i < this.slips;
+      g.strokeStyle = spent ? 'rgba(226,120,90,0.85)' : 'rgba(238,230,212,0.4)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.arc(150 + i * 9, 11, 3, 0, Math.PI * 2);
+      g.stroke();
+      if (spent) {
+        g.beginPath();
+        g.moveTo(147 + i * 9, 8);
+        g.lineTo(153 + i * 9, 14);
+        g.stroke();
+      }
+    }
+    hr.seq.forEach((k, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const x = 10 + col * 56;
+      const y = 32 + row * 16;
+      const isNext = i === this.seqPos;
+      g.fillStyle = i < this.seqPos ? 'rgba(238,230,212,0.32)' : isNext ? '#f6ecd6' : 'rgba(238,230,212,0.66)';
+      g.font = `${isNext ? '700' : '500'} 11px Literata, Georgia, serif`;
+      g.fillText(`${i < this.seqPos ? '' : isNext ? '▸ ' : ''}${UROJO_CHALK[k] ?? '?'}`, x, y);
+      if (i < this.seqPos) {
+        g.strokeStyle = 'rgba(238,230,212,0.3)';
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(x - 1, y - 3.5);
+        g.lineTo(x + g.measureText(UROJO_CHALK[k] ?? '?').width + 1, y - 3.5);
+        g.stroke();
+      }
+    });
+    g.restore();
+  }
+
   private paintTag(g: CanvasRenderingContext2D) {
-    const label = this.phase === 'done' ? 'the corner, fed' : `bowl ${Math.min(this.round + 1, UROJO_ROUNDS.length)} of ${UROJO_ROUNDS.length}`;
+    const bowls = this.hard ? UROJO_HARD.length : UROJO_ROUNDS.length;
+    const label =
+      this.phase === 'done'
+        ? 'the corner, fed'
+        : this.phase === 'lost'
+          ? 'the rush moves on'
+          : `bowl ${Math.min(this.round + 1, bowls)} of ${bowls}`;
     g.save();
     g.translate(12, 12);
     g.rotate(-0.03);

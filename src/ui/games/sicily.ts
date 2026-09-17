@@ -2,6 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
+import { RUN, coach } from './run';
 
 /**
  * Sicily's three hands-on verbs, each painted as a small moving picture.
@@ -72,6 +73,9 @@ function bakedVGrad(g: CanvasRenderingContext2D, x: number, y: number, w: number
 type Card = { v: number; s: number };
 
 const SUIT_NAMES = ['denari', 'coppe', 'spade', 'bastoni'] as const;
+
+/** The start flag, spoken to coach() so the next how-to can pass advice on. */
+const SCOPA_FLAG = 'c8.scopa.start';
 
 const COACH = [
   'An elder taps the deck: "The settebello, the seven of denari. She is the bride of the game. Guard her."',
@@ -462,6 +466,13 @@ export class ScopaPanel {
   private lastCapMine = false;
   private coachI = 0;
   private lesson = '';
+  // The telling. Read once from RUN.hard at open; never mid-match.
+  private hard = false;
+  // The run's own record, so a loss can be coached specifically.
+  private missedSette = 0; // times the settebello lay takeable and you played past her
+  private missedCap = 0; // no-capture plays while another card in hand could capture
+  private gifts = 0; // cards you fed the table that he took on his very next play
+  private fedKey = -1; // the card you just fed, watched for one opposing turn
   private consolI = 0;
   private hint = '';
   private flourish = '';
@@ -494,11 +505,16 @@ export class ScopaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
     this.myPts = 0;
     this.oppPts = 0;
-    this.target = 6;
+    this.target = this.hard ? 8 : 6;
     this.coachI = 0;
     this.lesson = '';
+    this.missedSette = 0;
+    this.missedCap = 0;
+    this.gifts = 0;
+    this.fedKey = -1;
     this.scene ??= new Scene();
     this.scene.restart();
     this.setHint = mountScene(this.root, 'Scopa at the Circolo', this.scene, SCOPA_LEGEND).setHint;
@@ -507,7 +523,9 @@ export class ScopaPanel {
     this.q.length = 0;
     this.flourishAt = -1;
     this.startRound();
-    this.hint = 'Left and right pick a card, Space plays it. Match a table card, or sum several. Sweep the table for a scopa.';
+    this.hint = this.hard
+      ? 'Tonight he plays to eight, and he plays properly: sevens guarded, nothing light left lying. Lose the match and the evening is his. Left and right pick, Space plays.'
+      : 'Left and right pick a card, Space plays it. Match a table card, or sum several. Sweep the table for a scopa.';
     this.root.hidden = false;
     this.setHint(this.hint);
   }
@@ -526,6 +544,7 @@ export class ScopaPanel {
     this.myScope = 0;
     this.oppScope = 0;
     this.lastCapMine = false;
+    this.fedKey = -1;
     this.flourish = '';
     this.phase = 'play';
     this.vfxDeal();
@@ -695,6 +714,7 @@ export class ScopaPanel {
         return !!t && sette(t);
       });
       if (saver) {
+        this.missedSette++;
         this.lesson = `The settebello was lying there in the sun and your ${saver.v} was in your hand. She is a whole point, bedda. Her first, always.`;
         return;
       }
@@ -702,11 +722,29 @@ export class ScopaPanel {
     if (took) return;
     const alt = rest.find((c) => !!this.wouldTake(c));
     if (alt) {
+      this.missedCap++;
       const got = this.wouldTake(alt) ?? [];
       this.lesson =
         got.length === 1
           ? `You held the ${alt.v} and its twin was lying right there on the wood, in the sun, waiting. Talìa before you play, picciriddu.`
           : `You held the ${alt.v}, and the wood was showing ${got.map((c) => c.v).join(' and ')}. Arithmetic, picciriddu. Arithmetic is also fishing.`;
+    }
+  }
+
+  /**
+   * The match, diagnosed. One line, the dominant miss of this match, in the
+   * elder's voice, handed to coach() so the next how-to re-arms you. Every
+   * loss earns it; a win earns it too when the misses were real.
+   */
+  private coachRun() {
+    if (this.missedSette > 0) {
+      coach(SCOPA_FLAG, 'You let the settebello go to build a small sweep; the seven of coins outscores three sweeps. When she lies on the wood and a seven is in your hand, she comes first, always.');
+    } else if (this.gifts > 0 && this.gifts >= this.missedCap) {
+      coach(SCOPA_FLAG, 'You fed a light table and he swept what you set down. When you cannot capture, discard onto a heavy table, past ten, where no single card can take everything.');
+    } else if (this.missedCap > 0) {
+      coach(SCOPA_FLAG, 'You laid cards on the wood while their captures sat there in the sun. Count the table before every play; the sum that reaches your card is the whole game.');
+    } else {
+      coach(SCOPA_FLAG, 'He beat you on the counting, not the sweeps: most cards, most denari. Take every small capture he offers; the quiet points are the ones that decide it.');
     }
   }
 
@@ -727,6 +765,7 @@ export class ScopaPanel {
       }
     }
     if (taken.length === 0) {
+      if (mine) this.fedKey = ckey(card);
       this.table.push(card);
       this.vfxPlace(card, mine);
       return mine ? 'No capture; the card stays on the wood.' : 'The elder feeds the table a card, watching you sideways.';
@@ -772,6 +811,27 @@ export class ScopaPanel {
     for (let i = 0; i < this.opp.length; i++) {
       const c = this.opp[i];
       if (!c) continue;
+      if (this.hard) {
+        // The feast-night elder values what the cards are, not how many:
+        // the settebello above everything, denari counted one by one, and a
+        // sweep for the sideways card. He also banks his own seven of coins
+        // the moment it can capture, rather than risking it on the wood.
+        const got = this.wouldTake(c);
+        if (!got) continue;
+        let score = got.length;
+        for (const t of got) {
+          if (t.s === 0) score += 1;
+          if (t.v === 7 && t.s === 0) score += 6;
+        }
+        if (c.s === 0) score += 1;
+        if (c.v === 7 && c.s === 0) score += 4;
+        if (got.length === this.table.length) score += 5;
+        if (score > bestScore) {
+          bestScore = score;
+          bestI = i;
+        }
+        continue;
+      }
       const single = this.table.some((t) => t.v === c.v);
       const sum = single ? null : findSum(this.table, c.v);
       if (!single && !sum) continue;
@@ -784,7 +844,28 @@ export class ScopaPanel {
         bestI = i;
       }
     }
-    if (bestI < 0) {
+    if (bestI < 0 && this.hard) {
+      // Nothing to take, so he feeds the table the way a man feeds a stray
+      // he does not want back: never a seven, never a coin if he can help
+      // it, and never a card that leaves the wood light enough for one of
+      // yours to sweep it whole.
+      const tableSum = this.table.reduce((a, t) => a + t.v, 0);
+      let low = Infinity;
+      let lowI = 0;
+      for (let i = 0; i < this.opp.length; i++) {
+        const c = this.opp[i];
+        if (!c) continue;
+        let risk = c.v;
+        if (tableSum + c.v <= 10) risk += 40;
+        if (c.v === 7) risk += 25;
+        if (c.s === 0) risk += 12;
+        if (risk < low) {
+          low = risk;
+          lowI = i;
+        }
+      }
+      bestI = lowI;
+    } else if (bestI < 0) {
       let lowI = 0;
       let lowV = 99;
       for (let i = 0; i < this.opp.length; i++) {
@@ -796,8 +877,13 @@ export class ScopaPanel {
       }
       bestI = lowI;
     }
+    // Watch the card you fed the table for exactly one of his turns: if it
+    // leaves the wood now, it left in his pile, and that is a gift.
+    const fedOut = this.fedKey >= 0 && this.table.some((t) => ckey(t) === this.fedKey);
     const played = this.opp.splice(bestI, 1)[0];
     if (played) this.hint = this.resolve(played, false);
+    if (fedOut && !this.table.some((t) => ckey(t) === this.fedKey)) this.gifts++;
+    this.fedKey = -1;
   }
 
   private afterTurns() {
@@ -940,6 +1026,8 @@ export class ScopaPanel {
       if (over && this.myPts > this.oppPts) {
         this.phase = 'done';
         this.flourish = '';
+        // A win with real misses in it still earns the one true sentence.
+        if (this.missedSette + this.missedCap + this.gifts > 0) this.coachRun();
         this.hint = `${this.myPts} to ${this.oppPts}. The table thumps; the chair is yours now, officially. Press Space.`;
         this.audio.weaveDone();
         const sc = this.scene;
@@ -950,7 +1038,9 @@ export class ScopaPanel {
         }
       } else if (over && this.oppPts > this.myPts) {
         // He wins one. Nothing is lost except the game, and the game was
-        // never the point: the rematch is, and so is what he says next.
+        // never the point: the rematch is, and so is what he says next. In
+        // the hard telling the loss is real, and the diagnosis travels with
+        // you: the dominant miss of the match goes to the next how-to card.
         this.phase = 'lost';
         this.flourish = '';
         this.audio.bump();
@@ -959,19 +1049,39 @@ export class ScopaPanel {
           sc.flash('#e8dcc4', 0.14);
           if (!calm()) sc.thump(2, 0.03);
         }
-        const said = this.lesson || CONSOLATIONS[this.consolI % CONSOLATIONS.length] || '';
-        this.consolI++;
-        this.lesson = '';
-        this.hint =
-          `${this.oppPts} to ${this.myPts}, his. He gathers the cards without hurrying and taps them square. ` +
-          `"${said}" Nobody has ever left this table after one game. Space, and he deals again.`;
+        this.coachRun();
+        if (this.hard) {
+          this.hint =
+            `${this.oppPts} to ${this.myPts}, his, and on a feast night the chair keeps its owner. ` +
+            'He squares the deck like a full stop. "Come back when the sevens come first." Space, and the evening is over.';
+        } else {
+          const said = this.lesson || CONSOLATIONS[this.consolI % CONSOLATIONS.length] || '';
+          this.consolI++;
+          this.lesson = '';
+          this.hint =
+            `${this.oppPts} to ${this.myPts}, his. He gathers the cards without hurrying and taps them square. ` +
+            `"${said}" Nobody has ever left this table after one game. Space, and he deals again.`;
+        }
       } else {
         this.startRound();
         this.hint = `${this.myPts} to ${this.oppPts}, playing to ${this.target}. The deal passes; the fan takes a turn too.`;
       }
     } else if (this.phase === 'lost') {
+      if (this.hard) {
+        // The hard telling ends here, gracefully: the run closes, and the
+        // coach line already waits on the next how-to card.
+        this.root.hidden = true;
+        const done = this.onDone;
+        this.onDone = null;
+        done?.();
+        return;
+      }
       this.myPts = 0;
       this.oppPts = 0;
+      // A fresh match gets a fresh diagnosis; the old misses were coached.
+      this.missedSette = 0;
+      this.missedCap = 0;
+      this.gifts = 0;
       this.startRound();
       this.hint = 'Fresh deal, nothing owed, the espresso going cold in exactly the same place. "Now. The sevens, then everything else."';
     } else if (this.phase === 'done') {
@@ -1115,7 +1225,7 @@ export class ScopaPanel {
       g.restore();
     }
     if (this.phase === 'lost') {
-      inkText(g, 'he shuffles without being asked', 320, 152, {
+      inkText(g, this.hard ? 'the deck sleeps in its drawer tonight' : 'he shuffles without being asked', 320, 152, {
         size: 13,
         italic: true,
         color: 'rgba(244,236,214,0.85)',
@@ -1351,16 +1461,30 @@ type PisciPhase = 'row' | 'leap' | 'lost' | 'done';
 
 const PISCI_LEGEND = [{ keys: ['space'], does: 'pull on the rais\u2019s call' }] as const;
 
+/** The start flag, spoken to coach() so the next how-to can pass advice on. */
+const PISCI_FLAG = 'c8.pisci.start';
+
 export class PisciPanel {
   private phase: PisciPhase = 'row';
   private strokes = 0; // good strokes this leg
-  private broke = 0; // mistimed pulls this pass; three and the stroke breaks
+  private broke = 0; // mistimed pulls this pass; enough and the stroke breaks
   private leg = 0; // 0..2; the fish escapes after legs 0 and 1
   private x = 1; // the rais's call rolling toward the boat
   private speed = 0.5;
   private leapT = 0;
   private hint = '';
   private onDone: (() => void) | null = null;
+
+  // The telling. Read once from RUN.hard at open; never mid-pass.
+  private hard = false;
+  private baseSpeed = 0.5; // the rais's opening tempo
+  private gain = 0.14; // how much faster each pass calls
+  private winHi = 0.24; // pull no sooner than this
+  private winLo = -0.08; // and no later
+  private brokeLimit = 3; // mistimes one pass carries before the stroke breaks
+  // The run's own record, so the drift can be coached specifically.
+  private early = 0; // pulls that beat the call
+  private late = 0; // calls that rolled past unpulled
 
   private scene: Scene | null = null;
   private setHint: (h: string) => void = () => {};
@@ -1383,12 +1507,20 @@ export class PisciPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.baseSpeed = this.hard ? 0.85 : 0.5;
+    this.gain = this.hard ? 0.2 : 0.14;
+    this.winHi = this.hard ? 0.13 : 0.24;
+    this.winLo = this.hard ? -0.05 : -0.08;
+    this.brokeLimit = this.hard ? 2 : 3;
+    this.early = 0;
+    this.late = 0;
     this.phase = 'row';
     this.strokes = 0;
     this.broke = 0;
     this.leg = 0;
     this.x = 1;
-    this.speed = 0.5;
+    this.speed = this.baseSpeed;
     this.scene ??= new Scene();
     this.scene.restart();
     this.setHint = mountScene(this.root, 'U Pisci a Mari', this.scene, PISCI_LEGEND).setHint;
@@ -1397,7 +1529,9 @@ export class PisciPanel {
     this.rockT = 9;
     this.pullT = 9;
     this.prevLeap = 0;
-    this.hint = 'The rais lifts his arm. Space to pull as his call reaches the boat.';
+    this.hint = this.hard
+      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Two slapped blades in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
+      : 'The rais lifts his arm. Space to pull as his call reaches the boat.';
     this.root.hidden = false;
     this.setHint(this.hint);
   }
@@ -1406,7 +1540,8 @@ export class PisciPanel {
     if (!this.isOpen) return;
     if (this.phase === 'row') {
       this.x -= dt * this.speed;
-      if (this.x < -0.08) {
+      if (this.x < this.winLo) {
+        this.late++;
         this.audio.slosh();
         this.x = 1;
         this.scene?.burst(BOAT_AT.x - 60, 198, { n: calm() ? 2 : 6, color: 'rgba(235,248,250,0.85)', size: 2, speed: 60, life: 0.5, grav: 220 });
@@ -1430,7 +1565,7 @@ export class PisciPanel {
         this.phase = 'row';
         this.x = 1;
         this.broke = 0; // a new pass, and the rhythm starts forgiven
-        this.speed += 0.14;
+        this.speed += this.gain;
         this.hint = 'The boat comes about. The rais calls faster now; the fish has made it personal.';
       }
     }
@@ -1447,13 +1582,26 @@ export class PisciPanel {
   }
 
   /**
-   * One oar out of time. Three in the same pass and the boat stops being a
-   * boat, which is the fail: loud, wet, and instantly repeatable. The fish is
-   * never lost, only postponed until everyone stops laughing.
+   * One line for the drift this run actually had, handed to coach() so the
+   * next how-to re-arms the hands and not just the hope.
+   */
+  private coachDrift() {
+    if (this.early + this.late === 0) return;
+    if (this.early >= this.late) {
+      coach(PISCI_FLAG, 'Your blade beats the call; it slaps air while the crest is still crossing open water. Watch the lit swell, not his arm, and pull only when it touches the bow.');
+    } else {
+      coach(PISCI_FLAG, 'The call keeps rolling past you unpulled. Set the oar as the crest closes and commit while it still touches the bow; certainty comes after the stroke, not before.');
+    }
+  }
+
+  /**
+   * One oar out of time. Enough in the same pass and the boat stops being a
+   * boat. In the story telling that fail is loud, wet, and instantly
+   * repeatable; in the hard telling the fish takes the hint and the sea.
    */
   private stumble(msg: string) {
     this.broke++;
-    if (this.broke < 3) {
+    if (this.broke < this.brokeLimit) {
       this.hint = msg;
       return;
     }
@@ -1465,25 +1613,37 @@ export class PisciPanel {
       if (!calm()) sc.thump(4, 0.05);
       sc.burst(BOAT_AT.x, 200, { n: calm() ? 6 : 18, color: 'rgba(235,248,250,0.9)', size: 2.8, speed: 120, life: 0.7, grav: 300 });
     }
-    this.hint =
-      'The stroke breaks. Four oars, four opinions, and the boat sits down in the water like a tired dog. ' +
-      'The rais laughs until he has to hold the gunwale. "Amunì, from the top." Space to take it again.';
+    this.coachDrift();
+    this.hint = this.hard
+      ? 'The stroke breaks and the swordfish flashes once under the keel, gone to tell it his way. ' +
+        'The rais shrugs at the whole sea. "Domani. The fish also rehearses." Space, and the pageant stands down.'
+      : 'The stroke breaks. Four oars, four opinions, and the boat sits down in the water like a tired dog. ' +
+        'The rais laughs until he has to hold the gunwale. "Amunì, from the top." Space to take it again.';
   }
 
   onAction() {
     const sc = this.scene;
     if (this.phase === 'lost') {
+      if (this.hard) {
+        // The hard telling ends with the broken stroke: the run closes and
+        // the drift's diagnosis waits on the next how-to card.
+        this.root.hidden = true;
+        const done = this.onDone;
+        this.onDone = null;
+        done?.();
+        return;
+      }
       this.phase = 'row';
       this.strokes = 0;
       this.broke = 0;
       this.leg = 0;
       this.x = 1;
-      this.speed = 0.5;
+      this.speed = this.baseSpeed;
       this.hint = 'He wipes his eyes and lifts his arm again. Space to pull as the call reaches the boat.';
       return;
     }
     if (this.phase === 'row') {
-      if (this.x <= 0.24 && this.x >= -0.08) {
+      if (this.x <= this.winHi && this.x >= this.winLo) {
         this.strokes++;
         this.audio.slosh();
         if (sc) {
@@ -1521,12 +1681,15 @@ export class PisciPanel {
               sc.burst(160, 170, { n: calm() ? 6 : 16, color: 'rgba(238,250,252,0.9)', size: 2.6, speed: 120, life: 0.6, grav: 320 });
             }
             this.hint = 'The fish surrenders, grinning, hauled up to bells and roaring. Press Space.';
+            // A win with slapped blades still earns the one true sentence.
+            this.coachDrift();
           }
         } else {
           this.x = 1;
           this.hint = `Pull! Together! ${3 - this.strokes} more to close on the fish.`;
         }
       } else {
+        this.early++;
         this.audio.bump();
         this.rockT = 0;
         sc?.burst(BOAT_AT.x + 40, 196, { n: 2, color: 'rgba(235,248,250,0.7)', size: 1.8, speed: 40, life: 0.4, grav: 180 });
@@ -1676,10 +1839,10 @@ export class PisciPanel {
     }
     const chase = this.phase === 'done' ? 'caught' : ['first pass', 'second pass', 'the taking'][this.leg] ?? '';
     inkText(g, chase, 92, 315, { size: 12, color: 'rgba(242,230,208,0.9)', italic: true });
-    // The rhythm plank: three oars in time, and how many are not.
+    // The rhythm plank: the oars the pass can forgive, and how many it has.
     rr(g, 192, 300, 138, 30, 5, 'rgba(58,42,26,0.78)');
     g.lineCap = 'round';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < this.brokeLimit; i++) {
       const gone = i < this.broke || this.phase === 'lost';
       g.strokeStyle = gone ? '#c1512f' : 'rgba(242,230,208,0.7)';
       g.lineWidth = 2.6;
@@ -1691,7 +1854,7 @@ export class PisciPanel {
     }
     inkText(g, 'the stroke', 252, 315, { size: 12, color: 'rgba(242,230,208,0.9)', italic: true });
     if (this.phase === 'lost') {
-      inkText(g, 'the rais is still laughing', 344, 70, {
+      inkText(g, this.hard ? 'the sea keeps the fish tonight' : 'the rais is still laughing', 344, 70, {
         size: 14,
         italic: true,
         color: 'rgba(40,52,72,0.75)',
@@ -1736,6 +1899,33 @@ const CUSTOMERS: CannoloCustomer[] = [
   {
     call: 'Last customer: Alfio himself, arms folded, off duty for exactly one pastry. "Impress me. I taught you everything you know today."',
     served: 'Alfio chews with his eyes shut, professionally. "Tsk. Tragic," he says, finishing it. "I have nothing left to teach."',
+  },
+];
+
+/** The start flag, spoken to coach() so the next how-to can pass advice on. */
+const CANNOLO_FLAG = 'c8.cook.start';
+
+/** The hard telling's queue: feast night, five orders, no patience spared. */
+const HARD_CUSTOMERS: CannoloCustomer[] = [
+  {
+    call: 'Feast night, and the queue starts with the signora in black, unimpressed in advance. "One. I will hear the crack from here."',
+    served: 'She listens to the crack, then to the echo of the crack. One nod. The whole queue exhales.',
+  },
+  {
+    call: 'Two rowers, sashes still dripping. "Full honors, and quickly; the band only knows one song and it is ending."',
+    served: 'Gone in two bites. One rower salutes with the stub; the other has already rejoined the song.',
+  },
+  {
+    call: 'The priest, off duty in the manner of priests, which is not at all. "For the sacristan. She counts crumbs."',
+    served: 'He inspects it like a relic, which for him it may be. "She will find nothing to forgive," he says, almost worried.',
+  },
+  {
+    call: 'A grandmother lifts a small boy to the counter; he orders by pointing with his whole body. "You heard him," she says.',
+    served: 'The boy takes it two-handed, with the gravity of a chalice bearer. She pays in exact coins and blessings.',
+  },
+  {
+    call: 'Last: Alfio himself, arms folded, the bag hand already itching. "Impress me twice. It is a feast; miracles come in pairs."',
+    served: 'Alfio chews with his eyes shut, longer than necessary. "Tsk. Twice tragic." It is the highest grade he has ever given.',
   },
 ];
 
@@ -1893,7 +2083,7 @@ function miniCannolo(): HTMLCanvasElement {
   return cv;
 }
 
-type CannoloPhase = 'pipe' | 'burst' | 'garnish' | 'served' | 'done';
+type CannoloPhase = 'pipe' | 'burst' | 'garnish' | 'served' | 'failed' | 'done';
 
 const CANNOLO_LEGEND = [
   { keys: ['space'], does: 'start the ricotta, and stop it' },
@@ -1913,6 +2103,14 @@ export class CannoloPanel {
   private gCur = 0;
   private hint = '';
   private onDone: (() => void) | null = null;
+
+  // The telling. Read once from RUN.hard at open; never mid-shell.
+  private hard = false;
+  private shellsN = 3; // customers in the queue tonight
+  private faults = 0; // hard only: wrecked shells; three and the bag goes home
+  // The run's own record, so the tendency can be coached specifically.
+  private overs = 0; // shells burst by riding the flow too far
+  private unders = 0; // ends stopped shy of the gold
 
   private scene: Scene | null = null;
   private setHint: (h: string) => void = () => {};
@@ -1937,13 +2135,19 @@ export class CannoloPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.shellsN = this.hard ? 5 : 3;
+    this.faults = 0;
+    this.overs = 0;
+    this.unders = 0;
     this.phase = 'pipe';
     this.shell = 0;
     this.end = 0;
     this.fill = 0;
     this.flowing = false;
-    this.speed = 0.42;
-    this.zoneLo = 0.6;
+    this.speed = this.hard ? 0.5 : 0.42;
+    this.zoneLo = this.hard ? 0.62 : 0.6;
+    this.zoneW = this.hard ? 0.12 : 0.2;
     this.gCur = 0;
     this.scene ??= new Scene();
     this.scene.restart();
@@ -1957,9 +2161,16 @@ export class CannoloPanel {
     this.servedT = 9;
     this.tweezT = 9;
     this.splats = [];
-    this.hint = `${CUSTOMERS[0]?.call ?? ''} Space starts the ricotta; Space again stops it in the sweet zone.`;
+    this.hint = this.hard
+      ? `${this.cust(0)?.call ?? ''} Five shells at feast pace, the gold worn thin, and the third wrecked shell ends the night. Space to pipe.`
+      : `${this.cust(0)?.call ?? ''} Space starts the ricotta; Space again stops it in the sweet zone.`;
     this.root.hidden = false;
     this.setHint(this.hint);
+  }
+
+  /** Tonight's queue: the story's three, or the feast's five. */
+  private cust(i: number): CannoloCustomer | undefined {
+    return (this.hard ? HARD_CUSTOMERS : CUSTOMERS)[i];
   }
 
   tick(dt: number) {
@@ -1989,9 +2200,19 @@ export class CannoloPanel {
         }
         this.creamDone0 = 0;
         this.creamDone1 = 0;
-        this.hint =
-          'Too much. The shell splits along its seam and lets go from both ends at once. Alfio catches the wreck and eats it in one bite. ' +
-          '"Quality control." Another shell is already on the board. Space, or wait for him to chew.';
+        this.overs++;
+        if (this.hard) this.faults++;
+        if (this.hard && this.faults >= 3) {
+          this.hint = 'Too much, and that was the third. The shell lets go from both ends at once; Alfio catches the wreck and, for the first time tonight, does not eat it. Space.';
+        } else if (this.hard) {
+          this.hint =
+            'Too much. The shell splits along its seam and Alfio eats the wreck without comment, which is worse. ' +
+            `That is ${this.faults} of the three the feast can spare. Space, or wait for him to chew.`;
+        } else {
+          this.hint =
+            'Too much. The shell splits along its seam and lets go from both ends at once. Alfio catches the wreck and eats it in one bite. ' +
+            '"Quality control." Another shell is already on the board. Space, or wait for him to chew.';
+        }
       }
     } else if (this.phase === 'burst') {
       this.burstT -= dt;
@@ -2006,8 +2227,15 @@ export class CannoloPanel {
     this.setHint(this.hint);
   }
 
-  /** Same customer, same order, no scolding. The split shell costs nothing. */
+  /**
+   * Same customer, same order, no scolding. In the story telling the split
+   * shell costs nothing; in the hard telling three wrecks end the night.
+   */
   private freshShell() {
+    if (this.hard && this.faults >= 3) {
+      this.failNight();
+      return;
+    }
     this.phase = 'pipe';
     this.splats = [];
     this.burstT = 0;
@@ -2018,6 +2246,34 @@ export class CannoloPanel {
     this.hint = 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
   }
 
+  /** One line for the tendency this run actually had, for the next how-to. */
+  private coachTendency() {
+    if (this.overs + this.unders === 0) return;
+    if (this.overs >= this.unders) {
+      coach(CANNOLO_FLAG, 'Every shell you lost went from riding the flow past the gold. The cream keeps moving while your thumb decides; let go the moment it touches the gold, not at the far wall.');
+    } else {
+      coach(CANNOLO_FLAG, 'You keep stopping shy, the end still hungry. The gold starts later than your nerve says; hold one breath longer and stop inside it, not before it.');
+    }
+  }
+
+  /** The hard telling's graceful ending: the bag goes home with Alfio. */
+  private failNight() {
+    this.phase = 'failed';
+    this.splats = [];
+    this.burstT = 0;
+    this.flowing = false;
+    this.audio.bump();
+    const sc = this.scene;
+    if (sc) {
+      sc.flash('#e8dcc4', 0.14);
+      if (!calm()) sc.thump(2, 0.03);
+    }
+    this.coachTendency();
+    this.hint =
+      '"Basta, bedda." Alfio lifts the bag out of your hands the way you lift a sleeping cat. ' +
+      '"Three shells for the seagulls is a festival of its own. Tomorrow the gold will still be there." Space, and the queue gets his cannoli tonight.';
+  }
+
   onDir(dir: Dir) {
     if (this.phase !== 'garnish') return;
     if (dir === 'left' || dir === 'up') this.gCur = (this.gCur + GARNISHES.length - 1) % GARNISHES.length;
@@ -2026,6 +2282,13 @@ export class CannoloPanel {
 
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'failed') {
+      this.root.hidden = true;
+      const done = this.onDone;
+      this.onDone = null;
+      done?.();
+      return;
+    }
     if (this.phase === 'burst') {
       this.freshShell();
       return;
@@ -2041,7 +2304,22 @@ export class CannoloPanel {
       }
       this.flowing = false;
       if (this.fill < this.zoneLo) {
-        this.hint = 'Alfio squints down the shell. "That end is still hungry, friend. Again, with courage." The flow waits on your thumb.';
+        this.unders++;
+        if (this.hard) {
+          // On feast night a hungry end is a wreck of its own: scraped out,
+          // eaten as evidence, and counted against the three.
+          this.faults++;
+          this.fill = 0;
+          if (this.faults >= 3) {
+            this.failNight();
+            return;
+          }
+          this.hint =
+            '"No. She sat hungry; she would have sagged by the piazza." He scrapes the end clean and eats the evidence. ' +
+            `That is ${this.faults} of the three the feast can spare. That end again, from empty, all the way to the gold.`;
+        } else {
+          this.hint = 'Alfio squints down the shell. "That end is still hungry, friend. Again, with courage." The flow waits on your thumb.';
+        }
       } else {
         const generous = this.fill > this.zoneLo + this.zoneW;
         sc?.burst(ENDS[this.end] ?? 177, SHELL_AT.y, { n: calm() ? 3 : 7, color: '#f4efe4', size: 2, speed: 40, life: 0.4, grav: 160 });
@@ -2076,20 +2354,20 @@ export class CannoloPanel {
           sc.burst(ex, SHELL_AT.y - 26, { n: calm() ? 6 : 14, color: col, size: 2.2, speed: 70, life: 0.7, grav: 260 });
         }
       }
-      this.hint = `Both ends dipped. ${g.line} ${CUSTOMERS[this.shell]?.served ?? ''} Space for the next.`;
+      this.hint = `Both ends dipped. ${g.line} ${this.cust(this.shell)?.served ?? ''} Space for the next.`;
     } else if (this.phase === 'served') {
       this.doneShells.push(this.curGarn);
       this.shell++;
-      if (this.shell < CUSTOMERS.length) {
+      if (this.shell < this.shellsN) {
         this.phase = 'pipe';
         this.end = 0;
         this.fill = 0;
         this.creamDone0 = 0;
         this.creamDone1 = 0;
         this.curGarn = -1;
-        this.speed += 0.12; // the bag warms, the ricotta hurries
-        this.zoneLo = 0.56 + this.shell * 0.05;
-        this.hint = `${CUSTOMERS[this.shell]?.call ?? ''} The ricotta runs faster as the bag warms. Space to pipe.`;
+        this.speed += this.hard ? 0.1 : 0.12; // the bag warms, the ricotta hurries
+        this.zoneLo = this.hard ? 0.6 + this.shell * 0.04 : 0.56 + this.shell * 0.05;
+        this.hint = `${this.cust(this.shell)?.call ?? ''} The ricotta runs faster as the bag warms. Space to pipe.`;
       } else {
         this.phase = 'done';
         this.audio.weaveDone();
@@ -2098,7 +2376,11 @@ export class CannoloPanel {
           if (!calm()) sc.thump(4, 0.04);
           sc.burst(552, 250, { n: calm() ? 8 : 20, color: '#e8c86a', size: 2.6, speed: 130, life: 0.8, grav: 200 });
         }
-        this.hint = 'Three shells, three moments, zero soggy lies. Alfio holds out his hand for the bag with visible reluctance. Press Space.';
+        this.hint = this.hard
+          ? 'Five shells at feast pace, zero soggy lies. Alfio looks at the bag, then at you, and does not hold out his hand. Tonight you carry it home. Press Space.'
+          : 'Three shells, three moments, zero soggy lies. Alfio holds out his hand for the bag with visible reluctance. Press Space.';
+        // Even a served queue can carry a tendency worth one warm sentence.
+        this.coachTendency();
       }
     } else if (this.phase === 'done') {
       this.root.hidden = true;
@@ -2193,7 +2475,7 @@ export class CannoloPanel {
     // Finished cannoli collect on the tray, dressed and vouched for.
     this.doneShells.forEach((garn, i) => {
       g.save();
-      g.translate(508 + i * 36, 290 - i * 7);
+      g.translate(508 + i * (this.hard ? 24 : 36), 290 - i * 7);
       g.rotate(-0.12 + i * 0.11);
       g.drawImage(miniCannolo(), -32, -11);
       const col = GCOL[garn] ?? '#7fae62';
@@ -2277,12 +2559,13 @@ export class CannoloPanel {
     rr(g, -75, -25, 150, 52, 4, 'rgba(50,32,16,0.25)');
     rr(g, -77, -27, 150, 52, 4, '#f7f0dc');
     rr(g, -14, -31, 28, 9, 2, 'rgba(220,200,150,0.55)');
-    inkText(g, `shell ${Math.min(this.shell + 1, 3)} of 3`, -66, -12, { size: 12.5, bold: true });
+    inkText(g, `shell ${Math.min(this.shell + 1, this.shellsN)} of ${this.shellsN}`, -66, -12, { size: 12.5, bold: true });
     const state =
       this.phase === 'burst' ? 'erupted'
       : this.phase === 'pipe' ? `end ${this.end + 1} of 2 · ${this.flowing ? 'piping' : 'holding'}`
       : this.phase === 'garnish' ? 'the garnish'
       : this.phase === 'served' ? 'served'
+      : this.phase === 'failed' ? 'the bag goes home'
       : 'the bag returns';
     inkText(g, state, -66, 8, { size: 11.5, italic: true, color: 'rgba(43,33,24,0.8)' });
     g.restore();
@@ -2314,6 +2597,9 @@ export class CannoloPanel {
     }
     if (this.phase === 'served' || this.phase === 'done') {
       inkText(g, 'filled at the moment, never before', 320, 152, { size: 13, italic: true, color: 'rgba(244,236,214,0.85)', align: 'center' });
+    }
+    if (this.phase === 'failed') {
+      inkText(g, 'the bag goes home with Alfio', 320, 152, { size: 13, italic: true, color: 'rgba(244,236,214,0.85)', align: 'center' });
     }
   }
 }

@@ -1,5 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
+import { RUN, coach } from './run';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
@@ -60,6 +61,14 @@ type RowPhase = 'row' | 'wallow' | 'done';
 
 /** Four ragged strokes in a row before the crew loses the song. Rare, and funny. */
 const RAGGED_LIMIT = 4;
+
+/**
+ * The hard telling of the race: the pacer sets a champion's tempo, the strike
+ * lane narrows to a blade's width, only clean strokes move the boat, and the
+ * crew's patience runs one stroke shorter. A fair night ends in the water.
+ */
+const ROW_HARD = { speed: 0.72, speedInc: 0.06, hi: 0.13, lo: -0.04, goodGain: 0.09, raggedGain: 0, limit: 3 };
+const ROW_EASY = { speed: 0.5, speedInc: 0.04, hi: 0.22, lo: -0.06, goodGain: 0.13, raggedGain: 0.03, limit: RAGGED_LIMIT };
 
 /** Deterministic monsoon: fixed drops and stipple rings, phased by scene time. */
 const RAIN = (() => {
@@ -169,6 +178,12 @@ export class RowPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The telling and the tally: which numbers rule this run, and where the
+  // misses drifted, so the coach line can name the direction, not the fact.
+  private tune = ROW_EASY;
+  private early = 0;
+  private late = 0;
+
   // Visual state only; game logic above is untouched.
   private scene: Scene | null = null;
   private hints: { setHint: (h: string) => void } | null = null;
@@ -191,15 +206,20 @@ export class RowPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.tune = RUN.hard ? ROW_HARD : ROW_EASY;
     this.phase = 'row';
     this.x = 1;
-    this.speed = 0.5;
+    this.speed = this.tune.speed;
     this.progress = 0;
     this.good = 0;
     this.call = 0;
     this.ragged = 0;
     this.pulled = false;
-    this.hint = 'The singer calls; the oars answer. Space exactly as the beat reaches the blades.';
+    this.early = 0;
+    this.late = 0;
+    this.hint = RUN.hard
+      ? 'Race tempo. The song runs fast, the lane is a blade wide, and only clean strokes move her. Space on the call.'
+      : 'The singer calls; the oars answer. Space exactly as the beat reaches the blades.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Chundan Vallam', this.scene, ROW_LEGEND);
     unclampHint(this.root);
@@ -224,8 +244,12 @@ export class RowPanel {
         this.x = 1;
         this.hint = 'The beat comes around again. The song waits for no one, and forgives everyone.';
         // Only once you have actually swung: reading the hint costs nothing.
-        if (this.pulled) this.ragged++;
-        if (this.ragged >= RAGGED_LIMIT) this.loseTheSong();
+        if (this.pulled) {
+          this.ragged++;
+          this.late++; // a beat that sails past is the latest stroke there is
+          this.rowCoach();
+        }
+        if (this.ragged >= this.tune.limit) this.loseTheSong();
       }
     }
     if (this.phase === 'wallow') this.wallowT = Math.min(1, this.wallowT + dt * 1.6);
@@ -250,6 +274,20 @@ export class RowPanel {
 
   onDir(_dir: Dir) {
     // The song sets the course; you only have to be on time.
+  }
+
+  /**
+   * Name the drift, not the failure: on every shortfall the panel rewrites its
+   * advice from the run's own tally, so the next how-to card knows whether
+   * this rower jumps the call or trails it.
+   */
+  private rowCoach() {
+    coach(
+      'c6.row.start',
+      this.early > this.late
+        ? 'You strike before the call reaches the blades; let the gold cross the first cane pole, then pull.'
+        : 'Your oar lands after the call has gone by; start the pull the moment the gold enters the lane, not as it leaves.',
+    );
   }
 
   /**
@@ -286,11 +324,11 @@ export class RowPanel {
     }
     if (this.phase === 'row') {
       this.pulled = true;
-      if (this.x <= 0.22 && this.x >= -0.06) {
+      if (this.x <= this.tune.hi && this.x >= this.tune.lo) {
         this.good++;
         this.ragged = 0;
-        this.progress = Math.min(1, this.progress + 0.13);
-        this.speed += 0.04;
+        this.progress = Math.min(1, this.progress + this.tune.goodGain);
+        this.speed += this.tune.speedInc;
         this.audio.slosh();
         this.call = (this.call + 1) % CALLS.length;
         this.hint = `${CALLS[this.call]} A hundred blades bite as one, and the boat SURGES.`;
@@ -308,11 +346,14 @@ export class RowPanel {
           this.ripples.push({ x: 240, y: 246, age: 0 });
         }
       } else {
-        this.progress = Math.min(1, this.progress + 0.03);
+        this.progress = Math.min(1, this.progress + this.tune.raggedGain);
         this.ragged++;
+        if (this.x > this.tune.hi) this.early++;
+        else this.late++;
+        this.rowCoach();
         this.audio.bump();
         this.hint =
-          this.ragged >= RAGGED_LIMIT - 1
+          this.ragged >= this.tune.limit - 1
             ? 'Ragged again. Raghavan draws breath the way a kettle does. One clean stroke and all is forgiven.'
             : 'Ragged. Your oar slaps alone; the song scoops you back onto the beat.';
         this.strokeT = 0.55;
@@ -320,7 +361,7 @@ export class RowPanel {
           sc.burst(310, 238, { n: 5, color: '#cfe4da', speed: 80, grav: 260, size: 2.2, life: 0.5 });
           this.vortices.push({ x: 306, y: 242, age: 0, dir: 1 });
         }
-        if (this.ragged >= RAGGED_LIMIT) {
+        if (this.ragged >= this.tune.limit) {
           this.x = 1;
           this.loseTheSong();
           return;
@@ -617,8 +658,9 @@ export class RowPanel {
 
 // ------------------------------------------------------------- the sadya
 
-/** Slots on the leaf, 3 columns x 2 rows. Narrow end of the leaf points left. */
-const SLOTS = ['inji puli', 'thoran', 'avial', 'banana', 'rice', 'pappadam'];
+/** Slots on the leaf, 3 columns x 2 rows, plus the tip seat the hard telling
+ * opens at the narrow end. Narrow end of the leaf points left. */
+const SLOTS = ['inji puli', 'thoran', 'avial', 'banana', 'rice', 'pappadam', 'leaf tip'];
 
 /** Serving order, each with its home slot and its auntie correction. */
 const COURSES: { item: string; slot: number; oops: string }[] = [
@@ -630,7 +672,36 @@ const COURSES: { item: string; slot: number; oops: string }[] = [
   { item: 'rice', slot: 4, oops: '"Rice last, rice center," both aunties say together, delighted to finally agree on something.' },
 ];
 
-type SadyaPhase = 'serve' | 'fold' | 'gag' | 'done';
+/**
+ * The hard telling of the leaf: two more courses after the rice, and the
+ * aunties keep a clock now. Sambar goes down over the rice, then the payasam
+ * travels all the way out to the leaf tip, sweet things last, at the narrow
+ * end. Three slips, wrong seats or cold ladles, and the leaf gets redone.
+ */
+const HARD_COURSES: { item: string; slot: number; oops: string }[] = [
+  ...COURSES,
+  { item: 'sambar', slot: 4, oops: '"Sambar goes OVER the rice, mone, dead center," says Auntie Leela, steering your ladle with her chin.' },
+  { item: 'payasam', slot: 6, oops: '"Not there!" both aunties say together. "Payasam is the goodbye. It waits at the leaf tip, where the narrow end points."' },
+];
+
+/** Hard telling only: seconds an auntie will watch a ladle hover. */
+const SADYA_CLOCK = 6;
+/** Hard telling only: slips before the aunties redo the leaf themselves. */
+const SLIP_LIMIT = 3;
+
+/** Where each course belongs, in an auntie's own words, for the coach line. */
+const SADYA_HOME: Record<string, string> = {
+  pappadam: 'pappadam sits low at bottom right, where the rice will keep it company',
+  'inji puli': 'the pickle keeps the small corner, top left where the narrow end points',
+  thoran: 'thoran lives up top, in the middle, as it always has',
+  avial: 'avial keeps the top right seat, eldest of the vegetables',
+  banana: 'the banana waits at bottom left, visible but not ambitious',
+  rice: 'rice goes last of the mains, dead center',
+  sambar: 'sambar pours over the rice, dead center',
+  payasam: 'sweet comes last, at the leaf tip',
+};
+
+type SadyaPhase = 'serve' | 'fold' | 'gag' | 'redo' | 'done';
 
 const SLOT_POS: [number, number][] = [
   [205, 133],
@@ -639,6 +710,7 @@ const SLOT_POS: [number, number][] = [
   [205, 250],
   [345, 254],
   [478, 250],
+  [116, 192],
 ];
 
 const FOOD_TINT: Record<string, string> = {
@@ -648,6 +720,8 @@ const FOOD_TINT: Record<string, string> = {
   banana: '#e8c84d',
   rice: '#efe8d8',
   pappadam: '#e8cf96',
+  sambar: '#b5641e',
+  payasam: '#d8a86a',
 };
 
 let sadyaWood: Surface | null = null;
@@ -820,6 +894,28 @@ function paintFood(g: CanvasRenderingContext2D, item: string, x: number, y: numb
       }
       break;
     }
+    case 'sambar': {
+      // The rice it landed on, then the gravy soaking down its slopes.
+      oval(g, 0, 2, 27, 14, '#e3d9c2');
+      oval(g, 0, -1, 25, 12, '#efe8d8');
+      for (let i = 0; i < 8; i++) oval(g, r.range(-17, 17), r.range(-8, 5), 2.6, 1.2, '#f8f4e8', r.next() * 3);
+      oval(g, 0, 0, 17 + 5 * spread, 8 + 3 * spread, 'rgba(150,68,20,0.85)');
+      oval(g, -3, -2, 10 + 3 * spread, 4, '#c9762a');
+      // A drumstick piece and one ambitious chili riding the flood.
+      oval(g, 5, -1, 8, 2.2, '#9db26a', 0.3);
+      oval(g, -7, 2, 3, 2, '#b03a20', 0.8);
+      for (let i = 0; i < 4; i++) dot(g, r.range(-11, 11), r.range(-4, 4), 1.3, '#e8a24a');
+      break;
+    }
+    case 'payasam': {
+      // The goodbye: pale caramel payasam pooled at the tip, cashews floating.
+      oval(g, 0, 1, 13 + 6 * spread, 7 + 3 * spread, '#c68f4e');
+      oval(g, 0, 0, 11 + 5 * spread, 5.5 + 2 * spread, '#d8a86a');
+      oval(g, -3, -2, 6 + 2 * spread, 2.4, '#eccb96');
+      for (let i = 0; i < 4; i++) oval(g, r.range(-8, 8), r.range(-3, 3), 2.2, 1.4, '#f4e2c0', r.next());
+      for (let i = 0; i < 3; i++) dot(g, r.range(-7, 7), r.range(-3, 3), 1.2, '#8a5a2a');
+      break;
+    }
   }
   g.restore();
 }
@@ -837,6 +933,16 @@ export class SadyaPanel {
   private fold: 'toward' | 'away' = 'toward';
   private hint = '';
   private onDone: (() => void) | null = null;
+
+  // The telling and the tally: which courses this run serves, the slips the
+  // aunties are counting, and where each course kept landing wrongly, so the
+  // coach line can name the actual seat instead of a general scolding.
+  private hard = false;
+  private courses: { item: string; slot: number; oops: string }[] = COURSES;
+  private slips = 0;
+  private lapses = 0;
+  private missBy = new Map<string, { n: number; at: number }>();
+  private courseAt = 0;
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -861,19 +967,27 @@ export class SadyaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.courses = this.hard ? HARD_COURSES : COURSES;
     this.phase = 'serve';
-    this.placed = [null, null, null, null, null, null];
+    this.placed = [null, null, null, null, null, null, null];
     this.course = 0;
     this.cur = 0;
     this.fold = 'toward';
-    this.hint = 'Narrow end of the leaf points left. Arrows choose a spot; Space serves the pappadam. Right hand only.';
+    this.slips = 0;
+    this.lapses = 0;
+    this.missBy.clear();
+    this.courseAt = 0;
+    this.hint = this.hard
+      ? 'Eight courses tonight, down to the payasam at the leaf tip, and the aunties keep a clock. Space serves the pappadam; be quick and be right.'
+      : 'Narrow end of the leaf points left. Arrows choose a spot; Space serves the pappadam. Right hand only.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Sadya Leaf', this.scene, SADYA_LEGEND);
     unclampHint(this.root);
     this.scene.restart();
     this.curX = SLOT_POS[0]![0];
     this.curY = SLOT_POS[0]![1];
-    this.landAt = [-1, -1, -1, -1, -1, -1];
+    this.landAt = [-1, -1, -1, -1, -1, -1, -1];
     this.pending = null;
     this.ladleDip = 0;
     this.foldT = 0;
@@ -911,14 +1025,41 @@ export class SadyaPanel {
       this.waftAt = sc.time + 0.5;
       if (!calm()) sc.waft(SLOT_POS[4]![0] + wobble(sc.time, 2) * 6, SLOT_POS[4]![1] - 8);
     }
+    // The hard telling keeps a clock on the ladle: hover too long and the
+    // course goes cold, which the aunties count the same as a wrong seat.
+    if (this.hard && this.phase === 'serve' && sc.time - this.courseAt > SADYA_CLOCK) {
+      this.courseAt = sc.time;
+      this.lapses++;
+      this.slips++;
+      this.sadyaCoach();
+      this.audio.blip();
+      if (!calm()) sc.thump(1.6, 0);
+      sc.wobble(3.5);
+      if (this.slips >= SLIP_LIMIT) {
+        this.redoLeaf();
+      } else {
+        const item = this.courses[this.course]?.item ?? 'course';
+        this.hint = `"The ${item} has gone cold in the ladle, mone." Auntie Leela reheats it with one look at you. Quicker now.`;
+      }
+    }
     sc.frame(dt, (g) => this.paint(g));
     this.hints?.setHint(this.hint);
   }
 
   onDir(dir: Dir) {
     if (this.phase === 'serve') {
+      // The tip seat sits off the grid at the narrow end, hard telling only.
+      if (this.cur === 6) {
+        if (dir === 'right' || dir === 'up') this.cur = 0;
+        else if (dir === 'down') this.cur = 3;
+        return;
+      }
       const x = this.cur % 3;
       const y = Math.floor(this.cur / 3);
+      if (this.hard && dir === 'left' && x === 0) {
+        this.cur = 6;
+        return;
+      }
       const nx = Math.max(0, Math.min(2, x + (dir === 'left' ? -1 : dir === 'right' ? 1 : 0)));
       const ny = Math.max(0, Math.min(1, y + (dir === 'up' ? -1 : dir === 'down' ? 1 : 0)));
       this.cur = ny * 3 + nx;
@@ -928,10 +1069,49 @@ export class SadyaPanel {
     }
   }
 
+  /**
+   * Advice from the run's own tally: the course most often mis-seated, named
+   * with the seat it tried and the seat it keeps, or the clock if the ladle
+   * mostly just hovered too long.
+   */
+  private sadyaCoach() {
+    let worst: { item: string; n: number; at: number } | null = null;
+    for (const [item, m] of this.missBy) if (!worst || m.n > worst.n) worst = { item, n: m.n, at: m.at };
+    let line: string;
+    if (!worst || this.lapses > worst.n) {
+      line = 'The courses cooled while you hunted for seats; the aunties want each ladle down within a few breaths of the last.';
+    } else {
+      const seat = worst.at === 6 ? 'at the leaf tip' : `at the ${SLOTS[worst.at]}'s seat`;
+      line = `The ${worst.item} went down ${seat}; ${SADYA_HOME[worst.item] ?? 'ask an auntie, and duck'}.`;
+    }
+    coach('c6.sadya.start', line);
+  }
+
+  /** Three slips and the aunties redo the leaf. Nothing lost but a leaf. */
+  private redoLeaf() {
+    this.phase = 'redo';
+    this.audio.bump();
+    this.hint =
+      'Three slips, and the aunties trade one look. The leaf is lifted, wiped away, and a fresh one laid. "Again, mole. Hands learn by doing it twice." Space takes the ladle back.';
+    if (this.scene && !calm()) this.scene.thump(2.5, 0.02);
+  }
+
+  /** Take the ladle back: the panel's own reset, same completion callback. */
+  private again() {
+    const done = this.onDone;
+    if (done) this.open(done);
+    this.hint = 'A fresh leaf, narrow end left. Auntie Leela hands you the ladle like nothing happened. Officially, nothing did.';
+    this.hints?.setHint(this.hint);
+  }
+
   onAction() {
     const sc = this.scene;
+    if (this.phase === 'redo') {
+      this.again();
+      return;
+    }
     if (this.phase === 'serve') {
-      const c = COURSES[this.course];
+      const c = this.courses[this.course];
       if (!c) return;
       if (this.cur === c.slot) {
         this.placed[c.slot] = c.item;
@@ -939,7 +1119,8 @@ export class SadyaPanel {
         this.ladleDip = 1;
         if (sc) this.pending = { slot: c.slot, item: c.item, land: sc.time + 0.22, fx: false };
         this.course++;
-        const next = COURSES[this.course];
+        this.courseAt = sc?.time ?? 0;
+        const next = this.courses[this.course];
         if (next) {
           this.hint = `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
         } else {
@@ -955,8 +1136,19 @@ export class SadyaPanel {
       } else {
         this.audio.blip();
         this.hint = c.oops;
+        // Remember which course went astray and where it tried to sit, so
+        // the next how-to card can coach the actual mistake.
+        const m = this.missBy.get(c.item) ?? { n: 0, at: this.cur };
+        m.n++;
+        m.at = this.cur;
+        this.missBy.set(c.item, m);
+        this.sadyaCoach();
         if (sc && !calm()) sc.thump(1.6, 0);
         sc?.wobble(3.5); // an auntie's head-shake, not a scolding
+        if (this.hard) {
+          this.slips++;
+          if (this.slips >= SLIP_LIMIT) this.redoLeaf();
+        }
       }
     } else if (this.phase === 'fold') {
       this.phase = 'gag';
@@ -1008,22 +1200,30 @@ export class SadyaPanel {
       g.restore();
     }
 
+    const t2 = sc?.time ?? 0;
+    const clock = Math.max(0, Math.ceil(SADYA_CLOCK - (t2 - this.courseAt)));
     const capText =
       this.phase === 'serve'
-        ? `serving: ${COURSES[this.course]?.item ?? ''}`
-        : this.phase === 'fold'
-          ? `fold: ${this.fold === 'toward' ? '← toward you' : 'away →'}`
-          : 'the leaf is folded';
+        ? this.hard
+          ? `serving: ${this.courses[this.course]?.item ?? ''} · ladle clock ${clock} · slips ${this.slips} of ${SLIP_LIMIT}`
+          : `serving: ${this.courses[this.course]?.item ?? ''}`
+        : this.phase === 'redo'
+          ? 'the aunties redo the leaf'
+          : this.phase === 'fold'
+            ? `fold: ${this.fold === 'toward' ? '← toward you' : 'away →'}`
+            : 'the leaf is folded';
     cap(g, capText);
   }
 
   private paintOpenLeaf(g: CanvasRenderingContext2D, t: number) {
     g.drawImage(sadyaLeafBake().cv, 52, 44);
-    // Empty seats: a faint hollow and the auntie's map, written small.
-    for (let i = 0; i < 6; i++) {
+    // Empty seats: a faint hollow and the auntie's map, written small. The
+    // tip seat only exists in the hard telling, small like the end it sits on.
+    const nSlots = this.hard ? 7 : 6;
+    for (let i = 0; i < nSlots; i++) {
       const [x, y] = SLOT_POS[i]!;
       if (this.landAt[i]! < 0) {
-        oval(g, x, y + 3, 32, 15, 'rgba(32,54,24,0.16)');
+        oval(g, x, y + 3, i === 6 ? 22 : 32, i === 6 ? 11 : 15, 'rgba(32,54,24,0.16)');
         if (this.phase === 'serve') label(g, SLOTS[i]!, x, y + 7, 'rgba(240,244,220,0.6)', 15);
       } else {
         softShadow(g, x, y + 9, 36, 12, 0.18);
@@ -1179,6 +1379,15 @@ type ChayaPhase = 'boil' | 'pull' | 'dry' | 'serve' | 'done';
 /** The counter can drink three tumblers before the pot notices. */
 const SPILL_LIMIT = 3;
 
+/**
+ * The hard telling of the pour: every chalk mark sits higher, the arm climbs
+ * faster so the moment of letting go is a blink, the pot forgives two spills
+ * instead of three, and a finished boil left standing goes over the rim.
+ */
+const HARD_PULL_TARGETS = [0.6, 0.76, 0.9];
+const CHAYA_HARD = { arm: 0.58, armAccel: 0.3, spills: 2, boilOver: 2.2 };
+const CHAYA_EASY = { arm: 0.45, armAccel: 0.25, spills: SPILL_LIMIT, boilOver: Infinity };
+
 const PUDDLES: [number, number][] = [
   [468, 262],
   [258, 268],
@@ -1273,6 +1482,17 @@ export class ChayaPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The telling and the tally: this run's chalk marks and tempo, plus what
+  // actually went wrong (short pulls, overshoots, boilovers), so the coach
+  // line can name the dominant miss instead of shrugging.
+  private hard = false;
+  private targets = PULL_TARGETS;
+  private tune = CHAYA_EASY;
+  private boilT = 0;
+  private lows = 0;
+  private overs = 0;
+  private boils = 0;
+
   // Visual state only.
   private scene: Scene | null = null;
   private hints: { setHint: (h: string) => void } | null = null;
@@ -1292,15 +1512,24 @@ export class ChayaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.targets = this.hard ? HARD_PULL_TARGETS : PULL_TARGETS;
+    this.tune = this.hard ? CHAYA_HARD : CHAYA_EASY;
     this.phase = 'boil';
     this.boil = 0;
+    this.boilT = 0;
     this.stirs = 0;
     this.pullIdx = 0;
     this.arm = 0;
     this.lifting = false;
     this.spills = 0;
+    this.lows = 0;
+    this.overs = 0;
+    this.boils = 0;
     this.serve = 'under';
-    this.hint = 'Milk and tea over the flame. Nothing to press yet; the boil is the boil.';
+    this.hint = this.hard
+      ? 'Milk and tea over the flame. Tonight the chalk marks sit higher, and when the boil comes it will not wait for you.'
+      : 'Milk and tea over the flame. Nothing to press yet; the boil is the boil.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Meter-Long Pour', this.scene, CHAYA_LEGEND);
     unclampHint(this.root);
@@ -1321,26 +1550,36 @@ export class ChayaPanel {
       this.boil = Math.min(1, this.boil + dt / 4.5);
       if (was < 1 && this.boil >= 1) {
         this.audio.chime();
-        this.hint = 'The boil climbs the pot and holds. "Now," says Shaji. Space to take up the tumblers.';
+        this.hint = this.hard
+          ? 'The boil climbs the pot and holds. "NOW," says Shaji, and means it; this boil will not stand around. Space, quickly.'
+          : 'The boil climbs the pot and holds. "Now," says Shaji. Space to take up the tumblers.';
         if (sc) {
           sc.flash('#f6e3b0', 0.3);
           if (!calm()) sc.burst(150, 196, { n: 8, color: '#f4ead6', speed: 50, grav: -30, size: 2.4, life: 0.8, kind: 'puff' });
         }
       }
+      // The hard telling's narrow window: a finished boil left standing goes
+      // over the rim, and the counter drinks milk instead of chaya.
+      if (this.boil >= 1) {
+        this.boilT += dt;
+        if (this.boilT > this.tune.boilOver) this.boilOver();
+      }
     } else if (this.phase === 'pull' && this.lifting) {
-      this.arm = Math.min(1, this.arm + dt * (0.45 + this.arm * 0.25));
+      this.arm = Math.min(1, this.arm + dt * (this.tune.arm + this.arm * this.tune.armAccel));
       if (this.arm >= 1) {
         // Overshoot: the arc outruns the tumbler. A wet counter, never a failure.
         this.lifting = false;
         this.arm = 0;
         this.spills++;
+        this.overs++;
+        this.chayaCoach();
         this.audio.slosh();
         this.hint = 'The arc outruns the glass; chaya rings the counter. Shaji laughs like a kettle. "Now it is a real thattukada. Again, from the wrist."';
         if (sc && !calm()) {
           sc.thump(6, 0.05);
           sc.burst(410, 250, { n: 14, color: '#c9862e', speed: 130, grav: 320, size: 2.6, life: 0.6 });
         }
-        if (this.spills >= SPILL_LIMIT) this.potDry();
+        if (this.spills >= this.tune.spills) this.potDry();
       }
     }
     // Visual clocks.
@@ -1370,6 +1609,37 @@ export class ChayaPanel {
       if (dir === 'left') this.serve = 'flourish';
       if (dir === 'right') this.serve = 'under';
     }
+  }
+
+  /**
+   * Advice from the run's own tally: whichever miss dominated, short pulls,
+   * greedy overshoots, or a boil left standing, gets named for the next card.
+   */
+  private chayaCoach() {
+    const line =
+      this.boils > this.lows && this.boils > this.overs
+        ? 'The boil finished without you and went over the rim; when it climbs and holds, take up the tumblers at once.'
+        : this.overs > this.lows
+          ? 'You held the lift past its top and the arc outran the glass; let the tea go the moment the stream starts to sing.'
+          : "You pulled at a hand's height; the froth needs the full arm and a steady stream.";
+    coach('c6.cook.start', line);
+  }
+
+  /** Hard telling only: the finished boil stood too long and went over. */
+  private boilOver() {
+    const sc = this.scene;
+    this.boilT = 0;
+    this.boil = 0.7;
+    this.spills++;
+    this.boils++;
+    this.chayaCoach();
+    this.audio.bump();
+    this.hint = '"Aiyyo, the milk!" It climbs the rim and goes over in one white sheet. Shaji rescues the pot; the flame hisses about it. The boil starts its climb again.';
+    if (sc && !calm()) {
+      sc.thump(4, 0.04);
+      sc.burst(150, 196, { n: 12, color: '#f4ead6', speed: 90, grav: 260, size: 2.4, life: 0.6 });
+    }
+    if (this.spills >= this.tune.spills) this.potDry();
   }
 
   /** The counter has drunk the pot. Nothing lost but milk, and some dignity. */
@@ -1410,7 +1680,10 @@ export class ChayaPanel {
         ][(this.stirs - 1) % 3] as string;
       } else {
         this.phase = 'pull';
-        this.hint = 'Two tumblers, one stream. Space lifts the pouring arm; Space again lets the tea go. Height is froth.';
+        this.boilT = 0;
+        this.hint = this.hard
+          ? 'Two tumblers, one stream, and higher chalk than yesterday. Space lifts the arm; Space again lets go, and the letting go is everything.'
+          : 'Two tumblers, one stream. Space lifts the pouring arm; Space again lets the tea go. Height is froth.';
       }
       return;
     }
@@ -1421,7 +1694,7 @@ export class ChayaPanel {
         this.hint = 'The arm climbs, the stream thins and sings. Let go when the height feels like bragging.';
       } else {
         this.lifting = false;
-        const target = PULL_TARGETS[this.pullIdx] ?? 0.8;
+        const target = this.targets[this.pullIdx] ?? 0.8;
         if (this.arm >= target) {
           this.audio.chime();
           this.hint = PULL_PRAISE[this.pullIdx] as string;
@@ -1432,7 +1705,7 @@ export class ChayaPanel {
             sc.flash('#ffdf9a', 0.3);
             if (!calm()) sc.burst(410, 200, { n: 10, color: '#f6ecd8', speed: 70, grav: 60, size: 2.6, life: 0.6 });
           }
-          if (this.pullIdx >= PULL_TARGETS.length) {
+          if (this.pullIdx >= this.targets.length) {
             this.phase = 'serve';
             this.hint += ' Now the glass. Left and right choose how it is handed over; Space commits.';
           } else {
@@ -1441,6 +1714,8 @@ export class ChayaPanel {
         } else {
           this.audio.bump();
           this.arm = 0;
+          this.lows++;
+          this.chayaCoach();
           this.hint = '"That is not chaya, that is surrender," says Shaji. "Again. The wrist knows; let it brag a little."';
           if (sc && !calm()) sc.thump(2.5, 0);
         }
@@ -1566,7 +1841,7 @@ export class ChayaPanel {
 
   private paintPull(g: CanvasRenderingContext2D, t: number) {
     const armY = 232 - this.arm * 180;
-    const target = PULL_TARGETS[this.pullIdx] ?? 0.8;
+    const target = this.targets[this.pullIdx] ?? 0.8;
     const targetY = 232 - target * 180;
     // The chalk mark on the wall: pull to here, then higher.
     g.strokeStyle = 'rgba(240,240,230,0.5)';

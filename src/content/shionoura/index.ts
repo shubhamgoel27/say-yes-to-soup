@@ -70,6 +70,8 @@ export const CHAPTER: ChapterDef = {
         'Arrows drift the poi; Space dips it under a shallow goldfish. The deep ones have done this before.',
         'Paper always loses to water in the end. When it tears, the uncle just hands you another.',
       ],
+      hardHow:
+        'The hard telling: the uncle\'s festival-thin paper, quicker fish, and a smaller pool of reach. Every dip counts double, and most of the tub has learned to dive.',
       make: (root, audio) => new KingyoPanel(root, audio as AudioBus),
     },
     {
@@ -80,6 +82,8 @@ export const CHAPTER: ChapterDef = {
         'Space makes each move when the pot asks for it; arrows move your hands over the water.',
         'Fumi calls the steps, once and warmly. The waiting is one of them.',
       ],
+      hardHow:
+        'The hard telling: Fumi turns the flame up. The kombu\'s moment is one breath wide, the foam hurries, and the squeeze forgives nothing shy. Kombu boiled is kombu wasted.',
       make: (root, audio) => new DashiPanel(root, audio as AudioBus),
     },
   ],

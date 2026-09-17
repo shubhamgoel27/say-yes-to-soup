@@ -182,7 +182,8 @@ export class PauseMenu {
   private gamesItems() {
     const won = flags ? wonGames(flags) : [];
     return won.map((g) => ({
-      label: g.title,
+      // A small star marks a hard telling done properly, once, cleanly.
+      label: flags?.has(`hard.${g.flag}`) ? `${g.title} ✶` : g.title,
       tag: g.chapter,
       act: () => {
         this.close();

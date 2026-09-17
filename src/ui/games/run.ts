@@ -21,6 +21,14 @@ export function coach(startFlag: string, text: string): void {
   coachLines.set(startFlag, text);
 }
 
+/**
+ * Whether advice is waiting, without spending it. The completion flow asks
+ * this one question: a hard run that filed nothing was a clean run.
+ */
+export function peekCoach(startFlag: string): boolean {
+  return coachLines.has(startFlag);
+}
+
 /** The advice owed to the next attempt, consumed on read. */
 export function takeCoach(startFlag: string): string | null {
   const t = coachLines.get(startFlag) ?? null;

@@ -9,6 +9,7 @@ import {
   ERRAND_BY_ID,
   EVENT_NODES,
   EXAMINES,
+  GAMES,
   JOURNAL,
   JOURNAL_BY_ID,
   LETTERS,
@@ -1080,6 +1081,31 @@ describe('the thread never lies', () => {
         }
         checkState(`completing task ${k}`, false);
       }
+    }
+  });
+});
+
+describe('every game keeps its hard telling', () => {
+  it('every replayable game says how the hard telling differs', () => {
+    for (const g of GAMES) {
+      // The ofrenda is the one deliberate exception: not replayable, never
+      // hard, never failed. Grief is not a minigame.
+      if (g.replayable === false) continue;
+      assert.ok(
+        typeof g.hardHow === 'string' && g.hardHow.trim().length > 0,
+        `game '${g.flag}' has no hardHow; its hard telling would be unreachable from the card`,
+      );
+    }
+  });
+
+  it('every hardHow fits the card and keeps the house voice', () => {
+    for (const g of GAMES) {
+      if (!g.hardHow) continue;
+      assert.ok(
+        g.hardHow.length < 240,
+        `[${g.flag}] hardHow is ${g.hardHow.length} chars; the card crowds past 240`,
+      );
+      assert.ok(!g.hardHow.includes('—'), `[${g.flag}] hardHow contains an em dash`);
     }
   });
 });

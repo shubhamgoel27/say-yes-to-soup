@@ -29,6 +29,8 @@ export const CHAPTER: ChapterDef = {
         'Lid last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
         'Burn it and Ben just scrubs the pot out. He has burnt more dinners than you will ever cook.',
       ],
+      hardHow:
+        'The hard telling: Ben only watches. He calls each thing by riddle, the pot waits just so long for every jar, and the gold band at the end is one breath wide.',
       make: (root, audio) => new GalleyPanel(root, audio as AudioBus),
     },
     {
@@ -40,6 +42,8 @@ export const CHAPTER: ChapterDef = {
         'Land on it and the lines ink themselves in, and she tells you whose sky it is.',
         'Nothing can be lost up here. Look in the wrong place and she only says warmer.',
       ],
+      hardHow:
+        'The hard telling: the marks shrink to the heart of each sky, Hana keeps her counsel, and you have only till eight bells.',
       make: (root, audio) => new StarPanel(root, audio as AudioBus),
     },
   ],

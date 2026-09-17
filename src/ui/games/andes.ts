@@ -2,6 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { surface, rect, rr, oval, dot, vgrad, shade, glowSpot, softShadow, Rng, type Surface } from '../../art/pix';
 import { Scene, mountScene, easeInCubic, easeOutCubic, wobble } from './scene';
+import { RUN, coach } from './run';
 
 /**
  * The highlands' hands-on verb: the watia earth oven, built with Justina at
@@ -19,7 +20,27 @@ import { Scene, mountScene, easeInCubic, easeOutCubic, wobble } from './scene';
  * and the dome tumbling down in a golden flash at the end.
  */
 
-type WatiaPhase = 'stack' | 'fire' | 'collapse' | 'done';
+type WatiaPhase = 'stack' | 'fire' | 'collapse' | 'done' | 'lost';
+
+/** This game's start flag, for coach(); must match its GameDef in content. */
+const WATIA_FLAG = 'watia.start';
+
+/** Dome tiers by slot index: footings, shoulders, crown. The hard telling
+ * insists on this order; the story build never checks it. */
+const TIER = [0, 0, 1, 1, 2];
+
+/**
+ * The hard telling's fire, reached only by replaying. The story fire keeps
+ * its old numbers (gain 0.11 per press, decay 0.055/s, patient fuel): none
+ * of these constants are read on a first build.
+ */
+const HARD_DECAY = 0.1; // glow lost per second, fire and collapse both
+const HARD_GAIN = 0.1; // per on-beat press; off-beat presses land differently
+const BEAT_MIN = 0.35; // a gap under this chokes the fire
+const BEAT_MAX = 0.95; // a gap over this is a late press, counted for coaching
+const CHOKE_LOSS = 0.06; // glow lost when the fire chokes on piled presses
+const HARD_FUEL = 20; // seconds of fuel; the glow must peak before it spends
+const COLLAPSE_FLOOR = 0.7; // commit above this heat or the papas stay raw
 
 /** Slot positions along the dome arc, in percent of the scene box. */
 const SLOTS: { x: number; y: number; s: number }[] = [
@@ -387,6 +408,15 @@ export class WatiaPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The telling and its ledger. The counts feed diagnoseFire(), which names
+  // the run's dominant timing failure for coach().
+  private hard = false;
+  private live = false; // an open run that has not ended; catches step-aways
+  private fuel = 0; // hard only: seconds spent in the fire phase
+  private lastFeed = -1; // pulse-clock time of the previous feed press
+  private chokes = 0; // presses piled closer than BEAT_MIN
+  private lates = 0; // presses further apart than BEAT_MAX
+
   // Visual state only; game logic never reads any of this.
   private scene = new Scene();
   private setHintFn: ((h: string) => void) | null = null;
@@ -419,7 +449,15 @@ export class WatiaPanel {
     this.best = 0;
     this.pulse = 0;
     this.fallen = false;
-    this.hint = 'Big ones at the bottom. Arrows pick a spot; Space sets the clod.';
+    this.hard = RUN.hard;
+    this.live = true;
+    this.fuel = 0;
+    this.lastFeed = -1;
+    this.chokes = 0;
+    this.lates = 0;
+    this.hint = this.hard
+      ? 'Tonight the dome keeps its order: footings, then shoulders, then the crown.'
+      : 'Big ones at the bottom. Arrows pick a spot; Space sets the clod.';
     this.root.hidden = false;
     this.scene.restart();
     this.setHintFn = mountScene(this.root, 'The Watia', this.scene, WATIA_LEGEND).setHint;
@@ -436,10 +474,36 @@ export class WatiaPanel {
   }
 
   tick(dt: number) {
-    if (!this.isOpen) return;
+    if (!this.isOpen) {
+      // Stepped away mid-run: leave a lesson for the next how-to card if the
+      // run's own data has one to give.
+      if (this.live) {
+        this.live = false;
+        if (this.phase !== 'done' && this.phase !== 'lost') this.coachAbandon();
+      }
+      return;
+    }
     this.pulse += dt;
     if (this.phase === 'fire') {
-      this.glow = Math.max(0, this.glow - dt * 0.055);
+      this.glow = Math.max(0, this.glow - dt * (this.hard ? HARD_DECAY : 0.055));
+      if (this.hard) {
+        this.fuel += dt;
+        if (this.fuel >= HARD_FUEL) {
+          this.lose(
+            this.diagnoseFire(),
+            'The fuel spends itself and the clods only blushed. Justina shrugs, warm about it: next fire. Press Space.',
+          );
+        }
+      }
+    } else if (this.phase === 'collapse' && this.hard) {
+      // The hard telling's collapse window: the heat drains while you admire.
+      this.glow = Math.max(0, this.glow - dt * HARD_DECAY);
+      if (this.glow < COLLAPSE_FLOOR) {
+        this.lose(
+          'The dome glowed and you admired it too long; once the clods burn past sunset-red, bring them down within a breath or two.',
+          'The blush fades before the dome comes down. Cold earth, raw papas, a lesson. Press Space.',
+        );
+      }
     }
     const sdt = this.scene.frame(dt, (g) => this.paint(g));
     this.emit(sdt);
@@ -459,6 +523,19 @@ export class WatiaPanel {
         this.hint = 'That one is set. The dome wants a gap filled, not a clod polished.';
         const slot = this.cursor;
         this.scene.tween(1, 0, 0.25, easeOutCubic, (v) => (this.squash[slot] = v * 0.5));
+      } else if (
+        this.hard &&
+        SLOTS.some((_, i) => (TIER[i] ?? 0) < (TIER[this.cursor] ?? 0) && !this.placed[i])
+      ) {
+        // Hard telling: nothing under it yet, so the clod rolls back off.
+        this.audio.bump();
+        this.hint = 'It rolls off; nothing holds it yet. Footings, then shoulders, then the crown.';
+        const slot = this.cursor;
+        this.scene.tween(1, 0, 0.3, easeOutCubic, (v) => (this.squash[slot] = v * 0.5));
+        const p = slotPx(slot);
+        this.scene.burst(p.x, p.y + p.h * 0.3, {
+          n: calm() ? 3 : 6, kind: 'puff', color: 'rgba(150,116,80,0.45)', speed: 45, grav: -8, life: 0.5, size: 3.5,
+        });
       } else {
         this.placed[this.cursor] = true;
         this.audio.dig();
@@ -471,11 +548,29 @@ export class WatiaPanel {
         if (left === 0) {
           this.phase = 'fire';
           this.glow = 0.12;
-          this.hint = 'Feed the fire: press Space with the flame, steady as a heartbeat.';
+          this.hint = this.hard
+            ? 'Feed the fire on a true heartbeat: not a flurry, not a lull, before the fuel spends.'
+            : 'Feed the fire: press Space with the flame, steady as a heartbeat.';
         }
       }
     } else if (this.phase === 'fire') {
-      this.glow = Math.min(1.35, this.glow + 0.11);
+      if (this.hard) {
+        const gap = this.lastFeed < 0 ? -1 : this.pulse - this.lastFeed;
+        this.lastFeed = this.pulse;
+        if (gap >= 0 && gap < BEAT_MIN) {
+          // Piled presses choke the mouth: smoke, and the glow slips back.
+          this.chokes++;
+          this.glow = Math.max(0.05, this.glow - CHOKE_LOSS);
+          this.audio.bump();
+          this.scene.burst(300, 254, {
+            n: calm() ? 3 : 7, kind: 'puff', color: 'rgba(120,110,100,0.55)', speed: 40, grav: -60, life: 0.7, size: 4.5,
+          });
+          this.hint = 'Too quick; the fire chokes on the pile. One press each heartbeat.';
+          return;
+        }
+        if (gap > BEAT_MAX) this.lates++;
+      }
+      this.glow = Math.min(1.35, this.glow + (this.hard ? HARD_GAIN : 0.11));
       this.best = Math.max(this.best, this.glow);
       this.audio.weaveNote(Math.floor(this.glow * 6));
       this.animFeed();
@@ -497,11 +592,47 @@ export class WatiaPanel {
       this.audio.weaveDone();
       this.animCollapse();
       this.hint = 'WHUMP. Earth over embers over papas. The field is cooking its own. Press Space.';
-    } else if (this.phase === 'done') {
+    } else if (this.phase === 'done' || this.phase === 'lost') {
+      this.live = false;
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
       done?.();
+    }
+  }
+
+  /** End a hard run short: record the lesson, cool the scene, wait for Space. */
+  private lose(coachLine: string, hint: string) {
+    this.phase = 'lost';
+    coach(WATIA_FLAG, coachLine);
+    this.audio.bump();
+    this.scene.burst(300, 260, {
+      n: calm() ? 4 : 9, kind: 'puff', color: 'rgba(130,120,110,0.5)', speed: 45, grav: -50, life: 0.9, size: 5,
+    });
+    this.hint = hint;
+  }
+
+  /** Name the fire's dominant timing failure from this run's own counts. */
+  private diagnoseFire(): string {
+    if (this.chokes > this.lates && this.chokes > 0) {
+      return `The fire choked ${this.chokes === 1 ? 'once' : `${this.chokes} times`} on presses piled too close; it wants one press per heartbeat, steady, not a handful at once.`;
+    }
+    if (this.lates > 0) {
+      return 'Your presses drifted a beat or more apart and the glow bled out between them; keep the heartbeat unbroken and it will climb past red.';
+    }
+    return 'The glow climbed but the fuel outran it; start the heartbeat sooner and do not stop to watch the clods blush.';
+  }
+
+  /** A run walked away from mid-phase still owes its lesson, if it has one. */
+  private coachAbandon() {
+    if (this.phase === 'fire') {
+      if (this.hard && (this.chokes > 0 || this.lates > 0)) {
+        coach(WATIA_FLAG, this.diagnoseFire());
+      } else if (this.best > 0.2) {
+        coach(WATIA_FLAG, 'The clods were already warming when you stepped away; steady presses, like a heartbeat, and they blush past red.');
+      }
+    } else if (this.phase === 'collapse') {
+      coach(WATIA_FLAG, 'The dome was glowing and ready; one committed press brings it down on the papas.');
     }
   }
 
@@ -739,5 +870,10 @@ export class WatiaPanel {
     }
     const gk = wobble(this.pulse, 6) * 0.5 + 0.5;
     dot(g, x + w * frac, y + 5, 3 + gk * 1.5, '#ffd75e');
+    // Hard telling: an ashy underbar burns down with the fuel.
+    if (this.hard) {
+      const fu = Math.max(0, 1 - this.fuel / HARD_FUEL);
+      if (fu > 0.005) rr(g, x, y + 14, Math.max(3, w * fu), 3, 1.5, '#8c8479');
+    }
   }
 }

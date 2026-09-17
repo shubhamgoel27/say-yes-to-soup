@@ -4,6 +4,7 @@ import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
+import { RUN, coach } from './run';
 
 /** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
 function calm(): boolean {
@@ -27,6 +28,11 @@ function fixHint(root: HTMLElement) {
  * Catch none and the paper tears through with nothing in it, which is the
  * festival's own beloved fail: the uncle simply hands you another poi and
  * Space starts a fresh round. Nothing is lost but paper.
+ *
+ * The hard telling (RUN.hard, replay only): festival-thin paper that soaks
+ * in about half the dips, quicker and divier fish, a smaller pool of reach.
+ * Any tear, in either telling, leaves a coach() line naming the dominant
+ * miss, so the next how-to can hand the player back their own mistake.
  */
 
 type Fish = { x: number; v: number; deep: boolean; ph: number; ly: number; hv: number; dd: number };
@@ -39,6 +45,10 @@ const BOWL = { x: 572, y: 244, r: 36 };
 
 /** The poi reaches this far to either side; it is the whole aim of the game. */
 const REACH = 0.09;
+/** The hard telling's reach: the same poi, but the uncle's festival paper. */
+const REACH_HARD = 0.062;
+/** The start flag, spoken to coach() so the next how-to can pass advice on. */
+const KINGYO_FLAG = 'c4.kingyo.start';
 /** Dash patterns live here so the hot path never allocates an array. */
 const REACH_DASH = [5, 5];
 const EMPTY_DASH: number[] = [];
@@ -56,6 +66,14 @@ export class KingyoPanel {
   private phase: 'scoop' | 'torn' | 'done' = 'scoop';
   private hint = '';
   private onDone: (() => void) | null = null;
+
+  // The telling. Read once from RUN.hard at open; never mid-round.
+  private hard = false;
+  private reach = REACH;
+  // The run's own record, so a tear can be coached specifically.
+  private dips = 0; // dips that lifted no fish
+  private deepDips = 0; // of those, dips spent on a deep-lit fish
+  private waterDips = 0; // and dips that found only water
 
   // Render-only state. None of it feeds back into the game.
   private scene = new Scene();
@@ -83,6 +101,11 @@ export class KingyoPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.reach = this.hard ? REACH_HARD : REACH;
+    this.dips = 0;
+    this.deepDips = 0;
+    this.waterDips = 0;
     this.phase = 'scoop';
     this.cx = 0.5;
     this.soak = 0;
@@ -91,15 +114,17 @@ export class KingyoPanel {
     for (let i = 0; i < 4; i++) {
       this.fish.push({
         x: (i + 0.5) / 4,
-        v: (Math.random() - 0.5) * 0.5,
-        deep: Math.random() < 0.4,
+        v: (Math.random() - 0.5) * (this.hard ? 0.9 : 0.5),
+        deep: Math.random() < (this.hard ? 0.55 : 0.4),
         ph: Math.random() * Math.PI * 2,
         ly: 80 + Math.random() * 160,
         hv: 0.2,
         dd: 0,
       });
     }
-    this.hint = 'The poi is paper. Arrows to drift it, Space to scoop. Gently.';
+    this.hint = this.hard
+      ? 'The uncle brings out the festival paper, thin as a rumor. The fish have heard about you. Arrows and Space, and no wasted dips.'
+      : 'The poi is paper. Arrows to drift it, Space to scoop. Gently.';
     this.poiX = 0.5;
     this.dipT = 0;
     this.ripples = [];
@@ -123,13 +148,13 @@ export class KingyoPanel {
       for (const f of this.fish) {
         f.x += f.v * dt * 0.35;
         if (f.x < 0.04 || f.x > 0.96) f.v = -f.v;
-        if (Math.random() < dt * 0.4) f.v = (Math.random() - 0.5) * 0.6;
-        if (Math.random() < dt * 0.25) f.deep = !f.deep;
+        if (Math.random() < dt * (this.hard ? 0.6 : 0.4)) f.v = (Math.random() - 0.5) * (this.hard ? 1.15 : 0.6);
+        if (Math.random() < dt * (this.hard ? 0.45 : 0.25)) f.deep = !f.deep;
       }
     }
     if (this.phase === 'scoop') {
       // Paper soaks just by hovering near the water. It was always going to.
-      this.soak = Math.min(100, this.soak + dt * 3);
+      this.soak = Math.min(100, this.soak + dt * (this.hard ? 5.2 : 3));
       if (this.soak >= 100) {
         if (this.caught === 0) this.tear();
         else this.finish();
@@ -165,7 +190,7 @@ export class KingyoPanel {
     this.dipT = 0.34;
     this.ripples.push({ x: px, y: py, r: 8, a: 0.6 });
     this.scene.burst(px, py, { n: calm() ? 4 : 9, color: '#cfe8ef', size: 2.6, speed: 70, grav: 190, life: 0.5 });
-    const idx = this.fish.findIndex((f) => !f.deep && Math.abs(f.x - this.cx) < 0.09);
+    const idx = this.fish.findIndex((f) => !f.deep && Math.abs(f.x - this.cx) < this.reach);
     if (idx >= 0) {
       const hit = this.fish[idx] as Fish;
       this.flight = { x: this.fishX(hit.x), y: this.fishY(hit), t: 0 };
@@ -184,16 +209,20 @@ export class KingyoPanel {
       if (!calm()) this.scene.thump(4, 0.04);
       this.scene.flash('#ffe9c4', 0.16);
       this.scene.burst(px, py, { n: calm() ? 5 : 12, color: '#8fd0e0', size: 2.2, speed: 110, grav: 240, life: 0.55, kind: 'streak' });
-      this.soak = Math.min(100, this.soak + 18);
+      this.soak = Math.min(100, this.soak + (this.hard ? 24 : 18));
       this.hint = ['One! Level wrist, says the uncle.', 'Two! The uncle raises an eyebrow.', 'Three! Now you are showing off.'][
         Math.min(this.caught - 1, 2)
       ] as string;
       if (this.caught >= 3 || this.fish.length === 0) this.finish();
     } else {
       this.audio.slosh();
-      this.soak = Math.min(100, this.soak + 26);
+      this.soak = Math.min(100, this.soak + (this.hard ? 38 : 26));
       this.ripples.push({ x: px, y: py, r: 14, a: 0.45 });
-      this.hint = this.fish.some((f) => f.deep && Math.abs(f.x - this.cx) < 0.09)
+      this.dips++;
+      const overDeep = this.fish.some((f) => f.deep && Math.abs(f.x - this.cx) < this.reach);
+      if (overDeep) this.deepDips++;
+      else this.waterDips++;
+      this.hint = overDeep
         ? 'That one dove. The poi drinks the tub instead.'
         : 'Water, beautifully scooped. The paper darkens.';
     }
@@ -210,6 +239,7 @@ export class KingyoPanel {
 
   private finish() {
     this.phase = 'done';
+    coach(KINGYO_FLAG, ''); // a bagged round retires any advice still owed
     this.audio.weaveDone();
     this.scene.flash('#ffd9a0', 0.32);
     if (!calm()) this.scene.thump(3, 0.03);
@@ -231,6 +261,15 @@ export class KingyoPanel {
    */
   private tear() {
     this.phase = 'torn';
+    // Name the run's dominant miss, so the next how-to re-arms the hands.
+    coach(
+      KINGYO_FLAG,
+      this.deepDips > 0 && this.deepDips >= this.waterDips
+        ? 'You chased the deep-lit ones; the poi tears on them. Take the pale shallow fish first, the ones still carrying lantern light.'
+        : this.waterDips > 0
+          ? 'Your dips kept landing where a fish had just been. Drift the poi until the pool under it turns lantern-gold, then Space, at once.'
+          : 'The paper drank the tub while you hovered. It soaks either way, so dip early and often; hesitation costs the same as a miss.',
+    );
     this.audio.slosh();
     this.scene.flash('#cfe8ef', 0.18);
     if (!calm()) this.scene.thump(3, 0.04);
@@ -431,7 +470,7 @@ export class KingyoPanel {
     // thing you are hunting is the hottest colour in the frame, and the only
     // one that glows. A deep one has gone cold and blue, and reads as refusal.
     if (f.dd < 0.9) {
-      const near = this.phase === 'scoop' && Math.abs(f.x - this.cx) < REACH;
+      const near = this.phase === 'scoop' && Math.abs(f.x - this.cx) < this.reach;
       g.globalAlpha = (1 - f.dd) * (near ? 0.62 + wobble(t, 6) * 0.12 : 0.34);
       g.drawImage(this.glowSprite().cv, x - 40, y - 26, 80, 52);
       g.globalAlpha = 1;
@@ -523,12 +562,12 @@ export class KingyoPanel {
     // trying. It rides under the fish so it never hides one.
     if (this.phase === 'scoop') {
       const px0 = this.fishX(this.poiX);
-      const wLeft = this.fishX(Math.max(0, this.poiX - REACH));
-      const wRight = this.fishX(Math.min(1, this.poiX + REACH));
+      const wLeft = this.fishX(Math.max(0, this.poiX - this.reach));
+      const wRight = this.fishX(Math.min(1, this.poiX + this.reach));
       const rw = (wRight - wLeft) / 2;
       let catchable = false;
       for (const f of this.fish) {
-        if (!f.deep && Math.abs(f.x - this.cx) < REACH) {
+        if (!f.deep && Math.abs(f.x - this.cx) < this.reach) {
           catchable = true;
           break;
         }
@@ -752,6 +791,11 @@ export class KingyoPanel {
  * out with no blame in it and the cold water goes back on, which is exactly
  * how her mother-in-law taught her. Everything else is corrected in place,
  * once and warmly, without costing the morning.
+ *
+ * The hard telling (RUN.hard, replay only): a higher flame. The heat climbs
+ * half again as fast and the pull window thins to one breath; the foam
+ * multiplies and hurries; the squeeze forgives less. A boiled pot, in either
+ * telling, leaves a coach() line naming the mistimed pull.
  */
 
 type DashiPhase = 'steep' | 'pull' | 'ruined' | 'skim' | 'onigiri' | 'done';
@@ -761,6 +805,20 @@ const PULL_LO = 72; // the sweet zone: kombu out JUST before the boil
 const PULL_HI = 94;
 const PACK_LO = 38; // the squeeze's wide soft zone
 const PACK_HI = 92;
+
+// The hard telling: the same dawn, told with a higher flame. The heat climbs
+// faster AND the sweet zone thins, so the pull is one breath, not a sentence;
+// the foam swims like it means it, and the squeeze stops forgiving shyness.
+// The steep is untouched: patience is a story beat, not a difficulty dial.
+const HEAT_RATE = 13;
+const HEAT_RATE_HARD = 19;
+const PULL_LO_HARD = 79;
+const PULL_HI_HARD = 91;
+const PACK_LO_HARD = 58;
+const PACK_HI_HARD = 84;
+const SQUEEZE_RATE = 46;
+const SQUEEZE_RATE_HARD = 60;
+const DASHI_FLAG = 'c4.cook.start';
 
 const WAIT_LINES = [
   'Fumi, without looking up: "Not yet. The sea takes its time."',
@@ -801,6 +859,19 @@ export class DashiPanel {
   private hint = '';
   private onDone: (() => void) | null = null;
 
+  // The telling. Read once from RUN.hard at open; never mid-morning.
+  private hard = false;
+  private heatRate = HEAT_RATE;
+  private pullLo = PULL_LO;
+  private pullHi = PULL_HI;
+  private packLo = PACK_LO;
+  private packHi = PACK_HI;
+  private squeezeRate = SQUEEZE_RATE;
+  private skimReach = 0.1;
+  // The run's own record, so a boil-over can be coached specifically.
+  private earlyPulls = 0;
+  private lastEarlyHeat = 0;
+
   // Render-only state.
   private scene = new Scene();
   private setHint: (h: string) => void = () => {};
@@ -836,6 +907,16 @@ export class DashiPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.hard = RUN.hard;
+    this.heatRate = this.hard ? HEAT_RATE_HARD : HEAT_RATE;
+    this.pullLo = this.hard ? PULL_LO_HARD : PULL_LO;
+    this.pullHi = this.hard ? PULL_HI_HARD : PULL_HI;
+    this.packLo = this.hard ? PACK_LO_HARD : PACK_LO;
+    this.packHi = this.hard ? PACK_HI_HARD : PACK_HI;
+    this.squeezeRate = this.hard ? SQUEEZE_RATE_HARD : SQUEEZE_RATE;
+    this.skimReach = this.hard ? 0.07 : 0.1;
+    this.earlyPulls = 0;
+    this.lastEarlyHeat = 0;
     this.phase = 'steep';
     this.dropped = false;
     this.steepT = 0;
@@ -886,19 +967,20 @@ export class DashiPanel {
       this.steepT += dt;
       if (this.steepT >= STEEP_NEED) {
         this.phase = 'pull';
-        this.hint =
-          'The flame goes on, low. "Now watch, not the clock, the kombu. Out it comes JUST before the boil. Space, at the right moment."';
+        this.hint = this.hard
+          ? 'The flame goes on, higher than she usually dares. "This morning the sea gives you one breath, not a sentence. Space, at the moment."'
+          : 'The flame goes on, low. "Now watch, not the clock, the kombu. Out it comes JUST before the boil. Space, at the right moment."';
       }
     } else if (this.phase === 'pull') {
-      this.heat = Math.min(100, this.heat + dt * 13);
+      this.heat = Math.min(100, this.heat + dt * this.heatRate);
       if (this.heat >= 100) this.boilOver();
     } else if (this.phase === 'skim') {
       for (const f of this.foam) {
-        f.x += f.v * dt * 0.12;
+        f.x += f.v * dt * (this.hard ? 0.3 : 0.12);
         if (f.x < 0.06 || f.x > 0.94) f.v = -f.v;
       }
     } else if (this.phase === 'onigiri' && this.squeezing) {
-      this.squeeze += dt * 46;
+      this.squeeze += dt * this.squeezeRate;
       if (this.squeeze > 108) {
         this.audio.blip();
         this.squeezing = false;
@@ -947,8 +1029,10 @@ export class DashiPanel {
         this.waitPokes++;
       }
     } else if (this.phase === 'pull') {
-      if (this.heat < PULL_LO) {
+      if (this.heat < this.pullLo) {
         this.audio.blip();
+        this.earlyPulls++;
+        this.lastEarlyHeat = this.heat;
         this.hint = '"Not yet. See the little bubbles on the kombu, small as roe? When they hurry, you move."';
       } else {
         this.audio.chime();
@@ -962,7 +1046,7 @@ export class DashiPanel {
     } else if (this.phase === 'skim') {
       const lpx = this.surfX(this.lxD);
       this.dipT = 0.3;
-      const idx = this.foam.findIndex((f) => Math.abs(f.x - this.lx) < 0.1);
+      const idx = this.foam.findIndex((f) => Math.abs(f.x - this.lx) < this.skimReach);
       if (idx >= 0) {
         this.foam.splice(idx, 1);
         this.audio.slosh();
@@ -1000,7 +1084,7 @@ export class DashiPanel {
         this.hint = 'The rice is hot enough to argue with. You press, steady...';
       } else {
         this.squeezing = false;
-        if (this.squeeze >= PACK_LO && this.squeeze <= PACK_HI) {
+        if (this.squeeze >= this.packLo && this.squeeze <= this.packHi) {
           this.packed++;
           this.audio.weaveNote(this.packed % 7);
           this.squeeze = 0;
@@ -1015,6 +1099,7 @@ export class DashiPanel {
           });
           if (this.packed >= 2) {
             this.phase = 'done';
+            coach(DASHI_FLAG, ''); // breakfast made; retire any advice still owed
             this.audio.weaveDone();
             this.scene.flash('#ffd9a0', 0.35);
             this.hint =
@@ -1039,6 +1124,15 @@ export class DashiPanel {
    */
   private boilOver() {
     this.phase = 'ruined';
+    // Name the mistimed pull, so the next how-to re-arms the hands.
+    coach(
+      DASHI_FLAG,
+      this.earlyPulls === 0
+        ? 'You watched the boil arrive with your hands at your sides. When the roe-small bubbles start to hurry up the kombu, that is Space, right then.'
+        : this.lastEarlyHeat >= this.pullLo - 10
+          ? 'Your last pull was one breath early, and the boil caught you waiting for a second chance. Hold on the pale band; press the instant the fill enters it.'
+          : 'You reached in while the bubbles were still roe-small, then stopped trusting yourself. Watch the pale band on the meter; press the instant the fill enters it.',
+    );
     this.audio.slosh();
     this.scene.flash('#dfe6e2', 0.22);
     if (!calm()) this.scene.thump(4, 0.05);
@@ -1055,6 +1149,8 @@ export class DashiPanel {
       { x: 0.52, v: (Math.random() - 0.5) * 0.6 },
       { x: 0.8, v: (Math.random() - 0.5) * 0.6 },
     ];
+    // The higher flame throws a fourth cluster, and none of them dawdle.
+    if (this.hard) this.foam.push({ x: 0.36, v: (Math.random() - 0.5) * 0.6 });
   }
 
   // -------- render-only choreography
@@ -1531,7 +1627,10 @@ export class DashiPanel {
       const w = this.dropped ? Math.min(100, (this.steepT / STEEP_NEED) * 100) : 0;
       this.meter(g, 40, 320, 260, w / 100, 'cold water, resting', undefined, '#7fa8b5');
     } else if (boiling) {
-      this.meter(g, 40, 320, 260, this.heat / 100, 'toward the boil (the pale band is your moment)', [PULL_LO, PULL_HI]);
+      const label = this.hard
+        ? 'toward the boil (the pale band is your moment, and it is one breath wide)'
+        : 'toward the boil (the pale band is your moment)';
+      this.meter(g, 40, 320, 260, this.heat / 100, label, [this.pullLo, this.pullHi]);
     } else if (this.phase === 'ruined') {
       this.meter(g, 40, 320, 260, 1, 'boiled through. Space fills the pot cold again', undefined, '#7f8a84');
     } else if (this.phase === 'skim') {
@@ -1540,7 +1639,10 @@ export class DashiPanel {
       g.fillText(`foam left: ${this.foam.length}. Arrows steer the ladle, Space skims.`, 40, 326);
     } else if (this.phase === 'onigiri') {
       const dots = '●'.repeat(this.packed);
-      this.meter(g, 40, 320, 260, Math.min(100, this.squeeze) / 100, `the squeeze ${dots} (soft zone is wide; anger is not)`, [PACK_LO, PACK_HI]);
+      const label = this.hard
+        ? `the squeeze ${dots} (this morning the soft zone is one handspan)`
+        : `the squeeze ${dots} (soft zone is wide; anger is not)`;
+      this.meter(g, 40, 320, 260, Math.min(100, this.squeeze) / 100, label, [this.packLo, this.packHi]);
     }
   }
 }
