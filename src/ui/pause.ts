@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { isCoarseTouch } from './responsive';
+import { goSideways, isCoarseTouch, isPhone } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -269,6 +269,9 @@ export class PauseMenu {
         value: () => (document.fullscreenElement ? 'on' : 'off'),
         adjust: () => {
           if (document.fullscreenElement) void document.exitFullscreen();
+          // On a phone the room and the landscape lock travel together;
+          // elsewhere fullscreen alone is the whole ask.
+          else if (isPhone()) void goSideways();
           else void document.documentElement.requestFullscreen?.();
           setTimeout(() => this.render(), 150);
         },

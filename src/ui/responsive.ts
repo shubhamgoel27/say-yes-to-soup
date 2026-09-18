@@ -219,7 +219,7 @@ function declineOffer(): void {
  * The one firm ask, made only inside a user gesture: fullscreen first, then
  * the landscape lock. Every refusal lands softly in the rotate page instead.
  */
-async function goSideways(): Promise<void> {
+export async function goSideways(): Promise<void> {
   const root = document.documentElement;
   try {
     await root.requestFullscreen({ navigationUI: 'hide' });
@@ -268,12 +268,22 @@ function onGesture(): void {
   else syncPin();
 }
 
-/** The quiet corner pin: only after two declines, only upright, never in fullscreen. */
+/**
+ * The quiet corner pin. Upright, the big card is the affordance and the pin
+ * appears only once it has been declined away. Lying down there is no card
+ * at all, so whenever fullscreen is gone (an app switch, a back swipe, a
+ * fresh landscape boot) the pin is the one road back to the full spread.
+ */
 function syncPin(): void {
-  if (fallbackMode) return;
-  const wanted = declines >= 2 && !lockActive && !document.fullscreenElement && inPortrait();
+  if (fallbackMode || !canLockLandscape()) return;
+  const bare = !lockActive && !document.fullscreenElement;
+  const wanted = bare && (!inPortrait() || declines >= 2);
   if (!wanted && !pinEl) return;
-  ensurePin().hidden = !wanted;
+  const pin = ensurePin();
+  pin.hidden = !wanted;
+  const label = inPortrait() ? 'Lay the journal sideways' : 'Back to the full spread';
+  pin.title = label;
+  pin.setAttribute('aria-label', label);
 }
 
 // ---------------------------------------------------------------------------
@@ -327,6 +337,11 @@ export function initRotateNudge(): void {
         }
         syncPin();
       }
+    });
+    // Coming back from another app: fullscreenchange may have fired while
+    // the tab was hidden, so the pin re-checks the room on every return.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) syncPin();
     });
     syncPin();
   } else {
