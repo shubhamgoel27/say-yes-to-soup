@@ -2,6 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
+import { isCoarseTouch } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -70,7 +71,13 @@ export function wonGames(src: FlagSource): ReplayGame[] {
   return REPLAY_GAMES.filter((g) => src.has(g.doneFlag));
 }
 
-type Prefs = { textSpeed: 'cozy' | 'brisk' | 'instant'; reduceMotion: boolean; textSize: 'normal' | 'large' };
+type Prefs = {
+  textSpeed: 'cozy' | 'brisk' | 'instant';
+  reduceMotion: boolean;
+  textSize: 'normal' | 'large';
+  /** Touch walking: the floating stick, or the four-button cluster. */
+  walkControl: 'stick' | 'buttons';
+};
 const PREFS_KEY = 'soup.prefs';
 
 function loadPrefs(): Prefs {
@@ -78,7 +85,7 @@ function loadPrefs(): Prefs {
   // once anything has been saved, the player's explicit choice wins.
   const osCalm =
     typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const defaults: Prefs = { textSpeed: 'cozy', reduceMotion: osCalm, textSize: 'normal' };
+  const defaults: Prefs = { textSpeed: 'cozy', reduceMotion: osCalm, textSize: 'normal', walkControl: 'stick' };
   try {
     const raw = localStorage.getItem(PREFS_KEY);
     if (raw) return { ...defaults, reduceMotion: false, ...JSON.parse(raw) };
@@ -154,6 +161,7 @@ export class PauseMenu {
     this.hooks.onTextSpeed(TEXT_CPS[this.prefs.textSpeed]);
     document.body.classList.toggle('reduce-motion', this.prefs.reduceMotion);
     document.body.classList.toggle('text-large', this.prefs.textSize === 'large');
+    document.body.classList.toggle('walk-buttons', this.prefs.walkControl === 'buttons');
   }
 
   // ---------------------------------------------------------------- items
@@ -242,6 +250,20 @@ export class PauseMenu {
           this.savePrefs();
         },
       },
+      // Touch screens only: which control owns the lower-left thumb. The
+      // row would be a riddle on a keyboard, so fine pointers never see it.
+      ...(isCoarseTouch()
+        ? [
+            {
+              label: 'Walking',
+              value: () => (this.prefs.walkControl === 'buttons' ? 'buttons' : 'stick'),
+              adjust: () => {
+                this.prefs.walkControl = this.prefs.walkControl === 'buttons' ? 'stick' : 'buttons';
+                this.savePrefs();
+              },
+            },
+          ]
+        : []),
       {
         label: 'Fullscreen',
         value: () => (document.fullscreenElement ? 'on' : 'off'),

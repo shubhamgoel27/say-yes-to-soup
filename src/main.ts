@@ -19,6 +19,7 @@ import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
 import { RUN, peekCoach, takeCoach } from './ui/games/run';
+import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { initRotateNudge, isCoarseTouch } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
@@ -3265,6 +3266,41 @@ function fitCameraToCrop(tx: number, ty: number) {
     .vp-pad [data-dir='left'] { grid-area: l; }
     .vp-pad [data-dir='right'] { grid-area: r; }
     .vp-pad [data-dir='down'] { grid-area: d; }
+    /* The Walking setting picks one lower-left tenant: the floating stick
+     * by default, the button cluster for anyone who asks. */
+    body:not(.walk-buttons) .vp-pad { display: none; }
+    body.walk-buttons .vp-stick { display: none; }
+    .vp-stick {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: min(46vw, 340px);
+      height: min(52vh, 300px);
+      pointer-events: auto;
+      touch-action: none;
+      -webkit-user-select: none; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #vpad.vp-quiet .vp-stick { pointer-events: none; }
+    .vp-ring {
+      position: absolute;
+      width: 96px; height: 96px;
+      margin: -48px 0 0 -48px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(242, 230, 208, 0.42);
+      background: rgba(23, 18, 14, 0.22);
+      box-shadow: inset 0 0 10px rgba(217, 164, 65, 0.18);
+      pointer-events: none;
+    }
+    .vp-ring[hidden] { display: none; }
+    .vp-pebble {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(242, 230, 208, 0.82);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 10px rgba(217, 164, 65, 0.4);
+    }
     .vp-side {
       position: absolute;
       right: calc(14px + env(safe-area-inset-right, 0px));
@@ -3889,6 +3925,15 @@ vpad.innerHTML = `
   </div>`;
 frameEl.appendChild(vpad);
 const threadBtn = vpad.querySelector<HTMLElement>('[data-act="thread"]')!;
+// The floating stick shares the pad's lower-left with the button cluster;
+// the Walking setting decides which of the two is present via a body class,
+// so neither this file nor the pause menu ever call each other about it.
+const stick = makeStick(
+  vpad,
+  (d) => input.holdDir(d),
+  (d) => input.releaseDir(d),
+  () => audio.ensure(),
+);
 
 if (isCoarseTouch()) {
   vpad.hidden = false;
@@ -3914,6 +3959,9 @@ function syncVpad() {
     !textbox.isOpen && !journalUI.isOpen && !pauseMenu.isOpen && !albumUI.isOpen &&
     !chapterClose.isOpen && !title.letterOpen && !uiCardOpen();
   vpad.classList.toggle('vp-quiet', !wanted);
+  // A drag caught mid-air by an opening overlay must not keep walking
+  // under the paper, nor resume by itself when the paper lifts.
+  if (!wanted) stick.calm();
   const band = state.has('keepsake.band');
   if (threadBtn.hidden === band) threadBtn.hidden = !band;
 }
