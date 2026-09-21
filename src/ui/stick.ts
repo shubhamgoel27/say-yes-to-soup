@@ -48,6 +48,26 @@ export type Stick = {
   root: HTMLElement;
 };
 
+/** Once a thumb has walked this long in total, the hint has done its job. */
+const TAUGHT_AFTER_MS = 1200;
+const TAUGHT_KEY = 'elsewhere.stickTaught';
+
+function alreadyTaught(): boolean {
+  try {
+    return localStorage.getItem(TAUGHT_KEY) === '1';
+  } catch {
+    return false; // private browsing: the hint simply teaches every visit
+  }
+}
+
+function rememberTaught(): void {
+  try {
+    localStorage.setItem(TAUGHT_KEY, '1');
+  } catch {
+    // Nothing to do; the in-page fade already happened.
+  }
+}
+
 /**
  * Mount the stick into the vpad. `hold`/`release` are the engine's own
  * holdDir/releaseDir; `wake` runs once per fresh touch (audio unlock).
@@ -70,6 +90,30 @@ export function makeStick(
   const ring = root.querySelector<HTMLElement>('.vp-ring')!;
   const pebble = root.querySelector<HTMLElement>('.vp-pebble')!;
 
+  // The invisible-control problem: a first-time thumb has no way to know
+  // the lower left listens. A faint dashed ring and one hand-written line
+  // wait there until the thumb has genuinely walked, then retire for good.
+  let hintEl: HTMLElement | null = null;
+  if (!alreadyTaught()) {
+    hintEl = document.createElement('div');
+    hintEl.className = 'vp-hint';
+    hintEl.innerHTML = `
+      <div class="vp-hint-ring"></div>
+      <div class="vp-hint-line">rest a thumb here, slide to walk</div>`;
+    root.appendChild(hintEl);
+  }
+  let walkedMs = 0;
+  let heldSince = 0;
+
+  const retireHint = () => {
+    if (!hintEl) return;
+    const el = hintEl;
+    hintEl = null;
+    rememberTaught();
+    el.classList.add('gone');
+    setTimeout(() => el.remove(), 900);
+  };
+
   let pointer: number | null = null;
   let ox = 0;
   let oy = 0;
@@ -79,6 +123,13 @@ export function makeStick(
     if (d === held) return;
     if (held) release(held);
     if (d) hold(d);
+    if (hintEl) {
+      // Bank walking time across holds; the lesson is cumulative.
+      const now = performance.now();
+      if (held) walkedMs += now - heldSince;
+      if (d) heldSince = now;
+      if (walkedMs >= TAUGHT_AFTER_MS) retireHint();
+    }
     held = d;
   };
 

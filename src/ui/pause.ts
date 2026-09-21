@@ -336,7 +336,17 @@ export class PauseMenu {
           return `${head}<div class="p-opt p-g-row${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`;
         })
         .join('');
-      body = `<div class="p-menu p-games">${rows}
+      // Once every hard telling on the route is done clean, the shelf says
+      // so in Nani's hand; until then it keeps the secret.
+      const hardSet = CHAPTERS.flatMap((c) => c.games ?? []).filter(
+        (g) => g.hardHow && g.replayable !== false,
+      );
+      const everyStar =
+        flags !== null && hardSet.length > 0 && hardSet.every((g) => flags!.has(`hard.${g.flag}`));
+      const allLine = everyStar
+        ? '<div class="p-g-all">every telling, done properly &#10038;</div>'
+        : '';
+      body = `<div class="p-menu p-games">${rows}${allLine}
         <div class="p-hint-line">no lesson this time, nothing to keep &nbsp; &middot; &nbsp; Esc back</div></div>`;
     } else if (this.screen === 'settings') {
       body = `<div class="p-settings">${this.settingsItems()

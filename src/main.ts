@@ -511,6 +511,15 @@ function openPanel(g: GameEntry) {
         // The shelf remembers with a small star.
         state.set(`hard.${g.def.flag}`);
         toasts.show('The hard telling, done properly. ✶');
+        // The last star of the whole journey earns one more line; the
+        // toasts queue, so it follows the first at its own pace.
+        const everyStar = games
+          .filter((x) => x.def.hardHow)
+          .every((x) => state.has(`hard.${x.def.flag}`));
+        if (everyStar && !state.has('hard.all')) {
+          state.set('hard.all');
+          toasts.show('Every telling, done properly. Nani closes the journal and pretends she never worried.');
+        }
       } else {
         toasts.show('Just for the joy of it.');
       }
@@ -3301,6 +3310,35 @@ function fitCameraToCrop(tx: number, ty: number) {
       background: rgba(242, 230, 208, 0.82);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), 0 0 10px rgba(217, 164, 65, 0.4);
     }
+    .vp-hint {
+      position: absolute;
+      left: 36px;
+      bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+      width: 150px;
+      text-align: center;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    .vp-hint.gone { opacity: 0; }
+    .vp-hint-ring {
+      width: 72px; height: 72px;
+      margin: 0 auto 7px;
+      border-radius: 50%;
+      border: 2px dashed rgba(242, 230, 208, 0.55);
+      animation: vpHintPulse 2.2s ease-in-out infinite;
+    }
+    .vp-hint-line {
+      font-family: var(--hand, cursive);
+      font-size: 15px;
+      color: rgba(242, 230, 208, 0.9);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
+      transform: rotate(-1.2deg);
+    }
+    @keyframes vpHintPulse {
+      0%, 100% { transform: scale(1); opacity: 0.55; }
+      50% { transform: scale(1.07); opacity: 0.95; }
+    }
+    body.reduce-motion .vp-hint-ring { animation: none; opacity: 0.7; }
     .vp-side {
       position: absolute;
       right: calc(14px + env(safe-area-inset-right, 0px));
