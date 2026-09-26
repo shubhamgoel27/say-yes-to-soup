@@ -54,23 +54,6 @@ function bakeGlow(color: string, r = 64): Surface {
   return s;
 }
 
-// ------------------------------------------------------------ the save peek
-
-/**
- * Panels are built at boot with no handle on GameState, so the ofrenda reads
- * the autosave (written on every flag change, always current by open()).
- */
-function savedFlags(): Set<string> {
-  try {
-    const raw = localStorage.getItem('elsewhere.save');
-    if (!raw) return new Set();
-    const data = JSON.parse(raw) as { flags?: string[] };
-    return new Set(data.flags ?? []);
-  } catch {
-    return new Set();
-  }
-}
-
 // ------------------------------------------------------------ the mole
 
 const STIR_ORDER: Dir[] = ['up', 'right', 'down', 'left'];
@@ -770,7 +753,7 @@ type OfrendaItem = { id: string; label: string; echo: string };
 
 const LEVELS = ['cielo, for what guides', 'the table, for what feeds', 'earth, for what walks'];
 
-function buildItems(flags: Set<string>): OfrendaItem[] {
+function buildItems(flags: ReadonlySet<string>): OfrendaItem[] {
   const items: OfrendaItem[] = [
     {
       id: 'photo',
@@ -1153,6 +1136,9 @@ export class OfrendaPanel {
   constructor(
     private root: HTMLElement,
     private audio: AudioBus,
+    /** The live journey's flags. Reading the autosave instead once meant
+     * slot one's journey, whichever journal was actually open. */
+    private flags: () => ReadonlySet<string>,
   ) {}
 
   get isOpen(): boolean {
@@ -1161,7 +1147,7 @@ export class OfrendaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
-    this.items = buildItems(savedFlags());
+    this.items = buildItems(this.flags());
     this.placed = [[], [], []];
     this.idx = 0;
     this.level = 1;

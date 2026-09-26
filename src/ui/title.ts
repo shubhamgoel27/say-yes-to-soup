@@ -215,7 +215,7 @@ export class TitleScreen {
   /** With no argument, Nani's framing letter. With one, mail from a friend.
    * `playerName` (already limited to letters and spaces) personalises the
    * framing letter's salutation; blank keeps Nani's original line. */
-  showLetter(mail?: { from: string; body: string[] }, playerName?: string | null) {
+  showLetter(mail?: { from: string; body: string[]; typed?: boolean }, playerName?: string | null) {
     this.letterEl.hidden = false;
     const dear = playerName
       ? `For ${playerName}, whenever you are grown,`
@@ -233,7 +233,7 @@ export class TitleScreen {
     const sign = mail ? mail.from : 'Nani, 1974';
     this.letterEl.innerHTML = `
       <div class="letter-fold">
-        <div class="letter-paper">
+        <div class="letter-paper${mail?.typed ? ' typed' : ''}">
           <div class="letter-body">
             ${paragraphs}
             <p class="letter-sign">${sign}</p>

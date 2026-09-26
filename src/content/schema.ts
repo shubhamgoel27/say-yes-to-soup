@@ -95,6 +95,9 @@ export type LetterDef = {
   when?: Cond;
   /** Paragraphs. */
   body: string[];
+  /** Struck on a machine, not written by hand (a telegram): the body is set
+   * in a typed face, and only the signature keeps the hand. */
+  typed?: boolean;
 };
 
 /**
@@ -186,7 +189,9 @@ export type GameDef = {
   /** One line for the hard telling's how-to card; its presence declares the
    * game HAS a hard telling. Panels read RUN.hard and tighten accordingly. */
   hardHow?: string;
-  make: (root: HTMLElement, audio: unknown) => GamePanel;
+  /** `flags` is the live journey's flag set, read at the moment of asking,
+   * for panels whose contents depend on the road (the ofrenda). */
+  make: (root: HTMLElement, audio: unknown, flags: () => ReadonlySet<string>) => GamePanel;
 };
 
 /**

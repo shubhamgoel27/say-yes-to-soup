@@ -259,6 +259,13 @@ export class GameState {
   playerName: string | null = null;
   /** The traveler's chosen look, or null for the default. */
   playerLook: PlayerLook | null = null;
+  /**
+   * The shelf slot this journey belongs to, pinned when it is loaded or
+   * wiped. save() writes here and never re-reads the shelf key: a second
+   * tab that opened another journal once moved the shared key under this
+   * one, and the next autosave landed on the other tab's journey.
+   */
+  slot: number = activeSlot();
 
   private onJournal: Events['journal'][] = [];
   private onErrand: Events['errand'][] = [];
@@ -303,6 +310,11 @@ export class GameState {
     if (cond.has && !cond.has.every((f) => this.flags.has(f))) return false;
     if (cond.not && cond.not.some((f) => this.flags.has(f))) return false;
     return true;
+  }
+
+  /** Every raised flag, read-only, for panels that inventory the road. */
+  flagSet(): ReadonlySet<string> {
+    return this.flags;
   }
 
   hasPage(id: string): boolean {
@@ -429,7 +441,7 @@ export class GameState {
       });
       // Keep the last known-good copy before overwriting. A journey can be
       // thirty hours long; a single torn write must never be able to end it.
-      const k = slotKeys(activeSlot());
+      const k = slotKeys(this.slot);
       const prev = localStorage.getItem(k.save);
       if (prev && parseSave(prev)) localStorage.setItem(k.bak, prev);
       localStorage.setItem(k.save, payload);
@@ -471,18 +483,20 @@ export class GameState {
    * events; callers reset UI. Other journals on the shelf are untouched. */
   reset() {
     this.forget();
+    this.slot = activeSlot();
     // eraseSlot also clears the pre-rename save for slot 0, or the old
     // journey resurrects as Continue on the next boot.
-    eraseSlot(activeSlot());
+    eraseSlot(this.slot);
   }
 
   hasSave(): boolean {
-    return slotOccupied(activeSlot());
+    return slotOccupied(this.slot);
   }
 
   load() {
+    this.slot = activeSlot();
     try {
-      const k = slotKeys(activeSlot());
+      const k = slotKeys(this.slot);
       // ?fresh serves automation; it must fire once per page load, not on
       // every journal switch (reloadJourney re-enters load(), and a shared
       // link with ?fresh once ate the active slot on every shelf browse).

@@ -286,6 +286,16 @@ function loadMix(): Mix {
   return { music: 1, sfx: 1, ambience: 1 };
 }
 
+/** Mute rides beside the mix, so M on one visit is still M on the next. */
+const MUTE_KEY = 'soup.muted';
+function loadMuted(): boolean {
+  try {
+    return localStorage.getItem(MUTE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
@@ -307,7 +317,7 @@ export class AudioBus {
   private raining = false;
   /** Next-call clocks for each creature, in ctx time. */
   private nextCall: Record<string, number> = {};
-  muted = false;
+  muted = loadMuted();
   private blipCount = 0;
   private scene: Scene = 'outdoor';
   private region = 'andes';
@@ -469,6 +479,9 @@ export class AudioBus {
 
   toggleMute(): boolean {
     this.muted = !this.muted;
+    try {
+      localStorage.setItem(MUTE_KEY, this.muted ? '1' : '0');
+    } catch { /* private browsing */ }
     if (this.master && this.ctx) {
       this.master.gain.setTargetAtTime(this.muted ? 0 : 0.5, this.ctx.currentTime, 0.05);
     }

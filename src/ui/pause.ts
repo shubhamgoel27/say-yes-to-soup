@@ -114,6 +114,10 @@ export class PauseMenu {
   private prefs: Prefs = loadPrefs();
   /** While true, "Back to title" is hidden (opened from the title itself). */
   private fromTitle = false;
+  /** Opened straight onto a page (Settings from the title, the credits after
+   * the closing book): backing out closes, rather than landing on "A rest",
+   * a menu the player never passed through. */
+  private direct = false;
 
   constructor(
     private root: HTMLElement,
@@ -131,6 +135,7 @@ export class PauseMenu {
   open(screen: Screen = 'menu', fromTitle = false) {
     this.screen = screen;
     this.fromTitle = fromTitle;
+    this.direct = screen !== 'menu';
     this.cursor = 0;
     this.root.hidden = false;
     // The entrance animation belongs to opening, not to every re-render:
@@ -138,6 +143,11 @@ export class PauseMenu {
     // book-open there made the whole panel flicker on every arrow press.
     this.justOpened = true;
     this.render();
+  }
+
+  /** Redraw in place, for a change made from outside (the M key). */
+  refresh() {
+    if (this.isOpen) this.render();
   }
 
   /** True for exactly the first render after open(); gates the entrance. */
@@ -225,6 +235,11 @@ export class PauseMenu {
         adjust: (d: number) => this.audio.setMix('ambience', this.audio.mix.ambience + d * 0.1),
       },
       {
+        label: 'Sound',
+        value: () => (this.audio.muted ? 'off (M)' : 'on (M)'),
+        adjust: () => void this.audio.toggleMute(),
+      },
+      {
         label: 'Text speed',
         value: () => speedNames[this.prefs.textSpeed],
         adjust: (d: number) => {
@@ -307,11 +322,11 @@ export class PauseMenu {
     if (this.screen === 'menu') this.menuItems()[this.cursor]?.act();
     else if (this.screen === 'games') this.gamesItems()[this.cursor]?.act();
     else if (this.screen === 'settings') this.settingsItems()[this.cursor]?.adjust(1), this.render();
-    else this.goto('menu');
+    else this.onBack();
   }
 
   onBack() {
-    if (this.screen === 'menu') this.close();
+    if (this.screen === 'menu' || this.direct) this.close();
     else this.goto('menu');
   }
 
@@ -368,6 +383,7 @@ export class PauseMenu {
         <div class="p-row"><span class="p-label">Mute</span><span class="p-value">M</span></div>
         <div class="p-note">Nani&rsquo;s actual instructions: say yes to soup, ask about the bread,
         and if someone corrects you, thank them twice. Walk slowly. That is the whole trick.</div>
+        <div class="p-hint-line">Esc back</div>
       </div>`;
     } else {
       // The subtitle is the one line here that is allowed to change, because
@@ -382,6 +398,10 @@ export class PauseMenu {
                Nobody hurried you and you did not hurry. That was the whole assignment.</p>`
             : ''
         }
+        <p class="p-c-thanks">Special thanks. To Angli, for the idea underneath everything here:
+        that language and food are how strangers become people to each other.
+        And to Nishant, who helped shape the game, its villages, and the
+        traveler&rsquo;s long arc home.</p>
         <p class="p-c-sec">Every village in this game is fictional; the texture is researched,
         and corrections from people who know these places are welcome.</p>
         <p class="p-c-sec">Type set in Fraunces, Literata &amp; Caveat (OFL, Google Fonts).
@@ -391,12 +411,9 @@ export class PauseMenu {
         the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).
         Everything else, the art, the music, the weather and the gulls, is cooked
         fresh by the game at runtime.</p>
-        <p class="p-c-sec">Special thanks. To Angli, for the idea underneath everything here:
-        that language and food are how strangers become people to each other.
-        And to Nishant, who helped shape the game, its villages, and the
-        traveler&rsquo;s long arc home.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>
         ${done ? '<p class="end-envoi end-last-word">The pot is still on. It is always on. Come back whenever.</p>' : ''}
+        <div class="p-hint-line">Esc back</div>
       </div>`;
     }
     const title =

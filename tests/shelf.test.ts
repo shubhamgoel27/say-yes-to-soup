@@ -153,6 +153,22 @@ describe('the shelf: journeys stay independent', () => {
     assert.ok(b.has('journey.a') && !b.has('journey.b'), 'the other journal reads back whole');
   });
 
+  it('a journey keeps saving to its own slot when another tab moves the shelf', () => {
+    store.set('elsewhere.save.2', rawSave(['other.tab']));
+    setActiveSlot(0);
+    const here = new GameState();
+    here.load();
+    here.set('mine');
+    // A second tab opens journal two: the shared shelf key moves under us.
+    setActiveSlot(1);
+    here.set('still.mine');
+    assert.deepEqual(JSON.parse(store.get('elsewhere.save.2')!).flags, ['other.tab'],
+      'the other tab journal must not be overwritten');
+    assert.ok(JSON.parse(store.get('elsewhere.save')!).flags.includes('still.mine'),
+      'the autosave lands in the slot this journey was loaded from');
+    assert.equal(here.slot, 0);
+  });
+
   it('reset and eraseSlot touch only their own journal', () => {
     store.set('elsewhere.save', rawSave(['a']));
     store.set('elsewhere.save.bak', rawSave(['a-old']));

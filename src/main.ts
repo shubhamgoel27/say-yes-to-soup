@@ -440,7 +440,7 @@ function makeOverlayRoot(id: string): HTMLElement {
 }
 const games = GAMES.map((g) => {
   const root = makeOverlayRoot(g.flag.replace(/\W+/g, '-'));
-  return { def: g, root, panel: g.make(root, audio) };
+  return { def: g, root, panel: g.make(root, audio, () => state.flagSet()) };
 });
 const anyGameOpen = () => games.some((g) => g.panel.isOpen);
 type GameEntry = (typeof games)[number];
@@ -738,14 +738,52 @@ state.on('errand', (id) => {
 refreshTaskChip();
 
 let plateTimers: number[] = [];
+/**
+ * The plate shares the toasts' hush: while a story surface quiets the HUD,
+ * a plate waits (or, caught mid-show, goes back to wait) and plays whole
+ * once the HUD returns. "CHAPTER SEVEN · COMPLETE" once faded in and out
+ * entirely behind the ceremony that followed it.
+ */
+let plateHeld = false;
+let plateWaiting: { text: string; holdMs: number } | null = null;
+let plateLive: { text: string; holdMs: number } | null = null;
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
-  plateEl.textContent = text;
+  plateTimers = [];
   plateEl.classList.remove('show');
+  if (plateHeld) {
+    plateWaiting = { text, holdMs };
+    plateLive = null;
+    return;
+  }
+  plateEl.textContent = text;
+  plateLive = { text, holdMs };
   plateTimers = [
     window.setTimeout(() => plateEl.classList.add('show'), 350),
-    window.setTimeout(() => plateEl.classList.remove('show'), holdMs),
+    window.setTimeout(() => {
+      plateEl.classList.remove('show');
+      plateLive = null;
+    }, holdMs),
   ];
+}
+function holdPlate(held: boolean) {
+  if (held === plateHeld) return;
+  plateHeld = held;
+  if (held) {
+    if (plateLive) showPlate(plateLive.text, plateLive.holdMs);
+  } else if (plateWaiting) {
+    const w = plateWaiting;
+    plateWaiting = null;
+    showPlate(w.text, w.holdMs);
+  }
+}
+/** A journal switch drops a waiting plate with the rest of the old news. */
+function dropPlate() {
+  for (const t of plateTimers) clearTimeout(t);
+  plateTimers = [];
+  plateWaiting = null;
+  plateLive = null;
+  plateEl.classList.remove('show');
 }
 
 // ---------------------------------------------------------------- villagers
@@ -1802,7 +1840,7 @@ function endDialogue() {
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   // The intro has let go; now the village may introduce itself.
-  if (pendingWelcome) setTimeout(playWelcome, 420);
+  if (pendingWelcome && !welcomeTimer) welcomeTimer = window.setTimeout(playWelcome, 420);
   if (talkingTo) {
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward
@@ -1830,7 +1868,7 @@ function endDialogue() {
     if (def) {
       player.frozen = true;
       audio.pageFlip();
-      title.showLetter({ from: def.from, body: def.body });
+      title.showLetter({ from: def.from, body: def.body, typed: def.typed });
       return;
     }
     openLetterId = null;
@@ -2430,11 +2468,13 @@ function beginPlay(freshStart: boolean) {
     // a pacing bot: Enter through the letter, examine the well inside the
     // 900ms window, and the game's first words never played.
     const introTry = () => {
+      introTimer = 0;
       if (state.has('intro.done')) return;
       if (!textbox.isOpen) startNarration('intro.wake');
-      else setTimeout(introTry, 400);
+      else introTimer = window.setTimeout(introTry, 400);
     };
-    setTimeout(introTry, 900);
+    window.clearTimeout(introTimer);
+    introTimer = window.setTimeout(introTry, 900);
     // The welcome waits for the intro to finish. Shown here it was invisible:
     // the narration holds the textbox open for over a minute, quiet-hud fades
     // the plate and the toasts for all of it, and their timers run out behind
@@ -2459,7 +2499,12 @@ function reloadJourney() {
   pendingLetter = null;
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
+  window.clearTimeout(introTimer);
+  introTimer = 0;
+  window.clearTimeout(welcomeTimer);
+  welcomeTimer = 0;
   toasts.dismissAll();
+  dropPlate();
   state.forget();
   state.load();
   for (const tm of Object.values(maps)) tm.clearOverrides();
@@ -2488,7 +2533,14 @@ function reloadJourney() {
 
 /** The opening's stagecraft, held until the player can actually see it. */
 let pendingWelcome = false;
+/** At most one welcome in flight: every dialogue close used to schedule
+ * another while the first waited its 420ms, and two could land. */
+let welcomeTimer = 0;
+/** The intro's retry loop; a journal switch must be able to stop it. */
+let introTimer = 0;
 function playWelcome() {
+  welcomeTimer = 0;
+  if (!pendingWelcome) return;
   pendingWelcome = false;
   showPlate(map.name);
   toasts.show('walk with the arrow keys or WASD, or click where you want to go');
@@ -2691,6 +2743,10 @@ function update(dt: number) {
     if (quiet !== quietHud) {
       quietHud = quiet;
       document.body.classList.toggle('quiet-hud', quiet);
+      // Held, not lost: toasts and plates wait behind the hush and play
+      // whole once it lifts.
+      toasts.setHeld(quiet);
+      holdPlate(quiet);
     }
   }
   // The touch pad follows the same rhythm: overlays up, pad away.
@@ -2745,7 +2801,12 @@ function update(dt: number) {
     debugEl.dataset.on = showDebug ? '1' : '0';
   }
   if (input.takeMute()) {
-    toasts.show(audio.toggleMute() ? 'sound off' : 'sound on');
+    // The key was just pressed, so someone is looking: the reply shows even
+    // over the title or the pause card.
+    const line = audio.toggleMute() ? 'sound off' : 'sound on';
+    if (quietHud) toasts.showNow(line);
+    else toasts.show(line);
+    if (pauseMenu.isOpen) pauseMenu.refresh();
   }
 
   input.pollGamepad();
@@ -3774,7 +3835,7 @@ function pauseTap(t: HTMLElement, clientX: number, viaTouch: boolean) {
     // gesture the arrow keys make, aimed with the pointer.
     const r = row.getBoundingClientRect();
     steerTo(pauseRoot, '.p-row', row, (d) => pauseMenu.onDir(d));
-    pauseMenu.onDir(clientX > r.left + r.width / 2 ? 'right' : 'left');
+    pauseMenu.onDir(clientX >= r.left + r.width / 2 ? 'right' : 'left');
     audio.select();
     return;
   }
