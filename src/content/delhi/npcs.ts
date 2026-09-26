@@ -1901,7 +1901,7 @@ export const DELHI_LETTERS: LetterDef[] = [
     from: 'Mariamma, Kaithappuram',
     when: { has: ['c6.sadya.done'] },
     body: [
-      'Mone. The rain here has settled into its long habit and the pot still improves overnight. Joseph sleeps until meals; the correct system continues.',
+      'Kunje. The rain here has settled into its long habit and the pot still improves overnight. Joseph sleeps until meals; the correct system continues.',
       'Auntie Leela and Auntie Rosamma still argue about which way you folded your leaf at my sadya. Leela says toward, Rosamma says away, and both claim your fold as their teaching.',
       'They say in Delhi the aunties feed you until you surrender. Good. Surrender. It is the only fight worth losing daily.',
       'Eat properly, cover your head where heads are covered, and write one line. Mothers read between lines; it is our alphabet.',
@@ -1911,7 +1911,7 @@ export const DELHI_LETTERS: LetterDef[] = [
     id: 'delhi.mariamma',
     from: 'Mariamma, Kaithappuram',
     body: [
-      'Mone. The rain here has settled into its long habit and the pot still improves overnight. Joseph sleeps until meals; the correct system continues.',
+      'Kunje. The rain here has settled into its long habit and the pot still improves overnight. Joseph sleeps until meals; the correct system continues.',
       'The little Japanese umbrella stands by the door where you left the story of it. Visitors ask; I tell it longer each time. That is how umbrellas grow.',
       'They say in Delhi the aunties feed you until you surrender. Good. Surrender. It is the only fight worth losing daily.',
       'Eat properly, cover your head where heads are covered, and write one line. Mothers read between lines; it is our alphabet.',

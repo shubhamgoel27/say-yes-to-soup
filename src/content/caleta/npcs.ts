@@ -410,7 +410,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.simon.idle': {
     lines: [
-      { who: 'Don Simón', text: 'No hay horario, hijo. Todo depende de la mar. There is no schedule. There is only her mood.' },
+      { who: 'Don Simón', text: 'No hay horario, joven. Todo depende de la mar. There is no schedule. There is only her mood.' },
     ],
   },
   // The thread about her: the coast remembers a week of hesitation, and finds
@@ -606,7 +606,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.petro.first': {
     lines: [
       { text: 'You enter past the pots, because that is the only way in. Steam, ají, one long table half full of strangers not being strangers.' },
-      { who: 'Doña Petro', text: 'Sit. There is no menu, hija de la sierra. Today the pots say tortitas de choclo, so that is what the day means.' },
+      { who: 'Doña Petro', text: 'Sit. There is no menu, criatura de la sierra. Today the pots say tortitas de choclo, so that is what the day means.' },
       { text: 'Corn cakes, crisp at the edge, sweet in the middle. The person beside you passes the ají without being asked.' },
     ],
     effects: ['set:met.petro', 'journal:people.petro'],
@@ -627,7 +627,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.petro.noon': {
     lines: [
-      { who: 'Doña Petro', text: 'Ceviche? Hija, look at the light. It is past three; that fish came ashore at dawn and is done being ceviche today.' },
+      { who: 'Doña Petro', text: 'Ceviche? Corazón, look at the light. It is past three; that fish came ashore at dawn and is done being ceviche today.' },
       { who: 'Doña Petro', text: 'Noon to three, that is the whole dish. Come tomorrow and taste two thousand years of fuss; tonight we eat warm things.' },
     ],
     effects: ['set:c2.ceviche', 'journal:customs.noon'],
@@ -657,12 +657,12 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.petro.idle': {
     lines: [
-      { who: 'Doña Petro', text: 'Each weekday its own pot, hija. Come enough times and you will have eaten the whole week. That is the only menu.' },
+      { who: 'Doña Petro', text: 'Each weekday its own pot, corazón. Come enough times and you will have eaten the whole week. That is the only menu.' },
     ],
   },
   'mar.petro.cookAgain': {
     lines: [
-      { who: 'Doña Petro', text: 'The lisa came in fresh this morning. My knees are not what they were. Get behind the pots again, hija, and I will taste.' },
+      { who: 'Doña Petro', text: 'The lisa came in fresh this morning. My knees are not what they were. Get behind the pots again, corazón, and I will taste.' },
     ],
     choices: [
       { text: 'Cook the ceviche again', when: { has: ['c2.cook.done'] }, goto: 'mar.petro.cookReplay' },
@@ -679,7 +679,7 @@ export const CALETA_NODES: NodeMap = {
   // ---- the ceviche lesson: eaten first, learned second ----
   'mar.petro.teach': {
     lines: [
-      { who: 'Doña Petro', text: 'You have eaten it. Good. Eating is the exam you take before the lesson, hija.' },
+      { who: 'Doña Petro', text: 'You have eaten it. Good. Eating is the exam you take before the lesson, corazón.' },
       { who: 'Doña Petro', text: 'Come behind the pots. Nobody stands behind my pots except family, and the ceviche is how you apply.' },
     ],
     choices: [
@@ -696,7 +696,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.cook.later': {
     lines: [
-      { who: 'Doña Petro', text: 'Nerves season nothing, hija. Come back before the clock does its only trick.' },
+      { who: 'Doña Petro', text: 'Nerves season nothing, corazón. Come back before the clock does its only trick.' },
     ],
   },
   'mar.cook.finish': {

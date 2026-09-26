@@ -672,7 +672,7 @@ const COURSES: { item: string; slot: number; oops: string }[] = [
   { item: 'inji puli', slot: 0, oops: 'Auntie Rosamma clicks her tongue kindly. "Pickles go top left, where the narrow end points. Small things, small corner."' },
   { item: 'thoran', slot: 1, oops: '"Thoran up top, in the middle," Auntie Leela says, steering your hand with two fingers. "It has always lived there."' },
   { item: 'avial', slot: 2, oops: '"Avial keeps the top right seat," says Auntie Rosamma. "It is the eldest of the vegetables. Respect."' },
-  { item: 'banana', slot: 3, oops: 'Auntie Leela smiles. "The banana waits at bottom left, mole. Dessert should be visible but not ambitious."' },
+  { item: 'banana', slot: 3, oops: 'Auntie Leela smiles. "The banana waits at bottom left, kunje. Dessert should be visible but not ambitious."' },
   { item: 'rice', slot: 4, oops: '"Rice last, rice center," both aunties say together, delighted to finally agree on something.' },
 ];
 
@@ -1099,7 +1099,7 @@ export class SadyaPanel {
     this.sadyaCoach(true);
     this.audio.bump();
     this.hint =
-      'Three slips, and the aunties trade one look. The leaf is lifted, wiped away, and a fresh one laid. "Again, mole. Hands learn by doing it twice." Space takes the ladle back.';
+      'Three slips, and the aunties trade one look. The leaf is lifted, wiped away, and a fresh one laid. "Again, kunje. Hands learn by doing it twice." Space takes the ladle back.';
     if (this.scene && !calm()) this.scene.thump(2.5, 0.02);
   }
 
@@ -1661,7 +1661,7 @@ export class ChayaPanel {
     this.chayaCoach(true);
     this.audio.bump();
     this.hint =
-      'The pot goes light, then empty. Shaji looks at the shining counter, then at you. "Mone, today the table drank first. Space, and we boil again."';
+      'The pot goes light, then empty. Shaji looks at the shining counter, then at you. "Kunje, today the table drank first. Space, and we boil again."';
     if (sc && !calm()) sc.thump(3, 0.03);
   }
 

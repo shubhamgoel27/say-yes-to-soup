@@ -1164,7 +1164,7 @@ export class NetPanel {
  * CevichePanel: behind Doña Petro's pots at noon, assembling the dish in its
  * one true order. The clock is the enemy that isn't: the only timing that
  * matters is the lime "kiss," a bar you must pull the fish out of while it is
- * bright. Leave it too long and the fish is "cooked to death, hija"; Petro
+ * bright. Leave it too long and the fish is "cooked to death, corazón"; Petro
  * hands you more fish, warmly, forever. Nothing else can go wrong. In the
  * hard telling the forever runs out: two lisas, then the noon moves on.
  */
@@ -1433,15 +1433,15 @@ export class CevichePanel {
           // The hard telling has two lisas and no third.
           this.lost = true;
           coach('c2.cook.start', this.cevAdvice());
-          this.hint = '"Two lisas cooked to death is enough for one noon, hija." She takes the board back, kindly, and feeds you anyway. Press Space.';
+          this.hint = '"Two lisas cooked to death is enough for one noon, corazón." She takes the board back, kindly, and feeds you anyway. Press Space.';
           return;
         }
         this.dropAt = sc.time; // more fish arrives, tumbling in fresh
         this.milk = Math.min(this.milk, 0.3);
         this.hint = this.hard
-          ? '"Cooked to death, hija." She hands you the LAST lisa. "The lime kisses. It does not marry." Out in the bright sliver, or the noon goes on without you.'
+          ? '"Cooked to death, corazón." She hands you the LAST lisa. "The lime kisses. It does not marry." Out in the bright sliver, or the noon goes on without you.'
           : this.spoiled === 1
-            ? '"Cooked to death, hija." She eats the evidence and hands you more fish. "The lime kisses. It does not marry."'
+            ? '"Cooked to death, corazón." She eats the evidence and hands you more fish. "The lime kisses. It does not marry."'
             : '"Again dead! Good, I was hungry." More fish arrives. Pull it OUT while the bar burns bright.';
       }
     }

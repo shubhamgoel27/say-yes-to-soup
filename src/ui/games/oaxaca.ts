@@ -84,7 +84,7 @@ const SMOKE_WARN =
 const SMOKE_SAVED = 'Off the heat in time. Chela, without turning around: good ears. That is most of cooking.';
 const SCORCHED =
   'The chiles go to carbon and the smoke turns bitter. Chela lifts the whole pot off the fire, saying nothing unkind.<br>' +
-  '<b>Chela:</b> I have burnt this mole twice, hija, and once with my mother watching. Space, and we begin the pot again.';
+  '<b>Chela:</b> I have burnt this mole twice, mi vida, and once with my mother watching. Space, and we begin the pot again.';
 const SECOND_POT = 'Fresh chiles, a washed pot, the same hour ahead. The second one is always better. She would know.';
 const OPENING = 'The spoon stands up in the pot by itself. Stir in circles: up, right, down, left.';
 
@@ -105,7 +105,7 @@ const HARD_REST = 1.9;
 const HARD_REST_GRACE = 2.2;
 
 const HARD_OPENING =
-  'Chela: The fiesta pot, hija. Same circle, more of it, and the comal in a mood. The pot catches the moment the spoon rests, so keep it walking.';
+  'Chela: The fiesta pot, mi vida. Same circle, more of it, and the comal in a mood. The pot catches the moment the spoon rests, so keep it walking.';
 const HARD_LINES = [
   'Chela: A fiesta pot feeds the whole village, and the village can taste a tired arm. Do not have one.',
   'Chela: My mother stirred nine rounds the night of the boda. Ninety guests, one spoon. This spoon.',

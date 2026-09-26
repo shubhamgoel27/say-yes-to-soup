@@ -1440,6 +1440,9 @@ export const NODES: NodeMap = {
   'ex.doorShut': {
     lines: [{ text: 'Latched. From inside: the clack of a loom, a radio speaking Quechua, someone laughing at it.' }],
   },
+  'ex.doorShut.away': {
+    lines: [{ text: 'Latched. From inside: a radio in a language you are still learning, a pan, someone laughing at both.' }],
+  },
   'ex.chomba': {
     lines: [
       { text: 'The great clay mother of the house. Inside, chicha dreams its slow, sour dreams.' },
@@ -1756,7 +1759,7 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   flower: [{ node: 'ex.flower' }],
   tuft: [{ node: 'ex.tuft', scope: 'home' }, { node: 'ex.tuft.away', scope: 'away' }],
   rock: [{ node: 'ex.rock', scope: 'home' }, { node: 'ex.rock.away', scope: 'away' }],
-  doorShut: [{ node: 'ex.doorShut' }],
+  doorShut: [{ node: 'ex.doorShut', scope: 'home' }, { node: 'ex.doorShut.away', scope: 'away' }],
   chomba: [{ node: 'ex.chomba' }],
   qoncha: [{ node: 'ex.qoncha' }],
   loom: [{ node: 'ex.loom' }],

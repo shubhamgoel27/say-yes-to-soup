@@ -195,7 +195,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.petro.reunion': {
     lines: [
       { text: 'You enter past the pots, because that is still the only way in. Steam, ají, the long table half full of strangers not being strangers.' },
-      { who: 'Doña Petro', text: 'Hija de la sierra! Sit. Do not tell me the whole ocean yet; in this house the pot goes first.' },
+      { who: 'Doña Petro', text: 'Criatura de la sierra! Sit. Do not tell me the whole ocean yet; in this house the pot goes first.' },
       { who: 'Doña Petro', text: 'The sudado is on. It has been on, more or less, since you left. Some pots are promises.' },
     ],
     effects: ['set:c10.petro.seen'],

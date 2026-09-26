@@ -1063,10 +1063,10 @@ export const CROSSING_LETTERS: LetterDef[] = [
     id: 'c3.petro',
     from: 'Doña Petro, La Picantería',
     body: [
-      'Hija. The fog has lifted twice since you sailed, and the village has decided it is your doing. Let them; it costs nothing.',
+      'Corazón. The fog has lifted twice since you sailed, and the village has decided it is your doing. Let them; it costs nothing.',
       'Eat warm things at night. The sea is cold at the bottom and it climbs. Ask your captain for soup, not for courage.',
       'Her cook has a word, the capitana says: baon. Food packed for somebody’s watch, love kept warm under a cloth. Eat yours, and carry someone else’s.',
-      'The pots say you come back this way someday. The pots are never wrong, hija. Only slow.',
+      'The pots say you come back this way someday. The pots are never wrong, corazón. Only slow.',
     ],
   },
 ];

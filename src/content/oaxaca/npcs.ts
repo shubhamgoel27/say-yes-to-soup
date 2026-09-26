@@ -426,7 +426,7 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { text: 'The altar rises through the afternoon: two levels, then a third, cloth smoothed, the marigold arch tied over everything.' },
       { text: 'Her mother’s photograph goes up last, next to a cup for tejate. You hand her things before she asks; she stops noticing you are a guest.' },
-      { who: 'Doña Refugio', text: 'There. The mole is resting, the bread is up, the path is laid. The ledger line is paid, hija. Fifty years late and right on time.' },
+      { who: 'Doña Refugio', text: 'There. The mole is resting, the bread is up, the path is laid. The ledger line is paid, corazón. Fifty years late and right on time.' },
     ],
     effects: ['set:c9.family.done', 'set:c9.debt.paid'],
     next: 'c9.refugio.page2',
@@ -435,7 +435,7 @@ export const OAXACA_NODES: NodeMap = {
     lines: [
       { text: 'She opens the ledger to cross out the line. Then she turns the page and goes still.' },
       { text: 'Below the old ink, in her mother’s smaller hand: Debts of kindness pass to the children. Both directions.' },
-      { who: 'Doña Refugio', text: 'Both directions, hija. You paid hers. Now this village pays what it owes her, to you. We are building your Nani an ofrenda.' },
+      { who: 'Doña Refugio', text: 'Both directions, corazón. You paid hers. Now this village pays what it owes her, to you. We are building your Nani an ofrenda.' },
     ],
     next: 'c9.altar.hub',
   },
@@ -509,7 +509,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.altar.begin': {
     lines: [
-      { who: 'Doña Refugio', text: 'Three levels. What guides her, what feeds her, what walks with her. Your hands, hija. We will tell you nothing unless you ask.' },
+      { who: 'Doña Refugio', text: 'Three levels. What guides her, what feeds her, what walks with her. Your hands, corazón. We will tell you nothing unless you ask.' },
     ],
     effects: ['set:c9.ofrenda.start'],
   },
@@ -687,7 +687,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.chela.moleAgain': {
     lines: [
-      { who: 'Abuela Chela', text: 'There is always another pot, hija. This valley eats mole faster than one shoulder can stir it.' },
+      { who: 'Abuela Chela', text: 'There is always another pot, mi vida. This valley eats mole faster than one shoulder can stir it.' },
     ],
     choices: [
       { text: 'Take the spoon again', when: { has: ['c9.mole.done'] }, goto: 'c9.chela.moleReplay' },
@@ -886,7 +886,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.care.night': {
     lines: [
-      { who: 'Don Melitón', text: 'The dead, señorita. The first night the angelitos, the little ones, with sweets and no chile. The second night the grown ones, with mezcal.' },
+      { who: 'Don Melitón', text: 'The dead, joven. The first night the angelitos, the little ones, with sweets and no chile. The second night the grown ones, with mezcal.' },
       { who: 'Don Melitón', text: 'It is not a mourning. It is a reunion with candles. There will be laughing at these graves, and it will be the respectful kind.' },
     ],
   },
@@ -931,7 +931,7 @@ export const OAXACA_NODES: NodeMap = {
   'c9.care.after': {
     lines: [
       { who: 'Don Melitón', text: 'The candles are low and nobody has gone home. That is the whole review; the village will repeat it until roughly forever.' },
-      { who: 'Don Melitón', text: 'Doors stay open for you here, señorita. That is not a saying. I mean the doors.' },
+      { who: 'Don Melitón', text: 'Doors stay open for you here, joven. That is not a saying. I mean the doors.' },
     ],
   },
   'c9.care.idle': {

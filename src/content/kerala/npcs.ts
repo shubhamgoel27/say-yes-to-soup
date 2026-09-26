@@ -413,7 +413,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.blessing': {
     lines: [
-      { who: 'Mariamma', text: 'Come here. Rowed with the club, served at my sadya, stood in the returning rain like a local fool. Mone, you are done arriving.' },
+      { who: 'Mariamma', text: 'Come here. Rowed with the club, served at my sadya, stood in the returning rain like a local fool. Kunje, you are done arriving.' },
       { text: 'She holds your face in both hands, the way you handle something you intend to keep. Her eyes shine; the good kind, this time.' },
       { who: 'Mariamma', text: 'The sea took my son and sends me letters. Now it takes you too. Go to Moosa at the jetty; the wind is already asking about you.' },
     ],
@@ -446,7 +446,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.idle': {
     lines: [
-      { who: 'Mariamma', text: 'Mone, did you eat? Do not answer; sit, and the answer will become yes.' },
+      { who: 'Mariamma', text: 'Kunje, did you eat? Do not answer; sit, and the answer will become yes.' },
     ],
   },
 
@@ -541,7 +541,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.shaji.cookoffer': {
     lines: [
       { text: 'Shaji has been watching you drink the way a coach watches footwork. He sets two empty tumblers on the counter like a dare.' },
-      { who: 'Shaji', text: 'Mone, your wrists look ready. You have watched enough chaya; it is time the chaya watched you. Come behind the kettle.' },
+      { who: 'Shaji', text: 'Kunje, your wrists look ready. You have watched enough chaya; it is time the chaya watched you. Come behind the kettle.' },
     ],
     choices: [
       { text: 'Step behind the kettle', goto: 'c6.shaji.cookgo' },
@@ -562,7 +562,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.cook.finish': {
     lines: [
       { text: 'The last glass travels down the counter to a poler who never ordered and was always going to get one. The froth holds its head.' },
-      { who: 'Shaji', text: 'Wrist, height, froth, and no funeral for the spills. Mone, I promote you: customer to nuisance. It is the highest rank I give.' },
+      { who: 'Shaji', text: 'Wrist, height, froth, and no funeral for the spills. Kunje, I promote you: customer to nuisance. It is the highest rank I give.' },
     ],
     effects: ['clear:c6.cook.start', 'set:c6.cook.done'],
     choices: [
