@@ -92,8 +92,10 @@ export const EXAMINES: Record<string, WorldExamineArm[]> = (() => {
         if (arm.map) {
           (scoped[kind] ??= []).push({ ...arm, chapter: c.id });
         } else {
-          for (const mapId of ownMaps) (scoped[kind] ??= []).push({ ...arm, map: mapId, chapter: c.id });
-          (fallbacks[kind] ??= []).push({ ...arm, chapter: c.id });
+          if (arm.scope !== 'away') {
+            for (const mapId of ownMaps) (scoped[kind] ??= []).push({ ...arm, map: mapId, chapter: c.id });
+          }
+          if (arm.scope !== 'home') (fallbacks[kind] ??= []).push({ ...arm, chapter: c.id });
         }
       }
     }

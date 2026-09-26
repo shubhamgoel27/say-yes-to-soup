@@ -448,7 +448,7 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Nilda', text: 'My mother came down from the sierra with one just like it. Her whole village in eleven rows of wool.' },
       { who: 'Nilda', text: 'My aunt still lives up there, past the pass. So you see, half of me is from where you just walked.' },
     ],
-    effects: ['set:met.nilda', 'set:c2.kin', 'journal:people.nilda'],
+    effects: ['set:met.nilda', 'journal:people.nilda'],
   },
   'mar.nilda.first': {
     lines: [

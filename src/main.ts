@@ -2763,8 +2763,13 @@ function update(dt: number) {
       return ox === fx && oy === fy;
     });
     // Only THINGS earn the dot (props, seats, mounds, people); bare ground
-    // still answers when examined, but quietly, undiscovered on purpose.
+    // still answers when examined, but quietly, undiscovered on purpose,
+    // unless a live arm there carries `cue` (an errand laid on the ground).
     const objKind = map.object(fx, fy)?.t;
+    const groundKind = objKind === undefined ? map.ground(fx, fy).t : undefined;
+    const groundCue =
+      groundKind !== undefined &&
+      (EXAMINES[groundKind]?.some((a) => a.cue && (!a.map || a.map === map.id) && state.check(a.when)) ?? false);
     const digThere =
       map.id === 'village' &&
       state.has('dig.invite') &&
@@ -2772,6 +2777,7 @@ function update(dt: number) {
       DIG_SPOTS.some((sp) => sp.at[0] === fx && sp.at[1] === fy && !state.has(sp.flag));
     const examThere =
       digThere ||
+      groundCue ||
       (objKind !== undefined &&
         objKind !== 'blocked' &&
         (sitKindsOn(map.id).has(objKind) ||

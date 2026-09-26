@@ -52,7 +52,24 @@ export type EventNode = { when?: Cond; node: string };
  * `map` only applies on that map, letting the same prop speak differently in
  * different chapters (the merged record lists map-tagged arms first).
  */
-export type ExamineArm = { when?: Cond; node: string; map?: string };
+/**
+ * `cue` earns bare ground the curiosity dot while the arm is live. Ground
+ * normally answers quietly, undiscovered on purpose; an arm that is the
+ * player's current errand (the petal path) must not hide like that.
+ */
+export type ExamineArm = {
+  when?: Cond;
+  node: string;
+  map?: string;
+  cue?: boolean;
+  /**
+   * For untagged arms only. By default an untagged arm speaks on its own
+   * chapter's maps AND serves as the world's fallback for that kind. 'home'
+   * keeps it to its own maps; 'away' makes it the fallback only. The Andes
+   * grass ("the only place in the valley") once answered in Kerala.
+   */
+  scope?: 'home' | 'away';
+};
 
 /**
  * `her` is the thread about Nani herself, assembled from what strangers along
