@@ -236,12 +236,12 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c7.kanga.game'], not: ['c7.kanga.done'] },
-    text: 'You can hear cloth now, says Bi Amina. Go back to the shop for the pair: one to wear, and one that was never going to be yours.',
+    text: 'You can hear cloth now, says Bi Amina. Stay at her counter for the pair: one to wear, and one that was never going to be yours.',
     who: 'amina',
   },
   {
     when: { has: ['c7.met.bakari'], not: ['c7.sail.ok'] },
-    text: 'Kapteni Bakari offered the ngalawa and the kaskazi. Keep the telltale streaming; luffing only slows you, and irons costs nothing but the reach.',
+    text: 'Kapteni Bakari watches the water between dominoes, and a ngalawa waits below his table. Go back to him. Aboard, keep the telltale streaming; luffing only slows you.',
     who: 'bakari',
   },
   {
@@ -292,5 +292,6 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   {
     when: { has: ['c7.arrived'], not: ['c7.complete'] },
     text: 'The village runs at the tide’s pace: an elder on his bench, a shop of talking cloth, cloves drying by the lane, and a sea floor to walk at low tide.',
+    who: ['rashid', 'amina', 'juma', 'bakari', 'salma', 'zuberi', 'issa', 'ali'],
   },
 ];

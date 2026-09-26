@@ -289,7 +289,7 @@ export const TASKS: TaskDef[] = [
   {
     when: { has: ['dig.invite'], not: ['dig.done'] },
     text: 'Justina pointed out glinting mounds among the terrace rows. Dig every one; she promises each papa has a name worth hearing.',
-    at: ['village', 36, 24],
+    at: ['village', 35, 21],
   },
   {
     when: { has: ['watia.start'] },
@@ -324,7 +324,7 @@ export const TASKS: TaskDef[] = [
   {
     when: { has: ['bundle.delivered'], not: ['challar.done'] },
     text: 'People keep mentioning the chichería under the red flag. Step through the doorway of Rosa\'s house; someone inside has been holding a seat for forty years.',
-    at: ['village', 12, 25],
+    who: 'teofilo',
   },
   {
     when: { has: ['bundle.delivered'], not: ['errand.carmen-wichuna', 'pallay.done'] },
@@ -347,7 +347,7 @@ export const TASKS: TaskDef[] = [
   {
     when: { has: ['errand.nani-letter'], not: ['story.complete'] },
     text: "Nani's letter wants opening at the gate, past the terraces, where she meant to open it.",
-    at: ['village', 40, 16],
+    at: ['village', 41, 16],
   },
   {
     // The one documented stuck point: a llama wall with an off-screen key.
@@ -358,7 +358,7 @@ export const TASKS: TaskDef[] = [
   {
     when: { has: ['story.complete'], not: ['c2.arrived'] },
     text: 'The gate stands open: the pass, Paca, the switchbacks of La Bajada. The road runs all the way down now; there is a village at the bottom where the air smells of salt. Follow the descent to its end.',
-    at: ['la-bajada', 19, 16],
+    at: ['la-bajada', 20, 16],
   },
   {
     when: { not: ['met.rosa'] },

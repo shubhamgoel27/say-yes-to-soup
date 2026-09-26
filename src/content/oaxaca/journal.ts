@@ -229,12 +229,15 @@ export const OAXACA_TASKS: TaskDef[] = [
   {
     when: { has: ['c9.path.task'], not: ['c9.path.laid'] },
     text: 'Melitón’s costal of petals is over your shoulder. Walk the lane below the camposanto gate and lay the marigold path, thick where it bends.',
-    at: ['oaxaca', 40, 2],
+    // A strip of the bare petal lane itself: the thread ends facing it, and
+    // Space on that ground is where the petals go down.
+    at: ['oaxaca', 40, 4],
   },
   {
     when: { has: ['c9.ledger.out'], not: ['c9.ledger'] },
     text: 'The guelaguetza ledger lies open on Refugio’s table: fifty years of kindness with page numbers. Read until a name stops you.',
-    who: 'refugio',
+    // The table, not Refugio: reading it is the player's own act.
+    at: ['cocina', 10, 4],
   },
   {
     when: { has: ['c9.ledger'], not: ['c9.telegram'] },
@@ -269,7 +272,8 @@ export const OAXACA_TASKS: TaskDef[] = [
   {
     when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.complete'] },
     text: 'Tonight the camposanto is lit. Follow your own petals through the marigold arch. Don Melitón says the night knows its business.',
-    at: ['oaxaca', 40, 2],
+    // The vigil begins with Melitón himself; the arch is only the way in.
+    who: 'meliton',
   },
   {
     when: { has: ['met.refugio', 'met.elias', 'met.chela'], not: ['c9.ledger.out'] },
@@ -289,10 +293,11 @@ export const OAXACA_TASKS: TaskDef[] = [
   {
     when: { has: ['c9.complete'] },
     text: 'The ledger is closed, both directions. The colectivo at the plaza’s south corner leaves ahorita, whenever that is. The village stays warm until then.',
-    at: ['oaxaca', 23, 29],
+    at: ['oaxaca', 23, 28],
   },
   {
     when: { has: ['c9.arrived'], not: ['c9.complete'] },
     text: 'A valley village dressed for its biggest week: the market lane, the portales, a tejatera who wants to see your book once you have met her village.',
+    who: ['refugio', 'chela', 'elias', 'eugenia', 'tacho', 'meliton'],
   },
 ];

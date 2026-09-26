@@ -64,7 +64,7 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
     text: "The road up is the same road down, older now: La Bajada, the pass, the gate. Ch'aska Pampa is at the top, and the flag will be up.",
-    at: ['la-caleta', 8, 1],
+    who: 'rosa',
   },
   {
     when: { has: ['c10.rosa.seen'], not: ['c10.aurelio.seen'] },
@@ -99,7 +99,7 @@ export const RETURN_TASKS: TaskDef[] = [
   {
     when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
     text: 'One page left. The well, where the water is, where it started.',
-    at: ['village', 21, 16],
+    at: ['village', 21, 15],
   },
   {
     when: { has: ['c10.arrived'], not: ['story.end'] },

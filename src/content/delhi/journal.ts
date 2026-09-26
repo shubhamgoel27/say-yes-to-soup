@@ -345,7 +345,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['errand.pigeon-home'], not: ['c11.pigeon.home'] },
     text: 'Begum rides in your jacket, splinted wing and one unimpressed eye. Sushila\'s instructions: straight up the stairs, no detours, no chai.',
-    at: ['delhi-rooftop', 9, 4],
+    who: 'yusuf',
   },
   {
     when: { has: ['c11.met.mehr'], not: ['c11.attar.mitti'] },
@@ -375,7 +375,7 @@ export const DELHI_TASKS: TaskDef[] = [
   {
     when: { has: ['c11.arrived'], not: ['letter.read.delhi.pilar'] },
     text: 'A red post box stands on the chowk, imperially confident. Mail has a way of finding you; it found this box first.',
-    at: ['delhi', 38, 10],
+    at: ['delhi', 45, 19],
   },
   {
     when: { has: ['c11.duel.done', 'c11.chit.bombay'], not: ['c11.complete'] },
@@ -394,10 +394,11 @@ export const DELHI_TASKS: TaskDef[] = [
     // to the moon story or its page.
     when: { has: ['c11.jog2'], not: ['page.customs.chandni'] },
     text: 'Joginder said the silver street rumor is wrong and would not say more. The bricks of the chowk have been asked before; ask them yourself.',
-    at: ['delhi', 30, 15],
+    at: ['delhi', 42, 8],
   },
   {
     when: { has: ['c11.arrived'], not: ['c11.complete'] },
     text: 'Kucha Aab-o-Daana: the gali of the griddle, the spice end, the chowk, the rooftops. Walk it slowly; it is loud, but it notices.',
+    who: ['bantu', 'kamla', 'joginder', 'yusuf', 'mehr', 'sushila', 'akhtar', 'sethji'],
   },
 ];

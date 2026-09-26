@@ -208,7 +208,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] },
     text: 'The karaoke machine in the mess has come out from under its cover. Attendance is not so much optional as inevitable.',
-    at: ['galley', 11, 1],
+    at: ['galley', 12, 1],
   },
   {
     when: { has: ['c3.shellback'], not: ['joseph.letter'] },
@@ -246,11 +246,11 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     when: { has: ['c3.complete'] },
     text: 'Land birds lead the bow now. Go stand at the very point of it, by the jackstaff, and let Japan happen to you.',
-    at: ['ship', 21, 3],
+    at: ['ship', 21, 2],
   },
   {
     when: { has: ['c3.arrived'], not: ['c3.complete'] },
     text: 'The ship is a village of two dozen: the galley under the house, the bow past the containers, the rail all the way around. Meet her.',
-    who: 'mangben',
+    who: ['mangben', 'joseph', 'hanaC3', 'olena', 'bosun', 'riosC3'],
   },
 ];

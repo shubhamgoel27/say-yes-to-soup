@@ -6,6 +6,7 @@ import type { RouteStop } from '../content/route';
 import { makeDishArt } from '../art/dishes';
 import { makePhotoArt } from '../art/albumart';
 import { PHOTOS } from './album';
+import { openTasks } from '../content/guide';
 
 export type { TaskDef };
 
@@ -99,13 +100,12 @@ export class JournalUI {
   }
 
   /** Every open thread's full definition, in priority order. The red thread
-   * asks for the first one's `who`/`at`, so the defs are the real currency
-   * here and the chip's text list is derived from them. */
+   * follows the first one that resolves to a `who`/`at`, so the defs are the
+   * real currency here and the chip's text list is derived from them. The
+   * guide owns the rule (live chapter, conditions met, and somebody named
+   * still has news), so the chip and the thread can never disagree. */
   activeTaskDefs(): WorldTask[] {
-    return this.tasks
-      // A chapter stops advising you the moment you have moved on past it.
-      .filter((t) => !t.supersededBy.some((f) => this.state.has(f)))
-      .filter((t) => this.state.check(t.when));
+    return openTasks(this.tasks, this.state);
   }
 
   /** Every open thread, in priority order. */

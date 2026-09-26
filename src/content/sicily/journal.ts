@@ -268,14 +268,16 @@ export const SICILY_TASKS: TaskDef[] = [
   {
     when: { has: ['c8.arrived'], not: ['letter.read.sicily.pilar'] },
     text: 'The POSTE window in the piazza is open, technically. Mail from home crosses two oceans slower than gossip; there should be some waiting.',
-    at: ['sicily', 27, 18],
+    at: ['sicily', 27, 17],
   },
   {
     when: { has: ['c8.complete'] },
     text: 'Veracruz exists, in principle. Until the gangway calls: granita at Alfio’s, the dusk walk, and everyone who fed you owed a goodbye.',
+    who: 'patane',
   },
   {
     when: { has: ['c8.arrived'], not: ['c8.complete'] },
     text: 'The town is small and loud and generous: the singing stall, the granita bar, the church steps, the circolo doorway, the black beach. Meet it.',
+    who: ['concetta', 'turi', 'alfio', 'c8elders', 'donsaro', 'nino', 'rosaria', 'patane'],
   },
 ];

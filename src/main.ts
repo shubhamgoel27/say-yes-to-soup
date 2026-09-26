@@ -46,6 +46,7 @@ import {
 } from './content/world';
 import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
+import { atFor, doorsFrom, liveWho, nextMapToward, npcMap } from './content/guide';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -2125,69 +2126,56 @@ const GLINT = {
   sessionGraceS: 300,
 };
 
-/** Doors out of a map, from the authored data plus the runtime east gate. */
-function doorsFrom(mapId: string): { to: string; at: [number, number] }[] {
-  const doors = (REGION_MAPS[mapId]?.triggers ?? [])
-    .filter((t): t is TriggerDef & { type: 'door' } => t.type === 'door')
-    .map((t) => ({ to: t.to, at: [t.at[0], t.at[1]] as [number, number] }));
-  if (mapId === 'village' && state.has('story.complete')) {
-    doors.push({ to: 'east-road', at: [41, 16] }, { to: 'east-road', at: [42, 16] });
-  }
-  return doors;
-}
-
-/** BFS over the door graph: the next map to step into on the way to `target`,
- * or null when no chain of doors connects here to there. */
-function nextMapToward(target: string): string | null {
-  if (target === map.id) return null;
-  const prev = new Map<string, string>();
-  const queue = [map.id];
-  const seen = new Set([map.id]);
-  for (let head = 0; head < queue.length; head++) {
-    const cur = queue[head]!;
-    for (const d of doorsFrom(cur)) {
-      if (seen.has(d.to)) continue;
-      seen.add(d.to);
-      prev.set(d.to, cur);
-      if (d.to === target) {
-        let at = target;
-        while (prev.get(at) !== map.id) at = prev.get(at) ?? map.id;
-        return at;
-      }
-      queue.push(d.to);
-    }
-  }
-  return null;
-}
-
-/** Where the active task continues, as a cell on the current map. `at` wins;
- * else `who` at their live position if they are here; else the door the
- * player should take toward wherever the target actually is. */
-function threadTargetFor(task: WorldTask): { cell: [number, number]; adjacent: boolean } | null {
+/**
+ * Where a task continues, as a cell on the current map, measured from `from`.
+ * An `at` names a door to walk through, or a thing to face: the thread ends
+ * beside the thing and its loop lands on the thing itself, never on the
+ * player's own feet. A `who` names one person or a crowd; the thread takes
+ * the nearest of them here who still has something new to say (the guide
+ * has already dropped anyone down to their idle line). Anything on another
+ * map resolves to the closest door on this one that leads toward it.
+ */
+function threadTargetFor(
+  task: WorldTask,
+  from: [number, number],
+): { cell: [number, number]; adjacent: boolean } | null {
+  const solid = (x: number, y: number) => map.solid(x, y);
   let targetMap: string | null = null;
-  if (task.at) {
-    const [m, x, y] = task.at;
-    if (m === map.id) return { cell: [x, y], adjacent: false };
+  const at = atFor(task, state);
+  if (at) {
+    const [m, x, y] = at;
+    if (m === map.id) return { cell: [x, y], adjacent: map.triggerAt(x, y)?.type !== 'door' };
     targetMap = m;
-  } else if (task.who) {
-    const v = villagers.find((n) => n.def.id === task.who);
-    if (!v) return null;
-    if (v.def.map === map.id) {
-      // Named but not present (gated away, faded for the night): no thread.
-      if (!state.check(v.def.when) || v.fade <= 0.02) return null;
-      return { cell: v.actor.occupies(), adjacent: true };
+  } else {
+    const live = liveWho(task, state);
+    let best = Infinity;
+    let bestCell: [number, number] | null = null;
+    for (const id of live) {
+      const v = villagers.find((n) => n.def.id === id);
+      // Here but faded for the night: not somewhere the thread can end.
+      if (!v || v.def.map !== map.id || v.fade <= 0.02) continue;
+      const cell = v.actor.occupies();
+      const p = pathBetween(from, cell[0], cell[1], solid, true);
+      if (p && p.length < best) {
+        best = p.length;
+        bestCell = cell;
+      }
     }
-    targetMap = v.def.map;
+    if (bestCell) return { cell: bestCell, adjacent: true };
+    targetMap =
+      live
+        .map((id) => npcMap(id))
+        .find((m): m is string => !!m && m !== map.id && !!nextMapToward(map.id, m, state)) ?? null;
   }
   if (!targetMap) return null;
-  const hop = nextMapToward(targetMap);
+  const hop = nextMapToward(map.id, targetMap, state);
   if (!hop) return null;
   // Several doors can lead the same way; the thread takes the closest one.
   let best: number = Infinity;
   let bestAt: [number, number] | null = null;
-  for (const d of doorsFrom(map.id)) {
+  for (const d of doorsFrom(map.id, state)) {
     if (d.to !== hop) continue;
-    const p = pathBetween(player.occupies(), d.at[0], d.at[1], (x, y) => map.solid(x, y));
+    const p = pathBetween(from, d.at[0], d.at[1], solid);
     if (p && p.length < best) {
       best = p.length;
       bestAt = d.at;
@@ -2197,29 +2185,32 @@ function threadTargetFor(task: WorldTask): { cell: [number, number]; adjacent: b
 }
 
 /**
- * The walk path the thread would lie along, from `from` toward the active
- * task, capped at THREAD_MAX_TILES. Walkable ground only, bodies ignored:
- * the thread is yarn on the floor, not a route around whoever is passing.
- * Null when nothing resolves; absence is better than noise.
+ * The walk path the thread would lie along, from `from` toward the first
+ * open task that resolves, capped at THREAD_MAX_TILES. Walkable ground only,
+ * bodies ignored: the thread is yarn on the floor, not a route around
+ * whoever is passing. A task with nowhere to point hands the thread to the
+ * next one down; only when none resolves does the thread rest.
  */
 function threadPathFrom(
   from: [number, number],
 ): { tiles: [number, number][]; loop: [number, number] | null; task: WorldTask } | null {
-  const task = journalUI.activeTaskDefs()[0];
-  if (!task || (!task.who && !task.at)) return null;
-  const aim = threadTargetFor(task);
-  if (!aim) return null;
   const solid = (x: number, y: number) => map.solid(x, y);
-  let path = pathBetween(from, aim.cell[0], aim.cell[1], solid, aim.adjacent);
-  // A fixed spot can be a prop with no floor of its own; point beside it.
-  if (!path && !aim.adjacent) path = pathBetween(from, aim.cell[0], aim.cell[1], solid, true);
-  if (!path) return null;
-  const reaches = path.length <= THREAD_MAX_TILES;
-  return {
-    tiles: [from, ...path.slice(0, THREAD_MAX_TILES)],
-    loop: reaches ? aim.cell : null,
-    task,
-  };
+  for (const task of journalUI.activeTaskDefs()) {
+    if (task.who === undefined && !task.at) continue;
+    const aim = threadTargetFor(task, from);
+    if (!aim) continue;
+    let path = pathBetween(from, aim.cell[0], aim.cell[1], solid, aim.adjacent);
+    // A fixed spot can be a prop with no floor of its own; point beside it.
+    if (!path && !aim.adjacent) path = pathBetween(from, aim.cell[0], aim.cell[1], solid, true);
+    if (!path) continue;
+    const reaches = path.length <= THREAD_MAX_TILES;
+    return {
+      tiles: [from, ...path.slice(0, THREAD_MAX_TILES)],
+      loop: reaches ? aim.cell : null,
+      task,
+    };
+  }
+  return null;
 }
 
 let threadToastAt = -Infinity;

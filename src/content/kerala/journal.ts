@@ -256,7 +256,7 @@ export const KERALA_TASKS: TaskDef[] = [
   {
     when: { has: ['c6.letter.delivered'], not: ['letter.read.kochi.pilar'] },
     text: 'Mail waits at the jetty office window, held under a tin of cardamom. One envelope looks suspiciously like an invoice.',
-    at: ['kerala', 21, 22],
+    at: ['kerala', 25, 25],
   },
   {
     when: { has: ['c6.row.done', 'c6.sadya.done', 'c6.rain'], not: ['c6.complete'] },
@@ -264,12 +264,18 @@ export const KERALA_TASKS: TaskDef[] = [
     who: 'mariamma',
   },
   {
-    when: { has: ['c6.complete'] },
+    when: { has: ['c6.complete'], not: ['c6.depart.ready'] },
+    text: 'The whole spit has vouched for you. Moosa, counting cardamom by the jetty office, knows where the spice goes next. Ask him which road is yours.',
+    who: 'moosa',
+  },
+  {
+    when: { has: ['c6.depart.ready'] },
     text: 'Moosa has named you a train and a spice street in Delhi: Khari Baoli, three days north. Until then, Kaithappuram keeps your mornings.',
     who: 'moosa',
   },
   {
     when: { has: ['c6.arrived'], not: ['c6.complete'] },
     text: 'Kaithappuram is a spit of land between paddy and lagoon: the thattukada, the reading room, the coir yard, the palms. Walk it slowly; it notices.',
+    who: ['mariamma', 'shaji', 'omana', 'varkey', 'kuttan', 'moosa', 'appu', 'librarian'],
   },
 ];

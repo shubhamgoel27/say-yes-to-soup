@@ -118,8 +118,10 @@ export type TaskDef = {
   when: Cond;
   text: string;
   /** Where this thread continues: an NPC the player should find. Nani's red
-   * thread (the band Carmen tied) unspools toward them when asked. */
-  who?: string;
+   * thread (the band Carmen tied) unspools toward them when asked. A list
+   * names a crowd: the thread picks the nearest of them who still has
+   * something new to say, and skips anyone down to their idle line. */
+  who?: string | string[];
   /** Or a fixed spot: [mapId, x, y]. Wins over `who` when both are given. */
   at?: [string, number, number];
 };

@@ -237,7 +237,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   {
     when: { has: ['c4.taisomen'], not: ['c4.ofuro'] },
     text: 'The ofuro steams behind its own wall at the minshuku. There is a right order to it, and Fumi can hear a shortcut through the wall.',
-    at: ['minshuku', 10, 2],
+    at: ['minshuku', 10, 1],
   },
   {
     when: { has: ['c4.dashi'], not: ['c4.cook.done'] },
@@ -282,7 +282,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   {
     when: { has: ['c4.tanzaku'], not: ['c4.wish.hung'] },
     text: 'The tanzaku waits in your pocket, small on purpose. Find the wishing bamboo and write the one wish that fits.',
-    at: ['shionoura', 13, 10],
+    at: ['shionoura', 20, 9],
   },
   {
     when: { has: ['met.taro'], not: ['c4.taro.wish'] },
@@ -292,12 +292,12 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   {
     when: { has: ['met.hana'], not: ['c4.kingyo.done'] },
     text: 'A red and white stall on the quay holds a tub of goldfish and an uncle with paper scoops. Taro insists he has never let a kid leave empty. Test it.',
-    at: ['shionoura', 24, 21],
+    at: ['shionoura', 24, 20],
   },
   {
     when: { has: ['c4.arrived'], not: ['letter.read.c4.pilar'] },
     text: 'A red pillar box stands by the ferry office, and the clerk has been holding mail for a traveler answering your description.',
-    at: ['shionoura', 31, 22],
+    at: ['shionoura', 31, 21],
   },
   {
     when: { has: ['c4.omiyage', 'c4.wish.hung', 'c4.kingyo.done'], not: ['c4.complete'] },
@@ -307,7 +307,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   {
     when: { has: ['c4.arrived'], not: ['c4.complete'] },
     text: 'Shionoura is small and loud with cicadas: the quay market at dawn, the shotengai under its noren, the shrine up the steps. Meet it before the seventh night.',
-    who: 'hana',
+    who: ['hana', 'fumi', 'daisuke', 'sachiko', 'genji', 'taro', 'isao'],
   },
   {
     when: { has: ['c4.complete'] },

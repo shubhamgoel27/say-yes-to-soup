@@ -21,6 +21,7 @@ import {
 } from '../src/content/world';
 import { ROUTE } from '../src/content/route';
 import { WHISPERS } from '../src/content/threadwhispers';
+import { whoOf } from '../src/content/guide';
 import { TileMap } from '../src/engine/grid';
 import { seamKinds } from '../src/engine/renderer';
 import type { ExamineArm } from '../src/content/schema';
@@ -280,8 +281,9 @@ describe("nani's red thread finds real places", () => {
   it('every task.who names a villager on the roster', () => {
     const ids = new Set(NPCS.map((n) => n.id));
     for (const t of TASKS) {
-      if (t.who === undefined) continue;
-      assert.ok(ids.has(t.who), `task "${t.text.slice(0, 50)}..." points at unknown npc ${t.who}`);
+      for (const who of whoOf(t)) {
+        assert.ok(ids.has(who), `task "${t.text.slice(0, 50)}..." points at unknown npc ${who}`);
+      }
     }
   });
 
@@ -313,13 +315,14 @@ describe("nani's red thread finds real places", () => {
       }
     }
     for (const t of TASKS) {
-      if (t.who === undefined) continue;
-      const npc = NPCS.find((n) => n.id === t.who);
-      if (!npc || npc.map === 'village') continue; // the village is the root
-      assert.ok(
-        doorsInto.has(npc.map),
-        `task npc ${t.who} lives on ${npc.map}, which no door leads into`,
-      );
+      for (const who of whoOf(t)) {
+        const npc = NPCS.find((n) => n.id === who);
+        if (!npc || npc.map === 'village') continue; // the village is the root
+        assert.ok(
+          doorsInto.has(npc.map),
+          `task npc ${who} lives on ${npc.map}, which no door leads into`,
+        );
+      }
     }
   });
 });
@@ -978,14 +981,15 @@ describe('the thread never lies', () => {
     for (const c of CHAPTERS) {
       const home = c.arrival?.map ?? 'village';
       for (const t of c.tasks) {
-        if (!t.who) continue;
-        const npc = NPCS.find((n) => n.id === t.who);
-        assert.ok(npc, `[${c.id}] task who '${t.who}' is not on the roster`);
-        assert.ok(
-          reaches(home, npc!.map),
-          `[${c.id}] task "${t.text.slice(0, 50)}..." points at ${t.who} on ` +
-            `'${npc!.map}', which no door chain reaches from '${home}'`,
-        );
+        for (const who of whoOf(t)) {
+          const npc = NPCS.find((n) => n.id === who);
+          assert.ok(npc, `[${c.id}] task who '${who}' is not on the roster`);
+          assert.ok(
+            reaches(home, npc!.map),
+            `[${c.id}] task "${t.text.slice(0, 50)}..." points at ${who} on ` +
+              `'${npc!.map}', which no door chain reaches from '${home}'`,
+          );
+        }
       }
     }
   });
@@ -1044,19 +1048,21 @@ describe('the thread never lies', () => {
           !completed.has(active!.text),
           `[${c.id}] ${where}: the thread points back at a step already done: "${active!.text.slice(0, 60)}"`,
         );
-        if (active!.who) {
-          const npc = npcById.get(active!.who);
-          assert.ok(npc, `[${c.id}] ${where}: active task names unknown npc ${active!.who}`);
+        for (const who of whoOf(active!)) {
+          const npc = npcById.get(who);
+          assert.ok(npc, `[${c.id}] ${where}: active task names unknown npc ${who}`);
           // Only the not-direction of the villager's gate is checked: a set
           // not-flag means the flags themselves sent them away (Hana sails on
           // c5.complete), so a task still pointing at them is stale. Their
           // when.has may rest on prerequisites the sim never granted (meeting
           // Joseph implies the delivery that summons him), which play implies
           // but a task-list walk cannot see.
+          // A crowd is exempt: the guide skips whoever of it is away.
+          if (typeof active!.who !== 'string') continue;
           const gone = (npc!.when?.not ?? []).filter((f) => state.has(f));
           assert.ok(
             gone.length === 0,
-            `[${c.id}] ${where}: active task points at ${active!.who}, who left town on ` +
+            `[${c.id}] ${where}: active task points at ${who}, who left town on ` +
               `${gone.join('+')}: "${active!.text.slice(0, 60)}"`,
           );
         }

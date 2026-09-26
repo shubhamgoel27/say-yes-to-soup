@@ -218,7 +218,7 @@ export const BUSAN_TASKS: TaskDef[] = [
   {
     when: { has: ['c5.arrived'], not: ['letter.read.c5.pilar'] },
     text: 'A postal window the size of a biscuit tin sits by the ferry office. Mail crosses oceans faster than you do; ask.',
-    at: ['busan', 40, 24],
+    at: ['busan', 40, 23],
   },
   {
     when: { has: ['c5.complete'] },
@@ -228,6 +228,6 @@ export const BUSAN_TASKS: TaskDef[] = [
   {
     when: { has: ['c5.arrived'], not: ['c5.complete'] },
     text: 'One warm lane between the hillside and the harbor: fish stalls, a griddle, a tea house up the stairs. Meet it slowly; it moves fast.',
-    who: 'sunhee',
+    who: ['sunhee', 'byeongok', 'mija', 'cho', 'gong', 'daeho', 'bak'],
   },
 ];

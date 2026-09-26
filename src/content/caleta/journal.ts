@@ -261,17 +261,17 @@ export const CALETA_TASKS: TaskDef[] = [
   {
     when: { has: ['c2.gift'], not: ['c2.gift.sent'] },
     text: 'A very weird sea thing rides in your pocket, addressed to a bridge magnate. The harbor office counter is by the office door, up from the pier.',
-    at: ['la-caleta', 29, 22],
+    at: ['la-caleta', 29, 21],
   },
   {
     when: { has: ['c2.gift.sent'], not: ['letter.read.home.aurelio'] },
     text: 'The harbor clerk was digging under the counter for a second envelope. Ask at the window again.',
-    at: ['la-caleta', 29, 22],
+    at: ['la-caleta', 29, 21],
   },
   {
     when: { has: ['pilar.sea', 'c2.arrived'], not: ['c2.gift'] },
     text: 'Pilar’s invoice stands: something from the sea, a weird one. The tidepools along the wet sand look promising.',
-    at: ['la-caleta', 14, 28],
+    at: ['la-caleta', 14, 29],
   },
   {
     when: { has: ['c2.ceviche'], not: ['c2.atenoon'] },
@@ -305,7 +305,7 @@ export const CALETA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['met.simon'], not: ['c2.trade'] },
-    text: 'Don Simón mentioned his grandfather walking dried fish up your very road. Ask him what came back down.',
+    text: 'Sit with Don Simón at the pier rail again. Men who mend line all day finish their stories on the second visit, and his runs up your very road.',
     who: 'simon',
   },
   {
@@ -326,10 +326,11 @@ export const CALETA_TASKS: TaskDef[] = [
   {
     when: { has: ['c2.complete'] },
     text: 'The Crossing is being provisioned; the tide will say when. Until then La Caleta is yours: blank pages, the malecón at dusk, one pelican with a criminal record.',
+    at: ['la-caleta', 23, 30],
   },
   {
     when: { has: ['c2.arrived'], not: ['c2.complete'] },
     text: 'La Caleta is small and talkative: the stall on the malecón, the old man on the pier, the picantería you enter past the pots. Meet it.',
-    who: 'marisol',
+    who: ['marisol', 'simon', 'felix', 'petro', 'rios', 'nilda', 'rafa', 'wili'],
   },
 ];
