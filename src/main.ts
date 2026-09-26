@@ -4475,3 +4475,12 @@ dev.attachCommands((frames) => {
 });
 
 startLoop(update, render);
+
+// The loader in index.html has been covering the wait since first paint; lift
+// it once the world has drawn a real frame beneath it.
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  const loader = document.getElementById('loader');
+  if (!loader) return;
+  loader.classList.add('done');
+  setTimeout(() => loader.remove(), 700);
+}));

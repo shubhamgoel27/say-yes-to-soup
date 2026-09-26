@@ -96,6 +96,105 @@
         --fs-hand17: 19.5px;
         --fs-hand175: 20px;
       }
+
+      /* The kitchen before the journey: painted from this file alone, so it is
+       * up while the game's script is still on the road. main.ts lifts it on
+       * the first real frame. */
+      #loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        padding: 0 16px;
+        background: radial-gradient(ellipse at 50% 42%, #2a1e15 0%, #1d1510 55%, #17120e 100%);
+        color: #e8dcc4;
+        transition: opacity 0.6s ease;
+      }
+      #loader.done { opacity: 0; pointer-events: none; }
+      .ld-bowl { width: 112px; height: auto; overflow: visible; }
+      .ld-steam {
+        fill: none;
+        stroke: #e8dcc4;
+        stroke-width: 3;
+        stroke-linecap: round;
+        transform-box: fill-box;
+        transform-origin: 50% 100%;
+        opacity: 0;
+        animation: ldSteam 3.2s ease-in-out infinite;
+      }
+      .ld-steam.s2 { animation-delay: 1.05s; }
+      .ld-steam.s3 { animation-delay: 2.1s; }
+      @keyframes ldSteam {
+        0% { opacity: 0; transform: translateY(10px) scaleY(0.7); }
+        30% { opacity: 0.55; }
+        100% { opacity: 0; transform: translateY(-12px) scaleY(1.1); }
+      }
+      /* Her woven band, spooling out as the thread of the wait. */
+      .ld-band {
+        width: min(200px, 60vw);
+        height: 7px;
+        border-radius: 4px;
+        background: rgba(232, 220, 196, 0.08);
+        box-shadow: inset 0 0 0 1px rgba(232, 220, 196, 0.12);
+        overflow: hidden;
+      }
+      .ld-band i {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: repeating-linear-gradient(
+          90deg,
+          #c1512f 0 12px, #d9a441 12px 24px, #3f7fb0 24px 36px, #6b8e4e 36px 48px
+        );
+        animation: ldSpool 9s cubic-bezier(0.15, 0.7, 0.3, 1) forwards, ldWeave 1.6s linear infinite;
+      }
+      @keyframes ldSpool { to { width: 92%; } }
+      @keyframes ldWeave { to { background-position: 48px 0; } }
+      .ld-lines {
+        position: relative;
+        width: 100%;
+        height: 32px;
+        font-family: 'Caveat', 'Segoe Script', cursive;
+        font-size: 24px;
+        text-align: center;
+      }
+      .ld-lines span {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        animation: ldLine 12s ease-in-out infinite;
+      }
+      .ld-lines span:nth-child(2) { animation-delay: 3s; }
+      .ld-lines span:nth-child(3) { animation-delay: 6s; }
+      .ld-lines span:nth-child(4) { animation-delay: 9s; }
+      @keyframes ldLine {
+        0% { opacity: 0; transform: translateY(4px); }
+        5%, 21% { opacity: 1; transform: none; }
+        26%, 100% { opacity: 0; transform: translateY(-4px); }
+      }
+      .ld-slow {
+        margin: 6px 0 0;
+        max-width: 30em;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 13px;
+        line-height: 1.5;
+        text-align: center;
+        color: #a8977c;
+        opacity: 0;
+        animation: ldSlow 0.8s ease 20s forwards;
+      }
+      @keyframes ldSlow { to { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) {
+        .ld-steam { animation: none; opacity: 0.4; }
+        .ld-band i { animation: none; width: 100%; }
+        .ld-lines span { animation: none; }
+        .ld-lines span:last-child { opacity: 1; }
+        .ld-slow { animation-duration: 0.01s; }
+      }
       html, body {
         margin: 0;
         height: 100%;
@@ -2758,6 +2857,28 @@
     </style>
   </head>
   <body>
+    <div id="loader" role="status" aria-label="Loading Say Yes to Soup">
+      <svg class="ld-bowl" viewBox="0 0 120 104" aria-hidden="true">
+        <path class="ld-steam s1" d="M44 44 C 38 34, 50 28, 44 18 S 46 6, 42 0" />
+        <path class="ld-steam s2" d="M60 42 C 54 32, 66 26, 60 16 S 62 4, 58 -2" />
+        <path class="ld-steam s3" d="M76 44 C 70 34, 82 28, 76 18 S 78 6, 74 0" />
+        <ellipse cx="60" cy="96" rx="34" ry="5" fill="rgba(0,0,0,0.35)" />
+        <path d="M14 56 H106 C 104 80, 86 94, 60 94 C 34 94, 16 80, 14 56 Z" fill="#a85a36" />
+        <path d="M14 56 H106 C 105 66, 101 74, 95 80 C 86 70, 34 70, 25 80 C 19 74, 15 66, 14 56 Z" fill="#8f4a2b" opacity="0.55" />
+        <path d="M22 70 H98" stroke="#d9a441" stroke-width="3" stroke-dasharray="7 5" opacity="0.8" />
+        <ellipse cx="60" cy="56" rx="46" ry="9" fill="#c9733f" />
+        <ellipse cx="60" cy="57" rx="40" ry="6.5" fill="#e0a24a" />
+        <ellipse cx="50" cy="56" rx="9" ry="1.8" fill="#f3cf82" opacity="0.8" />
+      </svg>
+      <div class="ld-band" aria-hidden="true"><i></i></div>
+      <div class="ld-lines" aria-hidden="true">
+        <span>warming the pot</span>
+        <span>finding her pages</span>
+        <span>asking about the bread</span>
+        <span>saying yes to soup</span>
+      </div>
+      <p class="ld-slow">A slow road today. If nothing changes soon, a refresh usually helps.</p>
+    </div>
     <div id="stage">
       <div id="frame">
         <canvas id="game"></canvas>
