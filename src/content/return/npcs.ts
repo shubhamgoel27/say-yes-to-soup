@@ -362,7 +362,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.aurelio.soup': {
     lines: [
       { text: 'From beside the well he lifts a cloth off a small pot. Soup. Still warm, as if it knew which boat you were on.' },
-      { who: 'Don Aurelio', text: 'The letter said it is always on. An old man should not write checks his pot cannot cash.' },
+      { who: 'Don Aurelio', text: 'The letter said it is always on. An old man\'s word should never be bigger than his pot.' },
     ],
     choices: [
       // A gift set on Nani's ofrenda in Oaxaca cannot also be handed over

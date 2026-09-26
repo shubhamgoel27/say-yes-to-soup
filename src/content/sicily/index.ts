@@ -149,7 +149,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c8.complete',
-    plate: 'CHAPTER EIGHT · COMPLETE',
     toasts: ['✦ the town signs you out, with regret', 'a ship for Veracruz exists, in principle'],
   },
 };

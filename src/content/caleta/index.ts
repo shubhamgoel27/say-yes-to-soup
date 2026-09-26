@@ -99,7 +99,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c2.complete',
-    plate: 'CHAPTER TWO · COMPLETE',
     toasts: ['✦ the village vouches for you', 'the Crossing is being provisioned'],
   },
 };

@@ -262,6 +262,8 @@ export type ChapterDef = {
     swap?: { from: string; to: { t: string; solid?: boolean; tall?: boolean } };
     cells?: [number, number, { t: string; solid?: boolean; tall?: boolean } | null][];
   }[];
-  /** Chapter-complete beat: when `flag` first appears, show the plate. */
-  completion?: { flag: string; plate: string; toasts: string[] };
+  /** Chapter-complete beat: when `flag` first appears, show the plate. The
+   * plate's words ("CHAPTER EIGHT · COMPLETE") are derived from play order
+   * in world.ts, so inserting a chapter can never misnumber the rest. */
+  completion?: { flag: string; toasts: string[] };
 };

@@ -664,7 +664,7 @@ const SLOTS = ['inji puli', 'thoran', 'avial', 'banana', 'rice', 'pappadam', 'le
 
 /** Serving order, each with its home slot and its auntie correction. */
 const COURSES: { item: string; slot: number; oops: string }[] = [
-  { item: 'pappadam', slot: 5, oops: 'Auntie Leela taps your wrist. "Pappadam sits low, mone, bottom right. It likes company with the rice."' },
+  { item: 'pappadam', slot: 5, oops: 'Auntie Leela taps your wrist. "Pappadam sits low, kunje, bottom right. It likes company with the rice."' },
   { item: 'inji puli', slot: 0, oops: 'Auntie Rosamma clicks her tongue kindly. "Pickles go top left, where the narrow end points. Small things, small corner."' },
   { item: 'thoran', slot: 1, oops: '"Thoran up top, in the middle," Auntie Leela says, steering your hand with two fingers. "It has always lived there."' },
   { item: 'avial', slot: 2, oops: '"Avial keeps the top right seat," says Auntie Rosamma. "It is the eldest of the vegetables. Respect."' },
@@ -680,7 +680,7 @@ const COURSES: { item: string; slot: number; oops: string }[] = [
  */
 const HARD_COURSES: { item: string; slot: number; oops: string }[] = [
   ...COURSES,
-  { item: 'sambar', slot: 4, oops: '"Sambar goes OVER the rice, mone, dead center," says Auntie Leela, steering your ladle with her chin.' },
+  { item: 'sambar', slot: 4, oops: '"Sambar goes OVER the rice, kunje, dead center," says Auntie Leela, steering your ladle with her chin.' },
   { item: 'payasam', slot: 6, oops: '"Not there!" both aunties say together. "Payasam is the goodbye. It waits at the leaf tip, where the narrow end points."' },
 ];
 
@@ -1039,7 +1039,7 @@ export class SadyaPanel {
         this.redoLeaf();
       } else {
         const item = this.courses[this.course]?.item ?? 'course';
-        this.hint = `"The ${item} has gone cold in the ladle, mone." Auntie Leela reheats it with one look at you. Quicker now.`;
+        this.hint = `"The ${item} has gone cold in the ladle, kunje." Auntie Leela reheats it with one look at you. Quicker now.`;
       }
     }
     sc.frame(dt, (g) => this.paint(g));
@@ -1675,7 +1675,7 @@ export class ChayaPanel {
         this.spoonT = 1;
         this.hint = [
           '"Patience is an ingredient," says Shaji. The milk thinks about it, walls first.',
-          'Shaji moves your hand off the pot with one finger. "The boil answers to the flame, mone, not to us."',
+          'Shaji moves your hand off the pot with one finger. "The boil answers to the flame, kunje, not to us."',
           'The kettle mutters. You wait. Around here, this counts as working.',
         ][(this.stirs - 1) % 3] as string;
       } else {

@@ -162,7 +162,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'shionoura', node: 'c4.arrive', flag: 'c4.arrived' },
   completion: {
     flag: 'c4.complete',
-    plate: 'CHAPTER FOUR · COMPLETE',
     toasts: ['✦ your wish hangs on the town bamboo', 'the morning boat to Busan is provisioned'],
   },
 };

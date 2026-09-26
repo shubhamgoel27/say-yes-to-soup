@@ -85,7 +85,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'ship', node: 'c3.arrive', flag: 'c3.arrived' },
   completion: {
     flag: 'c3.complete',
-    plate: 'CHAPTER THREE · COMPLETE',
     toasts: ['✦ the whole crew vouches for you', 'Shionoura rises with the sun'],
   },
 };

@@ -28,6 +28,7 @@ import {
   ARRIVALS,
   CHAPTERS,
   COMPLETIONS,
+  chapterPlate,
   DIG_SPOTS,
   DRESSINGS,
   EXAMINES,
@@ -1516,6 +1517,69 @@ function blockedFor(self: Actor): (x: number, y: number) => boolean {
   return (x, y) => map.solid(x, y) || occupied(x, y, self);
 }
 
+/**
+ * Where arrivals land on each map: its own spawn and the spawn of every door
+ * that leads in. A wandering villager never loiters on one; Abuela Chela
+ * used to amble onto the cocina doorstep and stand on the player coming out.
+ */
+const doorsteps: Record<string, Set<string>> = (() => {
+  const out: Record<string, Set<string>> = {};
+  const add = (id: string, x: number, y: number) => (out[id] ??= new Set()).add(`${x},${y}`);
+  for (const [id, m] of Object.entries(REGION_MAPS)) {
+    add(id, m.spawn[0], m.spawn[1]);
+    for (const t of m.triggers ?? []) if (t.type === 'door') add(t.to, t.spawn[0], t.spawn[1]);
+  }
+  return out;
+})();
+const onDoorstep = (x: number, y: number) => doorsteps[map.id]?.has(`${x},${y}`) ?? false;
+
+/**
+ * Nobody shares a tile. A villager who finds itself standing on the player
+ * or on another villager (a traveler who appeared on a spot someone had
+ * wandered into, a reload that stood the player on Sun-hee) steps to the
+ * nearest free cell. Rare, and a one-tile hop beats two bodies in one place.
+ */
+function unstack() {
+  const here = spritesHere();
+  const taken = new Set<string>();
+  for (const s of here) {
+    if (s === dog) continue;
+    const [x, y] = s.actor.occupies();
+    const key = `${x},${y}`;
+    if (!taken.has(key) || s === playerSprite || s.actor.frozen || s.actor.isMoving) {
+      taken.add(key);
+      continue;
+    }
+    const free = nearestFree(x, y, (cx, cy) => taken.has(`${cx},${cy}`) || onDoorstep(cx, cy));
+    if (free) {
+      s.actor.placeAt(free[0], free[1], s.actor.dir);
+      taken.add(`${free[0]},${free[1]}`);
+    }
+  }
+}
+
+/** Breadth-first from (x, y) for the nearest standable cell within 4 steps. */
+function nearestFree(x: number, y: number, avoid: (x: number, y: number) => boolean): [number, number] | null {
+  const seen = new Set<string>([`${x},${y}`]);
+  let ring: [number, number][] = [[x, y]];
+  for (let d = 0; d < 4; d++) {
+    const next: [number, number][] = [];
+    for (const [cx, cy] of ring) {
+      for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0], [0, -1]] as const) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        const k = `${nx},${ny}`;
+        if (seen.has(k) || !map.inBounds(nx, ny) || map.solid(nx, ny)) continue;
+        seen.add(k);
+        if (!avoid(nx, ny)) return [nx, ny];
+        next.push([nx, ny]);
+      }
+    }
+    ring = next;
+  }
+  return null;
+}
+
 function updateVillager(v: Villager, dt: number) {
   if (v.actor.frozen) return;
 
@@ -1598,7 +1662,8 @@ function updateVillager(v: Villager, dt: number) {
         : null;
     v.think = 1.0 + Math.random() * 2.8;
   }
-  const leash = (x: number, y: number) => x < hx - r || x > hx + r || y < hy - r || y > hy + r;
+  const leash = (x: number, y: number) =>
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y);
   v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
@@ -1670,6 +1735,18 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   if (!dest) return;
   map = dest;
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
+  // The vigil is a night. Its page says "tonight the camposanto is lit", and
+  // walking through the marigold arch at noon once opened it in full sun:
+  // the arch is where the evening comes down, whatever hour you left at.
+  if (
+    dest.id === 'camposanto' &&
+    state.has('c9.ofrenda.done') &&
+    !state.has('c9.complete') &&
+    nightLevel(dayT) < 0.5 &&
+    !Number.isFinite(todOverride)
+  ) {
+    dayT = 0.7;
+  }
   // A befriended dog refuses to be door-blocked; it simply arrives too.
   if (dog && state.has('allqu.friend')) {
     dog.def.map = map.id;
@@ -1920,7 +1997,7 @@ function endDialogue() {
 // The identical top-level applyDressings serves here too; a nested copy of
 // it once lived in this scope as a paste leftover and shadowed nothing.
 applyDressings();
-    showPlate('CHAPTER ONE · COMPLETE', 5200);
+    showPlate(chapterPlate(0), 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
     scheduleCeremony('story.complete');
@@ -2568,8 +2645,9 @@ function titleActivate() {
   }
   title.hideTitle();
   if (choice === 'new') {
-    freshSlate();
-    openFlyleaf();
+    // The old journey is wiped only when the traveler actually sets out:
+    // Esc on the flyleaf used to return to a title whose journal was gone.
+    openFlyleaf(freshSlate);
   } else {
     beginPlay(false);
   }
@@ -2587,16 +2665,22 @@ function freshSlate() {
 }
 
 /** The flyleaf first: a name (or not) and the traveler's look, then the
- * letter. Continue never passes through here, so it never asks. */
-function openFlyleaf() {
+ * letter. Continue never passes through here, so it never asks. `setOut`
+ * clears the slate, and runs only when the flyleaf is finished; backing
+ * out returns to the cover with nothing touched. */
+function openFlyleaf(setOut: () => void) {
   mode = 'naming';
   naming.open((res) => {
+    setOut();
     state.playerName = res.name;
     state.playerLook = res.look;
     state.save();
     refreshPlayerSheet();
     mode = 'letter';
     title.showLetter(undefined, state.playerName);
+  }, () => {
+    mode = 'title';
+    title.showTitle(state.hasSave());
   });
 }
 
@@ -2613,15 +2697,18 @@ function beginSecondReading(row: number) {
   const data = peekSlot(row);
   const words = (data?.journal ?? []).filter((p) => p.startsWith('words.'));
   const konami = (data?.flags ?? []).includes('konami');
-  setActiveSlot(row);
-  freshSlate();
-  // Quietly: two dozen toasts and chimes at once would bury the moment the
-  // player actually chose. The pages are not news; they came with you.
-  state.grantPagesQuietly(words);
-  state.set('second.reading');
-  if (konami) state.set('konami');
   title.hideTitle();
-  openFlyleaf();
+  openFlyleaf(() => {
+    // Only on setting out: backing off the flyleaf leaves the finished
+    // journal whole and the shelf exactly as it was.
+    setActiveSlot(row);
+    freshSlate();
+    // Quietly: two dozen toasts and chimes at once would bury the moment the
+    // player actually chose. The pages are not news; they came with you.
+    state.grantPagesQuietly(words);
+    state.set('second.reading');
+    if (konami) state.set('konami');
+  });
 }
 
 /** Put down whichever letter is open; shared by Space and click. */
@@ -3046,6 +3133,7 @@ function update(dt: number) {
         if (v === paca && pacaWalk.length > 0) continue;
         updateVillager(v, dt);
       }
+      unstack();
     }
   }
 

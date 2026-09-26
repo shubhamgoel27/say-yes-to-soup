@@ -22,7 +22,7 @@ export type RouteStop = {
 export const ROUTE: RouteStop[] = [
   {
     id: 'chaska-pampa',
-    name: "Ch'aska Pampa",
+    name: 'Ch’aska Pampa',
     hop: 'begin where the stars graze',
     nani: 'Say yes to soup. The whole trick is here if I look slowly enough.',
     complete: { has: ['story.complete'] },

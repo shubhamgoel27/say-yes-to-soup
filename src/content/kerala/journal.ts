@@ -31,7 +31,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     title: 'Chetta, chechi',
     script: 'ചേട്ടാ',
     sub: 'Elder brother (chechi, ചേച്ചി: elder sister). The default address for anyone slightly older, related or not.',
-    you: 'I said "Shaji chetta" once and was promoted from sir to mone on the spot. The whole village is relatives if you address it right.',
+    you: 'I said "Shaji chetta" once and was promoted from guest to kunje on the spot. The whole village is relatives if you address it right.',
     rhyme: {
       with: 'words.causa',
       note: 'The coast called me causa, the backwater calls me chechi. Family words, handed to strangers on purpose.',
@@ -121,7 +121,7 @@ export const KERALA_JOURNAL: JournalEntry[] = [
     tab: 'people',
     title: 'Shaji',
     sub: 'The thattukada. Kettle, griddle, awning, and the village’s news cycle.',
-    you: 'Pulls chaya in a meter-long arc, three jobs with one wrist. Promoted me from sir to mone the day I earned chetta. The bench remembers.',
+    you: 'Pulls chaya in a meter-long arc, three jobs with one wrist. Promoted me from guest to kunje the day I earned chetta. The bench remembers.',
   },
   {
     id: 'people.omana',

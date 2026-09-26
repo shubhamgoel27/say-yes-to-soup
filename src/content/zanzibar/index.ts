@@ -154,7 +154,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'zanzibar', node: 'c7.arrive', flag: 'c7.arrived' },
   completion: {
     flag: 'c7.complete',
-    plate: 'CHAPTER SEVEN · COMPLETE',
     toasts: ['✦ the coast vouches for your pace', 'deck passage north is being entered in the ledger'],
   },
 };

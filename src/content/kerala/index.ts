@@ -180,7 +180,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c6.complete',
-    plate: 'CHAPTER SIX · COMPLETE',
-    toasts: ['✦ the village calls you mone now', 'a spice ship is turning west'],
+    toasts: ['✦ the village calls you kunje now', 'a spice ship is turning west'],
   },
 };

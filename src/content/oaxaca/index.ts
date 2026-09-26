@@ -211,7 +211,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'oaxaca', node: 'c9.arrive', flag: 'c9.arrived' },
   completion: {
     flag: 'c9.complete',
-    plate: 'CHAPTER NINE · COMPLETE',
     toasts: ['✦ the ledger closes, both directions', 'the long way home is open'],
   },
 };

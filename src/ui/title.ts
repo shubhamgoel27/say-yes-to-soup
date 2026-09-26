@@ -15,7 +15,7 @@ import {
   writeSlotRaw,
 } from '../engine/state';
 import { ROUTE } from '../content/route';
-import { CHAPTERS, JOURNAL, REGION_MAPS } from '../content/world';
+import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
 
 /**
@@ -47,8 +47,12 @@ function welcomeBackLine(): string | null {
     const stop = chapter ? ROUTE.find((r) => r.id === chapter.id) : undefined;
     const where = [...new Set([mapName, stop?.name].filter(Boolean))].join(', ');
     if (!where) return null;
+    // Only pages this build knows: a save carrying ids from an older or
+    // newer journal (renamed pages, dev grants) must not inflate the count.
     const held = new Set(
-      Array.isArray(data.journal) ? data.journal.filter((p): p is string => typeof p === 'string') : [],
+      Array.isArray(data.journal)
+        ? data.journal.filter((p): p is string => typeof p === 'string' && JOURNAL_BY_ID.has(p))
+        : [],
     );
     const threads = JOURNAL.filter(
       (e) => e.rhyme && held.has(e.id) && held.has(e.rhyme.with),
@@ -71,9 +75,14 @@ function welcomeBackLine(): string | null {
  * simply means no shimmer.
  */
 function savedKonami(): boolean {
+  return savedFlag('konami');
+}
+
+/** Whether the journal on the table carries a flag; trouble reads as no. */
+function savedFlag(flag: string): boolean {
   try {
     const data = peekSlot(activeSlot());
-    return (data?.flags ?? []).includes('konami');
+    return (data?.flags ?? []).includes(flag);
   } catch {
     return false;
   }
@@ -141,6 +150,8 @@ export class TitleScreen {
   private armNew = false;
   /** The welcome-back line under Continue; null when there is nothing to say. */
   private welcomeBack: string | null = null;
+  /** The journal on the table has been written to its last page. */
+  private finished = false;
 
   // ---- the shelf: three journals, one open on the table ----
   private shelf = false;
@@ -186,6 +197,7 @@ export class TitleScreen {
     this.armNew = false;
     this.shelf = false;
     this.welcomeBack = hasSave ? welcomeBackLine() : null;
+    this.finished = hasSave && savedFlag('story.end');
     this.konami = !this.shimmered && hasSave && savedKonami();
     if (this.konami) this.shimmered = true;
     this.options = hasSave
@@ -254,7 +266,7 @@ export class TitleScreen {
     else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
     else return;
     this.armNew = false; // moving the cursor stands down the warning
-    this.render();
+    this.renderMenu();
   }
 
   /**
@@ -266,7 +278,7 @@ export class TitleScreen {
     const id = this.options[this.cursor]?.id ?? 'new';
     if (id === 'new' && this.hasSave && !this.armNew) {
       this.armNew = true;
-      this.render();
+      this.renderMenu();
       return 'none';
     }
     return id;
@@ -540,17 +552,50 @@ export class TitleScreen {
       </div>`;
   }
 
+  /** One menu row's markup; shared by the full render and the cursor update. */
+  private optHtml(i: number): string {
+    const o = this.options[i];
+    if (!o) return '';
+    const label =
+      o.id === 'new' && this.armNew ? 'Erase the journal and begin again? (press again)' : o.label;
+    const sub =
+      o.id === 'continue' && this.welcomeBack
+        ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
+        : '';
+    return `${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${label}${sub}`;
+  }
+
+  private optClass(i: number): string {
+    const o = this.options[i];
+    return `t-opt${i === this.cursor ? ' sel' : ''}${o?.id === 'new' && this.armNew ? ' warn' : ''}`;
+  }
+
+  /**
+   * A cursor move touches only the menu rows. Rebuilding the whole cover on
+   * every arrow press repainted the gouache and restarted the steam, the
+   * breathing canvas and the manicule's pulse, a flicker per keypress.
+   * Only rows whose state changed are rewritten.
+   */
+  private renderMenu() {
+    const rows = this.titleEl.querySelectorAll<HTMLElement>('.t-menu .t-opt');
+    if (rows.length !== this.options.length) {
+      this.render();
+      return;
+    }
+    rows.forEach((el, i) => {
+      const cls = this.optClass(i);
+      const html = this.optHtml(i);
+      if (el.className !== cls || el.dataset.html !== html) {
+        el.className = cls;
+        el.innerHTML = html;
+        el.dataset.html = html;
+      }
+    });
+  }
+
   private render() {
     const menu = this.options
-      .map((o, i) => {
-        const label =
-          o.id === 'new' && this.armNew ? 'Erase the journal and begin again? (press again)' : o.label;
-        const sub =
-          o.id === 'continue' && this.welcomeBack
-            ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
-            : '';
-        return `<div class="t-opt${i === this.cursor ? ' sel' : ''}${o.id === 'new' && this.armNew ? ' warn' : ''}">${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${label}${sub}</div>`;
-      })
+      .map((_, i) => `<div class="${this.optClass(i)}">${this.optHtml(i)}</div>`)
       .join('');
     // The shimmer plays once on load; cursor moves rebuild this DOM and must
     // not replay it, so the flag is spent on the first render.
@@ -560,7 +605,7 @@ export class TitleScreen {
       <div class="t-card">
         <div class="t-cover">
           <div class="t-band${shimmer ? ' shimmer' : ''}"></div>
-          <div class="t-kicker">a journal, half full</div>
+          <div class="t-kicker">${this.finished ? 'a journal, full' : 'a journal, half full'}</div>
           <div class="t-name">SAY YES<br>TO SOUP</div>
           <div class="t-art">
             <span class="t-steam s1"></span><span class="t-steam s2"></span><span class="t-steam s3"></span>
@@ -620,6 +665,7 @@ export class NamingCard {
   private idx = [0, 0, 0];
   private name = '';
   private onDone: ((res: FlyleafResult) => void) | null = null;
+  private onCancel: (() => void) | null = null;
   private sheet: HTMLCanvasElement | null = null;
   private raf = 0;
   private animT = 0;
@@ -632,8 +678,11 @@ export class NamingCard {
     return !this.root.hidden;
   }
 
-  open(onDone: (res: FlyleafResult) => void) {
+  /** `onCancel` runs when Esc backs out of the first step: nothing chosen,
+   * nothing written, the cover comes back with the old journey intact. */
+  open(onDone: (res: FlyleafResult) => void, onCancel?: () => void) {
     this.onDone = onDone;
+    this.onCancel = onCancel ?? null;
     this.step = 1;
     this.row = 0;
     this.idx = [0, 0, 0];
@@ -645,14 +694,19 @@ export class NamingCard {
     this.render();
   }
 
-  private finish() {
+  private shut() {
     window.removeEventListener('keydown', this.onKey, true);
     cancelAnimationFrame(this.raf);
     this.root.hidden = true;
     this.root.innerHTML = '';
     this.sheet = null;
+  }
+
+  private finish() {
+    this.shut();
     const done = this.onDone;
     this.onDone = null;
+    this.onCancel = null;
     done?.({
       name: this.name.trim() || null,
       look: {
@@ -663,10 +717,9 @@ export class NamingCard {
     });
   }
 
-  /** Enter confirms the step; Esc skips it. Both end on the same road. */
-  private advance(skip: boolean) {
+  /** Enter confirms the step. A blank name is a fine answer ("traveler"). */
+  private advance() {
     if (this.step === 1) {
-      if (skip) this.name = '';
       this.step = 2;
       this.render();
     } else {
@@ -674,24 +727,38 @@ export class NamingCard {
     }
   }
 
+  /** Esc steps back: from the look to the name, from the name to the cover. */
+  private back() {
+    if (this.step === 2) {
+      this.step = 1;
+      this.render();
+      return;
+    }
+    this.shut();
+    const cancel = this.onCancel;
+    this.onDone = null;
+    this.onCancel = null;
+    cancel?.();
+  }
+
   private onKey = (e: KeyboardEvent) => {
     if (!this.isOpen) return;
     e.stopPropagation();
     if (e.code === 'Escape') {
       e.preventDefault();
-      this.advance(true);
+      this.back();
       return;
     }
     if (e.code === 'Enter') {
       e.preventDefault();
-      this.advance(false);
+      this.advance();
       return;
     }
     if (this.step !== 2) return; // step 1: every other key belongs to the pen
     const k = e.code;
     if (k === 'Space') {
       e.preventDefault();
-      this.advance(false);
+      this.advance();
     } else if (k === 'ArrowUp' || k === 'KeyW') {
       e.preventDefault();
       this.row = (this.row + CC_ROWS.length - 1) % CC_ROWS.length;
@@ -725,7 +792,7 @@ export class NamingCard {
       this.renderRows();
       return;
     }
-    if (t.closest('.cc-btn')) this.advance(false);
+    if (t.closest('.cc-btn')) this.advance();
   };
 
   private cycle(row: number, d: number) {
@@ -756,7 +823,7 @@ export class NamingCard {
           <div class="cc-hint">${
             COARSE
               ? 'leave it blank and you are &ldquo;traveler&rdquo;'
-              : 'Enter writes it in &middot; Esc leaves it blank'
+              : 'leave it blank and you are &ldquo;traveler&rdquo; &middot; Enter writes it in &middot; Esc back'
           }</div>
         </div>`;
       const input = this.root.querySelector<HTMLInputElement>('.cc-input');
@@ -787,7 +854,7 @@ export class NamingCard {
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
         <div class="cc-hint">${
-          COARSE ? 'tap &lsaquo; &rsaquo; to choose' : 'arrows choose &middot; Enter sets out'
+          COARSE ? 'tap &lsaquo; &rsaquo; to choose' : 'arrows choose &middot; Enter sets out &middot; Esc back'
         }</div>
       </div>`;
     this.renderRows();

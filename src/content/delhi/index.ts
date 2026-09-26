@@ -195,7 +195,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c11.complete',
-    plate: 'OLD DELHI · COMPLETE',
     toasts: ['✦ the kucha counts you among its own', 'a chit opens the sea road west'],
   },
 };

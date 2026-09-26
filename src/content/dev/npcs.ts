@@ -328,7 +328,7 @@ export const NODES: NodeMap = {
   'intro.wake': {
     lines: [
       { text: 'The bus left you at the bottom of the valley an hour ago. The driver pointed uphill and said only: arriba.' },
-      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch\'aska Pampa. Start where the water is."' },
+      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch’aska Pampa. Start where the water is."' },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
     effects: ['set:intro.done'],
@@ -399,7 +399,7 @@ export const NODES: NodeMap = {
   },
   'aurelio.chaska': {
     lines: [
-      { who: 'Don Aurelio', text: "This place? Ch'aska Pampa. Star plain." },
+      { who: 'Don Aurelio', text: 'This place? Ch’aska Pampa. Star plain.' },
       { who: 'Don Aurelio', text: 'When it rains, the ground fills with puddles, and the pampa catches stars. You can check my work tonight.' },
     ],
     effects: ['journal:words.chaska'],
@@ -1369,7 +1369,7 @@ export const NODES: NodeMap = {
   },
   'gate.end': {
     lines: [
-      { text: 'End of Chapter One. Ch\'aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
+      { text: 'End of Chapter One. Ch’aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
     ],
   },
   'gate.after': {
