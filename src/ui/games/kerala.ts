@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun, tip } from './run';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
@@ -206,6 +206,7 @@ export class RowPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c6.row.start');
     this.tune = RUN.hard ? ROW_HARD : ROW_EASY;
     this.phase = 'row';
     this.x = 1;
@@ -281,8 +282,10 @@ export class RowPanel {
    * advice from the run's own tally, so the next how-to card knows whether
    * this rower jumps the call or trails it.
    */
-  private rowCoach() {
-    coach(
+  private rowCoach(lost = false) {
+    // A ragged stroke the crew forgave is a tip; only losing the song is a
+    // fault. The hard card promises the crew's forgiveness, and keeps it.
+    (lost ? coach : tip)(
       'c6.row.start',
       this.early > this.late
         ? 'You strike before the call reaches the blades; let the gold cross the first cane pole, then pull.'
@@ -299,6 +302,7 @@ export class RowPanel {
     const sc = this.scene;
     this.phase = 'wallow';
     this.wallowT = 0;
+    this.rowCoach(true);
     this.audio.bump();
     this.hint =
       'The stroke dies. A hundred blades go their own way and the boat sits down in the water like a tired buffalo. Space to take the seat again.';
@@ -967,6 +971,7 @@ export class SadyaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c6.sadya.start');
     this.hard = RUN.hard;
     this.courses = this.hard ? HARD_COURSES : COURSES;
     this.phase = 'serve';
@@ -1074,7 +1079,7 @@ export class SadyaPanel {
    * with the seat it tried and the seat it keeps, or the clock if the ladle
    * mostly just hovered too long.
    */
-  private sadyaCoach() {
+  private sadyaCoach(lost = false) {
     let worst: { item: string; n: number; at: number } | null = null;
     for (const [item, m] of this.missBy) if (!worst || m.n > worst.n) worst = { item, n: m.n, at: m.at };
     let line: string;
@@ -1084,12 +1089,14 @@ export class SadyaPanel {
       const seat = worst.at === 6 ? 'at the leaf tip' : `at the ${SLOTS[worst.at]}'s seat`;
       line = `The ${worst.item} went down ${seat}; ${SADYA_HOME[worst.item] ?? 'ask an auntie, and duck'}.`;
     }
-    coach('c6.sadya.start', line);
+    // A slip inside the card's three is a tip; only a redone leaf is a fault.
+    (lost ? coach : tip)('c6.sadya.start', line);
   }
 
   /** Three slips and the aunties redo the leaf. Nothing lost but a leaf. */
   private redoLeaf() {
     this.phase = 'redo';
+    this.sadyaCoach(true);
     this.audio.bump();
     this.hint =
       'Three slips, and the aunties trade one look. The leaf is lifted, wiped away, and a fresh one laid. "Again, mole. Hands learn by doing it twice." Space takes the ladle back.';
@@ -1381,8 +1388,9 @@ const SPILL_LIMIT = 3;
 
 /**
  * The hard telling of the pour: every chalk mark sits higher, the arm climbs
- * faster so the moment of letting go is a blink, the pot forgives two spills
- * instead of three, and a finished boil left standing goes over the rim.
+ * faster so the moment of letting go is a blink, the pot runs dry on the
+ * second spill instead of the third, and a finished boil left standing goes
+ * over the rim. A pour served before the pot runs dry is the star.
  */
 const HARD_PULL_TARGETS = [0.6, 0.76, 0.9];
 const CHAYA_HARD = { arm: 0.58, armAccel: 0.3, spills: 2, boilOver: 2.2 };
@@ -1512,6 +1520,7 @@ export class ChayaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c6.cook.start');
     this.hard = RUN.hard;
     this.targets = this.hard ? HARD_PULL_TARGETS : PULL_TARGETS;
     this.tune = this.hard ? CHAYA_HARD : CHAYA_EASY;
@@ -1615,14 +1624,15 @@ export class ChayaPanel {
    * Advice from the run's own tally: whichever miss dominated, short pulls,
    * greedy overshoots, or a boil left standing, gets named for the next card.
    */
-  private chayaCoach() {
+  private chayaCoach(lost = false) {
     const line =
       this.boils > this.lows && this.boils > this.overs
         ? 'The boil finished without you and went over the rim; when it climbs and holds, take up the tumblers at once.'
         : this.overs > this.lows
           ? 'You held the lift past its top and the arc outran the glass; let the tea go the moment the stream starts to sing.'
           : "You pulled at a hand's height; the froth needs the full arm and a steady stream.";
-    coach('c6.cook.start', line);
+    // A spill the pot forgave is a tip; only a pot run dry is a fault.
+    (lost ? coach : tip)('c6.cook.start', line);
   }
 
   /** Hard telling only: the finished boil stood too long and went over. */
@@ -1648,6 +1658,7 @@ export class ChayaPanel {
     this.phase = 'dry';
     this.lifting = false;
     this.arm = 0;
+    this.chayaCoach(true);
     this.audio.bump();
     this.hint =
       'The pot goes light, then empty. Shaji looks at the shining counter, then at you. "Mone, today the table drank first. Space, and we boil again."';

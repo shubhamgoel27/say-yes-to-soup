@@ -1,7 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun, tip } from './run';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art/pix';
 
 /**
@@ -41,10 +41,12 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art
  * line under the next how-to card says the one true thing about why.
  *
  * COACHING. Every run keeps a small honest ledger of its misses (early
- * flips, split seals, pulls through pigeons, slack in steady air...). When
- * a finished run fell short anywhere, in either mode, the panel tells
- * coach() the single dominant miss, named specifically, so the next how-to
- * card can re-arm the player instead of just re-inviting them.
+ * flips, lopsided second rolls, pulls through pigeons, slack in steady
+ * air...). When a finished run had any miss, the panel names the single
+ * dominant one, specifically, so the next how-to card can re-arm the player
+ * instead of just re-inviting them. A run that ran out (the bowl scraped,
+ * the charkhi bare) files it with coach(); a run won anyway files a tip(),
+ * so the hard telling's star goes to finishing inside what its card forgives.
  */
 
 const linear = (t: number) => t;
@@ -606,7 +608,7 @@ const P_COACH: Record<PFault, (where: string) => string> = {
   early: (w) =>
     `You flipped before the tawa sang on the ${w}; a pale side is a shy one. Hold your hand until the bright band, then go.`,
   rollSecond: (w) =>
-    `Your seal split on the ${w}; press the edge, not the center, before the first flip, and catch the parcel roll dead even.`,
+    `Your second roll ran lopsided on the ${w}; the sealed parcel wants the same even stop as the first disc, so stop the pin dead in the middle of the meter.`,
   rollFirst: (w) =>
     `Your discs came out lopsided on the ${w}; watch the pin, not the dough, and stop it dead in the middle of the meter.`,
 };
@@ -669,6 +671,7 @@ export class ParanthaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(COOK_FLAG);
     // The hard telling is read once here, never mid-batch. A first story run
     // arrives with RUN.hard false and plays exactly as it always has.
     this.hard = RUN.hard;
@@ -904,13 +907,13 @@ export class ParanthaPanel {
   private fault(kind: PFault) {
     this.faults[kind]++;
     const c = this.courses[Math.min(this.course, this.courses.length - 1)];
-    this.faultWhere[kind] = (c?.name ?? 'parantha').replace(' parantha', '');
+    this.faultWhere[kind] = (c?.name ?? 'parantha').replace(' parantha', '').replace(/^the /, '');
   }
 
   /**
    * The run fell short somewhere and the next how-to card should say where.
    * The dominant miss wins; ties fall to the costlier habit (a waited-out
-   * song before a late hand, a late hand before an early one, the seal
+   * song before a late hand, a late hand before an early one, the second roll
    * before the first roll). A clean run files nothing.
    */
   private reportCoach() {
@@ -919,7 +922,8 @@ export class ParanthaPanel {
       if (this.faults[k] > 0 && (!top || this.faults[k] > this.faults[top])) top = k;
     }
     if (!top) return;
-    coach(COOK_FLAG, P_COACH[top](this.faultWhere[top] || 'parantha'));
+    // The bowl scraped is a fault; a rush served with a wobble is a tip.
+    (this.spent ? coach : tip)(COOK_FLAG, P_COACH[top](this.faultWhere[top] || 'parantha'));
   }
 
   /**
@@ -1878,6 +1882,7 @@ export class PatangPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(this.tournament ? DUEL_FLAG : KITE_FLAG);
     // The hard telling is read once here, never mid-flight. A first story
     // run arrives with RUN.hard false and flies exactly as it always has.
     this.hard = RUN.hard;
@@ -2339,7 +2344,8 @@ export class PatangPanel {
       if (this.faults[k] > 0 && (!top || this.faults[k] > this.faults[top])) top = k;
     }
     if (!top) return;
-    coach(this.tournament ? DUEL_FLAG : KITE_FLAG, K_COACH[top](this.faults[top]));
+    // A bare charkhi is a fault; an evening won with a wobble is a tip.
+    (this.spent ? coach : tip)(this.tournament ? DUEL_FLAG : KITE_FLAG, K_COACH[top](this.faults[top]));
   }
 
   private caption(): string {

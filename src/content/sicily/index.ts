@@ -74,7 +74,7 @@ export const CHAPTER: ChapterDef = {
         'The rais calls, and the call rolls across the water toward the boat. Space pulls the oar the moment it arrives.',
         'Three good strokes close each pass. Rush one and the harbor is delighted, and he simply calls again.',
       ],
-      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Two slapped blades in one pass and the fish keeps the sea.',
+      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea.',
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
     {
@@ -85,7 +85,7 @@ export const CHAPTER: ChapterDef = {
         'Space starts the ricotta, Space again stops it in the sweet zone. Both ends, always, then the arrows pick a garnish.',
         'Every garnish is correct. Overfill and the shell splits; Alfio eats the evidence and hands you a fresh one.',
       ],
-      hardHow: 'The hard telling: five customers at feast pace, the gold worn thin, a hungry end counted like a wreck. The third wrecked shell and Alfio takes the bag back.',
+      hardHow: 'The hard telling: five customers at feast pace and the gold worn thin; an end stopped short of it or past it is a wreck. The third wreck and Alfio takes the bag back.',
       make: (root, audio) => new CannoloPanel(root, audio as AudioBus),
     },
   ],

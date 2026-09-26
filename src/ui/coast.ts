@@ -3,7 +3,7 @@ import type { AudioBus } from '../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag } from './games/scene';
 import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
-import { RUN, coach } from './games/run';
+import { RUN, coach, freshRun, tip } from './games/run';
 import { keysOrTaps } from './responsive';
 
 /**
@@ -20,8 +20,9 @@ import { keysOrTaps } from './responsive';
  * All three panels also carry a hard telling (RUN.hard, replay only): faster
  * swells and a strike a handsbreadth wide, dusk that runs out on the net, a
  * lime sliver and only two lisas. The hard telling can be lost; losing costs
- * nothing but leaves one honest coach() line for the next how-to card. The
- * first story run never reads these numbers.
+ * nothing but leaves one honest coach() line for the next how-to card. A win
+ * inside what the card forgives is the star, with any wobble kept as a tip().
+ * The first story run never reads these numbers.
  */
 
 const calm = () => document.body.classList.contains('reduce-motion');
@@ -359,6 +360,7 @@ export class WavePanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('wave.start');
     this.phase = 'paddle';
     this.waves = 0;
     this.x = 1;
@@ -458,8 +460,9 @@ export class WavePanel {
         this.phase = 'done';
         this.audio.weaveDone();
         this.hint = 'The wave sets you down on the sand like a parcel. Press Space.';
-        // Won, but not clean: the next how-to card owes the specific fix.
-        if (this.earlyMisses + this.lateMisses > 0) coach('wave.start', this.paddleAdvice());
+        // Won with a wobble: the card promised two escapes, so the win (and
+        // the hard star) stands, and the next how-to card owes the fix as a tip.
+        if (this.earlyMisses + this.lateMisses > 0) tip('wave.start', this.paddleAdvice());
         const sc = this.scene!;
         sc.thump(calm() ? 0 : 4, 0.04);
         sc.flash('#f7e9c8', 0.3);
@@ -832,6 +835,7 @@ export class NetPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('net.start');
     this.done = false;
     this.hard = RUN.hard;
     this.holesTotal = this.hard ? 8 : 6;
@@ -931,7 +935,7 @@ export class NetPanel {
         this.audio.weaveDone();
         this.hint = 'The net is whole. So, somehow, is the evening. Press Space.';
         // Whole, but the hands fumbled along the way: owe the honest tip.
-        if (this.misties >= 3) coach('net.start', this.netAdvice());
+        if (this.misties >= 3) tip('net.start', this.netAdvice());
         // The whole net pulls taut.
         sc.tween(this.sagK, 0.12, 0.8, easeOutBack, (v) => (this.sagK = v));
         sc.flash('#ffe6b8', 0.3);
@@ -1386,6 +1390,7 @@ export class CevichePanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c2.cook.start');
     this.step = 'cut';
     this.cuts = 0;
     this.sides = 0;
@@ -1550,8 +1555,9 @@ export class CevichePanel {
         this.pour = 1;
         this.audio.weaveDone();
         this.advance();
-        // Done, but the lime run was not clean: the next card owes the fix.
-        if (this.spoiled + this.earlies > 0) coach('c2.cook.start', this.cevAdvice());
+        // Done with a wobble: Petro's second lisa was promised, so the win
+        // (and the hard star) stands; the next card still owes the fix.
+        if (this.spoiled + this.earlies > 0) tip('c2.cook.start', this.cevAdvice());
         if (sc) {
           this.pourAt = sc.time;
           sc.flash('#ffe9c0', 0.3);

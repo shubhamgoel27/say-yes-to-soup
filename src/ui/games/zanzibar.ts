@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
-import { RUN, coach, takeCoach } from './run';
+import { RUN, coach, freshRun, tip, takeCoach } from './run';
 
 /** The start flags these panels answer to; coach() files advice under them. */
 const SAIL_FLAG = 'c7.sail.start';
@@ -286,6 +286,7 @@ export class SailPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(SAIL_FLAG); // bearing away from irons is a fresh reach
     this.phase = 'sail';
     this.hard = RUN.hard;
     this.band = this.hard ? 0.07 : 0.11;
@@ -1216,6 +1217,7 @@ export class UrojoPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(UROJO_FLAG);
     this.phase = 'build';
     this.hard = RUN.hard;
     this.round = 0;
@@ -1387,7 +1389,7 @@ export class UrojoPanel {
           // The gentle telling's one shortfall still teaches: the coach line
           // names what was actually aboard when the bowl came up short.
           const aboard = UROJO_CHALK.filter((_, i) => (this.counts[i] ?? 0) > 0);
-          coach(
+          tip(
             UROJO_FLAG,
             aboard.length === 0
               ? 'You offered Zuberi bare broth; broth is a floor, not a meal. Put three things in the bowl before you reach for the slate.'
@@ -1450,8 +1452,8 @@ export class UrojoPanel {
       } else {
         this.phase = 'done';
         // A rush survived with slips still coaches: the next how-to hands the
-        // dominant miss back, so a pass with a wobble is re-armed too.
-        if (this.hard && this.slips > 0) coach(UROJO_FLAG, this.coachLine());
+        // dominant miss back, so a pass with a wobble is re-armed too. The card forgives two slips, so the win (and the star) stands.
+        if (this.hard && this.slips > 0) tip(UROJO_FLAG, this.coachLine());
         this.audio.weaveDone();
         this.scene.flash('#ffe9b8', 0.3);
         this.scene.burst(BOWL_X, BOWL_Y - 30, { n: calm() ? 6 : 14, color: '#f2d98a', speed: 90, grav: 140, size: 3, life: 0.8 });

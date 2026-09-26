@@ -1,6 +1,9 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun } from './run';
+
+/** The start flag, spoken to coach() so the next how-to can pass advice on. */
+const MOLE_FLAG = 'c9.mole.start';
 import { Scene, mountScene, wobble, easeOutCubic, keyCap } from './scene';
 import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot } from '../../art/pix';
 
@@ -269,6 +272,9 @@ export class MolePanel {
   /** (Re)start a pot. Kept apart from open() so a scorch restart can hold on
    * to the telling it began with, whatever RUN.hard says by then. */
   private begin(hard: boolean) {
+    // A scorch restart is a fresh pot: the burnt one's coach line becomes a
+    // tip, and this pot can still earn the fiesta's star on its own merits.
+    freshRun(MOLE_FLAG);
     this.hard = hard;
     this.goalRounds = hard ? HARD_ROUNDS : STIR_ROUNDS;
     this.step = 0;
@@ -403,7 +409,7 @@ export class MolePanel {
     this.potCatch = -1;
     // The lesson is owed either way; the next how-to offer carries it.
     const why = this.diagnose(cause);
-    coach('c9.mole.start', why);
+    coach(MOLE_FLAG, why);
     this.hint = this.hard
       ? 'The pot goes to carbon and the smoke turns bitter. Chela lifts it off the fire, unhurried even now.<br>' +
         `<i>${why}</i><br><b>Chela:</b> Even at fiesta, a pot is only a pot. Space, and we begin again.`

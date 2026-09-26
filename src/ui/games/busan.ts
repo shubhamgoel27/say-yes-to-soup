@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag } from './scene';
 import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../../art/pix';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun } from './run';
 
 /**
  * Busan's hands-on verb: the hotteok griddle.
@@ -398,6 +398,7 @@ export class HotteokPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(START_FLAG); // a fresh batch, from the engine or the burnt-batch retry
     this.phase = 'press';
     this.round = 0;
     this.golden = 0;

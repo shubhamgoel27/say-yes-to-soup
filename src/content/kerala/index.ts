@@ -109,7 +109,7 @@ export const CHAPTER: ChapterDef = {
         'Then Space lifts the pouring arm, Space again lets the tea go. Height is froth.',
         'Reach too far and it rings the counter. Shaji laughs, wipes, and hands you the tumblers again.',
       ],
-      hardHow: 'The hard telling: the chalk marks sit higher, the arm climbs quicker, the pot forgives two spills only, and a boil left standing goes over the rim.',
+      hardHow: 'The hard telling: the chalk marks sit higher, the arm climbs quicker, the pot runs dry on the second spill, and a boil left standing goes over the rim.',
       make: (root, audio) => new ChayaPanel(root, audio as AudioBus),
     },
   ],
