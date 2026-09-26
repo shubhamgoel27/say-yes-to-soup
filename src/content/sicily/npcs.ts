@@ -1126,11 +1126,6 @@ export const SICILY_NODES: NodeMap = {
       { text: 'A Vespa the color of pistachio gelato, leaning on its stand. It is older than the mayor and runs better; both facts are public record.' },
     ],
   },
-  'c8.ex.postsign': {
-    lines: [
-      { text: 'POSTE. One window, one fan, one clerk. The mail moves at the speed of the fan.' },
-    ],
-  },
   'c8.ex.macchina': {
     lines: [
       { text: 'The espresso machine: chrome gone soft with polishing, a lever like a ship’s telegraph. It is older than every member, and louder.' },

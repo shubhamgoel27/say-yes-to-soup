@@ -72,7 +72,10 @@ export function makeDtSmoother(): (raw: number) => number {
     if (known.length > 2) known.shift();
   };
 
-  return (raw: number): number => {
+  return (rawIn: number): number => {
+    // A timestamp from before the last one (a clock hiccup, a rAF stamp
+    // older than the loop's own start) is no time at all, never negative time.
+    const raw = Number.isFinite(rawIn) ? Math.max(0, rawIn) : 0;
     if (recent.length >= 6) {
       const sorted = [...recent].sort((a, b) => a - b);
       const median = sorted[sorted.length >> 1] ?? raw;
@@ -143,7 +146,11 @@ export function makeDtSmoother(): (raw: number) => number {
       drift -= repay;
       return median + repay;
     }
-    recent.push(raw);
+    // Warm-up: too few frames for a median yet. The pause rule applies here
+    // too: a tab hidden during the first frames must neither step the sim by
+    // its whole absence nor seed the median with it.
+    if (raw > 250) return 1000 / 60;
+    if (raw > 0) recent.push(raw);
     return raw;
   };
 }

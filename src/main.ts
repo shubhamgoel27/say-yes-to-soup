@@ -17,7 +17,7 @@ import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
-import { AlbumUI } from './ui/album';
+import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, peekCoach, takeCoach } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
@@ -4230,8 +4230,26 @@ function installCheats() {
     { n: 8, id: 'zanzibar', map: 'zanzibar', flag: 'c7.arrived', complete: 'c7.complete' },
     { n: 9, id: 'sicily', map: 'sicily', flag: 'c8.arrived', complete: 'c8.complete' },
     { n: 10, id: 'oaxaca', map: 'oaxaca', flag: 'c9.arrived', complete: 'c9.complete' },
-    { n: 11, id: 'home', map: 'village', flag: 'c10.arrived' },
+    { n: 11, id: 'home', map: 'la-caleta', flag: 'c10.arrived' },
   ];
+  /**
+   * What a real journey carries out of a chapter besides its two flags: the
+   * things later chapters gate on. Skipping Ch'aska Pampa without the band
+   * and a moved Paca, or Kerala with Joseph's letter still undelivered, left
+   * soup.go() standing in a world no player could reach.
+   */
+  const CARRY: Record<number, { set?: string[]; clear?: string[] }> = {
+    1: { set: ['pallay.done', 'keepsake.band', 'paca.moved'] },
+    3: { set: ['joseph.letter'] },
+    6: { set: ['c6.letter.delivered'], clear: ['joseph.letter'] },
+  };
+  /** Mark chapter `c` walked: its flags and whatever it hands onward. */
+  const walk = (c: (typeof CHAPTERS_CHEAT)[number]) => {
+    state.set(c.flag);
+    if (c.complete) state.set(c.complete);
+    for (const f of CARRY[c.n]?.set ?? []) state.set(f);
+    for (const f of CARRY[c.n]?.clear ?? []) state.clearFlag(f);
+  };
 
   const jump = (mapId: string, at?: [number, number]) => {
     const dest = maps[mapId];
@@ -4293,10 +4311,12 @@ function installCheats() {
       // with its own flags from the table; the target itself only arrives.
       for (const c of CHAPTERS_CHEAT) {
         if (c.n >= target.n) break;
-        state.set(c.flag);
-        if (c.complete) state.set(c.complete);
+        walk(c);
       }
-      state.set(target.flag);
+      // The target's own arrival narration plays on landing, as in play, and
+      // raises its flag itself; only a chapter without one is marked here.
+      const arrival = ARRIVALS.find((a) => a.flag === target.flag);
+      if (!arrival || arrival.map !== target.map || !state.check(arrival.when)) state.set(target.flag);
       // Chapters skipped over are already celebrated; without this, the
       // next dialogue to end replayed every plate and chapter-close at once.
       resyncCelebrations();
@@ -4356,11 +4376,10 @@ function installCheats() {
       }));
     },
     photos() {
-      const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
-        'photo.c5.market', 'photo.c6.jetty', 'photo.c11.kites', 'photo.c7.shore',
-        'photo.c8.piazza', 'photo.c9.ofrenda'];
-      for (const f of shots) state.set(f);
-      return `${shots.length} photographs granted`;
+      // Straight from the album's own list, so a renamed photo cannot leave
+      // this desk granting flags nothing reads.
+      for (const p of PHOTOS) state.set(p.flag);
+      return `${PHOTOS.length} photographs granted`;
     },
     tod(t: number) {
       dayT = Math.max(0, Math.min(0.999, t));
@@ -4390,10 +4409,13 @@ function installCheats() {
     end() {
       api.pages();
       api.photos();
-      for (const c of CHAPTERS_CHEAT) {
-        state.set(c.flag);
-        if (c.complete) state.set(c.complete);
-      }
+      for (const c of CHAPTERS_CHEAT) walk(c);
+      // Every homecoming the well waits on: the reunions, the album, and
+      // Doña Carmen's word, so the last page is one Space away.
+      for (const f of [
+        'c10.marisol.seen', 'c10.rosa.seen', 'c10.aurelio.seen', 'c10.carmen.seen',
+        'c10.pilar.seen', 'c10.album.seen', 'c10.carmen.her',
+      ]) state.set(f);
       // The endgame has its own authored ending; nothing here celebrates.
       resyncCelebrations();
       return jump('village');
