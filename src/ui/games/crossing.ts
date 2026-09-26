@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun, tip } from './run';
 
 /**
  * The Yacana's two hands-on verbs.
@@ -136,12 +136,6 @@ function shelfSpot(name: string): string {
   const row = idx < COLS ? 'top shelf' : 'lower shelf';
   return `${col} on the ${row}`;
 }
-
-/**
- * Esc raises the engine's own strip over an open panel. The pot has the
- * decency to wait while it is up: nothing burns behind a menu.
- */
-const stripUp = () => (document.querySelector('.ht-strip') as HTMLElement | null)?.hidden === false;
 
 // Shelf geometry: two wooden shelves of four slots on the galley's right wall.
 const SLOT_X0 = 432;
@@ -428,6 +422,7 @@ export class GalleyPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c3.cook.start'); // the scrubbed pot's retry is a fresh run too
     this.step = 0;
     this.cur = 0;
     this.done = false;
@@ -563,7 +558,7 @@ export class GalleyPanel {
         if ((this.wrongBy[i] ?? 0) > (this.wrongBy[worst] ?? 0)) worst = i;
       }
       const name = (this.wantName(worst) ?? 'garlic').toLowerCase();
-      coach('c3.cook.start', `You kept reaching past the ${name}; it sits ${shelfSpot(this.wantName(worst) ?? '')}. Go straight to it and the pot stays calm.`);
+      tip('c3.cook.start', `You kept reaching past the ${name}; it sits ${shelfSpot(this.wantName(worst) ?? '')}. Go straight to it and the pot stays calm.`);
     }
     this.audio.weaveDone();
     this.sc.flash('#ffe2b0', 0.3);
@@ -636,9 +631,10 @@ export class GalleyPanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     const simDt = this.sc.frame(dt, (g) => this.paint(g));
-    // The reduction runs on its own clock, and only while the pot is unattended
-    // by menus. Ben calls it twice before it ever catches.
-    if (this.simmer >= 0 && !this.done && !this.burnt && !stripUp()) {
+    // The reduction runs on its own clock; the engine stops every panel's clock
+    // while the pause strip is up, so nothing burns behind a menu. Ben calls
+    // it twice before it ever catches.
+    if (this.simmer >= 0 && !this.done && !this.burnt) {
       const was = this.simmer;
       const dur = this.hard ? (calm() ? HARD_SIMMER_CALM : HARD_SIMMER_DUR) : calm() ? SIMMER_CALM : SIMMER_DUR;
       this.simmer = Math.min(1, this.simmer + simDt / dur);
@@ -655,7 +651,7 @@ export class GalleyPanel {
       if (this.simmer >= 1) this.burn();
     }
     // The hard telling's other clock: each step, the pot waits only so long.
-    if (this.hard && this.feeding && !this.lidding && !stripUp()) {
+    if (this.hard && this.feeding && !this.lidding) {
       this.stepLeft -= simDt;
       if (this.stepLeft <= 0) this.scorch();
     }
@@ -1392,6 +1388,7 @@ export class StarPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun('c3.stars.start');
     this.target = 0;
     this.cx = 5;
     this.cy = 3;
@@ -1476,7 +1473,7 @@ export class StarPanel {
           for (let i = 1; i < this.missBy.length; i++) {
             if ((this.missBy[i]?.n ?? 0) > (this.missBy[worst]?.n ?? 0)) worst = i;
           }
-          coach('c3.stars.start', this.starCoach(worst));
+          tip('c3.stars.start', this.starCoach(worst));
         }
       }
     } else {
@@ -1570,7 +1567,7 @@ export class StarPanel {
     const simDt = this.sc.frame(dt, (g) => this.paint(g));
     // Hard telling: the watch glass runs while the strip is down and the sky
     // is still owed readings. The story telling has no clock at all.
-    if (this.hard && !this.done && !this.failed && !stripUp()) {
+    if (this.hard && !this.done && !this.failed) {
       this.left -= simDt;
       if (this.left <= 0) {
         this.left = 0;

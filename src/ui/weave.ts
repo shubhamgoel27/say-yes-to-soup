@@ -3,7 +3,7 @@ import type { AudioBus } from '../engine/audio';
 import { PAL } from '../engine/config';
 import { surface, rect, rr, oval, dot, vgrad, shade, mute, glowSpot, softShadow, Rng, type Surface } from '../art/pix';
 import { Scene, mountScene, easeOutCubic, easeInCubic, easeOutBack, wobble } from './games/scene';
-import { RUN, coach } from './games/run';
+import { RUN, coach, freshRun } from './games/run';
 
 /**
  * The weaving mini-game: Carmen calls a color sequence, you call it back with
@@ -330,6 +330,7 @@ export class WeavePanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(WEAVE_FLAG);
     this.row = 0;
     this.woven = [];
     this.hard = RUN.hard;

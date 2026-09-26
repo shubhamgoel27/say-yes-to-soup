@@ -18,7 +18,7 @@ import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI } from './ui/album';
-import { RUN, peekCoach, takeCoach } from './ui/games/run';
+import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { initRotateNudge, isCoarseTouch } from './ui/responsive';
@@ -442,6 +442,7 @@ const games = GAMES.map((g) => {
   const root = makeOverlayRoot(g.flag.replace(/\W+/g, '-'));
   return { def: g, root, panel: g.make(root, audio) };
 });
+const panelList = games.map((g) => g.panel);
 const anyGameOpen = () => games.some((g) => g.panel.isOpen);
 type GameEntry = (typeof games)[number];
 
@@ -471,6 +472,14 @@ let howtoSel = 0;
 let howtoOpts: string[] = ['Begin', 'Not yet'];
 /** Coach's advice, drawn once per card: takeCoach consumes, render repeats. */
 let howtoCoach: string | null = null;
+/**
+ * The card that comes back holding advice ignores "begin" for a short beat
+ * (performance.now() ms): the Space that closed the panel is often pressed
+ * twice, and the second press must not skip the one line worth reading.
+ */
+let howtoGraceUntil = 0;
+const HOWTO_GRACE_MS = 650;
+const howtoInGrace = () => performance.now() < howtoGraceUntil;
 const HARD_OPT = 'The hard telling';
 let stripFor: GameEntry | null = null;
 let stripSel = 1;
@@ -486,49 +495,51 @@ function pendingGame(): GameEntry | null {
 /** Open a panel and route its completion: story narration, or replay joy. */
 function openPanel(g: GameEntry) {
   player.frozen = true;
+  // Every open is a fresh run, "Start over" included: advice filed by a run
+  // the player already put behind them must not cost this one its star.
+  freshRun(g.def.flag);
   g.panel.open(() => {
     player.frozen = false;
     const wasHard = RUN.hard;
     RUN.hard = false;
-    if (state.has('replay.mode')) {
-      // A return visit: no narration to repeat, just the doing of the thing.
-      state.clearFlag('replay.mode');
-      state.clearFlag(g.def.flag);
-      if (wasHard && peekCoach(g.def.flag)) {
-        // The hard telling filed advice, so the run was not clean: the panel
-        // already told that story in its own voice. Out here, the card comes
-        // straight back holding the coach's line, cursor on the rematch.
-        state.set('replay.mode');
-        state.set(g.def.flag);
-        showHowto(g);
-        howtoSel = howtoOpts.indexOf(HARD_OPT);
-        if (howtoSel < 0) howtoSel = 0;
-        renderHowto();
-        return;
-      }
-      if (wasHard) {
-        // Nothing for the coach to say: the hard telling, done properly.
-        // The shelf remembers with a small star.
-        state.set(`hard.${g.def.flag}`);
-        toasts.show('The hard telling, done properly. ✶');
-        // The last star of the whole journey earns one more line; the
-        // toasts queue, so it follows the first at its own pace.
-        const everyStar = games
-          .filter((x) => x.def.hardHow)
-          .every((x) => state.has(`hard.${x.def.flag}`));
-        if (everyStar && !state.has('hard.all')) {
-          state.set('hard.all');
-          toasts.show('Every telling, done properly. Nani closes the journal and pretends she never worried.');
-        }
-      } else {
-        toasts.show('Just for the joy of it.');
-      }
-      audio.chime();
-      const [px, py] = player.renderPos();
-      renderer.burst(px + TILE / 2, py + 2, 'sparkle', ['#f2e6d0', '#d9a441']);
+    const verdict = verdictFor(g.def.flag, state.has('replay.mode'), wasHard);
+    if (verdict === 'story') {
+      startNarration(g.def.doneNode);
       return;
     }
-    startNarration(g.def.doneNode);
+    // A return visit: no narration to repeat, just the doing of the thing.
+    state.clearFlag('replay.mode');
+    state.clearFlag(g.def.flag);
+    if (verdict === 'short') {
+      // The hard telling filed advice, so the run was not clean: the panel
+      // already told that story in its own voice. Out here, the card comes
+      // straight back holding the coach's line, cursor on the rematch.
+      state.set('replay.mode');
+      state.set(g.def.flag);
+      showHowto(g);
+      howtoSel = howtoOpts.indexOf(HARD_OPT);
+      if (howtoSel < 0) howtoSel = 0;
+      howtoGraceUntil = performance.now() + HOWTO_GRACE_MS;
+      renderHowto();
+      return;
+    }
+    if (verdict === 'star') {
+      // Nothing for the coach to say: the hard telling, done properly.
+      // The shelf remembers with a small star.
+      state.set(`hard.${g.def.flag}`);
+      toasts.show('The hard telling, done properly. ✶');
+      // The last star of the whole journey earns one more line; the
+      // toasts queue, so it follows the first at its own pace.
+      if (everyStar(games.map((x) => x.def), (f) => state.has(f)) && !state.has('hard.all')) {
+        state.set('hard.all');
+        toasts.show('Every telling, done properly. Nani closes the journal and pretends she never worried.');
+      }
+    } else {
+      toasts.show('Just for the joy of it.');
+    }
+    audio.chime();
+    const [px, py] = player.renderPos();
+    renderer.burst(px + TILE / 2, py + 2, 'sparkle', ['#f2e6d0', '#d9a441']);
   });
 }
 
@@ -2657,7 +2668,8 @@ function motionWitness() {
 function update(dt: number) {
   renderer.tick(dt);
   textbox.tick(dt);
-  for (const g of games) g.panel.tick?.(dt);
+  // The pause strip is a real pause: no panel clock runs while it is up.
+  tickPanels(panelList, dt, !stripEl.hidden);
   audio.tick(dt);
   stage.tick(dt);
 
@@ -2830,7 +2842,9 @@ function update(dt: number) {
       renderHowto();
       audio.select();
     }
-    if (act) {
+    if (act && howtoInGrace()) {
+      // A leftover press from the panel that just closed: the card stays.
+    } else if (act) {
       audio.confirm();
       closeHowto(howtoOpts[howtoSel] ?? null);
     } else if (back || pauseKey) {
@@ -2838,9 +2852,11 @@ function update(dt: number) {
       closeHowto(null);
     }
   } else if (!stripEl.hidden) {
-    // The in-panel pause strip: start over, keep at it, or step away.
-    if (menuDir === 'up' || menuDir === 'down') {
-      stripSel = (stripSel + (menuDir === 'down' ? 1 : STRIP_OPTS.length - 1)) % STRIP_OPTS.length;
+    // The in-panel pause strip: start over, keep at it, or step away. It
+    // lies as a row, so left and right walk it as well as up and down.
+    if (menuDir) {
+      const fwd = menuDir === 'down' || menuDir === 'right';
+      stripSel = (stripSel + (fwd ? 1 : STRIP_OPTS.length - 1)) % STRIP_OPTS.length;
       renderStrip();
       audio.select();
     }
@@ -3911,6 +3927,7 @@ howtoEl.addEventListener('pointerdown', (e) => {
   const row = (e.target as HTMLElement).closest('[data-ht]');
   if (!row) return;
   e.preventDefault();
+  if (howtoInGrace()) return; // the double tap that closed the panel, still landing
   howtoSel = Number((row as HTMLElement).dataset.ht);
   audio.confirm();
   closeHowto(howtoOpts[howtoSel] ?? null);
@@ -4108,6 +4125,8 @@ function installCheats() {
           'soup.flags(sub?)     list flags currently set, optionally filtered',
           'soup.games()         list every minigame and its start flag',
           'soup.play(flag)      open a minigame right now',
+          'soup.replay(flag)    offer its replay card now, hard telling included',
+          'soup.panel(flag)     the live panel object, for automation',
           'soup.pages()         fill the journal, every page',
           "soup.page(id)        grant one page properly (soup.flag can't)",
           'soup.perf()          frame costs and a log of every hitch over 14ms',
@@ -4168,6 +4187,20 @@ function installCheats() {
       if (textbox.isOpen) return `${flag} armed; it opens when this conversation ends`;
       openPanel(g);
       return `playing ${flag}`;
+    },
+    /** Offer a game's replay card right now, hard telling included, exactly
+     * as a return visit does: the card, then whichever telling you pick. */
+    replay(flag: string) {
+      const g = games.find((x) => x.def.flag === flag);
+      if (!g) return `no game with start flag ${flag}. try soup.games()`;
+      state.set('replay.mode');
+      state.set(flag);
+      showHowto(g);
+      return `the card for ${flag} is on the table`;
+    },
+    /** The live panel behind a start flag, for automation that plays it. */
+    panel(flag: string) {
+      return games.find((x) => x.def.flag === flag)?.panel ?? null;
     },
     pages() {
       for (const e of JOURNAL) state.apply([`journal:${e.id}`]);

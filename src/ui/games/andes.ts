@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { surface, rect, rr, oval, dot, vgrad, shade, glowSpot, softShadow, Rng, type Surface } from '../../art/pix';
 import { Scene, mountScene, easeInCubic, easeOutCubic, wobble } from './scene';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun } from './run';
 
 /**
  * The highlands' hands-on verb: the watia earth oven, built with Justina at
@@ -442,6 +442,7 @@ export class WatiaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(WATIA_FLAG);
     this.phase = 'stack';
     this.placed = SLOTS.map(() => false);
     this.cursor = 0;

@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun, tip } from './run';
 
 /**
  * Sicily's three hands-on verbs, each painted as a small moving picture.
@@ -472,7 +472,9 @@ export class ScopaPanel {
   private missedSette = 0; // times the settebello lay takeable and you played past her
   private missedCap = 0; // no-capture plays while another card in hand could capture
   private gifts = 0; // cards you fed the table that he took on his very next play
+  private lightGifts = 0; // of those, fed onto a table light enough (ten or under) for one card to sweep
   private fedKey = -1; // the card you just fed, watched for one opposing turn
+  private fedLight = false; // whether the table was sweepable right after that feed
   private consolI = 0;
   private hint = '';
   private flourish = '';
@@ -505,6 +507,7 @@ export class ScopaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(SCOPA_FLAG);
     this.hard = RUN.hard;
     this.myPts = 0;
     this.oppPts = 0;
@@ -514,6 +517,7 @@ export class ScopaPanel {
     this.missedSette = 0;
     this.missedCap = 0;
     this.gifts = 0;
+    this.lightGifts = 0;
     this.fedKey = -1;
     this.scene ??= new Scene();
     this.scene.restart();
@@ -733,18 +737,23 @@ export class ScopaPanel {
 
   /**
    * The match, diagnosed. One line, the dominant miss of this match, in the
-   * elder's voice, handed to coach() so the next how-to re-arms you. Every
-   * loss earns it; a win earns it too when the misses were real.
+   * elder's voice. Every loss files it with coach(); a win with real misses
+   * in it still earns the sentence, as a tip(). You must play a card every
+   * turn, so a card he takes back is often unavoidable: the hard telling's
+   * star is the match itself, exactly as the card says.
    */
-  private coachRun() {
+  private coachRun(lost: boolean) {
+    const file = lost ? coach : tip;
     if (this.missedSette > 0) {
-      coach(SCOPA_FLAG, 'You let the settebello go to build a small sweep; the seven of coins outscores three sweeps. When she lies on the wood and a seven is in your hand, she comes first, always.');
+      file(SCOPA_FLAG, 'You let the settebello go to build a small sweep; the seven of coins outscores three sweeps. When she lies on the wood and a seven is in your hand, she comes first, always.');
+    } else if (this.lightGifts > 0 && this.lightGifts >= this.missedCap) {
+      file(SCOPA_FLAG, 'You fed a light table and he swept what you set down. When you cannot capture, discard onto a heavy table, past ten, where no single card can take everything.');
     } else if (this.gifts > 0 && this.gifts >= this.missedCap) {
-      coach(SCOPA_FLAG, 'You fed a light table and he swept what you set down. When you cannot capture, discard onto a heavy table, past ten, where no single card can take everything.');
+      file(SCOPA_FLAG, 'You fed him cards he could take straight back. When you cannot capture, lay down a value whose twins are already in the piles, and keep the sevens and the coins at home.');
     } else if (this.missedCap > 0) {
-      coach(SCOPA_FLAG, 'You laid cards on the wood while their captures sat there in the sun. Count the table before every play; the sum that reaches your card is the whole game.');
+      file(SCOPA_FLAG, 'You laid cards on the wood while their captures sat there in the sun. Count the table before every play; the sum that reaches your card is the whole game.');
     } else {
-      coach(SCOPA_FLAG, 'He beat you on the counting, not the sweeps: most cards, most denari. Take every small capture he offers; the quiet points are the ones that decide it.');
+      file(SCOPA_FLAG, 'He beat you on the counting, not the sweeps: most cards, most denari. Take every small capture he offers; the quiet points are the ones that decide it.');
     }
   }
 
@@ -765,8 +774,11 @@ export class ScopaPanel {
       }
     }
     if (taken.length === 0) {
-      if (mine) this.fedKey = ckey(card);
       this.table.push(card);
+      if (mine) {
+        this.fedKey = ckey(card);
+        this.fedLight = this.table.reduce((a, t) => a + t.v, 0) <= 10;
+      }
       this.vfxPlace(card, mine);
       return mine ? 'No capture; the card stays on the wood.' : 'The elder feeds the table a card, watching you sideways.';
     }
@@ -882,7 +894,10 @@ export class ScopaPanel {
     const fedOut = this.fedKey >= 0 && this.table.some((t) => ckey(t) === this.fedKey);
     const played = this.opp.splice(bestI, 1)[0];
     if (played) this.hint = this.resolve(played, false);
-    if (fedOut && !this.table.some((t) => ckey(t) === this.fedKey)) this.gifts++;
+    if (fedOut && !this.table.some((t) => ckey(t) === this.fedKey)) {
+      this.gifts++;
+      if (this.fedLight) this.lightGifts++;
+    }
     this.fedKey = -1;
   }
 
@@ -1027,7 +1042,7 @@ export class ScopaPanel {
         this.phase = 'done';
         this.flourish = '';
         // A win with real misses in it still earns the one true sentence.
-        if (this.missedSette + this.missedCap + this.gifts > 0) this.coachRun();
+        if (this.missedSette + this.missedCap + this.gifts > 0) this.coachRun(false);
         this.hint = `${this.myPts} to ${this.oppPts}. The table thumps; the chair is yours now, officially. Press Space.`;
         this.audio.weaveDone();
         const sc = this.scene;
@@ -1049,7 +1064,7 @@ export class ScopaPanel {
           sc.flash('#e8dcc4', 0.14);
           if (!calm()) sc.thump(2, 0.03);
         }
-        this.coachRun();
+        this.coachRun(true);
         if (this.hard) {
           this.hint =
             `${this.oppPts} to ${this.myPts}, his, and on a feast night the chair keeps its owner. ` +
@@ -1079,9 +1094,11 @@ export class ScopaPanel {
       this.myPts = 0;
       this.oppPts = 0;
       // A fresh match gets a fresh diagnosis; the old misses were coached.
+      freshRun(SCOPA_FLAG);
       this.missedSette = 0;
       this.missedCap = 0;
       this.gifts = 0;
+      this.lightGifts = 0;
       this.startRound();
       this.hint = 'Fresh deal, nothing owed, the espresso going cold in exactly the same place. "Now. The sevens, then everything else."';
     } else if (this.phase === 'done') {
@@ -1507,6 +1524,7 @@ export class PisciPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(PISCI_FLAG);
     this.hard = RUN.hard;
     this.baseSpeed = this.hard ? 0.85 : 0.5;
     this.gain = this.hard ? 0.2 : 0.14;
@@ -1530,7 +1548,7 @@ export class PisciPanel {
     this.pullT = 9;
     this.prevLeap = 0;
     this.hint = this.hard
-      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Two slapped blades in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
+      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
       : 'The rais lifts his arm. Space to pull as his call reaches the boat.';
     this.root.hidden = false;
     this.setHint(this.hint);
@@ -1585,12 +1603,14 @@ export class PisciPanel {
    * One line for the drift this run actually had, handed to coach() so the
    * next how-to re-arms the hands and not just the hope.
    */
-  private coachDrift() {
+  private coachDrift(lost: boolean) {
     if (this.early + this.late === 0) return;
+    // A broken stroke is a fault; a fish landed with a wobble is only a tip.
+    const file = lost ? coach : tip;
     if (this.early >= this.late) {
-      coach(PISCI_FLAG, 'Your blade beats the call; it slaps air while the crest is still crossing open water. Watch the lit swell, not his arm, and pull only when it touches the bow.');
+      file(PISCI_FLAG, 'Your blade beats the call; it slaps air while the crest is still crossing open water. Watch the lit swell, not his arm, and pull only when it touches the bow.');
     } else {
-      coach(PISCI_FLAG, 'The call keeps rolling past you unpulled. Set the oar as the crest closes and commit while it still touches the bow; certainty comes after the stroke, not before.');
+      file(PISCI_FLAG, 'The call keeps rolling past you unpulled. Set the oar as the crest closes and commit while it still touches the bow; certainty comes after the stroke, not before.');
     }
   }
 
@@ -1613,7 +1633,7 @@ export class PisciPanel {
       if (!calm()) sc.thump(4, 0.05);
       sc.burst(BOAT_AT.x, 200, { n: calm() ? 6 : 18, color: 'rgba(235,248,250,0.9)', size: 2.8, speed: 120, life: 0.7, grav: 300 });
     }
-    this.coachDrift();
+    this.coachDrift(true);
     this.hint = this.hard
       ? 'The stroke breaks and the swordfish flashes once under the keel, gone to tell it his way. ' +
         'The rais shrugs at the whole sea. "Domani. The fish also rehearses." Space, and the pageant stands down.'
@@ -1633,10 +1653,13 @@ export class PisciPanel {
         done?.();
         return;
       }
+      freshRun(PISCI_FLAG); // from the top is a fresh run
       this.phase = 'row';
       this.strokes = 0;
       this.broke = 0;
       this.leg = 0;
+      this.early = 0;
+      this.late = 0;
       this.x = 1;
       this.speed = this.baseSpeed;
       this.hint = 'He wipes his eyes and lifts his arm again. Space to pull as the call reaches the boat.';
@@ -1681,8 +1704,8 @@ export class PisciPanel {
               sc.burst(160, 170, { n: calm() ? 6 : 16, color: 'rgba(238,250,252,0.9)', size: 2.6, speed: 120, life: 0.6, grav: 320 });
             }
             this.hint = 'The fish surrenders, grinning, hauled up to bells and roaring. Press Space.';
-            // A win with slapped blades still earns the one true sentence.
-            this.coachDrift();
+            // A win with a wobble still earns the one true sentence, as a tip.
+            this.coachDrift(false);
           }
         } else {
           this.x = 1;
@@ -2135,6 +2158,7 @@ export class CannoloPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(CANNOLO_FLAG);
     this.hard = RUN.hard;
     this.shellsN = this.hard ? 5 : 3;
     this.faults = 0;
@@ -2147,7 +2171,7 @@ export class CannoloPanel {
     this.flowing = false;
     this.speed = this.hard ? 0.5 : 0.42;
     this.zoneLo = this.hard ? 0.62 : 0.6;
-    this.zoneW = this.hard ? 0.12 : 0.2;
+    this.zoneW = this.hard ? 0.14 : 0.2; // on feast night the gold is a wall on both sides, so it keeps a little width
     this.gCur = 0;
     this.scene ??= new Scene();
     this.scene.restart();
@@ -2162,7 +2186,7 @@ export class CannoloPanel {
     this.tweezT = 9;
     this.splats = [];
     this.hint = this.hard
-      ? `${this.cust(0)?.call ?? ''} Five shells at feast pace, the gold worn thin, and the third wrecked shell ends the night. Space to pipe.`
+      ? `${this.cust(0)?.call ?? ''} Five shells at feast pace and the gold worn thin; stop short of it or past it and the end is a wreck, and the third wreck ends the night. Space to pipe.`
       : `${this.cust(0)?.call ?? ''} Space starts the ricotta; Space again stops it in the sweet zone.`;
     this.root.hidden = false;
     this.setHint(this.hint);
@@ -2247,12 +2271,14 @@ export class CannoloPanel {
   }
 
   /** One line for the tendency this run actually had, for the next how-to. */
-  private coachTendency() {
+  private coachTendency(lost: boolean) {
     if (this.overs + this.unders === 0) return;
+    // The bag taken back is a fault; a served queue with a wreck in it is a tip.
+    const file = lost ? coach : tip;
     if (this.overs >= this.unders) {
-      coach(CANNOLO_FLAG, 'Every shell you lost went from riding the flow past the gold. The cream keeps moving while your thumb decides; let go the moment it touches the gold, not at the far wall.');
+      file(CANNOLO_FLAG, 'Every shell you lost went from riding the flow past the gold. The cream keeps moving while your thumb decides; let go the moment it touches the gold, not at the far wall.');
     } else {
-      coach(CANNOLO_FLAG, 'You keep stopping shy, the end still hungry. The gold starts later than your nerve says; hold one breath longer and stop inside it, not before it.');
+      file(CANNOLO_FLAG, 'You keep stopping shy, the end still hungry. The gold starts later than your nerve says; hold one breath longer and stop inside it, not before it.');
     }
   }
 
@@ -2268,7 +2294,7 @@ export class CannoloPanel {
       sc.flash('#e8dcc4', 0.14);
       if (!calm()) sc.thump(2, 0.03);
     }
-    this.coachTendency();
+    this.coachTendency(true);
     this.hint =
       '"Basta, bedda." Alfio lifts the bag out of your hands the way you lift a sleeping cat. ' +
       '"Three shells for the seagulls is a festival of its own. Tomorrow the gold will still be there." Space, and the queue gets his cannoli tonight.';
@@ -2320,6 +2346,21 @@ export class CannoloPanel {
         } else {
           this.hint = 'Alfio squints down the shell. "That end is still hungry, friend. Again, with courage." The flow waits on your thumb.';
         }
+      } else if (this.hard && this.fill > this.zoneLo + this.zoneW) {
+        // On feast night the gold is the whole law: an end ridden past it
+        // crowds the seam and cracks, and it counts against the three.
+        this.overs++;
+        this.faults++;
+        this.fill = 0;
+        this.audio.bump();
+        sc?.burst(ENDS[this.end] ?? 177, SHELL_AT.y, { n: calm() ? 3 : 8, color: '#f0e8d2', size: 2.4, speed: 90, life: 0.5, grav: 260 });
+        if (this.faults >= 3) {
+          this.failNight();
+          return;
+        }
+        this.hint =
+          '"Past the gold. Hear that? The seam." A hairline crack, and he scrapes the end out and eats the evidence. ' +
+          `That is ${this.faults} of the three the feast can spare. That end again, from empty; stop inside the gold.`;
       } else {
         const generous = this.fill > this.zoneLo + this.zoneW;
         sc?.burst(ENDS[this.end] ?? 177, SHELL_AT.y, { n: calm() ? 3 : 7, color: '#f4efe4', size: 2, speed: 40, life: 0.4, grav: 160 });
@@ -2365,7 +2406,7 @@ export class CannoloPanel {
         this.creamDone0 = 0;
         this.creamDone1 = 0;
         this.curGarn = -1;
-        this.speed += this.hard ? 0.1 : 0.12; // the bag warms, the ricotta hurries
+        this.speed += this.hard ? 0.08 : 0.12; // the bag warms, the ricotta hurries
         this.zoneLo = this.hard ? 0.6 + this.shell * 0.04 : 0.56 + this.shell * 0.05;
         this.hint = `${this.cust(this.shell)?.call ?? ''} The ricotta runs faster as the bag warms. Space to pipe.`;
       } else {
@@ -2380,7 +2421,7 @@ export class CannoloPanel {
           ? 'Five shells at feast pace, zero soggy lies. Alfio looks at the bag, then at you, and does not hold out his hand. Tonight you carry it home. Press Space.'
           : 'Three shells, three moments, zero soggy lies. Alfio holds out his hand for the bag with visible reluctance. Press Space.';
         // Even a served queue can carry a tendency worth one warm sentence.
-        this.coachTendency();
+        this.coachTendency(false);
       }
     } else if (this.phase === 'done') {
       this.root.hidden = true;

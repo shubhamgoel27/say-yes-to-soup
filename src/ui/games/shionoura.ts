@@ -4,7 +4,7 @@ import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
-import { RUN, coach } from './run';
+import { RUN, coach, freshRun } from './run';
 
 /** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
 function calm(): boolean {
@@ -101,6 +101,7 @@ export class KingyoPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(KINGYO_FLAG); // a fresh paper after a tear is a fresh run
     this.hard = RUN.hard;
     this.reach = this.hard ? REACH_HARD : REACH;
     this.dips = 0;
@@ -239,7 +240,6 @@ export class KingyoPanel {
 
   private finish() {
     this.phase = 'done';
-    coach(KINGYO_FLAG, ''); // a bagged round retires any advice still owed
     this.audio.weaveDone();
     this.scene.flash('#ffd9a0', 0.32);
     if (!calm()) this.scene.thump(3, 0.03);
@@ -907,6 +907,7 @@ export class DashiPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    freshRun(DASHI_FLAG);
     this.hard = RUN.hard;
     this.heatRate = this.hard ? HEAT_RATE_HARD : HEAT_RATE;
     this.pullLo = this.hard ? PULL_LO_HARD : PULL_LO;
@@ -1099,7 +1100,6 @@ export class DashiPanel {
           });
           if (this.packed >= 2) {
             this.phase = 'done';
-            coach(DASHI_FLAG, ''); // breakfast made; retire any advice still owed
             this.audio.weaveDone();
             this.scene.flash('#ffd9a0', 0.35);
             this.hint =
