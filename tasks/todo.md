@@ -538,8 +538,17 @@ definition, so the coach ledger doubles as the outcome signal.
 
 Audit reports: scratchpad sweep/{build,play-early,play-mid,play-late,games,mobile,ui,code}.
 
-- [ ] A. Thread: "meet X" tasks for unmet required NPCs, no single-NPC fallbacks, cross-map targets lead forward, wrong coords (kerala mail, Sachiko bamboo, pier sign, vigil, road home, Oaxaca arrival); invariant sim test per chapter
-- [ ] B. Hard tellings: empty coach = clean, clear coach on success/restart, pause strip freezes panels, Scopa rule, pastry gold, shelf scroll, strip left/right, coach typos
-- [ ] C. Mobile landscape: pointer:coarse sizing, stick hint line-height, title + settings fit 412px, pin vs thread button, touch copy
-- [ ] D. Story gates (Carmen ending, gifts twice, petal path, Chela door), saves (slot pinning, ofrenda slot), toasts under quiet HUD, title fit/anim restart/esc paths, mute persist, continuity (plates, Kochi, grass leak, Kerala address), lint-chapter sync, dev cheats
+- [x] A. Thread: "meet X" tasks for unmet required NPCs, no single-NPC fallbacks, cross-map targets lead forward, wrong coords (kerala mail, Sachiko bamboo, pier sign, vigil, road home, Oaxaca arrival); invariant sim test per chapter
+- [x] B. Hard tellings: empty coach = clean, clear coach on success/restart, pause strip freezes panels, Scopa rule, pastry gold, shelf scroll, strip left/right, coach typos
+- [x] C. Mobile landscape: pointer:coarse sizing, stick hint line-height, title + settings fit 412px, pin vs thread button, touch copy
+- [x] D. Story gates (Carmen ending, gifts twice, petal path, Chela door), saves (slot pinning, ofrenda slot), toasts under quiet HUD, title fit/anim restart/esc paths, mute persist, continuity (plates, Kochi, grass leak, Kerala address), lint-chapter sync, dev cheats
 - [ ] Merge, full gate (tsc, tests, lint, prod build e2e), ship
+
+### Review
+Four worktree agents, merged on branch sweep-fixes (only import-line conflicts,
+from B vs C/D in main.ts, coast.ts, weave.ts). Gate: tsc clean, 210/210 tests
+(was 124; new thread, hard, gates, toast, lint, touch suites), prod build boots
+and plays with zero console errors on desktop 1280x800 and Galaxy landscape.
+Taste call from B: any hard win within what the card forgives earns the star;
+wobbles become tips for the next card. Left: remaining Andes fallback lines
+(bench, mat, rug), Oaxaca "senorita/hija" address, bundle split + loading state.
