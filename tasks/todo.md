@@ -533,3 +533,13 @@ definition, so the coach ledger doubles as the outcome signal.
 - [x] Orientation: phones landscape-first; Android fullscreen+lock via journal card, iOS rotate page, decline-twice corner pin; tablets/desktop untouched
 - [x] Gate: tsc clean, 118/118, prod build boots, hard-telling e2e ALL GREEN on merged tree
 - [x] Shipped: d641773, fb755e3, 20fa5bd
+
+## 2026-09-26: full-sweep fixes (8-agent audit, 4 fix agents)
+
+Audit reports: scratchpad sweep/{build,play-early,play-mid,play-late,games,mobile,ui,code}.
+
+- [ ] A. Thread: "meet X" tasks for unmet required NPCs, no single-NPC fallbacks, cross-map targets lead forward, wrong coords (kerala mail, Sachiko bamboo, pier sign, vigil, road home, Oaxaca arrival); invariant sim test per chapter
+- [ ] B. Hard tellings: empty coach = clean, clear coach on success/restart, pause strip freezes panels, Scopa rule, pastry gold, shelf scroll, strip left/right, coach typos
+- [ ] C. Mobile landscape: pointer:coarse sizing, stick hint line-height, title + settings fit 412px, pin vs thread button, touch copy
+- [ ] D. Story gates (Carmen ending, gifts twice, petal path, Chela door), saves (slot pinning, ofrenda slot), toasts under quiet HUD, title fit/anim restart/esc paths, mute persist, continuity (plates, Kochi, grass leak, Kerala address), lint-chapter sync, dev cheats
+- [ ] Merge, full gate (tsc, tests, lint, prod build e2e), ship

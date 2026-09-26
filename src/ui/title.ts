@@ -616,7 +616,7 @@ export class TitleScreen {
         <div class="t-controls">${
           COARSE
             ? `
-          <span><b>tap the ground</b>&nbsp; walk</span>
+          <span><b>thumb, lower left</b>&nbsp; walk</span>
           <span><b>tap people</b>&nbsp; talk</span>
           <span><b>&#9998;</b>&nbsp; the journal</span>`
             : `
