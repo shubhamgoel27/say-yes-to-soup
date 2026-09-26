@@ -2395,17 +2395,35 @@
         .p-row { padding-top: 8px; padding-bottom: 8px; }
         .j-tab { padding-top: 12px; padding-bottom: 12px; }
         .j-item { padding-top: 8px; padding-bottom: 8px; }
-        .ht-opt { padding: 9px 4px; }
+        .ht-opt { padding: 10px 4px; }
         .ht-row { padding: 10px 12px; }
         .sh-verb { padding: 6px 3px; }
-        .cc-arr { padding: 6px 10px; }
+        /* Every finger target reaches 44px. Dialogue choices keep their
+         * margin-list look and simply gain height; the flyleaf's look
+         * arrows get whole 44px cells instead of a glyph-sized sliver. */
+        .tb-choice { padding-top: 11px; padding-bottom: 11px; }
+        .cc-row { grid-template-columns: 44px 1fr 44px; }
+        .cc-arr {
+          min-height: 44px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .cc-btn { min-height: 44px; }
+        /* The chip's quiet last line is small print under small print;
+         * held in a hand it keeps a legible floor. */
+        .errand-nudge { font-size: max(0.85em, 12.5px); }
       }
 
       /* ---- readable floor for small touch screens ----
        * The small-print tier was sized for a desk. On a phone in the hand it
        * floors near 13.5px. Set on :root, so the Large text setting (vars on
        * body.text-large, closer to the text) still wins when chosen. */
-      @media (pointer: coarse) and (max-width: 740px) {
+      /* Phones held sideways are 844 to 932px wide and slip past a width
+       * gate, so the floor also keys off the short side a phone lying down
+       * always has. Tablets are taller than 500px either way. */
+      @media (pointer: coarse) and (max-width: 740px), (pointer: coarse) and (max-height: 500px) {
         :root {
           --fs-11: 13px;
           --fs-115: 13px;
@@ -2450,6 +2468,86 @@
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }
         .p-card, .ht-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+        /* A scene capped by height is narrower than its panel: sit it in
+         * the middle rather than against the left rule. */
+        .g-stage canvas { margin: 0 auto; }
+      }
+
+      /* ---- landscape phones: the cover and Settings open wide ----
+       * A phone lying down is 393 to 412px tall; the upright cover stacked
+       * its menu past 480px. Lying down, the cover opens like the book it
+       * is: kicker, name, and painting on the left leaf, the invitation and
+       * the menu on the right. Settings takes the same spread and sets its
+       * rows in two columns, so the last row and its hint stay on the page
+       * (a clipped row let a finger fall through to the backdrop, which
+       * reads as Back). Coarse-gated and short: desktop windows never match. */
+      @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+        #title { padding: 8px 0; }
+        .t-card { padding: 0 12px; }
+        .t-cover {
+          width: min(94vw, 760px);
+          box-sizing: border-box;
+          padding: 18px 44px 16px 26px;
+          display: grid;
+          grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+          grid-template-areas:
+            'kicker sub'
+            'name menu'
+            'art menu';
+          grid-template-rows: auto auto 1fr;
+          column-gap: 26px;
+          align-items: start;
+        }
+        .t-kicker { grid-area: kicker; align-self: end; font-size: 18px; margin-bottom: 2px; }
+        .t-name { grid-area: name; font-size: 30px; }
+        .t-art {
+          grid-area: art;
+          margin: 8px 0 0;
+          width: 100%;
+          max-width: calc((100vh - 170px) * 1.8);
+          justify-self: center;
+        }
+        .t-sub { grid-area: sub; margin: 4px 0 8px; max-width: none; align-self: end; }
+        .t-menu { grid-area: menu; align-self: center; margin-bottom: 0; }
+        .t-band { right: 16px; width: 12px; }
+        .t-controls { margin-top: 10px; flex-wrap: wrap; gap: 6px 18px; }
+
+        .p-card:has(.p-settings) {
+          width: min(94vw, 720px);
+          max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+          padding: 12px 22px 12px;
+        }
+        .p-card:has(.p-settings) .p-title { margin-bottom: 6px; }
+        .p-settings {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          column-gap: 30px;
+        }
+        .p-settings .p-row { min-height: 44px; box-sizing: border-box; align-items: center; padding-top: 4px; padding-bottom: 4px; }
+        .p-settings .p-hint-line { grid-column: 1 / -1; margin-top: 6px; }
+
+        /* The flyleaf's traveler stands in the left margin, the choices
+         * beside it, so "set out" is on the page without a scroll. */
+        .cc-paper:has(.cc-fig) {
+          width: min(94vw, 640px);
+          box-sizing: border-box;
+          padding: 16px 28px 12px;
+          display: grid;
+          grid-template-columns: 150px 1fr;
+          grid-template-areas:
+            'kicker kicker'
+            'fig copy'
+            'fig rows'
+            'fig actions'
+            'fig hint';
+          column-gap: 18px;
+        }
+        .cc-paper:has(.cc-fig) .cc-kicker { grid-area: kicker; margin-bottom: 6px; }
+        .cc-paper:has(.cc-fig) .cc-copy { grid-area: copy; margin: 0 auto 8px; }
+        .cc-paper:has(.cc-fig) .cc-fig { grid-area: fig; align-self: center; margin: 0; }
+        .cc-paper:has(.cc-fig) .cc-rows { grid-area: rows; width: 100%; margin: 0 auto 4px; }
+        .cc-paper:has(.cc-fig) .cc-actions { grid-area: actions; }
+        .cc-paper:has(.cc-fig) .cc-hint { grid-area: hint; }
       }
 
       /* ---- landscape-first: the journal reads best sideways ----
@@ -2564,7 +2662,8 @@
         .sw-go:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 rgba(43, 33, 24, 0.45); }
         .sw-stay {
           display: block;
-          margin: 10px auto 0;
+          min-height: 44px;
+          margin: 8px auto 0;
           padding: 8px 12px;
           background: none;
           border: none;
@@ -2577,12 +2676,15 @@
         }
 
         /* The corner pin: a paper scrap that remembers the offer quietly. */
+        /* It stands just above the pad's side column, whose tallest stack
+         * (thread, journal, pause, action) tops out at 266px upright and
+         * 226px lying down, so the two never touch. */
         #sidewayspin {
           position: fixed;
-          right: calc(10px + env(safe-area-inset-right, 0px));
-          bottom: calc(224px + env(safe-area-inset-bottom, 0px));
-          width: 40px;
-          height: 40px;
+          right: calc(12px + env(safe-area-inset-right, 0px));
+          bottom: calc(280px + env(safe-area-inset-bottom, 0px));
+          width: 44px;
+          height: 44px;
           display: grid;
           place-items: center;
           padding: 0;
@@ -2593,6 +2695,9 @@
           box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.45);
           cursor: pointer;
           z-index: 60;
+        }
+        @media (max-height: 500px) {
+          #sidewayspin { right: calc(10px + env(safe-area-inset-right, 0px)); bottom: calc(238px + env(safe-area-inset-bottom, 0px)); }
         }
         .sw-phone-small {
           width: 12px;

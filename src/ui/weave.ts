@@ -4,6 +4,7 @@ import { PAL } from '../engine/config';
 import { surface, rect, rr, oval, dot, vgrad, shade, mute, glowSpot, softShadow, Rng, type Surface } from '../art/pix';
 import { Scene, mountScene, easeOutCubic, easeInCubic, easeOutBack, wobble } from './games/scene';
 import { RUN, coach } from './games/run';
+import { keysOrTaps } from './responsive';
 
 /**
  * The weaving mini-game: Carmen calls a color sequence, you call it back with
@@ -66,6 +67,24 @@ const BALLS = [
   { x: 594, y: 178 }, // right: gold
   { x: 523, y: 250 }, // down: violet
 ];
+
+/** A finger's reach around each ball, in scene px: its arrow tag included,
+ * and still short of halfway to its neighbours so no tap is ambiguous. */
+const BALL_REACH = 44;
+
+/** Which yarn ball a point in scene px lands on (a COLORS index), or -1. */
+export function ballAt(x: number, y: number): number {
+  let best = -1;
+  let bestD = BALL_REACH * BALL_REACH;
+  BALLS.forEach((b, i) => {
+    const d = (x - b.x) ** 2 + (y - b.y) ** 2;
+    if (d <= bestD) {
+      best = i;
+      bestD = d;
+    }
+  });
+  return best;
+}
 
 const calm = () => document.body.classList.contains('reduce-motion');
 
@@ -322,7 +341,25 @@ export class WeavePanel {
   constructor(
     private root: HTMLElement,
     private audio: AudioBus,
-  ) {}
+  ) {
+    // A ball is its own answer: touch one and that colour is called back.
+    // Only while the hand is answering; otherwise the tap falls through to
+    // the panel's compass as before (the middle still means Space).
+    this.scene.cv.addEventListener('pointerdown', (e) => {
+      if (this.phase !== 'input' || !this.isOpen) return;
+      const r = this.scene.cv.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      const idx = ballAt(
+        ((e.clientX - r.left) / r.width) * this.scene.W,
+        ((e.clientY - r.top) / r.height) * this.scene.H,
+      );
+      const dir = COLORS[idx]?.dir;
+      if (!dir) return;
+      e.preventDefault();
+      e.stopPropagation();
+      this.onDir(dir);
+    });
+  }
 
   get isOpen(): boolean {
     return !this.root.hidden;
@@ -397,7 +434,10 @@ export class WeavePanel {
         this.inputT = 0;
         this.hint = this.hard
           ? 'Now you, and quickly; the shed will not stay open.'
-          : 'Now you. Call them back with the arrows.';
+          : keysOrTaps(
+              'Now you. Call them back with the arrows.',
+              'Now you. Call them back: touch each ball in turn.',
+            );
       }
     } else if (this.phase === 'input' && this.hard) {
       this.inputT += dt;
