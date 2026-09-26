@@ -420,9 +420,39 @@ export class PauseMenu {
         ${body}
       </div>`;
     this.justOpened = false;
-    if (prevScroll > 0) {
-      const card = this.root.querySelector('.p-card');
-      if (card) card.scrollTop = prevScroll;
+    const card = this.root.querySelector('.p-card') as HTMLElement | null;
+    if (!card) return;
+    if (prevScroll > 0) card.scrollTop = prevScroll;
+    this.keepCursorVisible(card);
+  }
+
+  /**
+   * The keyboard cursor never walks off the paper. On a long shelf (twenty
+   * two games at 1280x800 runs past the card) the card scrolls just enough
+   * to show the selected row, with its chapter heading when it starts one;
+   * the last row brings the foot of the card along, so the closing lines
+   * (and Nani's "every telling" when it is earned) are read, not hidden.
+   */
+  private keepCursorVisible(card: HTMLElement) {
+    if (card.scrollHeight <= card.clientHeight) return;
+    const sel = card.querySelector('.p-opt.sel, .p-row.sel') as HTMLElement | null;
+    if (!sel) return;
+    const rows = card.querySelectorAll('.p-opt, .p-row');
+    if (rows.length > 0 && rows[rows.length - 1] === sel) {
+      card.scrollTop = card.scrollHeight;
+      return;
     }
+    if (rows.length > 0 && rows[0] === sel) {
+      card.scrollTop = 0;
+      return;
+    }
+    const head = sel.previousElementSibling;
+    const topEl = head && head.classList.contains('p-g-chapter') ? (head as HTMLElement) : sel;
+    const box = card.getBoundingClientRect();
+    const pad = 10;
+    const top = topEl.getBoundingClientRect().top;
+    const bottom = sel.getBoundingClientRect().bottom;
+    if (top < box.top + pad) card.scrollTop -= box.top + pad - top;
+    else if (bottom > box.bottom - pad) card.scrollTop += bottom - (box.bottom - pad);
   }
 }
