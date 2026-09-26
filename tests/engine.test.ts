@@ -380,6 +380,26 @@ describe('the dt smoother absorbs strays and follows real cadence changes', () =
   });
 });
 
+describe('the smoother warm-up keeps the same rules', () => {
+  it('a pause in the first frames is forgiven and does not poison the median', () => {
+    const smooth = makeDtSmoother();
+    smooth(8.3);
+    const paused = smooth(10 * 60 * 1000);
+    assert.ok(paused < 20, `a warm-up pause stepped ${paused.toFixed(0)}ms`);
+    for (let i = 0; i < 10; i++) smooth(8.3);
+    const settled = smooth(8.3);
+    assert.ok(Math.abs(settled - 8.3) < 0.5, `the median learned the pause: ${settled.toFixed(2)}ms`);
+  });
+
+  it('never returns negative time, warm or not', () => {
+    const smooth = makeDtSmoother();
+    assert.equal(smooth(-5), 0);
+    assert.equal(smooth(Number.NaN), 0);
+    for (let i = 0; i < 10; i++) smooth(8.3);
+    assert.ok(smooth(-12) >= 0);
+  });
+});
+
 describe('paused time is forgiven, not repaid', () => {
   it('a long hidden-tab gap does not speed the game up afterward', () => {
     const smooth = makeDtSmoother();

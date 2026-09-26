@@ -79,6 +79,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'oax.telegram',
       from: 'kept fifty years at the back of the ledger',
+      typed: true,
       body: [
         'TELEGRAMA URGENTE · OFICINA DE OAXACA · 30 OCTUBRE 1975',
         'PARA: ZOILA · SAN ISIDRO GUELAZANA',
@@ -114,7 +115,7 @@ export const CHAPTER: ChapterDef = {
       // Built once, for one person, out of what this particular road carried
       // here. Offering to do it again would turn a remembering into a task.
       replayable: false,
-      make: (root, audio) => new OfrendaPanel(root, audio as AudioBus),
+      make: (root, audio, flags) => new OfrendaPanel(root, audio as AudioBus, flags),
     },
   ],
   recall: RECALL,
@@ -210,7 +211,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'oaxaca', node: 'c9.arrive', flag: 'c9.arrived' },
   completion: {
     flag: 'c9.complete',
-    plate: 'CHAPTER NINE · COMPLETE',
     toasts: ['✦ the ledger closes, both directions', 'the long way home is open'],
   },
 };

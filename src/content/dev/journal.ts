@@ -34,7 +34,7 @@ export const JOURNAL: JournalEntry[] = [
   {
     id: 'words.chaska',
     tab: 'words',
-    title: "Ch'aska",
+    title: 'Ch’aska',
     sub: 'Star. The village name means "star plain."',
     nani: 'On clear nights the pampa doubles the sky.',
     you: 'Aurelio says the plain catches stars when it rains. I checked. Puddles, everywhere, all shining.',

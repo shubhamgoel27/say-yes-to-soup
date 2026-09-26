@@ -92,8 +92,10 @@ export const EXAMINES: Record<string, WorldExamineArm[]> = (() => {
         if (arm.map) {
           (scoped[kind] ??= []).push({ ...arm, chapter: c.id });
         } else {
-          for (const mapId of ownMaps) (scoped[kind] ??= []).push({ ...arm, map: mapId, chapter: c.id });
-          (fallbacks[kind] ??= []).push({ ...arm, chapter: c.id });
+          if (arm.scope !== 'away') {
+            for (const mapId of ownMaps) (scoped[kind] ??= []).push({ ...arm, map: mapId, chapter: c.id });
+          }
+          if (arm.scope !== 'home') (fallbacks[kind] ??= []).push({ ...arm, chapter: c.id });
         }
       }
     }
@@ -149,7 +151,16 @@ export const MOODS: Record<string, MoodSpec> = Object.assign({}, ...CHAPTERS.map
 
 export const ARRIVALS = CHAPTERS.flatMap((c) => (c.arrival ? [c.arrival] : []));
 export const DRESSINGS = CHAPTERS.flatMap((c) => c.dressings ?? []);
-export const COMPLETIONS = CHAPTERS.flatMap((c) => (c.completion ? [c.completion] : []));
+const NUMBER_WORDS = [
+  'ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT', 'NINE', 'TEN', 'ELEVEN', 'TWELVE',
+];
+/** "CHAPTER EIGHT · COMPLETE", counted from where the chapter sits in play order. */
+export function chapterPlate(index: number): string {
+  return `CHAPTER ${NUMBER_WORDS[index] ?? String(index + 1)} · COMPLETE`;
+}
+export const COMPLETIONS = CHAPTERS.flatMap((c, i) =>
+  c.completion ? [{ ...c.completion, plate: chapterPlate(i) }] : [],
+);
 
 /** Sitting: per-map resting thoughts, and which kinds invite you to sit. */
 export const SIT_LINES: Record<string, string[]> = Object.assign(

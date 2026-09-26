@@ -328,7 +328,7 @@ export const NODES: NodeMap = {
   'intro.wake': {
     lines: [
       { text: 'The bus left you at the bottom of the valley an hour ago. The driver pointed uphill and said only: arriba.' },
-      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch\'aska Pampa. Start where the water is."' },
+      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch’aska Pampa. Start where the water is."' },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
     effects: ['set:intro.done'],
@@ -399,7 +399,7 @@ export const NODES: NodeMap = {
   },
   'aurelio.chaska': {
     lines: [
-      { who: 'Don Aurelio', text: "This place? Ch'aska Pampa. Star plain." },
+      { who: 'Don Aurelio', text: 'This place? Ch’aska Pampa. Star plain.' },
       { who: 'Don Aurelio', text: 'When it rains, the ground fills with puddles, and the pampa catches stars. You can check my work tonight.' },
     ],
     effects: ['journal:words.chaska'],
@@ -1369,7 +1369,7 @@ export const NODES: NodeMap = {
   },
   'gate.end': {
     lines: [
-      { text: 'End of Chapter One. Ch\'aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
+      { text: 'End of Chapter One. Ch’aska Pampa remains open: pages unfilled, people mid-story, soup presumably hot.' },
     ],
   },
   'gate.after': {
@@ -1419,6 +1419,18 @@ export const NODES: NodeMap = {
   'ex.flower': {
     lines: [{ text: 'Small stubborn flowers, growing at an altitude that argues against them.' }],
   },
+  'ex.grass.away': {
+    lines: [{ text: 'Grass, doing what grass does in every village on the road: holding the ground together and asking nothing for it.' }],
+  },
+  'ex.tuft.away': {
+    lines: [{ text: 'A tuft of wiry grass, combed one way by the wind. It knows where the weather comes from.' }],
+  },
+  'ex.rock.away': {
+    lines: [{ text: 'A rock, older than the lane around it. It is not planning to move.' }],
+  },
+  'ex.pot.away': {
+    lines: [{ text: 'A clay pot with its lid on. Somebody\'s dinner is in there, keeping its own counsel.' }],
+  },
   'ex.tuft': {
     lines: [{ text: 'Ichu bunchgrass, gold and sharp. The whole pampa whispers with it when the wind combs through.' }],
   },
@@ -1445,6 +1457,12 @@ export const NODES: NodeMap = {
   },
   'ex.bed': {
     lines: [{ text: 'Sheepskins and a striped blanket heavy enough to argue with the altiplano night.' }],
+  },
+  'ex.table.away': {
+    lines: [{ text: 'A worn table, wiped down and set again. Every kitchen on the road has one that has heard everything.' }],
+  },
+  'ex.shelf.away': {
+    lines: [{ text: 'Cups, bowls, a tin of something sweet. Everything within reach of whoever cooks here.' }],
   },
   'ex.table': {
     lines: [{ text: 'A worn table. A dish of toasted cancha sits out for whoever comes. You take exactly three.' }],
@@ -1736,23 +1754,23 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   house: [{ node: 'ex.adobe' }],
   blocked: [{ node: 'ex.adobe' }],
   flower: [{ node: 'ex.flower' }],
-  tuft: [{ node: 'ex.tuft' }],
-  rock: [{ node: 'ex.rock' }],
+  tuft: [{ node: 'ex.tuft', scope: 'home' }, { node: 'ex.tuft.away', scope: 'away' }],
+  rock: [{ node: 'ex.rock', scope: 'home' }, { node: 'ex.rock.away', scope: 'away' }],
   doorShut: [{ node: 'ex.doorShut' }],
   chomba: [{ node: 'ex.chomba' }],
   qoncha: [{ node: 'ex.qoncha' }],
   loom: [{ node: 'ex.loom' }],
   bed: [{ node: 'ex.bed' }],
-  table: [{ node: 'ex.table' }],
+  table: [{ node: 'ex.table', scope: 'home' }, { node: 'ex.table.away', scope: 'away' }],
   stool: [{ node: 'ex.stool' }],
-  shelf: [{ node: 'ex.shelf' }],
+  shelf: [{ node: 'ex.shelf', scope: 'home' }, { node: 'ex.shelf.away', scope: 'away' }],
   rug: [{ node: 'ex.rug' }],
   floorEarth: [{ node: 'ex.floor' }],
   wallStone: [{ node: 'ex.wallStone' }],
   dirt: [{ node: 'ex.dirt' }],
   wallInt: [{ node: 'ex.wallInt' }],
   mat: [{ node: 'ex.mat' }],
-  pot: [{ node: 'ex.pot' }],
+  pot: [{ node: 'ex.pot', scope: 'home' }, { node: 'ex.pot.away', scope: 'away' }],
   cuy: [{ node: 'ex.cuy' }],
   gate: [
     { when: { has: ['errand.nani-letter'] }, node: 'gate.final' },
@@ -1866,7 +1884,9 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   plaza: [{ node: 'ex.plaza' }],
   plazaWorn: [{ node: 'ex.plazaworn' }],
   wellstone: [{ node: 'ex.wellstone' }],
-  grass: [{ node: 'ex.grass' }],
+  // Andes words stay in the Andes; elsewhere the plain kinds get a line
+  // that is true in any village on the route.
+  grass: [{ node: 'ex.grass', scope: 'home' }, { node: 'ex.grass.away', scope: 'away' }],
 };
 
 /** Where the promising mounds appear once Justina invites you to dig. */

@@ -17,7 +17,7 @@ import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
-import { AlbumUI } from './ui/album';
+import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, peekCoach, takeCoach } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
@@ -28,6 +28,7 @@ import {
   ARRIVALS,
   CHAPTERS,
   COMPLETIONS,
+  chapterPlate,
   DIG_SPOTS,
   DRESSINGS,
   EXAMINES,
@@ -441,7 +442,7 @@ function makeOverlayRoot(id: string): HTMLElement {
 }
 const games = GAMES.map((g) => {
   const root = makeOverlayRoot(g.flag.replace(/\W+/g, '-'));
-  return { def: g, root, panel: g.make(root, audio) };
+  return { def: g, root, panel: g.make(root, audio, () => state.flagSet()) };
 });
 const anyGameOpen = () => games.some((g) => g.panel.isOpen);
 type GameEntry = (typeof games)[number];
@@ -739,14 +740,52 @@ state.on('errand', (id) => {
 refreshTaskChip();
 
 let plateTimers: number[] = [];
+/**
+ * The plate shares the toasts' hush: while a story surface quiets the HUD,
+ * a plate waits (or, caught mid-show, goes back to wait) and plays whole
+ * once the HUD returns. "CHAPTER SEVEN · COMPLETE" once faded in and out
+ * entirely behind the ceremony that followed it.
+ */
+let plateHeld = false;
+let plateWaiting: { text: string; holdMs: number } | null = null;
+let plateLive: { text: string; holdMs: number } | null = null;
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
-  plateEl.textContent = text;
+  plateTimers = [];
   plateEl.classList.remove('show');
+  if (plateHeld) {
+    plateWaiting = { text, holdMs };
+    plateLive = null;
+    return;
+  }
+  plateEl.textContent = text;
+  plateLive = { text, holdMs };
   plateTimers = [
     window.setTimeout(() => plateEl.classList.add('show'), 350),
-    window.setTimeout(() => plateEl.classList.remove('show'), holdMs),
+    window.setTimeout(() => {
+      plateEl.classList.remove('show');
+      plateLive = null;
+    }, holdMs),
   ];
+}
+function holdPlate(held: boolean) {
+  if (held === plateHeld) return;
+  plateHeld = held;
+  if (held) {
+    if (plateLive) showPlate(plateLive.text, plateLive.holdMs);
+  } else if (plateWaiting) {
+    const w = plateWaiting;
+    plateWaiting = null;
+    showPlate(w.text, w.holdMs);
+  }
+}
+/** A journal switch drops a waiting plate with the rest of the old news. */
+function dropPlate() {
+  for (const t of plateTimers) clearTimeout(t);
+  plateTimers = [];
+  plateWaiting = null;
+  plateLive = null;
+  plateEl.classList.remove('show');
 }
 
 // ---------------------------------------------------------------- villagers
@@ -1479,6 +1518,69 @@ function blockedFor(self: Actor): (x: number, y: number) => boolean {
   return (x, y) => map.solid(x, y) || occupied(x, y, self);
 }
 
+/**
+ * Where arrivals land on each map: its own spawn and the spawn of every door
+ * that leads in. A wandering villager never loiters on one; Abuela Chela
+ * used to amble onto the cocina doorstep and stand on the player coming out.
+ */
+const doorsteps: Record<string, Set<string>> = (() => {
+  const out: Record<string, Set<string>> = {};
+  const add = (id: string, x: number, y: number) => (out[id] ??= new Set()).add(`${x},${y}`);
+  for (const [id, m] of Object.entries(REGION_MAPS)) {
+    add(id, m.spawn[0], m.spawn[1]);
+    for (const t of m.triggers ?? []) if (t.type === 'door') add(t.to, t.spawn[0], t.spawn[1]);
+  }
+  return out;
+})();
+const onDoorstep = (x: number, y: number) => doorsteps[map.id]?.has(`${x},${y}`) ?? false;
+
+/**
+ * Nobody shares a tile. A villager who finds itself standing on the player
+ * or on another villager (a traveler who appeared on a spot someone had
+ * wandered into, a reload that stood the player on Sun-hee) steps to the
+ * nearest free cell. Rare, and a one-tile hop beats two bodies in one place.
+ */
+function unstack() {
+  const here = spritesHere();
+  const taken = new Set<string>();
+  for (const s of here) {
+    if (s === dog) continue;
+    const [x, y] = s.actor.occupies();
+    const key = `${x},${y}`;
+    if (!taken.has(key) || s === playerSprite || s.actor.frozen || s.actor.isMoving) {
+      taken.add(key);
+      continue;
+    }
+    const free = nearestFree(x, y, (cx, cy) => taken.has(`${cx},${cy}`) || onDoorstep(cx, cy));
+    if (free) {
+      s.actor.placeAt(free[0], free[1], s.actor.dir);
+      taken.add(`${free[0]},${free[1]}`);
+    }
+  }
+}
+
+/** Breadth-first from (x, y) for the nearest standable cell within 4 steps. */
+function nearestFree(x: number, y: number, avoid: (x: number, y: number) => boolean): [number, number] | null {
+  const seen = new Set<string>([`${x},${y}`]);
+  let ring: [number, number][] = [[x, y]];
+  for (let d = 0; d < 4; d++) {
+    const next: [number, number][] = [];
+    for (const [cx, cy] of ring) {
+      for (const [dx, dy] of [[0, 1], [-1, 0], [1, 0], [0, -1]] as const) {
+        const nx = cx + dx;
+        const ny = cy + dy;
+        const k = `${nx},${ny}`;
+        if (seen.has(k) || !map.inBounds(nx, ny) || map.solid(nx, ny)) continue;
+        seen.add(k);
+        if (!avoid(nx, ny)) return [nx, ny];
+        next.push([nx, ny]);
+      }
+    }
+    ring = next;
+  }
+  return null;
+}
+
 function updateVillager(v: Villager, dt: number) {
   if (v.actor.frozen) return;
 
@@ -1561,7 +1663,8 @@ function updateVillager(v: Villager, dt: number) {
         : null;
     v.think = 1.0 + Math.random() * 2.8;
   }
-  const leash = (x: number, y: number) => x < hx - r || x > hx + r || y < hy - r || y > hy + r;
+  const leash = (x: number, y: number) =>
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y);
   v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
@@ -1633,6 +1736,18 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   if (!dest) return;
   map = dest;
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
+  // The vigil is a night. Its page says "tonight the camposanto is lit", and
+  // walking through the marigold arch at noon once opened it in full sun:
+  // the arch is where the evening comes down, whatever hour you left at.
+  if (
+    dest.id === 'camposanto' &&
+    state.has('c9.ofrenda.done') &&
+    !state.has('c9.complete') &&
+    nightLevel(dayT) < 0.5 &&
+    !Number.isFinite(todOverride)
+  ) {
+    dayT = 0.7;
+  }
   // A befriended dog refuses to be door-blocked; it simply arrives too.
   if (dog && state.has('allqu.friend')) {
     dog.def.map = map.id;
@@ -1803,7 +1918,7 @@ function endDialogue() {
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   // The intro has let go; now the village may introduce itself.
-  if (pendingWelcome) setTimeout(playWelcome, 420);
+  if (pendingWelcome && !welcomeTimer) welcomeTimer = window.setTimeout(playWelcome, 420);
   if (talkingTo) {
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward
@@ -1831,7 +1946,7 @@ function endDialogue() {
     if (def) {
       player.frozen = true;
       audio.pageFlip();
-      title.showLetter({ from: def.from, body: def.body });
+      title.showLetter({ from: def.from, body: def.body, typed: def.typed });
       return;
     }
     openLetterId = null;
@@ -1883,7 +1998,7 @@ function endDialogue() {
 // The identical top-level applyDressings serves here too; a nested copy of
 // it once lived in this scope as a paste leftover and shadowed nothing.
 applyDressings();
-    showPlate('CHAPTER ONE · COMPLETE', 5200);
+    showPlate(chapterPlate(0), 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
     scheduleCeremony('story.complete');
@@ -2421,11 +2536,13 @@ function beginPlay(freshStart: boolean) {
     // a pacing bot: Enter through the letter, examine the well inside the
     // 900ms window, and the game's first words never played.
     const introTry = () => {
+      introTimer = 0;
       if (state.has('intro.done')) return;
       if (!textbox.isOpen) startNarration('intro.wake');
-      else setTimeout(introTry, 400);
+      else introTimer = window.setTimeout(introTry, 400);
     };
-    setTimeout(introTry, 900);
+    window.clearTimeout(introTimer);
+    introTimer = window.setTimeout(introTry, 900);
     // The welcome waits for the intro to finish. Shown here it was invisible:
     // the narration holds the textbox open for over a minute, quiet-hud fades
     // the plate and the toasts for all of it, and their timers run out behind
@@ -2450,7 +2567,12 @@ function reloadJourney() {
   pendingLetter = null;
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
+  window.clearTimeout(introTimer);
+  introTimer = 0;
+  window.clearTimeout(welcomeTimer);
+  welcomeTimer = 0;
   toasts.dismissAll();
+  dropPlate();
   state.forget();
   state.load();
   for (const tm of Object.values(maps)) tm.clearOverrides();
@@ -2479,7 +2601,14 @@ function reloadJourney() {
 
 /** The opening's stagecraft, held until the player can actually see it. */
 let pendingWelcome = false;
+/** At most one welcome in flight: every dialogue close used to schedule
+ * another while the first waited its 420ms, and two could land. */
+let welcomeTimer = 0;
+/** The intro's retry loop; a journal switch must be able to stop it. */
+let introTimer = 0;
 function playWelcome() {
+  welcomeTimer = 0;
+  if (!pendingWelcome) return;
   pendingWelcome = false;
   showPlate(map.name);
   toasts.show('walk with the arrow keys or WASD, or click where you want to go');
@@ -2507,8 +2636,9 @@ function titleActivate() {
   }
   title.hideTitle();
   if (choice === 'new') {
-    freshSlate();
-    openFlyleaf();
+    // The old journey is wiped only when the traveler actually sets out:
+    // Esc on the flyleaf used to return to a title whose journal was gone.
+    openFlyleaf(freshSlate);
   } else {
     beginPlay(false);
   }
@@ -2526,16 +2656,22 @@ function freshSlate() {
 }
 
 /** The flyleaf first: a name (or not) and the traveler's look, then the
- * letter. Continue never passes through here, so it never asks. */
-function openFlyleaf() {
+ * letter. Continue never passes through here, so it never asks. `setOut`
+ * clears the slate, and runs only when the flyleaf is finished; backing
+ * out returns to the cover with nothing touched. */
+function openFlyleaf(setOut: () => void) {
   mode = 'naming';
   naming.open((res) => {
+    setOut();
     state.playerName = res.name;
     state.playerLook = res.look;
     state.save();
     refreshPlayerSheet();
     mode = 'letter';
     title.showLetter(undefined, state.playerName);
+  }, () => {
+    mode = 'title';
+    title.showTitle(state.hasSave());
   });
 }
 
@@ -2552,15 +2688,18 @@ function beginSecondReading(row: number) {
   const data = peekSlot(row);
   const words = (data?.journal ?? []).filter((p) => p.startsWith('words.'));
   const konami = (data?.flags ?? []).includes('konami');
-  setActiveSlot(row);
-  freshSlate();
-  // Quietly: two dozen toasts and chimes at once would bury the moment the
-  // player actually chose. The pages are not news; they came with you.
-  state.grantPagesQuietly(words);
-  state.set('second.reading');
-  if (konami) state.set('konami');
   title.hideTitle();
-  openFlyleaf();
+  openFlyleaf(() => {
+    // Only on setting out: backing off the flyleaf leaves the finished
+    // journal whole and the shelf exactly as it was.
+    setActiveSlot(row);
+    freshSlate();
+    // Quietly: two dozen toasts and chimes at once would bury the moment the
+    // player actually chose. The pages are not news; they came with you.
+    state.grantPagesQuietly(words);
+    state.set('second.reading');
+    if (konami) state.set('konami');
+  });
 }
 
 /** Put down whichever letter is open; shared by Space and click. */
@@ -2682,6 +2821,10 @@ function update(dt: number) {
     if (quiet !== quietHud) {
       quietHud = quiet;
       document.body.classList.toggle('quiet-hud', quiet);
+      // Held, not lost: toasts and plates wait behind the hush and play
+      // whole once it lifts.
+      toasts.setHeld(quiet);
+      holdPlate(quiet);
     }
   }
   // The touch pad follows the same rhythm: overlays up, pad away.
@@ -2698,8 +2841,13 @@ function update(dt: number) {
       return ox === fx && oy === fy;
     });
     // Only THINGS earn the dot (props, seats, mounds, people); bare ground
-    // still answers when examined, but quietly, undiscovered on purpose.
+    // still answers when examined, but quietly, undiscovered on purpose,
+    // unless a live arm there carries `cue` (an errand laid on the ground).
     const objKind = map.object(fx, fy)?.t;
+    const groundKind = objKind === undefined ? map.ground(fx, fy).t : undefined;
+    const groundCue =
+      groundKind !== undefined &&
+      (EXAMINES[groundKind]?.some((a) => a.cue && (!a.map || a.map === map.id) && state.check(a.when)) ?? false);
     const digThere =
       map.id === 'village' &&
       state.has('dig.invite') &&
@@ -2707,6 +2855,7 @@ function update(dt: number) {
       DIG_SPOTS.some((sp) => sp.at[0] === fx && sp.at[1] === fy && !state.has(sp.flag));
     const examThere =
       digThere ||
+      groundCue ||
       (objKind !== undefined &&
         objKind !== 'blocked' &&
         (sitKindsOn(map.id).has(objKind) ||
@@ -2736,7 +2885,12 @@ function update(dt: number) {
     debugEl.dataset.on = showDebug ? '1' : '0';
   }
   if (input.takeMute()) {
-    toasts.show(audio.toggleMute() ? 'sound off' : 'sound on');
+    // The key was just pressed, so someone is looking: the reply shows even
+    // over the title or the pause card.
+    const line = audio.toggleMute() ? 'sound off' : 'sound on';
+    if (quietHud) toasts.showNow(line);
+    else toasts.show(line);
+    if (pauseMenu.isOpen) pauseMenu.refresh();
   }
 
   input.pollGamepad();
@@ -2970,6 +3124,7 @@ function update(dt: number) {
         if (v === paca && pacaWalk.length > 0) continue;
         updateVillager(v, dt);
       }
+      unstack();
     }
   }
 
@@ -3765,7 +3920,7 @@ function pauseTap(t: HTMLElement, clientX: number, viaTouch: boolean) {
     // gesture the arrow keys make, aimed with the pointer.
     const r = row.getBoundingClientRect();
     steerTo(pauseRoot, '.p-row', row, (d) => pauseMenu.onDir(d));
-    pauseMenu.onDir(clientX > r.left + r.width / 2 ? 'right' : 'left');
+    pauseMenu.onDir(clientX >= r.left + r.width / 2 ? 'right' : 'left');
     audio.select();
     return;
   }
@@ -4066,8 +4221,26 @@ function installCheats() {
     { n: 8, id: 'zanzibar', map: 'zanzibar', flag: 'c7.arrived', complete: 'c7.complete' },
     { n: 9, id: 'sicily', map: 'sicily', flag: 'c8.arrived', complete: 'c8.complete' },
     { n: 10, id: 'oaxaca', map: 'oaxaca', flag: 'c9.arrived', complete: 'c9.complete' },
-    { n: 11, id: 'home', map: 'village', flag: 'c10.arrived' },
+    { n: 11, id: 'home', map: 'la-caleta', flag: 'c10.arrived' },
   ];
+  /**
+   * What a real journey carries out of a chapter besides its two flags: the
+   * things later chapters gate on. Skipping Ch'aska Pampa without the band
+   * and a moved Paca, or Kerala with Joseph's letter still undelivered, left
+   * soup.go() standing in a world no player could reach.
+   */
+  const CARRY: Record<number, { set?: string[]; clear?: string[] }> = {
+    1: { set: ['pallay.done', 'keepsake.band', 'paca.moved'] },
+    3: { set: ['joseph.letter'] },
+    6: { set: ['c6.letter.delivered'], clear: ['joseph.letter'] },
+  };
+  /** Mark chapter `c` walked: its flags and whatever it hands onward. */
+  const walk = (c: (typeof CHAPTERS_CHEAT)[number]) => {
+    state.set(c.flag);
+    if (c.complete) state.set(c.complete);
+    for (const f of CARRY[c.n]?.set ?? []) state.set(f);
+    for (const f of CARRY[c.n]?.clear ?? []) state.clearFlag(f);
+  };
 
   const jump = (mapId: string, at?: [number, number]) => {
     const dest = maps[mapId];
@@ -4129,10 +4302,12 @@ function installCheats() {
       // with its own flags from the table; the target itself only arrives.
       for (const c of CHAPTERS_CHEAT) {
         if (c.n >= target.n) break;
-        state.set(c.flag);
-        if (c.complete) state.set(c.complete);
+        walk(c);
       }
-      state.set(target.flag);
+      // The target's own arrival narration plays on landing, as in play, and
+      // raises its flag itself; only a chapter without one is marked here.
+      const arrival = ARRIVALS.find((a) => a.flag === target.flag);
+      if (!arrival || arrival.map !== target.map || !state.check(arrival.when)) state.set(target.flag);
       // Chapters skipped over are already celebrated; without this, the
       // next dialogue to end replayed every plate and chapter-close at once.
       resyncCelebrations();
@@ -4192,11 +4367,10 @@ function installCheats() {
       }));
     },
     photos() {
-      const shots = ['photo.taken', 'photo.c2.pier', 'photo.c3.deck', 'photo.c4.shrine',
-        'photo.c5.market', 'photo.c6.jetty', 'photo.c11.kites', 'photo.c7.shore',
-        'photo.c8.piazza', 'photo.c9.ofrenda'];
-      for (const f of shots) state.set(f);
-      return `${shots.length} photographs granted`;
+      // Straight from the album's own list, so a renamed photo cannot leave
+      // this desk granting flags nothing reads.
+      for (const p of PHOTOS) state.set(p.flag);
+      return `${PHOTOS.length} photographs granted`;
     },
     tod(t: number) {
       dayT = Math.max(0, Math.min(0.999, t));
@@ -4226,10 +4400,13 @@ function installCheats() {
     end() {
       api.pages();
       api.photos();
-      for (const c of CHAPTERS_CHEAT) {
-        state.set(c.flag);
-        if (c.complete) state.set(c.complete);
-      }
+      for (const c of CHAPTERS_CHEAT) walk(c);
+      // Every homecoming the well waits on: the reunions, the album, and
+      // Doña Carmen's word, so the last page is one Space away.
+      for (const f of [
+        'c10.marisol.seen', 'c10.rosa.seen', 'c10.aurelio.seen', 'c10.carmen.seen',
+        'c10.pilar.seen', 'c10.album.seen', 'c10.carmen.her',
+      ]) state.set(f);
       // The endgame has its own authored ending; nothing here celebrates.
       resyncCelebrations();
       return jump('village');

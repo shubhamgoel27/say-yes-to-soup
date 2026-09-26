@@ -310,7 +310,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.adopt': {
     lines: [
-      { who: 'Mariamma', text: 'You carried my son’s voice across the sea. So. In this house you are not sir, not madam. You are mone. My child.' },
+      { who: 'Mariamma', text: 'You carried my son’s voice across the sea. So. In this house you are not sir, not madam. You are kunje. Little one, mine.' },
       { who: 'Mariamma', text: 'Say nanni if you must thank me. That is thanks in Malayalam. But family says it rarely and shows it daily.' },
       { who: 'Mariamma', text: 'Now go and drink chaya at Shaji’s stall, and tell him whose guest you are. The village will do the rest.' },
     ],
@@ -324,7 +324,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.kitchen': {
     lines: [
-      { who: 'Mariamma', text: 'Sukhamano, mone? It means, are you well. You answer: sukham! Say it until it is true; that is how it works.' },
+      { who: 'Mariamma', text: 'Sukhamano, kunje? It means, are you well. You answer: sukham! Say it until it is true; that is how it works.' },
       { text: 'She lifts the lid on a clay pot. Meen curry, dark red, sour with kudampuli. It has been resting since yesterday.' },
       { who: 'Mariamma', text: 'Fish curry is better on the second day. The pot thinks about it overnight. People also improve if you let them sit.' },
     ],
@@ -359,7 +359,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.her.why': {
     lines: [
-      { who: 'Mariamma', text: 'Because she asked the way you ask for salt, mone. Some things you only argue with after the boat has gone.' },
+      { who: 'Mariamma', text: 'Because she asked the way you ask for salt, kunje. Some things you only argue with after the boat has gone.' },
     ],
     next: 'c6.mariamma.her2',
   },
@@ -374,7 +374,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.mariamma.sadyaplan': {
     lines: [
       { who: 'Mariamma', text: 'Sunday I am laying a sadya. For the letter, for the umbrella, for the whole village that raised my Joseph.' },
-      { who: 'Mariamma', text: 'Banana leaves, rice, ten dishes, payasam at the end. My knees can cook but they cannot also serve. Your hands, mone?' },
+      { who: 'Mariamma', text: 'Banana leaves, rice, ten dishes, payasam at the end. My knees can cook but they cannot also serve. Your hands, kunje?' },
       { text: 'It is not really a question. In this kitchen, the questions are decorations.' },
     ],
     effects: ['set:c6.sadya.ask'],
@@ -430,7 +430,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.sadyaAgain': {
     lines: [
-      { who: 'Mariamma', text: 'The aunties are back and still wrong about the fold. There are leaves cut, mone, and my knees have not improved.' },
+      { who: 'Mariamma', text: 'The aunties are back and still wrong about the fold. There are leaves cut, kunje, and my knees have not improved.' },
     ],
     choices: [
       { text: 'Take up the serving spoon again', when: { has: ['c6.sadya.done'] }, goto: 'c6.mariamma.sadyaReplay' },
@@ -454,13 +454,13 @@ export const KERALA_NODES: NodeMap = {
   'c6.shaji.first': {
     lines: [
       { text: 'A stall the size of a wardrobe, a kettle the size of a temple bell. The man behind it nods with professional politeness.' },
-      { who: 'Shaji', text: 'Chaya, sir? Puttu, sir? Sit, sir. The bench is for customers and philosophers, and the rate is the same.' },
+      { who: 'Shaji', text: 'Chaya, guest? Puttu? Sit, sit. The bench is for customers and philosophers, and the rate is the same.' },
     ],
     effects: ['set:met.shaji', 'journal:people.shaji'],
   },
   'c6.shaji.firstwarm': {
     lines: [
-      { who: 'Shaji', text: 'You are the one! Mariamma chechi’s letter, from Joseph, across the whole sea. The village knew before you knocked, sir.' },
+      { who: 'Shaji', text: 'You are the one! Mariamma chechi’s letter, from Joseph, across the whole sea. The village knew before you knocked, guest.' },
       { who: 'Shaji', text: 'For that, the bench, the good glass, and my full attention. This is a thattukada; news and chaya are both served hot.' },
     ],
     effects: ['set:met.shaji', 'journal:people.shaji'],
@@ -468,9 +468,9 @@ export const KERALA_NODES: NodeMap = {
   'c6.shaji.chaya': {
     lines: [
       { text: 'He pours tea from one tumbler to another in a long bronze arc, a meter of chaya airborne and not one drop lost.' },
-      { who: 'Shaji', text: 'Pulling cools it, mixes it, and looks magnificent. Three jobs, one wrist. That is management, sir.' },
+      { who: 'Shaji', text: 'Pulling cools it, mixes it, and looks magnificent. Three jobs, one wrist. That is management, guest.' },
       { text: 'On a steel plate: puttu, a soft white cylinder of rice and coconut, with kadala curry. Beside it a parotta, flaking into ribbons.' },
-      { who: 'Shaji', text: 'Puttu for the morning, parotta for the soul. Tear it with the fingers, sir. Cutlery is for people in a hurry to be elsewhere.' },
+      { who: 'Shaji', text: 'Puttu for the morning, parotta for the soul. Tear it with the fingers, guest. Cutlery is for people in a hurry to be elsewhere.' },
     ],
     effects: ['set:c6.chaya', 'journal:words.chaya', 'journal:dishes.puttu'],
     choices: [
@@ -480,7 +480,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.shaji.deom': {
     lines: [
-      { who: 'Shaji', text: 'Deom! A name for it! Here it has no name, sir. I pour short, you notice, I top it up. Naming it would spoil the aim.' },
+      { who: 'Shaji', text: 'Deom! A name for it! Here it has no name, guest. I pour short, you notice, I top it up. Naming it would spoil the aim.' },
       { text: 'He tops your glass with a flourish. The extra is always poured last, so it stays the extra.' },
     ],
     effects: ['journal:dishes.parotta'],
@@ -488,9 +488,9 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.shaji.extra': {
     lines: [
-      { who: 'Shaji', text: 'Watch, sir.' },
+      { who: 'Shaji', text: 'Watch, guest.' },
       { text: 'He tops the glass with one more pull, unasked. It is a small ceremony: the short pour, the noticing, the topping-up.' },
-      { who: 'Shaji', text: 'The last splash is not chaya, sir. It is the message. Regulars get it without asking; that is what regular means.' },
+      { who: 'Shaji', text: 'The last splash is not chaya, guest. It is the message. Regulars get it without asking; that is what regular means.' },
     ],
     effects: ['journal:dishes.parotta'],
     next: 'c6.shaji.wobble',
@@ -499,7 +499,7 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { text: 'You ask if there will be puttu tomorrow. Shaji tilts his head side to side. You take it as a no and start to stand.' },
       { who: 'Appu', text: 'Where are you GOING? That means yes! Head goes like a boat, answer is yes. Head goes still, THEN you worry.' },
-      { who: 'Shaji', text: 'The boy translates for tourists and crows. Yes, puttu tomorrow, sir. The head said so plainly.' },
+      { who: 'Shaji', text: 'The boy translates for tourists and crows. Yes, puttu tomorrow, guest. The head said so plainly.' },
     ],
     effects: ['journal:customs.headwobble'],
   },
@@ -507,14 +507,14 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { text: 'You put down the glass and try it: Shaji chetta, one more chaya?' },
       { who: 'Shaji', text: 'AH. Chetta! Did you hear, kettle? Promoted!' },
-      { who: 'Shaji', text: 'No more sir, mone. Sir is a coat for strangers; this bench was never for strangers, only for family who had not arrived yet.' },
+      { who: 'Shaji', text: 'No more guest, kunje. Guest is a coat for strangers; this bench was never for strangers, only for family who had not arrived yet.' },
     ],
     effects: ['set:c6.chetta'],
   },
   'c6.shaji.rainstall': {
     lines: [
       { text: 'The stall in the rain is a lighthouse with snacks. Under the awning, six people, four umbrellas, one argument about football.' },
-      { who: 'Shaji', text: 'Rain-watching chaya is kattan, mone. Black, no milk, sweet. The rain provides the milk feelings.' },
+      { who: 'Shaji', text: 'Rain-watching chaya is kattan, kunje. Black, no milk, sweet. The rain provides the milk feelings.' },
     ],
     effects: ['set:c6.rainchaya'],
   },
@@ -525,7 +525,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.shaji.pourAgain': {
     lines: [
-      { who: 'Shaji', text: 'The kettle has been asking after you, mone. Two tumblers, one wrist, and a bench with nothing better to watch.' },
+      { who: 'Shaji', text: 'The kettle has been asking after you, kunje. Two tumblers, one wrist, and a bench with nothing better to watch.' },
     ],
     choices: [
       { text: 'Step behind the kettle again', when: { has: ['c6.cook.done'] }, goto: 'c6.shaji.pourReplay' },
@@ -556,7 +556,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.shaji.cooklater': {
     lines: [
-      { who: 'Shaji', text: 'The kettle takes no offense, mone. It has outlasted braver refusals than yours.' },
+      { who: 'Shaji', text: 'The kettle takes no offense, kunje. It has outlasted braver refusals than yours.' },
     ],
   },
   'c6.cook.finish': {
@@ -576,13 +576,13 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.cook.twohands': {
     lines: [
-      { who: 'Shaji', text: 'Then Busan and this bench are in full agreement, mone. The hand under the glass says: this is given, not merely sold.' },
+      { who: 'Shaji', text: 'Then Busan and this bench are in full agreement, kunje. The hand under the glass says: this is given, not merely sold.' },
       { text: 'He serves the next customer with one hand under the glass, a little more visibly than usual, for your benefit.' },
     ],
   },
   'c6.cook.flourish': {
     lines: [
-      { who: 'Shaji', text: 'The top hand pours; the bottom hand gives. A glass with a hand under it is offered, mone, not just delivered.' },
+      { who: 'Shaji', text: 'The top hand pours; the bottom hand gives. A glass with a hand under it is offered, kunje, not just delivered.' },
       { who: 'Shaji', text: 'Weight travels with respect. Hold the next one that way and watch the drinker sit a little straighter.' },
     ],
   },
@@ -645,7 +645,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.rain.arrives': {
     lines: [
       { who: 'Kuttan', text: 'HA! There she is.' },
-      { who: 'Kuttan', text: 'Edavappathi, mone, back from her dry week. Stand in it a minute; reunions matter here.' },
+      { who: 'Kuttan', text: 'Edavappathi, kunje, back from her dry week. Stand in it a minute; reunions matter here.' },
     ],
     effects: ['set:c6.rain', 'journal:customs.monsoon'],
   },

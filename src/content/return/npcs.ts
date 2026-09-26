@@ -362,10 +362,13 @@ export const RETURN_NODES: NodeMap = {
   'c10.aurelio.soup': {
     lines: [
       { text: 'From beside the well he lifts a cloth off a small pot. Soup. Still warm, as if it knew which boat you were on.' },
-      { who: 'Don Aurelio', text: 'The letter said it is always on. An old man should not write checks his pot cannot cash.' },
+      { who: 'Don Aurelio', text: 'The letter said it is always on. An old man\'s word should never be bigger than his pot.' },
     ],
     choices: [
-      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'] } },
+      // A gift set on Nani's ofrenda in Oaxaca cannot also be handed over
+      // here; the choice becomes the telling of where it went instead.
+      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage'] } },
+      { text: 'Tell him where his omiyage went', goto: 'c10.aurelio.ofrenda', when: { has: ['omiyage.aurelio', 'c9.of.omiyage'] } },
       { text: 'Tell him about a ledger in Oaxaca', goto: 'c10.aurelio.ledger', when: { has: ['c9.debt.paid'] } },
       { text: 'Say yes to soup', goto: 'c10.aurelio.eat' },
     ],
@@ -376,7 +379,13 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Don Aurelio', text: 'From the far side of the water. And you carried it the whole way, for an old man at a well.' },
       { who: 'Don Aurelio', text: 'Ayni, wawa. It crosses oceans fine. I always suspected it would.' },
     ],
-    effects: ['set:c10.aurelio.omiyage'],
+    next: 'c10.aurelio.eat',
+  },
+  'c10.aurelio.ofrenda': {
+    lines: [
+      { text: 'You tell him: the little parcel from the Seto sea was for him, and it went on her ofrenda in Oaxaca instead, between the marigolds and the bread.' },
+      { who: 'Don Aurelio', text: 'Then it reached the right hands by the long road. She always did take my share of the good things. Ayni keeps no tally between us two.' },
+    ],
     next: 'c10.aurelio.eat',
   },
   'c10.aurelio.ledger': {
@@ -385,7 +394,6 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Don Aurelio', text: 'And you paid it. So the seed came up after all.' },
       { who: 'Don Aurelio', text: 'A debt does not expire, I told you once. I did not tell you the other half: neither does the thanks.' },
     ],
-    effects: ['set:c10.aurelio.ledger'],
     next: 'c10.aurelio.eat',
   },
   'c10.aurelio.eat': {
@@ -410,7 +418,8 @@ export const RETURN_NODES: NodeMap = {
     ],
     effects: ['set:c10.carmen.seen'],
     choices: [
-      { text: 'Give her the kanga from Zanzibar', goto: 'c10.carmen.kanga', when: { has: ['kanga.gift'] } },
+      { text: 'Give her the kanga from Zanzibar', goto: 'c10.carmen.kanga', when: { has: ['kanga.gift'], not: ['c9.of.kanga'] } },
+      { text: 'Tell her about the kanga from Zanzibar', goto: 'c10.carmen.ofrenda', when: { has: ['kanga.gift', 'c9.of.kanga'] } },
       { text: 'Sit while she weaves', goto: 'c10.carmen.sit' },
     ],
   },
@@ -420,7 +429,13 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Doña Carmen', text: 'Cloth that speaks in letters! Ha. Mine speaks without them. Now they can argue on the same wall.' },
       { who: 'Doña Carmen', text: 'A cloth kept for giving is a debt kept warm. Whoever taught you that, wawa, she and I would agree on everything.' },
     ],
-    effects: ['set:c10.carmen.kanga'],
+    next: 'c10.carmen.sit',
+  },
+  'c10.carmen.ofrenda': {
+    lines: [
+      { text: 'You tell her about a cloth that speaks in letters, folded for giving, and how it went on Nani\'s ofrenda in Oaxaca, under the candles.' },
+      { who: 'Doña Carmen', text: 'Good. A cloth kept for giving went to the one who taught you to keep one. My wall can wait; hers could not.' },
+    ],
     next: 'c10.carmen.sit',
   },
   'c10.carmen.sit': {
@@ -564,7 +579,8 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Pilar', text: 'The museum accepts donations. It also accepts facts, rocks, and staring respectfully.' },
     ],
     choices: [
-      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'] } },
+      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] } },
+      { text: 'Explain where her omiyage went', goto: 'c10.pilar.ofrenda', when: { has: ['omiyage.pilar', 'c9.of.omiyage'] } },
       { text: 'Stare respectfully', goto: 'c10.pilar.stare' },
     ],
   },
@@ -574,7 +590,14 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Pilar', text: 'A foreign acquisition. The museum is now international. That changes the stationery.' },
       { text: 'It gets its own crate, beside the sea thing. Exhibit two. The museum has doubled; the gift-shop rocks watch enviously.' },
     ],
-    effects: ['set:c10.pilar.omiyage'],
+    next: 'c10.pilar.stare',
+  },
+  'c10.pilar.ofrenda': {
+    lines: [
+      { text: 'You explain: there was an omiyage, bright, from a festival across the ocean, chosen for her. It went on your Nani\'s ofrenda in Oaxaca instead.' },
+      { who: 'Pilar', text: 'Loaned to a sister institution. Acceptable. The museum will display the paperwork.' },
+      { text: 'She writes OMIYAGE (ON LOAN, OAXACA) on a card and props it against an empty crate. It is, somehow, the best exhibit.' },
+    ],
     next: 'c10.pilar.stare',
   },
   'c10.pilar.stare': {
@@ -762,6 +785,12 @@ export const RETURN_NODES: NodeMap = {
     ],
     effects: ['set:end.book', 'set:album.open'],
   },
+  'c10.well.notyet': {
+    lines: [
+      { text: 'The well. You reach for the journal, and your hand stops on the band instead.' },
+      { text: 'The last page can wait an afternoon. Doña Carmen has something to say before it is written, and she is at her loom.' },
+    ],
+  },
   'c10.well.after': {
     lines: [
       { text: 'The well, older than the church. The water, older than everything. Your page, the newest thing here, already settling in.' },
@@ -772,26 +801,34 @@ export const RETURN_NODES: NodeMap = {
 
 /** The well speaks for the ending; map-tagged so the Andes keep their own words elsewhere. */
 export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
+  // The last page waits on Doña Carmen too: it speaks of the apacheta stone
+  // she hands over, and the road home is not walked until she has read the
+  // wrist and said the village's piece out loud.
   well: [
     {
       map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'wish.nani'], not: ['story.end'] },
+      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.nani'], not: ['story.end'] },
       node: 'c10.well.wishnani',
     },
     {
       map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'wish.road'], not: ['story.end'] },
+      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.road'], not: ['story.end'] },
       node: 'c10.well.wishroad',
     },
     {
       map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'wish.people'], not: ['story.end'] },
+      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.people'], not: ['story.end'] },
       node: 'c10.well.wishpeople',
     },
     {
       map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
+      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her'], not: ['story.end'] },
       node: 'c10.lastpage',
+    },
+    {
+      map: 'village',
+      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.carmen.her'] },
+      node: 'c10.well.notyet',
     },
     { map: 'village', when: { has: ['story.end'] }, node: 'c10.well.after' },
   ],

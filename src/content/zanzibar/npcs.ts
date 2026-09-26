@@ -241,7 +241,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   // ---------------- arrival ----------------
   'c7.arrive': {
     lines: [
-      { text: 'Twelve days of engine hum out of Kochi, then the last hour under sail: a jahazi, borrowed wind, a coast the color of bone and palm.' },
+      { text: 'Twelve days of engine hum out of Bombay, then the last hour under sail: a jahazi, borrowed wind, a coast the color of bone and palm.' },
       { text: 'The tide is out. The sea has stepped back half a mile and left its floor drying in the sun, studded with starfish.' },
       { text: 'On the jetty, nobody hurries to meet you. Somebody waves anyway. Karibu, the wave says. Come near.' },
     ],
@@ -437,8 +437,9 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Bi Amina', text: 'First: my cousin arrives tomorrow from Pemba, her first visit in years. Which kanga do I hang by the door?' },
     ],
     choices: [
-      { text: '"Mgeni ni kuku mweupe. A guest is a white chicken."', goto: 'c7.amina.r1y' },
+      // The answer moves around between rounds; always-first taught nothing.
       { text: '"Akili ni mali. Wits are wealth."', goto: 'c7.amina.r1n1' },
+      { text: '"Mgeni ni kuku mweupe. A guest is a white chicken."', goto: 'c7.amina.r1y' },
       { text: '"Mapenzi ni kikohozi. Love is a cough."', goto: 'c7.amina.r1n2' },
     ],
   },
@@ -467,9 +468,9 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Bi Amina', text: 'Second: the fish seller walks past the tailor’s daughter twice a day now, for no fish reason. Which kanga does his mother wear?' },
     ],
     choices: [
-      { text: '"Mapenzi ni kikohozi. Love is a cough."', goto: 'c7.amina.r2y' },
       { text: '"Mgeni ni kuku mweupe. A guest is a white chicken."', goto: 'c7.amina.r2n1' },
       { text: '"Mkono wa Mungu. The hand of God."', goto: 'c7.amina.r2n2' },
+      { text: '"Mapenzi ni kikohozi. Love is a cough."', goto: 'c7.amina.r2y' },
     ],
   },
   'c7.amina.r2y': {
@@ -498,9 +499,9 @@ export const ZANZIBAR_NODES: NodeMap = {
       { who: 'Bi Amina', text: 'Last: my neighbor got a new roof and has begun explaining money to everyone at the well. Which kanga do I wear to fetch water?' },
     ],
     choices: [
-      { text: '"Akili ni mali. Wits are wealth."', goto: 'c7.amina.matched' },
       { text: '"A guest is a white chicken."', goto: 'c7.amina.r3n1' },
       { text: '"Love is a cough."', goto: 'c7.amina.r3n2' },
+      { text: '"Akili ni mali. Wits are wealth."', goto: 'c7.amina.matched' },
     ],
   },
   'c7.amina.r3n1': {

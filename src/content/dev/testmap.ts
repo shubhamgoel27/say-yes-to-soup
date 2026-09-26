@@ -260,7 +260,7 @@ const { ground, objects } = paint();
 
 export const VILLAGE_MAP: MapData = {
   id: 'village',
-  name: "Ch'aska Pampa",
+  name: 'Ch’aska Pampa',
   spawn: [21, 17],
   spawnFacing: 'up',
   triggers: [

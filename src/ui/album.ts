@@ -173,6 +173,11 @@ export class AlbumUI {
   }
 
   onDir(dir: Dir) {
+    // The closing book's last page says "any key", and an arrow is a key.
+    if (this.mode === 'end' && this.onLastPage) {
+      this.onAction();
+      return;
+    }
     if (dir === 'left') this.turn(-1);
     else if (dir === 'right') this.turn(1);
   }

@@ -52,7 +52,24 @@ export type EventNode = { when?: Cond; node: string };
  * `map` only applies on that map, letting the same prop speak differently in
  * different chapters (the merged record lists map-tagged arms first).
  */
-export type ExamineArm = { when?: Cond; node: string; map?: string };
+/**
+ * `cue` earns bare ground the curiosity dot while the arm is live. Ground
+ * normally answers quietly, undiscovered on purpose; an arm that is the
+ * player's current errand (the petal path) must not hide like that.
+ */
+export type ExamineArm = {
+  when?: Cond;
+  node: string;
+  map?: string;
+  cue?: boolean;
+  /**
+   * For untagged arms only. By default an untagged arm speaks on its own
+   * chapter's maps AND serves as the world's fallback for that kind. 'home'
+   * keeps it to its own maps; 'away' makes it the fallback only. The Andes
+   * grass ("the only place in the valley") once answered in Kerala.
+   */
+  scope?: 'home' | 'away';
+};
 
 /**
  * `her` is the thread about Nani herself, assembled from what strangers along
@@ -95,6 +112,9 @@ export type LetterDef = {
   when?: Cond;
   /** Paragraphs. */
   body: string[];
+  /** Struck on a machine, not written by hand (a telegram): the body is set
+   * in a typed face, and only the signature keeps the hand. */
+  typed?: boolean;
 };
 
 /**
@@ -188,7 +208,9 @@ export type GameDef = {
   /** One line for the hard telling's how-to card; its presence declares the
    * game HAS a hard telling. Panels read RUN.hard and tighten accordingly. */
   hardHow?: string;
-  make: (root: HTMLElement, audio: unknown) => GamePanel;
+  /** `flags` is the live journey's flag set, read at the moment of asking,
+   * for panels whose contents depend on the road (the ofrenda). */
+  make: (root: HTMLElement, audio: unknown, flags: () => ReadonlySet<string>) => GamePanel;
 };
 
 /**
@@ -242,6 +264,8 @@ export type ChapterDef = {
     swap?: { from: string; to: { t: string; solid?: boolean; tall?: boolean } };
     cells?: [number, number, { t: string; solid?: boolean; tall?: boolean } | null][];
   }[];
-  /** Chapter-complete beat: when `flag` first appears, show the plate. */
-  completion?: { flag: string; plate: string; toasts: string[] };
+  /** Chapter-complete beat: when `flag` first appears, show the plate. The
+   * plate's words ("CHAPTER EIGHT · COMPLETE") are derived from play order
+   * in world.ts, so inserting a chapter can never misnumber the rest. */
+  completion?: { flag: string; toasts: string[] };
 };

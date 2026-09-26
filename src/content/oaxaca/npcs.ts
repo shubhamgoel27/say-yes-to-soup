@@ -1459,7 +1459,7 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   cempa: [{ node: 'c9.ex.cempa' }],
   petalpath: [
-    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay' },
+    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay', cue: true },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.petals2' },
     { node: 'c9.ex.petals1' },
   ],
@@ -1544,6 +1544,9 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   cubeta: [{ node: 'c9.ex.cubeta' }],
   costal: [
     { map: 'cocina', node: 'c9.ex.costal.cocina' },
+    // The sack Melitón hands over is also where the job starts: shouldering
+    // it walks the lane. The bare path itself only answers when faced.
+    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay' },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.costal.empty' },
     { node: 'c9.ex.costal.full' },
   ],
