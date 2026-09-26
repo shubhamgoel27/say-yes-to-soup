@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { goSideways, isCoarseTouch, isPhone } from './responsive';
+import { goSideways, isCoarseTouch, isPhone, keysOrTaps } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -362,7 +362,7 @@ export class PauseMenu {
         ? '<div class="p-g-all">every telling, done properly &#10038;</div>'
         : '';
       body = `<div class="p-menu p-games">${rows}${allLine}
-        <div class="p-hint-line">no lesson this time, nothing to keep &nbsp; &middot; &nbsp; Esc back</div></div>`;
+        <div class="p-hint-line">no lesson this time, nothing to keep &nbsp; &middot; &nbsp; ${keysOrTaps('Esc back', 'tap beside the page to go back')}</div></div>`;
     } else if (this.screen === 'settings') {
       body = `<div class="p-settings">${this.settingsItems()
         .map(
@@ -372,7 +372,10 @@ export class PauseMenu {
           </div>`,
         )
         .join('')}
-        <div class="p-hint-line">&#8592;&#8594; adjust &nbsp; Esc back</div></div>`;
+        <div class="p-hint-line">${keysOrTaps(
+          '&#8592;&#8594; adjust &nbsp; Esc back',
+          'tap a row&rsquo;s left or right half to adjust &nbsp;&middot;&nbsp; tap beside the page to go back',
+        )}</div></div>`;
     } else if (this.screen === 'help') {
       body = `<div class="p-help">
         <div class="p-row"><span class="p-label">Walk</span><span class="p-value">arrows / WASD / stick / click a spot</span></div>

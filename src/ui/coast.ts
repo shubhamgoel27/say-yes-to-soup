@@ -4,6 +4,7 @@ import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag 
 import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
 import { RUN, coach } from './games/run';
+import { keysOrTaps } from './responsive';
 
 /**
  * The coast's two hands-on verbs, plus the noon kitchen. Same logic as ever;
@@ -382,8 +383,14 @@ export class WavePanel {
     this.drift = 0; // a fresh sea; the last run's chop does not carry over
     this.rideT = 0;
     this.hint = this.hard
-      ? 'The hard water. The swells run fast and the strike is a handsbreadth. Space, exactly as one reaches you.'
-      : 'A swell rolls in. Space to paddle as it reaches you.';
+      ? keysOrTaps(
+          'The hard water. The swells run fast and the strike is a handsbreadth. Space, exactly as one reaches you.',
+          'The hard water. The swells run fast and the strike is a handsbreadth. &#10022;, exactly as one reaches you.',
+        )
+      : keysOrTaps(
+          'A swell rolls in. Space to paddle as it reaches you.',
+          'A swell rolls in. Tap &#10022; to paddle as it reaches you.',
+        );
     this.root.hidden = false;
     this.scene ??= new Scene();
     this.ui = mountScene(this.root, 'The Caballito', this.scene, WAVE_LEGEND);

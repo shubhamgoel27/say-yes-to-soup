@@ -99,7 +99,7 @@ export function makeStick(
     hintEl.className = 'vp-hint';
     hintEl.innerHTML = `
       <div class="vp-hint-ring"></div>
-      <div class="vp-hint-line">rest a thumb here, slide to walk</div>`;
+      <div class="vp-hint-line">rest a thumb here,<br>slide to walk</div>`;
     root.appendChild(hintEl);
   }
   let walkedMs = 0;

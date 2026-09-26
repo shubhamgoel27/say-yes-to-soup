@@ -28,6 +28,15 @@ export function isCoarseTouch(): boolean {
 }
 
 /**
+ * Keyboard words on a desk, finger words on glass. Copy that names a key
+ * (Space, Esc, N, the arrows) reads as a riddle under a thumb, so every such
+ * line passes both spellings through here. Same capability test as the pad.
+ */
+export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch()): string {
+  return coarse ? taps : keys;
+}
+
+/**
  * A phone proper: touch-first and the screen's smaller side under 600 CSS px.
  * Screen dimensions, not window: fullscreen and browser chrome move the
  * window, the glass never changes. iPad mini's short side is 744px, so every
@@ -260,12 +269,49 @@ function offerEligible(): boolean {
 }
 
 /**
- * A natural tap while upright is the invitation to offer. Capture phase so
- * the game still receives the tap; the card simply arrives on top of it.
+ * A natural tap while upright is the invitation to offer. The card answers
+ * that tap, so the tap ends here: left to run on, it landed on whatever the
+ * title had under the finger (Credits, most often) and opened it behind the
+ * card. Capture phase on window, so nothing beneath ever hears it.
  */
-function onGesture(): void {
-  if (offerEligible()) showOffer();
-  else syncPin();
+function onGesture(e: PointerEvent): void {
+  if (offerEligible()) {
+    showOffer();
+    swallowGesture(e);
+  } else {
+    syncPin();
+  }
+}
+
+/**
+ * Consume one whole touch: its pointerdown now, its pointerup when the finger
+ * lifts, and the click the browser still synthesizes afterwards (preventing
+ * a touch pointerdown stops the compat mouse events, never the click).
+ */
+function swallowGesture(e: PointerEvent): void {
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  const id = e.pointerId;
+  const eat = (ev: Event) => {
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+  };
+  const dropClick = () => window.removeEventListener('click', onClick, true);
+  const onClick = (ev: MouseEvent) => {
+    eat(ev);
+    dropClick();
+  };
+  const onEnd = (ev: PointerEvent) => {
+    if (ev.pointerId !== id) return;
+    eat(ev);
+    window.removeEventListener('pointerup', onEnd, true);
+    window.removeEventListener('pointercancel', onEnd, true);
+    // The click, if one comes, follows the lift within a frame or two.
+    setTimeout(dropClick, 400);
+  };
+  window.addEventListener('pointerup', onEnd, true);
+  window.addEventListener('pointercancel', onEnd, true);
+  window.addEventListener('click', onClick, true);
 }
 
 /**
@@ -324,9 +370,14 @@ export function initRotateNudge(): void {
   window.addEventListener('resize', onOrientationSettled);
 
   if (canLockLandscape()) {
-    window.addEventListener('pointerdown', onGesture, { capture: true, passive: true });
+    window.addEventListener('pointerdown', onGesture, { capture: true, passive: false });
     document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
+      // Entering counts too: the pin that asked for the room must leave the
+      // moment the room is granted, whatever the orientation lock decides
+      // (and however long it takes to decide).
+      if (document.fullscreenElement) {
+        syncPin();
+      } else {
         // The system took us back (back gesture, swipe). Release cleanly and
         // wait for the next natural tap; no nagging on the way out.
         lockActive = false;

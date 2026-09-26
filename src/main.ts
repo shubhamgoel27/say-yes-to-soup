@@ -21,7 +21,7 @@ import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, peekCoach, takeCoach } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
-import { initRotateNudge, isCoarseTouch } from './ui/responsive';
+import { initRotateNudge, isCoarseTouch, keysOrTaps } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -556,7 +556,7 @@ function renderHowto() {
           .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}${t === HARD_OPT && hardDone ? '&nbsp;&#10038;' : ''}</div>`)
           .join('')}
       </div>
-      <div class="ht-keys">Space to begin &middot; Esc, not yet</div>
+      <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
     </div>`;
 }
 
@@ -663,7 +663,7 @@ function refreshTaskChip() {
     if (nudged) {
       const nudge = document.createElement('span');
       nudge.className = 'errand-nudge';
-      nudge.textContent = 'press N when the way is lost';
+      nudge.textContent = keysOrTaps('press N when the way is lost', 'tap \u2933 when the way is lost');
       errandEl.appendChild(nudge);
     }
     errandEl.hidden = false;
@@ -2611,8 +2611,11 @@ function playWelcome() {
   if (!pendingWelcome) return;
   pendingWelcome = false;
   showPlate(map.name);
-  toasts.show('walk with the arrow keys or WASD, or click where you want to go');
-  toasts.show('Space talks to people and touches things');
+  toasts.show(keysOrTaps(
+    'walk with the arrow keys or WASD, or click where you want to go',
+    'slide a thumb in the lower left to walk, or tap where you want to go',
+  ));
+  toasts.show(keysOrTaps('Space talks to people and touches things', '\u2726 talks to people and touches things'));
 }
 
 /** Confirm the title menu's current option; shared by Space and click. */
@@ -3466,6 +3469,9 @@ function fitCameraToCrop(tx: number, ty: number) {
       transition: opacity 0.8s ease;
     }
     .vp-hint.gone { opacity: 0; }
+    /* A minigame panel owns the middle and its left rule runs through this
+     * corner; the lesson is about walking and waits for the world. */
+    #vpad.vp-game .vp-hint { opacity: 0; }
     .vp-hint-ring {
       width: 72px; height: 72px;
       margin: 0 auto 7px;
@@ -3476,6 +3482,9 @@ function fitCameraToCrop(tx: number, ty: number) {
     .vp-hint-line {
       font-family: var(--hand, cursive);
       font-size: 15px;
+      /* #frame zeroes line-height for the canvas; without its own leading
+       * the two wrapped lines of this hint printed on top of each other. */
+      line-height: 1.3;
       color: rgba(242, 230, 208, 0.9);
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
       transform: rotate(-1.2deg);
@@ -4143,6 +4152,8 @@ function syncVpad() {
     !textbox.isOpen && !journalUI.isOpen && !pauseMenu.isOpen && !albumUI.isOpen &&
     !chapterClose.isOpen && !title.letterOpen && !uiCardOpen();
   vpad.classList.toggle('vp-quiet', !wanted);
+  const inGame = anyGameOpen();
+  if (vpad.classList.contains('vp-game') !== inGame) vpad.classList.toggle('vp-game', inGame);
   // A drag caught mid-air by an opening overlay must not keep walking
   // under the paper, nor resume by itself when the paper lifts.
   if (!wanted) stick.calm();
