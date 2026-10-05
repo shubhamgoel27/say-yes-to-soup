@@ -244,3 +244,15 @@ zoom. Three gaps between emulation and glass:
 Meta-rule: the first real-device report outranks any emulated ALL GREEN.
 Treat it like a witness capture from the motion saga: never argue with it,
 instrument and fix.
+
+## A trailer is a made thing, not a capture (2026-09-26)
+Two trailer cuts missed. v1 was a tour (villages in order, uniform 2-3s shots,
+the game's own camera, the game's own looping music, captions). v2 added a
+concept on top, but the owner still saw "procedural": the footage was still
+default gameplay framing cut to procedural music. Indie trailers that make
+people want to play are scored to a real piece of music with a build, shot
+with intent (close-ups, slow pushes, staged moments, time passing), open on a
+hook that raises a question, show the verbs with sound, and pay the question
+off. Rule: before producing any promotional media, study 3-5 reference works
+in the genre, write down what they do, and plan music and shots first; a
+capture pipeline is the last step, not the first.
