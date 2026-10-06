@@ -552,3 +552,15 @@ and plays with zero console errors on desktop 1280x800 and Galaxy landscape.
 Taste call from B: any hard win within what the card forgives earns the star;
 wobbles become tips for the next card. Left: remaining Andes fallback lines
 (bench, mat, rug), Oaxaca "senorita/hija" address, bundle split + loading state.
+
+## 2026-10-05: the 8.5 polish pass (6 worktree agents)
+
+Brief: scratchpad/polish/BRIEF.md. Honest review put the game at 7.5/10; four gaps.
+
+- [ ] A1-A4 Less reading: cut ~1/3 of dialogue per chapter (Delhi ~40%), explanation -> action
+- [ ] A2/A3/A4 Endings: Busan no ceremony (the deom is the goodbye), Zanzibar quiet dawn
+      departure, Sicily goodbye collapses into an argument cut off by the horn; no "holds your
+      face"/"vouches for you" anywhere
+- [ ] B Story minigames reward attention, not mashing (masher vs attentive bots, all 23 games)
+- [ ] C Art: region-true NPC silhouettes (src/art/looks.ts), continuous ground, softer bloom
+- [ ] Merge, full gate, verification playthrough, ship

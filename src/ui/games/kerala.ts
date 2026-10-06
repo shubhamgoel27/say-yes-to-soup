@@ -1228,7 +1228,7 @@ export class SadyaPanel {
       if (sc) sc.flash('#ffe9b0', 0.4);
       this.hint =
         !this.hard && this.misses === 0
-          ? '"Your whole family folds it wrong and has since 1951," someone adds. Auntie Leela pats your hand: "Served like a daughter of this house, kunje. Come for Onam." Press Space.'
+          ? '"Your whole family folds it wrong and has since 1951," someone adds. Auntie Leela pats your hand: "Served like one of this house, kunje. Come for Onam." Press Space.'
           : !this.hard && this.leelaServed >= 2
             ? '"Your whole family folds it wrong and has since 1951," someone adds. "And she served half of it," says Rosamma, nodding at Leela. The leaf says you ate well anyway. Press Space.'
             : '"Your whole family folds it wrong and has since 1951," someone adds, delighted. Either way, the leaf says you ate well. Press Space.';
