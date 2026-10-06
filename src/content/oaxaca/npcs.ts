@@ -339,9 +339,8 @@ export const OAXACA_NODES: NodeMap = {
   // ---------------- arrival ----------------
   'c9.arrive': {
     lines: [
-      { text: 'The colectivo shudders off toward the highway, and the valley closes its quiet around the sound.' },
-      { text: 'Somewhere a cohete goes up: one bang, no spectacle. The dogs complain about it professionally.' },
-      { text: 'Woodsmoke, copal, a tuba practicing scales behind a door. The whole village smells faintly of oranges that turn out to be flowers.' },
+      { text: 'The colectivo shudders off toward the highway. A cohete goes up, one bang, and the dogs complain professionally.' },
+      { text: 'Woodsmoke, copal, a tuba practicing behind a door. The village smells faintly of oranges that turn out to be flowers.' },
     ],
     effects: ['set:c9.arrived'],
   },
@@ -349,10 +348,9 @@ export const OAXACA_NODES: NodeMap = {
   // ---------------- Doña Refugio, the tejatera ----------------
   'c9.refugio.first': {
     lines: [
-      { text: 'In the cool of the kitchen a woman works a clay basin, lifting the corn-and-cacao with her forearm until white foam rises.' },
-      { who: 'Doña Refugio', text: 'Tejate. Sit. The foam is the prize, and the foam does not wait for introductions.' },
-      { text: 'It is cold, faintly of flowers, drunk from a painted jícara. She watches you drink like the drink is a question.' },
-      { who: 'Doña Refugio', text: 'You carry that book the way some people carry a thing they have stopped noticing they are holding. Come back when you have met my village.' },
+      { text: 'In the cool kitchen a woman lifts corn-and-cacao in a clay basin with her forearm until white foam rises.' },
+      { who: 'Doña Refugio', text: 'Tejate. Sit. The foam does not wait for introductions.' },
+      { who: 'Doña Refugio', text: 'You carry that book like something you have stopped noticing you hold. Come back when you have met my village.' },
     ],
     effects: ['set:met.refugio', 'journal:people.refugio', 'journal:dishes.tejate'],
   },
@@ -360,27 +358,30 @@ export const OAXACA_NODES: NodeMap = {
   // it yourself: the examine on the table (c9.ledger.read) finds the line.
   'c9.refugio.ledger': {
     lines: [
-      { who: 'Doña Refugio', text: 'Elías told me about your wrist. Chela told me about your appetite. Now show me the book you carry like a child.' },
-      { text: 'You hand over the journal. She turns pages with a wet thumb, and then she stops turning.' },
-      { who: 'Doña Refugio', text: 'This hand wrote in my mother’s kitchen. I was nine, sitting there in the corner.' },
-      { text: 'From under the altar table she brings a notebook, swollen with years, spine mended with cloth. She lays it open on the table, and waits.' },
+      { who: 'Doña Refugio', text: 'Elías told me about your wrist. Chela told me about your appetite. Now show me the book.' },
+      { text: 'She turns the pages with a wet thumb, and then she stops turning.' },
+      { who: 'Doña Refugio', text: 'This hand wrote in my mother’s kitchen. I was nine.' },
+      { text: 'From under the altar table she brings a notebook, spine mended with cloth, lays it open on the table, and waits.' },
     ],
     effects: ['set:c9.ledger.out'],
   },
   'c9.refugio.lookit': {
-    lines: [
-      { who: 'Doña Refugio', text: 'It is on the table. Read it the way she read your book: slowly.' },
-    ],
+    lines: [{ who: 'Doña Refugio', text: 'It is on the table. Read it the way she read your book: slowly.' }],
   },
   'c9.refugio.telegram': {
     lines: [
-      { who: 'Doña Refugio', text: 'She stayed the week before the fiesta, right where you stand. She was going to help with the mole. She never got to.' },
+      { who: 'Doña Refugio', text: 'She stayed the week before the fiesta, right where you stand. She was going to help with the mole.' },
       { text: 'From the back of the ledger she takes a folded paper, soft as cloth at the creases, and puts it in your hands.' },
       { who: 'Doña Refugio', text: 'She left that same night, and the road never brought her back.' },
+    ],
+    effects: ['set:c9.telegram', 'letter:oax.telegram', 'journal:her.oaxaca'],
+    next: 'c9.refugio.name',
+  },
+  'c9.refugio.name': {
+    lines: [
       { who: 'Doña Refugio', text: 'My mother kept her cup on the shelf a whole year. Then she wrote the line, so we would not be allowed to forget.' },
       { text: 'You say the name you called her: Nani. Refugio repeats it once, and now the village has it too.' },
     ],
-    effects: ['set:c9.telegram', 'letter:oax.telegram', 'journal:her.oaxaca'],
     choices: [
       {
         text: 'Answer Old Man Cho, half a world late: say what it weighs',
@@ -392,57 +393,51 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.refugio.riddle': {
     lines: [
-      { text: 'Ayni, yapa, deom, pilón, guelaguetza. An old tea sage in Busan asked what the weightless thing weighs when you find its last name.' },
-      { text: 'You look at the line in the ledger and answer him out loud. Nothing. And a village remembers it for fifty years.' },
-      { who: 'Doña Refugio', text: 'Whoever taught you that question, tell them an old woman in the valley says: correct. Now let me tell you the rest.' },
+      { text: 'Ayni, yapa, deom, pilón, guelaguetza. In Busan an old tea sage asked what the weightless thing weighs.' },
+      { text: 'You answer him out loud: nothing. And a village remembers it for fifty years.' },
+      { who: 'Doña Refugio', text: 'Tell whoever asked you that an old woman in the valley says: correct.' },
     ],
     effects: ['set:c9.riddle.answered'],
     next: 'c9.refugio.owe',
   },
   'c9.refugio.chain': {
     lines: [
-      { who: 'Doña Refugio', text: 'It is not charity and it is not a bill. Today for you, tomorrow for me, and the notebook keeps us honest across the years.' },
-      { who: 'Doña Refugio', text: 'A debt of kindness does not shame anybody. It only waits. Ours has waited fifty years, light as air the whole time.' },
+      { who: 'Doña Refugio', text: 'Not charity, not a bill. Today for you, tomorrow for me. A debt of kindness shames nobody; it only waits.' },
     ],
     next: 'c9.refugio.owe',
   },
   'c9.refugio.owe': {
     lines: [
-      { who: 'Doña Refugio', text: 'A guelaguetza is not owed to a grave. It is owed to a family, and here is her family, standing in my kitchen.' },
-      { who: 'Doña Refugio', text: 'Work her week, the one she never finished. Then we will talk about what my mother wrote on the next page.' },
+      { who: 'Doña Refugio', text: 'It is owed to a family, and here is her family, standing in my kitchen.' },
+      { who: 'Doña Refugio', text: 'Work her week, the one she never finished. Then we will talk about the next page.' },
     ],
   },
   'c9.refugio.bread': {
     lines: [
-      { text: 'You set the basket down. The smell of orange blossom and egg bread takes the room without a fight.' },
-      { who: 'Doña Refugio', text: 'Straight from the oven to the altar, the way it should arrive. My mother is getting her favorite this year.' },
-      { who: 'Doña Refugio', text: 'Look at you, carrying bread through this village. Fifty years folds up very small, sometimes.' },
+      { text: 'You set the basket down. Orange blossom and egg bread take the room without a fight.' },
+      { who: 'Doña Refugio', text: 'Straight from the oven to the altar. Look at you, carrying bread through this village. Fifty years folds up very small.' },
     ],
     effects: ['errand.done', 'clear:errand.pan-refugio', 'set:c9.bread.done'],
   },
-  // The what-each-element-is-for catechism lives in the build game now: every
-  // element speaks its one line at the moment your hands set it down.
+  // The altar itself is shown by the build game and by the ofrenda examine;
+  // here the work is one beat, and then the page that turns the chapter.
   'c9.refugio.family': {
     lines: [
-      { text: 'The altar rises through the afternoon: two levels, then a third, cloth smoothed, the marigold arch tied over everything.' },
-      { text: 'Her mother’s photograph goes up last, next to a cup for tejate. You hand her things before she asks; she stops noticing you are a guest.' },
-      { who: 'Doña Refugio', text: 'There. The mole is resting, the bread is up, the path is laid. The ledger line is paid, corazón. Fifty years late and right on time.' },
+      { text: 'All afternoon you hand her things before she asks, until she stops noticing you are a guest.' },
+      { who: 'Doña Refugio', text: 'There. Mole, bread, path. The ledger line is paid, corazón. Fifty years late and right on time.' },
     ],
     effects: ['set:c9.family.done', 'set:c9.debt.paid'],
     next: 'c9.refugio.page2',
   },
   'c9.refugio.page2': {
     lines: [
-      { text: 'She opens the ledger to cross out the line. Then she turns the page and goes still.' },
-      { text: 'Below the old ink, in her mother’s smaller hand: Debts of kindness pass to the children. Both directions.' },
+      { text: 'She turns the page to cross the line out. Below it, in her mother’s smaller hand: Debts of kindness pass to the children. Both directions.' },
       { who: 'Doña Refugio', text: 'Both directions, corazón. You paid hers. Now this village pays what it owes her, to you. We are building your Nani an ofrenda.' },
     ],
     next: 'c9.altar.hub',
   },
   'c9.altar.hub': {
-    lines: [
-      { who: 'Doña Refugio', text: 'The altar holds what she loved and what she was owed. What did the road put in your hands? Bring all of it.' },
-    ],
+    lines: [{ who: 'Doña Refugio', text: 'What did the road put in your hands? Bring all of it.' }],
     choices: [
       {
         text: 'The omiyage from Shionoura, chosen for Doña Petro and never posted',
@@ -485,89 +480,81 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.altar.omiyage': {
     lines: [
-      { text: 'The little parcel from the Seto sea, still in its careful paper. It was always going to be opened by somebody loved.' },
-      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is exactly on time for a different person. Set it with the rest.' },
+      { text: 'The little parcel from the Seto sea, still in its careful paper.' },
+      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
     ],
     effects: ['set:c9.of.omiyage'],
     next: 'c9.altar.hub',
   },
   'c9.altar.kanga': {
     lines: [
-      { text: 'The kanga unfolds in her kitchen, and the proverb along its edge gets read aloud by a woman who cannot read Swahili and gets it right anyway.' },
-      { who: 'Doña Refugio', text: 'One worn, one given. Whoever folded this knew the same arithmetic as my mother’s notebook.' },
+      { text: 'She reads the kanga’s proverb aloud. She cannot read Swahili, and she gets it right anyway.' },
+      { who: 'Doña Refugio', text: 'One worn, one given. My mother’s notebook knew the same arithmetic.' },
     ],
     effects: ['set:c9.of.kanga'],
     next: 'c9.altar.hub',
   },
   'c9.altar.wish': {
     lines: [
-      { text: 'The strip of Tanabata paper has gone soft at the folds from riding in the journal. The wish is still legible. It mostly came true.' },
-      { who: 'Doña Refugio', text: 'A wish that crossed three oceans belongs on an altar. Where else do wishes and the dead both get fed?' },
+      { text: 'The Tanabata paper has gone soft at the folds. The wish is still legible. It mostly came true.' },
+      { who: 'Doña Refugio', text: 'Where else do wishes and the dead both get fed?' },
     ],
     effects: ['set:c9.of.wish'],
     next: 'c9.altar.hub',
   },
   'c9.altar.begin': {
     lines: [
-      { who: 'Doña Refugio', text: 'Three levels. What guides her, what feeds her, what walks with her. Your hands, corazón. We will tell you nothing unless you ask.' },
+      { who: 'Doña Refugio', text: 'Three levels. What guides her, what feeds her, what walks with her. Your hands, corazón.' },
     ],
     effects: ['set:c9.ofrenda.start'],
   },
   'c9.altar.wait': {
-    lines: [
-      { who: 'Doña Refugio', text: 'The candles keep. Walk, breathe, come back. Altars are patient; it is their whole profession.' },
-    ],
+    lines: [{ who: 'Doña Refugio', text: 'The candles keep. Altars are patient; it is their whole profession.' }],
   },
   'c9.ofrenda.built': {
     lines: [
-      { text: 'The small altar glows beside the big one: her photograph, her bread, her flowers, the journey arranged around her like company.' },
-      { who: 'Doña Refugio', text: 'All this time she had no place set in this valley. Look at her now. Tonight we take the last candle to the camposanto.' },
+      { who: 'Doña Refugio', text: 'All this time she had no place set in this valley. Look at her now.' },
       { text: 'The journal sits at the altar’s foot, closed. For once it does not feel half finished. It feels half full.' },
+      { who: 'Doña Refugio', text: 'Tonight we take the last candle to the camposanto.' },
     ],
     // The customs page fills here, with your own hands just off the altar: the
     // elements taught themselves as you placed them.
     effects: ['clear:c9.ofrenda.start', 'set:c9.ofrenda.done', 'journal:customs.ofrenda'],
   },
   'c9.refugio.again': {
-    lines: [
-      { who: 'Doña Refugio', text: 'The small table is waiting, and so are the neighbors. Nobody builds an altar alone. That is nearly the law here.' },
-    ],
+    lines: [{ who: 'Doña Refugio', text: 'The small table is waiting. Nobody builds an altar alone; that is nearly the law here.' }],
     next: 'c9.altar.hub',
   },
   // At the wall, at the vigil, with her family's row behind her.
   'c9.refugio.tonight': {
     lines: [
-      { text: 'She has claimed a piece of the south wall with a blanket, a basket, and one candle set well apart from her family’s row.' },
-      { who: 'Doña Refugio', text: 'That one is not ours. That one faces out, toward the road. A light is set that way for somebody who is still walking.' },
-      { who: 'Doña Refugio', text: 'Sit. Melitón will tell you these graves are his. Do not believe a word of it; he only sweeps them.' },
+      { text: 'She has claimed a piece of the south wall: a blanket, a basket, and one candle set apart from her family’s row.' },
+      { who: 'Doña Refugio', text: 'That one faces out, toward the road. A light set that way is for somebody still walking.' },
     ],
   },
   'c9.refugio.after': {
     lines: [
       { who: 'Doña Refugio', text: 'The ledger is closed, both directions. That does not mean you stop being family. It means you start.' },
-      { who: 'Doña Refugio', text: 'When you go, go the long way home, and tell the sea it is only borrowing you. The colectivo passes the south corner of the plaza.' },
+      { who: 'Doña Refugio', text: 'Go the long way home. The colectivo passes the south corner of the plaza.' },
     ],
   },
   'c9.refugio.idle': {
-    lines: [
-      { who: 'Doña Refugio', text: 'The fiesta has enough people talking. It is short of people doing. You know where the doing is.' },
-    ],
+    lines: [{ who: 'Doña Refugio', text: 'The fiesta has enough people talking. It is short of people doing.' }],
   },
 
   // ---------------- Elías, cochineal red ----------------
   'c9.elias.band': {
     lines: [
-      { text: 'The weaver’s hand closes gently around your wrist before either of you says a word. He turns the woven band to the light.' },
-      { who: 'Elías', text: 'Padiuxi. Forgive my hands, they saw it first. This red. Where did a traveler get this red?' },
-      { who: 'Elías', text: 'Grana cochinilla. An insect raised on the nopal, crushed to make kings jealous. My yarn is dyed with it, and so is your wrist.' },
-      { who: 'Elías', text: 'It was born in your mountains, friend. Peru grows most of it to this day. Two continents, one small stubborn bug. You wear the proof.' },
+      { text: 'The weaver’s hand closes gently around your wrist before either of you says a word.' },
+      { who: 'Elías', text: 'Padiuxi. Forgive my hands, they saw it first. Where did a traveler get this red?' },
+      { who: 'Elías', text: 'Grana cochinilla. A bug from the nopal, born in your mountains. My yarn is dyed with it, and so is your wrist.' },
     ],
     effects: ['set:met.elias', 'journal:people.elias', 'journal:customs.grana'],
   },
   'c9.elias.first': {
     lines: [
-      { text: 'A man sits at a standing loom in his doorway, walking deep red up the warp a thread at a time.' },
-      { who: 'Elías', text: 'Padiuxi. That is a hello, and it costs you nothing to keep. The loom does not mind an audience, it minds a hurry.' },
+      { text: 'A man at a standing loom in his doorway walks deep red up the warp, a thread at a time.' },
+      { who: 'Elías', text: 'Padiuxi. That is a hello. The loom does not mind an audience, it minds a hurry.' },
     ],
     effects: ['set:met.elias', 'journal:people.elias'],
     choices: [
@@ -577,54 +564,48 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.elias.red': {
     lines: [
-      { who: 'Elías', text: 'Grana cochinilla. An insect that lives on the nopal, dried and crushed. The Spaniards shipped it out like red gold.' },
-      { who: 'Elías', text: 'It started in the Andes long before it made Oaxaca rich. The same bug dyed cloth there a thousand years ago. Red with a passport.' },
+      { who: 'Elías', text: 'Grana cochinilla. An insect from the nopal, dried and crushed. The Spaniards shipped it out like red gold.' },
+      { who: 'Elías', text: 'It dyed cloth in the Andes a thousand years before it made Oaxaca rich. Red with a passport.' },
     ],
     effects: ['journal:customs.grana'],
   },
   'c9.elias.loom': {
     lines: [
-      { who: 'Elías', text: 'A tapestry, Teotitlán style, though this village never claims their name. The diamond is the valley. The red is an insect’s whole opinion.' },
-      { who: 'Elías', text: 'Ask me about the red some time. It has crossed more oceans than you have.' },
+      { who: 'Elías', text: 'The diamond is the valley. The red is an insect’s whole opinion. Ask me about the red some time.' },
     ],
   },
   'c9.elias.dye': {
     lines: [
-      { who: 'Elías', text: 'The dye pot today: grana with lime juice makes flame, grana with ash makes wine. One insect, a whole argument of reds.' },
-      { who: 'Elías', text: 'For the fiesta I dye double. The dead see best at night, my grandmother said, but they see red at any hour.' },
+      { who: 'Elías', text: 'Grana with lime makes flame; grana with ash makes wine. One insect, a whole argument of reds.' },
+      { who: 'Elías', text: 'For the fiesta I dye double. The dead see red at any hour, my grandmother said.' },
     ],
     effects: ['set:c9.elias2', 'journal:customs.grana'],
   },
   'c9.elias.idle': {
-    lines: [
-      { who: 'Elías', text: 'Thread, beat, thread, beat. A tapestry is just patience with a pattern to hide inside.' },
-    ],
+    lines: [{ who: 'Elías', text: 'Thread, beat, thread, beat. A tapestry is patience with a pattern to hide inside.' }],
   },
 
   // ---------------- Abuela Chela, the mole ----------------
   'c9.chela.first': {
     lines: [
-      { text: 'On Refugio’s patio an old woman commands a comal the size of a wagon wheel. A tlayuda is browning on it, big as the moon.' },
-      { who: 'Abuela Chela', text: 'You look hungry in the specific way of travelers. Sit on the low stool. The low stool is for guests who stay.' },
-      { text: 'Tlayuda with beans, quesillo, a swipe of asiento. A neighbor passing the gate calls out: ¡provecho! You have never met her.' },
-      { who: 'Abuela Chela', text: 'You answer gracias, igualmente, and you say it to strangers eating from now on. It is free, and it seasons the whole street.' },
+      { text: 'On Refugio’s patio an old woman commands a comal the size of a wagon wheel. A tlayuda browns on it, big as the moon.' },
+      { who: 'Abuela Chela', text: 'You look hungry in the way of travelers. Sit on the low stool; it is for guests who stay.' },
+      { text: 'A neighbor passing the gate calls out: ¡provecho! You have never met her. Chela answers for you: gracias, igualmente.' },
     ],
     effects: ['set:met.chela', 'journal:people.chela', 'journal:dishes.tlayuda', 'journal:words.provecho'],
   },
   'c9.chela.mole': {
     lines: [
-      { who: 'Abuela Chela', text: 'So Refugio read you the line. Good. Then you know this mole negro is three days old already and still two days from done.' },
-      { who: 'Abuela Chela', text: 'Thirty things go in and I am short the ones that matter: chilhuacle, mulato, pasilla. Eugenia holds them for me at the stall.' },
-      { who: 'Abuela Chela', text: 'Go, tell her it is for the mole of the fiesta. And do not shake the bag; chiles bruise like opinions.' },
+      { who: 'Abuela Chela', text: 'So you found the line. Then you know this mole negro is three days old and two days from done.' },
+      { who: 'Abuela Chela', text: 'I am short the chiles that matter. Eugenia holds them at her stall. Do not shake the bag; chiles bruise like opinions.' },
     ],
     effects: ['set:c9.mole.ask', 'errand:chela-chiles', 'set:errand.chela-chiles'],
   },
   'c9.chela.chiles': {
     lines: [
       { text: 'You call her name from the gate. Without turning from the comal she answers: ¿Mande?' },
-      { who: 'Abuela Chela', text: 'Mande, we say here. Not qué. My mother would reach for the wooden spoon over qué. You will learn to flinch too.' },
-      { text: 'She opens the bag and inhales like a doctor listening to a chest. The chilhuacle passes inspection.' },
-      { who: 'Abuela Chela', text: 'Now the chocolate. Tacho grinds cacao when the bread lets him. Tell him: for the mole, the good disc, not the tourist disc.' },
+      { who: 'Abuela Chela', text: 'Mande, we say, not qué. My mother reached for the spoon over qué.' },
+      { who: 'Abuela Chela', text: 'Good chiles. Now the chocolate: Tacho, the good disc, not the tourist disc.' },
     ],
     effects: [
       'journal:words.mande',
@@ -638,15 +619,14 @@ export const OAXACA_NODES: NodeMap = {
   'c9.chela.choco': {
     lines: [
       { text: 'The chocolate disc goes into her palm and she nods once, which from Chela is a parade.' },
-      { who: 'Abuela Chela', text: 'Chiles toasted black, seeds burnt on purpose, bread and tortilla burnt on more purpose. Now it all becomes one thing, slowly.' },
     ],
     effects: ['errand.done', 'clear:errand.chela-choco', 'set:c9.choco.done'],
     next: 'c9.chela.stir',
   },
   'c9.chela.stir': {
     lines: [
-      { who: 'Abuela Chela', text: 'The pot wants an hour of stirring and my shoulder is older than the pot. Your Nani was promised this exact hour, you know.' },
-      { who: 'Abuela Chela', text: 'She left before the stirring. The mole never held it against her, but it kept the hour open. Take the spoon?' },
+      { who: 'Abuela Chela', text: 'The pot wants an hour of stirring, and my shoulder is older than the pot.' },
+      { who: 'Abuela Chela', text: 'Your Nani was promised this exact hour. She left before it. Take the spoon?' },
     ],
     choices: [
       { text: 'Take the spoon', goto: 'c9.chela.stiryes' },
@@ -654,77 +634,65 @@ export const OAXACA_NODES: NodeMap = {
     ],
   },
   'c9.chela.stiryes': {
-    lines: [
-      { who: 'Abuela Chela', text: 'In circles, with the pot, never against it. The mole sets the pace and you agree with it. That is the entire recipe.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'With the pot, never against it. The mole sets the pace.' }],
     effects: ['set:c9.mole.start'],
   },
   'c9.chela.stirno': {
-    lines: [
-      { who: 'Abuela Chela', text: 'The pot can idle. Idling is half of cooking. The other half is showing up, so show up.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'The pot can idle. Idling is half of cooking. The other half is showing up.' }],
   },
   'c9.chela.again': {
-    lines: [
-      { who: 'Abuela Chela', text: 'The spoon has not forgotten you. Neither have I, and I am the more patient of the two.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'The spoon has not forgotten you. Neither have I.' }],
     next: 'c9.chela.stir',
   },
   'c9.mole.stirred': {
     lines: [
-      { text: 'Somewhere in the hour, your arm stops being yours and becomes the pot’s. The mole turns glossy, black as a polished olla, quiet.' },
-      { who: 'Abuela Chela', text: 'There. Before the church was painted, I promised a traveler she would stir this pot. I am telling her now that her family kept the appointment.' },
-      { text: 'She says it to the steam, conversationally, like the steam has ears. On this patio, this week, it might.' },
+      { text: 'Somewhere in the hour your arm becomes the pot’s. The mole turns glossy, black as a polished olla, quiet.' },
+      { who: 'Abuela Chela', text: 'There. I promised a traveler she would stir this pot. Her family kept the appointment.' },
+      { text: 'She says it to the steam, like the steam has ears. This week, it might.' },
     ],
     effects: ['clear:c9.mole.start', 'set:c9.mole.done', 'journal:dishes.molenegro'],
   },
   'c9.chela.rest': {
     lines: [
       { who: 'Abuela Chela', text: 'The mole rests until the fiesta, and so should you. Here, a spoonful over rice, for quality control. You are the control.' },
-      { text: 'A neighbor leans on the gate, eating a memela. You say ¡provecho! before you can think about it. She grins: gracias, igualmente.' },
+      { text: 'A neighbor at the gate is eating a memela. You say ¡provecho! before you think. She grins: gracias, igualmente.' },
     ],
     next: 'c9.chela.moleAgain',
   },
   'c9.chela.moleAgain': {
-    lines: [
-      { who: 'Abuela Chela', text: 'There is always another pot, mi vida. This valley eats mole faster than one shoulder can stir it.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'There is always another pot, mi vida. This valley eats mole faster than one shoulder stirs it.' }],
     choices: [
       { text: 'Take the spoon again', when: { has: ['c9.mole.done'] }, goto: 'c9.chela.moleReplay' },
       { text: 'Let the pot rest', goto: 'c9.chela.idle' },
     ],
   },
   'c9.chela.moleReplay': {
-    lines: [
-      { who: 'Abuela Chela', text: 'Bueno. Nothing to prove tonight. Only the circles, the smoke to keep an ear on, and me talking at your elbow.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'Bueno. Nothing to prove tonight. Only the circles, the smoke, and me at your elbow.' }],
     effects: ['set:replay.mode', 'set:c9.mole.start'],
   },
   'c9.chela.idle': {
-    lines: [
-      { who: 'Abuela Chela', text: 'The comal keeps its own calendar. Tortillas daily, memelas for whoever earns them, and one mole a year that eats the whole week.' },
-    ],
+    lines: [{ who: 'Abuela Chela', text: 'Tortillas daily, memelas for whoever earns them, and one mole a year that eats the whole week.' }],
   },
 
   // ---------------- Doña Eugenia, marchanta ----------------
   'c9.eugenia.first': {
     lines: [
-      { who: 'Doña Eugenia', text: '¡Pásele, marchanta, pásele! Chiles, cacao, sal de gusano. Everything the season wants, and a few things it forgot to want.' },
-      { who: 'Doña Eugenia', text: 'Marchanta is what we call each other, you and I. You buy from me twice and the word does the rest. It is a small marriage of errands.' },
+      { who: 'Doña Eugenia', text: '¡Pásele, marchanta, pásele! Chiles, cacao, sal de gusano.' },
+      { who: 'Doña Eugenia', text: 'Marchanta is what we call each other, you and I. Buy from me twice and the word does the rest.' },
     ],
     effects: ['set:met.eugenia', 'journal:words.marchanta'],
   },
   'c9.eugenia.chiles': {
     lines: [
-      { who: 'Doña Eugenia', text: 'For Chela’s mole? Then you get the chilhuacle I do not put on the table. One little valley grows it, and it costs like it knows.' },
-      { text: 'She weighs the dark chiles like contraband, wraps them, and then drops a fistful of cacao beans on top without a word.' },
-      { who: 'Doña Eugenia', text: 'The pilón, marchanta. The little extra, for regulars. You do not ask, I do not explain. It simply happens between us.' },
+      { who: 'Doña Eugenia', text: 'For Chela’s mole? Then the chilhuacle I keep under the table. One little valley grows it.' },
+      { text: 'She wraps the dark chiles, then drops a fistful of cacao beans on top without a word.' },
+      { who: 'Doña Eugenia', text: 'The pilón, marchanta. You do not ask, I do not explain.' },
     ],
     effects: ['set:c9.chiles', 'journal:customs.pilon'],
   },
   'c9.eugenia.idle': {
     lines: [
-      { who: 'Doña Eugenia', text: 'Tomorrow the tianguis is in the next town, and I go where the tianguis goes. Today, lucky for you, it is my patio.' },
+      { who: 'Doña Eugenia', text: 'Tomorrow the tianguis is in the next town, and I go where it goes. Today it is my patio.' },
     ],
     choices: [
       { text: '"Doña Eugenia, where was I headed?"', goto: 'c9.eugenia.thread' },
@@ -732,37 +700,34 @@ export const OAXACA_NODES: NodeMap = {
     ],
   },
   'c9.eugenia.thread': {
-    lines: [
-      { who: 'Doña Eugenia', text: 'Ay, marchanta. In this market even the chiles know where they are going. Ask your wrist; it shops smarter than you.' },
-    ],
+    lines: [{ who: 'Doña Eugenia', text: 'Ay, marchanta. Ask your wrist; it shops smarter than you.' }],
     effects: ['thread:'],
   },
   'c9.eugenia.threadNo': {
-    lines: [{ who: 'Doña Eugenia', text: 'Take your time. The pasilla waited fifty years for its pot; it can wait for you.' }],
+    lines: [{ who: 'Doña Eugenia', text: 'Take your time. The pasilla waited fifty years for its pot.' }],
   },
 
   // ---------------- Tacho, the panadero ----------------
   'c9.pan.first': {
     lines: [
-      { text: 'The panadería breathes heat into the lane. Racks of round loaves cool by the door, each crown pressed with a small painted face.' },
-      { who: 'Tacho', text: 'Pan de muerto, the Oaxaca way: pan de yema, and the carita on top. Here the bread looks back at you. It is only polite.' },
-      { who: 'Tacho', text: 'The next batch comes out ahorita. You want to wait, wait. Ahorita is a word with room in it.' },
+      { text: 'The panadería breathes heat into the lane. Each loaf cooling by the door wears a small painted face.' },
+      { who: 'Tacho', text: 'Pan de muerto, with the carita on top. Here the bread looks back at you. It is only polite.' },
+      { who: 'Tacho', text: 'The next batch comes out ahorita. Ahorita is a word with room in it.' },
     ],
     effects: ['set:met.pan', 'journal:people.panadero'],
   },
   'c9.pan.choco': {
     lines: [
-      { who: 'Tacho', text: 'For the mole? Then the good disc, stone-ground, almost no sugar. The tourist disc is for people who drink chocolate with their eyes.' },
-      { text: 'While he wraps it he beats a jug of chocolate de agua to foam and pours you a cup, water-dark and honest.' },
-      { who: 'Tacho', text: 'In water, not milk, so the cacao does the talking. Dunk bread in it at the fiesta and you will understand this village completely.' },
+      { who: 'Tacho', text: 'For the mole? Then the good disc, stone-ground. The tourist disc is for people who drink with their eyes.' },
+      { text: 'While he wraps it he beats a cup of chocolate de agua to foam for you, water-dark and honest.' },
     ],
     effects: ['set:c9.choco', 'journal:dishes.chocolatedeagua'],
   },
   'c9.pan.bread': {
     lines: [
-      { text: 'The oven finally opens. The batch you were promised ahorita arrives one errand, two conversations, and one stirred pot later.' },
-      { who: 'Tacho', text: 'You see? Ahorita came. It always comes. It just refuses to be supervised.' },
-      { who: 'Tacho', text: 'This basket is for Refugio’s altar, promised for the guelaguetza. Your arms look honest. Carry it warm, that is the whole trick.' },
+      { text: 'The batch you were promised ahorita arrives one errand, two conversations, and one stirred pot later.' },
+      { who: 'Tacho', text: 'You see? Ahorita came. It just refuses to be supervised.' },
+      { who: 'Tacho', text: 'This basket is for Refugio’s altar. Carry it warm; that is the whole trick.' },
     ],
     effects: [
       'journal:words.ahorita',
@@ -773,29 +738,25 @@ export const OAXACA_NODES: NodeMap = {
     ],
   },
   'c9.pan.idle': {
-    lines: [
-      { who: 'Tacho', text: 'Flour at four, ovens at five, caritas at six. The dead eat better than the living this month and nobody complains.' },
-    ],
+    lines: [{ who: 'Tacho', text: 'Flour at four, ovens at five, caritas at six. The dead eat better than the living this month.' }],
     choices: [
       { text: '"Tacho, what was I meant to be doing?"', goto: 'c9.pan.thread' },
       { text: 'Breathe the oven air', goto: 'c9.pan.threadNo' },
     ],
   },
   'c9.pan.thread': {
-    lines: [
-      { who: 'Tacho', text: 'My bread never forgets its oven, and look at you. Follow the red, amigo; dough and travelers both rise where they are put.' },
-    ],
+    lines: [{ who: 'Tacho', text: 'Follow the red, amigo. Dough and travelers both rise where they are put.' }],
     effects: ['thread:'],
   },
   'c9.pan.threadNo': {
-    lines: [{ who: 'Tacho', text: 'Best smell in the valley, and it is free. Stay as long as your errands allow.' }],
+    lines: [{ who: 'Tacho', text: 'Best smell in the valley, and it is free.' }],
   },
 
   // ---------------- Silvino, the alebrije carver ----------------
   'c9.carver.first': {
     lines: [
-      { text: 'A man paints dots on a carved creature: half iguana, half trumpet, somehow also a cat. It dries in the sun looking pleased.' },
-      { who: 'Silvino', text: 'Alebrijes. I dream them, the copal wood argues, we settle out of court. This one wanted wings and got a better tail instead.' },
+      { text: 'A man paints dots on a carved creature: half iguana, half trumpet, somehow also a cat.' },
+      { who: 'Silvino', text: 'Alebrijes. I dream them, the copal wood argues, we settle out of court.' },
     ],
     effects: ['set:met.carver', 'journal:people.carver'],
     choices: [
@@ -805,26 +766,24 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.carver.honest': {
     lines: [
-      { who: 'Silvino', text: 'Ha! Ancient like my bicycle. A man in Mexico City, Pedro Linares, dreamed them in a fever around 1936. Paper first, wood later.' },
-      { who: 'Silvino', text: 'Arrazola and Tilcajete made them theirs with copal and a knife. Newness is not a scandal, friend. Every tradition was Tuesday once.' },
+      { who: 'Silvino', text: 'Ha! Ancient like my bicycle. Pedro Linares dreamed them in a fever around 1936, in Mexico City. Paper first, wood later.' },
+      { who: 'Silvino', text: 'Newness is not a scandal, friend. Every tradition was Tuesday once.' },
     ],
   },
   'c9.carver.dreams': {
     lines: [
       { who: 'Silvino', text: 'Last night, a donkey with fish for ears. The night before, nothing, so I painted the tail of the nothing. It sold by noon.' },
-      { who: 'Silvino', text: 'People want the creatures to be four thousand years old. They are younger than my grandmother. Both facts are good ones.' },
     ],
   },
   'c9.carver.second': {
     lines: [
-      { who: 'Silvino', text: 'Nico told you they are ancient guardians, no? His cousin saw a movie. I told him the true story and he liked it better. A fever! A dream!' },
-      { who: 'Silvino', text: 'Since that movie, more visitors come. Some come to see, some come to take. Be the kind that sees, and the village will show you everything.' },
+      { who: 'Silvino', text: 'Nico told you they are ancient guardians? His cousin saw a movie. I told him about the fever. He liked it better.' },
+      { who: 'Silvino', text: 'Since the movie, some visitors come to see and some to take. Be the kind that sees.' },
     ],
     effects: ['set:c9.carver2'],
   },
   'c9.carver.idle': {
     lines: [
-      { who: 'Silvino', text: 'The paint decides when it is done. I only hold the brush and outvote it occasionally.' },
       { text: 'The iguana-trumpet-cat has gained wings since this morning. Small ones, but clearly going somewhere.' },
     ],
     effects: ['set:c9.carver.i1'],
@@ -838,38 +797,36 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.carver.idle3': {
     lines: [
-      { who: 'Silvino', text: 'Every time you walk past, it grows a little braver. Keep visiting and I will have to charge it rent.' },
-      { text: 'Today: a third eye, or possibly a polka dot with ambition. Either way, it suits.' },
+      { who: 'Silvino', text: 'Every time you walk past, it grows a little braver. Today: a third eye, or a polka dot with ambition.' },
     ],
   },
 
   // ---------------- Nico, the comparsa kid ----------------
   'c9.kid.first': {
     lines: [
-      { who: 'Nico', text: 'You came for the fiesta? I am IN the comparsa this year. We go house to house all night with the banda. ALL night. I get a costume.' },
-      { who: 'Nico', text: 'My trombone is borrowed and I know four notes, but at night, moving, four notes is plenty. You will hear us. Everyone hears us.' },
-      { who: 'Nico', text: 'Did you see the alebrijes? They are ancient, you know. Spirit guardians from a thousand years. My cousin told me.' },
+      { who: 'Nico', text: 'I am IN the comparsa this year. House to house all night with the banda. ALL night.' },
+      { who: 'Nico', text: 'My trombone is borrowed and I know four notes. At night, moving, four notes is plenty.' },
+      { who: 'Nico', text: 'Did you see the alebrijes? Ancient spirit guardians. My cousin told me.' },
     ],
     effects: ['set:met.kid', 'journal:people.kid'],
   },
   'c9.kid.two': {
     lines: [
       { who: 'Nico', text: 'Okay, Silvino says the alebrijes came from a fever dream in 1936. A fever! You can catch one anytime!' },
-      { who: 'Nico', text: 'Also, the face paint is for us, for the comparsa. Not for standing next to graves taking pictures. Melitón made that rule very clear.' },
     ],
     effects: ['set:c9.kid2'],
   },
   'c9.kid.idle': {
     lines: [
-      { who: 'Nico', text: 'When a cohete goes up, the dogs complain and my mother says ya empezó. It has begun. It began weeks ago. It is always beginning.' },
+      { who: 'Nico', text: 'When a cohete goes up my mother says ya empezó. It has begun. It began weeks ago. It is always beginning.' },
     ],
   },
 
   // ---------------- Don Melitón, camposanto caretaker ----------------
   'c9.care.first': {
     lines: [
-      { text: 'An old man sweeps between the graves with a broom worn to a slant, unhurried, moving the dust only as far as it agrees to go.' },
-      { who: 'Don Melitón', text: 'Welcome. Walk anywhere, the paths are for walking. We are getting the beds ready; company is coming from far away.' },
+      { text: 'An old man sweeps between the graves, moving the dust only as far as it agrees to go.' },
+      { who: 'Don Melitón', text: 'Welcome. We are getting the beds ready; company is coming from far away.' },
     ],
     effects: ['set:met.caretaker', 'journal:people.caretaker'],
     choices: [
@@ -879,28 +836,26 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.care.halloween': {
     lines: [
-      { who: 'Don Melitón', text: 'A fair guess, and a wrong one, and you are not the first. Halloween dresses up as the dead to be safe from them. We set the table for ours.' },
-      { who: 'Don Melitón', text: 'Nobody here is afraid of my guests. They are our mothers. You do not fear your mother; you make her favorite dish and you wait up.' },
-      { who: 'Don Melitón', text: 'Some Halloween leaks in at the edges, sure. Plastic pumpkins at the tianguis. The children enjoy both. The graves only get one.' },
+      { who: 'Don Melitón', text: 'A fair guess, and a wrong one. Halloween dresses up as the dead to be safe from them. We set the table for ours.' },
+      { who: 'Don Melitón', text: 'Nobody fears my guests. They are our mothers. You make her favorite dish and you wait up.' },
     ],
   },
   'c9.care.night': {
     lines: [
-      { who: 'Don Melitón', text: 'The dead, joven. The first night the angelitos, the little ones, with sweets and no chile. The second night the grown ones, with mezcal.' },
-      { who: 'Don Melitón', text: 'It is not a mourning. It is a reunion with candles. There will be laughing at these graves, and it will be the respectful kind.' },
+      { who: 'Don Melitón', text: 'The dead, joven. First night the angelitos, with sweets. Second night the grown ones, with mezcal.' },
+      { who: 'Don Melitón', text: 'It is not a mourning. It is a reunion with candles.' },
     ],
   },
   'c9.care.path': {
     lines: [
-      { who: 'Don Melitón', text: 'Refugio sent word about the ledger. Then you can carry this: a costal of cempasúchil petals, and the job that goes with it.' },
-      { who: 'Don Melitón', text: 'The path from my gate toward the village wants a fresh line of petals. Scent and color, so the souls do not wander the wrong lane.' },
-      { who: 'Don Melitón', text: 'Lay them thick where the path bends. The dead were people; people miss turns.' },
+      { who: 'Don Melitón', text: 'Refugio sent word. Then carry this: a costal of cempasúchil petals, and the job that goes with it.' },
+      { who: 'Don Melitón', text: 'A line of petals from my gate toward the village, so the souls do not wander the wrong lane. Thick where it bends.' },
     ],
     effects: ['set:c9.path.task'],
   },
   'c9.care.wait': {
     lines: [
-      { who: 'Don Melitón', text: 'The costal will not lay itself along the path, and I have swept the same spot twice waiting to watch you do it.' },
+      { who: 'Don Melitón', text: 'The costal will not lay itself. I have swept the same spot twice waiting to watch you.' },
     ],
   },
   // The vigil is shown, not told: the candle dressing, the velacion mood and
@@ -908,104 +863,99 @@ export const OAXACA_NODES: NodeMap = {
   // person could say, plus the one thing that happens to you.
   'c9.vigil': {
     lines: [
-      { who: 'Don Melitón', text: 'You see? A reunion. The ones who cry, cry a while, and then someone hands them bread. The night knows its business.' },
+      { who: 'Don Melitón', text: 'You see? A reunion. The ones who cry, cry a while, and then someone hands them bread.' },
     ],
     next: 'c9.vigil2',
   },
+  // No one holds your face here. Refugio puts a lit candle in your hands and
+  // has you set it beside hers, facing the road: the village's gesture, not
+  // the elders' pattern from every other coast.
   'c9.vigil2': {
     lines: [
-      { text: 'On the south wall, apart from her family’s row, Refugio has set one candle facing out, toward the road.' },
-      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. Owed, both directions, and paid.' },
-      { who: 'Doña Refugio', text: 'Your petals run gate to lane to doorway. If she is coming, she will not miss the turn.' },
+      { text: 'On the south wall, apart from her family’s row, one candle faces out toward the road. Refugio lights a second from it and hands it to you.' },
+      { who: 'Doña Refugio', text: 'For Zoila, called Nani by exactly one person. Set it next to mine. Your petals will show her the turn.' },
     ],
     next: 'c9.vigil3',
   },
   'c9.vigil3': {
     lines: [
-      { who: 'Don Melitón', text: 'Sit. Eat. Tonight nobody in this camposanto is a stranger, which for one night includes the dead.' },
-      { text: 'You stay until the candles are low. Someone starts on your grandmother: a borrowed horse, the wrong river, her refusing to dry off.' },
-      { text: 'You will never hear it the same twice.' },
+      { text: 'You set it down. Two small lights, facing the road. Someone starts on your grandmother: a borrowed horse, the wrong river, her refusing to dry off.' },
+      { text: 'You stay until the candles are low. You will never hear it the same twice.' },
     ],
     effects: ['set:c9.complete', 'journal:customs.camposanto'],
   },
   'c9.care.after': {
     lines: [
-      { who: 'Don Melitón', text: 'The candles are low and nobody has gone home. That is the whole review; the village will repeat it until roughly forever.' },
       { who: 'Don Melitón', text: 'Doors stay open for you here, joven. That is not a saying. I mean the doors.' },
     ],
   },
   'c9.care.idle': {
     lines: [
-      { who: 'Don Melitón', text: 'Sweep, wash, whitewash, flowers. A camposanto is a garden where the flowers are people. It wants the same daily attention.' },
+      { who: 'Don Melitón', text: 'Sweep, wash, whitewash, flowers. A camposanto is a garden where the flowers are people.' },
     ],
   },
 
   // ---------------- the families at the vigil ----------------
   'c9.vigil.epifania': {
     lines: [
-      { text: 'An old woman sits on a folded blanket with her back against a headstone somebody washed white this morning.' },
-      { who: 'Doña Epifania', text: 'My mother. She hated to be cold, so I bring one blanket, for me, and I sit close, and we both get the good of it.' },
+      { who: 'Doña Epifania', text: 'My mother hated the cold. So I bring one blanket, I sit close to her stone, and we both get the good of it.' },
     ],
   },
   'c9.vigil.bernardo': {
     lines: [
-      { who: 'Bernardo', text: 'Mezcal? It is for my father, but he never once finished a glass without help. A family tradition, on both sides of the stone.' },
-      { text: 'He tips a splash onto the earth before he drinks. Your own hand moves to do the same before you decide anything about it.' },
+      { who: 'Bernardo', text: 'Mezcal? It is for my father, but he never once finished a glass without help.' },
+      { text: 'He tips a splash onto the earth before he drinks. Your hand moves to do the same before you decide anything.' },
     ],
   },
   'c9.vigil.luz': {
     lines: [
-      { who: 'Luz', text: 'Tamal. Take it. Do not look at the basket; the basket is not in charge of this night, I am.' },
-      { text: 'She is two graves along before you finish thanking her, delivering the same instruction in the same unarguable tone.' },
+      { who: 'Luz', text: 'Tamal. Take it. The basket is not in charge of this night; I am.' },
     ],
   },
   'c9.vigil.serafin': {
     lines: [
-      { text: 'A man plays quietly three graves along: the same song around and around, with a different mistake each time.' },
-      { who: 'Serafín', text: 'She only ever liked the one song. Fifty-one years of it. I have gotten worse at the middle part on purpose; she laughed at that part.' },
+      { who: 'Serafín', text: 'She only ever liked the one song. Fifty-one years of it. I play the middle part badly on purpose; she laughed at that part.' },
     ],
   },
   'c9.vigil.chuy': {
     lines: [
-      { who: 'Chuy', text: 'Look. Wax. If you catch it coming off the candle it goes hard in your hand and then you have a little planet.' },
-      { text: 'He has eleven little planets. He is willing, with visible effort, to part with the smallest and least round of them.' },
+      { who: 'Chuy', text: 'Look. Catch the wax coming off the candle and it goes hard in your hand. Then you have a little planet.' },
+      { text: 'He has eleven little planets. With visible effort, he parts with the smallest.' },
     ],
   },
 
   // ---------------- Chasca, in the cempasúchil ----------------
   'c9.chasca.field': {
     lines: [
-      { who: 'Chasca', text: 'The soup-eater, standing waist-deep in marigolds. I have followed you across one entire planet and this is the picture I was saving film for.' },
-      { who: 'Chasca', text: 'Orange to the horizon, you in the middle, the camposanto wall behind. Do not smile. Just be arriving. You are very good at arriving.' },
-      { text: 'The shutter clicks once. She lowers the camera slowly, like setting down a full cup.' },
-      { who: 'Chasca', text: 'That was the last frame of the roll, and the roll is the album. Albums end, you know.' },
+      { who: 'Chasca', text: 'The soup-eater, waist-deep in marigolds. This is the picture I was saving film for.' },
+      { who: 'Chasca', text: 'Do not smile. Just be arriving. You are very good at arriving.' },
+      { text: 'The shutter clicks once. She lowers the camera slowly, like setting down a full cup. Last frame of the roll.' },
     ],
     effects: ['set:met.chascaC9', 'set:photo.flash', 'set:photo.c9.field'],
   },
   'c9.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Nine chapters of you in one bag. I will develop them all at home, in the dark, and the journey will happen again in a tray of water.' },
-      { who: 'Chasca', text: 'When you get back, come see the album. It was always going to end where the road ends. Endings are just where albums learn what they are.' },
+      { who: 'Chasca', text: 'Nine chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
     ],
   },
 
   // ---------------- post office ----------------
   'c9.post.pilar': {
     lines: [
-      { text: 'The correo counter under the portales holds one clerk, one stamp pad, and a shoebox marked EXTRANJERO. Your name is in the shoebox.' },
-      { text: 'An envelope in handwriting you know: it usually looks like an invoice. This time the lines are straight and careful.' },
+      { text: 'Under the portales: one clerk, one stamp pad, a shoebox marked EXTRANJERO. Your name is in it.' },
+      { text: 'Handwriting you know, that usually looks like an invoice. This time the lines are straight and careful.' },
     ],
     effects: ['letter:oax.pilar'],
   },
   'c9.post.concetta': {
     lines: [
-      { text: 'The clerk snaps his fingers and produces a second envelope, sea-stamped, smelling faintly of lemons that traveled badly.' },
+      { text: 'The clerk produces a second envelope, sea-stamped, smelling faintly of lemons that traveled badly.' },
     ],
     effects: ['letter:oax.concetta'],
   },
   'c9.post.idle': {
     lines: [
-      { text: 'CORREO, says the little sign, and under it: SI NO ESTOY, AHORITA VENGO. The clerk is there anyway, disappointed you did not test it.' },
+      { text: 'CORREO, says the sign, and under it: SI NO ESTOY, AHORITA VENGO. The clerk is there anyway.' },
     ],
   },
 
@@ -1013,7 +963,6 @@ export const OAXACA_NODES: NodeMap = {
   'c9.depart': {
     lines: [
       { text: 'The colectivo idles at the south corner, pointed at the highway, the coast, the ship, the long way home.' },
-      { text: 'Down to Veracruz, across one more ocean, down one more coast. La Caleta first, then the old road up. The journal rides on top of the bag now.' },
     ],
     choices: [
       { text: 'Board. The long way home.', goto: 'c9.depart.go' },
@@ -1023,416 +972,275 @@ export const OAXACA_NODES: NodeMap = {
   'c9.depart.go': {
     lines: [
       { text: 'The village lets you go the way it took you in: without ceremony, with bread for the road you did not ask for.' },
-      { text: 'Weeks fold into wake and coastline. Then a grey morning, a familiar fog, and a pier standing on old sugar-trade legs. La Caleta.' },
+      { text: 'Weeks fold into wake and coastline. Then a grey morning, a familiar fog, a pier on old sugar-trade legs. La Caleta.' },
     ],
     effects: ['travel:la-caleta,22,28,up'],
   },
   'c9.depart.stay': {
     lines: [
-      { text: 'The driver nods and settles his hat back over his eyes. Ahorita, his posture says. The word finally makes perfect sense.' },
+      { text: 'The driver settles his hat back over his eyes. Ahorita, his posture says. The word finally makes sense.' },
     ],
   },
 
   // ---------------- examines ----------------
   'c9.ex.casona': {
-    lines: [
-      { text: 'Adobe under lime paint, green cantera around the door, rebar praying for a second floor. Bougainvillea is slowly buying the wall.' },
-    ],
+    lines: [{ text: 'Adobe under lime paint, green cantera around the door, rebar praying for a second floor.' }],
   },
   'c9.ex.portales': {
-    lines: [
-      { text: 'The portales: arches of green cantera, the same stone as the grand churches, scaled to a village that likes its grandeur sittable.' },
-    ],
+    lines: [{ text: 'Arches of green cantera, the stone of the grand churches, scaled to a village that likes its grandeur sittable.' }],
   },
   'c9.ex.papel': {
-    lines: [
-      { text: 'Papel picado shivers overhead, whole scenes scissored into tissue. The wind reads each flag and keeps none of them.' },
-    ],
+    lines: [{ text: 'Papel picado shivers overhead, whole scenes scissored into tissue.' }],
   },
   'c9.ex.cempa': {
-    lines: [
-      { text: 'Cempasúchil to the field’s edge, orange arguing with orange. The scent is loud. This is the crop you can hear.' },
-    ],
+    lines: [{ text: 'Cempasúchil to the field’s edge, orange arguing with orange. The scent is loud.' }],
   },
   'c9.path.lay': {
     lines: [
-      { text: 'You walk the lane from the camposanto gate, sowing petals by the handful. The costal lightens; the road turns the color of embers.' },
-      { text: 'Behind you the path burns quietly orange, gate to lane to doorway. A woman crosses herself and thanks you by name. You never told her it.' },
+      { text: 'You walk the lane from the camposanto gate, sowing petals by the handful. The road turns the color of embers.' },
+      { text: 'A woman crosses herself and thanks you by name. You never told her it.' },
     ],
     effects: ['set:c9.path.laid', 'journal:customs.cempasuchil'],
   },
   'c9.ex.petals1': {
-    lines: [
-      { text: 'A thin line of last year’s petals, ghost-orange, pressed into the earth. The path remembers being lit, and expects it again.' },
-    ],
+    lines: [{ text: 'A thin line of last year’s petals pressed into the earth. The path remembers being lit.' }],
   },
   'c9.ex.petals2': {
-    lines: [
-      { text: 'The petal path runs whole from the camposanto gate into the village, laid by your own hands. Bright enough to follow home from either end.' },
-    ],
+    lines: [{ text: 'The petal path runs whole from the camposanto gate into the village. Bright enough to follow home from either end.' }],
   },
   'c9.ex.comal': {
-    lines: [
-      { text: 'The big comal, black with decades, over a fire kept modest on purpose. Tortillas at the edge, a tlayuda in the middle, order everywhere.' },
-    ],
+    lines: [{ text: 'The big comal, black with decades, over a fire kept modest on purpose.' }],
   },
   'c9.ex.veladora': {
-    lines: [
-      { text: 'Veladoras in glass, lit early and left burning. Small lights posted like sentries along the route the dead will take.' },
-    ],
+    lines: [{ text: 'Veladoras in glass, posted like sentries along the route the dead will take.' }],
   },
   'c9.ex.panstall': {
-    lines: [
-      { text: 'Rounds of pan de muerto, sugar-dusted, each crown wearing its small painted carita. A whole shelf of bread, looking back.' },
-    ],
+    lines: [{ text: 'Pan de muerto, sugar-dusted, each crown wearing a painted carita. A whole shelf of bread, looking back.' }],
   },
   'c9.ex.barrostall': {
-    lines: [
-      { text: 'Barro negro: grey clay burnished with a quartz stone until it fires black. The shelf shines like wet river stones.' },
-    ],
+    lines: [{ text: 'Barro negro: grey clay burnished with quartz until it fires black. The shelf shines like wet river stones.' }],
   },
   'c9.ex.telar': {
-    lines: [
-      { text: 'The standing loom, warp like harp strings, a deep red cloth climbing it. The red is cochineal: an insect’s life, continued as color.' },
-    ],
+    lines: [{ text: 'The standing loom, warp like harp strings, red cloth climbing it. Cochineal: an insect’s life, continued as color.' }],
   },
   'c9.ex.alebrije': {
-    lines: [
-      { text: 'Copal-wood creatures drying in the sun: impossible anatomy, confident paint. None of them are ancient. All of them are certain.' },
-    ],
+    lines: [{ text: 'Copal-wood creatures drying in the sun. None of them are ancient. All of them are certain.' }],
   },
   'c9.ex.rebozos': {
     lines: [
-      { text: 'A rack of rebozos hung to be walked into: cochineal red, indigo, one green that argues with everything near it and wins.' },
-      { text: 'The seller says a rebozo carries a baby, a market load, or a grief, depending on the year. She says it like a price list.' },
+      { text: 'Rebozos in cochineal red and indigo. A rebozo carries a baby, a market load, or a grief, the seller says, like a price list.' },
     ],
   },
   'c9.ex.puestoflores': {
     lines: [
-      { text: 'Buckets of cempasuchil by the armful, and one bucket of cresta de gallo, red as a stove ring. The whole week is these two colors.' },
-      { text: 'You buy them by the arm, not by the stem. Everyone leaves this stall carrying more orange than they can see over.' },
+      { text: 'Cempasúchil by the armful and one bucket of cresta de gallo, red as a stove ring. The whole week is these two colors.' },
     ],
   },
   'c9.ex.capilla': {
     lines: [
-      { text: 'A small whitewashed chapel over one family’s dead, with a glass door and candles behind it that have been lit since Tuesday.' },
-      { text: 'It is repainted every October, by an argument about the color, which is settled the same way every year: white, and someone sulks.' },
+      { text: 'A whitewashed chapel over one family’s dead. Repainted every October after an argument about color: white, and someone sulks.' },
     ],
   },
   'c9.ex.campogate': {
-    lines: [
-      { text: 'The camposanto arch, garlanded in marigolds. Gates usually keep things out. This one is decorated for arrivals.' },
-    ],
+    lines: [{ text: 'The camposanto arch, garlanded in marigolds. This gate is decorated for arrivals.' }],
   },
   'c9.ex.tumba.night': {
-    lines: [
-      { text: 'A grave dressed like a dinner table: candles, mole, marigolds, a poured mezcal. Whoever sleeps here is being kept excellent company.' },
-    ],
+    lines: [{ text: 'A grave dressed like a dinner table: candles, mole, marigolds, a poured mezcal. Excellent company.' }],
   },
   'c9.ex.tumba': {
-    lines: [
-      { text: 'A whitewashed grave, freshly swept, marigolds heaped at its foot. The stone is old; the attention is this morning’s.' },
-    ],
+    lines: [{ text: 'A whitewashed grave, freshly swept. The stone is old; the attention is this morning’s.' }],
   },
   'c9.ex.ofrenda0': {
-    lines: [
-      { text: 'Bare boards and folded cloth, a marigold arch half tied. An altar the way a stage is a play: not yet, but soon.' },
-    ],
+    lines: [{ text: 'Bare boards and folded cloth, a marigold arch half tied. Not yet, but soon.' }],
   },
   'c9.ex.ofrenda2': {
     lines: [
-      { text: 'The family ofrenda stands complete: water, salt, copal, candles, her mother’s photograph over the bread. Beside it a small table waits, empty.' },
+      { text: 'Three levels, cloth smoothed, the marigold arch tied over everything. Her mother’s photograph sits above a cup for tejate.' },
+      { text: 'Beside it a small table waits, empty.' },
     ],
   },
   'c9.ex.ofrenda3': {
     lines: [
-      { text: 'Two altars glow side by side. On the small one: her photograph, her bread, and pieces of a journey arranged like family around her.' },
-      { text: 'The room smells of copal and marigold. Nobody here would call the journal half finished now.' },
+      { text: 'Two altars glow side by side. On the small one: her photograph, her bread, and a journey arranged like family around her.' },
     ],
   },
   'c9.ex.ofrenda1': {
-    lines: [
-      { text: 'The ofrenda is filling day by day: cloth, then candles, then the marigold arch. Altars are built the way trust is, in layers.' },
-    ],
+    lines: [{ text: 'The ofrenda fills day by day: cloth, then candles, then the arch. Altars are built the way trust is, in layers.' }],
   },
   'c9.ex.colectivo': {
-    lines: [
-      { text: 'The colectivo stop. A hand-lettered sign gives the schedule as SALIDAS: AHORITA. The driver sleeps under his hat, honoring it exactly.' },
-    ],
+    lines: [{ text: 'The colectivo stop. SALIDAS: AHORITA. The driver sleeps under his hat, honoring it exactly.' }],
   },
   'c9.ex.plaza': {
-    lines: [
-      { text: 'The plaza breathes in the evening: bench talk under the portales, the banda rehearsing somewhere close, papel picado keeping time overhead.' },
-    ],
+    lines: [{ text: 'Bench talk under the portales, the banda rehearsing close by, papel picado keeping time overhead.' }],
   },
   'c9.ex.path9': {
-    lines: [
-      { text: 'Packed valley earth, swept by doorways as far as each broom claims. The street is a shared floor and everyone knows their tile.' },
-    ],
+    lines: [{ text: 'Packed valley earth, swept by each doorway as far as its broom claims.' }],
   },
   'c9.ex.stall9': {
-    lines: [
-      { text: 'Eugenia’s stall: chiles by their first names, cacao in fat sacks, chapulines by the scoop, sal de gusano in careful jars.' },
-    ],
+    lines: [{ text: 'Eugenia’s stall: chiles by their first names, cacao in fat sacks, chapulines by the scoop.' }],
   },
   'c9.ex.door9': {
-    lines: [
-      { text: 'From behind the door, a clarinet climbs a scale, misses the top step, and tries again. The banda practices; nobody inside cares that you exist.' },
-    ],
+    lines: [{ text: 'Behind the door a clarinet climbs a scale, misses the top step, and tries again.' }],
   },
   'c9.ex.tree9': {
-    lines: [
-      { text: 'Shade tree with bougainvillea using it as a ladder. The magenta is winning, to nobody’s regret.' },
-    ],
+    lines: [{ text: 'A shade tree with bougainvillea using it as a ladder. The magenta is winning.' }],
   },
   'c9.ex.sign9': {
     lines: [
-      { text: 'The village sign, repainted every fiesta. Under the name, smaller: LOS MUERTOS NO SE FUERON. SE ADELANTARON. The dead did not leave; they went ahead.' },
+      { text: 'Under the village name: LOS MUERTOS NO SE FUERON. SE ADELANTARON. The dead did not leave; they went ahead.' },
     ],
   },
   'c9.ex.patio': {
-    lines: [
-      { text: 'Swept earth patio, the comal at its heart. The ground is kept like a floor because that is exactly what it is.' },
-    ],
+    lines: [{ text: 'A swept earth patio, kept like a floor because that is what it is.' }],
   },
   'c9.ex.wall9': {
-    lines: [
-      { text: 'The camposanto wall, whitewashed for the season. On the inside face, generations of names; on this side, marigold garlands.' },
-    ],
+    lines: [{ text: 'The camposanto wall, whitewashed. Names on the inside face; marigold garlands on this one.' }],
   },
   'c9.ex.bench9': {
-    lines: [
-      { text: 'A cantera bench polished by fifty years of sitters. The stone has learned the shape of a good long evening.' },
-    ],
+    lines: [{ text: 'A cantera bench polished by fifty years of sitters.' }],
   },
   'c9.ex.farol9': {
-    lines: [
-      { text: 'A plaza lamp, already ringed with moths that clearly know something about the coming nights.' },
-    ],
+    lines: [{ text: 'A plaza lamp ringed with moths that clearly know something about the coming nights.' }],
   },
   'c9.ex.tuft9': {
-    lines: [
-      { text: 'Dry valley grass, gone gold. At 1,500 meters the light cuts sharp and everything casts an opinion of a shadow.' },
-    ],
+    lines: [{ text: 'Dry valley grass gone gold. The high light gives everything an opinion of a shadow.' }],
   },
 
   // ---------------- the love layer: small things, each with a voice ----------------
   'c9.ex.cempacut': {
-    lines: [
-      { text: 'Cut cempasúchil in tied armfuls, stems to one side, fire to the other. The stems are for the living to carry; the color is for someone else.' },
-    ],
+    lines: [{ text: 'Cut cempasúchil in tied armfuls. The stems are for the living to carry; the color is for someone else.' }],
   },
   'c9.ex.agave': {
-    lines: [
-      { text: 'An agave piña by the door, fat as a sleeping pig. Eight years growing in the hills, and it will be sipped slowly, which is only fair.' },
-    ],
+    lines: [{ text: 'An agave piña by the door, fat as a sleeping pig. Eight years growing, and it will be sipped slowly.' }],
   },
   'c9.ex.papelstack': {
-    lines: [
-      { text: 'Papel picado still folded in its stack, colors sorted, scissors resting. A whole sky, waiting in a doorway to be hung.' },
-    ],
+    lines: [{ text: 'Papel picado folded in its stack, scissors resting. A whole sky, waiting to be hung.' }],
   },
   'c9.ex.dog1': {
     lines: [
-      { text: 'A village dog asleep on the panadería step, the warmest stone on the street.' },
-      { text: 'He audited every doorway in the village for a year. This is his published finding.' },
+      { text: 'A village dog asleep on the panadería step, the warmest stone on the street. A year of auditing doorways; this is his finding.' },
     ],
     effects: ['set:c9.dog.known'],
   },
   'c9.ex.dog2': {
-    lines: [
-      { text: 'He opens one eye, files you under harmless, and closes it again. The oven wall backs his decision completely.' },
-    ],
+    lines: [{ text: 'He opens one eye, files you under harmless, and closes it again.' }],
   },
   'c9.ex.chapulines': {
-    lines: [
-      { text: 'Chapulines by the scoop, toasted with lime and chile. Crunchy, salty, and proof the valley wastes nothing that hops.' },
-    ],
+    lines: [{ text: 'Chapulines toasted with lime and chile. Proof the valley wastes nothing that hops.' }],
   },
   'c9.ex.cantaros': {
-    lines: [
-      { text: 'Clay cántaros sweating politely in the shade, a plate over each mouth. The water tastes of rain first and the jar second, in that order.' },
-    ],
+    lines: [{ text: 'Clay cántaros sweating in the shade. The water tastes of rain first and the jar second.' }],
   },
   'c9.ex.metate': {
-    lines: [
-      { text: 'Chela’s metate, knee-high, older than the patio around it. Cacao and chile have polished the stone into one long shallow smile.' },
-    ],
+    lines: [{ text: 'Chela’s metate, polished by cacao and chile into one long shallow smile.' }],
   },
   'c9.ex.escoba': {
-    lines: [
-      { text: 'A broom resting mid-shift. Every door sweeps to the middle of the street, where its territory meets the neighbor’s, exactly.' },
-    ],
+    lines: [{ text: 'A broom resting mid-shift. Every door sweeps to the middle of the street, exactly.' }],
   },
   'c9.ex.gallina': {
-    lines: [
-      { text: 'Hens auditing the ground, clause by clause. Whatever the comal drops, the committee finds it first.' },
-    ],
+    lines: [{ text: 'Hens auditing the ground. Whatever the comal drops, the committee finds it first.' }],
   },
   'c9.ex.cohete': {
-    lines: [
-      { text: 'A spent cohete stick, back down from this morning’s announcement. One bang, no spectacle: the sky clearing its throat, the dogs objecting.' },
-    ],
+    lines: [{ text: 'A spent cohete stick, back down from this morning’s announcement.' }],
   },
   'c9.ex.cubeta': {
-    lines: [
-      { text: 'Whitewash and a stiff brush, resting between graves. Tidying a tomb is housework here, done for family who only moved.' },
-    ],
+    lines: [{ text: 'Whitewash and a stiff brush. Tidying a tomb is housework here, for family who only moved.' }],
   },
   'c9.ex.costal.full': {
-    lines: [
-      { text: 'A costal packed with cempasúchil petals to the brim. It smells like the whole field agreed to travel.' },
-    ],
+    lines: [{ text: 'A costal packed with cempasúchil petals. It smells like the whole field agreed to travel.' }],
   },
   'c9.ex.costal.empty': {
-    lines: [
-      { text: 'The costal, empty now and folded square. Every petal it held is out on the path, doing its one bright job.' },
-    ],
+    lines: [{ text: 'The costal, empty and folded square. Every petal it held is out on the path.' }],
   },
   'c9.ex.jicaras': {
-    lines: [
-      { text: 'Painted jícaras stacked mouth-down to dry, red and black lacquer. Tejate tastes better from a gourd, and the gourds seem to know.' },
-    ],
+    lines: [{ text: 'Painted jícaras stacked mouth-down to dry. Tejate tastes better from a gourd, and the gourds know.' }],
   },
 
   // ---------------- examines: the cocina, indoors and in its own voice ----------------
   // The ledger is read, not recited: Refugio leaves it open on the table and
   // the player finds the 1975 line with their own eyes.
   'c9.ex.mesa': {
-    lines: [
-      { text: 'The kitchen table, scrubbed pale by decades of elbows. Under the altar end, a low shelf holds one cloth-mended notebook.' },
-    ],
+    lines: [{ text: 'The kitchen table, scrubbed pale. Under the altar end, a shelf holds one cloth-mended notebook.' }],
   },
   'c9.ledger.read': {
     lines: [
-      { text: 'The guelaguetza ledger, open where she left it. Weddings, funerals, fiestas: fifty years of lending, line after line crossed out, repaid.' },
+      { text: 'The guelaguetza ledger. Weddings, funerals, fiestas: fifty years of lending, line after line crossed out, repaid.' },
       { text: 'One page stops you. Zoila, 1975: one week of shelter, one mole feast. Owed. Nothing crosses it out.' },
     ],
     effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
   },
   'c9.ex.ledger.after': {
-    lines: [
-      { text: 'The ledger, back under the altar table. Fifty years of kindness with page numbers, and one line that waited for you.' },
-    ],
+    lines: [{ text: 'The ledger, back under the altar table, and one line that waited for you.' }],
   },
   'c9.ex.comal.cocina': {
-    lines: [
-      { text: 'The kitchen comal, set low against the west wall where the smoke knows the way out. It is the only fire in the room and it is never quite out.' },
-    ],
+    lines: [{ text: 'The kitchen comal, low against the west wall where the smoke knows the way out. It is never quite out.' }],
   },
   'c9.ex.metate.cocina': {
-    lines: [
-      { text: 'Refugio’s metate, kept on the floor by the fire because that is where the knees go. The stone leans a little, worn deeper on the near side.' },
-    ],
+    lines: [{ text: 'Refugio’s metate on the floor by the fire, worn deeper on the near side.' }],
   },
   'c9.ex.escoba.cocina': {
-    lines: [
-      { text: 'The broom parked in the corner by the door, bristles up, so the dust it has already gathered stays gathered.' },
-    ],
+    lines: [{ text: 'The broom parked bristles up, so the dust it has gathered stays gathered.' }],
   },
   'c9.ex.cantaros.cocina': {
-    lines: [
-      { text: 'Two cántaros just inside the door, plates over their mouths, set where anyone coming in from the sun will reach them first.' },
-    ],
+    lines: [{ text: 'Two cántaros by the door, where anyone coming in from the sun reaches them first.' }],
   },
   'c9.ex.papel.cocina': {
-    lines: [
-      { text: 'Papel picado strung across the kitchen at exactly the height of a tall guest, who will duck, and a short one, who will not.' },
-      { text: 'These are the practice ones, cut early to get the hand back. The good strings go out over the street.' },
-    ],
+    lines: [{ text: 'Practice papel picado, strung at exactly the height of a tall guest, who will duck.' }],
   },
   'c9.ex.costal.cocina': {
-    lines: [
-      { text: 'Costales banked in the corner: corn in one, dried chiles in another, and a third holding nothing at all but its own shape.' },
-    ],
+    lines: [{ text: 'Costales in the corner: corn in one, dried chiles in another, a third holding only its own shape.' }],
   },
   'c9.ex.papelstack.cocina': {
-    lines: [
-      { text: 'A stack of tissue half cut, the scissors resting on it mid-flower. Whoever it is comes back to this between everything else.' },
-    ],
+    lines: [{ text: 'A stack of tissue half cut, the scissors resting mid-flower.' }],
   },
   'c9.ex.ristra': {
-    lines: [
-      { text: 'A ristra of chiles hung on the wall to dry, pasilla and guajillo braided in together, going darker and quieter by the week.' },
-    ],
+    lines: [{ text: 'A ristra of pasilla and guajillo drying on the wall, going darker and quieter by the week.' }],
   },
   'c9.ex.cazuelas': {
-    lines: [
-      { text: 'Cazuelas stacked by size, each chipped in a different honest place.' },
-      { text: 'The big one at the bottom is for mole only. Everyone knows this without being told.' },
-    ],
+    lines: [{ text: 'Cazuelas stacked by size, each chipped in a different honest place. The big one is for mole only.' }],
   },
   'c9.ex.tuba1': {
     lines: [
-      { text: 'The banda’s tuba rests on a chair outside rehearsal, catching its breath.' },
-      { text: 'The chair was carried out specifically. A tuba does not sit on the ground like some clarinet.' },
+      { text: 'The banda’s tuba rests on a chair outside rehearsal. A tuba does not sit on the ground like some clarinet.' },
     ],
     effects: ['set:c9.tuba.known'],
   },
   'c9.ex.tuba2': {
-    lines: [
-      { text: 'Inside, the banda runs the same eight bars without it. You can hear the exact hole where the tuba goes.' },
-    ],
+    lines: [{ text: 'Inside, the banda runs eight bars without it. You can hear the exact hole where the tuba goes.' }],
   },
   'c9.ex.rotulo': {
-    lines: [
-      { text: 'A hand-painted sign, half born: three letters with fat shadows and curls, then pencil ghosts where the rest will be.' },
-      { text: 'The flourish underneath is already finished. It was clearly the fun part.' },
-    ],
+    lines: [{ text: 'A hand-painted sign, three letters done and the rest in pencil. The flourish is finished; it was the fun part.' }],
   },
   'c9.ex.bugambilia': {
-    lines: [
-      { text: 'Bougainvillea pouring over the wall, magenta by the armload. The wall considers this fair rent for being slowly taken apart.' },
-    ],
+    lines: [{ text: 'Bougainvillea pouring over the wall. The wall considers it fair rent for being slowly taken apart.' }],
   },
   'c9.ex.nicho': {
-    lines: [
-      { text: 'A corner nicho: a saint the size of a thumb, marigolds changed this morning, one steady flame. Easy to miss, kept too well to be forgotten.' },
-    ],
+    lines: [{ text: 'A corner nicho: a thumb-sized saint, marigolds changed this morning, one steady flame.' }],
   },
   'c9.ex.paletas': {
-    lines: [
-      { text: 'The paletero’s bicycle cart, parked with intent near the colectivo stop.' },
-      { text: 'The bell is small and silver, and every child in the valley can hear it through a closed door and a nap.' },
-    ],
+    lines: [{ text: 'The paletero’s cart. Every child in the valley can hear its small silver bell through a closed door and a nap.' }],
   },
   'c9.ex.crates': {
-    lines: [
-      { text: 'Market crates in a leaning tower: tomatillos still in their paper lanterns, chiles ranked by how much they intend to hurt you.' },
-    ],
+    lines: [{ text: 'Tomatillos in their paper lanterns, chiles ranked by how much they intend to hurt you.' }],
   },
   'c9.ex.pantray': {
-    lines: [
-      { text: 'Trays of pan de muerto cooling by the door, caritas up. Forty small painted faces, patient, all pointed at the street.' },
-    ],
+    lines: [{ text: 'Trays of pan de muerto cooling, caritas up. Forty small faces, all pointed at the street.' }],
   },
   'c9.ex.pantray.out': {
-    lines: [
-      { text: 'The rack stands one batch lighter: the altar bread went out first, warm, in your arms. The rest cools for the living, who can wait.' },
-    ],
+    lines: [{ text: 'The rack is one batch lighter: the altar bread went out first, warm, in your arms.' }],
   },
   'c9.ex.alebrije.close': {
-    lines: [
-      { text: 'Up close the half-painted one is an argument: cobalt insists, orange objects, dots file in to mediate. The colors argue, and the colors win.' },
-    ],
+    lines: [{ text: 'Up close the half-painted one is an argument: cobalt insists, orange objects, dots file in to mediate.' }],
     effects: ['set:c9.alebrije.close'],
   },
   'c9.ex.wallcal': {
-    lines: [
-      { text: 'Cal above, colour below, and the join is a hand\'s width of somebody\'s decision made once and never revisited.' },
-      { text: 'The top of the wall has gone the soft brown of thirty years of comal smoke. Refugio calls that seasoning and refuses to paint over it.' },
-    ],
+    lines: [{ text: 'Cal above, colour below. The top has gone brown with thirty years of comal smoke; Refugio calls that seasoning.' }],
   },
   'c9.ex.floorsaltillo': {
-    lines: [
-      { text: 'Saltillo tiles, fired by hand, no two the same red. Warm underfoot by ten in the morning and still warm at midnight.' },
-      { text: 'A marigold petal has got into the grout. Several have. It is that month.' },
-    ],
+    lines: [{ text: 'Saltillo tiles, no two the same red. A marigold petal has got into the grout. Several have. It is that month.' }],
   },
   'c9.ex.rugpetate': {
-    lines: [
-      { text: 'A petate of woven palm with a grana stripe and a marigold one. Babies sleep on these, chiles dry on these, and eventually everyone is wrapped in one.' },
-    ],
+    lines: [{ text: 'A palm petate with a grana stripe. Babies sleep on these, chiles dry on these, and eventually everyone is wrapped in one.' }],
   },
 };
 
