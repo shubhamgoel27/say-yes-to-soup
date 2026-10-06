@@ -20,7 +20,7 @@ const RECALL: RecallManifest = {
     'page.words.polepole', // the game's thesis, spoken by a whole coast
     'kanga.gift', // the second kanga, meant for giving; paid off in the Return
     'photo.c7.door', // Chasca's photo at the carved door, album fodder
-    'c7.complete', // Sicily's harbor agent hears the coast vouched for you
+    'c7.complete', // left at dawn, pole pole; Sicily's harbor agent knows the coast sent you on
   ],
   backfills: {
     // Knowledge keys have local locksmiths: the no-key branch teaches it anyway.
@@ -152,8 +152,21 @@ export const CHAPTER: ChapterDef = {
   },
   sitKinds: ['stool'],
   arrival: { map: 'zanzibar', node: 'c7.arrive', flag: 'c7.arrived' },
+  dressings: [
+    {
+      // Dawn: the other cats are out on the flats. Only the ginger one keeps
+      // the bench, so the thing left on it has exactly one place to be.
+      map: 'zanzibar',
+      when: { has: ['c7.dawn'] },
+      cells: [
+        [7, 17, null],
+        [14, 18, null],
+        [44, 18, null],
+      ],
+    },
+  ],
   completion: {
     flag: 'c7.complete',
-    toasts: ['✦ the coast vouches for your pace', 'deck passage north is being entered in the ledger'],
+    toasts: ['✦ the coast lets you go at its own pace', 'a freighter turns north on the dawn tide'],
   },
 };

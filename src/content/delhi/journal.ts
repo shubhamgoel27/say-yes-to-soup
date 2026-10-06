@@ -42,7 +42,7 @@ export const DELHI_JOURNAL: JournalEntry[] = [
     title: 'Abhi, bas paanch minute',
     script: 'अभी',
     sub: 'Right now, meaning: within the hour, the day, or the general era. Five minutes, meaning: five of something.',
-    you: 'Bantu said bas paanch minute and returned at dusk, delighted, with jalebi as interest on the delay. The clock here is a suggestion box.',
+    you: 'Bantu told his uncle abhi, right now, then took me to breakfast. He went back at lunch, delighted, with jalebi as interest on the delay.',
     rhyme: {
       with: 'words.ahorita',
       note: 'One day you will meet abhi wearing other clothes on other coasts. Time bends the same way wherever people would rather finish the talk.',
@@ -166,7 +166,7 @@ export const DELHI_JOURNAL: JournalEntry[] = [
     tab: 'people',
     title: 'Sethji Onkar Nath',
     sub: 'Ninth-generation spice trader, Khari Baoli end. Tests strangers by smell; ignores them otherwise.',
-    you: 'Three vouches and one named cardamom coast later, his ledger opened the road to the sea. For a week I did not exist. The cure for stranger is not money.',
+    you: 'Three names and one cardamom pod later, his ledger opened the road to the sea. For a week I did not exist. The cure for stranger is not money.',
   },
   {
     id: 'people.sushila',
@@ -324,7 +324,17 @@ export const DELHI_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c11.arrived'], not: ['c11.met.jog'] },
-    text: 'The golden dome belongs to the gurdwara; the open door under it belongs to everyone. Go in hungry. A basket of rumals waits by the door.',
+    text: 'The golden dome belongs to the gurdwara; the open door under it belongs to everyone. Go in hungry.',
+    who: 'joginder',
+  },
+  {
+    when: { has: ['c11.met.jog'], not: ['c11.rumal'] },
+    text: 'Shoes off, head covered. The basket of rumals waits by the langar door; any color fits.',
+    at: ['delhi-langar', 13, 11],
+  },
+  {
+    when: { has: ['c11.rumal'], not: ['c11.jog.fed'] },
+    text: 'Your head is covered. Sit in the pangat; Joginder says the dal finds you.',
     who: 'joginder',
   },
   {
@@ -354,7 +364,7 @@ export const DELHI_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c11.cook.done', 'c11.seva.done', 'c11.kite.done'], not: ['c11.chit.bombay'] },
-    text: 'Kamla vouches you can feed people, Joginder that you can serve, Yusuf that you can read the wind. Carry all three names to Sethji at the spice end.',
+    text: 'Kamla says you can feed people, Joginder that you can serve, Yusuf that you can read the wind. Carry all three names to Sethji at the spice end.',
     who: 'sethji',
   },
   {
@@ -379,7 +389,7 @@ export const DELHI_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c11.duel.done', 'c11.chit.bombay'], not: ['c11.complete'] },
-    text: 'Flown, fed, served, vouched, soaked. Go and stand in front of Kamla Chachi; she has been packing something and pretending she is not.',
+    text: 'Flown, fed, served, soaked. Go and stand at Kamla Chachi\'s tawa; she has been packing something and pretending she is not.',
     who: 'kamla',
   },
   {

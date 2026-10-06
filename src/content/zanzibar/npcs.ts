@@ -12,6 +12,8 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'rashid',
     name: 'Mzee Rashid',
     map: 'zanzibar',
+    // At dawn the bench is empty: the goodbye is what he leaves on it.
+    when: { not: ['c7.dawn'] },
     pos: [15, 11],
     range: 0,
     look: {
@@ -30,11 +32,6 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       // The bench remembers her. Earned by the coffee, which is earned by
       // sitting twice: he tells it to people who have stopped being visitors.
       { when: { has: ['c7.rashid.past'], not: ['c7.rashid.her'] }, node: 'c7.rashid.her' },
-      {
-        when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.greeting', 'c7.baraza.sat'], not: ['c7.complete'] },
-        node: 'c7.rashid.blessing',
-      },
-      { when: { has: ['c7.complete'] }, node: 'c7.rashid.after' },
       { node: 'c7.rashid.idle' },
     ],
   },
@@ -42,6 +39,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'amina',
     name: 'Bi Amina',
     map: 'kangashop',
+    when: { not: ['c7.dawn'] },
     pos: [5, 2],
     range: 1,
     look: {
@@ -65,6 +63,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'juma',
     name: 'Juma',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [10, 3],
     range: 1,
     look: {
@@ -86,6 +85,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'zuberi',
     name: 'Zuberi',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [40, 14],
     range: 1,
     look: {
@@ -108,6 +108,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'salma',
     name: 'Mama Salma',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [10, 26],
     range: 1,
     look: {
@@ -130,6 +131,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'issa',
     name: 'Fundi Issa',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [30, 21],
     range: 1,
     look: {
@@ -150,6 +152,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'bakari',
     name: 'Kapteni Bakari',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [40, 16],
     range: 0,
     look: {
@@ -172,6 +175,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'ali',
     name: 'Ali',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [37, 21],
     range: 0,
     look: {
@@ -184,7 +188,10 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c7.met.ali'] }, node: 'c7.ali.first' },
-      { when: { has: ['c7.complete'] }, node: 'c7.ali.book' },
+      {
+        when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.greeting', 'c7.baraza.sat', 'c7.rashid.her'], not: ['c7.dawn'] },
+        node: 'c7.ali.book',
+      },
       { node: 'c7.ali.not' },
     ],
   },
@@ -193,7 +200,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'riosC7',
     name: 'Capitana Ríos',
     map: 'zanzibar',
-    when: { has: ['c7.arrived'], not: ['c7.complete'] },
+    when: { has: ['c7.arrived'], not: ['c7.complete', 'c7.dawn'] },
     pos: [39, 23],
     range: 0,
     look: {
@@ -214,6 +221,7 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     id: 'chascaC7',
     name: 'Chasca',
     map: 'zanzibar',
+    when: { not: ['c7.dawn'] },
     pos: [24, 11],
     range: 0,
     look: {
@@ -230,20 +238,42 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
       { node: 'c7.chasca.again' },
     ],
   },
+  {
+    // Awake too early, in the carved doorway. She never says a word.
+    id: 'mtotoC7',
+    name: 'A girl in a doorway',
+    map: 'zanzibar',
+    when: { has: ['c7.dawn'] },
+    pos: [24, 11],
+    range: 0,
+    look: {
+      skin: '#6b4a32',
+      hair: '#1c1410',
+      cloth: '#c98a2e',
+      stripe: '#f2e6d0',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#3f7fb0',
+      kid: true,
+    },
+    entry: [
+      { when: { not: ['c7.waved'] }, node: 'c7.dawn.child' },
+      { node: 'c7.dawn.child2' },
+    ],
+  },
 ];
 
 export const ZANZIBAR_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c7.ex.wall': {
-    lines: [{ text: 'Coral rag under lime: the reef, standing up as a wall. It keeps the noon out and the cool in.' }],
+    lines: [{ text: 'Coral rag under lime: the reef, standing up as a wall.' }],
   },
   // ---------------- arrival ----------------
   'c7.arrive': {
     lines: [
-      { text: 'Twelve days of engine hum out of Bombay, then the last hour under sail: a jahazi, borrowed wind, a coast the color of bone and palm.' },
-      { text: 'The tide is out. The sea has stepped back half a mile and left its floor drying in the sun, studded with starfish.' },
-      { text: 'On the jetty, nobody hurries to meet you. Somebody waves anyway. Karibu, the wave says. Come near.' },
+      { text: 'Twelve days out of Bombay, then the last hour under sail: a jahazi, borrowed wind, a coast the color of bone and palm.' },
+      { text: 'The tide is out; the sea has stepped back half a mile. Nobody hurries to meet you. Somebody waves anyway: karibu, come near.' },
     ],
     effects: ['set:c7.arrived'],
   },
@@ -251,7 +281,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   // ---------------- Mzee Rashid, the baraza ----------------
   'c7.rashid.hello': {
     lines: [
-      { text: 'An old man sits on the stone bench built into his house front, as if the house grew him. He watches the lane like a favorite program.' },
+      { text: 'An old man sits on the stone bench built into his house front, as if the house grew him.' },
       { who: 'Mzee Rashid', text: 'Habari za asubuhi? How is your morning?' },
     ],
     effects: ['set:c7.met.rashid', 'journal:people.rashid'],
@@ -262,7 +292,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.rashid.ladder': {
     lines: [
-      { text: 'The bench has not moved. Neither has he. The greeting resumes exactly where it must: the beginning.' },
+      { text: 'The greeting resumes exactly where it must: the beginning.' },
       { who: 'Mzee Rashid', text: 'Habari za asubuhi?' },
     ],
     choices: [
@@ -271,63 +301,71 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.rashid.l2': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'Nzuri sana. Habari za safari? How was the road that brought you?' },
-    ],
+    lines: [{ who: 'Mzee Rashid', text: 'Nzuri sana. Habari za safari? How was the road that brought you?' }],
     choices: [
       { text: '"Long, and kind. Habari za nyumbani?"', goto: 'c7.rashid.l3' },
       { text: '"Fine, fine. So, the boats..."', goto: 'c7.rashid.restart' },
     ],
   },
   'c7.rashid.l3': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'Ah, you ask back! Nyumbani is well. The tide went out; it will come in.' },
-      { who: 'Mzee Rashid', text: 'And the home you carry with you, mgeni? News of that one?' },
-    ],
+    lines: [{ who: 'Mzee Rashid', text: 'Ah, you ask back! Nyumbani is well. And the home you carry with you, mgeni?' }],
     choices: [
-      { text: 'Tell him about a stone village very far uphill, slowly', goto: 'c7.rashid.earned' },
+      { text: 'Tell him about a stone village far uphill, slowly', goto: 'c7.rashid.earned' },
       { text: '"Complicated. Is that the time?"', goto: 'c7.rashid.restart' },
     ],
   },
   'c7.rashid.earned': {
     lines: [
-      { who: 'Mzee Rashid', text: 'Hm. A grandmother’s road. That is a good reason to be in no hurry at all.' },
-      { who: 'Mzee Rashid', text: 'You greeted all the way to the end. Most visitors quit at the first nzuri. Karibu kijijini: welcome to the village.' },
+      { who: 'Mzee Rashid', text: 'Hm. A grandmother’s road. A good reason to be in no hurry at all.' },
+      { who: 'Mzee Rashid', text: 'You greeted all the way down. Most quit at the first nzuri. Karibu kijijini.' },
     ],
     effects: ['set:c7.greeting', 'journal:words.habari'],
   },
   'c7.rashid.restart': {
     lines: [
-      { text: 'He does not frown. He settles deeper, like a man holding all the tide’s time, and begins again from the top.' },
-      { who: 'Mzee Rashid', text: 'Habari za asubuhi? We will get there, mgeni. The greeting is not the door. The greeting is the house.' },
+      { text: 'He settles deeper and begins again from the top.' },
+      { who: 'Mzee Rashid', text: 'Habari za asubuhi? The greeting is not the door, mgeni. The greeting is the house.' },
     ],
   },
   'c7.rashid.sit': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'Sit. This bench has held four generations of news. It can hold your errands too.' },
-    ],
+    lines: [{ who: 'Mzee Rashid', text: 'Sit. This bench has held four generations of news. It can hold your errands too.' }],
     choices: [
       { text: 'Sit down on the baraza', goto: 'c7.rashid.sat' },
       { text: '"Maybe later. I have a list."', goto: 'c7.rashid.hurry' },
     ],
   },
   'c7.rashid.hurry': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'Pole pole, mgeni. The list will still be a list. You are the only part of it that can spoil.' },
+    lines: [{ who: 'Mzee Rashid', text: 'Pole pole, mgeni. The list will keep. You are the only part of it that can spoil.' }],
+  },
+  // The sitting is the player's to keep or break.
+  'c7.rashid.sat': {
+    lines: [{ text: 'You sit. Nothing happens. A cat crosses; a door opens two houses down, and closes.' }],
+    choices: [
+      { text: 'Get up; you have a list', goto: 'c7.rashid.sat.rise' },
+      { text: 'Keep sitting', goto: 'c7.rashid.sat.stay' },
     ],
   },
-  'c7.rashid.sat': {
+  'c7.rashid.sat.rise': {
     lines: [
-      { text: 'You sit. Nothing happens. A cat crosses; a door opens two houses down, and closes. This, apparently, is the activity.' },
-      { text: 'You shift to rise. His hand lands light on your arm, no weight in it at all.' },
-      { who: 'Mzee Rashid', text: 'Pole pole ndio mwendo. Slowly, slowly is the way to go. It is not advice, mgeni; it is the road itself.' },
-      { text: 'So you stay. The second sitting is easier. Somewhere down the lane, the morning agrees to pass by itself.' },
+      { text: 'His hand lands light on your arm, no weight in it at all.' },
+      { who: 'Mzee Rashid', text: 'Pole pole ndio mwendo. Slowly, slowly is the way to go.' },
     ],
+    next: 'c7.rashid.sat.end',
+  },
+  'c7.rashid.sat.stay': {
+    lines: [
+      { text: 'You stay. After a while he nods, as if you had said something.' },
+      { who: 'Mzee Rashid', text: 'Pole pole ndio mwendo, mgeni.' },
+    ],
+    next: 'c7.rashid.sat.end',
+  },
+  'c7.rashid.sat.end': {
+    lines: [{ text: 'The second sitting is easier. Down the lane, the morning agrees to pass by itself.' }],
     effects: ['set:c7.baraza.sat', 'journal:words.polepole', 'journal:customs.baraza'],
   },
   'c7.rashid.coffee': {
     lines: [
-      { text: 'A boy brings kahawa down the lane: tall brass pot, cups like thimbles. Rashid takes two and hands you one, bitter and ginger-edged.' },
+      { text: 'A boy brings kahawa in a tall brass pot. Rashid hands you a cup like a thimble.' },
       { who: 'Mzee Rashid', text: 'My grandfather was sold through this island. I say it once, so you know what the stone remembers. We do not make a museum of this bench.' },
       { who: 'Mzee Rashid', text: 'Now drink slowly. The cup is small so that the sitting is long.' },
     ],
@@ -340,9 +378,9 @@ export const ZANZIBAR_NODES: NodeMap = {
    */
   'c7.rashid.her': {
     lines: [
-      { text: 'He shifts a hand-width along the bench, following the shade, and considers the book on your hip without asking a thing about it.' },
-      { who: 'Mzee Rashid', text: 'Bi Zoila sat on that end through a season of long rains. Feet on the stone, and that same red thread on the spine.' },
-      { who: 'Mzee Rashid', text: 'One evening she said she might not go home, and nobody argued. People say that on this bench, and one or two of them mean it.' },
+      { text: 'He shifts a hand-width along the bench, following the shade.' },
+      { who: 'Mzee Rashid', text: 'Bi Zoila sat on that end through a season of long rains. That same red thread on the spine.' },
+      { who: 'Mzee Rashid', text: 'One evening she said she might not go home, and nobody argued. People say that on this bench, and one or two mean it.' },
     ],
     choices: [
       { text: 'Say nothing.', goto: 'c7.rashid.her.quiet' },
@@ -350,63 +388,84 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.rashid.her.quiet': {
-    lines: [
-      { text: 'You look down the lane with him. The shade moves another hand-width.' },
-    ],
+    lines: [{ text: 'You look down the lane with him. The shade moves another hand-width.' }],
     next: 'c7.rashid.her2',
   },
   'c7.rashid.her.meant': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'The bench does not ask, mgeni. It only keeps the sitting.' },
-    ],
+    lines: [{ who: 'Mzee Rashid', text: 'The bench does not ask, mgeni. It only keeps the sitting.' }],
     next: 'c7.rashid.her2',
   },
   'c7.rashid.her2': {
-    lines: [
-      { text: 'The lane goes on being the lane. The red thread on the spine is the same red thread.' },
-    ],
+    lines: [{ text: 'The lane goes on being the lane. The red thread on the spine is the same red thread.' }],
     effects: ['set:c7.rashid.her', 'journal:her.zanzibar'],
   },
-  'c7.rashid.blessing': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'Bakari says you kept his telltale streaming. Amina says you can hear cloth. Twice you have sat here without asking the bench to be a bus stop.' },
-      { who: 'Mzee Rashid', text: 'You arrived asking for a boat mid-greeting. Now you greet all the way down. Go tell Ali I said you are ready cargo.' },
-      { text: 'He resumes watching the lane, which is to say he never stopped. You have been vouched for at the speed of the tide.' },
-    ],
-    effects: ['set:c7.complete'],
-  },
-  'c7.rashid.after': {
-    lines: [
-      { who: 'Mzee Rashid', text: 'The ship will leave when it leaves. Until then the bench is yours too. That is what it is for.' },
-    ],
-  },
   'c7.rashid.idle': {
+    lines: [{ who: 'Mzee Rashid', text: 'The tide is out. It will come in. Between those two facts a person can live a whole good life, mgeni.' }],
+  },
+
+  // ---------------- the dawn: nobody says goodbye ----------------
+  /**
+   * The coast lets you go the way it let you in: without hurry and without
+   * speeches. Ali books the dawn tide; the night passes in one fade; the lane
+   * is empty, the bench is empty, and what is left on it says the rest.
+   */
+  'c7.dawn.go': {
+    lines: [{ text: 'Ali writes your name in the ledger. You sleep above the counter, the tide loud under the floor.' }],
+    effects: ['set:c7.dawn', 'travel:zanzibar,14,11,up'],
+  },
+  'c7.dawn.bench': {
     lines: [
-      { who: 'Mzee Rashid', text: 'The tide is out. It will come in. Between those two facts a person can live a whole good life, mgeni.' },
+      { text: 'First light. Every door on the lane is shut, and the baraza is empty.' },
+      { text: 'At Rashid’s end of the bench the ginger cat sleeps on a folded kanga. You slide it out; she allows it.' },
+      { text: 'Along the hem: Haraka haraka haina baraka. Hurry, hurry has no blessing.' },
     ],
+    effects: ['set:c7.complete', 'journal:words.haraka'],
+  },
+  'c7.dawn.cat': {
+    lines: [{ text: 'The cat has the whole bench now.' }],
+  },
+  'c7.dawn.child': {
+    lines: [
+      { text: 'A small girl stands in the carved doorway, awake too early. She lifts one hand and waves.' },
+      { text: 'You wave back. Neither of you says a word.' },
+    ],
+    effects: ['set:c7.waved'],
+  },
+  'c7.dawn.child2': {
+    lines: [{ text: 'She is still in the doorway, watching the lane.' }],
+  },
+  'c7.dawn.jetty': {
+    lines: [{ text: 'The freighter’s launch waits at the end of the jetty, engine ticking. Behind you the village sleeps on.' }],
+    choices: [
+      { text: 'Step down into the launch', goto: 'c7.ali.sail' },
+      { text: 'One more look at the lane', goto: 'c7.dawn.stay' },
+    ],
+  },
+  'c7.dawn.stay': {
+    lines: [{ text: 'The lane holds still for you. The tide does not; it is already turning.' }],
   },
 
   // ---------------- Bi Amina, the kanga shop ----------------
   'c7.amina.band': {
     lines: [
-      { who: 'Bi Amina', text: 'Karibu, karibu! Sit, the shop is cool. Wait. Your wrist. Who wrote you?' },
-      { who: 'Bi Amina', text: 'This band is speech, mgeni. Rows like these are a village saying itself. I sell printed sentences; you have been wearing a woven one.' },
+      { who: 'Bi Amina', text: 'Karibu! Wait. Your wrist. Who wrote you?' },
+      { who: 'Bi Amina', text: 'Rows like these are a village saying itself. I sell printed sentences; you have been wearing a woven one.' },
     ],
     effects: ['set:c7.met.amina', 'journal:people.amina', 'journal:words.karibu'],
     next: 'c7.amina.welcome',
   },
   'c7.amina.first': {
     lines: [
-      { text: 'The shop is a single cool room lined floor to ceiling with folded color. A woman looks up, delighted, as if you were expected.' },
-      { who: 'Bi Amina', text: 'Karibu! Come near, come in. Mgeni ni kuku mweupe: a guest is a white chicken. Everyone will notice you, so you may as well be fed.' },
+      { text: 'A single cool room, lined floor to ceiling with folded color.' },
+      { who: 'Bi Amina', text: 'Karibu! Come near. Mgeni ni kuku mweupe: a guest is a white chicken. Everyone will notice you, so you may as well be fed.' },
     ],
     effects: ['set:c7.met.amina', 'journal:people.amina', 'journal:words.karibu'],
     next: 'c7.amina.welcome',
   },
   'c7.amina.welcome': {
     lines: [
-      { text: 'Refusal is not offered as an option. Mandazi arrives, cardamom-sweet and still hot, with ginger tea that bites back kindly.' },
-      { who: 'Bi Amina', text: 'Chai ya tangawizi, breakfast of this whole coast. Eat. Then we can discuss what the cloth has to say about you.' },
+      { text: 'Mandazi arrives, cardamom-sweet and hot, with ginger tea that bites back kindly.' },
+      { who: 'Bi Amina', text: 'Eat. Then we discuss what the cloth has to say about you.' },
     ],
     effects: ['journal:dishes.mandazi', 'journal:dishes.chaitangawizi'],
     choices: [
@@ -416,26 +475,19 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.amina.speaks': {
     lines: [
-      { who: 'Bi Amina', text: 'Every kanga carries a jina, a saying printed along the hem. Wear the right proverb near the right person and everything is said, mgeni.' },
-      { who: 'Bi Amina', text: 'No shouting, no witnesses. The cloth talks and the woman keeps her silence. It is the politest sharp thing ever invented.' },
+      { who: 'Bi Amina', text: 'Every kanga carries a jina, a saying along the hem. Wear the right one near the right person, and everything is said.' },
+      { who: 'Bi Amina', text: 'No shouting, no witnesses. It is the politest sharp thing ever invented.' },
     ],
   },
   'c7.amina.eatfirst': {
-    lines: [
-      { who: 'Bi Amina', text: 'A guest who eats first was raised properly. The cloth is patient; it has been talking for a hundred years.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'A guest who eats first was raised properly. The cloth is patient.' }],
   },
   'c7.amina.game0': {
-    lines: [
-      { who: 'Bi Amina', text: 'Back again! Good. Before I sell you anything, we play. I describe the day; you choose the kanga that answers it.' },
-      { who: 'Bi Amina', text: 'Choose wrong and I will laugh at you with love. Ready?' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Back again! Before I sell you anything, we play. I describe the day; you choose the kanga that answers it.' }],
     next: 'c7.amina.r1',
   },
   'c7.amina.r1': {
-    lines: [
-      { who: 'Bi Amina', text: 'First: my cousin arrives tomorrow from Pemba, her first visit in years. Which kanga do I hang by the door?' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'First: my cousin arrives from Pemba tomorrow, her first visit in years. Which kanga by the door?' }],
     choices: [
       // The answer moves around between rounds; always-first taught nothing.
       { text: '"Akili ni mali. Wits are wealth."', goto: 'c7.amina.r1n1' },
@@ -444,29 +496,19 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.amina.r1y': {
-    lines: [
-      { who: 'Bi Amina', text: 'Eee! Yes. The white chicken stands out in the flock, so it is treated as special. My cousin will be fed until she complains.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Eee! Yes. The white chicken stands out in the flock, so she is treated as special. My cousin will be fed until she complains.' }],
     next: 'c7.amina.r2',
   },
   'c7.amina.r1n1': {
-    lines: [
-      { who: 'Bi Amina', text: 'You would greet my cousin with WITS ARE WEALTH? She will hear me calling her poor and foolish in one cloth!' },
-      { who: 'Bi Amina', text: 'Think of the flock, mgeni. A guest stands out like a white chicken, and standing out means being treated specially. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'WITS ARE WEALTH, for my cousin? She will hear me calling her poor and foolish in one cloth! Again.' }],
     next: 'c7.amina.r1',
   },
   'c7.amina.r1n2': {
-    lines: [
-      { who: 'Bi Amina', text: 'Love is a cough, for my COUSIN? The lane would talk for a month and I would deserve it.' },
-      { who: 'Bi Amina', text: 'That one waits for a different neighbor, believe me. For a guest you want the white chicken. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Love is a cough, for my COUSIN? The lane would talk for a month. A guest stands out, mgeni. Again.' }],
     next: 'c7.amina.r1',
   },
   'c7.amina.r2': {
-    lines: [
-      { who: 'Bi Amina', text: 'Second: the fish seller walks past the tailor’s daughter twice a day now, for no fish reason. Which kanga does his mother wear?' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Second: the fish seller walks past the tailor’s daughter twice a day, for no fish reason. Which kanga does his mother wear?' }],
     choices: [
       { text: '"Mgeni ni kuku mweupe. A guest is a white chicken."', goto: 'c7.amina.r2n1' },
       { text: '"Mkono wa Mungu. The hand of God."', goto: 'c7.amina.r2n2' },
@@ -474,30 +516,19 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.amina.r2y': {
-    lines: [
-      { who: 'Bi Amina', text: 'Mapenzi ni kikohozi, hayawezi kufichika! Love is a cough; it cannot be hidden.' },
-      { who: 'Bi Amina', text: 'His mother wears it, says nothing, and the whole street is informed. That is efficiency, mgeni.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Mapenzi ni kikohozi, hayawezi kufichika! Love is a cough; it cannot be hidden. She says nothing, and the street is informed.' }],
     next: 'c7.amina.r3',
   },
   'c7.amina.r2n1': {
-    lines: [
-      { who: 'Bi Amina', text: 'A white chicken? The boy is not a guest, he is a symptom! Ha!' },
-      { who: 'Bi Amina', text: 'What cannot be hidden, mgeni? A cough. And what else? Exactly. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'A white chicken? The boy is not a guest, he is a symptom! Again.' }],
     next: 'c7.amina.r2',
   },
   'c7.amina.r2n2': {
-    lines: [
-      { who: 'Bi Amina', text: 'The hand of God! Mgeni, God has better things to do than the fish seller’s heart. Though not much better.' },
-      { who: 'Bi Amina', text: 'The saying we need is about a thing that cannot be hidden, like a cough. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'God has better things to do than the fish seller’s heart. Though not much better. Again.' }],
     next: 'c7.amina.r2',
   },
   'c7.amina.r3': {
-    lines: [
-      { who: 'Bi Amina', text: 'Last: my neighbor got a new roof and has begun explaining money to everyone at the well. Which kanga do I wear to fetch water?' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Last: my neighbor got a new roof and now explains money at the well. Which kanga do I wear for water?' }],
     choices: [
       { text: '"A guest is a white chicken."', goto: 'c7.amina.r3n1' },
       { text: '"Love is a cough."', goto: 'c7.amina.r3n2' },
@@ -505,30 +536,24 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.amina.r3n1': {
-    lines: [
-      { who: 'Bi Amina', text: 'She is not a guest, she is a neighbor, which is a life sentence! Ha!' },
-      { who: 'Bi Amina', text: 'I need a cloth that mentions wealth without mentioning her roof. Think, mgeni. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'She is not a guest; she is a neighbor, which is a life sentence! Again.' }],
     next: 'c7.amina.r3',
   },
   'c7.amina.r3n2': {
-    lines: [
-      { who: 'Bi Amina', text: 'Love is a cough? For HER? Now THAT would start a story neither of us could afford.' },
-      { who: 'Bi Amina', text: 'No. I want to answer her roof with my head held high. Wits, mgeni. Again.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Love is a cough, for HER? That would start a story neither of us could afford. Again.' }],
     next: 'c7.amina.r3',
   },
   'c7.amina.matched': {
     lines: [
-      { who: 'Bi Amina', text: 'AKILI NI MALI! Wits are wealth! I say nothing, I fetch my water, and her roof gets smaller with every step I take.' },
-      { who: 'Bi Amina', text: 'You can hear cloth, mgeni. Come back and I will sell you some words worth wearing.' },
+      { who: 'Bi Amina', text: 'AKILI NI MALI! Wits are wealth! I say nothing, I fetch my water, and her roof gets smaller with every step.' },
+      { who: 'Bi Amina', text: 'You can hear cloth, mgeni. Come back and I will sell you words worth wearing.' },
     ],
     effects: ['set:c7.kanga.game'],
   },
   'c7.amina.pair': {
     lines: [
-      { text: 'She measures you with one look, then pulls out a pair: sea-blue and rust, a hem of white letters, still joined as one long cloth.' },
-      { who: 'Bi Amina', text: 'Kangas are born in pairs, a gora. One you cut and wear. The other is not yours, mgeni; it is for giving away. That is the design.' },
+      { text: 'She pulls out a pair: sea-blue and rust, still joined as one long cloth.' },
+      { who: 'Bi Amina', text: 'Kangas are born in pairs. One you cut and wear. The other is not yours, mgeni; it is for giving away.' },
     ],
     effects: ['set:c7.kanga.done', 'set:kanga.gift', 'journal:customs.kanga'],
     choices: [
@@ -541,43 +566,36 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.amina.pallay': {
-    lines: [
-      { who: 'Bi Amina', text: 'Woven in! So the cloth speaks there too, in thread instead of ink.' },
-      { who: 'Bi Amina', text: 'Yours says: Mkono wa Mungu hakuna wa kuushinda. No one can overcome the hand of God. For a traveler, that is a seatbelt.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Woven in! So the cloth speaks there too, in thread instead of ink.' }],
+    next: 'c7.amina.jina',
   },
   'c7.amina.jina': {
-    lines: [
-      { who: 'Bi Amina', text: 'Yours says: Mkono wa Mungu hakuna wa kuushinda. No one can overcome the hand of God. For a traveler, mgeni, that is a seatbelt.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Yours says: Mkono wa Mungu hakuna wa kuushinda. No one can overcome the hand of God. For a traveler, that is a seatbelt.' }],
   },
   'c7.amina.idle': {
-    lines: [
-      { who: 'Bi Amina', text: 'Wear the one; keep the other folded. When you meet the person it belongs to, you will not have to ask. The cloth will lean.' },
-    ],
+    lines: [{ who: 'Bi Amina', text: 'Wear the one; keep the other folded. When you meet the person it belongs to, the cloth will lean.' }],
   },
 
   // ---------------- Juma, the spice-farm edge ----------------
   'c7.juma.first': {
     lines: [
-      { text: 'The lane ends in green: pepper vines climbing the palms, and mats of rust-red cloves drying by the path, the smell arriving first.' },
-      { who: 'Juma', text: 'Mind the mats, mgeni! Three months of climbing dries on those. Sniff all you like; the smell is free.' },
-      { who: 'Juma', text: 'Come back at saa mbili and help me rake them. Saa mbili sharp. Even a farm keeps some appointments.' },
+      { text: 'The lane ends in green: pepper vines up the palms, and mats of rust-red cloves drying by the path.' },
+      { who: 'Juma', text: 'Mind the mats, mgeni! Come back at saa mbili and help me rake. Saa mbili sharp.' },
     ],
     effects: ['set:c7.met.juma', 'journal:people.juma'],
   },
   'c7.juma.late': {
     lines: [
-      { text: 'You arrive at two in the afternoon, punctual to your own wrist. Juma is asleep in the shade, hat down. The mats are already raked.' },
-      { who: 'Juma', text: 'Saa mbili, mgeni! Hour two! The day starts at sunrise here, so hour two is eight in the morning. Subtract six from that watch.' },
-      { who: 'Juma', text: 'You are not late, understand. You are six hours sideways. Nobody is wrong; the sun simply signed our clock first. Tomorrow, saa mbili.' },
+      { text: 'You arrive at two in the afternoon. Juma is asleep in the shade; the mats are already raked.' },
+      { who: 'Juma', text: 'Saa mbili, mgeni! Hour two! The day starts at sunrise here, so hour two is eight in the morning.' },
+      { who: 'Juma', text: 'You are not late. You are six hours sideways. Tomorrow, saa mbili.' },
     ],
     effects: ['set:c7.saa', 'journal:customs.swahilitime'],
   },
   'c7.juma.mats': {
     lines: [
-      { text: 'Saa mbili, sunrise math. This time the mats are full and the raking is real work with a real rhythm to it.' },
-      { who: 'Juma', text: 'These buds went to weddings in Bombay and coffee in Muscat before either of us had grandfathers. Pemba grows most of it now; the smell stays ours.' },
+      { text: 'Saa mbili, sunrise math. The mats are full, and the raking has a rhythm.' },
+      { who: 'Juma', text: 'These buds went to weddings in Bombay and coffee in Muscat before either of us had grandfathers.' },
     ],
     effects: ['set:c7.juma.cardamom'],
     choices: [
@@ -590,29 +608,20 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.juma.kerala': {
-    lines: [
-      { who: 'Juma', text: 'You drank it in the hills it comes from! Same pod, mgeni, carried by the same wind that carried your ship.' },
-      { who: 'Juma', text: 'The monsoon is a spice road with weather. Kerala, Oman, here: one kitchen, three coastlines.' },
-    ],
+    lines: [{ who: 'Juma', text: 'You drank it in the hills it comes from! Same pod, same wind as your ship. Kerala, Oman, here: one kitchen, three coastlines.' }],
   },
   'c7.juma.pods': {
-    lines: [
-      { who: 'Juma', text: 'Cardamom, mgeni. Crush one and your tea grows a second opinion. It crossed from India with the wind, like the doors and the pilau.' },
-    ],
+    lines: [{ who: 'Juma', text: 'Cardamom. Crush one and your tea grows a second opinion. It crossed from India with the wind, like the doors and the pilau.' }],
   },
   'c7.juma.idle': {
-    lines: [
-      { who: 'Juma', text: 'The spice tours ride through at noon and photograph the vanilla. The farming is the part before and after the photograph, mgeni.' },
-    ],
+    lines: [{ who: 'Juma', text: 'The spice tours photograph the vanilla. The farming is before and after the photograph.' }],
   },
 
   // ---------------- Zuberi, the urojo cart ----------------
   'c7.zuberi.first': {
     lines: [
-      { text: 'A cart at the market corner, a vat of turmeric-gold soup, a man building each bowl like an argument he intends to win.' },
-      { who: 'Zuberi', text: 'Urojo. Zanzibar mix. Potatoes, bhajia, crunch, chili, lime. Sour, hot, crowded: the market, in a bowl.' },
-      { text: 'You ask how long it will take. He looks at you the way the tide looks at a schedule.' },
-      { who: 'Zuberi', text: 'Pole pole, mgeni. The bowl arrives when it is a bowl. Yours is the only clock in this soup.' },
+      { text: 'A cart at the market corner, a vat of turmeric-gold soup, a man building each bowl like an argument.' },
+      { who: 'Zuberi', text: 'Urojo. Potatoes, bhajia, chili, lime: sour, hot, crowded. The market, in a bowl.' },
     ],
     effects: ['set:c7.met.zuberi', 'journal:dishes.urojo'],
     choices: [
@@ -625,20 +634,16 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.zuberi.sudado': {
-    lines: [
-      { who: 'Zuberi', text: 'Peru knows! Sour is the cure, mgeni. Lime and mango wake up whatever the night flattened. Every coast keeps one pot like this.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'Peru knows! Sour is the cure, mgeni. Every coast keeps one pot like this.' }],
   },
   'c7.zuberi.cure': {
-    lines: [
-      { who: 'Zuberi', text: 'Sour wakes you, mgeni. Mango, lime, tamarind: the pot for long nights, long roads, long faces. Sour soup is medicine everywhere the sea goes.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'Sour wakes you. Mango, lime, tamarind: the pot for long nights, long roads, long faces.' }],
   },
   'c7.zuberi.dusk': {
     lines: [
-      { text: 'Dusk. The corner lamps kindle one by one, and the smoke begins telling the whole shore what is cooking.' },
-      { who: 'Zuberi', text: 'Tonight, pweza wa nazi: octopus that walked the flats at low tide, in coconut curry. That is the real food of this island.' },
-      { who: 'Zuberi', text: 'The next stall will offer you Zanzibar pizza. It is fine, mgeni. But it is from nowhere, and least of all from here.' },
+      { text: 'Dusk. The corner lamps kindle one by one.' },
+      { who: 'Zuberi', text: 'Tonight, pweza wa nazi: octopus off the flats, in coconut curry. The real food of this island.' },
+      { who: 'Zuberi', text: 'The next stall sells Zanzibar pizza. It is fine. It is from nowhere.' },
     ],
     effects: ['set:c7.zuberi.dusk', 'journal:dishes.pweza', 'journal:words.hamnashida'],
     choices: [
@@ -647,40 +652,29 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.zuberi.hamna': {
-    lines: [
-      { who: 'Zuberi', text: 'Ha! Real Swahili, yes. But we sell that phrase to visitors now, like the pizza. Between us we say hamna shida.' },
-      { who: 'Zuberi', text: 'No worries, in work clothes. Say it and watch the price of your soup improve.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'Ha! Real Swahili, but we sell that one to visitors now. Between us we say hamna shida. Watch your soup get cheaper.' }],
   },
   'c7.zuberi.pweza': {
-    lines: [
-      { text: 'The octopus is tender in a way that suggests a private agreement with the coconut. You understand the island a little more per bite.' },
-    ],
+    lines: [{ text: 'The octopus is tender in a way that suggests a private agreement with the coconut.' }],
   },
   'c7.zuberi.cookAgain': {
-    lines: [
-      { who: 'Zuberi', text: 'The vat is full and the corner is hungry, mgeni. The apron is where you left it, on the cart handle.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'The vat is full. The apron is on the cart handle.' }],
     choices: [
       { text: 'Tie the apron on again', when: { has: ['c7.cook.done'] }, goto: 'c7.zuberi.cookReplay' },
       { text: '"I am here to eat tonight, not to ladle."', goto: 'c7.zuberi.idle' },
     ],
   },
   'c7.zuberi.cookReplay': {
-    lines: [
-      { who: 'Zuberi', text: 'Good. No lesson in it this time; you know the corner. Feed them however you hear them, and I will describe the damage.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'No lesson this time. Feed them however you hear them, and I will describe the damage.' }],
     effects: ['set:replay.mode', 'set:c7.cook.start'],
   },
   'c7.zuberi.idle': {
-    lines: [
-      { who: 'Zuberi', text: 'Come at dusk, mgeni. The day market sells things. The night market sells the day itself, warmed up.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'Come at dusk. The night market sells the day itself, warmed up.' }],
   },
   'c7.zuberi.apron': {
     lines: [
-      { text: 'The lunch line thins. Zuberi looks at you, then at the vat, then unties the spare apron from the cart handle.' },
-      { who: 'Zuberi', text: 'You have eaten my urojo and watched me build it. Watching is half of nothing, mgeni. Come behind the pot; the next bowls are yours.' },
+      { text: 'The lunch line thins. Zuberi unties the spare apron from the cart handle.' },
+      { who: 'Zuberi', text: 'Watching is half of nothing, mgeni. Come behind the pot; the next bowls are yours.' },
     ],
     choices: [
       { text: 'Tie on the apron', goto: 'c7.zuberi.apron.go' },
@@ -689,21 +683,16 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.zuberi.apron.go': {
     // The corner's rules live in the howTo card; he keeps only his favorite part.
-    lines: [
-      { who: 'Zuberi', text: 'The customer calls the bowl; you answer it. The rest, mgeni, is bowls I get to describe.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'The customer calls the bowl; you answer it.' }],
     effects: ['set:c7.cook.start'],
   },
   'c7.zuberi.apron.wait': {
-    lines: [
-      { who: 'Zuberi', text: 'Haya. The vat and I keep the same hours: until it is finished.' },
-    ],
+    lines: [{ who: 'Zuberi', text: 'Haya. The vat and I keep the same hours: until it is finished.' }],
   },
   'c7.cook.finish': {
     lines: [
-      { text: 'The vat steams down to its last gold inch. Two customers fed, one apron returned, your wrists smelling of lime and turmeric.' },
-      { who: 'Zuberi', text: 'You see what you built? Bhajia from India, mango from the farms, cassava from the mainland, lime off our own trees. One bowl.' },
-      { who: 'Zuberi', text: 'Everything that ever anchored here ends up in the pot. Nothing else is required of a soup, mgeni.' },
+      { text: 'The vat steams down to its last gold inch. Your wrists smell of lime and turmeric.' },
+      { who: 'Zuberi', text: 'Bhajia from India, mango from the farms, cassava from the mainland, lime off our trees. Everything that anchors here ends up in the pot.' },
     ],
     effects: ['clear:c7.cook.start', 'set:c7.cook.done'],
   },
@@ -711,8 +700,8 @@ export const ZANZIBAR_NODES: NodeMap = {
   // ---------------- Mama Salma, the mwani rows ----------------
   'c7.salma.first': {
     lines: [
-      { text: 'Far out on the wet flats, staked lines run like stitched seams. A woman moves along them tying red bunches, skirts knotted high.' },
-      { who: 'Mama Salma', text: 'Mwani. Seaweed. We plant at low tide and the sea farms it for us while we sleep. My mother tied lines on this same flat before me.' },
+      { text: 'Staked lines run across the wet flats like stitched seams. A woman ties red bunches along them.' },
+      { who: 'Mama Salma', text: 'Mwani. Seaweed. We plant at low tide, and the sea farms it while we sleep.' },
     ],
     effects: ['set:c7.met.salma', 'journal:people.salma'],
     choices: [
@@ -721,73 +710,58 @@ export const ZANZIBAR_NODES: NodeMap = {
     ],
   },
   'c7.salma.rows': {
-    lines: [
-      { who: 'Mama Salma', text: 'Tied at low tide, harvested at low tide. The moon is the foreman here. Between tides we mend lines, mind children, argue prices.' },
-    ],
+    lines: [{ who: 'Mama Salma', text: 'Tied at low tide, harvested at low tide. The moon is the foreman here.' }],
     choices: [{ text: 'Help her carry the wet sack up the beach', goto: 'c7.salma.carry' }],
   },
   'c7.salma.again': {
-    lines: [
-      { who: 'Mama Salma', text: 'Back again? Good timing. The sack will not walk itself up the beach, and my back has opinions today.' },
-    ],
+    lines: [{ who: 'Mama Salma', text: 'Back again? The sack will not walk itself up the beach, and my back has opinions today.' }],
     choices: [
       { text: 'Take the sack', goto: 'c7.salma.carry' },
       { text: '"Not right now."', goto: 'c7.salma.nomind' },
     ],
   },
   'c7.salma.nomind': {
-    lines: [
-      { who: 'Mama Salma', text: 'Haya. The tide keeps my hours anyway. Pole for your busy day, mgeni.' },
-    ],
+    lines: [{ who: 'Mama Salma', text: 'Haya. The tide keeps my hours anyway.' }],
   },
   'c7.salma.carry': {
-    lines: [
-      { text: 'The sack is heavier than the sea smell suggests. You haul it past the tide line while she unties the next row one-handed, twice as fast.' },
-    ],
+    lines: [{ text: 'The sack is heavier than the sea smell suggests. You haul it past the tide line.' }],
     effects: ['set:c7.salma.helped'],
     next: 'c7.salma.carry2',
   },
   'c7.salma.carry2': {
-    lines: [
-      { who: 'Mama Salma', text: 'Asante sana! And pole for the carrying. We say pole for any burden, mgeni. It means: I see the weight, even if I cannot take it.' },
-    ],
+    lines: [{ who: 'Mama Salma', text: 'Asante sana. And pole for the carrying: we say pole for any burden. I see the weight, even if I cannot take it.' }],
     effects: ['journal:words.asante', 'journal:words.pole'],
   },
   'c7.salma.warm': {
     lines: [
-      { who: 'Mama Salma', text: 'The rows nearest shore die soft now. The water warms a little, the mwani breaks before it is grown, so we walk farther out each year.' },
-      { who: 'Mama Salma', text: 'My daughter wants nets in the deep water and a boat. Maybe she is right.' },
+      { who: 'Mama Salma', text: 'The rows nearest shore die soft now. The water warms, so we walk farther out each year.' },
+      { who: 'Mama Salma', text: 'My daughter wants a boat and nets in the deep water. Maybe she is right.' },
     ],
     effects: ['set:c7.salma.warm', 'journal:customs.mwani'],
   },
   'c7.salma.idle': {
-    lines: [
-      { who: 'Mama Salma', text: 'Low tide is my office hours, mgeni. At high tide, look for me at the market, selling soap the color of the sea’s insides.' },
-    ],
+    lines: [{ who: 'Mama Salma', text: 'Low tide is my office hours. At high tide, find me at the market.' }],
   },
 
   // ---------------- Fundi Issa, shaping ribs ----------------
   'c7.issa.first': {
     lines: [
-      { text: 'Above the tide line a man bends a rib of mango wood over his knee, adze marks still bright, an outrigger hull waiting beside him.' },
-      { who: 'Fundi Issa', text: 'Ngalawa. Dug from one mango trunk, given two arms so the sea cannot flip her without asking twice.' },
-      { who: 'Fundi Issa', text: 'The hull rots, mgeni. Every hull, this one too.' },
-      { who: 'Fundi Issa', text: 'So the boat is not the heirloom. The knowing how is the heirloom.' },
+      { text: 'A man bends a rib of mango wood over his knee, an outrigger hull beside him.' },
+      { who: 'Fundi Issa', text: 'Ngalawa. One mango trunk, two arms, so the sea cannot flip her without asking twice.' },
+      { who: 'Fundi Issa', text: 'The hull rots, mgeni. Every hull. So the boat is not the heirloom; the knowing how is.' },
     ],
     effects: ['set:c7.met.issa', 'journal:people.dhowbuilder', 'journal:customs.dhowknowledge'],
   },
   'c7.issa.second': {
     // The two-wind calendar moved onto the anchored jahazi (c7.ex.dhow.winds).
     lines: [
-      { who: 'Fundi Issa', text: 'My master learned at Nungwi: keel first, no drawings. I learned by watching his hands and by being wrong slowly.' },
-      { who: 'Fundi Issa', text: 'You want the year’s timetable, mgeni? It is riding at anchor out there. Go read her rig.' },
+      { who: 'Fundi Issa', text: 'My master learned at Nungwi: keel first, no drawings. I learned by being wrong slowly.' },
+      { who: 'Fundi Issa', text: 'The year’s timetable is riding at anchor out there. Go and read her rig.' },
     ],
     effects: ['set:c7.issa.winds'],
   },
   'c7.issa.idle': {
-    lines: [
-      { who: 'Fundi Issa', text: 'Come back when she floats, mgeni. A boat on the sand is a promise; the tide is the notary.' },
-    ],
+    lines: [{ who: 'Fundi Issa', text: 'A boat on the sand is a promise, mgeni; the tide is the notary.' }],
   },
 
   // ---------------- Kapteni Bakari, the domino table ----------------
@@ -798,16 +772,13 @@ export const ZANZIBAR_NODES: NodeMap = {
    */
   'c7.bakari.first': {
     lines: [
-      { text: 'Four retired captains around a table, dominoes going down like verdicts. Nobody looks up, which is how you know the game matters.' },
-      { who: 'Kapteni Bakari', text: 'Sit, mgeni, watch. This table has crossed to Bombay and back more times than it has legs.' },
-      { who: 'Kapteni Bakari', text: 'Friday, when the game ends, that pot serves pilau and the table eats together or not at all. Until then, eat what Zuberi gives you.' },
+      { text: 'Four retired captains around a table, dominoes going down like verdicts.' },
+      { who: 'Kapteni Bakari', text: 'Sit, mgeni, watch. On Friday that pot serves pilau, and the table eats together or not at all.' },
     ],
     effects: ['set:c7.met.bakari'],
   },
   'c7.bakari.sail': {
-    lines: [
-      { who: 'Kapteni Bakari', text: 'You keep looking at the water like it owes you a ride. Come; the ngalawa needs exercise. I must see if you can listen with your hands.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'You keep looking at the water like it owes you a ride. Come; the ngalawa needs exercise.' }],
     choices: [
       { text: 'Step aboard', goto: 'c7.bakari.go' },
       { text: '"Another tide."', goto: 'c7.bakari.later' },
@@ -815,48 +786,38 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.bakari.go': {
     // The teaching lives in the howTo card and on the trim rose; he just casts off.
-    lines: [
-      { who: 'Kapteni Bakari', text: 'Kaskazi today, steady from the northeast. Hands on the sheet, mgeni; I will mind the tiller and the laughing.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'Kaskazi today, steady from the northeast. Hands on the sheet; I will mind the tiller and the laughing.' }],
     effects: ['set:c7.sail.start'],
   },
   'c7.bakari.later': {
-    lines: [
-      { who: 'Kapteni Bakari', text: 'Haya. The wind is not offended. It has other appointments.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'Haya. The wind is not offended. It has other appointments.' }],
   },
   'c7.sail.done': {
     lines: [
-      { text: 'The village comes back to meet you, then the jetty. Your hands have learned a small permanent thing about wind.' },
-      { who: 'Kapteni Bakari', text: 'You luffed, you listened, you fixed it. That is the whole trade, mgeni. The rest is repetition and weather.' },
+      { text: 'The jetty comes back to meet you. Your hands have learned a small permanent thing about wind.' },
+      { who: 'Kapteni Bakari', text: 'You luffed, you listened, you fixed it. That is the whole trade, mgeni.' },
     ],
     effects: ['clear:c7.sail.start', 'set:c7.sail.ok', 'journal:customs.lateen'],
   },
   'c7.bakari.praise': {
-    lines: [
-      { who: 'Kapteni Bakari', text: 'The telltale streamed, and Issa says the wind agreed with you. When you ride a strange ship north, help in the galley and stay off the ropes.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'The telltale streamed. On a strange ship north, help in the galley and stay off the ropes.' }],
     effects: ['set:c7.bakari.props'],
   },
   'c7.bakari.sailAgain': {
-    lines: [
-      { who: 'Kapteni Bakari', text: 'The kaskazi is still working and the ngalawa is still tied to a post. Between us, that is a waste of two good things.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'The kaskazi is working and the ngalawa is tied to a post. A waste of two good things.' }],
     choices: [
       { text: 'Take the ngalawa out again', when: { has: ['c7.sail.ok'] }, goto: 'c7.bakari.sailReplay' },
       { text: '"Another tide, kapteni."', goto: 'c7.bakari.idle' },
     ],
   },
   'c7.bakari.sailReplay': {
-    lines: [
-      { who: 'Kapteni Bakari', text: 'Haya. Nothing to prove today, mgeni. Only the wind, the telltale, and the long way back to the jetty.' },
-    ],
+    lines: [{ who: 'Kapteni Bakari', text: 'Nothing to prove today. Only the wind and the long way back to the jetty.' }],
     effects: ['set:replay.mode', 'set:c7.sail.start'],
   },
   'c7.bakari.idle': {
     // The captains' pizza argument, demoted from the welcome to table talk.
     lines: [
-      { who: 'Kapteni Suleiman', text: 'Zanzibar pizza, Bakari. Old, old food, from the Sultan’s own kitchen. Feed the mgeni properly.' },
+      { who: 'Kapteni Suleiman', text: 'Zanzibar pizza, Bakari: old food, from the Sultan’s own kitchen.' },
       { who: 'Kapteni Bakari', text: 'Suleiman also remembers winning arguments he lost. Your bone, kapteni.' },
     ],
   },
@@ -864,34 +825,26 @@ export const ZANZIBAR_NODES: NodeMap = {
   // ---------------- Ali, the shipping agent ----------------
   'c7.ali.first': {
     lines: [
-      { text: 'A counter at the jetty root, a ledger, and a man with the handwriting of someone who has recorded cargo through three currencies.' },
+      { text: 'A counter at the jetty root, a ledger, and a man who has recorded cargo through three currencies.' },
       // Timeline note: the Suez Canal reopened on 1975-06-05 after eight years
       // closed. Her passage north through it is deliberately after that date,
       // which is why her margins run out of 1974 and into 1975 on this coast.
-      { who: 'Ali', text: 'Deck passage north, through Suez? It exists, mgeni. Ships call twice a month.' },
-      { who: 'Ali', text: 'This coast is not finished with you. Come back when Mzee Rashid says you have slowed down.' },
+      { who: 'Ali', text: 'Deck passage north, through Suez? Ships call twice a month. But this coast is not finished with you yet.' },
     ],
     effects: ['set:c7.met.ali'],
   },
   'c7.ali.not': {
-    lines: [
-      { who: 'Ali', text: 'Rashid’s bench decides before I do, mgeni.' },
-    ],
+    lines: [{ who: 'Ali', text: 'The freighter keeps the tide’s hours, mgeni. So do I.' }],
   },
   'c7.ali.book': {
-    lines: [
-      { who: 'Ali', text: 'Rashid sent word. Deck passage north: Suez, then the middle sea, a freighter with a cook who loves and hates company in equal parts.' },
-      { who: 'Ali', text: 'She sails on the tide after this one. Say your goodbyes pole pole; it is the only speed goodbyes keep.' },
-    ],
+    lines: [{ who: 'Ali', text: 'Deck passage north: Suez, then the middle sea. She sails on the dawn tide, before the village is up.' }],
     choices: [
-      { text: 'Board when the tide serves', goto: 'c7.ali.sail' },
+      { text: 'Sleep, and walk down at first light', goto: 'c7.dawn.go' },
       { text: '"Not yet. The coast is not finished being sat on."', goto: 'c7.ali.wait' },
     ],
   },
   'c7.ali.sail': {
-    lines: [
-      { text: 'The freighter takes you the way the coast gave you everything: without hurry. Zanzibar lowers itself into the sea line, pole pole.' },
-    ],
+    lines: [{ text: 'The freighter takes you the way the coast gave you everything: without hurry. Zanzibar lowers itself into the sea line, pole pole.' }],
     effects: ['travel:sicily'],
   },
   'c7.ali.wait': {
@@ -901,10 +854,8 @@ export const ZANZIBAR_NODES: NodeMap = {
   // ---------------- Capitana Ríos, ashore on her rounds ----------------
   'c7.rios.hello': {
     lines: [
-      { text: 'At the jetty root stands a silhouette you know from a bridge wing. Past the reef, riding at anchor, unmistakably: the Yacana.' },
-      { who: 'Capitana Ríos', text: 'The galley hand. Cargo goes where cargo goes, and this week it goes through Zanzibar. Do not look surprised; it undermines my navigation.' },
-      { text: 'She is off watch. She holds her shore leave the way some people hold an unfamiliar baby.' },
-      { who: 'Capitana Ríos', text: 'Well. Report. Did the sea keep teaching you after my deck, or did the land take it all back?' },
+      { text: 'At the jetty root stands a silhouette you know from a bridge wing. Past the reef, riding at anchor: the Yacana.' },
+      { who: 'Capitana Ríos', text: 'The galley hand. Cargo goes where cargo goes. Report: did the sea keep teaching you?' },
     ],
     effects: ['set:c7.rios.met'],
     choices: [
@@ -915,407 +866,258 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.rios.lamar': {
     lines: [
-      { who: 'Capitana Ríos', text: 'La mar. Still, and always.' },
-      { who: 'Capitana Ríos', text: 'Ninety-four crossings, and the word finally walked ashore ahead of me. Simón will hear of this, and he will be unbearable.' },
+      { who: 'Capitana Ríos', text: 'La mar. Still, and always. Ninety-four crossings, and the word walked ashore ahead of me.' },
       { text: 'Something in the dry face moves half a degree. On her, that is a salute.' },
     ],
   },
   'c7.rios.shellback': {
-    lines: [
-      { who: 'Capitana Ríos', text: 'So you are. Neptune’s court does not revoke. Half my paperwork should be as permanent as that soaking.' },
-      { who: 'Capitana Ríos', text: 'Then stand like one. The tide here outranks us both, which frankly is a relief.' },
-    ],
+    lines: [{ who: 'Capitana Ríos', text: 'So you are. Neptune’s court does not revoke. Then stand like one; the tide here outranks us both.' }],
   },
   'c7.rios.honest': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Good. A sailor who admits forgetting is a sailor who logs honestly. I would rather ship that than a confident memory.' },
-      { who: 'Capitana Ríos', text: 'So, once more, for the log: la mar, never el mar. She carries us and could decline to; the ones she carries say it her way.' },
-      { who: 'Capitana Ríos', text: 'And you crossed the line on my deck, so you are a shellback whether you recall the soaking or not. Neptune keeps his own ledger.' },
+      { who: 'Capitana Ríos', text: 'Good. A sailor who admits forgetting logs honestly. So, once more for the log: la mar, never el mar.' },
+      { who: 'Capitana Ríos', text: 'And you crossed the line on my deck: a shellback, whether you recall the soaking or not.' },
     ],
   },
   'c7.rios.bench': {
     lines: [
-      { text: 'The Capitana has discovered the barazas. She reports on them the way she reports weather: facts first, feelings never, feelings anyway.' },
-      { who: 'Capitana Ríos', text: 'Load-bearing stone, shaded, full view of the channel traffic. Whoever engineered that bench understood port operations completely.' },
-      { who: 'Capitana Ríos', text: 'I sat on one for an hour this morning. The village calls it sitting; on my bridge we call it keeping watch. Acceptable naval architecture.' },
-      { text: 'An hour, she says, like a logged fact. From a woman who paces whole crossings, an hour of stone is practically a love letter.' },
+      { text: 'The Capitana has discovered the barazas. She reports on them like weather.' },
+      { who: 'Capitana Ríos', text: 'Load-bearing stone, full view of the channel. I sat an hour. On my bridge we call that keeping watch.' },
+      { text: 'From a woman who paces whole crossings, an hour of stone is practically a love letter.' },
     ],
     effects: ['set:c7.rios.sat'],
   },
   'c7.rios.idle': {
-    lines: [
-      { who: 'Capitana Ríos', text: 'The Yacana loads cloves until the tide serves. Until then I am, technically, a tourist. Do not report me.' },
-    ],
+    lines: [{ who: 'Capitana Ríos', text: 'The Yacana loads cloves until the tide serves. Until then I am, technically, a tourist.' }],
   },
 
   // ---------------- Chasca, at the carved door ----------------
   'c7.chasca.door': {
     lines: [
-      { who: 'Chasca', text: 'The soup-eater! You keep arriving exactly where the album needs you. I am mid-bargain over a kanga; we are both enjoying it too much to finish.' },
-      { who: 'Chasca', text: 'Now stand by the carved door. The studs, the arch, a hundred years of arrivals; you are simply the newest. Smile!' },
-      { text: 'The shutter clicks at the exact moment the lane decides to be golden. She grins like she planned the light. Perhaps she did.' },
+      { who: 'Chasca', text: 'The soup-eater! Stand by the carved door: a hundred years of arrivals, and you are the newest. Smile!' },
+      { text: 'The shutter clicks the moment the lane decides to be golden.' },
     ],
     effects: ['set:c7.met.chasca', 'set:photo.flash', 'set:photo.c7.door'],
   },
   'c7.chasca.again': {
-    lines: [
-      { who: 'Chasca', text: 'Eight frames now, one per road. The album is starting to look like a sentence with somewhere to get to, pole pole.' },
-    ],
+    lines: [{ who: 'Chasca', text: 'Eight frames now, one per road. The album is starting to look like a sentence.' }],
   },
 
   // ---------------- the counter and the mail ----------------
   'c7.post.pilar': {
-    lines: [
-      { text: 'The counter holds mail. Ali produces an envelope addressed in handwriting you would recognize underwater: it is, structurally, an invoice.' },
-    ],
+    lines: [{ text: 'Ali produces an envelope in handwriting you would recognize underwater: structurally, an invoice.' }],
     effects: ['letter:c7.pilar'],
   },
   'c7.post.mangben': {
-    lines: [
-      { text: 'Ali digs again and comes up with a second envelope, this one smelling faintly of a galley: garlic, diesel, benevolence.' },
-    ],
+    lines: [{ text: 'A second envelope, smelling faintly of a galley: garlic, diesel, benevolence.' }],
     effects: ['letter:c7.mangben'],
   },
   'c7.post.idle': {
-    lines: [
-      { text: 'SHIPPING AGENT. The ledger is closed, the pen capped. The tide table behind the counter disagrees with your watch by six hours exactly.' },
-    ],
+    lines: [{ text: 'The tide table behind the counter disagrees with your watch by six hours exactly.' }],
   },
 
   // ---------------- examines ----------------
   'c7.ex.nyumba': {
-    lines: [
-      { text: 'Coral rag under lime wash: the walls are reef, quarried and stacked. The house stays cool by remembering the sea it used to be.' },
-    ],
+    lines: [{ text: 'Reef, quarried and stacked. The house stays cool by remembering the sea it used to be.' }],
   },
   'c7.ex.mlango': {
-    lines: [
-      { text: 'A carved door: arched frame, ranks of brass studs, a chain border for protection. The town keeps its finest sentences on its doors.' },
-    ],
+    lines: [{ text: 'A carved door, ranks of brass studs. The town keeps its finest sentences on its doors.' }],
   },
   'c7.ex.baraza': {
-    lines: [
-      { text: 'A stone bench grown into the house front. Built so guests can be received without entering, and news without knocking.' },
-    ],
+    lines: [{ text: 'A stone bench grown into the house front, for news that does not need to knock.' }],
   },
   'c7.ex.ngalawa': {
-    lines: [
-      { text: 'A ngalawa: one mango trunk, two outrigger arms, a sail like a folded wing. Nimble as a water strider and about as sinkable.' },
-    ],
+    lines: [{ text: 'One mango trunk, two outrigger arms, a sail like a folded wing.' }],
   },
   'c7.ex.ngalawa.after': {
     // Dressing: the boat keeps the lesson after the reach is sailed.
-    lines: [
-      { text: 'The ngalawa rests at her post, the sail furled fat along the yard, still warm from the reach. Your palm remembers where the sheet lives.' },
-    ],
+    lines: [{ text: 'The ngalawa rests at her post. Your palm remembers where the sheet lives.' }],
   },
   'c7.ex.dhow': {
-    lines: [
-      { text: 'A jahazi rides at anchor, lateen yard crossed like a drawn bow. Patched sail, oiled planks, a waterline worn pale by two winds.' },
-    ],
+    lines: [{ text: 'A jahazi at anchor, lateen yard crossed like a drawn bow.' }],
   },
   'c7.ex.clovemat': {
-    lines: [
-      { text: 'Cloves drying on a woven mat, rust-red and fragrant enough to reorganize your priorities. Three months of climbing per handful.' },
-    ],
+    lines: [{ text: 'Cloves drying rust-red, fragrant enough to reorganize your priorities.' }],
   },
   'c7.ex.kangarack': {
-    lines: [
-      { text: 'Kangas in ranks of printed color, each hem carrying its saying. A rack of things it would be unwise to say out loud.' },
-    ],
+    lines: [{ text: 'Kangas in printed ranks: a rack of things it would be unwise to say out loud.' }],
   },
   'c7.ex.spicesack': {
-    lines: [
-      { text: 'Sacks rolled open: pepper, cinnamon bark, nutmeg still in its lace. The corner smells like the hold of a very old ship.' },
-    ],
+    lines: [{ text: 'Pepper, cinnamon bark, nutmeg still in its lace. The corner smells like a very old ship.' }],
   },
   'c7.ex.marketlamp.shop': {
-    lines: [
-      { text: 'The lamp stands at the end of the cutting counter, not mid-room. She lights it for the work; the rest of the shop gets what is left.' },
-    ],
+    lines: [{ text: 'She lights this lamp for the cutting; the rest of the shop gets what is left.' }],
   },
   'c7.ex.marketlamp': {
-    lines: [
-      { text: 'A hurricane lamp on a pole, waiting for its hour. The night market does not open; it kindles.' },
-    ],
+    lines: [{ text: 'A hurricane lamp on a pole. The night market does not open; it kindles.' }],
   },
   'c7.ex.mwanirow': {
-    lines: [
-      { text: 'Staked lines seamed across the flats, tufted dark red with growing mwani. A farm the sea waters twice a day, no fence required.' },
-    ],
+    lines: [{ text: 'Staked lines tufted with red mwani: a farm the sea waters twice a day.' }],
   },
   'c7.ex.corallane': {
-    lines: [
-      { text: 'A lane of crushed coral, white as bone and swept clean. It holds the day’s heat gently, like everything else here.' },
-    ],
+    lines: [{ text: 'Crushed coral, white as bone, holding the day’s heat gently.' }],
   },
   'c7.ex.sand': {
-    lines: [
-      { text: 'Pale coral sand, coarse with shell. Barefoot country; your shoes are beginning to feel like an opinion.' },
-    ],
+    lines: [{ text: 'Coral sand, coarse with shell. Your shoes are beginning to feel like an opinion.' }],
   },
   'c7.ex.flats': {
-    lines: [
-      { text: 'The sea’s floor, walked on. Starfish sprawl like dropped punctuation, small crabs commute, and somewhere a woman hunts octopus on foot.' },
-    ],
+    lines: [{ text: 'The sea’s floor, walked on. Starfish sprawl like dropped punctuation.' }],
   },
   'c7.ex.sea': {
-    lines: [
-      { text: 'The Indian Ocean at its ease. It has carried monsoons, dhows, cloves, grandmothers. Today it is mostly carrying light.' },
-    ],
+    lines: [{ text: 'It has carried monsoons, dhows, cloves, grandmothers. Today, mostly light.' }],
   },
   'c7.ex.stall': {
-    lines: [
-      { text: 'A market stall under a striped awning: bananas, limes, dried fish, sugarcane waiting for the press.' },
-    ],
+    lines: [{ text: 'Bananas, limes, dried fish, sugarcane waiting for the press.' }],
   },
   'c7.ex.tree': {
-    lines: [
-      { text: 'A clove tree, glossy-leaved. The buds are picked green, dried red, and argued over in gold.' },
-    ],
+    lines: [{ text: 'A clove tree. The buds are picked green, dried red, and argued over in gold.' }],
   },
   'c7.ex.sign': {
-    lines: [
-      { text: 'FUKONI, the sign says. Underneath, smaller, in another hand: pole pole ndio mwendo.' },
-    ],
+    lines: [{ text: 'FUKONI. Underneath, in another hand: pole pole ndio mwendo.' }],
   },
   'c7.ex.jetty': {
-    lines: [
-      { text: 'Stone and mangrove-pole jetty, patched every generation since sail. It creaks in Swahili.' },
-    ],
+    lines: [{ text: 'Stone and mangrove poles, patched every generation since sail. It creaks in Swahili.' }],
   },
   'c7.ex.table': {
-    lines: [
-      { text: 'The domino table. The bones are worn smooth as beach glass, and standing this close without playing feels like eavesdropping.' },
-      { text: 'A bone goes down with a click of finality. Somewhere in it there is a story about a cyclone; you can tell by the silence.' },
-    ],
+    lines: [{ text: 'A bone goes down with a click of finality.' }],
   },
   'c7.ex.pilaupot': {
     // The plate carries the remembering now; Bakari only pointed at the pot.
-    lines: [
-      { text: 'Behind the bones a covered pot minds a charcoal ring, keeping Friday. The steam slipping the lid is pilau: Oman on one side, India on the other.' },
-    ],
+    lines: [{ text: 'A covered pot keeping Friday on a charcoal ring. The steam is pilau: Oman on one side, India on the other.' }],
     effects: ['set:c7.seen.pilau', 'journal:dishes.pilau'],
   },
   'c7.ex.stall.pizza': {
     // The Sultan's-kitchen story, retired from the welcome speech to the griddle.
-    lines: [
-      { text: 'Under the awning, beside the limes, a griddle folds Zanzibar pizza: thin dough, egg, mince, a confident squiggle of mayonnaise.' },
-      { text: 'The captains claim the Sultan’s kitchen; Zuberi claims nowhere at all. The griddle stays out of it and sells out nightly.' },
-    ],
+    lines: [{ text: 'A griddle folds Zanzibar pizza. The captains claim the Sultan’s kitchen; Zuberi claims nowhere.' }],
   },
   'c7.ex.dhow.winds': {
     // Issa's two-wind calendar, read off the rig he pointed at.
-    lines: [
-      { text: 'The jahazi rides with her yard set for the kaskazi, the northeast wind that works until February.' },
-      { text: 'After April the kusi answers from the south. Boats and weddings on this coast are planned by those two.' },
-    ],
+    lines: [{ text: 'Her yard is set for the kaskazi, the northeast wind, until February. After April the kusi answers from the south.' }],
   },
   'c7.ex.shelfshop': {
-    lines: [
-      { text: 'Folded kangas by the hundred, sorted by loudness. The shelf is a library that happens to be wearable.' },
-    ],
+    lines: [{ text: 'Folded kangas by the hundred, sorted by loudness.' }],
   },
 
   // ---------------- the love pass: small things, given voices ----------------
   'c7.ex.kline.a': {
-    lines: [
-      { text: 'Kangas drying in pairs, each hem holding its printed sentence up to the wind.' },
-      { text: 'The nearest reads Wache waseme: let them talk. Somebody hung that one facing the lane on purpose.' },
-    ],
+    lines: [{ text: 'The nearest hem reads Wache waseme: let them talk. Somebody hung that one facing the lane on purpose.' }],
     effects: ['set:c7.seen.kline'],
   },
   'c7.ex.kline.b': {
-    lines: [
-      { text: 'The cloths have turned in the wind; the message has not. Whoever should let them talk has presumably walked past by now.' },
-    ],
+    lines: [{ text: 'The cloths have turned in the wind; the message has not.' }],
   },
   'c7.ex.kline.c': {
     // Dressing: the shop line remembers your purchase.
-    lines: [
-      { text: 'Sea-blue and rust flies at the end of the line now, twin to the cloth on your shoulder. The lane has been informed.' },
-    ],
+    lines: [{ text: 'Sea-blue and rust flies at the end of the line now, twin to the cloth on your shoulder.' }],
   },
   'c7.ex.bao.a': {
-    lines: [
-      { text: 'A bao board mid-game on a barrel, seeds counted into their pits. Both players walked away; the game did not end, it is only breathing.' },
-    ],
+    lines: [{ text: 'A bao board mid-game on a barrel. Both players walked away; the game is only breathing.' }],
     effects: ['set:c7.seen.bao'],
   },
   'c7.ex.bao.b': {
-    lines: [
-      { text: 'You could move one seed and change two friendships. Do not touch the seeds. Every cat on this lane saw you think it.' },
-    ],
+    lines: [{ text: 'You could move one seed and change two friendships. Every cat on this lane saw you think it.' }],
     effects: ['set:egg.c7.bao'],
   },
   'c7.egg.bao2': {
-    lines: [
-      { text: 'Four seeds have moved since you last looked, and nobody was seen moving them. The game is being played properly: slowly, between everything else.' },
-    ],
+    lines: [{ text: 'Four seeds have moved since you last looked. Nobody was seen moving them.' }],
     effects: ['set:egg.c7.bao2'],
   },
   'c7.egg.bao3': {
-    lines: [
-      { text: 'You check the board the way the whole lane does, in passing, pretending not to. Whoever is winning, the barrel keeps it confidential.' },
-    ],
+    lines: [{ text: 'You check the board in passing, the way the whole lane does.' }],
   },
   'c7.ex.tray.after': {
-    lines: [
-      { text: 'The kahawa boy has moved down the lane. One of these cups was yours; the bench remembers who drank from it, which is how benches collect people.' },
-    ],
+    lines: [{ text: 'One of these cups was yours. That is how benches collect people.' }],
   },
   'c7.ex.tray': {
-    lines: [
-      { text: 'A brass kahawa pot and cups the size of thimbles. The cup is small so the sitting can be long; refills are how the bench keeps you.' },
-    ],
+    lines: [{ text: 'A brass kahawa pot and cups the size of thimbles.' }],
   },
   'c7.ex.madema': {
-    lines: [
-      { text: 'Madema: woven fish traps stacked like baskets that learned a trick. The fish swims in, reconsiders, and finds the door has become a wall.' },
-    ],
+    lines: [{ text: 'Woven fish traps. The fish swims in, reconsiders, and finds the door has become a wall.' }],
   },
   'c7.ex.coral': {
-    lines: [
-      { text: 'Coral-rag blocks queued for repairs, pale and pocked, still faintly reef. Somebody’s wall is about to remember the sea again.' },
-    ],
+    lines: [{ text: 'Coral blocks queued for repairs. Somebody’s wall is about to remember the sea.' }],
   },
   'c7.ex.limepail': {
-    lines: [
-      { text: 'A pail of lime wash and a stiff brush. The wall and the salt air are in an old argument, and this is the wall’s next word.' },
-    ],
+    lines: [{ text: 'Lime wash and a stiff brush: the wall’s next word in its old argument with the salt.' }],
   },
   'c7.ex.scaffold': {
-    lines: [
-      { text: 'Mangrove poles lashed with rope, not a nail anywhere, holding up a mason who is at lunch. The knots are the oldest technology on the wall.' },
-    ],
+    lines: [{ text: 'Mangrove poles lashed with rope, holding up a mason who is at lunch.' }],
   },
   'c7.ex.cat.a': {
-    lines: [
-      { text: 'A cat, seated exactly where everyone must step around her. Her look suggests your rent is late.' },
-    ],
+    lines: [{ text: 'A cat, seated exactly where everyone must step around her.' }],
     effects: ['set:c7.cat.one'],
   },
   'c7.ex.cat.b': {
-    lines: [
-      { text: 'Still there. Stone Town cats fear nothing; the dhows shipped their ancestors in as ratters, and the harbor has owed them wages ever since.' },
-    ],
+    lines: [{ text: 'Still there. The dhows shipped her ancestors in as ratters.' }],
     effects: ['set:c7.cat.two'],
   },
   'c7.ex.cat.c': {
-    lines: [
-      { text: 'You and the cat have reached an understanding. The understanding is that the cat was right.' },
-    ],
+    lines: [{ text: 'You and the cat have reached an understanding. The understanding is that the cat was right.' }],
   },
   'c7.ex.kuku.a': {
-    lines: [
-      { text: 'A white chicken patrols the shop front like she holds the lease.' },
-      { text: 'Mgeni ni kuku mweupe, says the cloth inside: a guest is a white chicken. This one has heard it, and it went straight to her head.' },
-    ],
+    lines: [{ text: 'A white chicken patrols the shop front like she holds the lease.' }],
     effects: ['set:c7.seen.kuku'],
   },
   'c7.ex.kuku.b': {
-    lines: [
-      { text: 'Still here, still white, still special. The proverb never said anything about modesty.' },
-    ],
+    lines: [{ text: 'Still white, still special. The proverb never mentioned modesty.' }],
   },
   'c7.ex.baiskeli': {
-    lines: [
-      { text: 'A bicycle with a fish crate lashed over the back wheel. The bell works perfectly; the brakes are more of a conversation.' },
-    ],
+    lines: [{ text: 'A fish crate lashed over the back wheel. The bell works; the brakes are more of a conversation.' }],
   },
   'c7.ex.henna': {
-    lines: [
-      { text: 'A low stool and a tray of henna cones, aimed and ready. Sit, hold still, and your hands leave wearing vines a wedding would envy.' },
-    ],
+    lines: [{ text: 'A tray of henna cones. Hold still and your hands leave wearing vines.' }],
   },
   'c7.ex.doormat': {
-    lines: [
-      { text: 'A woven mat squared to the doorstep, shoes queued beside it. You can take the household census without knocking.' },
-    ],
+    lines: [{ text: 'Shoes queued beside the mat. You can take the household census without knocking.' }],
   },
   'c7.ex.goal': {
-    lines: [
-      { text: 'Two flip-flops, one goal. Kickoff is when school ends; full time is when somebody’s mother uses their whole name.' },
-    ],
+    lines: [{ text: 'Two flip-flops, one goal. Full time is when somebody’s mother uses their whole name.' }],
   },
   'c7.ex.starfish': {
-    lines: [
-      { text: 'The tide left in a hurry and forgot things: a starfish, a shell, one small crab with big plans. It will be back for none of them.' },
-    ],
+    lines: [{ text: 'The tide left in a hurry: a starfish, a shell, one small crab with big plans.' }],
   },
   'c7.ex.sailspar.after': {
-    lines: [
-      { text: 'A spare sail furled on its spar. Somewhere in those wraps is the exact place the wind leans, and your hands know it now.' },
-    ],
+    lines: [{ text: 'Somewhere in those wraps is the place the wind leans. Your hands know it now.' }],
   },
   'c7.ex.sailspar': {
-    lines: [
-      { text: 'A lateen sail furled fat along its spar, resting on trestles above the sand. Folded wind, waiting for the kaskazi to ask for it back.' },
-    ],
+    lines: [{ text: 'A lateen sail furled along its spar: folded wind, waiting for the kaskazi.' }],
   },
   'c7.ex.radio.a': {
-    lines: [
-      { text: 'A radio with its antenna aimed at Stone Town. Taarab pours out: strings, a violin, a voice saying something sharp, deniably.' },
-    ],
+    lines: [{ text: 'Taarab pours out: strings, a violin, a voice saying something sharp, deniably.' }],
     effects: ['set:c7.seen.radio'],
   },
   'c7.ex.radio.b': {
-    lines: [
-      { text: 'Bi Amina turns it up for one song and says only: Siti binti Saad recorded before any man on this coast dared. The shop folds cloth in time.' },
-    ],
+    lines: [{ text: 'Bi Amina turns it up: Siti binti Saad, who recorded before any man on this coast dared.' }],
   },
   'c7.ex.sewing': {
-    lines: [
-      { text: 'Scissors, chalk, a tape measure coiled like something tame. This is the table where a gora becomes two kangas: one to keep, one to give.' },
-    ],
+    lines: [{ text: 'Scissors and chalk: where a pair becomes two kangas.' }],
   },
   'c7.ex.ukuta': {
-    lines: [
-      { text: 'A low coral wall, limed on the street side and left honest on the other. Waist high, which is the exact height of a conversation.' },
-      { text: 'Bougainvillea has been over the top of it for years. Nobody planted it. Nobody is going to be the one to cut it, either.' },
-    ],
+    lines: [{ text: 'A coral wall at the exact height of a conversation, bougainvillea over the top.' }],
   },
   'c7.ex.makuti': {
-    lines: [
-      { text: 'Plaited coconut thatch on two poles, thrown out over the baraza. The shade arrives about a step before you do, and it is always cooler than it looks.' },
-    ],
+    lines: [{ text: 'Coconut thatch thrown over the baraza. The shade arrives a step before you do.' }],
   },
   'c7.ex.madafu': {
-    lines: [
-      { text: 'Green coconuts heaped where the shade falls, panga standing in the pile. One is already open, going warm while its owner argues about something else.' },
-    ],
+    lines: [{ text: 'Green coconuts in the shade, one already open.' }],
   },
   'c7.ex.dagaa': {
-    lines: [
-      { text: 'Whitebait spread on a mesh rack, drying hard and silver in the sun. An octopus hangs on the line above, giving up its arms one at a time.' },
-      { text: 'It will all be someone else’s stew by Thursday. The rack goes back under the house until the next good haul.' },
-    ],
+    lines: [{ text: 'Whitebait drying silver on a rack, an octopus on the line above.' }],
   },
   'c7.ex.nyavu': {
-    lines: [
-      { text: 'A net spread on the sand to dry, corks along one edge, stones along the other. The mending needle is stuck in where the work stopped for tea.' },
-    ],
+    lines: [{ text: 'A net drying on the sand, the needle stuck in where the mending stopped for tea.' }],
   },
   'c7.ex.mkokoteni': {
-    lines: [
-      { text: 'A handcart tipped onto its shafts, sacks still aboard. Nobody unloads a cart they can lean, and nobody leans a cart they mean to move soon.' },
-    ],
+    lines: [{ text: 'A handcart leaned on its shafts. Nobody leans a cart they mean to move soon.' }],
   },
   'c7.ex.wallcoral': {
-    lines: [
-      { text: 'Coral rag under lime wash: rubble off a reef that stopped being a reef long before anyone here was born, painted white and asked to be a room.' },
-      { text: 'The lumps take the light unevenly, so the wall is never one colour twice in a day. The carved lintel over it came off a mangrove.' },
-    ],
+    lines: [{ text: 'Reef rubble, painted white and asked to be a room.' }],
   },
   'c7.ex.floorlimescreed': {
-    lines: [
-      { text: 'Lime screed, cool through your soles even at two in the afternoon. This is why the shoes came off at the door and not politeness.' },
-    ],
+    lines: [{ text: 'Lime screed, cool through your soles even at two in the afternoon.' }],
   },
   'c7.ex.rugmkeka': {
-    lines: [
-      { text: 'A mkeka, plaited palm leaf with two dyed strips running its length. Everything in this shop that matters gets done sitting on one of these.' },
-    ],
+    lines: [{ text: 'A plaited mkeka. Everything in this shop that matters gets done sitting on one.' }],
   },
 };
 
@@ -1374,6 +1176,9 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   limepail: [{ node: 'c7.ex.limepail' }],
   scaffold: [{ node: 'c7.ex.scaffold' }],
   paka: [
+    // At dawn only the ginger cat is out, beside Rashid's empty bench.
+    { when: { has: ['c7.dawn'], not: ['c7.complete'] }, node: 'c7.dawn.bench' },
+    { when: { has: ['c7.complete'] }, node: 'c7.dawn.cat' },
     { when: { not: ['c7.cat.one'] }, node: 'c7.ex.cat.a' },
     { when: { has: ['c7.cat.one'], not: ['c7.cat.two'] }, node: 'c7.ex.cat.b' },
     { node: 'c7.ex.cat.c' },
@@ -1411,7 +1216,10 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   tree: [{ map: 'zanzibar', node: 'c7.ex.tree' }],
   signpost: [{ map: 'zanzibar', node: 'c7.ex.sign' }],
-  pierdeck: [{ map: 'zanzibar', node: 'c7.ex.jetty' }],
+  pierdeck: [
+    { map: 'zanzibar', when: { has: ['c7.complete'] }, node: 'c7.dawn.jetty' },
+    { map: 'zanzibar', node: 'c7.ex.jetty' },
+  ],
   table: [
     { map: 'zanzibar', when: { has: ['c7.met.bakari'], not: ['c7.seen.pilau'] }, node: 'c7.ex.pilaupot' },
     { map: 'zanzibar', node: 'c7.ex.table' },
