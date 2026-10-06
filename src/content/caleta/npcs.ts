@@ -766,6 +766,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.rios.goodbyes': {
     lines: [
       { who: 'Capitana Ríos', text: 'Good answer. Take the evening for it.' },
+      { text: 'You make the rounds: a nod from Petro over the pots, a wave from Marisol, Félix pretending not to watch.' },
     ],
     next: 'mar.rios.accept',
   },

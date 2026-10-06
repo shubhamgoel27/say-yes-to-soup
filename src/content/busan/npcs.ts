@@ -28,9 +28,11 @@ export const BUSAN_NPCS: NpcDef[] = [
       { when: { has: ['c5.sunhee2', 'c5.met.mija'], not: ['c5.deom'] }, node: 'c5.sunhee.deom' },
       // Once the extra fish has made you a regular, the stall talks about the
       // lane's own business, which once included a foreigner in a queue.
-      { when: { has: ['c5.deom'], not: ['c5.her'] }, node: 'c5.sunhee.her' },
       // The berth is stamped: the next visit is the goodbye, at first light.
+      // It outranks the old story; a stall in the auction rush has no time
+      // for one.
       { when: { has: ['c5.complete'], not: ['c5.bye'] }, node: 'c5.sunhee.bye' },
+      { when: { has: ['c5.deom'], not: ['c5.her'] }, node: 'c5.sunhee.her' },
       { node: 'c5.sunhee.idle' },
     ],
   },

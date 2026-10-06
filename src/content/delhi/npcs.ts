@@ -443,7 +443,7 @@ export const DELHI_NODES: NodeMap = {
   'c11.cook.finish': {
     lines: [
       { text: 'Aloo, mooli, rabri. The last goes to a porter who has eaten here thirty years. He bites, and stops talking entirely.' },
-      { who: 'Kamla Chachi', text: 'You hear that? Nothing. In this gali, silence is the trophy. When Sethji asks nothing, tell him Kamla says you can feed people.' },
+      { who: 'Kamla Chachi', text: 'You hear that? Nothing. In this gali, silence is the trophy. If Sethji asks, tell him Kamla says you can feed people.' },
     ],
     effects: ['clear:c11.cook.start', 'set:c11.cook.done'],
   },
@@ -451,14 +451,14 @@ export const DELHI_NODES: NodeMap = {
   // the piece that always goes to Sheru; today it goes to you.
   'c11.kamla.blessing': {
     lines: [
-      { text: 'She is packing before you reach the counter: paranthas in newspaper, mango pickle in a jar.' },
+      { text: 'Your bundle is already packed on the counter: paranthas in newspaper, mango pickle in a jar.' },
       { text: 'She never stops rolling. She tears the crisp edge off the next parantha, the piece that is always Sheru\'s, and presses it into your palm.' },
       { who: 'Kamla Chachi', text: 'Bundle for the train, pickle for the ship, edge for now. Eat it hot, beta. NEXT!' },
     ],
     effects: ['set:c11.complete'],
   },
   'c11.kamla.after': {
-    lines: [{ who: 'Kamla Chachi', text: 'Eat on the train, eat on the ship, and write when you land. One line is enough; cooks read between lines.' }],
+    lines: [{ who: 'Kamla Chachi', text: 'Eat on the train, eat on the ship, and write when you land. One line is enough; a cook can taste the rest.' }],
   },
   'c11.kamla.idle': {
     lines: [{ who: 'Kamla Chachi', text: 'Sixty-one years this wrist, and it still argues with the rolling pin every morning. Sit, beta, watch it win.' }],

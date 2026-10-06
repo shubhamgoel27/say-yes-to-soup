@@ -416,7 +416,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.dawn.bench': {
     lines: [
       { text: 'First light. Every door on the lane is shut, and the baraza is empty.' },
-      { text: 'At Rashid’s end of the bench the ginger cat sleeps on a folded kanga. You slide it out; she allows it.' },
+      { text: 'At Rashid’s end of the bench the ginger cat sleeps on a folded kanga left for you. You slide it out; she allows it.' },
       { text: 'Along the hem: Haraka haraka haina baraka. Hurry, hurry has no blessing.' },
     ],
     effects: ['set:c7.complete', 'journal:words.haraka'],

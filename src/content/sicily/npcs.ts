@@ -366,7 +366,7 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'Fruit, coffee, a sweet. The pranzo does not end; it widens.' },
       { who: 'Nonna Concetta', text: 'Sunday is a roll call, picciriddu. Everyone answers, even the dead, even the ones in Torino.' },
-      { text: 'Later, Nani’s entry on this page stops mid sentence. The rest is just paper.' },
+      { text: 'Later, Nani’s entry on this page stops mid-sentence. The rest is just paper.' },
     ],
     effects: ['set:c8.pranzo', 'journal:customs.pranzo', 'journal:words.picciriddu'],
   },
@@ -991,7 +991,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.depart.horn': {
     lines: [
-      { text: 'The ship’s horn lands on all of them at once, one long note that ends every argument on the coast mid sentence.' },
+      { text: 'The ship’s horn lands on all of them at once, one long note that ends every argument on the coast mid-sentence.' },
       { text: 'Alfio shouts something from the quay, both hands cupped. The horn takes every word.' },
       { text: 'The faraglioni slide past. Behind you, very small, the town is arguing again.' },
     ],

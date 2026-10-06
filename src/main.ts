@@ -4270,7 +4270,7 @@ function installCheats() {
    * soup.go() standing in a world no player could reach.
    */
   const CARRY: Record<number, { set?: string[]; clear?: string[] }> = {
-    1: { set: ['pallay.done', 'keepsake.band', 'paca.moved'] },
+    1: { set: ['pallay.done', 'keepsake.band', 'paca.moved', 'her.zoila'] },
     3: { set: ['joseph.letter'] },
     6: { set: ['c6.letter.delivered'], clear: ['joseph.letter'] },
   };
