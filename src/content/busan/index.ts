@@ -86,6 +86,6 @@ export const CHAPTER: ChapterDef = {
   arrival: { map: 'busan', node: 'c5.arrive', flag: 'c5.arrived' },
   completion: {
     flag: 'c5.complete',
-    toasts: ['✦ the lane vouches for you', 'the Malabar Star loads at dusk'],
+    toasts: ['✦ berth: one', 'the Malabar Star sails on the morning tide'],
   },
 };

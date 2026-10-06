@@ -13,7 +13,7 @@ export const RECALL: RecallManifest = {
   ],
   plants: [
     'c6.arrived', // earlier task lists hand over once you are ashore
-    'c6.letter.delivered', // the village vouches; later chapters may remember
+    'c6.letter.delivered', // the letter reached her; later chapters may remember
     'c6.complete',
     'photo.c6.jetty', // Chasca's monsoon photograph, paid off in the Return
     'page.words.chaya', // Zanzibar's chai and Sicily's granita mornings can nod to it
