@@ -557,10 +557,20 @@ wobbles become tips for the next card. Left: remaining Andes fallback lines
 
 Brief: scratchpad/polish/BRIEF.md. Honest review put the game at 7.5/10; four gaps.
 
-- [ ] A1-A4 Less reading: cut ~1/3 of dialogue per chapter (Delhi ~40%), explanation -> action
-- [ ] A2/A3/A4 Endings: Busan no ceremony (the deom is the goodbye), Zanzibar quiet dawn
+- [x] A1-A4 Less reading: cut ~1/3 of dialogue per chapter (Delhi ~40%), explanation -> action
+- [x] A2/A3/A4 Endings: Busan no ceremony (the deom is the goodbye), Zanzibar quiet dawn
       departure, Sicily goodbye collapses into an argument cut off by the horn; no "holds your
       face"/"vouches for you" anywhere
-- [ ] B Story minigames reward attention, not mashing (masher vs attentive bots, all 23 games)
-- [ ] C Art: region-true NPC silhouettes (src/art/looks.ts), continuous ground, softer bloom
-- [ ] Merge, full gate, verification playthrough, ship
+- [x] B Story minigames reward attention, not mashing (masher vs attentive bots, all 23 games)
+- [x] C Art: region-true NPC silhouettes (src/art/looks.ts), continuous ground, softer bloom
+- [x] Merge, full gate, verification playthrough, ship
+
+### Review
+Six worktree agents, then three read-only verifiers, then two fix rounds. Shipped f14041b.
+Dialogue 59,138 -> 40,502 words (-31.5%; Delhi -40%). New endings: Busan (the deom is the
+goodbye), Zanzibar (quiet dawn, kanga on the bench), Sicily (send-off argument cut by the horn),
+plus a place-specific gesture in every other chapter. Story minigames: mashing is slower than
+careful play in every game (mashaudit), no-fail kept. Art: ~100 NPCs in region-true everyday
+dress (garb.ts, looks.ts), continuous ground seams, soft bloom; perf at 6x throttle: chunk bake
+max 1.1ms, frame gap p95 ~9ms. 226/226 tests. Known pre-existing, not fixed: square water
+edges in Kerala, square shade box behind haystacks.
