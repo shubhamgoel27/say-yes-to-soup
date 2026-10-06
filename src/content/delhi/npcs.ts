@@ -72,6 +72,9 @@ export const DELHI_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c11.met.jog'] }, node: 'c11.jog.first' },
+      // Head covered first, then the row: both are the player's own doing.
+      { when: { has: ['c11.met.jog'], not: ['c11.rumal'] }, node: 'c11.jog.basket' },
+      { when: { has: ['c11.rumal'], not: ['c11.jog.fed'] }, node: 'c11.jog.sit' },
       { when: { has: ['errand.seva-atta'], not: ['c11.seva.done'] }, node: 'c11.jog.seva' },
       { when: { has: ['c11.seva.done'], not: ['c11.jog2'] }, node: 'c11.jog.tuesday' },
       { node: 'c11.jog.idle' },
@@ -279,14 +282,13 @@ export const DELHI_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c11.ex.wall': {
-    lines: [{ text: 'Thin old bricks under lime plaster, laid when the canal still ran. The newest paint is only the top page.' }],
+    lines: [{ text: 'Thin old bricks under lime plaster. The newest paint is only the top page.' }],
   },
   // ---------------- arrival ----------------
   'c11.arrive': {
     lines: [
-      { text: 'Three days north by rail: chai at every platform, languages changing station by station.' },
-      { text: 'Then a walled city swallows the train whole. A rickshaw threads lanes that narrow like an argument and open like a laugh.' },
-      { text: 'It stops in a chowk under a golden dome. The driver refuses your coin twice, takes it the third time, and blesses your journey.' },
+      { text: 'Three days north by rail. Then a walled city swallows the train whole.' },
+      { text: 'The rickshaw stops in a chowk under a golden dome. The driver refuses your coin twice, takes it the third time, and blesses your journey.' },
     ],
     effects: ['set:c11.arrived'],
   },
@@ -294,16 +296,14 @@ export const DELHI_NODES: NodeMap = {
   // ---------------- Bantu, the first friend ----------------
   'c11.bantu.first': {
     lines: [
-      { who: 'Bantu', text: 'New face! Full backpack, zero idea where to look first. Scene kya hai, what is your scene? Wait, do not tell me: traveler, hungry, lost.' },
-      { who: 'Bantu', text: 'I am Bantu. My uncle owns the rickshaw; I own the knowledge. This kucha is mine, and I will lend it to you.' },
-      { text: 'His rickshaw is a jugaad miracle: parts from three machines, one wedding\'s tinsel, and a bell that outranks the brakes.' },
-      { who: 'Bantu', text: 'Rule one: tension mat lo, do not stress. Rule two: every good door here only looks closed. Chalo!' },
+      { who: 'Bantu', text: 'New face! Full backpack, zero idea where to look. Wait, do not tell me: traveler, hungry, lost.' },
+      { who: 'Bantu', text: 'I am Bantu. My uncle owns the rickshaw; I own the knowledge. Rule one: tension mat lo, do not stress.' },
     ],
-    effects: ['set:c11.met.bantu', 'journal:people.bantu', 'journal:words.jugaad'],
+    effects: ['set:c11.met.bantu', 'journal:people.bantu'],
   },
   'c11.bantu.bhaiya': {
     lines: [
-      { who: 'Bantu', text: 'Watch me work. Oye Rafiq bhaiya, the tire! Meena didi, your cards came! See? Bhaiya, didi. Brother, sister. Everyone, all day.' },
+      { who: 'Bantu', text: 'Watch me work. Oye Rafiq bhaiya, the tire! Meena didi, your cards came! Bhaiya, didi. Everyone, all day.' },
     ],
     choices: [
       {
@@ -316,33 +316,30 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.bantu.chetta': {
     lines: [
-      { who: 'Bantu', text: 'AY. You came pre-installed! Chetta, bhaiya, same software, different language. Say it and watch the whole gali soften.' },
-      { who: 'Bantu', text: 'But note, I am Bantu bhaiya only until you meet my uncle. Then he is bhaiya and I am oye Bantu. The system has ranks.' },
-      { who: 'Bantu', text: 'Now, chalo. Kamla Chachi first. Chachi means auntie, and auntie means you are about to be fed beyond your legal capacity.' },
+      { who: 'Bantu', text: 'AY. You came pre-installed! Chetta, bhaiya: same software, different language.' },
+      { who: 'Bantu', text: 'Now chalo. Kamla Chachi first. Chachi means auntie, and auntie means you are about to be fed beyond your legal capacity.' },
     ],
     effects: ['set:c11.bhaiya', 'journal:words.bhaiya'],
   },
   'c11.bantu.bhaiya2': {
     lines: [
-      { who: 'Bantu', text: 'Because it works! Call a stranger sir and he checks his wallet. Call him bhaiya and he checks if you have eaten. Brother, sister. Free to use.' },
-      { who: 'Bantu', text: 'Try it. Bhaiya for men, didi for women, ji on the end for extra polish.' },
-      { who: 'Bantu', text: 'Now, chalo. Kamla Chachi first. Chachi means auntie, and auntie means you are about to be fed beyond your legal capacity.' },
+      { who: 'Bantu', text: 'Because it works! Call a stranger sir and he checks his wallet. Call him bhaiya and he checks if you have eaten.' },
+      { who: 'Bantu', text: 'Now chalo. Kamla Chachi first. Chachi means auntie, and auntie means you are about to be fed beyond your legal capacity.' },
     ],
     effects: ['set:c11.bhaiya', 'journal:words.bhaiya'],
   },
   'c11.bantu.nashta': {
     lines: [
-      { who: 'Bantu', text: 'Nashta time. Breakfast. Do not argue, the city has already decided.' },
-      { text: 'He orders bedmi puri and aloo sabzi for two without asking, then nagori halwa "for balance". The stall opens before seven; it is already a parliament.' },
-      { who: 'Bantu', text: 'Bas paanch minute, I told my uncle an hour ago. Five minutes is a unit, not a promise. Abhi works the same.' },
-      { text: 'The sabzi is spiced for people with a full day of arguing ahead of them. Around you, the day\'s arguing has begun.' },
+      { who: 'Bantu', text: 'Nashta time. Do not argue; the city has already decided.' },
+      { text: 'Bedmi puri and aloo sabzi for two, ordered without asking. The stall is already a parliament.' },
+      { who: 'Bantu', text: 'I told my uncle I would be back abhi, right now. He will see me at lunch. He knows.' },
     ],
     effects: ['set:c11.nashta', 'journal:dishes.bedmi', 'journal:words.abhi'],
   },
   'c11.bantu.rain': {
     lines: [
-      { who: 'Bantu', text: 'FIRST RAIN! Did you see me? I did one full lap of the chowk standing on the pedals. My uncle saw. Worth it.' },
-      { who: 'Bantu', text: 'Now everything smells correct and the puddles belong to the kids. City rule. Adults may look, only we may jump.' },
+      { who: 'Bantu', text: 'FIRST RAIN! I did one full lap of the chowk standing on the pedals. My uncle saw. Worth it.' },
+      { who: 'Bantu', text: 'The puddles belong to the kids now. City rule: adults may look, only we may jump.' },
     ],
     effects: ['set:c11.bantu.rained'],
   },
@@ -356,23 +353,18 @@ export const DELHI_NODES: NodeMap = {
     ],
   },
   'c11.bantu.stay': {
-    lines: [
-      { who: 'Bantu', text: 'Correct answer also! The train runs daily, the mohalla runs always. Tension mat lo. I will keep the seat dusted.' },
-    ],
+    lines: [{ who: 'Bantu', text: 'Correct answer also! The train runs daily; the mohalla runs always. I will keep the seat dusted.' }],
   },
   'c11.depart': {
     lines: [
-      { text: 'Last langar at dawn: dal, quiet, the floor level as ever. Kamla\'s parantha bundle rides on top of your pack, mango pickle wedged like a passport.' },
-      { text: 'Bantu weaves through the waking lanes, ringing the bell at friends, which is everyone. At the station he refuses your coin twice and cries once.' },
-      { text: 'Rail south through monsoon country. At the Bombay docks, Sethji\'s chit opens a berth like a spoken password; his cousin\'s firm loads for Zanzibar.' },
-      { text: 'The ship swings west onto the old dhow road. In your pocket: bottled rain, a clove order, a winter IOU.' },
+      { text: 'Last langar at dawn, the floor level as ever. Kamla\'s bundle rides on your pack.' },
+      { text: 'Bantu rings his bell at everyone on the way to the station. He refuses your coin twice and cries once.' },
+      { text: 'In Bombay the chit opens a berth like a password. The ship swings west onto the old dhow road.' },
     ],
     effects: ['set:c11.complete', 'travel:zanzibar'],
   },
   'c11.bantu.idle': {
-    lines: [
-      { who: 'Bantu', text: 'Aur batao! Tell me more. Where did you go, what did you eat, who fed you extra? These are the three news categories of this kucha.' },
-    ],
+    lines: [{ who: 'Bantu', text: 'Aur batao! Tell me more. Where did you go, who fed you extra? Those are the news categories here.' }],
     effects: ['journal:words.aurbatao'],
     choices: [
       { text: '"Which way was I headed, bhaiya?"', goto: 'c11.bantu.thread' },
@@ -380,28 +372,24 @@ export const DELHI_NODES: NodeMap = {
     ],
   },
   'c11.bantu.thread': {
-    lines: [
-      { who: 'Bantu', text: 'Lost? In MY mohalla? Impossible; the mohalla is never lost, only you. Hold out the wrist, the aunty-network knows.' },
-    ],
+    lines: [{ who: 'Bantu', text: 'Lost? In MY mohalla? The mohalla is never lost, only you. Hold out the wrist.' }],
     effects: ['thread:'],
   },
   'c11.bantu.threadNo': {
-    lines: [{ who: 'Bantu', text: 'Correct choice. News first, destinations later. That is journalism.' }],
+    lines: [{ who: 'Bantu', text: 'Correct. News first, destinations later. That is journalism.' }],
   },
 
   // ---------------- Kamla Chachi, the griddle ----------------
   'c11.kamla.first': {
     lines: [
       { text: 'The tawa corner smells like the reason the lane exists. A woman with forearms of authority already has a plate moving.' },
-      { who: 'Kamla Chachi', text: 'Haan ji, sit. The gali feeds first and asks later. Aloo parantha, and the sides are the constitution.' },
-      { text: 'Crisp shell, soft heart, four sides in formation: banana-tamarind chutney, mint chutney, aloo-methi, pickle. You stop planning your day.' },
-      { who: 'Kamla Chachi', text: 'My great-grandfather fried on this spot. Four generations, one tawa, no shortcuts. Now eat; questions digest better afterward.' },
+      { who: 'Kamla Chachi', text: 'Haan ji, sit. The gali feeds first and asks later. Aloo parantha, four sides, no substitutions. Eat; questions digest better afterward.' },
     ],
     effects: ['set:c11.met.kamla', 'journal:people.kamla', 'journal:dishes.parantha'],
   },
   'c11.kamla.dance': {
     lines: [
-      { text: 'Your plate is somehow full again. You do not remember agreeing to this. Kamla watches you with the calm of a chess player three moves ahead.' },
+      { text: 'Your plate is somehow full again. You do not remember agreeing to this.' },
       { who: 'Kamla Chachi', text: 'Thoda aur lo. Take a little more.' },
     ],
     choices: [
@@ -413,19 +401,23 @@ export const DELHI_NODES: NodeMap = {
       { text: 'Refuse politely; you are genuinely full', goto: 'c11.kamla.dance2' },
     ],
   },
+  // The refusal is done, not described: the pat is the player's own move.
   'c11.kamla.mathi': {
     lines: [
-      { who: 'Kamla Chachi', text: 'Mathi! Ha! A licensed refuser. Here the word is pet bhar gaya, my stomach is full, said with the hand flat on the stomach. Show me.' },
-      { text: 'You perform it: the phrase, the pat, the face of a person at peace. Kamla nods like an examiner, deeply satisfied.' },
-      { who: 'Kamla Chachi', text: 'Perfect form. In Kerala that ends it in three rounds. Here the na means convince me, so: one jalebi. It is already on your plate. Dance finished.' },
+      { who: 'Kamla Chachi', text: 'Mathi! Ha! A licensed refuser. Here the word is pet bhar gaya, stomach full, with the hand flat on it. Show me.' },
     ],
-    effects: ['set:c11.dance', 'journal:customs.thodaaur', 'journal:dishes.jalebi'],
+    choices: [{ text: 'Hand flat on your stomach: "Pet bhar gaya."', goto: 'c11.kamla.jalebi' }],
   },
   'c11.kamla.dance2': {
     lines: [
       { who: 'Kamla Chachi', text: 'No? Beta, the first no is a greeting, the second is manners. Say pet bhar gaya, stomach full, hand flat on it, so.' },
-      { text: 'You perform it: the phrase, the pat, the face of a person at peace. Kamla nods like an examiner, deeply satisfied.' },
-      { who: 'Kamla Chachi', text: 'Textbook. And because even a perfect na means convince me: one jalebi. It is already on your plate. Now the dance is finished.' },
+    ],
+    choices: [{ text: 'Hand flat on your stomach: "Pet bhar gaya."', goto: 'c11.kamla.jalebi' }],
+  },
+  'c11.kamla.jalebi': {
+    lines: [
+      { text: 'Kamla nods like an examiner, deeply satisfied.' },
+      { who: 'Kamla Chachi', text: 'Textbook. And because even a perfect na means convince me: one jalebi. It is already on your plate.' },
     ],
     effects: ['set:c11.dance', 'journal:customs.thodaaur', 'journal:dishes.jalebi'],
   },
@@ -433,7 +425,7 @@ export const DELHI_NODES: NodeMap = {
   // heard forty times, instead of stacking into the greeting.
   'c11.kamla.cookoffer': {
     lines: [
-      { who: 'Kamla Chachi', text: 'Haan ji, you eat with attention. That is half the training; the pin, the stuffing, and the flip are the other half.' },
+      { who: 'Kamla Chachi', text: 'Haan ji, you eat with attention. That is half the training; the pin and the flip are the other half.' },
     ],
     effects: ['journal:words.haanji'],
     choices: [
@@ -442,76 +434,88 @@ export const DELHI_NODES: NodeMap = {
     ],
   },
   'c11.kamla.cookgo': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'Wash the hands, tie the apron, respect the ghee. Aloo first; everyone begins at aloo. The tawa will speak, and you will learn its grammar.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'Wash the hands, respect the ghee. Aloo first; everyone begins at aloo.' }],
     effects: ['set:c11.cook.start'],
   },
   'c11.kamla.cooklater': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'The tawa holds no grudges, beta. It has outwaited four generations of cold feet.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'The tawa holds no grudges, beta. It has outwaited four generations of cold feet.' }],
   },
   'c11.cook.finish': {
     lines: [
-      { text: 'Three paranthas: aloo, mooli, rabri. The last one goes to a porter who has eaten here for thirty years. He takes a bite and stops talking entirely.' },
-      { who: 'Kamla Chachi', text: 'You hear that? Nothing. In this gali, silence is the trophy; we melt it down from compliments.' },
-      { who: 'Kamla Chachi', text: 'When Sethji asks, and he will ask nothing, tell him Kamla says you can feed people. He knows what my sentences weigh.' },
+      { text: 'Aloo, mooli, rabri. The last goes to a porter who has eaten here thirty years. He bites, and stops talking entirely.' },
+      { who: 'Kamla Chachi', text: 'You hear that? Nothing. In this gali, silence is the trophy. When Sethji asks nothing, tell him Kamla says you can feed people.' },
     ],
     effects: ['clear:c11.cook.start', 'set:c11.cook.done'],
   },
+  // The goodbye happens at the tawa, without the tawa stopping. The edge is
+  // the piece that always goes to Sheru; today it goes to you.
   'c11.kamla.blessing': {
     lines: [
-      { text: 'She is packing before you reach the counter: paranthas in paper, mango pickle in a jar with a lid that has survived three owners.' },
-      { who: 'Kamla Chachi', text: 'Flew for the kucha in the rain, fed my customers, served at the langar. Beta, you arrived weeks ago; you are only now noticing.' },
-      { who: 'Kamla Chachi', text: 'The bundle is for the train, the pickle for the ship. The gali feeds first, even when it is you leaving.' },
-      { text: 'She holds your face in both hands, exactly the way Mariamma did, one ocean and half a country ago.' },
+      { text: 'She is packing before you reach the counter: paranthas in newspaper, mango pickle in a jar.' },
+      { text: 'She never stops rolling. She tears the crisp edge off the next parantha, the piece that is always Sheru\'s, and presses it into your palm.' },
+      { who: 'Kamla Chachi', text: 'Bundle for the train, pickle for the ship, edge for now. Eat it hot, beta. NEXT!' },
     ],
     effects: ['set:c11.complete'],
   },
   'c11.kamla.after': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'Eat on the train, eat on the ship, and write when you land. One line is enough; mothers and cooks read between lines professionally.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'Eat on the train, eat on the ship, and write when you land. One line is enough; cooks read between lines.' }],
   },
   'c11.kamla.idle': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'Sixty-one years this wrist, and it still argues with the rolling pin every morning. Sit, beta, watch it win.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'Sixty-one years this wrist, and it still argues with the rolling pin every morning. Sit, beta, watch it win.' }],
   },
   'c11.kamla.cookagain': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'The queue is the queue and my wrist is sixty-one years old. Your hands know the pin now. Come, stand where you stood.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'The queue is the queue. Your hands know the pin now; come, stand where you stood.' }],
     choices: [
       { text: 'Tie the apron again', when: { has: ['c11.cook.done'] }, goto: 'c11.kamla.cookReplay' },
       { text: 'Another day; the gali is still teaching', goto: 'c11.kamla.idle' },
     ],
   },
   'c11.kamla.cookReplay': {
-    lines: [
-      { who: 'Kamla Chachi', text: 'Nothing to prove today. Only the pin, the ghee, and the good noise. Burn one if you like; Sheru has been extremely patient.' },
-    ],
+    lines: [{ who: 'Kamla Chachi', text: 'Nothing to prove today. Burn one if you like; Sheru has been extremely patient.' }],
     effects: ['set:replay.mode', 'set:c11.cook.start'],
   },
 
   // ---------------- the langar (scripted, unscored, sacred) ----------------
+  // You cover your own head and sit yourself down: the basket and the row
+  // are things you do, not things you are told about.
   'c11.jog.first': {
     lines: [
       { text: 'The hall is one floor and one smell: dal, ghee, woodsmoke. A mountain of a man, floury to the elbows, meets you at the shoe rack.' },
-      { who: 'Joginder Singh', text: 'Welcome, welcome. Shoes there, beta. And the head stays covered; take a rumal from the basket, any color, they all fit everyone.' },
-      { text: 'You tie one on. He straightens it with two fingers, the way you fix a nephew\'s collar, and waves you toward the striped rows of matting.' },
-      { who: 'Joginder Singh', text: 'Everyone sits in pangat, the rows, all on one floor. No high seat, no low seat, no first, no last. Sit; the dal finds you.' },
+      { who: 'Joginder Singh', text: 'Welcome, welcome. Shoes there, beta, and the head stays covered. Rumals in the basket; they all fit everyone.' },
     ],
-    effects: ['set:c11.met.jog', 'journal:people.joginder', 'journal:customs.langar'],
-    next: 'c11.jog.meal',
+    effects: ['set:c11.met.jog', 'journal:people.joginder'],
+  },
+  'c11.jog.basket': {
+    lines: [{ who: 'Joginder Singh', text: 'The basket by the door, beta. Any color.' }],
+  },
+  'c11.jog.tie': {
+    lines: [
+      { text: 'You tie one on, crooked. Joginder straightens it with two fingers, the way you fix a nephew\'s collar.' },
+      { who: 'Joginder Singh', text: 'Pangat, the rows: everyone on one floor. No high seat, no first, no last.' },
+    ],
+    effects: ['set:c11.rumal'],
+    choices: [
+      { text: 'Sit down in the row', goto: 'c11.jog.meal' },
+      { text: 'Look around the hall first', goto: 'c11.jog.later' },
+    ],
+  },
+  'c11.jog.later': {
+    lines: [{ who: 'Joginder Singh', text: 'Take your time. The dal finds you wherever you sit.' }],
+  },
+  'c11.jog.sit': {
+    lines: [{ who: 'Joginder Singh', text: 'Sit, beta. The dal finds you.' }],
+    choices: [
+      { text: 'Sit down in the row', goto: 'c11.jog.meal' },
+      { text: 'Not yet', goto: 'c11.jog.later' },
+    ],
   },
   'c11.jog.meal': {
     lines: [
-      { text: 'You sit between a porter and a man whose shoes outside cost more than the porter\'s month. The same ladle serves all three of you.' },
-      { who: 'Joginder Singh', text: 'Both hands, beta, cupped, so. Receiving with two hands is the whole theology; the rest is footnotes.' },
-      { text: 'Dal, roti, quiet. This place stands where the ninth Guru gave his head for another community\'s right to pray. He says it once, plainly, and ladles on.' },
+      { text: 'You sit between a porter and a man whose shoes cost the porter\'s month. One ladle serves you all.' },
+      { who: 'Joginder Singh', text: 'Both hands, beta, cupped, so. Receiving with two hands is the whole theology.' },
+      { text: 'Dal, roti, quiet. This place stands where the ninth Guru gave his head for another faith\'s right to pray.' },
     ],
+    effects: ['set:c11.jog.fed', 'journal:customs.langar'],
     choices: [
       { text: 'Offer money for the meal', goto: 'c11.jog.money' },
       { text: 'Ask how you can possibly repay this', goto: 'c11.jog.hands' },
@@ -519,16 +523,14 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.jog.money': {
     lines: [
-      { text: 'You hold out folded notes. Joginder regards them like a child\'s drawing of a horse: love, no intention of using it.' },
-      { who: 'Joginder Singh', text: 'Not coins, beta. Hands. The langar has no bill because it has no customers; it has only family who arrived hungry.' },
-      { who: 'Joginder Singh', text: 'Come Tuesday. Sleeves up, atta ready. You will roll rotis, and we will call the account settled that was never open.' },
+      { text: 'You hold out folded notes. He folds them back into your hand like a small confused bird.' },
+      { who: 'Joginder Singh', text: 'Not coins, beta. Hands. Come Tuesday, sleeves up, atta ready, and we will settle the account that was never open.' },
     ],
     effects: ['errand:seva-atta', 'set:errand.seva-atta'],
   },
   'c11.jog.hands': {
     lines: [
-      { who: 'Joginder Singh', text: 'Ah, the right question, asked in the right order. The answer is seva: service. Anyone may serve here; no skill required, which is the point.' },
-      { who: 'Joginder Singh', text: 'Come Tuesday. Sleeves up, atta ready. Knead, roll, wipe, stack. The kitchen will absorb you like it absorbs everything.' },
+      { who: 'Joginder Singh', text: 'The right question, in the right order. The answer is seva: service. Come Tuesday, sleeves up. No skill required; that is the point.' },
     ],
     effects: ['errand:seva-atta', 'set:errand.seva-atta'],
   },
@@ -536,7 +538,7 @@ export const DELHI_NODES: NodeMap = {
   // teaching, and the ayni contrast lives in the journal's stitched margin.
   'c11.jog.seva': {
     lines: [
-      { text: 'Tuesday. The kitchen is a weather system: steam, flour, forty wrists. You knead until your arms complain, then roll rotis, badly, then less badly.' },
+      { text: 'Tuesday. Steam, flour, forty wrists. You roll rotis badly, then less badly.' },
       { who: 'Joginder Singh', text: 'Round is a direction, not a requirement. The deg does not grade; it feeds.' },
       { text: 'You wipe the floor where five hundred people sat. It takes an hour and does not feel like one.' },
     ],
@@ -544,31 +546,27 @@ export const DELHI_NODES: NodeMap = {
     next: 'c11.jog.soul',
   },
   'c11.jog.soul': {
-    lines: [
-      { who: 'Joginder Singh', text: 'Tell Sethji the langar says your hands are true; he weighs my sentences too. The rest, your wrists already know.' },
-    ],
+    lines: [{ who: 'Joginder Singh', text: 'Tell Sethji the langar says your hands are true. He weighs my sentences too.' }],
   },
   // Second visit after the seva: the review, then the Chandni pointer. The
   // moonlight etymology itself waits in the chowk brick, where the name
   // lives; Joginder only points your eye at the place (gate: c11.jog2).
   'c11.jog.tuesday': {
     lines: [
-      { who: 'Joginder Singh', text: 'The rotis you rolled were eaten before they cooled, beta. That is the only review this kitchen publishes.' },
-      { who: 'Joginder Singh', text: 'When Bantu tells you Chandni Chowk means silver street, go ask the bricks of the chowk yourself. Correct him gently; he is sixteen.' },
+      { who: 'Joginder Singh', text: 'Your rotis were eaten before they cooled. That is the only review this kitchen publishes.' },
+      { who: 'Joginder Singh', text: 'When Bantu tells you Chandni Chowk means silver street, go and ask the chowk\'s bricks. Correct him gently; he is sixteen.' },
     ],
     effects: ['set:c11.jog2'],
   },
   'c11.jog.idle': {
-    lines: [
-      { who: 'Joginder Singh', text: 'Sit whenever the world gets tall, beta; this room stays low on purpose.' },
-    ],
+    lines: [{ who: 'Joginder Singh', text: 'Sit whenever the world gets tall, beta; this room stays low on purpose.' }],
   },
 
   // ---------------- Yusuf Miyan, the rooftop ----------------
   'c11.yusuf.first': {
     lines: [
-      { text: 'The stair delivers you into sky. Domes to the east, a red wall northward, wires, tanks, laundry, and a man scattering grain like punctuation.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Hm. A ground person. The ground is that way, down the stairs you came up.' },
+      { text: 'The stair delivers you into sky: domes, wires, laundry, and a man scattering grain like punctuation.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Hm. A ground person. The ground is that way, down the stairs.' },
     ],
     choices: [
       { text: 'Stand exactly where he points', goto: 'c11.yusuf.first.stand' },
@@ -577,31 +575,53 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.yusuf.first.stand': {
     lines: [
-      { text: 'You stand where he pointed: the top stair. A pigeon lands on his shoulder and inspects you with one orange eye.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Hm. Obedient. You may stand there. Not there. There. The roofs are a country, and you have no papers yet.' },
+      { text: 'You stand on the top stair. A pigeon lands on his shoulder and inspects you with one orange eye.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Hm. Obedient. You may stand there. The roofs are a country, and you have no papers yet.' },
     ],
     effects: ['set:c11.met.yusuf', 'journal:people.yusuf'],
   },
   'c11.yusuf.first.birds': {
     lines: [
-      { text: 'A pigeon lands on his shoulder and inspects you with one orange eye. Yusuf makes a sound, half whistle, half word, and the bird looks away, satisfied.' },
-      { who: 'Ustad Yusuf Miyan', text: 'They have names you have not earned yet. You may stand there. Not there. There. The roofs are a country; you have no papers.' },
+      { text: 'A pigeon lands on his shoulder. He makes a sound, half whistle, half word, and the bird looks away, satisfied.' },
+      { who: 'Ustad Yusuf Miyan', text: 'They have names you have not earned yet. The roofs are a country; you have no papers.' },
     ],
     effects: ['set:c11.met.yusuf', 'journal:people.yusuf'],
   },
+  // The names are a recital, so the player recites them.
   'c11.yusuf.names': {
     lines: [
-      { text: 'You come back. He pretends not to notice, which on this roof is a visa extension. The flock wheels once and settles.' },
-      { who: 'Ustad Yusuf Miyan', text: 'That one is Begum, she runs the coop. Sikandar, vain, watch his landings. Chandni, white one, my father named her line. Say them back.' },
-      { text: 'You say them back: Begum, Sikandar, Chandni. Begum ruffles at her name like a minister accepting protocol. Yusuf almost smiles; the wind reports it.' },
-      { who: 'Ustad Yusuf Miyan', text: 'No two roofs share a language; every keeper calls his birds in his own tongue. Mine came from my ustad, forty years dead. I answer him still.' },
+      { text: 'You come back. He pretends not to notice, which on this roof is a visa extension.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Begum runs the coop. Sikandar is vain; watch his landings. Chandni, the white one: my father named her line.' },
+    ],
+    next: 'c11.yusuf.names.say',
+  },
+  'c11.yusuf.names.say': {
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'Say them back.' }],
+    choices: [
+      { text: '"Begum, Sultan, Chandni."', goto: 'c11.yusuf.names.miss' },
+      { text: '"Begum, Sikandar, Chandni."', goto: 'c11.yusuf.names.ok' },
+      { text: '"Begum, Sikandar, and... the white one?"', goto: 'c11.yusuf.names.white' },
+    ],
+  },
+  'c11.yusuf.names.miss': {
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'Sultan is the neighbor\'s cat, and an enemy of this roof. Again.' }],
+    next: 'c11.yusuf.names.say',
+  },
+  'c11.yusuf.names.white': {
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The white one has a name older than you. Again.' }],
+    next: 'c11.yusuf.names.say',
+  },
+  'c11.yusuf.names.ok': {
+    lines: [
+      { text: 'Begum ruffles at her name like a minister accepting protocol. Yusuf almost smiles; the wind reports it.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Every keeper calls his birds in his own tongue. Mine came from my ustad, forty years dead.' },
     ],
     effects: ['set:c11.names', 'journal:customs.kabootar'],
   },
   'c11.yusuf.offer': {
     lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'You learned the names before asking for the sky. Correct order; most people arrive backwards. So: the patang.' },
-      { who: 'Ustad Yusuf Miyan', text: 'My dor is plain cotton; glass cuts birds and hands. The sky has enough blood in it already.' },
+      { who: 'Ustad Yusuf Miyan', text: 'You learned the names before asking for the sky. Correct order. So: the patang.' },
+      { who: 'Ustad Yusuf Miyan', text: 'My dor is plain cotton. Glass cuts birds and hands, and the sky has enough blood in it already.' },
     ],
     choices: [
       { text: 'Take the charkhi', goto: 'c11.yusuf.go' },
@@ -611,21 +631,16 @@ export const DELHI_NODES: NodeMap = {
   // No lecture before the sky: the panel's own weather teaches kheench and
   // dheel, and the first frayed dor teaches the one law about birds.
   'c11.yusuf.go': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The wind writes the sentence; you choose the punctuation. Make your mistakes with my paper: it is cheap, and the wind is free.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The wind writes the sentence; you choose the punctuation. Make your mistakes with my paper.' }],
     effects: ['set:c11.kite.start'],
   },
   'c11.yusuf.later': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'Good. Half of patangbazi is knowing when not to fly. You have mastered the easier half first.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'Good. Half of patangbazi is knowing when not to fly. You have mastered the easier half first.' }],
   },
   'c11.kite.flown': {
     lines: [
-      { text: 'The patang climbs like it remembered something urgent up there. A black kite crosses your line; saw on the taut, give on the gust, and then, release.' },
-      { text: 'WOH KATA! The cry comes from three roofs you cannot see. Somewhere two lanes over, a kid inherits a kingdom.' },
-      { who: 'Ustad Yusuf Miyan', text: 'You pulled through no birds and lost no temper. For a first blood, acceptable. The wind is nosy; it will want you again.' },
+      { text: 'The patang climbs like it remembered something urgent. A black kite crosses; you saw, and it goes. WOH KATA!' },
+      { who: 'Ustad Yusuf Miyan', text: 'No birds pulled, no temper lost. For a first flight, acceptable. The wind is nosy; it will want you again.' },
     ],
     effects: ['clear:c11.kite.start', 'set:c11.kite.done', 'journal:customs.patang', 'journal:words.wohkata'],
   },
@@ -633,9 +648,9 @@ export const DELHI_NODES: NodeMap = {
   // roofs do: by how badly somebody flew, and how much they enjoyed it.
   'c11.yusuf.her': {
     lines: [
-      { text: 'He winds dor back onto the charkhi, thumb over finger, watching the roofs rather than his hands. The flock mutters about the wind.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Acceptable hands. Better than the last foreigner who stood on that exact tile. Zoila madam, the rains of seventy-four.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Three days up here and she cut nobody. Not one string, and four of her own patangs gone down the wind.' },
+      { text: 'He winds dor back onto the charkhi, watching the roofs.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Acceptable hands. Better than the last foreigner on that exact tile. Zoila madam, the rains of seventy-four.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Three days up here and she cut nobody. Four of her own patangs gone down the wind.' },
     ],
     choices: [
       { text: '"Four kites gone. Was she upset?"', goto: 'c11.yusuf.her.ask' },
@@ -645,33 +660,26 @@ export const DELHI_NODES: NodeMap = {
   'c11.yusuf.her.ask': {
     lines: [
       { who: 'Ustad Yusuf Miyan', text: 'Every time the line went light she laughed loud enough that the neighbors came up to see who was winning. It was never her.' },
-      { who: 'Ustad Yusuf Miyan', text: 'My ustad was alive then and had no patience for bad hands. He let her back up the stairs on the second day and the third.' },
       { text: 'The charkhi keeps turning. Two lanes over a kite gets away from somebody, and a whole roof shouts about it.' },
     ],
     effects: ['set:c11.her', 'journal:her.delhi'],
   },
   'c11.yusuf.her.wind': {
-    lines: [
-      { text: 'You take a turn on the charkhi. He watches your thumb and approves by not commenting.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Every time the line went light she laughed loud enough that the neighbors came up to see who was winning. It was never her.' },
-      { who: 'Ustad Yusuf Miyan', text: 'My ustad was alive then and had no patience for bad hands. He let her back up the stairs on the second day and the third.' },
-      { text: 'The charkhi keeps turning. Two lanes over a kite gets away from somebody, and a whole roof shouts about it.' },
-    ],
-    effects: ['set:c11.her', 'journal:her.delhi'],
+    lines: [{ text: 'You take a turn on the charkhi. He watches your thumb and approves by not commenting.' }],
+    next: 'c11.yusuf.her.ask',
   },
   'c11.yusuf.begum': {
     lines: [
-      { text: 'You open your jacket. Begum steps out onto Yusuf\'s wrist with the dignity of a queen returning from unjust exile, splint and all.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Begum. Begum, Begum. Somebody\'s glass line, and my slow old eyes. Sushila ji splinted this wing?' },
-      { text: 'You nod. He is quiet for a while, making small sounds to the bird that are none of your business, and correctly so.' },
-      { who: 'Ustad Yusuf Miyan', text: 'Thirty years she has called my kites cruelty, and thirty years she has mended what cruel strings cut. Tell her the argument stands, and the tea too.' },
+      { text: 'You open your jacket. Begum steps onto Yusuf\'s wrist like a queen returning from unjust exile, splint and all.' },
+      { who: 'Ustad Yusuf Miyan', text: 'Begum, Begum. Somebody\'s glass line. Sushila ji splinted this?' },
+      { who: 'Ustad Yusuf Miyan', text: 'Thirty years she has called my kites cruelty, and mended what cruel strings cut. Tell her the argument stands, and the tea too.' },
     ],
     effects: ['errand.done', 'clear:errand.pigeon-home', 'set:c11.pigeon.home'],
   },
   'c11.yusuf.duel': {
     lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The rains have opened and the roofs are restless: tonight the kucha flies its tournament. Three rivals, rising wind, a storm queuing behind the fort.' },
-      { who: 'Ustad Yusuf Miyan', text: 'The flock is down early; tonight the sky belongs to paper. My hands are old and my roof needs a flyer. You.' },
+      { who: 'Ustad Yusuf Miyan', text: 'The rains have opened. Tonight the kucha flies its tournament: three rivals, and a storm queuing behind the fort.' },
+      { who: 'Ustad Yusuf Miyan', text: 'My hands are old and my roof needs a flyer. You.' },
     ],
     choices: [
       { text: 'Fly for the kucha', goto: 'c11.yusuf.duelgo' },
@@ -679,40 +687,29 @@ export const DELHI_NODES: NodeMap = {
     ],
   },
   'c11.yusuf.duelgo': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'Birds before glory, always; the rest your hands already know. Go. Make the sky shout.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'Birds before glory, always. Go. Make the sky shout.' }],
     effects: ['set:c11.duel.start'],
   },
   'c11.yusuf.duellater': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The dusk will hold. Come back before the light goes brass to purple; that is the flying hour, and it keeps no waiting room.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The dusk will hold. Come back at the flying hour; it keeps no waiting room.' }],
   },
   'c11.duel.won': {
     lines: [
-      { text: 'Yellow, green, red: three lines sawed free, the sky shouting WOH KATA from fifty roofs.' },
-      { text: 'Then the storm lands all at once, and every roof goes under one sheet of water.' },
-      { text: 'Kites come down hand over hand; kulhads come out from under tarps. Nobody leaves. The whole mohalla stands soaked, laughing at the thunder\'s timing.' },
-      { who: 'Ustad Yusuf Miyan', text: 'My ustad used to say the roofs are a country. Tonight you voted in its election. Go and be rained on properly; you have earned the weather.' },
+      { text: 'Yellow, green, red: three lines sawed free, and WOH KATA from fifty roofs. Then the storm lands all at once.' },
+      { text: 'Kites come down hand over hand. Nobody leaves; the mohalla stands soaked, laughing at the thunder\'s timing.' },
+      { who: 'Ustad Yusuf Miyan', text: 'The roofs are a country, and tonight you voted. Go and be rained on properly; you have earned the weather.' },
     ],
     effects: ['clear:c11.duel.start', 'set:c11.duel.done'],
   },
   'c11.yusuf.after': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The flock flew a full wheel this morning, storm-washed and showing off. Begum led. Her wing sits true, tell Sushila ji. Tell her the tea also stands.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The flock flew a full wheel this morning, storm-washed and showing off. Begum led. Tell Sushila ji the wing sits true.' }],
     effects: ['set:c11.yusuf2'],
   },
   'c11.yusuf.idle': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'Dusk and dawn the flock flies; between, the roof thinks. You may think here too, if you do it quietly.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'Dusk and dawn the flock flies; between, the roof thinks. You may think here too, quietly.' }],
   },
   'c11.yusuf.flyagain': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The wind is doing nothing important this evening. Neither, from the look of you, are you. The charkhi is where it always is.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The wind is doing nothing important this evening. Neither, from the look of you, are you.' }],
     choices: [
       { text: 'Take the charkhi up again', when: { has: ['c11.kite.done'] }, goto: 'c11.yusuf.kiteReplay' },
       { text: 'Fly the tournament sky once more', when: { has: ['c11.duel.done'] }, goto: 'c11.yusuf.duelReplay' },
@@ -720,309 +717,321 @@ export const DELHI_NODES: NodeMap = {
     ],
   },
   'c11.yusuf.kiteReplay': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'No tournament, no crowd, nothing riding on it. One kite, one argument, one sky. This is the version I actually like.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'No tournament, nothing riding on it. One kite, one sky. This is the version I actually like.' }],
     effects: ['set:replay.mode', 'set:c11.kite.start'],
   },
   'c11.yusuf.duelReplay': {
-    lines: [
-      { who: 'Ustad Yusuf Miyan', text: 'The roofs replay that night constantly, and each telling adds a rival. Fly it again before they add a fourth. Yellow, green, red.' },
-    ],
+    lines: [{ who: 'Ustad Yusuf Miyan', text: 'The roofs replay that night constantly, and each telling adds a rival. Yellow, green, red.' }],
     effects: ['set:replay.mode', 'set:c11.duel.start'],
   },
 
   // ---------------- Sushila Jain, the bird ward ----------------
   'c11.sushila.first': {
     lines: [
-      { text: 'At a folding table, a woman in white splints a pigeon\'s wing with two sticks and total calm. The bird supervises its own surgery, unimpressed.' },
-      { who: 'Sushila Jain', text: 'Manjha cut. Glass string. Hold this end, do not squeeze, do not coo at her; she is a patient, not a toy.' },
-      { text: 'You hold. She wraps. The pigeon sits through it, blinking. Across the street the temple\'s bird hospital takes the bed cases; she takes the walk-ins.' },
-      { who: 'Sushila Jain', text: 'Kites are a beautiful argument for cruelty; I have said so for thirty years. The pigeon men disagree. One at least flies cotton, which is something.' },
+      { text: 'At a folding table, a woman in white splints a pigeon\'s wing with two sticks and total calm.' },
+      { who: 'Sushila Jain', text: 'Manjha cut. Glass string. Hold this end; do not squeeze, do not coo at her. She is a patient, not a toy.' },
     ],
-    effects: ['set:c11.met.sushila', 'journal:people.sushila'],
+    effects: ['set:c11.met.sushila'],
+    choices: [{ text: 'Hold the wing still', goto: 'c11.sushila.held' }],
+  },
+  'c11.sushila.held': {
+    lines: [
+      { text: 'You hold. She wraps. The pigeon blinks through its own surgery, unimpressed.' },
+      { who: 'Sushila Jain', text: 'Kites are a beautiful argument for cruelty. I have said so for thirty years.' },
+    ],
+    effects: ['journal:people.sushila'],
   },
   'c11.sushila.errand': {
     lines: [
-      { who: 'Sushila Jain', text: 'You climb to that roof, yes? Good, be useful. This is Begum, the old man\'s head pigeon; her patience with me is finished.' },
-      { text: 'She tucks the bird into your jacket with startling gentleness, then reassembles her sternness like a folding chair.' },
-      { who: 'Sushila Jain', text: 'Straight up the stairs, no detours, no chai. And tell Yusuf the splint stays one more week, whatever the bird tells him.' },
+      { who: 'Sushila Jain', text: 'You climb to that roof, yes? Be useful. This is Begum, the old man\'s head pigeon; her patience with me is finished.' },
+      { text: 'She tucks the bird into your jacket with startling gentleness.' },
+      { who: 'Sushila Jain', text: 'Straight up the stairs, no detours. The splint stays one more week, whatever the bird tells him.' },
     ],
     effects: ['errand:pigeon-home', 'set:errand.pigeon-home'],
   },
   'c11.sushila.argue': {
     lines: [
-      { who: 'Sushila Jain', text: 'He said the argument stands and so does the tea. Hm. Thirty years and the man has finally produced one accurate sentence.' },
-      { who: 'Sushila Jain', text: 'Write this down somewhere: you can disagree with someone every single day and still keep their tea warm. It is the mohalla\'s one weird trick.' },
+      { who: 'Sushila Jain', text: 'The argument stands and so does the tea? Thirty years, and the man finally produces one accurate sentence.' },
+      { who: 'Sushila Jain', text: 'Write it down: you can disagree with someone every day and still keep their tea warm.' },
     ],
     effects: ['set:c11.sushila2'],
   },
   'c11.sushila.idle': {
-    lines: [
-      { who: 'Sushila Jain', text: 'Cotton for wounds, cotton for kites. If everyone chose string the way they choose bandages, my table would be a chai stall.' },
-    ],
+    lines: [{ who: 'Sushila Jain', text: 'Cotton for wounds, cotton for kites. If everyone chose string the way they choose bandages, my table would be a chai stall.' }],
   },
 
   // ---------------- Akhtar Bhai, the chai corner ----------------
   'c11.akhtar.first': {
     lines: [
       { text: 'The chai corner at the gali mouth: brass kettle, coal glow, kulhads stacked like a clay minaret. Yours is already pouring.' },
-      { who: 'Akhtar Bhai', text: 'Kulhad chai, first one on the house, because the house makes the rules. The cup is clay from a riverbank; drink.' },
-      { text: 'The chai tastes of cardamom and rain-on-earth. When it is done, he gestures: dash the kulhad on the stones. It shatters, musically.' },
-      { who: 'Akhtar Bhai', text: 'One cup, one life, no washing up. The lane gets a little more percussion; now sit.' },
+      { who: 'Akhtar Bhai', text: 'Kulhad chai, first one on the house. Drink. Then the cup goes on the stones: one cup, one life, no washing up.' },
     ],
     effects: ['set:c11.met.akhtar', 'journal:people.akhtar'],
+    choices: [
+      { text: 'Dash the empty kulhad on the stones', goto: 'c11.akhtar.dash' },
+      { text: 'Keep the cup', goto: 'c11.akhtar.keep' },
+    ],
+  },
+  'c11.akhtar.keep': {
+    lines: [{ who: 'Akhtar Bhai', text: 'Keep it? Then it is a souvenir and I am a museum. Go on, the stones are waiting.' }],
+    next: 'c11.akhtar.dash',
+  },
+  'c11.akhtar.dash': {
+    lines: [{ text: 'It shatters, musically. The lane gets a little more percussion, and Akhtar points you to the bench.' }],
   },
   'c11.akhtar.menu': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Aaiye, aaiye. Chai is default, sherbet is philosophy, and the khomcha there is empty, which is its own story. What will you have?' },
+      { who: 'Akhtar Bhai', text: 'Aaiye, aaiye. Chai is default, sherbet is philosophy, and the khomcha there is empty, which is its own story.' },
     ],
     choices: [
-      { text: 'Ask about daulat ki chaat; Nani\'s journal mentions a moonlight dish', goto: 'c11.akhtar.daulat' },
-      { text: 'Ask about the pink bottle behind the kettle', goto: 'c11.akhtar.rooh' },
-      { text: 'Just chai, and the lane\'s news with it', goto: 'c11.akhtar.news' },
+      { text: 'Ask about Nani\'s moonlight dish', goto: 'c11.akhtar.daulat' },
+      { text: 'Ask about the pink bottle', goto: 'c11.akhtar.rooh' },
+      { text: 'Just chai, and the news', goto: 'c11.akhtar.news' },
     ],
   },
   'c11.akhtar.daulat': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Daulat ki chaat! In SAWAN? The moon is behind clouds, beta. Churned on cold nights, set by dew; the foam cannot hold. Come when your breath shows.' },
-      { text: 'He slides over rabri instead, thick and sweet, an apology that outranks most gifts. Then he goes still, looking at your journal on the counter.' },
-      { who: 'Akhtar Bhai', text: 'A girl with a journal like that asked my father this. Monsoon of 1974; he wrote her a December IOU in the old tin.' },
-      { text: 'He taps the tin twice, a door kept for someone. Then he writes your IOU under hers.' },
+      { who: 'Akhtar Bhai', text: 'Daulat ki chaat? In SAWAN? It sets on winter dew; the foam cannot hold in this heat. Come when your breath shows.' },
+      { text: 'He slides over rabri instead. Then he sees the journal on the counter, and goes still.' },
+      { who: 'Akhtar Bhai', text: 'A girl with that same journal asked my father, monsoon of 1974. Her December IOU is still in this tin. Yours goes under it.' },
     ],
     effects: ['set:c11.promise.daulat', 'journal:dishes.daulat'],
   },
   'c11.akhtar.rooh': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Rooh Afza! Rose and herbs, invented three lanes over before my father had teeth. Pink as a wedding, cold as mercy.' },
-      { who: 'Akhtar Bhai', text: 'In milk for the devout, in ice water for the sweaty.' },
-      { text: 'He pours a glass so pink it embarrasses the sunset. The first sip lowers the temperature of the entire afternoon by a felt ten degrees.' },
-      { who: 'Akhtar Bhai', text: 'I call it the mohalla\'s blood type. Universal donor. Now, aur batao, what else does that journal of yours not know yet?' },
+      { who: 'Akhtar Bhai', text: 'Rooh Afza! Rose and herbs, invented three lanes over. Pink as a wedding, cold as mercy: the mohalla\'s blood type.' },
+      { text: 'The first sip lowers the whole afternoon by a felt ten degrees.' },
     ],
     effects: ['journal:dishes.roohafza'],
   },
   'c11.akhtar.news': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'News! The sky is loading a headline, the twins painted their kite green, and Sethji ignored a Bombay buyer so hard the man apologized for existing.' },
-      { who: 'Akhtar Bhai', text: 'Also the monkeys moved their commute twenty minutes earlier, which the wire committee calls an infrastructure crisis. Chai?' },
+      { who: 'Akhtar Bhai', text: 'News! The sky is loading a headline, the twins painted their kite green, and Sethji ignored a Bombay buyer so hard the man apologized.' },
     ],
   },
   'c11.akhtar.sher': {
     lines: [
-      { text: 'You try the haveli wall\'s couplet: hazaaron khwahishen aisi, ki har khwahish pe dam nikle. A thousand desires, each worth a life.' },
-      { who: 'Akhtar Bhai', text: 'WAH! Wah wah wah. Half the meter fell in a puddle but the heart arrived dry. Sher for chai, that is the standing offer; friend price, forever.' },
-      { text: 'He pours with extra height, which is how kettles applaud. Two porters say wah as well, on principle. Poetry has a wholesale rate here.' },
-      { who: 'Akhtar Bhai', text: 'Ghalib lived three lanes over and still owes half this city money. We forgave him in exchange for the couplets. Best trade Dilli ever made.' },
+      { text: 'You try the haveli wall\'s couplet: hazaaron khwahishen aisi, ki har khwahish pe dam nikle.' },
+      { who: 'Akhtar Bhai', text: 'WAH! Half the meter fell in a puddle, but the heart arrived dry. Sher for chai: friend price, forever.' },
+      { who: 'Akhtar Bhai', text: 'Ghalib lived three lanes over and owed half this city money. We forgave him for the couplets. Best trade Dilli ever made.' },
     ],
     effects: ['set:c11.sherchai', 'journal:customs.sher'],
   },
   'c11.akhtar.storm': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Positions, positions! The sky has been building its opening line since lunch. Look at that cloud, black as a good kadhai. Any minute. ANY minute.' },
-      { text: 'He narrates the sky like a cricket final: wind up, pigeons gone strategic, an umbrella seller appearing from nowhere, smelling profit.' },
+      { who: 'Akhtar Bhai', text: 'Positions! The sky has been building its opening line since lunch. Black as a good kadhai. Any minute. ANY minute.' },
     ],
     next: 'c11.rain.arrives',
   },
   'c11.rain.arrives': {
     lines: [
-      { text: 'The first drop hits the tarpaulin like a drumbeat. Then the sky opens its accounts. In twenty minutes the lane is ankle-deep and delighted.' },
-      { text: 'Kids commandeer the puddles. Somebody starts frying pakoras, because rain without pakoras is a wasted rain. The whole gali stands out in it, faces up.' },
+      { text: 'The first drop hits the tarpaulin like a drumbeat. Then the sky opens its accounts, and the lane is ankle-deep and delighted.' },
+      { text: 'Somebody starts frying pakoras. The whole gali stands out in it, faces up.' },
     ],
     effects: ['set:c11.rain'],
     choices: [
       {
-        text: '"I know this smell. It walked me up from Kerala; the same rain, gone north."',
+        text: '"I know this smell. It walked me up from Kerala."',
         goto: 'c11.akhtar.ksmell',
         when: { has: ['c6.rain'] },
       },
-      { text: 'Ask what the smell of it is', goto: 'c11.akhtar.mitti' },
+      { text: 'Ask what the smell is', goto: 'c11.akhtar.mitti' },
     ],
   },
   'c11.akhtar.ksmell': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Sunte ho? Listen to this one! Stood in the first rain on the Malabar coast, then RACED it here. Beat the monsoon north by days. Seniority, beta.' },
-      { who: 'Akhtar Bhai', text: 'The smell is mitti, wet earth. Same perfume, two coasts. You have now heard one weather system greet two worlds; most people never even hear it knock.' },
+      { who: 'Akhtar Bhai', text: 'Sunte ho? This one stood in the first rain on the Malabar coast, then RACED it here. Seniority, beta.' },
+      { who: 'Akhtar Bhai', text: 'The smell is mitti, wet earth. Same perfume, two coasts.' },
     ],
   },
   'c11.akhtar.mitti': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'That, beta, is mitti. Wet earth. The first rain unlocks it from the stones like a debt repaid; every kulhad you drank from was practicing the smell.' },
-      { who: 'Akhtar Bhai', text: 'A woman in the silver lane sells exactly this in a bottle. Go ask her once you dry off. Or better, before.' },
+      { who: 'Akhtar Bhai', text: 'That, beta, is mitti. Wet earth. Every kulhad you drank from was practicing the smell.' },
+      { who: 'Akhtar Bhai', text: 'A woman in the silver lane sells exactly this in a bottle. Go and ask her.' },
     ],
   },
   'c11.akhtar.rainchai': {
     lines: [
-      { who: 'Akhtar Bhai', text: 'Rain-watching chai is a separate product line: same kettle, better theater. Sit under the tarp; the lane will perform.' },
-      { text: 'Thunder lands a beat late and Akhtar shakes his head like an umpire. The lane laughs. The kettle, on its coals, keeps the score.' },
+      { who: 'Akhtar Bhai', text: 'Rain-watching chai: same kettle, better theater. Sit under the tarp.' },
+      { text: 'Thunder lands a beat late, and Akhtar shakes his head like an umpire.' },
     ],
     effects: ['set:c11.rainchai'],
   },
   'c11.akhtar.idle': {
-    lines: [
-      { who: 'Akhtar Bhai', text: 'You look like someone between errands, which is my entire clientele. Sit; the kettle was already expecting you.' },
-    ],
+    lines: [{ who: 'Akhtar Bhai', text: 'You look like someone between errands, which is my entire clientele. Sit.' }],
     choices: [
       { text: '"Remind me which errand, Akhtar Bhai?"', goto: 'c11.akhtar.thread' },
       { text: 'Just the chai', goto: 'c11.akhtar.threadNo' },
     ],
   },
   'c11.akhtar.thread': {
-    lines: [
-      { who: 'Akhtar Bhai', text: 'Breaking news: traveler mislays own morning. Sources say the wrist knows. This corner reported it first, remember that.' },
-    ],
+    lines: [{ who: 'Akhtar Bhai', text: 'Breaking news: traveler mislays own morning. Sources say the wrist knows.' }],
     effects: ['thread:'],
   },
   'c11.akhtar.threadNo': {
-    lines: [{ who: 'Akhtar Bhai', text: 'Wiser still. All roads pass this kettle eventually; you can wait for yours here.' }],
+    lines: [{ who: 'Akhtar Bhai', text: 'Wiser still. All roads pass this kettle eventually.' }],
   },
 
   // ---------------- Mehr Aapa, the attar lane ----------------
   'c11.mehr.first': {
     lines: [
-      { text: 'A cabinet of amber bottles, each a small sun. The woman behind it watches you look, which is apparently the first transaction.' },
-      { who: 'Mehr Aapa', text: 'No, you may not smell all of them. The nose is a small room; crowd it and nothing fits. One. Choose with your eyes first.' },
-      { text: 'You point at a dark vial, second shelf. She raises an eyebrow one millimeter, which here is a standing ovation.' },
-      { who: 'Mehr Aapa', text: 'Mitti attar. Baked earth from Kannauj, distilled into sandalwood. First rain, in a bottle. It is not for sale; it is for deserving.' },
+      { text: 'A cabinet of amber bottles, each a small sun.' },
+      { who: 'Mehr Aapa', text: 'No, you may not smell all of them. The nose is a small room. Choose one with your eyes.' },
     ],
     effects: ['set:c11.met.mehr'],
+    choices: [
+      { text: 'Point at the dark vial on the second shelf', goto: 'c11.mehr.vial' },
+      { text: 'Point at the rose, obviously', goto: 'c11.mehr.rose' },
+    ],
+  },
+  'c11.mehr.rose': {
+    lines: [{ who: 'Mehr Aapa', text: 'Rose is for weddings and apologies. Your eyes went to the dark one first; I saw.' }],
+    next: 'c11.mehr.vial',
+  },
+  'c11.mehr.vial': {
+    lines: [
+      { text: 'She raises an eyebrow one millimeter, which here is a standing ovation.' },
+      { who: 'Mehr Aapa', text: 'Mitti attar: baked earth, distilled into sandalwood. First rain, in a bottle. It is not for sale; it is for deserving.' },
+    ],
   },
   'c11.mehr.gift': {
-    lines: [
-      { who: 'Mehr Aapa', text: 'You want the mitti? Earn it with your mouth, not your money. Describe a first rain you stood in; I will know.' },
-    ],
+    lines: [{ who: 'Mehr Aapa', text: 'You want the mitti? Earn it with your mouth, not your money. Describe a first rain you stood in; I will know.' }],
     choices: [
       {
-        text: 'Describe Kerala\'s first rain: coins on tin, then tile, then the sky opening',
+        text: 'Describe Kerala\'s first rain: coins on tin, then tile',
         goto: 'c11.mehr.kerala',
         when: { has: ['c6.rain'] },
       },
-      { text: 'Admit you have not yet stood inside a proper first rain', goto: 'c11.mehr.wait' },
+      { text: 'Admit you have not stood in one yet', goto: 'c11.mehr.wait' },
     ],
   },
   'c11.mehr.kerala': {
     lines: [
-      { text: 'You give her the backwater monsoon: first drops like coins on tin, tiles answering deeper, kids running OUT of cover, the channel fizzing like soda.' },
-      { who: 'Mehr Aapa', text: 'The tin before the tile. Yes. Only someone who stood in it knows the tin sings first. Hold out your hand.' },
-      { text: 'A vial, small as a fingertip, warm from the shelf. One drop on your wrist and the whole first rain happens again, just for you.' },
-      { who: 'Mehr Aapa', text: 'Delhi bottles its monsoon; now you carry ours beside yours. Open it once on the next coast and you are standing here. That is the entire technology.' },
+      { text: 'You give her the backwater monsoon: coins on tin, tiles answering deeper, kids running OUT of cover.' },
+      { who: 'Mehr Aapa', text: 'The tin before the tile. Only someone who stood in it knows the tin sings first. Hold out your hand.' },
+      { text: 'A vial small as a fingertip. One drop on your wrist and the first rain happens again.' },
     ],
     effects: ['set:c11.attar.mitti', 'journal:customs.mitti', 'journal:people.mehr'],
   },
   'c11.mehr.wait': {
     lines: [
-      { who: 'Mehr Aapa', text: 'Honest, at least. Sawan is loading over the fort; when it breaks, stand in it. Do not shelter. Attend.' },
-      { who: 'Mehr Aapa', text: 'Come back wet, and describe what the stones give up. The bottle will still be here; deserving keeps.' },
+      { who: 'Mehr Aapa', text: 'Honest, at least. When sawan breaks over the fort, stand in it. Then come back wet and tell me what the stones give up.' },
     ],
     effects: ['set:c11.mehr.asked'],
   },
   'c11.mehr.rain2': {
     lines: [
-      { text: 'You come back still damp and describe it: the first drop\'s drumbeat, the stones exhaling, the smell rising unlocked, kids claiming the puddles.' },
-      { who: 'Mehr Aapa', text: 'The stones exhaling. Good. That smell is mitti; the earth keeps it in trust between rains. Hold out your hand.' },
-      { text: 'A vial, small as a fingertip, warm from the shelf. One drop on your wrist and the whole first rain happens again, just for you.' },
-      { who: 'Mehr Aapa', text: 'Delhi bottles its monsoon; now you carry it. Wherever you land next, open it once and you will be standing here. That is the entire technology.' },
+      { text: 'You come back still damp and describe it: the drumbeat, the stones exhaling, kids claiming the puddles.' },
+      { who: 'Mehr Aapa', text: 'The stones exhaling. Good. That is mitti; the earth keeps it in trust between rains. Hold out your hand.' },
+      { text: 'A vial small as a fingertip. One drop on your wrist and the first rain happens again.' },
     ],
     effects: ['set:c11.attar.mitti', 'journal:customs.mitti', 'journal:people.mehr'],
   },
   'c11.mehr.waiting': {
-    lines: [
-      { who: 'Mehr Aapa', text: 'Still dry? The sky is composing, beta; sawan never misses its own opening night. When it breaks, stand in it, then come and tell me properly.' },
-    ],
+    lines: [{ who: 'Mehr Aapa', text: 'Still dry? Sawan never misses its own opening night. When it breaks, stand in it.' }],
   },
   'c11.mehr.nani': {
     lines: [
-      { who: 'Mehr Aapa', text: 'That journal. Sit. My mother kept this shop before me, and her ledgers keep everything, including one Peruvian girl, monsoon of 1974.' },
-      { text: 'She turns cloth-bound pages, and there: mitti attar, one tola, the girl with the journal. Paid with a story.' },
-      { who: 'Mehr Aapa', text: 'Mother said she described a mountain rain so well the shop went quiet. Yours is the second vial we have given your family. Aapa keeps accounts.' },
+      { who: 'Mehr Aapa', text: 'That journal. My mother kept this shop before me, and her ledger keeps one Peruvian girl, monsoon of 1974.' },
+      { text: 'Mitti attar, one tola, the girl with the journal. Paid with a story: a mountain rain, told so well the shop went quiet.' },
+      { who: 'Mehr Aapa', text: 'Yours is the second vial we have given your family. Aapa keeps accounts.' },
     ],
     effects: ['set:c11.mehr.nani2'],
   },
   'c11.mehr.idle': {
-    lines: [
-      { who: 'Mehr Aapa', text: 'Perfume is memory with a stopper, beta. Choose slowly. The bottles are patient and so, professionally, am I.' },
-    ],
+    lines: [{ who: 'Mehr Aapa', text: 'Perfume is memory with a stopper, beta. Choose slowly.' }],
   },
 
   // ---------------- Sethji, the barrier with a ledger ----------------
   'c11.sethji.cold': {
     lines: [
-      { text: 'The spice end swallows the lane: sack mountains, chilli haze, porters with impossible loads. At its center, a man on a white-sheeted gaddi, writing.' },
-      { text: 'You greet him. He does not look up. A porter sneezes three times, operatically; Sethji blesses him without breaking his line. You do not exist yet.' },
+      { text: 'The spice end swallows the lane: sack mountains, chilli haze. At its center, a man on a white-sheeted gaddi, writing.' },
+      { text: 'You greet him. He does not look up. You do not exist yet.' },
     ],
     effects: ['set:c11.met.sethji'],
   },
   'c11.sethji.cold2': {
-    lines: [
-      { text: 'Sethji weighs, writes, and ignores you with the ease of a man who has ignored viceroys. The scale clicks. The ledger fills. You remain scenery.' },
-    ],
+    lines: [{ text: 'Sethji weighs, writes, and ignores you with the ease of a man who has ignored viceroys.' }],
   },
   'c11.sethji.test': {
     lines: [
-      { text: 'You say three names: Kamla, Joginder, Yusuf. The pen stops. For the first time in recorded history, Sethji Onkar Nath looks up.' },
-      { who: 'Sethji Onkar Nath', text: 'The tawa says you feed, the langar says you serve, the roof says you read wind. Three sentences from three people who do not spend them. Hm.' },
-      { text: 'He takes a pinch from an open sack and holds it out without a word: small green pods, sharp and sweet on the air.' },
-      { who: 'Sethji Onkar Nath', text: 'In this market nothing moves without a chit, and none was ever written for a stranger. So: name what my hand holds.' },
+      { text: 'You say three names: Kamla, Joginder, Yusuf. The pen stops. Sethji Onkar Nath looks up.' },
+      { who: 'Sethji Onkar Nath', text: 'The tawa says you feed, the langar says you serve, the roof says you read wind. Hm. Nothing in this market moves without a chit.' },
+    ],
+    next: 'c11.sethji.pods',
+  },
+  // The smell test is the player's nose, not his lecture: two pods, one
+  // question, as many sniffs as it takes.
+  'c11.sethji.pods': {
+    lines: [
+      { text: 'He holds out two pods, one in each palm: small and green, big and brown.' },
+      { who: 'Sethji Onkar Nath', text: 'Which one grew in the wet hills of the south?' },
     ],
     choices: [
       {
-        text: '"Small cardamom. Green, from the wet hills above the backwaters; it rode a jetty I stood on."',
+        text: '"The small green one. It rode down to a jetty I stood on."',
         goto: 'c11.sethji.cardamom',
         when: { has: ['c6.complete'] },
       },
-      { text: 'Admit your nose is untrained, and ask him to teach it', goto: 'c11.sethji.lesson' },
+      { text: 'Smell the small green pod', goto: 'c11.sethji.small' },
+      { text: 'Smell the big brown pod', goto: 'c11.sethji.big' },
     ],
+  },
+  'c11.sethji.small': {
+    lines: [{ text: 'Sharp and sweet, like rain turning to sugar.' }],
+    choices: [
+      { text: '"This one."', goto: 'c11.sethji.lesson' },
+      { text: 'Smell the other', goto: 'c11.sethji.big' },
+    ],
+  },
+  'c11.sethji.big': {
+    lines: [{ text: 'Smoke and shoulder: a campfire in a husk.' }],
+    choices: [
+      { text: '"This one."', goto: 'c11.sethji.wrong' },
+      { text: 'Smell the other', goto: 'c11.sethji.small' },
+    ],
+  },
+  'c11.sethji.wrong': {
+    lines: [{ who: 'Sethji Onkar Nath', text: 'Badi elaichi, from the eastern hills. Smoke does not grow in rain, beta. Again.' }],
+    next: 'c11.sethji.pods',
+  },
+  'c11.sethji.lesson': {
+    lines: [{ who: 'Sethji Onkar Nath', text: 'Small elaichi. Untrained, and right anyway; the nose files fast once it opens an account.' }],
+    next: 'c11.sethji.chit',
   },
   'c11.sethji.cardamom': {
     lines: [
-      { who: 'Sethji Onkar Nath', text: 'The COAST. The firangi child names the coast. Nine generations on this gaddi, and I count on one hand the strangers who knew small elaichi from big.' },
-      { text: 'He laughs, which rearranges the entire spice end; two porters nearly drop a sack from the novelty of it.' },
-      { who: 'Sethji Onkar Nath', text: 'You stood on the jetty it left from? Then you and this pod are old shipmates. Sit. SIT.' },
-    ],
-    next: 'c11.sethji.chit',
-  },
-  'c11.sethji.lesson': {
-    lines: [
-      { who: 'Sethji Onkar Nath', text: 'Untrained and says so. Better than trained and wrong. Attend: small elaichi, green, from the wet southern hills. It smells like rain turning sweet.' },
-      { text: 'He holds up a bigger pod, brown and smoky. Badi elaichi, from the eastern hills, all smoke and shoulder. You smell them in turn until it clicks.' },
-      { who: 'Sethji Onkar Nath', text: 'Again. Eyes closed. Small. Big. Small. Good; the nose files fast once it opens an account. This market has trained worse students, all relatives.' },
+      { who: 'Sethji Onkar Nath', text: 'The COAST. Nine generations on this gaddi, and I count on one hand the strangers who knew small elaichi from big.' },
+      { who: 'Sethji Onkar Nath', text: 'You stood on the jetty it left from? Then you and this pod are old shipmates.' },
     ],
     next: 'c11.sethji.chit',
   },
   'c11.sethji.chit': {
     lines: [
       { text: 'He writes six flowing lines, stamps them with a brass seal older than several countries, and folds the chit once.' },
-      { who: 'Sethji Onkar Nath', text: 'To my cousin\'s firm, Bombay docks; they load for Zanzibar. Show this and a berth finds you. The chit is the road.' },
-      { text: 'Then a cloth bag lands on top: cloves, tied with red thread. Carrying his cargo makes you his caravan.' },
-      { who: 'Sethji Onkar Nath', text: 'Deliver the cloves with the chit. Now go; the ledger missed you the moment I looked up.' },
+      { who: 'Sethji Onkar Nath', text: 'My cousin\'s firm, Bombay docks; they load for Zanzibar. These cloves go with it: carry my cargo, be my caravan.' },
+      { who: 'Sethji Onkar Nath', text: 'Now go. The ledger missed you the moment I looked up.' },
     ],
     effects: ['set:c11.chit.bombay', 'journal:people.sethji'],
   },
   'c11.sethji.after': {
-    lines: [
-      { who: 'Sethji Onkar Nath', text: 'The chit stays folded until Bombay, the cloves stay dry, my regards stay unofficial. The road west knows its own way.' },
-    ],
+    lines: [{ who: 'Sethji Onkar Nath', text: 'The chit stays folded until Bombay, the cloves stay dry. The road west knows its own way.' }],
   },
 
   // ---------------- Divakaran Master, over the mountains of books ----------------
   'c11.master.first': {
     lines: [
-      { text: 'By the book bundles, a familiar figure weighs a dictionary in both hands like a fish he suspects of lying about its weight. White hair. Kerala cotton.' },
-      { who: 'Divakaran Master', text: 'The letter-carrier! Ha! Of all the lanes in Hindustan. Sukhamano, are you well? Do not look amazed; readers migrate along the same rails as everyone.' },
-      { who: 'Divakaran Master', text: 'Once a year I buy the grandhasala a sack of books by weight. Poetry is heavy, politics is cheap; both facts please me enormously.' },
+      { text: 'By the book bundles, a familiar figure weighs a dictionary like a fish he suspects of lying about its weight.' },
+      { who: 'Divakaran Master', text: 'The letter-carrier! Of all the lanes in Hindustan. I buy the reading room its books by weight: poetry is heavy, politics is cheap.' },
     ],
     effects: ['set:c11.met.master'],
   },
   'c11.master.quiz': {
     lines: [
-      { who: 'Divakaran Master', text: 'Now. You left my village before I could set an examination, and a master never wastes a second chance. One question, and you may choose the question.' },
+      { who: 'Divakaran Master', text: 'You left my village before I could set an examination. One question, and you may choose it.' },
     ],
     effects: ['set:c11.master.quizzed'],
     choices: [
-      {
-        text: '"Head like a boat means yes. Head still, then you worry."',
-        goto: 'c11.master.wobble',
-        when: { has: ['page.customs.headwobble'] },
-      },
       {
         text: '"I held seat forty-one in a chundan vallam. The song does the steering."',
         goto: 'c11.master.row',
@@ -1031,691 +1040,392 @@ export const DELHI_NODES: NodeMap = {
       { text: '"I respectfully fail. Teach me the model answer."', goto: 'c11.master.fail' },
     ],
   },
-  'c11.master.wobble': {
-    lines: [
-      { who: 'Divakaran Master', text: 'Full marks! The wobble travels badly on paper and perfectly in person. Here they tilt the head too, you noticed? Same boat, different water.' },
-      { who: 'Divakaran Master', text: 'Appu will be insufferable when I report a foreign student passed on his syllabus. I will tell him immediately, of course. Adipoli.' },
-    ],
-  },
   'c11.master.row': {
     lines: [
-      { who: 'Divakaran Master', text: 'Seat forty-one! I watched from the bank with two newspapers and one umbrella. A hundred oars on one word: no shelf holds a better argument for rhythm.' },
-      { who: 'Divakaran Master', text: 'Varkey still tells people a traveler rowed on the beat. He says it like HE taught you. Let him; captains need their fictions.' },
+      { who: 'Divakaran Master', text: 'Seat forty-one! I watched from the bank with two newspapers and one umbrella. A hundred oars on one word.' },
+      { who: 'Divakaran Master', text: 'Varkey tells people a traveler rowed on the beat, as if HE taught you. Let him; captains need their fictions.' },
     ],
   },
   'c11.master.fail': {
     lines: [
-      { who: 'Divakaran Master', text: 'An honest fail earns the full lesson. Answer one, the head wobble: side to side like a boat means yes. A still head is the worry.' },
-      { who: 'Divakaran Master', text: 'Answer two, the snake boat: a hundred rowers, one song, oars striking on the word. Miss the beat and you row alone.' },
-      { who: 'Divakaran Master', text: 'There. Educated retroactively. The reading room stamps its books the same way, always a little after they are borrowed.' },
+      { who: 'Divakaran Master', text: 'An honest fail earns the lesson. The snake boat: a hundred rowers, one song. Miss the beat and you row alone.' },
+      { who: 'Divakaran Master', text: 'There. Educated retroactively, the way the reading room stamps its books.' },
     ],
   },
   'c11.master.idle': {
-    lines: [
-      { who: 'Divakaran Master', text: 'Delhi sells books by the kilo and poems by the couplet, and calls both a bargain. Correctly, in my assessment.' },
-    ],
+    lines: [{ who: 'Divakaran Master', text: 'Delhi sells books by the kilo and poems by the couplet, and calls both a bargain. Correctly.' }],
   },
 
   // ---------------- Chasca, at the storm's shutter ----------------
   'c11.chasca.photo': {
     lines: [
       { text: 'She is on the parapet, soaked to the collarbones, camera dry under a plastic bag with a lens hole.' },
-      { who: 'Chasca', text: 'The soup-eater, RAINING. Perfect, do not dry off. Stand with the domes behind you and the last kites coming down; the album has waited for this sky.' },
-      { text: 'Lightning obliges over the fort. Pigeons wheel one last silver loop between the raindrops. Her shutter clicks exactly once.' },
-      { who: 'Chasca', text: 'A monsoon jetty, and now a monsoon roof. You keep standing where the weather signs its name. Say fuzzy pickles; you already did. I have it.' },
+      { who: 'Chasca', text: 'The soup-eater, RAINING. Perfect, do not dry off. Domes behind you, the last kites coming down.' },
+      { text: 'Lightning obliges over the fort. Her shutter clicks exactly once.' },
     ],
     effects: ['set:c11.met.chasca11', 'set:photo.flash', 'set:photo.c11.kites'],
   },
   'c11.chasca.album': {
-    lines: [
-      { who: 'Chasca', text: 'One frame, whole sky, no reshoots. The album grows by exactly one truth per stop; this one is loud and wet and full of paper birds.' },
-      { who: 'Chasca', text: 'Where the album ends, it develops. Whose end? The journey is still deciding. I only press the button at the right seconds.' },
-    ],
+    lines: [{ who: 'Chasca', text: 'One frame, whole sky, no reshoots. This one is loud and wet and full of paper birds.' }],
   },
 
   // ---------------- Sheru, the gali dog ----------------
   'c11.sheru.first': {
     lines: [
-      { text: 'A brown dog with one standing ear and a clear conscience trots over, inspects your shoes, and finds them acceptable. The tail wags the whole dog.' },
-      { text: 'A card seller says his name is Sheru. The chai corner says Sheru. Kamla says Sheru but he answers her fastest, for professional reasons.' },
+      { text: 'A brown dog with one standing ear and a clear conscience inspects your shoes and finds them acceptable.' },
+      { text: 'Everyone calls him Sheru. He answers Kamla fastest, for professional reasons.' },
     ],
     effects: ['set:c11.met.sheru'],
   },
   'c11.sheru.rain': {
-    lines: [
-      { text: 'Sheru has relocated under the widest tarpaulin, dead center, dry as a minister. Monsoon veterans recognize each other; he blinks at you slowly.' },
-    ],
+    lines: [{ text: 'Sheru has relocated under the widest tarpaulin, dead center, dry as a minister. He blinks at you slowly.' }],
     effects: ['set:c11.sheru2'],
   },
   'c11.egg.sheru1': {
-    lines: [
-      { text: 'Sheru finds you before the smell of your pockets does. The tawa business made you colleagues; the burnt one, he feels, was a signing bonus.' },
-    ],
+    lines: [{ text: 'Sheru finds you before the smell of your pockets does. The tawa business made you colleagues.' }],
     effects: ['set:egg.c11.sheru1'],
   },
   'c11.egg.sheru2': {
-    lines: [
-      { text: 'Today he walks with you, one shop ahead, checking back like a hired guide. At Akhtar\'s corner he sits and stares meaningfully at the kettle.' },
-    ],
+    lines: [{ text: 'Today he walks one shop ahead of you, checking back like a hired guide. At Akhtar\'s corner he stares at the kettle.' }],
     effects: ['set:egg.c11.sheru2'],
   },
   'c11.egg.sheru3': {
     lines: [
       { text: 'At the chai corner a kulhad is already down off the stack, steam up, unasked for.' },
-      { who: 'Akhtar Bhai', text: 'The dog said you were coming. Regulars here are appointed by Sheru, beta; he has never once been wrong, so sit and drink before the sky does.' },
+      { who: 'Akhtar Bhai', text: 'The dog said you were coming. Regulars here are appointed by Sheru, beta.' },
     ],
     effects: ['set:egg.c11.sheru3'],
   },
   'c11.sheru.idle': {
-    lines: [
-      { text: 'Sheru patrols the gali on a schedule known only to him and honored by everyone. A parantha edge finds him; statistically, one always does.' },
-    ],
+    lines: [{ text: 'Sheru patrols on a schedule known only to him. A parantha edge finds him; statistically, one always does.' }],
   },
 
   // ---------------- the post box ----------------
   'c11.post.pilar': {
     lines: [
-      { text: 'The red pillar box has stood here since an empire mistook itself for permanent. A postman fishes out mail held for travelers, ledgered under a stone.' },
-      { text: 'One envelope wears stamps like campaign medals and handwriting you would recognize in the dark: an invoice that learned calligraphy.' },
+      { text: 'The red pillar box has stood here since an empire mistook itself for permanent. A postman fishes out mail held for travelers.' },
+      { text: 'One envelope wears stamps like campaign medals: an invoice that learned calligraphy.' },
     ],
     effects: ['letter:delhi.pilar'],
   },
   'c11.post.mariamma': {
-    lines: [
-      { text: 'The postman checks the ledger twice and produces a second envelope, soft at the corners, postmarked with a green coast, smelling faintly of a kitchen.' },
-    ],
+    lines: [{ text: 'The postman produces a second envelope, soft at the corners, postmarked with a green coast, smelling faintly of a kitchen.' }],
     effects: ['letter:delhi.mariamma'],
   },
   'c11.post.idle': {
-    lines: [
-      { text: 'The post box swallows letters for Bombay, Muscat, Lima, and one backwater village. Collection twice daily, monsoon permitting; it usually permits.' },
-    ],
+    lines: [{ text: 'The post box swallows letters for Bombay, Muscat, Lima, and one backwater village. Monsoon permitting.' }],
   },
 
   // ---------------- examines: new kinds, exterior ----------------
+  // Kinds that say one thing share one node (sacks and spills, wires and
+  // spans, terrace and its washes): the lane is dense, the reading is not.
   'c11.ex.galistone': {
-    lines: [
-      { text: 'Stone flags worn soft by four centuries of feet, patched with whatever the last repair had in the cart. The lane keeps its history underfoot.' },
-    ],
+    lines: [{ text: 'Stone flags worn soft by four centuries of feet.' }],
   },
   'c11.ex.chowkbrick': {
-    lines: [
-      { text: 'The chowk\'s redone brick, herringbone and proud. By day it belongs to feet, handcarts, and rickshaws; the cars wait outside like scolded dogs.' },
-    ],
+    lines: [{ text: 'Herringbone brick. The cars wait outside the chowk like scolded dogs.' }],
   },
   // The sevadar sent you here; the square answers for its own name.
   'c11.ex.chowkbrick.moon': {
     lines: [
       { text: 'Down the chowk\'s spine the brick dips in one shallow line: an old canal, paved over. The moon rode it all night.' },
-      { text: 'Chandni Chowk, the moonlight square. The silver shops came later and took the credit; the bricks under your feet never signed the paperwork.' },
+      { text: 'Chandni Chowk, the moonlight square. The silver shops came later and took the credit.' },
     ],
     effects: ['journal:customs.chandni'],
   },
   'c11.ex.wornedge': {
-    lines: [
-      { text: 'Where brick meets dirt, a strip of neither: ground down by wheels, feet, and hooves into the city\'s own alloy. No mason made this. Everyone did.' },
-    ],
+    lines: [{ text: 'A strip ground down by wheels, feet, and hooves. No mason made this. Everyone did.' }],
   },
   'c11.ex.mohallawall': {
-    lines: [
-      { text: 'Plaster over brick over older brick: a civic geology. A film poster, an ad ghost, and a monsoon streak share the wall without friction.' },
-    ],
+    lines: [{ text: 'A film poster, an ad ghost, and a monsoon streak, sharing one wall without friction.' }],
   },
   'c11.ex.haveli': {
-    lines: [
-      { text: 'A haveli holding three centuries in one facade: carved jharokha above, aluminum shopfront below, wires riding past every window like ivy with a job.' },
-    ],
+    lines: [{ text: 'A carved jharokha above, an aluminum shopfront below, wires past every window like ivy with a job.' }],
   },
   'c11.ex.gurdwara': {
-    lines: [
-      { text: 'Sis Ganj Sahib. The kitchen behind this door has never closed; the reason is told inside, once, plainly.' },
-    ],
+    lines: [{ text: 'Sis Ganj Sahib. The kitchen behind this door has never closed.' }],
   },
   'c11.ex.stairup': {
-    lines: [
-      { text: 'Whitewashed stairs worn shiny up the middle, climbing to the rooftop country. The best commute in the mohalla: twelve steps, one sky.' },
-    ],
+    lines: [{ text: 'Twelve whitewashed steps, worn shiny up the middle, and then one sky.' }],
   },
   'c11.ex.griddle': {
-    lines: [
-      { text: 'Kamla\'s iron tawa over coals, black with forty years of virtue. The ghee tin beside it is dented into loyalty; the queue forms by reflex.' },
-    ],
+    lines: [{ text: 'Kamla\'s iron tawa, black with forty years of virtue. The queue forms by reflex.' }],
   },
   'c11.ex.griddle.after': {
-    lines: [
-      { text: 'The tawa that taught your hands. It sings low when the ghee is ready; you can hear the grammar now, which makes the whole lane read differently.' },
-    ],
+    lines: [{ text: 'The tawa that taught your hands. You can hear when the ghee is ready now.' }],
   },
   'c11.ex.jalebi': {
-    lines: [
-      { text: 'Bade Mian\'s kadhai, since 1902: batter coiling into ghee, syrup waiting like a patient bank. No menu, one product, zero doubt.' },
-      { text: 'A jalebi lands in your hand, too hot to hold. You hold it. Around here that counts as both dessert and a handshake.' },
-    ],
+    lines: [{ text: 'Bade Mian\'s kadhai, since 1902. A jalebi lands in your hand, too hot to hold. You hold it; here that is a handshake.' }],
     effects: ['journal:dishes.jalebi'],
   },
   'c11.ex.chaikhana': {
-    lines: [
-      { text: 'Akhtar\'s corner: brass kettle, coal glow, kulhads in a clay minaret. The bench has heard forty years of news and improved most of it.' },
-    ],
+    lines: [{ text: 'Akhtar\'s bench has heard forty years of news and improved most of it.' }],
   },
   'c11.ex.kulhadtower': {
-    lines: [
-      { text: 'Unglazed clay cups stacked to a height only confidence explains. Each will hold one chai, add its riverbank to the flavor, and die a musical death.' },
-    ],
+    lines: [{ text: 'Clay cups stacked to a height only confidence explains. Each will die a musical death.' }],
   },
   'c11.ex.khomcha': {
-    lines: [
-      { text: 'A wicker khomcha, folded muslin, no wares. Daulat ki chaat is winter\'s: moonlight, dew, cold nights. Sawan gets the empty basket.' },
-    ],
+    lines: [{ text: 'A wicker khomcha, folded muslin, no wares. Sawan gets the empty basket.' }],
   },
   'c11.ex.khomcha.promise': {
-    lines: [
-      { text: 'The empty khomcha, waiting for December like everyone who heard the stories. In Akhtar\'s tin, two IOUs share a page: Nani\'s, and now yours.' },
-    ],
+    lines: [{ text: 'The empty khomcha, waiting for December. In Akhtar\'s tin, two IOUs share a page.' }],
   },
   'c11.ex.sackpyramid': {
-    lines: [
-      { text: 'A jute mountain range stenciled with districts. Cardamom, coriander, dried ginger: a subcontinent\'s pantry, stacked by porters who make it look easy.' },
-      { text: 'You lean closer and the chilli dust files its objection. You sneeze twice, operatically. Somewhere a porter says bless you in three languages.' },
-    ],
+    lines: [{ text: 'A jute mountain range of cardamom and dried ginger. You lean closer and sneeze twice. A porter blesses you in three languages.' }],
     effects: ['set:c11.sneezed'],
   },
   'c11.ex.sackpyramid.again': {
-    lines: [
-      { text: 'You breathe shallow this time, like the porters do. The sacks respect the adjustment. The sneeze waits, patient; it knows you will forget again.' },
-    ],
+    lines: [{ text: 'You breathe shallow, like the porters. The sneeze waits; it knows you will forget.' }],
   },
   'c11.ex.chilisacks': {
-    lines: [
-      { text: 'Open sacks of whole and ground chilli, red as a warning nobody heeds. The corridor sneezes on schedule and calls it seasoning.' },
-    ],
+    lines: [{ text: 'Chilli, red as a warning nobody heeds, tracked down the lane in a map of the day\'s deliveries.' }],
   },
   'c11.ex.sethgaddi': {
-    lines: [
-      { text: 'The gaddi: white sheet, bolster, brass scale, and a ledger whose entries reach Bombay without standing up. Ninth generation on this exact cushion.' },
-    ],
+    lines: [{ text: 'White sheet, brass scale, and a ledger whose entries reach Bombay without standing up.' }],
   },
   'c11.ex.sethgaddi.chit': {
-    lines: [
-      { text: 'The gaddi from which your road west was written in six lines and one brass stamp. The ledger has already moved on; ledgers always do.' },
-    ],
+    lines: [{ text: 'Your road west was written here in six lines. The ledger has already moved on.' }],
   },
   'c11.ex.attarcase': {
-    lines: [
-      { text: 'Amber bottles in rows, each one a bottled weather: rose, oud, khus, and on the second shelf, the monsoon itself, waiting for a deserving nose.' },
-    ],
+    lines: [{ text: 'Rose, oud, khus, and on the second shelf, the monsoon itself.' }],
   },
   'c11.ex.cardstall': {
-    lines: [
-      { text: 'Wedding cards fanned in red and gold: futures, printed in three scripts. The sample album is fat with other people\'s happiness and open for browsing.' },
-    ],
+    lines: [{ text: 'Wedding cards in red and gold: futures, printed in three scripts.' }],
   },
   'c11.ex.bookbundle': {
-    lines: [
-      { text: 'Books tied in jute, sold by weight, argued by title. Poetry is heavy and politics is cheap; the scale has no opinion and the buyers have several.' },
-    ],
+    lines: [{ text: 'Books tied in jute, sold by weight, argued by title.' }],
   },
   'c11.ex.signstack': {
-    lines: [
-      { text: 'Signboards stacked three deep in three scripts: Devanagari, Nastaliq, Latin. Half are hand-painted, and every letter is slightly proud of itself.' },
-    ],
+    lines: [{ text: 'Signboards in three scripts, one tube light failing politely since 1987.' }],
   },
   'c11.ex.wirebundle': {
-    lines: [
-      { text: 'A pole carrying every current the mohalla ever subscribed to, sagging like a python that ate the twentieth century. The monkeys call it a highway.' },
-    ],
+    lines: [{ text: 'Every current the mohalla ever subscribed to. Nobody knows which wire does what; everybody knows whom to shout for.' }],
   },
+  // Jugaad lives on the rickshaw it describes, not in Bantu's greeting.
   'c11.ex.rickshaw': {
-    lines: [
-      { text: 'A cycle-rickshaw in full regalia: painted flowers, tinsel, a bell that outranks the brakes. Parts from three machines and a prayer. Jugaad, licensed.' },
-    ],
+    lines: [{ text: 'Parts from three machines, wedding tinsel, and a bell that outranks the brakes. Jugaad, licensed.' }],
+    effects: ['journal:words.jugaad'],
   },
   'c11.ex.thela': {
     lines: [
-      { text: 'A thela of langra mangoes, straw-bedded, priced by conviction. The vendor names a figure with theatrical sorrow. You walk away; the dance requires it.' },
-      { text: 'Arre suniye toh! He calls you back like a lost nephew, drops the price, and adds one free for your health.' },
+      { text: 'Langra mangoes, priced with theatrical sorrow. You walk away; the dance requires it.' },
+      { text: 'Arre suniye toh! He calls you back like a lost nephew and adds one free for your health.' },
     ],
     effects: ['journal:customs.bargain'],
   },
   'c11.ex.thela.again': {
-    lines: [
-      { text: 'The mango vendor greets you as an old sparring partner. The first price is higher now, out of respect. Flattery, in this lane, is arithmetic.' },
-    ],
+    lines: [{ text: 'The first price is higher now, out of respect.' }],
   },
   'c11.ex.monkeywire': {
-    lines: [
-      { text: 'The monkey commute: along the wire, pause, judge the humans, proceed. The mohalla and the monkeys keep a treaty; the mangoes are the border dispute.' },
-    ],
+    lines: [{ text: 'The monkey commute: along the wire, pause, judge the humans, proceed.' }],
   },
   'c11.ex.peepal': {
-    lines: [
-      { text: 'The chowk\'s peepal, older than the pavement and most opinions. A diya burns in the niche; the thread round the trunk holds a hundred quiet asks.' },
-    ],
+    lines: [{ text: 'The thread round the peepal\'s trunk holds a hundred quiet asks.' }],
   },
   'c11.ex.handpump': {
-    lines: [
-      { text: 'Cast iron, public, undefeated. The handle takes your whole weight and returns cold water from somewhere honest. Porters, pigeons, kids: one queue.' },
-    ],
+    lines: [{ text: 'Cast iron, public, undefeated. Porters, pigeons, kids: one queue.' }],
   },
   'c11.ex.gullywall': {
-    lines: [
-      { text: 'Three chalked stumps, forty years of scuffs: the maidan\'s wicket wall. The LBW appeal beside it has been under review since before you were born.' },
-    ],
+    lines: [{ text: 'Three chalked stumps. The LBW appeal beside them has been under review since before you were born.' }],
   },
   'c11.ex.birdward': {
-    lines: [
-      { text: 'A folding table of cotton, splints, small scissors: the bird ward. The temple across the street runs a whole bird hospital; this is its field desk.' },
-    ],
+    lines: [{ text: 'Cotton, splints, small scissors: the bird hospital\'s field desk.' }],
   },
   'c11.ex.nishansahib': {
-    lines: [
-      { text: 'The nishan sahib, saffron over the whole square, visible from every roof. It marks the door that never closes and the kitchen that never asks.' },
-    ],
+    lines: [{ text: 'Saffron over the whole square, marking the door that never closes.' }],
   },
   'c11.ex.garlandline': {
-    lines: [
-      { text: 'Marigold garlands strung shoulder-high, sold by the arm\'s length. Weddings, temples, taxi dashboards: one orange blesses all three without prejudice.' },
-    ],
-  },
-  'c11.ex.marigoldheap': {
-    lines: [
-      { text: 'Loose marigolds, the garland trade\'s spare change. By evening they will be on a doorstep, a shrine, or a puddle, and correct in all three places.' },
-    ],
-  },
-  'c11.ex.spicespill': {
-    lines: [
-      { text: 'Turmeric and chilli dust tracked down the lane: an accidental map of the day\'s deliveries. The pigeons inspect it, decide it is not food, and move on.' },
-    ],
+    lines: [{ text: 'Marigolds by the arm\'s length. Weddings, temples, taxi dashboards: one orange blesses all three.' }],
   },
   // The kulhad page fills here, over the evidence, not in Akhtar's greeting:
   // you understand the cup's whole life at the sight of its afterlife.
   'c11.ex.kulhadshards': {
-    lines: [
-      { text: 'Spent kulhads, shattered musically, as intended. One cup, one chai, one small percussion solo. The lane\'s gutters glitter with clay applause.' },
-    ],
+    lines: [{ text: 'Spent kulhads, shattered as intended. The gutters glitter with clay applause.' }],
     effects: ['journal:dishes.kulhadchai'],
   },
   'c11.ex.pigeonpeck': {
-    lines: [
-      { text: 'Pigeons at their ground shift, auditing spilled grain. At dusk they clock out, rise in one silver sheet, and become somebody\'s flying signature.' },
-    ],
+    lines: [{ text: 'Pigeons auditing spilled grain, one grey feather left behind.' }],
   },
   'c11.ex.puddle': {
-    lines: [
-      { text: 'A monsoon puddle holding the wire bundles and one cut kite, upside down. By city law it belongs to the kids; adults may only look.' },
-    ],
+    lines: [{ text: 'A puddle holding one cut kite, upside down. By city law it belongs to the kids.' }],
   },
   'c11.ex.charpai': {
-    lines: [
-      { text: 'A charpai, rope-woven and sun-bleached, sagging with testimony. Load rating: two gossips, or one philosopher lying down.' },
-    ],
-  },
-  'c11.ex.chalkpitch': {
-    lines: [
-      { text: 'The chalked crease of the maidan\'s test arena. It is redrawn after every rain and every argument, which arrive on roughly the same schedule.' },
-    ],
+    lines: [{ text: 'A rope charpai, sagging with testimony. Load rating: two gossips, or one philosopher lying down.' }],
   },
 
   // ---------------- examines: rooftop ----------------
   'c11.ex.kabootarkhana': {
-    lines: [
-      { text: 'The kabootar khana: whitewashed compartments, wire fronts, named tenants. Begum runs the coop; Yusuf merely pays the grain bill and takes the blame.' },
-    ],
+    lines: [{ text: 'Whitewashed compartments, named tenants. Begum runs the coop; Yusuf pays the grain bill.' }],
   },
   'c11.ex.kitestack': {
-    lines: [
-      { text: 'Patangs leaning in a paper rainbow: fighters, all of them, tissue and bamboo. Each costs less than a chai and carries more ambition than most careers.' },
-    ],
+    lines: [{ text: 'Patangs in a paper rainbow. Each costs less than a chai and carries more ambition than most careers.' }],
   },
   'c11.ex.charkhi': {
-    lines: [
-      { text: 'The charkhi, wound fat with plain cotton dor. No glass on this roof; the ustad says the sky has enough blood in it.' },
-    ],
-  },
-  'c11.ex.watertank': {
-    lines: [
-      { text: 'A black water tank on stilts, the roof\'s civil servant. One pigeon stands on the lid at all times; the post appears to be hereditary.' },
-    ],
-  },
-  'c11.ex.dhobiline': {
-    lines: [
-      { text: 'The dhobi line flies the mohalla\'s flags: kurtas, dupattas, one defecting bedsheet. In this wind, laundry is the roof\'s weather report.' },
-    ],
-  },
-  'c11.ex.antennajugaad': {
-    lines: [
-      { text: 'A TV antenna guyed with kite string, aimed at a transmitter it believes in. Jugaad, aerial division: the picture snows only during cricket. Fate.' },
-    ],
-  },
-  'c11.ex.fortwall': {
-    lines: [
-      { text: 'The Red Fort\'s long wall holds the northern horizon down, red as a held breath. Thunderheads stack behind it in sawan like an audience arriving early.' },
-    ],
-  },
-  'c11.ex.jamadomes': {
-    lines: [
-      { text: 'Jama Masjid\'s domes ride the rooftop sea, white marble weather. At dusk they go rose-colored, and every pigeon in the walled city takes it personally.' },
-    ],
-  },
-  'c11.ex.parapet': {
-    lines: [
-      { text: 'The parapet: brick lace at knee height, the correct place for elbows and evenings. The whole mohalla is down there, being audible.' },
-    ],
-  },
-  'c11.ex.pigeonflock': {
-    lines: [
-      { text: 'The whole flock down at once: a grey carpet with opinions. Walk in and it becomes weather for four seconds, then floor again.' },
-      { text: 'Yusuf knows perhaps forty of them by name. He will tell you all forty if you stand still, and you will stand still.' },
-    ],
-  },
-  'c11.ex.jaalipanel': {
-    lines: [
-      { text: 'A sandstone jaali standing free in the room, carved into a hundred small stars. The afternoon comes through it as coins and moves across the floor.' },
-      { text: 'Cool on the palm even in June: the stone lets the wind pass and stops the sun. Somebody solved this long ago.' },
-    ],
-  },
-  'c11.ex.dryingcloth': {
-    lines: [
-      { text: 'Four lengths of cloth spread flat on the maidan dust, a stone on each corner. Red, indigo, one green with a gold border showing off.' },
-      { text: 'The dhobi will be back before the rain. He always is. Sawan and he have an understanding neither of them has ever explained.' },
-    ],
-  },
-  'c11.ex.parapetside': {
-    lines: [
-      { text: 'A knee-high party wall, a century old. Yusuf\'s birds on one side, the television on the other. Peace holds.' },
-    ],
-  },
-  'c11.ex.kitecut': {
-    lines: [
-      { text: 'A cut kite come to rest, someone\'s woh kata, now the roof\'s souvenir. Its severed line trails off the tile, still pointing at the fight it lost.' },
-    ],
-  },
-  'c11.ex.terrace': {
-    lines: [
-      { text: 'Lime-washed terrace brick, sun-cured and rain-rinsed. A second city lives up here: tanks, lines, coops, kites, and the sky finally at arm\'s reach.' },
-    ],
+    lines: [{ text: 'The charkhi, wound fat with plain cotton dor. No glass on this roof.' }],
   },
   'c11.ex.tanktrio': {
-    lines: [
-      { text: 'A black tank up a welded frame with a blue drum sulking at its foot. The whole mohalla\'s water lives three storeys up and comes down grudgingly.' },
-      { text: 'By four in the afternoon the water could make tea; by four in the morning it is the coldest thing in Delhi.' },
-    ],
+    lines: [{ text: 'A black tank on stilts. One pigeon stands on the lid at all times; the post appears to be hereditary.' }],
+  },
+  'c11.ex.dhobiline': {
+    lines: [{ text: 'Kurtas, dupattas, one defecting bedsheet. Laundry is the weather report up here.' }],
   },
   'c11.ex.dishantenna': {
-    lines: [
-      { text: 'A pale dish weighted down with two bricks, aimed at a satellite nobody has met. It brought two hundred channels and one permanent argument.' },
-      { text: 'When it rains hard the picture goes, and the whole lane agrees the rain is at fault. When it clears, credit stays with the bricks.' },
-    ],
+    lines: [{ text: 'A dish weighted with two bricks, an antenna guyed with kite string. The picture snows only during cricket.' }],
+  },
+  'c11.ex.fortwall': {
+    lines: [{ text: 'The Red Fort\'s wall holds the northern horizon down. Thunderheads stack behind it like an early audience.' }],
+  },
+  'c11.ex.jamadomes': {
+    lines: [{ text: 'At dusk the domes go rose, and every pigeon in the walled city takes it personally.' }],
+  },
+  'c11.ex.parapet': {
+    lines: [{ text: 'Brick lace at knee height, the correct place for elbows and evenings.' }],
+  },
+  'c11.ex.pigeonflock': {
+    lines: [{ text: 'A grey carpet with opinions. Walk in and it becomes weather for four seconds.' }],
+  },
+  'c11.ex.jaalipanel': {
+    lines: [{ text: 'A sandstone jaali of a hundred small stars. The afternoon comes through as coins.' }],
+  },
+  'c11.ex.dryingcloth': {
+    lines: [{ text: 'Cloth laid flat on the dust, a stone on each corner. The dhobi will be back before the rain. He always is.' }],
+  },
+  'c11.ex.kitecut': {
+    lines: [{ text: 'A cut kite come to rest. Nobody takes it down; that would be admitting things.' }],
+  },
+  'c11.ex.terrace': {
+    lines: [{ text: 'Lime-washed terrace brick, whitewashed for the birds. A second city, with the sky at arm\'s reach.' }],
   },
   'c11.ex.mumty': {
-    lines: [
-      { text: 'The mumty: a brick room the size of an argument, tin hat held down by two bricks. The green door has never been locked.' },
-      { text: 'Twelve steps inside it, and then this. Every roof in the mohalla begins with a small dark room and ends with the whole sky.' },
-    ],
+    lines: [{ text: 'Every roof here begins with a small dark room like this one and ends with the whole sky.' }],
   },
   'c11.ex.neemtub': {
-    lines: [
-      { text: 'A neem in a cut oil drum painted bus-blue. The roof\'s only shade, the lane\'s only free toothbrushes.' },
-    ],
+    lines: [{ text: 'A neem in a bus-blue oil drum: the roof\'s only shade, the lane\'s only free toothbrushes.' }],
   },
   'c11.ex.kitemast': {
-    lines: [
-      { text: 'A bamboo the length of two men, lashed to the parapet, flying whatever the roof currently declares. Last week it declared a shirt.' },
-      { text: 'A cut kite is tied on at shoulder height. Not decoration. A receipt.' },
-    ],
-  },
-  'c11.ex.wirespan': {
-    lines: [
-      { text: 'Nine cables crossing the gali at whatever height the last electrician could reach. One kite hangs in them, retired, out of everybody\'s jurisdiction.' },
-      { text: 'Nobody knows which wire does what. Everybody knows whom to shout for. The system works, in the way most systems here work.' },
-    ],
-  },
-  'c11.ex.clothspan': {
-    lines: [
-      { text: 'Cloth strung balcony to balcony over the lane: a red dupatta, a blue lungi, a white kurta with the sun straight through it. The gali\'s only colour.' },
-      { text: 'Walk under it in sawan and it drips on you. Walk under it in June and it is the coolest twelve feet in Delhi.' },
-    ],
+    lines: [{ text: 'A cut kite tied to a bamboo mast at shoulder height. Not decoration. A receipt.' }],
   },
   'c11.ex.shopspill': {
-    lines: [
-      { text: 'A shop that ran out of shop: steel and plastic stacked one tile into the lane. Nobody complains twice.' },
-    ],
-  },
-  'c11.ex.signjut': {
-    lines: [
-      { text: 'A painted board three scripts deep, its tube light failing politely since 1987. The shop below has moved twice.' },
-    ],
-  },
-  'c11.ex.terracelime': {
-    lines: [
-      { text: 'Fresh chuna underfoot: Yusuf whitewashes his terrace for the birds, not the neighbors. The birds have never once said thank you. He continues.' },
-    ],
-  },
-  'c11.ex.terracerose': {
-    lines: [
-      { text: 'The south terrace wears brick dust like an old shawl, worn to the pavers where the charpai parliament sits. Evening starts here and spreads.' },
-    ],
+    lines: [{ text: 'A shop that ran out of shop. Nobody complains twice.' }],
   },
   'c11.ex.tulsipot': {
-    lines: [
-      { text: 'A tulsi in a stepped clay pot, watered before anyone\'s tea. Basil below, pigeons above, and not one leaf goes missing. Some treaties hold.' },
-    ],
+    lines: [{ text: 'A tulsi, watered before anyone\'s tea. Pigeons above, and not one leaf missing.' }],
   },
   'c11.ex.transistor': {
-    lines: [
-      { text: 'A transistor with its aerial spliced by string, relaying the cricket to the entire sky. Scores travel roof to roof faster than the ball does.' },
-    ],
+    lines: [{ text: 'The cricket, relayed roof to roof faster than the ball.' }],
   },
   'c11.ex.chaitray': {
-    lines: [
-      { text: 'The chai tray: kettle, kulhads, rusk that stays structural until dipped. Quorum for the roof parliament is two cups and one disagreement.' },
-    ],
-  },
-  'c11.ex.charpaibed': {
-    lines: [
-      { text: 'A charpai made up properly: printed sheet, razai folded at the foot, one pillow that has heard everything. The parapet keeps its back.' },
-    ],
+    lines: [{ text: 'Quorum for the roof parliament: two cups and one disagreement.' }],
   },
   'c11.ex.diyaledge': {
-    lines: [
-      { text: 'Clay diyas on a whitewashed ledge, lit for the dusk flight. The roof keeps its own constellation, maintained nightly, fueled by mustard oil.' },
-    ],
-  },
-  'c11.ex.kitesnag': {
-    lines: [
-      { text: 'A cut kite snagged on a bamboo pole: some other roof\'s victory, this roof\'s flag. Nobody takes it down; that would be admitting things.' },
-    ],
-  },
-  'c11.ex.grainspill': {
-    lines: [
-      { text: 'Bajra scattered by the handful, already half gone under a hurry of beaks. One grey feather is left on the pile afterward.' },
-    ],
+    lines: [{ text: 'Clay diyas lit for the dusk flight: the roof\'s own constellation.' }],
   },
   'c11.ex.stool.roof': {
-    lines: [
-      { text: 'A low stool at charpai altitude, for the visitor whose knees vote against the floor. Up here even the furniture keeps the sky in view.' },
-    ],
+    lines: [{ text: 'A low stool for knees that vote against the floor.' }],
   },
 
   // ---------------- examines: langar hall ----------------
   'c11.ex.degpot': {
-    lines: [
-      { text: 'A deg the size of a well, stirred with a paddle you could row with. It has never cooked for fewer than everyone.' },
-    ],
+    lines: [{ text: 'A deg the size of a well. It has never cooked for fewer than everyone.' }],
   },
   'c11.ex.chulha': {
-    lines: [
-      { text: 'The langar chulha, fed since before dawn. The fire is tended in shifts by volunteers; the heat, like everything here, is donated.' },
-    ],
+    lines: [{ text: 'Fed since before dawn. The heat, like everything here, is donated.' }],
   },
   'c11.ex.attaboard': {
-    lines: [
-      { text: 'Dough in planetary quantities and the rolling pins of everyone who ever said I can help. Round is a direction, not a requirement.' },
-    ],
+    lines: [{ text: 'Dough in planetary quantities, and the rolling pins of everyone who ever said I can help.' }],
   },
   'c11.ex.rotistack': {
-    lines: [
-      { text: 'Rotis stacked warm in cloth, leaning with abundance. Production and blessing in one column; the stack never quite grows and never quite empties.' },
-    ],
+    lines: [{ text: 'Rotis warm in cloth. The stack never quite grows and never quite empties.' }],
   },
   'c11.ex.pangat': {
-    lines: [
-      { text: 'The pangat rows: striped matting, one level, where a CEO and a porter eat the same dal. The floor is the point.' },
-    ],
+    lines: [{ text: 'Striped matting, one level. The floor is the point.' }],
   },
   'c11.ex.rumalbasket': {
-    lines: [
-      { text: 'A basket of rumals in confident colors, for any head that arrived uncovered. Take one, tie it, belong. They all fit everyone; that is the design.' },
-    ],
+    lines: [{ text: 'Rumals in confident colors. They all fit everyone.' }],
   },
   'c11.ex.shoerack': {
-    lines: [
-      { text: 'Everyone\'s dusty miles parked at one door: chappals, office shoes, one tiny pair with lights in the heels. The rack holds them without ranking them.' },
-    ],
+    lines: [{ text: 'Chappals, office shoes, one tiny pair with lights in the heels, held without ranking.' }],
   },
   'c11.ex.doormat': {
-    lines: [
-      { text: 'Coir, honest, worn thin exactly where a thousand feet agreed to be polite. It greets a CEO and a porter with the same rough handshake.' },
-    ],
+    lines: [{ text: 'Coir, worn thin where a thousand feet agreed to be polite.' }],
   },
   'c11.ex.waterstation': {
-    lines: [
-      { text: 'Clay matkas sweating on an iron stand, steel tumblers below. Cold water, free, all July: the quietest ministry in the building.' },
-    ],
+    lines: [{ text: 'Sweating clay matkas. Cold water, free, all July: the quietest ministry in the building.' }],
   },
   'c11.ex.hallfan': {
-    lines: [
-      { text: 'The hall fan, cage dented, motor loyal, sweeping the pangat rows in slow forgiveness. Someone tied a ribbon to it to prove the breeze exists.' },
-    ],
+    lines: [{ text: 'Someone tied a ribbon to the fan to prove the breeze exists.' }],
   },
   'c11.ex.khandapanel': {
-    lines: [
-      { text: 'The khanda over a saffron drape: the kitchen\'s compass. Below this wall everything is level; that is not decor, that is the instruction.' },
-    ],
+    lines: [{ text: 'The khanda over a saffron drape. Below it, everything is level.' }],
   },
   'c11.ex.ladlestand': {
-    lines: [
-      { text: 'Karchhis racked by wingspan and the brass bucket between rounds. The dal travels the rows two-handed; the ladle never points at anyone.' },
-    ],
+    lines: [{ text: 'Karchhis racked by wingspan. The ladle never points at anyone.' }],
   },
   'c11.ex.thalistack': {
-    lines: [
-      { text: 'Five hundred steel thalis drying on edge, washed by whichever hands arrived. Tomorrow they will ring like shy bells all the way to the floor.' },
-    ],
+    lines: [{ text: 'Five hundred steel thalis, washed by whichever hands arrived. No ledger.' }],
   },
 
   // ---------------- examines: the poet's haveli ----------------
   'c11.ex.couplet': {
     lines: [
-      { text: 'Nastaliq on whitewash: hazaaron khwahishen aisi, ki har khwahish pe dam nikle. A thousand desires, each worth a life; many came true, still too few.' },
-      { text: 'You read it twice, then once more with your lips moving. It files itself somewhere permanent. The chai-wallah at the gali mouth pays for such lines.' },
+      { text: 'Nastaliq on whitewash: hazaaron khwahishen aisi, ki har khwahish pe dam nikle. A thousand desires, each worth a life.' },
+      { text: 'You read it twice, lips moving. The chai-wallah at the gali mouth pays for lines like this.' },
     ],
     effects: ['set:c11.sher.learned', 'journal:customs.sher'],
   },
   'c11.ex.couplet.again': {
-    lines: [
-      { text: 'The second panel, smaller: dil-e-nadaan tujhe hua kya hai. Oh innocent heart, what has happened to you. The wall asks everyone; nobody has to answer.' },
-    ],
+    lines: [{ text: 'The second panel: dil-e-nadaan tujhe hua kya hai. Oh innocent heart, what has happened to you.' }],
   },
   'c11.ex.divan': {
-    lines: [
-      { text: 'A divan with brocade bolsters, where visitors outstay beautifully. The cushions hold the shape of a century of good talks, none of them finished.' },
-    ],
+    lines: [{ text: 'Brocade bolsters holding the shape of a century of good talks, none of them finished.' }],
   },
   'c11.ex.takht': {
-    lines: [
-      { text: 'A low writing desk: paper, reed qalam, an inkwell that has outlived its opinions. Two lines begun, one crossed out. The crossing-out is the craft.' },
-    ],
+    lines: [{ text: 'Two lines begun, one crossed out, the drafts crumpled on the floor. The crossing-out is the craft.' }],
   },
   'c11.ex.bookchest': {
-    lines: [
-      { text: 'Divans of poets, a dictionary that lost an argument, dust holding it all in place. One volume lies open on top, mid-sentence since before Partition.' },
-    ],
+    lines: [{ text: 'One volume lies open on top, mid-sentence since before Partition.' }],
   },
   'c11.ex.mangocrate': {
-    lines: [
-      { text: 'A crate of langra in straw, perfuming the whole room; the caretaker keeps it the way other rooms keep flowers. Sawan\'s one non-negotiable furnishing.' },
-      { text: 'Ghalib, asked what he required of mangoes: sweet, and many. A friend said even donkeys refuse them. Exactly, said Ghalib. Even donkeys.' },
-    ],
+    lines: [{ text: 'Langra in straw. A friend told Ghalib even donkeys refuse mangoes. Exactly, said Ghalib. Even donkeys.' }],
     effects: ['journal:dishes.aam'],
   },
   'c11.ex.paandaan': {
-    lines: [
-      { text: 'A brass paandaan, hinged like a small bank vault, which socially it is. Betel leaf, areca, lime, cardamom: a whole diplomacy in one box.' },
-    ],
+    lines: [{ text: 'A brass paandaan, hinged like a small bank vault: a whole diplomacy in one box.' }],
   },
   'c11.ex.lampniche': {
-    lines: [
-      { text: 'A taaq in the wall: one oil lamp, fifty years of soot above it. Still the room\'s best reading light.' },
-    ],
-  },
-  'c11.ex.couplitter': {
-    lines: [
-      { text: 'Crumpled drafts by the takht, each one a second line that refused to land. The wastebasket lost on points; the floor keeps the evidence.' },
-    ],
+    lines: [{ text: 'One oil lamp, fifty years of soot. Still the best reading light in the room.' }],
   },
 
   // ---------------- examines: shared kinds, this chapter's voice ----------------
   'c11.ex.door': {
-    lines: [
-      { text: 'A door that looks closed. Per Bantu\'s rule two, it is not closed; it is simply resting. Behind it, someone\'s whole world keeps its own hours.' },
-    ],
+    lines: [{ text: 'A door that looks closed. In this gali it is only resting.' }],
   },
   'c11.ex.farol': {
-    lines: [
-      { text: 'A lane lamp wired into the great overhead tangle by a method best not audited. In the rain its light goes soft, a candle inside a waterfall.' },
-    ],
+    lines: [{ text: 'A lane lamp wired into the tangle by a method best not audited.' }],
   },
   'c11.ex.tuft': {
-    lines: [
-      { text: 'Grass in a pavement crack, drinking the season. Even the weeds of this city are fed by somebody\'s spillage; it is that kind of city.' },
-    ],
+    lines: [{ text: 'Grass in a crack, fed like everything here by somebody\'s spillage.' }],
   },
   'c11.ex.dirt': {
-    lines: [
-      { text: 'The maidan\'s trampled earth: cricket pitch, wrestling ground, puddle nursery, and parliament floor, depending on the hour.' },
-    ],
+    lines: [{ text: 'Cricket pitch, wrestling ground, puddle nursery, parliament floor, depending on the hour.' }],
   },
   'c11.ex.wallint.langar': {
-    lines: [
-      { text: 'Whitewashed walls that hold steam, kirtan, and the smell of dal in equal measure. A painted line reads: recognize the whole human race as one.' },
-    ],
+    lines: [{ text: 'A painted line on the whitewash: recognize the whole human race as one.' }],
   },
   'c11.ex.wallint.haveli': {
-    lines: [
-      { text: 'Cool lime-plastered walls a lakhori brick thick. Outside, the lane roars politely; in here, the loudest thing is the ink.' },
-    ],
-  },
-  'c11.ex.shelf.langar': {
-    lines: [
-      { text: 'Steel thalis and katoris in gleaming battalions, washed by volunteers whose seva is exactly this: five hundred dishes, no ledger, no complaints desk.' },
-    ],
+    lines: [{ text: 'Lime plaster a lakhori brick thick. In here, the loudest thing is the ink.' }],
   },
   'c11.ex.rug.haveli': {
-    lines: [
-      { text: 'A cotton dari, indigo-striped, worn to its geometry by listeners sitting exactly where you would sit. The mushaira is over; the dari disagrees.' },
-    ],
-  },
-  'c11.ex.mat.langar': {
-    lines: [
-      { text: 'The threshold mat, thinned by every kind of foot the city makes. It has one job and no opinions, which is rare for this street.' },
-    ],
+    lines: [{ text: 'An indigo dari worn to its geometry. The mushaira is over; the dari disagrees.' }],
   },
   'c11.ex.mat.haveli': {
-    lines: [
-      { text: 'A reed mat at the door, older than the electricity. You wipe your feet; the haveli notices, and approves in its cool, plastered way.' },
-    ],
+    lines: [{ text: 'A reed mat older than the electricity. You wipe your feet; the haveli approves.' }],
   },
   'c11.ex.floorterrazzo': {
-    lines: [
-      { text: 'Grey terrazzo in brass-edged bays, mopped between sittings. It has fed and been wiped clean more times than anybody has counted.' },
-      { text: 'Still damp in patches. The mop never gets far ahead of the sangat, and is not supposed to.' },
-    ],
+    lines: [{ text: 'Grey terrazzo, still damp. The mop never gets far ahead of the sangat.' }],
   },
   'c11.ex.floorsandstone': {
-    lines: [
-      { text: 'Agra sandstone flags, laid before anyone\'s grandmother, cool in June. The entire argument for building a house around a courtyard, in one material.' },
-    ],
+    lines: [{ text: 'Agra sandstone, cool in June: the whole argument for a courtyard house.' }],
   },
 };
 
@@ -1778,8 +1488,8 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   birdward: [{ node: 'c11.ex.birdward' }],
   nishansahib: [{ node: 'c11.ex.nishansahib' }],
   garlandline: [{ node: 'c11.ex.garlandline' }],
-  marigoldheap: [{ node: 'c11.ex.marigoldheap' }],
-  spicespill: [{ node: 'c11.ex.spicespill' }],
+  marigoldheap: [{ node: 'c11.ex.garlandline' }],
+  spicespill: [{ node: 'c11.ex.chilisacks' }],
   kulhadshards: [{ node: 'c11.ex.kulhadshards' }],
   pigeonpeck: [{ node: 'c11.ex.pigeonpeck' }],
   puddle: [{ node: 'c11.ex.puddle' }],
@@ -1789,7 +1499,7 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['letter.read.delhi.pilar'], not: ['letter.read.delhi.mariamma'] }, node: 'c11.post.mariamma' },
     { node: 'c11.post.idle' },
   ],
-  chalkpitch: [{ node: 'c11.ex.chalkpitch' }],
+  chalkpitch: [{ node: 'c11.ex.gullywall' }],
   kabootarkhana: [{ node: 'c11.ex.kabootarkhana' }],
   kitestack: [{ node: 'c11.ex.kitestack' }],
   tanktrio: [{ node: 'c11.ex.tanktrio' }],
@@ -1797,27 +1507,27 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   mumty: [{ node: 'c11.ex.mumty' }],
   neemtub: [{ node: 'c11.ex.neemtub' }],
   kitemast: [{ node: 'c11.ex.kitemast' }],
-  wirespan: [{ node: 'c11.ex.wirespan' }],
-  clothspan: [{ node: 'c11.ex.clothspan' }],
+  wirespan: [{ node: 'c11.ex.wirebundle' }],
+  clothspan: [{ node: 'c11.ex.dhobiline' }],
   shopspill: [{ node: 'c11.ex.shopspill' }],
-  signjut: [{ node: 'c11.ex.signjut' }],
-  terracelime: [{ node: 'c11.ex.terracelime' }],
-  terracerose: [{ node: 'c11.ex.terracerose' }],
+  signjut: [{ node: 'c11.ex.signstack' }],
+  terracelime: [{ node: 'c11.ex.terrace' }],
+  terracerose: [{ node: 'c11.ex.terrace' }],
   tulsipot: [{ node: 'c11.ex.tulsipot' }],
   transistor: [{ node: 'c11.ex.transistor' }],
   chaitray: [{ node: 'c11.ex.chaitray' }],
-  charpaibed: [{ node: 'c11.ex.charpaibed' }],
+  charpaibed: [{ node: 'c11.ex.charpai' }],
   diyaledge: [{ node: 'c11.ex.diyaledge' }],
-  kitesnag: [{ node: 'c11.ex.kitesnag' }],
-  grainspill: [{ node: 'c11.ex.grainspill' }],
+  kitesnag: [{ node: 'c11.ex.kitecut' }],
+  grainspill: [{ node: 'c11.ex.pigeonpeck' }],
   charkhi: [{ node: 'c11.ex.charkhi' }],
-  watertank: [{ node: 'c11.ex.watertank' }],
+  watertank: [{ node: 'c11.ex.tanktrio' }],
   dhobiline: [{ node: 'c11.ex.dhobiline' }],
-  antennajugaad: [{ node: 'c11.ex.antennajugaad' }],
+  antennajugaad: [{ node: 'c11.ex.dishantenna' }],
   fortwall: [{ node: 'c11.ex.fortwall' }],
   jamadomes: [{ node: 'c11.ex.jamadomes' }],
   parapet: [{ node: 'c11.ex.parapet' }],
-  parapetside: [{ node: 'c11.ex.parapetside' }],
+  parapetside: [{ node: 'c11.ex.parapet' }],
   dryingcloth: [{ node: 'c11.ex.dryingcloth' }],
   jaalipanel: [{ node: 'c11.ex.jaalipanel' }],
   pigeonflock: [{ node: 'c11.ex.pigeonflock' }],
@@ -1827,7 +1537,10 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   attaboard: [{ node: 'c11.ex.attaboard' }],
   rotistack: [{ node: 'c11.ex.rotistack' }],
   pangat: [{ node: 'c11.ex.pangat' }],
-  rumalbasket: [{ node: 'c11.ex.rumalbasket' }],
+  rumalbasket: [
+    { when: { has: ['c11.met.jog'], not: ['c11.rumal'] }, node: 'c11.jog.tie' },
+    { node: 'c11.ex.rumalbasket' },
+  ],
   shoerack: [{ node: 'c11.ex.shoerack' }],
   doormat: [{ node: 'c11.ex.doormat' }],
   waterstation: [{ node: 'c11.ex.waterstation' }],
@@ -1836,7 +1549,7 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   ladlestand: [{ node: 'c11.ex.ladlestand' }],
   thalistack: [{ node: 'c11.ex.thalistack' }],
   lampniche: [{ node: 'c11.ex.lampniche' }],
-  couplitter: [{ node: 'c11.ex.couplitter' }],
+  couplitter: [{ node: 'c11.ex.takht' }],
   coupletwall: [
     { when: { has: ['c11.sher.learned'] }, node: 'c11.ex.couplet.again' },
     { node: 'c11.ex.couplet' },
@@ -1855,10 +1568,10 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'delhi-langar', node: 'c11.ex.wallint.langar' },
     { map: 'delhi-haveli', node: 'c11.ex.wallint.haveli' },
   ],
-  shelf: [{ map: 'delhi-langar', node: 'c11.ex.shelf.langar' }],
+  shelf: [{ map: 'delhi-langar', node: 'c11.ex.thalistack' }],
   rug: [{ map: 'delhi-haveli', node: 'c11.ex.rug.haveli' }],
   mat: [
-    { map: 'delhi-langar', node: 'c11.ex.mat.langar' },
+    { map: 'delhi-langar', node: 'c11.ex.doormat' },
     { map: 'delhi-haveli', node: 'c11.ex.mat.haveli' },
   ],
 };

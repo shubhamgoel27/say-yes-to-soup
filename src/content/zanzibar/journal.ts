@@ -31,7 +31,7 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     title: 'Pole pole',
     sub: 'Slowly, slowly. The pace, the philosophy, the entire operating system.',
     nani: 'Pole pole ndio mwendo, the elder says. I have been studying doing nothing with the best teacher alive.',
-    you: 'Applied to me twice before it stuck: once on the bench, once at the soup. The list survived. I improved.',
+    you: 'Applied to me on the bench until it stuck. The list survived. I improved.',
     rhyme: {
       with: 'people.nani',
       note: 'A whole coast that knows my trick.',
@@ -51,6 +51,13 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     sub: 'The greeting ladder: news of the morning, the road, the home. Answer nzuri, then ask back.',
     nani: 'I tried to skip to my question and was returned, smiling, to the start, twice. The third time I stopped carrying the question.',
     you: 'Rashid restarted me from the top twice. The third time I greeted all the way down, and the village unlocked like a tide.',
+  },
+  {
+    id: 'words.haraka',
+    tab: 'words',
+    title: 'Haraka haraka haina baraka',
+    sub: 'Hurry, hurry has no blessing. Printed on hems, said to children, left on benches.',
+    you: 'Nobody said goodbye. A folded kanga on an empty bench said it for them, and a girl in a doorway waved. I left at the tide’s pace.',
   },
   {
     id: 'words.hamnashida',
@@ -204,6 +211,22 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
 
 /** Fukoni's loose threads; written like directions from a friend. */
 export const ZANZIBAR_TASKS: TaskDef[] = [
+  // The dawn first: once the village is asleep, nothing else is open.
+  {
+    when: { has: ['c7.dawn'], not: ['c7.complete'] },
+    text: 'First light, and the lane is asleep. Walk past Rashid’s bench on your way down.',
+    at: ['zanzibar', 14, 10],
+  },
+  {
+    when: { has: ['c7.complete'], not: ['c7.waved'] },
+    text: 'Someone small on the lane is awake too early.',
+    who: 'mtotoC7',
+  },
+  {
+    when: { has: ['c7.complete'] },
+    text: 'The launch waits at the end of the jetty. The tide is turning.',
+    at: ['zanzibar', 38, 27],
+  },
   {
     when: { has: ['c7.met.rashid'], not: ['c7.greeting'] },
     text: 'Mzee Rashid restarts the greeting every time you rush it. Answer the habari ladder all the way down, then ask back. There is no shortcut on purpose.',
@@ -280,13 +303,13 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
     who: 'ali',
   },
   {
-    when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.baraza.sat', 'c7.greeting'], not: ['c7.complete'] },
-    text: 'The sail is sailed, the cloth chosen, the bench sat. Go greet Mzee Rashid, all the way down, and hear what the coast decides.',
+    when: { has: ['c7.rashid.past'], not: ['c7.rashid.her'] },
+    text: 'Rashid has moved along the bench with the shade. Sit with him a while longer; the bench keeps more than news.',
     who: 'rashid',
   },
   {
-    when: { has: ['c7.complete'] },
-    text: 'Ali has a freighter, Suez, the middle sea. Until the tide serves, the bench is yours too; that is what it is for.',
+    when: { has: ['c7.sail.ok', 'c7.kanga.done', 'c7.baraza.sat', 'c7.greeting', 'c7.rashid.her'], not: ['c7.dawn'] },
+    text: 'The sail is sailed, the cloth chosen, the bench sat. Ali at the shipping counter keeps the freighter’s ledger.',
     who: 'ali',
   },
   {
