@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
+import { Hold } from './attend';
 
 /**
  * The Yacana's two hands-on verbs.
@@ -92,6 +93,11 @@ const CHUCKLES = [
 ];
 
 const COLS = 4;
+
+/** Story telling: seconds Ben's hand stays up after a wrong reach or a peek. */
+const BEN_HOLD = 0.5;
+/** Grabs inside one of those beats before Ben lets the reach through. */
+const BEN_PATIENCE = 4;
 
 /** Seconds the covered pot takes to go from all-vinegar to catching. */
 const SIMMER_DUR = 11;
@@ -385,6 +391,10 @@ export class GalleyPanel {
   private stepLeft = 0;
   /** Wrong reaches per step, for the coach's pointed finger. */
   private wrongBy: number[] = [];
+  /** Story: Ben's beat after a wrong reach or a peek under the lid. */
+  private ben = new Hold();
+  /** Story: steps Ben had to hand over outright. */
+  private handed = 0;
 
   constructor(
     private root: HTMLElement,
@@ -441,6 +451,8 @@ export class GalleyPanel {
     this.failMode = null;
     this.hard = RUN.hard;
     this.wrongBy = [];
+    this.ben.reset();
+    this.handed = 0;
     this.stepLeft = this.stepTime;
     this.hint = this.hard
       ? 'Ben ties your apron and steps back, arms folded. "Your pot tonight, pare. I only watch." ' + (HARD_STEPS[0]?.call ?? '')
@@ -480,6 +492,15 @@ export class GalleyPanel {
       done?.();
       return;
     }
+    if (this.ben.on) {
+      // Ben has a hand up; grabbing again only keeps it there, until he
+      // gives up and lets the reach through (he hands it over, laughing).
+      if (this.ben.streak < BEN_PATIENCE) {
+        this.ben.start(BEN_HOLD);
+        return;
+      }
+      this.ben.release();
+    }
     if (this.simmer >= 0) {
       this.liftOff();
       return;
@@ -512,9 +533,24 @@ export class GalleyPanel {
       });
       if (this.stepLeft <= 0) this.scorch();
       return;
+    } else if ((this.wrongBy[this.step] ?? 0) === 0) {
+      // The first wrong reach for a step: Ben points, and waits a beat.
+      this.audio.blip();
+      this.wrongBy[this.step] = 1;
+      this.misses++;
+      this.ben.start(BEN_HOLD);
+      this.hint = `Ben shakes his head, smiling. "Not that one, pare. The ${want.toLowerCase()} sits ${shelfSpot(want)}."`;
+      this.wobIdx = this.cur;
+      this.sc.tween(0, 1, 0.38, easeOutCubic, (v) => {
+        this.wobT = v;
+      }, () => {
+        this.wobIdx = -1;
+      });
+      return;
     } else {
       // No failing in this galley. Ben hands you the right thing, laughing.
       this.audio.blip();
+      this.handed++;
       const chuckle = CHUCKLES[this.misses % CHUCKLES.length] ?? CHUCKLES[0] ?? '';
       this.wrongBy[this.step] = (this.wrongBy[this.step] ?? 0) + 1;
       this.misses++;
@@ -547,7 +583,8 @@ export class GalleyPanel {
         return;
       }
       this.audio.blip();
-      this.hint = 'Ben leans over and sniffs. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
+      this.ben.start(BEN_HOLD);
+      this.hint = 'Ben puts the lid back with one finger. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
       return;
     }
     this.done = true;
@@ -570,7 +607,9 @@ export class GalleyPanel {
     this.hint =
       this.misses === 0
         ? 'Off the heat on exactly the right breath, dark and glossy. Ben looks at you with suspicion: "You have aunties, pare?" Press Space.'
-        : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
+        : !this.hard && this.handed >= 3
+          ? 'Off the heat, dark and glossy. "I cooked it, you held the spoon," Ben says, delighted with both of you. "Next time, look at the shelf, pare." Press Space.'
+          : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
   }
 
   /** The pot catches. Ben has burnt more dinners than you will ever cook. */
@@ -631,6 +670,7 @@ export class GalleyPanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     const simDt = this.sc.frame(dt, (g) => this.paint(g));
+    this.ben.tick(simDt);
     // The reduction runs on its own clock; the engine stops every panel's clock
     // while the pause strip is up, so nothing burns behind a menu. Ben calls
     // it twice before it ever catches.

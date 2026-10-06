@@ -663,8 +663,18 @@ export class RowPanel {
 // ------------------------------------------------------------- the sadya
 
 /** Slots on the leaf, 3 columns x 2 rows, plus the tip seat the hard telling
- * opens at the narrow end. Narrow end of the leaf points left. */
+ * opens at the narrow end. Narrow end of the leaf points left. The seats are
+ * not written on the leaf: Auntie Leela walks the order once as the panel
+ * opens (TEACH), and after that the leaf is only a leaf, the way it is at a
+ * real sadya. A wrong seat earns her correction and her finger on the right one. */
 const SLOTS = ['inji puli', 'thoran', 'avial', 'banana', 'rice', 'pappadam', 'leaf tip'];
+
+/** Auntie Leela's one walk around the leaf: which seat, in the order she points. */
+const TEACH = [0, 1, 2, 3, 5, 4];
+const TEACH_HARD = [6, ...TEACH];
+/** Seconds her finger rests on each seat, after a short breath to begin. */
+const TEACH_STEP = 0.55;
+const TEACH_START = 0.35;
 
 /** Serving order, each with its home slot and its auntie correction. */
 const COURSES: { item: string; slot: number; oops: string }[] = [
@@ -947,6 +957,8 @@ export class SadyaPanel {
   private lapses = 0;
   private missBy = new Map<string, { n: number; at: number }>();
   private courseAt = 0;
+  private misses = 0; // wrong seats this leaf, for the ending
+  private pointAt = -1; // the seat Auntie Leela's finger is on after a slip
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -983,9 +995,12 @@ export class SadyaPanel {
     this.lapses = 0;
     this.missBy.clear();
     this.courseAt = 0;
+    this.misses = 0;
+    this.pointAt = -1;
     this.hint = this.hard
       ? 'Eight courses tonight, down to the payasam at the leaf tip, and the aunties keep a clock. Space serves the pappadam; be quick and be right.'
-      : 'Narrow end of the leaf points left. Arrows choose a spot; Space serves the pappadam. Right hand only.';
+      : 'Auntie Leela points once, quickly: "Pickle in the small corner, where the narrow end points. Thoran, then avial, along the top. ' +
+        'Banana bottom left, pappadam bottom right, and the rice in the middle, last." Arrows choose a seat; Space serves the pappadam.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Sadya Leaf', this.scene, SADYA_LEGEND);
     unclampHint(this.root);
@@ -1121,6 +1136,7 @@ export class SadyaPanel {
       const c = this.courses[this.course];
       if (!c) return;
       if (this.cur === c.slot) {
+        this.pointAt = -1;
         this.placed[c.slot] = c.item;
         this.audio.chime();
         this.ladleDip = 1;
@@ -1132,7 +1148,10 @@ export class SadyaPanel {
           this.hint = `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
         } else {
           this.phase = 'fold';
-          this.hint = 'The leaf is full and correct. Now: fold it toward you, or away? Left and right choose; Space commits.';
+          this.hint =
+            !this.hard && this.misses === 0
+              ? 'Every course in its seat, first time. Auntie Leela looks at Rosamma: "Who taught this one?" "You did, just now." Now: fold it toward you, or away? Left and right choose; Space commits.'
+              : 'The leaf is full and correct. Now: fold it toward you, or away? Left and right choose; Space commits.';
           if (sc) {
             sc.flash('#fff3c8', 0.35);
             this.sweepAt = sc.time + 0.25;
@@ -1143,6 +1162,8 @@ export class SadyaPanel {
       } else {
         this.audio.blip();
         this.hint = c.oops;
+        this.misses++;
+        this.pointAt = c.slot; // her finger stays on the right seat until it is served
         // Remember which course went astray and where it tried to sit, so
         // the next how-to card can coach the actual mistake.
         const m = this.missBy.get(c.item) ?? { n: 0, at: this.cur };
@@ -1227,11 +1248,22 @@ export class SadyaPanel {
     // Empty seats: a faint hollow and the auntie's map, written small. The
     // tip seat only exists in the hard telling, small like the end it sits on.
     const nSlots = this.hard ? 7 : 6;
+    // Auntie Leela's one walk around the leaf: each seat lit and named in turn.
+    const order = this.hard ? TEACH_HARD : TEACH;
+    const k = Math.floor((t - TEACH_START) / TEACH_STEP);
+    const teaching = this.phase === 'serve' && t >= TEACH_START && k < order.length ? (order[k] ?? -1) : -1;
+    const teachA = teaching >= 0 ? Math.sin(Math.PI * Math.min(1, ((t - TEACH_START) % TEACH_STEP) / TEACH_STEP)) : 0;
     for (let i = 0; i < nSlots; i++) {
       const [x, y] = SLOT_POS[i]!;
       if (this.landAt[i]! < 0) {
         oval(g, x, y + 3, i === 6 ? 22 : 32, i === 6 ? 11 : 15, 'rgba(32,54,24,0.16)');
-        if (this.phase === 'serve') label(g, SLOTS[i]!, x, y + 7, 'rgba(240,244,220,0.6)', 15);
+        const pointed = this.phase === 'serve' && this.pointAt === i;
+        if (teaching === i || pointed) {
+          const a = pointed ? 0.55 + 0.25 * wobble(t, 3) : teachA;
+          glowSpot(g, x, y + 3, 40, '#fff3c8', 0.32 * a);
+          const name = i === 6 ? 'payasam' : SLOTS[i]!;
+          label(g, name, x, y + 7, `rgba(250,246,226,${(0.9 * a).toFixed(3)})`, 16);
+        }
       } else {
         softShadow(g, x, y + 9, 36, 12, 0.18);
         paintFood(g, this.placed[i] ?? '', x, y, t - this.landAt[i]!);

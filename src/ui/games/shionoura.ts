@@ -249,10 +249,15 @@ export class KingyoPanel {
       this.bagT = v;
     });
     this.scatterShreds();
+    const wasted = this.deepDips + this.waterDips;
     this.hint =
-      this.caught === 1
-        ? 'The paper sighs and lets go. One goldfish, bagged with ceremony. Space.'
-        : `The paper sighs and lets go. ${this.caught} goldfish, bagged with ceremony. Space.`;
+      !this.hard && this.caught >= 3 && wasted === 0
+        ? 'Three goldfish, three dips, not a drop wasted. The uncle bags them and, very quietly, gives you a fourth paper for later. Space.'
+        : !this.hard && wasted >= 3 && this.caught <= 1
+          ? 'The paper sighs and lets go. One goldfish, and most of the tub, scooped with enthusiasm. The uncle wrings out the scraps, laughing. Space.'
+          : this.caught === 1
+            ? 'The paper sighs and lets go. One goldfish, bagged with ceremony. Space.'
+            : `The paper sighs and lets go. ${this.caught} goldfish, bagged with ceremony. Space.`;
   }
 
   /**
