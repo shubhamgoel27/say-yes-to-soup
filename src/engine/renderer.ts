@@ -5,7 +5,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { Rng, cellHash, outlineSheet, surface } from '../art/pix';
+import { cellHash, outlineSheet, surface } from '../art/pix';
 
 /**
  * The world composer, smooth-art era. Renders the scene at 4x logical
@@ -73,8 +73,113 @@ const SH_MY = 9;
  */
 const ACTOR_H = 1.15;
 
-/** Depth into the cell each boundary-feather mask reaches, as a fraction. */
-const SPILL_DEPTHS = [0.12, 0.2, 0.3, 0.42, 0.58];
+/**
+ * A strip and its three tapered cousins: [as is, left end faded, right end
+ * faded, both]. A wall's shade that stops dead at a tile edge is a ruled line.
+ */
+function taperings(src: HTMLCanvasElement): HTMLCanvasElement[] {
+  const out: HTMLCanvasElement[] = [src];
+  for (const mode of [1, 2, 3]) {
+    const { cv, g } = surface(src.width, src.height);
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = 'destination-in';
+    const grad = g.createLinearGradient(0, 0, src.width, 0);
+    grad.addColorStop(0, mode & 1 ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,1)');
+    grad.addColorStop(0.45, 'rgba(0,0,0,1)');
+    grad.addColorStop(0.55, 'rgba(0,0,0,1)');
+    grad.addColorStop(1, mode & 2 ? 'rgba(0,0,0,0)' : 'rgba(0,0,0,1)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, src.width, src.height);
+    out.push(cv);
+  }
+  return out;
+}
+
+/**
+ * Object kinds that are walls, whatever chapter named them. Two cacti or two
+ * haystacks side by side are still props, and a prop lies on its own cast
+ * shadow rather than on a tile-wide wall strip.
+ */
+const WALL_KIND = /wall|mural|fence|pirca|gate|portales|parapet|hedge/i;
+
+/** The seam wobble repeats every this many tiles; masks are cached per phase. */
+const SEAM_PERIOD = 4;
+/** Seam masks are smooth fields, so they are made at half resolution. */
+const SEAM_RES = 32;
+
+/** Which of four wobbles a material's edge follows; stable per name. */
+function wobbleOf(kind: string): number {
+  let h = 7;
+  for (let i = 0; i < kind.length; i++) h = (h * 31 + kind.charCodeAt(i)) | 0;
+  return (h >>> 0) % 4;
+}
+
+/**
+ * Alpha masks for one cell: `code` is its 3x3 neighbourhood as indices into
+ * the cell's material list (index 0 is the cell's own ground), `wob` each
+ * material's wobble, `px, py` the cell's phase in the wobble's period. Returns
+ * one mask per neighbouring material (index 1 onward), each already holding
+ * the sequential alpha w_i / (w_0 + ... + w_i).
+ */
+function seamMasks(code: string, wob: number[], px: number, py: number): (HTMLCanvasElement | null)[] {
+  const k = wob.length;
+  const at = (c: number) => code.charCodeAt(c) - 48;
+  // Corner fractions per material: [material][tl, tr, bl, br].
+  const corners: number[][] = [];
+  for (let m = 0; m < k; m++) {
+    const q = (a: number, b: number, c: number, d: number) =>
+      ((at(a) === m ? 1 : 0) + (at(b) === m ? 1 : 0) + (at(c) === m ? 1 : 0) + (at(d) === m ? 1 : 0)) / 4;
+    corners.push([q(0, 1, 3, 4), q(1, 2, 4, 5), q(3, 4, 6, 7), q(4, 5, 7, 8)]);
+  }
+  const outs: { cv: HTMLCanvasElement; g: CanvasRenderingContext2D; img: ImageData }[] = [];
+  for (let m = 1; m < k; m++) {
+    const { cv, g } = surface(SEAM_RES, SEAM_RES);
+    outs.push({ cv, g, img: g.createImageData(SEAM_RES, SEAM_RES) });
+  }
+  const TAU = Math.PI * 2;
+  const w = new Float64Array(k);
+  for (let y = 0; y < SEAM_RES; y++) {
+    const v = (y + 0.5) / SEAM_RES;
+    const ty = (TAU * (py + v)) / SEAM_PERIOD;
+    for (let x = 0; x < SEAM_RES; x++) {
+      const u = (x + 0.5) / SEAM_RES;
+      const tx = (TAU * (px + u)) / SEAM_PERIOD;
+      let sum = 0;
+      for (let m = 0; m < k; m++) {
+        const c = corners[m]!;
+        const f = (c[0]! * (1 - u) + c[1]! * u) * (1 - v) + (c[2]! * (1 - u) + c[3]! * u) * v;
+        const o = wob[m]! * 1.7;
+        const n =
+          0.075 * Math.sin(tx + ty + 0.7 + o) +
+          0.06 * Math.sin(2 * tx - ty + 2.1 + o * 2) +
+          0.05 * Math.sin(tx - 2 * ty + 4.0 - o) +
+          0.03 * Math.sin(3 * ty + tx + 1.3 + o * 3) +
+          0.02 * Math.sin(5 * tx + 3 * ty + 0.4 + o);
+        const t = Math.min(1, Math.max(0, (f + n - 0.3) / 0.4));
+        // A sliver of the raw fraction keeps the sum off zero where three
+        // materials meet and none of them clears the sharpening threshold.
+        const wm = t * t * (3 - 2 * t) + f * 0.001;
+        w[m] = wm;
+        sum += wm;
+      }
+      let acc = w[0]!;
+      const i = (y * SEAM_RES + x) * 4;
+      for (let m = 1; m < k; m++) {
+        acc += w[m]!;
+        const a = sum > 0 && acc > 0 ? w[m]! / acc : 0;
+        const d = outs[m - 1]!.img.data;
+        d[i] = 255;
+        d[i + 1] = 255;
+        d[i + 2] = 255;
+        d[i + 3] = Math.round(255 * a);
+      }
+    }
+  }
+  return outs.map((o) => {
+    o.g.putImageData(o.img, 0, 0);
+    return o.cv;
+  });
+}
 
 /**
  * Every ground kind a seam on this map can ask to be feathered with. The draw
@@ -89,8 +194,6 @@ export function seamKinds(map: TileMap): Set<string> {
   }
   return kinds;
 }
-/** Seam fragments a single frame may cut before the rest wait their turn. */
-const BAKE_BUDGET = 2;
 
 export type Sprite = {
   actor: Actor;
@@ -218,24 +321,23 @@ export class Renderer {
   private tintPatches: HTMLCanvasElement[] = [];
   /** Baked walkable micro-decor per ground family; see groundLifePass. */
   private groundLife = new Map<string, HTMLCanvasElement[]>();
-  private wallShadeStrip: HTMLCanvasElement;
-  /** The ground's own darkening where it runs up against a tall thing's back. */
-  private northContact: HTMLCanvasElement;
+  /** Foot-of-wall shade; [plain, left end tapered, right end tapered, both]. */
+  private wallShadeStrip: HTMLCanvasElement[];
+  /** The ground's own darkening where it runs up against a tall thing's back. Same four. */
+  private northContact: HTMLCanvasElement[];
   private cloudPuff: HTMLCanvasElement;
   private fireflyGlow: HTMLCanvasElement;
   /** Surface history: damp, worn-pale, grime, and the pale standing-print. */
   private wearBlobs: HTMLCanvasElement[] = [];
   private standPrint: HTMLCanvasElement;
-  /** Feather masks for ground-kind seams: [direction][variant]. */
-  private spillMasks: HTMLCanvasElement[][] = [];
-  /** Ground fragments already cut to a mask, keyed kind|dir|mask|variant. */
-  private spillCache = new Map<string, HTMLCanvasElement | null>();
-  /** Maps whose seam fragments have all been cut already. */
+  /** Freestanding casters this frame: x, y, r, dx, dy per entry. Reused. */
+  private roundCasters: number[] = [];
+  /** Seam masks keyed by 3x3 material pattern, wobble phase and wobbles; see featherCell. */
+  private seamMasks = new Map<string, (HTMLCanvasElement | null)[]>();
+  /** One tile of scratch for cutting a neighbour's ground to a seam mask. */
+  private seamScratch = surface(S, S);
+  /** Maps whose seam masks have all been made already. */
   private warmedMaps = new Set<string>();
-  /** Fragments cut so far this frame, against BAKE_BUDGET. */
-  private frameBakes = 0;
-  /** True while the warm pass runs, which the budget does not apply to. */
-  private warming = false;
   /** Sun geometry, driven by the world clock: skew sign is throw direction. */
   private sunSkew = -0.55;
   private sunLen = 1;
@@ -351,6 +453,7 @@ export class Renderer {
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) throw new Error('2d canvas context unavailable');
     this.ctx = ctx;
+    if (import.meta.env.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
     canvas.width = W;
     canvas.height = H;
     ctx.imageSmoothingEnabled = true;
@@ -390,7 +493,7 @@ export class Renderer {
       g3.addColorStop(1, 'rgba(30,22,14,0)');
       ws.g.fillStyle = g3;
       ws.g.fillRect(0, 0, S, 16);
-      this.wallShadeStrip = ws.cv;
+      this.wallShadeStrip = taperings(ws.cv);
 
       // The far side. Where walkable ground runs into the back of a wall or
       // the eave of a roof, the ground goes dark before it gets there: it is
@@ -403,7 +506,7 @@ export class Renderer {
       g3b.addColorStop(1, 'rgba(26,19,13,0.36)');
       nc.g.fillStyle = g3b;
       nc.g.fillRect(0, 0, S, 26);
-      this.northContact = nc.cv;
+      this.northContact = taperings(nc.cv);
 
       const cp = surface(256, 256);
       const g4 = cp.g.createRadialGradient(128, 128, 26, 128, 128, 128);
@@ -458,7 +561,6 @@ export class Renderer {
     }
 
     this.bakeGroundLife();
-    this.bakeSpillMasks();
     this.flierFrames = bakeFliers();
     this.smokePuffs = bakeSmokePuffs();
     this.regionalArt = bakeRegionalArt();
@@ -642,110 +744,107 @@ export class Renderer {
   }
 
   /**
-   * Boundary feathering, part one: the masks.
+   * Boundary feathering.
    *
-   * Every map paints its ground by rule — `y >= 26 is sand` — so every seam
-   * between two materials is a ruled full-width line, and a frame full of
-   * them reads as a bar chart. These masks are the cure: a soft ragged tongue
-   * reaching in from one edge of a cell, five depths deep, four directions.
-   * Cut a neighbouring material to one of them and the seam grows fingers.
-   * Baked once; the choice per cell is hashed, so the coastline never moves.
+   * Every map paints its ground by rule, `y >= 26 is sand`, so every seam
+   * between two materials is a ruled line along the tile grid. The first cure
+   * cut a ragged tongue into each side of a seam independently, and the eye
+   * still found the grid: where both tongues crossed the same stretch of edge
+   * the colours swapped over at the line, a cell that "held its line" stopped
+   * at full strength, and wherever the boundary turned a corner the diagonal
+   * cell took no part and left a step. Blocks of path a shade darker than the
+   * dirt, squares of dirt a shade lighter than the cobbles.
+   *
+   * So the mix is now one continuous field shared by every cell. Each tile
+   * corner knows what fraction of its four cells each material holds; inside
+   * a cell a material's weight is the bilinear blend of its corners plus a
+   * slow world-anchored wobble of its own, sharpened, then normalised so the
+   * weights sum to one. Every cell computes the same weights at the same
+   * point, whichever material it happens to be, so the seam has no step along
+   * an edge, at a corner, or where three materials meet. Corners come out
+   * rounded because the field is. The cell's own ground is drawn first and
+   * each neighbour goes over it at w_i / (w_0 + ... + w_i), which composes
+   * to exactly the weighted mix whatever order the materials come in.
    */
-  private bakeSpillMasks() {
-    for (let dir = 0; dir < 4; dir++) {
-      const set: HTMLCanvasElement[] = [];
-      for (let v = 0; v < SPILL_DEPTHS.length; v++) {
-        const { cv, g } = surface(S, S);
-        const depth = (SPILL_DEPTHS[v] ?? 0.5) * S;
-        const r = new Rng(v * 9176 + dir * 613 + 29);
-        g.save();
-        g.translate(S / 2, S / 2);
-        g.rotate((dir * Math.PI) / 2);
-        g.translate(-S / 2, -S / 2);
-        // A sliver along the whole edge, so however deep two neighbours reach
-        // the seam itself never breaks into dashes.
-        const grad = g.createLinearGradient(0, 0, 0, 8);
-        grad.addColorStop(0, 'rgba(255,255,255,0.85)');
-        grad.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = grad;
-        g.fillRect(0, 0, S, 9);
-        // Then lobes, not a band. A band gives every cell the same square
-        // shoulders and the seam comes out as brickwork; a lobe tapers to
-        // nothing at the cell's own sides, so a deep cell beside a shallow one
-        // reads as two bulges of a wandering edge rather than as a step.
-        const lobe = (x: number, reach: number, soft: number) => {
-          const rad = Math.max(6, reach * 1.15);
-          const cyc = -reach * 0.22;
-          const lg = g.createRadialGradient(x, cyc, rad * 0.12, x, cyc, rad);
-          lg.addColorStop(0, 'rgba(255,255,255,1)');
-          lg.addColorStop(soft, 'rgba(255,255,255,0.9)');
-          lg.addColorStop(1, 'rgba(255,255,255,0)');
-          g.fillStyle = lg;
-          g.fillRect(x - rad, cyc - rad, rad * 2, rad * 2);
-        };
-        lobe(S * (0.28 + r.next() * 0.44), depth, 0.42 + r.next() * 0.2);
-        lobe(S * (r.next() * 0.5 - 0.1), depth * (0.25 + r.next() * 0.4), 0.38);
-        lobe(S * (0.6 + r.next() * 0.5), depth * (0.25 + r.next() * 0.4), 0.38);
-        g.restore();
-        set.push(cv);
+  private featherCell(
+    g: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    kind: string,
+    sx: number,
+    sy: number,
+    kindAt: (x: number, y: number) => string,
+  ) {
+    // Water banks autotile themselves and the outside of the world stays
+    // calm; neither takes part in either direction, so a neighbour of either
+    // kind counts as more of this cell's own ground.
+    if (WATERY.has(kind) || kind === 'void' || kind === 'scree') return;
+    const mats = this.seamMats;
+    mats.length = 1;
+    mats[0] = kind;
+    let code = '';
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        let k = kindAt(cx + i - 1, cy + j - 1);
+        if (k !== kind && (WATERY.has(k) || k === 'void' || k === 'scree' || !this.tiles.groundImage(k, 0))) k = kind;
+        let at = mats.indexOf(k);
+        if (at < 0) at = mats.push(k) - 1;
+        code += at;
       }
-      this.spillMasks.push(set);
+    }
+    if (mats.length === 1) return;
+    const px = ((cx % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    const py = ((cy % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    let key = `${code}|${px}${py}`;
+    for (const m of mats) key += `|${wobbleOf(m)}`;
+    let masks = this.seamMasks.get(key);
+    if (!masks) {
+      masks = seamMasks(code, mats.map(wobbleOf), px, py);
+      this.seamMasks.set(key, masks);
+    }
+    const { cv, g: sg } = this.seamScratch;
+    for (let i = 1; i < mats.length; i++) {
+      const mask = masks[i - 1];
+      const src = this.tiles.groundImage(mats[i]!, 0);
+      if (!mask || !src) continue;
+      sg.globalCompositeOperation = 'copy';
+      sg.drawImage(src, 0, 0);
+      sg.globalCompositeOperation = 'destination-in';
+      sg.drawImage(mask, 0, 0, S, S);
+      sg.globalCompositeOperation = 'source-over';
+      g.drawImage(cv, sx, sy);
     }
   }
+  private seamMats: string[] = [];
 
   /**
-   * Cut every seam fragment this map could ask for, once, while the screen is
-   * still covered by the transition. Measured before this existed: walking
-   * across the village cut 40 fragments mid-stride, up to 8 in a single frame,
-   * and each one allocates a canvas. That is a hitch you can feel, and it
-   * moved around depending on which way you walked, which is exactly what
-   * "sometimes it stutters" feels like from the other side of the screen.
+   * Make every seam mask this map can ask for while the screen is still
+   * covered by the transition, so a chunk baked mid-stride never allocates.
    */
-  private warmSeams(map: TileMap) {
+  private warmSeams(map: TileMap, kindAt: (x: number, y: number) => string) {
     if (this.warmedMaps.has(map.id)) return;
     this.warmedMaps.add(map.id);
-    const kinds = seamKinds(map);
-    // Any kind on the map can turn up as some other cell's neighbour, and the
-    // depth and variant are hashed per cell, so all of them are reachable.
-    this.warming = true;
-    for (const kind of kinds) {
-      if (kind === 'void') continue;
-      for (let dir = 0; dir < 4; dir++) {
-        for (let mask = 0; mask < SPILL_DEPTHS.length; mask++) {
-          this.spillTile(kind, dir, mask, 0);
-          this.spillTile(kind, dir, mask, 1);
-        }
+    const scratch = surface(S, S).g;
+    for (let y = -1; y <= map.h; y++) {
+      for (let x = -1; x <= map.w; x++) {
+        this.featherCell(scratch, x, y, kindAt(x, y), 0, 0, kindAt);
       }
     }
-    this.warming = false;
   }
 
   /**
-   * Boundary feathering, part two: one neighbouring material, already cut to
-   * one mask. Composed on demand and kept, so a seam costs one drawImage.
+   * Whether the cell holds part of a wall or building, and if so which of its
+   * ends are open: -1 for a freestanding prop or nothing at all, else an
+   * index into the tapered strip sets (bit 1: left end open, bit 2: right).
    */
-  private spillTile(kind: string, dir: number, mask: number, variant: number): HTMLCanvasElement | null {
-    // Keyed on the art, not the kind: an interior floor is re-skinned per map.
-    const key = `${this.tiles.artName(kind)}|${dir}|${mask}|${variant}`;
-    const hit = this.spillCache.get(key);
-    if (hit !== undefined) return hit;
-    // Backstop for anything the warm pass could not foresee, such as a
-    // dressing that retiles the ground under you. A missing feather for one
-    // frame is a seam nobody notices; eight canvas allocations is a stutter.
-    if (!this.warming && this.frameBakes >= BAKE_BUDGET) return null;
-    this.frameBakes++;
-    const src = this.tiles.groundImage(kind, variant);
-    const m = this.spillMasks[dir]?.[mask];
-    let out: HTMLCanvasElement | null = null;
-    if (src && m) {
-      const { cv, g } = surface(S, S);
-      g.drawImage(src, 0, 0);
-      g.globalCompositeOperation = 'destination-in';
-      g.drawImage(m, 0, 0);
-      out = cv;
-    }
-    this.spillCache.set(key, out);
-    return out;
+  private wallRun(map: TileMap, x: number, y: number): number {
+    const wallish = (ox: number, oy: number) => {
+      const o = map.object(ox, oy);
+      if (!o?.solid) return false;
+      return o.t === 'blocked' || (o.tall === true && (WALL_KIND.test(o.t) || this.tiles.isBuilding(o.t)));
+    };
+    if (!wallish(x, y)) return -1;
+    return (wallish(x - 1, y) ? 0 : 1) | (wallish(x + 1, y) ? 0 : 2);
   }
 
   /** Chapters bring their own weather. */
@@ -1240,9 +1339,8 @@ export class Renderer {
     // Which room we are in decides what its walls are made of. One lookup a
     // frame, and only when the map actually changed.
     this.tiles.setMap(map.id);
-    this.frameBakes = 0;
-    this.warmSeams(map);
     const kindAt = (x: number, y: number) => (map.inBounds(x, y) ? map.ground(x, y).t : 'scree');
+    this.warmSeams(map, kindAt);
 
     // Cull margins, and which side each one is actually for. A building is
     // drawn from its anchor cell UPWARD and a quarter tile left: its art is
@@ -1291,37 +1389,9 @@ export class Renderer {
           : NEVER;
         this.tiles.drawGround(ctx, kind, sx, sy, cx, cy, conn, this.time);
 
-        // Where two materials meet, each reaches into the other. Depth and
-        // reach are hashed per cell and per side, so a straight generated
-        // boundary comes out interlocked and no two cells agree on where it is.
-        const fk = this.fi(cx, cy);
-        // A path may be encroached on but never spills (it draws its own
-        // rounded core); water and the outside of the world take part in
-        // neither direction.
-        if (fk < 0 || !this.fSeam[fk] || WATERY.has(kind) || kind === 'void' || kind === 'scree') {
-          continue;
-        }
-        for (let d = 0; d < 4; d++) {
-          const nx = cx + (d === 1 ? 1 : d === 3 ? -1 : 0);
-          const ny = cy + (d === 0 ? -1 : d === 2 ? 1 : 0);
-          const nk = this.fi(nx, ny);
-          const other = nk >= 0 ? this.fKind[nk]! : kindAt(nx, ny);
-          if (other === kind) continue;
-          const pick = cellHash(cx, cy, 201 + d * 13);
-          if (pick > 0.88) continue; // a few cells hold their line
-          const img = this.spillTile(
-            other,
-            d,
-            Math.floor(pick * 1.14 * SPILL_DEPTHS.length) % SPILL_DEPTHS.length,
-            cellHash(cx, cy, 251 + d * 7) < 0.5 ? 0 : 1,
-          );
-          if (!img) continue;
-          // Never at full strength: a seam is two materials arguing, not one
-          // replacing the other tile by tile.
-          ctx.globalAlpha = 0.82;
-          ctx.drawImage(img, sx, sy);
-          ctx.globalAlpha = 1;
-        }
+        // Where two materials meet, each reaches into the other, and the two
+        // sides agree on the mix everywhere (see featherCell).
+        this.featherCell(ctx, cx, cy, kind, sx, sy, kindAt);
       }
     }
     }
@@ -1384,14 +1454,18 @@ export class Renderer {
         const self = map.object(cx, cy);
         if (!self?.solid) {
           // Anything wall-like above shades the foot of its own near side.
-          const above = map.object(cx, cy - 1);
-          if (above?.solid && above.tall) ctx.drawImage(this.wallShadeStrip, sx, sy);
+          // Only walls and buildings: a tile-wide band under a lone cactus or
+          // haystack is a square stain on the ground, and freestanding props
+          // already lie on their own soft cast shadows. A run's open ends
+          // fade out instead of stopping at the tile edge.
+          const ab = this.wallRun(map, cx, cy - 1);
+          if (ab >= 0) ctx.drawImage(this.wallShadeStrip[ab]!, sx, sy);
           // And the ground running into its far side goes dark before it gets
           // there. This is the whole depth cue for a roof that reaches the row
           // below you: without it the ridge lands at your feet and you read as
           // standing on the thatch.
-          const below = map.object(cx, cy + 1);
-          if (below?.solid && below.tall) ctx.drawImage(this.northContact, sx, sy + S - 26);
+          const be = this.wallRun(map, cx, cy + 1);
+          if (be >= 0) ctx.drawImage(this.northContact[be]!, sx, sy + S - 26);
         }
 
         const obj = self;
@@ -1583,7 +1657,7 @@ export class Renderer {
 
   /**
    * Paint one chunk's ground and seams. This mirrors the per-cell pass in
-   * drawWorld exactly (same hashes, same alpha, same spill picks), with two
+   * drawWorld exactly (both feather through featherCell), with two
    * deliberate differences: watery cells are recorded instead of painted,
    * because their frames animate, and the seam gate tests neighbours
    * directly instead of going through the frame window's fSeam field, which
@@ -1599,9 +1673,6 @@ export class Renderer {
     const g = e.g;
     const bx0 = gx * GCHUNK;
     const by0 = gy * GCHUNK;
-    const wasWarming = this.warming;
-    // A bake is a warm pass: a truncated seam would freeze into the chunk.
-    this.warming = true;
     for (let j = 0; j < GCHUNK; j++) {
       for (let i = 0; i < GCHUNK; i++) {
         const cx = bx0 + i;
@@ -1618,28 +1689,9 @@ export class Renderer {
           ? (dx: number, dy: number) => group.has(kindAt(cx + dx, cy + dy))
           : NEVER;
         this.tiles.drawGround(g, kind, sx, sy, cx, cy, conn, 0);
-        if (kind === 'void' || kind === 'scree') continue;
-        for (let d = 0; d < 4; d++) {
-          const nx = cx + (d === 1 ? 1 : d === 3 ? -1 : 0);
-          const ny = cy + (d === 0 ? -1 : d === 2 ? 1 : 0);
-          const other = kindAt(nx, ny);
-          if (other === kind) continue;
-          const pick = cellHash(cx, cy, 201 + d * 13);
-          if (pick > 0.88) continue; // a few cells hold their line
-          const img = this.spillTile(
-            other,
-            d,
-            Math.floor(pick * 1.14 * SPILL_DEPTHS.length) % SPILL_DEPTHS.length,
-            cellHash(cx, cy, 251 + d * 7) < 0.5 ? 0 : 1,
-          );
-          if (!img) continue;
-          g.globalAlpha = 0.82;
-          g.drawImage(img, sx, sy);
-          g.globalAlpha = 1;
-        }
+        this.featherCell(g, cx, cy, kind, sx, sy, kindAt);
       }
     }
-    this.warming = wasWarming;
   }
 
   /** A/B escape hatch: live per-cell ground vs baked chunks (dev probes). */
@@ -1844,6 +1896,8 @@ export class Renderer {
     g.clearRect(0, 0, SHW, SHH);
     g.beginPath();
     let any = false;
+    const round = this.roundCasters;
+    round.length = 0;
     // The convex hull of a base rectangle and its translate: the exact shape a
     // footprint sweeps along the sun. One subpath per caster, all into the same
     // path, so overlapping casters can never double darken.
@@ -1884,7 +1938,12 @@ export class Renderer {
         const fp = foot[row + cx]!;
         const w = s * fp;
         const inset = (s - w) / 2;
-        sweep((cx * TILE - cam.x) * k + inset, by + inset, w, w, dx, dy);
+        const bx = (cx * TILE - cam.x) * k + inset;
+        // Walls and buildings union as swept squares, which is their shape.
+        // A lone tree, cactus or lamp swept as a square left a tile-edged
+        // block on the ground; its base is round, so its shadow is a capsule.
+        if (this.wallRun(map, cx, cy) >= 0) sweep(bx, by + inset, w, w, dx, dy);
+        else if (round.length < 512) round.push(bx + w / 2, by + inset + w / 2, w / 2, dx, dy);
       }
     }
     // And the people. Their base is a shoe's width of ground at their feet,
@@ -1899,9 +1958,28 @@ export class Renderer {
       const d = TILE * k * 0.48;
       sweep(fx - w / 2, fy - d / 2, w, d, this.castX * hh * TILE * k, this.castY * hh * TILE * k);
     }
-    if (!any) return;
+    if (!any && round.length === 0) return;
     g.fillStyle = this.shadowRGB;
     g.fill();
+    // Opaque into the buffer, so overlaps cannot double darken either.
+    for (let i = 0; i < round.length; i += 5) {
+      const x = round[i]!, y = round[i + 1]!, r = round[i + 2]!, dx = round[i + 3]!, dy = round[i + 4]!;
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * r;
+      const ny = (dx / len) * r;
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.moveTo(x + dx + r, y + dy);
+      g.arc(x + dx, y + dy, r, 0, Math.PI * 2);
+      g.fill();
+      g.beginPath();
+      g.moveTo(x + nx, y + ny);
+      g.lineTo(x + dx + nx, y + dy + ny);
+      g.lineTo(x + dx - nx, y + dy - ny);
+      g.lineTo(x - nx, y - ny);
+      g.closePath();
+      g.fill();
+    }
     const ctx = this.ctx;
     ctx.globalAlpha = this.shadowA;
     ctx.drawImage(cv, 0, 0, SHW, SHH, 0, 0, W, H);

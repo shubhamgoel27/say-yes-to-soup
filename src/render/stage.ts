@@ -4,6 +4,9 @@ import {
   CanvasSource,
   ColorMatrixFilter,
   Container,
+  Filter,
+  GlProgram,
+  GpuProgram,
   RenderTexture,
   Sprite,
   Texture,
@@ -148,19 +151,27 @@ export class PixiStage {
     s.worldSource = new CanvasSource({ resource: worldCanvas, scaleMode: 'linear' });
     const worldSprite = new Sprite(new Texture({ source: s.worldSource }));
 
-    // Light map: ambient base + additive radial lights, multiplied over the world.
-    s.lightRT = RenderTexture.create({ width: VIEW_W, height: VIEW_H, scaleMode: 'nearest' });
+    // Light map: ambient base + screened radial lights, multiplied over the world.
+    // Linear, because the map is authored at a quarter of the art's resolution
+    // and a nearest upscale drew every lamp's falloff in visible 4px steps.
+    s.lightRT = RenderTexture.create({ width: VIEW_W, height: VIEW_H, scaleMode: 'linear' });
     s.lightScene = new Container();
     s.ambientSprite = new Sprite(Texture.WHITE);
     s.ambientSprite.width = VIEW_W;
     s.ambientSprite.height = VIEW_H;
     s.ambientSprite.tint = 0xffffff;
     s.lightScene.addChild(s.ambientSprite);
-    const radial = makeRadialTexture();
+    const radial = makeRadialTexture(LIGHT_STOPS);
+    const halo = makeRadialTexture(GLOW_STOPS);
     for (let i = 0; i < MAX_LIGHTS; i++) {
       const l = new Sprite(radial);
       l.anchor.set(0.5);
-      l.blendMode = 'add';
+      // Screen, not add. Added onto the ambient a hearth's light ran past
+      // white over most of its radius, and the clamp turned the falloff into
+      // a flat white plateau with a rim: the hard-edged disc on Carmen's
+      // walls. Screen approaches white and never reaches it, so the light
+      // keeps falling off all the way out and overlapping lamps merge softly.
+      l.blendMode = 'screen';
       l.visible = false;
       s.lightScene.addChild(l);
       s.lightPool.push(l);
@@ -171,7 +182,7 @@ export class PixiStage {
 
     // A faint additive echo of the same lights, so lamps genuinely glow.
     for (let i = 0; i < MAX_LIGHTS; i++) {
-      const gl = new Sprite(radial);
+      const gl = new Sprite(halo);
       gl.anchor.set(0.5);
       gl.blendMode = 'add';
       gl.alpha = 0;
@@ -209,16 +220,18 @@ export class PixiStage {
     // passes: same threshold, same radius, same glow, less strain.
     const coarseTouch =
       typeof matchMedia === 'function' && matchMedia('(pointer: coarse) and (hover: none)').matches;
-    s.scene.filters = [
-      grade,
-      new AdvancedBloomFilter({
-        threshold: 0.66,
-        bloomScale: 0.5,
-        brightness: 1,
-        blur: 6,
-        quality: coarseTouch ? 2 : 4,
-      }),
-    ];
+    const bloom = new AdvancedBloomFilter({
+      bloomScale: BLOOM_SCALE,
+      brightness: 1,
+      blur: 6,
+      quality: coarseTouch ? 2 : 4,
+    });
+    // The stock extract is a step: a pixel a hair over the threshold blooms at
+    // full strength and its neighbour a hair under blooms not at all, so a
+    // lamp-lit wall bloomed as a white shape with the outline of the light's
+    // reach. This one ramps in from zero and weighs the very brightest most.
+    (bloom as unknown as { _extractFilter: Filter })._extractFilter = new SoftExtractFilter(BLOOM_THRESHOLD);
+    s.scene.filters = [grade, bloom];
 
     // Compose at native art resolution, then scale smoothly to the window.
     s.prescaleRT = RenderTexture.create({
@@ -373,7 +386,7 @@ export class PixiStage {
       gl.position.set(spec.x * ART, spec.y * ART);
       gl.tint = spec.color;
       gl.scale.set((spec.r * ART * 1.4 * flick) / RADIAL_SIZE);
-      gl.alpha = 0.14;
+      gl.alpha = GLOW_ALPHA;
     }
 
     this.app.renderer.render({ container: this.lightScene, target: this.lightRT, clear: true });
@@ -414,21 +427,123 @@ function clearCanary() {
   }
 }
 
+/** Where bloom starts to gather, in the extract's (max + min) / 2 brightness. */
+const BLOOM_THRESHOLD = 0.6;
+/** How strongly the gathered light is added back. */
+const BLOOM_SCALE = 0.9;
+/** How strongly each light's additive halo glows over the scene. */
+const GLOW_ALPHA = 0.2;
+
+const SOFT_EXTRACT_VERT = `in vec2 aPosition;
+out vec2 vTextureCoord;
+uniform vec4 uInputSize;
+uniform vec4 uOutputFrame;
+uniform vec4 uOutputTexture;
+void main(void) {
+  vec2 position = aPosition * uOutputFrame.zw + uOutputFrame.xy;
+  position.x = position.x * (2.0 / uOutputTexture.x) - 1.0;
+  position.y = position.y * (2.0 * uOutputTexture.z / uOutputTexture.y) - uOutputTexture.z;
+  gl_Position = vec4(position, 0.0, 1.0);
+  vTextureCoord = aPosition * (uOutputFrame.zw * uInputSize.zw);
+}
+`;
+
+const SOFT_EXTRACT_FRAG = `in vec2 vTextureCoord;
+out vec4 finalColor;
+uniform sampler2D uTexture;
+uniform float uThreshold;
+void main() {
+  vec4 color = texture(uTexture, vTextureCoord);
+  float b = (max(max(color.r, color.g), color.b) + min(min(color.r, color.g), color.b)) * 0.5;
+  float x = clamp((b - uThreshold) / (1.0 - uThreshold), 0.0, 1.0);
+  finalColor = color * (x * x);
+}
+`;
+
+const SOFT_EXTRACT_WGSL = `struct GlobalFilterUniforms {
+  uInputSize: vec4<f32>,
+  uInputPixel: vec4<f32>,
+  uInputClamp: vec4<f32>,
+  uOutputFrame: vec4<f32>,
+  uGlobalFrame: vec4<f32>,
+  uOutputTexture: vec4<f32>,
+};
+struct SoftExtractUniforms {
+  uThreshold: f32,
+};
+@group(0) @binding(0) var<uniform> gfu: GlobalFilterUniforms;
+@group(0) @binding(1) var uTexture: texture_2d<f32>;
+@group(0) @binding(2) var uSampler: sampler;
+@group(1) @binding(0) var<uniform> softExtractUniforms: SoftExtractUniforms;
+
+struct VSOutput {
+  @builtin(position) position: vec4<f32>,
+  @location(0) uv: vec2<f32>,
+};
+
+@vertex
+fn mainVertex(@location(0) aPosition: vec2<f32>) -> VSOutput {
+  var position = aPosition * gfu.uOutputFrame.zw + gfu.uOutputFrame.xy;
+  position.x = position.x * (2.0 / gfu.uOutputTexture.x) - 1.0;
+  position.y = position.y * (2.0 * gfu.uOutputTexture.z / gfu.uOutputTexture.y) - gfu.uOutputTexture.z;
+  return VSOutput(vec4(position, 0.0, 1.0), aPosition * (gfu.uOutputFrame.zw * gfu.uInputSize.zw));
+}
+
+@fragment
+fn mainFragment(@builtin(position) position: vec4<f32>, @location(0) uv: vec2<f32>) -> @location(0) vec4<f32> {
+  let color = textureSample(uTexture, uSampler, uv);
+  let b = (max(max(color.r, color.g), color.b) + min(min(color.r, color.g), color.b)) * 0.5;
+  let t = softExtractUniforms.uThreshold;
+  let x = clamp((b - t) / (1.0 - t), 0.0, 1.0);
+  return color * (x * x);
+}
+`;
+
+/**
+ * Bloom's bright pass with a ramp instead of a step: nothing at the
+ * threshold, rising with the square of how far past it a pixel is. A lamp's
+ * glass still blooms about as much as it did; a cream wall in its light gets
+ * a fraction of that, and nothing anywhere has an edge.
+ */
+class SoftExtractFilter extends Filter {
+  constructor(threshold: number) {
+    super({
+      glProgram: GlProgram.from({
+        vertex: SOFT_EXTRACT_VERT,
+        fragment: SOFT_EXTRACT_FRAG,
+        name: 'soup-soft-extract',
+      }),
+      gpuProgram: GpuProgram.from({
+        vertex: { source: SOFT_EXTRACT_WGSL, entryPoint: 'mainVertex' },
+        fragment: { source: SOFT_EXTRACT_WGSL, entryPoint: 'mainFragment' },
+      }),
+      resources: {
+        softExtractUniforms: { uThreshold: { value: threshold, type: 'f32' } },
+      },
+    });
+  }
+}
+
 const RADIAL_SIZE = 64;
 
-/** A soft radial falloff, generated once; every light is this texture tinted. */
-function makeRadialTexture(): Texture {
+/**
+ * A soft radial falloff, generated once; every light is one of these tinted.
+ * `stops` are [offset, alpha] pairs from the centre out.
+ */
+function makeRadialTexture(stops: [number, number][]): Texture {
   const cv = document.createElement('canvas');
   cv.width = RADIAL_SIZE;
   cv.height = RADIAL_SIZE;
   const g = cv.getContext('2d');
   if (!g) throw new Error('no 2d ctx');
   const grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
-  grad.addColorStop(0, 'rgba(255,255,255,0.9)');
-  grad.addColorStop(0.4, 'rgba(255,255,255,0.45)');
-  grad.addColorStop(0.75, 'rgba(255,255,255,0.12)');
-  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  for (const [at, a] of stops) grad.addColorStop(at, `rgba(255,255,255,${a})`);
   g.fillStyle = grad;
   g.fillRect(0, 0, RADIAL_SIZE, RADIAL_SIZE);
   return Texture.from(cv);
 }
+
+/** The light map's falloff: fuller through the middle, since screen never clips. */
+const LIGHT_STOPS: [number, number][] = [[0, 1], [0.35, 0.66], [0.7, 0.22], [1, 0]];
+/** The additive halo's falloff: the old light curve, a broad soft glow. */
+const GLOW_STOPS: [number, number][] = [[0, 0.9], [0.4, 0.45], [0.75, 0.12], [1, 0]];
