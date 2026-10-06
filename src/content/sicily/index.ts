@@ -84,6 +84,7 @@ export const CHAPTER: ChapterDef = {
       howTo: [
         'Space starts the ricotta, Space again stops it in the sweet zone. Both ends, always, then the arrows pick a garnish.',
         'Every garnish is correct. Overfill and the shell splits; Alfio eats the evidence and hands you a fresh one.',
+        'Stop an end short and Alfio takes the bag a second to show you the gold.',
       ],
       hardHow: 'The hard telling: five customers at feast pace and the gold worn thin; an end stopped short of it or past it is a wreck. The third wreck and Alfio takes the bag back.',
       make: (root, audio) => new CannoloPanel(root, audio as AudioBus),

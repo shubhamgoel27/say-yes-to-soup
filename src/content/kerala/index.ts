@@ -93,8 +93,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c6.sadya.served',
       title: 'The sadya leaf',
       howTo: [
-        'Narrow end of the leaf points left. Arrows choose a seat, Space serves the course.',
-        'Right hand only; the left has other duties in life, and everyone at the leaf knows what they are.',
+        'Narrow end of the leaf points left. Auntie Leela points out each seat once as you begin.',
+        'Arrows choose a seat, Space serves the course.',
         'Nothing here can be lost. A wrong seat only buys you an auntie, and an opinion.',
       ],
       hardHow: 'The hard telling: eight courses down to the payasam at the leaf tip, a clock on every ladle, and three slips before the aunties redo the leaf.',

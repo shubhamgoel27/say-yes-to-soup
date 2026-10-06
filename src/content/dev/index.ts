@@ -45,6 +45,7 @@ export const CHAPTER: ChapterDef = {
       howTo: [
         'Big clods hold the base, smaller ones climb the dome.',
         'Arrows pick a spot; Space sets the clod where a gap waits.',
+        'Then feed the fire on a steady heartbeat; a flurry only smothers it.',
         'Close the earthen oven and the papas cook themselves.',
       ],
       hardHow: 'The true watia: build in order, feed the fire on a true heartbeat before the fuel spends, and bring the dome down while the clods still blaze.',

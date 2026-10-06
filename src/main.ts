@@ -1759,6 +1759,17 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   ) {
     dayT = 0.7;
   }
+  // Zanzibar's goodbye is written at first light: "Every door on the lane is
+  // shut." The night in the room above Ali's counter ends at dawn, whatever
+  // hour you went up.
+  if (
+    dest.id === 'zanzibar' &&
+    state.has('c7.dawn') &&
+    !state.has('c7.complete') &&
+    !Number.isFinite(todOverride)
+  ) {
+    dayT = 0.03;
+  }
   // A befriended dog refuses to be door-blocked; it simply arrives too.
   if (dog && state.has('allqu.friend')) {
     dog.def.map = map.id;

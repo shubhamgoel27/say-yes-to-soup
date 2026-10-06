@@ -24,7 +24,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The caballito',
       howTo: [
         'Space paddles as each swell reaches you. Too eager and it rolls you back; let the horse meet the water.',
-        'Past the break, hold the middle with the arrows and let the wave carry you home.',
+        'Past the break the horse leans; the arrows keep it in the middle while the wave carries you home.',
       ],
       hardHow:
         'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. On the ride home, a rail held under is a swim.',
@@ -49,6 +49,7 @@ export const CHAPTER: ChapterDef = {
       howTo: [
         'Space walks the dish through: cut, salt, the lime kiss, onion, the rest.',
         'Pull the fish while the bar burns bright. The lime kisses, it does not marry; overcook and Petro eats the proof.',
+        'Pull too soon and Petro takes the bowl back for a second.',
       ],
       hardHow:
         'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. The kiss, exactly, or the noon goes on without you.',

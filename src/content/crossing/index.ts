@@ -25,7 +25,7 @@ export const CHAPTER: ChapterDef = {
       title: 'Ben’s adobo',
       howTo: [
         'Ben calls for a thing. Arrows find it on his shelf, Space feeds it to the pot.',
-        'Reach for the wrong jar and nothing breaks. He laughs, hands you the right one, and the pot moves on.',
+        'Reach for the wrong jar and nothing breaks: Ben points you to it, and on the second wrong reach he laughs and hands it over.',
         'Lid last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
         'Burn it and Ben just scrubs the pot out. He has burnt more dinners than you will ever cook.',
       ],
