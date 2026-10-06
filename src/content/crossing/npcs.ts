@@ -186,21 +186,22 @@ export const CROSSING_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c3.ex.wall': {
-    lines: [{ text: 'White steel, painted so many times the rivets are only soft shapes now. Somewhere under the layers, the sea keeps trying to get in.' }],
+    lines: [
+      { text: 'White steel, painted so many times the rivets are soft shapes. Under the layers, the sea keeps trying to get in.' },
+    ],
   },
   // ---------------- boarding and arrival ----------------
   'c3.board': {
     lines: [
-      { text: 'The tide and the paperwork finally agree. The launch takes you out past the break to the anchored wall of the MV Yacana.' },
-      { text: 'The goodbyes stay on the pier: fish, fog, one pelican with a criminal record. Then the ladder. Thirty rungs, each with an opinion.' },
+      { text: 'The tide and the paperwork finally agree. The launch takes you out past the break to the MV Yacana.' },
+      { text: 'Then the ladder. Thirty rungs, each with an opinion.' },
     ],
     effects: ['travel:ship'],
   },
   'c3.arrive': {
     lines: [
-      { text: 'A new deck underfoot, humming. Not a sound so much as a heartbeat too big to hear; the engine, four decks down, already at work.' },
-      { text: 'Containers stand lashed in painted stacks like a steel bazaar. Aft, the white house watches everything with bridge-window eyes.' },
-      { text: 'Somewhere below, someone is frying garlic. Thirty-one days to Japan, and it smells like the crossing might be edible.' },
+      { text: 'A new deck underfoot, humming: the engine, four decks down, a heartbeat too big to hear.' },
+      { text: 'Somewhere below, someone is frying garlic. Thirty-one days to Japan, and the crossing smells edible.' },
     ],
     effects: ['set:c3.arrived'],
   },
@@ -208,13 +209,12 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- Capitana Ríos, la mar's own ----------------
   'c3.rios.first.casero': {
     lines: [
-      { who: 'Capitana Ríos', text: 'So. Marisol calls you casero and Petro swears your hands are clean. Good enough for my galley; better than most paperwork.' },
-      { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, which means he runs the morale. Report to him. Whatever he says outranks whatever I say.' },
-      { who: 'Capitana Ríos', text: 'La mar is generous this week. Enjoy that sentence while it is true.' },
+      { who: 'Capitana Ríos', text: 'So. Marisol calls you casero and Petro swears your hands are clean. Better than paperwork.' },
+      { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, so he runs the morale. Report to him. He outranks me.' },
     ],
     effects: ['set:c3.met.rios'],
     choices: [
-      { text: '"La mar. Don Simón taught me to say it that way."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
+      { text: '"La mar. Don Simón taught me."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
       { text: 'Ask why she says la mar', goto: 'c3.rios.lamar' },
       { text: 'Go find the galley', goto: 'c3.rios.go' },
     ],
@@ -222,63 +222,60 @@ export const CROSSING_NODES: NodeMap = {
   'c3.rios.first': {
     lines: [
       { text: 'The captain looks up from a clipboard.' },
-      { who: 'Capitana Ríos', text: 'The galley hand. Petro vouched, so the village vouched, so here you are. A ship floats on that arithmetic as much as on steel.' },
-      { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, which means he runs the morale. Report to him. La mar is generous this week; help him keep it so.' },
+      { who: 'Capitana Ríos', text: 'The galley hand. Petro says your hands are clean. A ship floats on that as much as on steel.' },
+      { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, so he runs the morale. Report to him.' },
     ],
     effects: ['set:c3.met.rios'],
     choices: [
-      { text: '"La mar. Don Simón taught me to say it that way."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
+      { text: '"La mar. Don Simón taught me."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
       { text: 'Ask why she says la mar', goto: 'c3.rios.lamar' },
       { text: 'Go find the galley', goto: 'c3.rios.go' },
     ],
   },
   'c3.rios.lamar': {
     lines: [
-      { who: 'Capitana Ríos', text: 'El mar is the thing on charts. La mar is the one who carries us, and could decline to. The ones she carries say it her way.' },
+      { who: 'Capitana Ríos', text: 'El mar is the thing on charts. La mar is the one who carries us, and could decline to.' },
       { who: 'Capitana Ríos', text: 'Call it superstition. I call it not arguing with my employer.' },
     ],
   },
   'c3.rios.lamar.knows': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Simón taught you on the pier, did he. Then you already know the first rule of my ship without me saying it.' },
-      { who: 'Capitana Ríos', text: 'She is hard but fair. If you work, you eat. Out here that is not philosophy; it is the duty roster.' },
+      { who: 'Capitana Ríos', text: 'Simón taught you, did he. Then you know my first rule: she is hard but fair. Work, and you eat.' },
     ],
   },
   'c3.rios.go': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Through the house door, follow the garlic. And bus your own tray, or Ben will teach you the word for people who do not.' },
+      { who: 'Capitana Ríos', text: 'Through the house door; follow the garlic. And bus your own tray.' },
     ],
   },
   'c3.rios.mail': {
     lines: [
-      { text: 'The captain produces a canvas sack gone soft at the corners. MAIL, it says, in stenciled letters that have crossed oceans.' },
-      { who: 'Capitana Ríos', text: 'The agent in Callao threw the bundle aboard with the last launch. Mid-ocean, it finally surfaces. Two are for you.' },
-      { who: 'Capitana Ríos', text: 'This one smells like an invoice. I did not ask.' },
+      { text: 'The captain produces a canvas sack gone soft at the corners.' },
+      { who: 'Capitana Ríos', text: 'Mail. Callao threw it aboard with the last launch. Two for you. This one smells like an invoice.' },
     ],
     effects: ['letter:c3.pilar'],
   },
   'c3.rios.mail2': {
     lines: [
-      { who: 'Capitana Ríos', text: 'There was a second envelope stuck to the first. Grease spot on the flap. In my experience, the better kind of letter.' },
+      { who: 'Capitana Ríos', text: 'A second envelope was stuck to the first. Grease spot on the flap. The better kind of letter.' },
     ],
     effects: ['letter:c3.petro'],
   },
   'c3.rios.landfall': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Ben feeds you, Joseph trusts you, the cadet lent you her sky, and even the engineer let you hold the jar. That is the whole ship.' },
       { who: 'Capitana Ríos', text: 'Land tomorrow. When you smell green, and the birds stop following and start leading, go stand at the bow.' },
-      { who: 'Capitana Ríos', text: 'Ninety-two crossings and that moment still gets me. La mar hands you back. Do not miss it.' },
+      { who: 'Capitana Ríos', text: 'Ninety-two crossings and it still gets me. La mar hands you back. Do not miss it.' },
     ],
     effects: ['set:c3.complete'],
   },
   'c3.rios.after': {
     lines: [
-      { who: 'Capitana Ríos', text: 'The Shionoura pilot boards at dawn. Until then the bow is yours. Say your goodbyes; a ship remembers who says them.' },
+      { who: 'Capitana Ríos', text: 'The Shionoura pilot boards at dawn. Until then the bow is yours.' },
     ],
   },
   'c3.rios.idle': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Four on, eight off, and the paperwork stands its own watch. Go on. The deck is better company than I am today.' },
+      { who: 'Capitana Ríos', text: 'Four on, eight off, and the paperwork stands its own watch. The deck is better company today.' },
     ],
   },
 
@@ -293,29 +290,28 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.first2': {
     lines: [
-      { text: 'Rice, fried fish, and a mug of coffee strong enough to stand the spoon up. He watches you eat like it is the evening news.' },
-      { who: 'Mang Ben', text: 'Mang Ben. Just Ben makes the bosun smirk, so use the Mang. Kumusta? No, eat first, answer after. House rule two.' },
+      { text: 'Rice, fried fish, coffee strong enough to stand the spoon up. He watches you eat like the evening news.' },
+      { who: 'Mang Ben', text: 'Mang Ben. Kumusta? No, eat first, answer after. House rule two.' },
     ],
     effects: ['journal:dishes.galleycoffee'],
   },
   'c3.ben.baon': {
     lines: [
-      { who: 'Mang Ben', text: 'Favor na, pare. Joseph has the watch and forgot his night lunch again. That boy remembers every rope aboard and zero meals.' },
-      { text: 'He packs a covered plate and tucks the cloth around it the way you tuck a blanket around a child.' },
-      { who: 'Mang Ben', text: 'Port rail, forward, where the chipping hammer is complaining. Walk it steady and it stays warm. Sige, go before the rice cools.' },
+      { who: 'Mang Ben', text: 'Favor na, pare. Joseph has the watch and forgot his night lunch again.' },
+      { text: 'He tucks a cloth around a covered plate the way you tuck a blanket around a child.' },
+      { who: 'Mang Ben', text: 'Port rail, forward. Walk it steady and it stays warm. Sige.' },
     ],
     effects: ['set:c3.baon', 'errand:ben-baon', 'set:errand.ben-baon'],
   },
   'c3.ben.wait': {
     lines: [
-      { who: 'Mang Ben', text: 'Still aboard, still holding the plate? It is getting philosophical under that cloth, pare. Port rail, forward. Joseph.' },
+      { who: 'Mang Ben', text: 'Still holding the plate? It is getting philosophical under that cloth, pare. Port rail. Joseph.' },
     ],
   },
   'c3.ben.cookoffer': {
     lines: [
-      { who: 'Mang Ben', text: 'Week three. The salad is a memory, the freezer is the whole harvest now, and the faces in my mess are getting long.' },
-      { who: 'Mang Ben', text: 'So tonight: lutong bahay. Home cooking, the medicine kind. Adobo first; the dish every Filipino abroad learns before the alphabet.' },
-      { who: 'Mang Ben', text: 'And sinigang after, sour soup for Joseph’s homesick face.' },
+      { who: 'Mang Ben', text: 'Week three. The salad is a memory and the faces in my mess are long.' },
+      { who: 'Mang Ben', text: 'Tonight, lutong bahay: home cooking, the medicine kind. Adobo, and sinigang for Joseph’s homesick face.' },
     ],
     effects: ['journal:words.lutongbahay', 'journal:dishes.sinigang'],
     choices: [
@@ -325,27 +321,27 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.cookstart': {
     lines: [
-      { who: 'Mang Ben', text: 'Sige! Apron on. I call the pot, you feed it. Wrong answers are allowed; that is exactly how my aunties taught me.' },
+      { who: 'Mang Ben', text: 'Sige! Apron on. I call the pot, you feed it. Wrong answers allowed; that is how my aunties taught me.' },
     ],
     effects: ['set:c3.cook.start'],
   },
   'c3.ben.cooklater': {
     lines: [
-      { who: 'Mang Ben', text: 'The pot is patient and so am I. One of us is lying, pare. Come back hungry.' },
+      { who: 'Mang Ben', text: 'The pot is patient and so am I. One of us is lying, pare.' },
     ],
   },
   'c3.cooked': {
     lines: [
-      { text: 'The pot settles, dark and glossy. Garlic, soy, vinegar and time, reduced to one certain sauce.' },
-      { who: 'Mang Ben', text: 'Masarap! When you hear that word across the mess tonight, remember you earned a piece of it. Adobo keeps; homesickness does not.' },
-      { text: 'At dinner the mess is loud again. Joseph has two helpings of sinigang and no long face at all. Medicine, administered.' },
+      { text: 'The pot settles, dark and glossy: garlic, soy, vinegar, and time.' },
+      { who: 'Mang Ben', text: 'Masarap! Hear that word in the mess tonight and know you earned a piece of it.' },
+      { text: 'At dinner Joseph has two helpings of sinigang. Medicine, administered.' },
     ],
     effects: ['clear:c3.cook.start', 'set:c3.cook.done', 'journal:dishes.adobo', 'journal:words.masarap'],
   },
   'c3.ben.mess': {
     lines: [
-      { who: 'Mang Ben', text: 'Hear the mess room tonight? Loud. The mess is the heart of the ship, pare, and that is a healthy heartbeat.' },
-      { who: 'Mang Ben', text: 'Also: the bosun keeps looking at the chart and grinning. When a bosun grins, pollywogs should stretch first. I say no more.' },
+      { who: 'Mang Ben', text: 'Hear the mess tonight? Loud. A healthy heartbeat, pare.' },
+      { who: 'Mang Ben', text: 'Also: the bosun keeps looking at the chart and grinning. Pollywogs should stretch. I say no more.' },
     ],
     // Said once, and then the galley goes back to offering you an apron.
     effects: ['set:c3.ben.messtold'],
@@ -354,9 +350,9 @@ export const CROSSING_NODES: NodeMap = {
   // twice removed, and funnier every time it changes hands.
   'c3.ben.her': {
     lines: [
-      { text: 'He is portioning tomorrow’s rice into trays, counting scoops under his breath and losing the count.' },
-      { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once. The cook who taught me had it from the cook before him.' },
-      { who: 'Mang Ben', text: 'A passenger girl who would not stay out of here. Zoila. Peeled onions for her supper and sang the whole watch.' },
+      { text: 'He is portioning tomorrow’s rice, counting scoops and losing the count.' },
+      { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once, the cook who taught me said.' },
+      { who: 'Mang Ben', text: 'A passenger girl who would not stay out of the galley. Zoila. Peeled onions and sang the whole watch.' },
     ],
     choices: [
       { text: 'Say nothing.', goto: 'c3.ben.her.quiet' },
@@ -371,28 +367,27 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.her.sing': {
     lines: [
-      { text: 'You ask it before you can stop yourself: could she sing?' },
+      { text: 'You ask before you can stop yourself.' },
     ],
     next: 'c3.ben.her2',
   },
   'c3.ben.her2': {
     lines: [
-      { who: 'Mang Ben', text: 'Badly, they say. They hid the ladle from her and she sang anyway. Thirty-one days, and the old cook missed it after.' },
-      { text: 'He laughs at his trays, delighted with a joke fifty years old that was never his.' },
+      { who: 'Mang Ben', text: 'Badly, they say. They hid the ladle and she sang anyway. Thirty-one days, and the old cook missed it after.' },
+      { text: 'He laughs at his trays, delighted with a fifty-year-old joke that was never his.' },
     ],
     effects: ['set:c3.her.told', 'journal:her.galley'],
   },
   'c3.ben.feast': {
     lines: [
-      { who: 'Mang Ben', text: 'A shellback in my galley! Then hear the good news: the bosun’s birthday drowned in the dateline, so I am cooking pancit anyway.' },
-      { who: 'Mang Ben', text: 'Long noodles, long life. You do not cut them, and you do not skip them just because Tuesday sank, pare.' },
-      { who: 'Mang Ben', text: 'Take a plate when you go up. And ingat, ha? Take care. I say it to everyone who leaves my galley. It works; look at this crew.' },
+      { who: 'Mang Ben', text: 'A shellback in my galley! The bosun’s birthday drowned in the dateline, so I am cooking pancit anyway.' },
+      { who: 'Mang Ben', text: 'Long noodles, long life. You do not cut them. Ingat, ha? Take care. I say it to everyone who leaves my galley.' },
     ],
     effects: ['set:c3.feast', 'journal:dishes.pancit', 'journal:words.ingat'],
   },
   'c3.ben.cookagain': {
     lines: [
-      { who: 'Mang Ben', text: 'Pare! The freezer surrendered another chicken and the rice is already on. Same pot, same argument. Cook it with me again?' },
+      { who: 'Mang Ben', text: 'Pare! The freezer surrendered another chicken. Same pot, same argument. Again?' },
     ],
     choices: [
       { text: 'Tie the apron on again', when: { has: ['c3.cook.done'] }, goto: 'c3.ben.cookreplay' },
@@ -401,51 +396,49 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.cookreplay': {
     lines: [
-      { who: 'Mang Ben', text: 'Sige. No lesson tonight, only the cooking. Garlic first, and let her take her own time on the heat.' },
+      { who: 'Mang Ben', text: 'Sige. No lesson tonight. Garlic first.' },
     ],
     effects: ['set:replay.mode', 'set:c3.cook.start'],
   },
   'c3.ben.idle': {
     lines: [
-      { who: 'Mang Ben', text: 'The fresh stores are finished, so now the freezer and the rice sack tell the story. Watch me make them interesting, pare.' },
+      { who: 'Mang Ben', text: 'The fresh stores are finished. Now the freezer and the rice sack tell the story. Watch me make it interesting.' },
     ],
   },
 
   // ---------------- Joseph, AB, Kerala ----------------
   'c3.jos.first': {
     lines: [
-      { text: 'An AB works a chipping hammer along the rail, unhurried, as if he and the rust have reached an understanding.' },
-      { who: 'Joseph', text: 'The new galley hands! Good. Twenty-three crew and the cook still needs more hands; that tells you who really runs this ship.' },
-      { who: 'Joseph', text: 'Joseph. Able seaman, from Kerala, the backwaters near Kochi. Nine months aboard, three to go. My mother keeps the truer count.' },
+      { text: 'An AB works a chipping hammer along the rail, unhurried, as if he and the rust have an understanding.' },
+      { who: 'Joseph', text: 'The new galley hand! Joseph. Able seaman, from Kerala, near Kochi. Nine months aboard, three to go. My mother keeps the truer count.' },
     ],
     effects: ['set:c3.met.joseph', 'journal:people.joseph'],
   },
   'c3.jos.baon': {
     lines: [
-      { who: 'Joseph', text: 'Ben sent the baon? Then you are my favorite person on this watch. Joseph, by the way. Able seaman, Kerala.' },
+      { who: 'Joseph', text: 'Ben sent the baon? You are my favorite person on this watch. Joseph. Able seaman, Kerala.' },
     ],
     effects: ['set:c3.met.joseph', 'journal:people.joseph'],
     next: 'c3.jos.baon2',
   },
   'c3.jos.baon2': {
     lines: [
-      { text: 'He eats standing at the rail, plate balanced like it grew there. Somewhere aft, the bell strikes twice, bright as a coin.' },
+      { text: 'He eats at the rail, plate balanced like it grew there. Aft, the bell strikes twice, bright as a coin.' },
     ],
     effects: ['journal:words.bells'],
     next: 'c3.jos.baon3',
   },
   'c3.jos.baon3': {
     lines: [
-      { who: 'Joseph', text: 'Two bells. One hour of the watch down, and it went down better fed. Tell Ben the plate came home warm, will you?' },
+      { who: 'Joseph', text: 'Two bells. One hour of the watch down, and better fed. Tell Ben the plate came home warm.' },
     ],
     effects: ['set:c3.baon.done', 'errand.done', 'clear:errand.ben-baon', 'journal:customs.watches'],
   },
   'c3.jos.entrust': {
     lines: [
-      { who: 'Joseph', text: 'A word, friend. You land in Japan and keep going; from there, ships run everywhere. Mine runs the wrong way first.' },
-      { text: 'From inside his jacket: a letter gone soft at the folds, and a small cloth bundle knotted with more care than any lashing on deck.' },
-      { who: 'Joseph', text: 'For my mother. Mariamma, in the backwaters near Kochi; every boatman knows the house. The letter says what letters say.' },
-      { who: 'Joseph', text: 'If your road ever bends through Kerala, carry them to her. If it does not, carry them anyway; better they wait in your bag than in mine.' },
+      { who: 'Joseph', text: 'A word, friend. You land in Japan and keep going. My ship runs the wrong way first.' },
+      { text: 'From his jacket: a letter soft at the folds, and a cloth bundle knotted with more care than any lashing.' },
+      { who: 'Joseph', text: 'For my mother, Mariamma, near Kochi. If your road bends through Kerala, carry them to her.' },
     ],
     choices: [
       { text: 'Take the letter and the bundle', goto: 'c3.jos.entrust.yes' },
@@ -454,25 +447,25 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.jos.entrust.what': {
     lines: [
-      { who: 'Joseph', text: 'Sandalwood soap, and a photograph of this ship. She will scold the soap for its price and frame the photograph. Mothers.' },
+      { who: 'Joseph', text: 'Sandalwood soap, and a photograph of this ship. She will scold the soap for its price and frame the photograph.' },
     ],
     next: 'c3.jos.entrust.yes',
   },
   'c3.jos.entrust.yes': {
     lines: [
-      { text: 'The letter and the bundle settle into your pack beside Nani’s journal, as if the three of them had traveled together before.' },
-      { who: 'Joseph', text: 'Amma will feed you until you surrender, you know. That is the delivery fee. I apologize in advance and not sincerely.' },
+      { text: 'The letter and the bundle settle into your pack beside Nani’s journal, like old traveling companions.' },
+      { who: 'Joseph', text: 'Amma will feed you until you surrender. That is the delivery fee.' },
     ],
     effects: ['set:joseph.letter'],
   },
   'c3.jos.after': {
     lines: [
-      { who: 'Joseph', text: 'Three months more and I follow my own letter home. Take the slow road, friend, so I win the race to my own kitchen.' },
+      { who: 'Joseph', text: 'Three months more and I follow my own letter home. Take the slow road, so I win the race to my own kitchen.' },
     ],
   },
   'c3.jos.idle': {
     lines: [
-      { who: 'Joseph', text: 'Rust never sleeps, so the chipping hammer cannot either. Honest work. The sea just permanently disagrees with it.' },
+      { who: 'Joseph', text: 'Rust never sleeps, so the chipping hammer cannot either. The sea permanently disagrees with my work.' },
     ],
     choices: [
       { text: '"Which way was I headed, Joseph?"', goto: 'c3.jos.thread' },
@@ -481,7 +474,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.jos.thread': {
     lines: [
-      { who: 'Joseph', text: 'On a ship there is only forward, aft, and overboard. For the fourth direction, ask your wrist; string outranks hammers.' },
+      { who: 'Joseph', text: 'On a ship there is forward, aft, and overboard. For the fourth direction, ask your wrist.' },
     ],
     effects: ['thread:'],
   },
@@ -492,16 +485,14 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- Hana, cadet, bound for Shionoura ----------------
   'c3.hana.first': {
     lines: [
-      { text: 'A young officer in cadet coveralls leans at the bow rail, logging seabirds in a notebook far too neat for this wind.' },
-      { who: 'Hana', text: 'Oh! Hello. Hana. Deck cadet, first contract, and in twelve days I will see my own harbor from a bridge wing. Shionoura.' },
-      { who: 'Hana', text: 'My grandmother keeps an inn there. I have timed my whole life to be home for Tanabata, the star festival. Seventh day, seventh month.' },
+      { text: 'A cadet leans at the bow rail, logging seabirds in a notebook far too neat for this wind.' },
+      { who: 'Hana', text: 'Oh! Hana. Deck cadet. In twelve days I see my own harbor, Shionoura. Home for Tanabata, the star festival.' },
     ],
     effects: ['set:c3.met.hana', 'journal:people.hana'],
   },
   'c3.hana.stars': {
     lines: [
-      { who: 'Hana', text: 'The mate is teaching me star sights, sextant and all. The satellites could sulk someday; the sky does not. The bow is best, at night.' },
-      { who: 'Hana', text: 'The same river of stars carries three names on this one ship. Come after dark. Show me yours and I will show you mine.' },
+      { who: 'Hana', text: 'The river of stars has three names on this one ship. Come to the bow after dark. Show me yours; I will show you mine.' },
     ],
     choices: [
       { text: 'Meet her on the dark bow', goto: 'c3.hana.starstart' },
@@ -510,34 +501,34 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.hana.starstart': {
     lines: [
-      { text: 'Night folds over the ship. The working lights die forward, the engine hums below, and the sky comes down to the rail to meet you.' },
+      { text: 'Night folds over the ship. The working lights die forward, and the sky comes down to the rail to meet you.' },
     ],
     effects: ['set:c3.stars.start'],
   },
   'c3.hana.starlater': {
     lines: [
-      { who: 'Hana', text: 'They rise on schedule. The mate says it is the only thing aboard that does. Find me when the deck goes dark.' },
+      { who: 'Hana', text: 'They rise on schedule; the mate says it is the only thing aboard that does. Find me when the deck goes dark.' },
     ],
   },
   // The naming happened on the bow, in the game's own hand; this is only the
   // coming down. The starriver page and its rhyme carry the recognition.
   'c3.starsdone': {
     lines: [
-      { text: 'Three skies, one river, inked in your own hand. Dead ahead, the Amanogawa waits for July.' },
+      { text: 'Three skies, one river, inked in your own hand.' },
       { who: 'Hana', text: 'And the ship is named for your llama, you know. Somebody’s grandmother knew exactly where to look.' },
     ],
     effects: ['clear:c3.stars.start', 'set:c3.stars.done', 'journal:customs.starriver'],
   },
   'c3.hana.words': {
     lines: [
-      { who: 'Hana', text: 'You gave me a constellation, so: arigatou. Thank you. Your first word of Japanese, and honestly the one I use most.' },
+      { who: 'Hana', text: 'You gave me a constellation, so: arigatou. Your first word of Japanese.' },
       { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
     ],
     effects: ['set:c3.hana.tanabata'],
   },
   'c3.hana.starsagain': {
     lines: [
-      { who: 'Hana', text: 'The lights go out forward again at eight bells, and the river will have turned one night further. Stand at the bow with me?' },
+      { who: 'Hana', text: 'The lights go out forward again at eight bells. Stand at the bow with me?' },
     ],
     choices: [
       { text: 'Go up to the dark bow', when: { has: ['c3.stars.done'] }, goto: 'c3.hana.starsreplay' },
@@ -546,45 +537,43 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.hana.starsreplay': {
     lines: [
-      { who: 'Hana', text: 'No sights to take tonight, no names to prove. Only the three skies, and the two of us being small under them.' },
+      { who: 'Hana', text: 'No names to prove tonight. Only the three skies, and the two of us being small under them.' },
     ],
     effects: ['set:replay.mode', 'set:c3.stars.start'],
   },
   'c3.hana.idle': {
     lines: [
-      { who: 'Hana', text: 'Eleven days. Ten if the current is kind. My grandmother is already airing the good futons; I can feel it from here.' },
+      { who: 'Hana', text: 'Eleven days. Ten if the current is kind. My grandmother is already airing the good futons; I can feel it.' },
     ],
   },
 
   // ---------------- Olena, second engineer ----------------
   'c3.olena.first': {
     lines: [
-      { text: 'The second engineer takes her sun break at the rail, coveralls tied at the waist, face tipped up like a solar panel.' },
-      { who: 'Olena', text: 'Ah. The galley hand. Good, you exist; Ben talks about you, and Ben exaggerates everything except food.' },
-      { who: 'Olena', text: 'Olena. Second engineer, from Odesa. I keep four thousand tons of machinery alive. My method? Politeness, mostly.' },
+      { text: 'The second engineer takes her sun break at the rail, face tipped up like a solar panel.' },
+      { who: 'Olena', text: 'Ah. The galley hand. Olena, second engineer, Odesa. I keep four thousand tons of machinery alive, mostly by politeness.' },
     ],
     effects: ['set:c3.met.olena', 'journal:people.olena'],
   },
   'c3.olena.starter': {
     lines: [
-      { who: 'Olena', text: 'Come. Hold this, carefully. It is older than my contract and more temperamental than the main engine.' },
-      { text: 'A glass jar, warm from her hands. Inside, something pale breathes: a sourdough starter, alive, and clearly opinionated.' },
-      { who: 'Olena', text: 'From my mother’s kitchen in Odesa. Six oceans it has crossed with me. On land I have one address; at sea, I have this.' },
-      { who: 'Olena', text: 'Feed it while I check the purifier. If it bubbles, you are family. If it does not, we will never speak of this again.' },
-      { text: 'You feed it a spoon of flour. It bubbles, smugly. Four decks down, the engine keeps the same patient time.' },
+      { who: 'Olena', text: 'Come. Hold this, carefully. It is more temperamental than the main engine.' },
+      { text: 'A warm glass jar. Inside, something pale breathes: a sourdough starter, alive and opinionated.' },
+      { who: 'Olena', text: 'My mother’s, from Odesa. Feed it. If it bubbles, you are family.' },
+      { text: 'You feed it a spoon of flour. It bubbles, smugly.' },
     ],
     effects: ['set:c3.olena.bread'],
   },
   'c3.olena.dateline': {
     lines: [
-      { who: 'Olena', text: 'You noticed we crossed the dateline in the night? Tuesday is gone. The whole day. The company does not pay it back; I checked.' },
-      { who: 'Olena', text: 'The bosun’s birthday was on that Tuesday. Officially he is now a man with no age. He is delighted. Do not ruin it for him.' },
+      { who: 'Olena', text: 'We crossed the dateline in the night. Tuesday is gone. The company does not pay it back; I checked.' },
+      { who: 'Olena', text: 'It was the bosun’s birthday. Officially he has no age now. He is delighted.' },
     ],
     effects: ['set:c3.olena.dateline', 'journal:customs.dateline'],
   },
   'c3.olena.idle': {
     lines: [
-      { who: 'Olena', text: 'The engine hum? You stop hearing it in week one. Then in port, the silence wakes you like an alarm. The sea keeps you either way.' },
+      { who: 'Olena', text: 'The engine hum? You stop hearing it in week one. Then in port, the silence wakes you like an alarm.' },
     ],
     choices: [
       { text: '"Remind me where I was going?"', goto: 'c3.olena.thread' },
@@ -593,20 +582,21 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.olena.thread': {
     lines: [
-      { who: 'Olena', text: 'A machine with one moving part and no manual. Hold it out. If my engine ran on grandmother-thread, I would sleep better.' },
+      { who: 'Olena', text: 'One moving part and no manual. Hold it out. If my engine ran on grandmother-thread, I would sleep better.' },
     ],
     effects: ['thread:'],
   },
   'c3.olena.threadNo': {
-    lines: [{ who: 'Olena', text: 'Good decision. The sun is free, and the company cannot invoice it.' }],
+    lines: [
+      { who: 'Olena', text: 'Good decision. The sun is free, and the company cannot invoice it.' },
+    ],
   },
 
   // ---------------- the Bosun, and the court of Neptune ----------------
   'c3.bosun.first': {
     lines: [
-      { text: 'The bosun stands in the container canyon, one hand on a lashing rod, testing it the way you test a drum.' },
-      { who: 'The Bosun', text: 'New hands. Two rules on my deck: one hand for you, one for the ship. And no whistling; the wind takes requests too seriously.' },
-      { who: 'The Bosun', text: 'The cat outranks you; the cook outranks me. Learn the ladder and the run goes easy.' },
+      { text: 'The bosun stands in the container canyon, testing a lashing rod like a drum.' },
+      { who: 'The Bosun', text: 'Two rules on my deck: one hand for you, one for the ship. And no whistling; the wind takes requests.' },
     ],
     effects: ['set:c3.met.bosun', 'journal:people.bosun'],
   },
@@ -614,9 +604,8 @@ export const CROSSING_NODES: NodeMap = {
   // posts (see c3.ex.manifest); the court itself carries the doing.
   'c3.bosun.summons': {
     lines: [
-      { text: 'The bosun unrolls a scroll with terrible ceremony. It is a cargo manifest wearing a border drawn in marker.' },
-      { who: 'The Bosun', text: 'Hear ye. At noon tomorrow this vessel crosses the Line, and King Neptune finds one POLLYWOG aboard. You, wog. Court on the hatch.' },
-      { who: 'The Bosun', text: 'The particulars go up on the house door. I decorated them myself.' },
+      { text: 'The bosun unrolls a scroll with terrible ceremony: a cargo manifest wearing a marker border.' },
+      { who: 'The Bosun', text: 'Hear ye. Tomorrow at noon we cross the Line, and Neptune finds one POLLYWOG aboard. You. Court on the hatch.' },
     ],
     effects: ['set:c3.wog', 'journal:words.pollywog'],
     choices: [
@@ -626,28 +615,26 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.bosun.refuse': {
     lines: [
-      { who: 'The Bosun', text: 'Nothing, wog. They watch from the rail with dry hair, and regret it at every karaoke night for the rest of the run.' },
-      { text: 'He rerolls the manifest with dignity. The particular dignity of a man who has already hidden the flour somewhere.' },
+      { who: 'The Bosun', text: 'Nothing, wog. They watch from the rail with dry hair, and regret it at every karaoke night after.' },
     ],
   },
   'c3.bosun.court': {
     lines: [
-      { text: 'Noon, on the Line. Neptune holds court on the hatch: the bosun in a mop wig and a bedsheet, trident of taped-together boat hooks.' },
-      { who: 'The Bosun', text: 'The charge: presuming to enter my kingdom unshelled and unsalted. How plead you? Wrong. All wogs plead wrong. It is tradition.' },
-      { text: 'The royal barber pats your face with flour. The royal court, meaning everyone off watch, tips one bucket of warm sea over you.' },
-      { text: 'Then the bosun shakes your dripping hand and the whole deck cheers.' },
+      { text: 'Noon, on the Line. Neptune holds court on the hatch: the bosun in a mop wig and a bedsheet, trident of taped boat hooks.' },
+      { who: 'The Bosun', text: 'The charge: entering my kingdom unshelled and unsalted. How plead you? Wrong. All wogs plead wrong.' },
+      { text: 'Flour on your head, one bucket of warm sea over you, and the whole deck cheering.' },
       { who: 'The Bosun', text: 'Rise, shellback, child of Neptune.' },
     ],
     effects: ['set:c3.shellback', 'journal:customs.linecrossing'],
   },
   'c3.bosun.after': {
     lines: [
-      { who: 'The Bosun', text: 'Shellback. It sits well on you. Next crossing you are on the bucket side of the ceremony, which I promise is even better.' },
+      { who: 'The Bosun', text: 'Shellback. It sits well on you. Next crossing you are on the bucket side, which is even better.' },
     ],
   },
   'c3.bosun.idle': {
     lines: [
-      { who: 'The Bosun', text: 'Lashings, turnbuckles, twist-locks. La mar tries every knot all day, and I answer for all of them all night.' },
+      { who: 'The Bosun', text: 'Lashings, turnbuckles, twist-locks. La mar tries every knot all day, and I answer for them all night.' },
     ],
     choices: [
       { text: '"Bosun, which way was I bound?"', goto: 'c3.bosun.thread' },
@@ -656,7 +643,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.bosun.thread': {
     lines: [
-      { who: 'The Bosun', text: 'Lost between the bays? Cadets manage it weekly. Out with the wrist: red line, fair lead, no chafe. That is good rigging.' },
+      { who: 'The Bosun', text: 'Lost between the bays? Cadets manage it weekly. Wrist out: red line, fair lead, no chafe.' },
     ],
     effects: ['thread:'],
   },
@@ -667,25 +654,23 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- Chasca, amidships ----------------
   'c3.chasca.deck': {
     lines: [
-      { who: 'Chasca', text: 'The soup-eater! Do not look so surprised. Photographers ride cargo ships; how else do you photograph the middle of the sea?' },
-      { who: 'Chasca', text: 'I paid my passage like a lady and I sleep in a hammock between mountains of boxes. Best room I have ever had. No walls!' },
-      { who: 'Chasca', text: 'Stand at the rail. Sky behind you, thirty days of nowhere in every direction. The album needs the middle. Say fuzzy pickles!' },
+      { who: 'Chasca', text: 'The soup-eater! How else do you photograph the middle of the sea? You ride a cargo ship.' },
+      { who: 'Chasca', text: 'Stand at the rail. Thirty days of nowhere behind you. Say fuzzy pickles!' },
     ],
     effects: ['set:c3.met.chasca', 'set:photo.flash', 'set:photo.c3.deck'],
   },
   'c3.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Three photographs now: the star plain, the sea’s edge, and the middle of everything. The album is growing a spine.' },
-      { who: 'Chasca', text: 'Chapter by chapter, somebody keeps walking into focus. I will not say who. The darkroom keeps secrets better than I do.' },
+      { who: 'Chasca', text: 'Three photographs now: the star plain, the sea’s edge, the middle of everything. The album is growing a spine.' },
     ],
   },
 
   // ---------------- karaoke night ----------------
   'c3.karaoke': {
     lines: [
-      { text: 'After dinner, the machine is wheeled to the head of the mess with the reverence of an altar. Nobody laughs. Nobody would dare.' },
-      { text: 'Joseph sings a Malayalam song about rain. Ben commits entirely to a ballad. Then Olena stands, dead serious, and breaks every heart aboard.' },
-      { text: 'They hand you the microphone anyway. The scoring machine gives you a 74; the crew cheers like it said 100. Ritual, accomplished.' },
+      { text: 'After dinner the karaoke machine is wheeled out with the reverence of an altar.' },
+      { text: 'Joseph sings about rain in Malayalam. Ben commits to a ballad. Olena stands and breaks every heart aboard.' },
+      { text: 'Then you. The machine says 74; the crew cheers like it said 100.' },
     ],
     effects: ['set:c3.karaoke.done', 'journal:customs.karaoke'],
   },
@@ -693,210 +678,312 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- departure ----------------
   'c3.depart': {
     lines: [
-      { text: 'A small brown bird lands on the rail. Wrong for open ocean; exactly right for a coast. Then the smell arrives: green, wet, alive.' },
-      { text: 'Land birds lead the bow now. Islands rise out of the haze, pine-shouldered, and a town the size of a held breath gathers round a harbor.' },
-      { text: 'The engine falls to a whisper, lines go over, and thirty-one days end in one gentle bump. Shionoura. The gangway swings down.' },
+      { text: 'A small brown bird lands on the rail. Then the smell arrives: green, wet, alive. Land birds lead the bow now.' },
+      { text: 'On the bollard by the jackstaff sits a covered plate, its cloth tucked like a blanket. Ben’s. This watch, the baon is yours.' },
+      { text: 'Islands rise out of the haze, and thirty-one days end in one gentle bump. Shionoura. The gangway swings down.' },
     ],
     effects: ['travel:shionoura'],
   },
 
   // ---------------- examines: the deck ----------------
   'c3.ex.deck': {
-    lines: [{ text: 'Steel plating painted deck-green, repainted so many times the coats have geology. Nonskid grit holds every step you give it.' }],
+    lines: [
+      { text: 'Deck-green steel, repainted so often the coats have geology. The nonskid grit holds every step.' },
+    ],
   },
   'c3.ex.railing': {
-    lines: [{ text: 'White rails, waist high, cold in any weather. Below them la mar goes by at fourteen knots.' }],
+    lines: [
+      { text: 'White rails, waist high, cold in any weather. Below, la mar goes by at fourteen knots.' },
+    ],
   },
   'c3.ex.contA': {
-    lines: [{ text: 'Rust-red boxes lashed four square with rods and twist-locks. The manifest says machine parts. The bosun says "weather, eventually."' }],
+    lines: [
+      { text: 'Rust-red boxes lashed four square. The manifest says machine parts. The bosun says "weather, eventually."' },
+    ],
   },
   'c3.ex.contB': {
-    lines: [{ text: 'Blue containers wearing other people’s addresses. Somebody’s whole shop is inside one, crossing an ocean without a window.' }],
+    lines: [
+      { text: 'Blue containers wearing other people’s addresses. Somebody’s whole shop is in one, crossing an ocean without a window.' },
+    ],
   },
   'c3.ex.contC': {
-    lines: [{ text: 'A green stack, salt-streaked. One is a reefer; it hums to itself day and night, keeping somebody’s fish colder than the sea.' }],
+    lines: [
+      { text: 'A green stack, salt-streaked. One is a reefer, humming day and night to keep somebody’s fish colder than the sea.' },
+    ],
   },
   'c3.ex.lifeboat': {
-    lines: [{ text: 'Orange, enclosed, hanging in its davits like a seed that hopes never to sprout. The bosun drills it weekly anyway. Kindly, but weekly.' }],
+    lines: [
+      { text: 'Orange, enclosed, hanging in its davits like a seed that hopes never to sprout. Drilled weekly anyway.' },
+    ],
   },
   'c3.ex.winch': {
-    lines: [{ text: 'A mooring winch wound with wire that could tow a village. The grease on it is fresh. That is the bosun’s signature.' }],
+    lines: [
+      { text: 'A mooring winch wound with wire that could tow a village. The fresh grease is the bosun’s signature.' },
+    ],
   },
   'c3.ex.bollard': {
-    lines: [{ text: 'Twin black bollards, waists polished bright by hawsers. In port, a figure eight of rope around these holds the whole ship still.' }],
+    lines: [
+      { text: 'Twin black bollards, waists polished bright by hawsers.' },
+    ],
   },
   'c3.ex.funnel': {
-    lines: [{ text: 'The funnel, buff yellow with a navy band, breathing one long thin ribbon at the sky. The ship’s heartbeat, made visible.' }],
+    lines: [
+      { text: 'The funnel, buff yellow with a navy band, breathing one thin ribbon at the sky.' },
+    ],
   },
   'c3.ex.shiphouse': {
-    lines: [{ text: 'The house: white steel stacked over the galley, the cabins, the bridge. An entire village fitted into one apartment block, aft.' }],
+    lines: [
+      { text: 'The house: galley, cabins, bridge, white steel stacked aft. A whole village in one apartment block.' },
+    ],
   },
   // The bosun's scroll, posted: Neptune's court in marker-on-paper voice.
   // The lore of the line-crossing lives here now, not in his mouth.
   'c3.ex.manifest': {
     lines: [
-      { text: 'Taped to the house door, the manifest wears its marker border proudly. BY ORDER OF KING NEPTUNE: ALL POLLYWOGS STAND TRIAL AT NOON, ON THE LINE.' },
-      { text: 'Beneath: A POLLYWOG HAS NEVER CROSSED THE EQUATOR. A SHELLBACK FEARS NOTHING BUT DRY LAND. Then, smaller: VOLUNTARY. GENTLE. MOSTLY FLOUR.' },
-      { text: 'The footer declares A THOUSAND YEARS OF TRADITION (VIKING). A neat pencil hand has added: four hundred, says the book on the bridge.' },
+      { text: 'Taped to the house door: BY ORDER OF KING NEPTUNE, ALL POLLYWOGS STAND TRIAL AT NOON, ON THE LINE.' },
+      { text: 'Then, smaller: A POLLYWOG HAS NEVER CROSSED THE EQUATOR. VOLUNTARY. GENTLE. MOSTLY FLOUR.' },
     ],
   },
   // The keepsake after the court: the certificate lands as a thing, not a speech.
   'c3.ex.manifest2': {
     lines: [
-      { text: 'Where the summons hung, a certificate now: SHELLBACK, over your name, signed by the captain and by King Neptune himself.' },
+      { text: 'Where the summons hung, a certificate: SHELLBACK, over your name, signed by the captain and King Neptune.' },
       { text: 'Neptune’s handwriting is the bosun’s exactly. Nobody aboard has found this worth mentioning.' },
     ],
   },
   'c3.ex.hammock2': {
-    lines: [{ text: 'Chasca’s hammock. A camera bag hangs at its head, and the sea appears to have been given instructions to hold still.' }],
+    lines: [
+      { text: 'Chasca’s hammock, a camera bag hung at its head.' },
+    ],
   },
   'c3.ex.hammock': {
-    lines: [{ text: 'A hammock slung between the container stacks, swinging easy with the roll. Somebody aboard is winning at rooms.' }],
+    lines: [
+      { text: 'A hammock slung between the container stacks. Somebody aboard is winning at rooms.' },
+    ],
   },
   'c3.ex.bell2': {
-    lines: [{ text: 'MV YACANA, says the bronze lip. Two strikes: an hour into the watch. You can read the ship’s arithmetic now.' }],
+    lines: [
+      { text: 'MV YACANA, says the bronze lip. Two strikes: an hour into the watch. You can read the ship’s arithmetic now.' },
+    ],
   },
   'c3.ex.bell': {
-    lines: [{ text: 'A bronze bell under its little roof, polished to gold. Mostly ceremony now, the crew says. It still gets rung, and rung right.' }],
+    lines: [
+      { text: 'A bronze bell polished to gold. Mostly ceremony now, the crew says. It still gets rung right.' },
+    ],
   },
   'c3.ex.jackstaff': {
-    lines: [{ text: 'The jackstaff at the bow’s very point, flag snapping. Past it: nothing, then more nothing, then Japan.' }],
+    lines: [
+      { text: 'The jackstaff at the bow’s point, flag snapping. Past it: nothing, more nothing, then Japan.' },
+    ],
   },
   'c3.ex.cat3': {
-    lines: [{ text: 'Landfall eve. The cat rises, stretches fore and aft, and walks the full length of your shin. On purpose. The bosun, passing, salutes you both.' }],
+    lines: [
+      { text: 'Landfall eve. The cat rises, stretches, and walks the full length of your shin. On purpose.' },
+    ],
   },
   'c3.ex.cat2': {
-    lines: [{ text: 'The cat licks her fur down flat. Fur licked against the grain means storm, says the bosun. She is saying nothing either way.' }],
+    lines: [
+      { text: 'The cat licks her fur flat. Against the grain means storm, says the bosun. She is saying nothing.' },
+    ],
   },
   'c3.ex.cat': {
-    lines: [{ text: 'The ship’s cat, asleep on a coil of rope, in charge of everything. She does not care that you exist. It is oddly restful.' }],
+    lines: [
+      { text: 'The ship’s cat, asleep on a coil of rope, in charge of everything. She does not care that you exist. It is restful.' },
+    ],
   },
   'c3.ex.crate': {
-    lines: [{ text: 'Spare hatch beams and lashing gear under a tarp, tied down twice. On deck, "loose" is just an early word for "lost."' }],
+    lines: [
+      { text: 'Spare hatch beams under a tarp, tied down twice. On deck, "loose" is an early word for "lost."' },
+    ],
   },
   'c3.ex.sea': {
-    lines: [{ text: 'La mar, all the way down and all the way out. Fourteen knots of west for weeks, and she still looks like she is deciding.' }],
+    lines: [
+      { text: 'La mar, all the way down and all the way out. Weeks of west, and she still looks like she is deciding.' },
+    ],
   },
   'c3.ex.oildrum': {
-    lines: [{ text: 'Oil drums lashed in a rank, stenciled CALLAO STORES over older stencils from older ports. A drum never retires; it just changes jobs.' }],
+    lines: [
+      { text: 'Oil drums stenciled CALLAO STORES over older ports. A drum never retires; it changes jobs.' },
+    ],
   },
   'c3.ex.hosereel': {
-    lines: [{ text: 'The fire hose on its reel, drilled monthly, needed never. The bosun re-rolls it after every drill because the last man rolled it wrong.' }],
+    lines: [
+      { text: 'The fire hose, drilled monthly, needed never. The bosun re-rolls it after every drill; the last man rolled it wrong.' },
+    ],
   },
   'c3.ex.paintcans': {
-    lines: [{ text: 'Deck green by the gallon, one can open and a brush mid-career. Joseph says the color is called International Green; the sea calls it a challenge.' }],
+    lines: [
+      { text: 'Deck green by the gallon, a brush mid-career. The sea calls the color a challenge.' },
+    ],
   },
   'c3.ex.rustpatch': {
-    lines: [{ text: 'A rust bloom, wire-brushed at the edges where somebody fought back. The bosun is losing this one politely, a few square inches per week.' }],
+    lines: [
+      { text: 'A rust bloom, wire-brushed at the edges. The bosun is losing this one politely, an inch a week.' },
+    ],
   },
   'c3.ex.ropecoil': {
-    lines: [{ text: 'A mooring line flemished into a perfect flat spiral. No sign says do not step on it; you just know, the way you know about altars.' }],
+    lines: [
+      { text: 'A mooring line flemished into a flat spiral. No sign says do not step on it; you just know.' },
+    ],
   },
   'c3.ex.flyingfish': {
-    lines: [{ text: 'A flying fish, stranded on deck overnight, wings folded like a closed umbrella. Ben calls this room service and the pan is already warm.' }],
+    lines: [
+      { text: 'A flying fish stranded overnight, wings folded like an umbrella. Ben calls this room service.' },
+    ],
   },
   'c3.ex.tarp3': {
-    lines: [{ text: 'Landfall eve, and the tarp is still a tarp. Whatever it is, it has crossed the whole Pacific unexplained, which by now feels like tenure.' }],
+    lines: [
+      { text: 'Landfall eve, and the tarp is still a tarp. It has crossed the whole Pacific unexplained, which feels like tenure.' },
+    ],
   },
   'c3.ex.tarp2': {
-    lines: [{ text: 'A shellback outranks a secret, so you ask again. The bosun pats the tarp fondly: she is not ready to meet people, he says.' }],
+    lines: [
+      { text: 'A shellback outranks a secret, so you ask again. She is not ready to meet people, the bosun says.' },
+    ],
   },
   'c3.ex.tarp': {
-    lines: [{ text: 'Something bulky under a green tarp, lashed with the bosun’s best crosses. Nobody aboard will say what it is, and asking only makes the smiles worse.' }],
+    lines: [
+      { text: 'Something bulky under a green tarp, lashed with the bosun’s best. Nobody will say what. Asking makes the smiles worse.' },
+    ],
   },
   'c3.ex.portcrate2': {
-    lines: [{ text: 'Tomorrow somebody stencils a red line through KOBE. MOMBASA moves up one, the way ports do, the way places wait for you.' }],
+    lines: [
+      { text: 'Tomorrow a red line goes through KOBE. MOMBASA moves up one, the way places wait for you.' },
+    ],
   },
   'c3.ex.portcrate': {
-    lines: [{ text: 'Crates stenciled with ports: CALLAO struck through in red, KOBE waiting in white, MOMBASA queued below. Cargo reads like an itinerary.' }],
+    lines: [
+      { text: 'Crates stenciled with ports: CALLAO struck through, KOBE waiting, MOMBASA queued. Cargo reads like an itinerary.' },
+    ],
   },
   'c3.ex.lifering': {
-    lines: [{ text: 'M V YACANA, stenciled around the orange ring. If the worst happens, the ship throws you her own name and hauls you back to it.' }],
+    lines: [
+      { text: 'M V YACANA, around the orange ring. If the worst happens, the ship throws you her own name.' },
+    ],
   },
   'c3.ex.deckshrine': {
-    lines: [{ text: 'A welded shrine the size of a breadbox: battery candle, coins in five currencies, one plastic flower zip-tied on. La mar accepts all denominations.' }],
+    lines: [
+      { text: 'A welded shrine the size of a breadbox: battery candle, coins in five currencies. La mar accepts all denominations.' },
+    ],
   },
   'c3.ex.laundry': {
-    lines: [{ text: 'Coveralls drying between rails: engine-room orange, deck navy, one pair sized like weather. Nobody asks whose that one is.' }],
+    lines: [
+      { text: 'Coveralls drying between rails: engine orange, deck navy, one pair sized like weather.' },
+    ],
   },
   'c3.ex.hammock.galley': {
-    lines: [{ text: 'A hammock slung in the mess corner, because the mess is cool and the cabins are not. Whoever has it now got it by seniority.' }],
+    lines: [
+      { text: 'A hammock in the mess corner, because the mess is cool and the cabins are not. Held by seniority.' },
+    ],
   },
   'c3.ex.laundry.galley': {
-    lines: [{ text: 'The drying rack lives in the mess where the stove heat goes, so the off-watch dries its coveralls and the room smells faintly of soap and diesel.' }],
+    lines: [
+      { text: 'The drying rack sits where the stove heat goes. The room smells of soap and diesel.' },
+    ],
   },
   'c3.ex.deckshrine.galley': {
-    lines: [{ text: 'The mess shrine, bolted to the bulkhead above where the food comes out. Battery candle, five currencies, one plastic flower going pale.' }],
+    lines: [
+      { text: 'The mess shrine above the serving hatch. Battery candle, five currencies, one plastic flower going pale.' },
+    ],
   },
   'c3.ex.portcrate.galley': {
-    lines: [{ text: 'Stores crates parked inside the door, half unpacked, the manifest still taped to the top one and already out of date.' }],
+    lines: [
+      { text: 'Stores crates inside the door, half unpacked, the manifest already out of date.' },
+    ],
   },
   'c3.ex.sternrod': {
-    lines: [{ text: 'A fishing rod lashed to the stern rail, trolling since Callao with a bell on its tip. Total catch so far: one clump of kelp, morale high.' }],
+    lines: [
+      { text: 'A rod lashed to the stern rail, trolling since Callao. Catch so far: one clump of kelp. Morale high.' },
+    ],
   },
   'c3.ex.matdeck': {
-    lines: [{ text: 'A coir mat that says WELCOME, laid at the foot of a six-dogged watertight door. Ben put it there, and the door has felt friendlier since.' }],
+    lines: [
+      { text: 'A WELCOME mat at the foot of a watertight door. Ben put it there; the door has felt friendlier since.' },
+    ],
   },
 
   // ---------------- examines: the galley ----------------
   'c3.ex.stove': {
-    lines: [{ text: 'The galley range, gimballed against the roll, one stockpot on low forever. The most defended territory on the ship.' }],
+    lines: [
+      { text: 'The range, gimballed against the roll, one stockpot on low forever. The most defended territory aboard.' },
+    ],
   },
   'c3.ex.karaoke': {
-    lines: [{ text: 'The karaoke machine rests under a fitted cover, like important equipment. Aboard, it is. The scoreboard has made enemies.' }],
+    lines: [
+      { text: 'The karaoke machine, under a fitted cover like important equipment. Aboard, it is.' },
+    ],
   },
   'c3.ex.trayrack': {
-    lines: [{ text: 'The tray rack by the scullery hatch. A sign in three languages and one drawing: BUS YOUR OWN TRAY. The drawing is stern.' }],
+    lines: [
+      { text: 'BUS YOUR OWN TRAY, in three languages and one stern drawing.' },
+    ],
   },
   'c3.ex.wallsteel': {
     lines: [
-      { text: 'White-painted steel, warm from the sun on its far side. When the soup boils, condensation draws brief rivers down it.' },
-      { text: 'Deck green from hip height down, where every crate corner in thirty years has arrived. Under the chips it goes red, then grey, then sea.' },
+      { text: 'White steel, warm from the sun beyond. When the soup boils, condensation draws brief rivers down it.' },
     ],
   },
   'c3.ex.floorsteel': {
     lines: [
-      { text: 'Scuffed steel underfoot, the sand-paint worn smooth in one path from stove to table. Thirty years of dinners went this way.' },
-      { text: 'They broadcast grit into the paint while it was wet, which is the only reason anybody stays upright in this room in weather.' },
+      { text: 'Scuffed steel, the grit-paint worn smooth in one path from stove to table. Thirty years of dinners went this way.' },
     ],
   },
   'c3.ex.table': {
-    lines: [{ text: 'The long mess table, rimmed so the plates cannot wander. Fiddles, Joseph calls the rims. In weather, the sea eats here too.' }],
+    lines: [
+      { text: 'The long mess table, rimmed so plates cannot wander. In weather, the sea eats here too.' },
+    ],
   },
   'c3.ex.shelf': {
-    lines: [{ text: 'Provisions, week three: rice in bulk, tins in ranks, the last onions hanging like medals. The freshness countdown, shelved.' }],
+    lines: [
+      { text: 'Week three: rice in bulk, tins in ranks, the last onions hanging like medals.' },
+    ],
   },
   'c3.ex.pot': {
-    lines: [{ text: 'The stockpot mutters on its hook. Whatever it is becoming, it has been becoming it since Callao.' }],
+    lines: [
+      { text: 'The stockpot mutters on its hook. It has been becoming something since Callao.' },
+    ],
   },
   // Skinned to `dunnage` on this map in `art/sets/crossing.ts`: a woven mat is
   // a floor covering for a room with a floor, and this room has a sole.
   'c3.ex.matgalley': {
     lines: [
-      { text: 'A dunnage board at the threshold, scrap timber slatted over bearers, worn pale where every pair of deck boots aboard has stamped on it.' },
-      { text: 'The water goes down between the slats and stays there. Wipe twice; Ben hears the difference between once and twice.' },
+      { text: 'A dunnage board at the threshold, worn pale by every pair of deck boots aboard. Wipe twice; Ben hears the difference.' },
     ],
   },
   'c3.ex.menuboard2': {
-    lines: [{ text: 'Tonight the chalk says adobo and sinigang, underlined twice. Smaller, underneath: ask the new hands how it happened.' }],
+    lines: [
+      { text: 'Tonight: adobo and sinigang, underlined twice. Smaller: ask the new hands how it happened.' },
+    ],
   },
   'c3.ex.menuboard': {
-    lines: [{ text: 'The chalkboard menu, in Ben’s square hand: rice, fried fish, soup of the day. The soup of the day has been "yes" since Callao.' }],
+    lines: [
+      { text: 'Ben’s chalk menu: rice, fried fish, soup of the day. The soup of the day has been "yes" since Callao.' },
+    ],
   },
   'c3.ex.dartboard': {
-    lines: [{ text: 'The mess dartboard, two darts up and one hole in the set. The third went over the side off Panama in 2019; scores carry an asterisk since.' }],
+    lines: [
+      { text: 'Two darts and a hole in the set. The third went over the side off Panama; scores carry an asterisk since.' },
+    ],
   },
   'c3.ex.chessset2': {
-    lines: [{ text: 'White claims the missing Tuesday ate one of their moves. The chief engineer has appealed to the captain, who has wisely declined the case.' }],
+    lines: [
+      { text: 'White claims the missing Tuesday ate a move. The captain has wisely declined the case.' },
+    ],
   },
   'c3.ex.chessset': {
-    lines: [{ text: 'A chess game paused mid-siege, board taped down against weather. Olena versus the chief engineer, day nineteen; touching it is mutiny.' }],
+    lines: [
+      { text: 'A chess game taped down mid-siege. Olena versus the chief engineer, day nineteen; touching it is mutiny.' },
+    ],
   },
   'c3.ex.galleyplant2': {
-    lines: [{ text: 'The pothos got watered three times today. Everyone thinks their turn should not be the one it dies on, so close to land.' }],
+    lines: [
+      { text: 'The pothos got watered three times today. Nobody wants it to die on their turn, so close to land.' },
+    ],
   },
   'c3.ex.galleyplant': {
-    lines: [{ text: 'A pothos in a rice tin, the ship’s one garden. The watering rota is taped on: HANA, JOSEPH, OLENA, BEN, and the bosun in different ink.' }],
+    lines: [
+      { text: 'A pothos in a rice tin, the ship’s one garden. The rota: HANA, JOSEPH, OLENA, BEN, and the bosun in different ink.' },
+    ],
   },
 };
 
