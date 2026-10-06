@@ -173,7 +173,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     id: 'people.rios',
     tab: 'people',
     title: 'Capitana Ríos',
-    sub: 'Master of the cargo ship at anchor. Takes working hands only, and only ones the village vouches for.',
+    sub: 'Master of the cargo ship at anchor. Takes working hands only, and only ones the village would miss.',
     you: '"They say a woman aboard is bad luck. I have crossed this ocean ninety times. The luck seems fine to me."',
   },
 
@@ -320,7 +320,7 @@ export const CALETA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['met.rios'], not: ['c2.complete'] },
-    text: 'Capitana Ríos takes working hands, vouched for by the village: be somebody’s casero, learn what la mar carries, make Petro’s kitchen owe you one.',
+    text: 'Capitana Ríos takes only working hands the village knows: be somebody’s casero, learn what la mar carries, make Petro’s kitchen owe you one.',
     who: 'rios',
   },
   {

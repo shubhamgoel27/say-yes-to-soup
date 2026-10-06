@@ -327,8 +327,8 @@ export const NODES: NodeMap = {
   // bag itself, one card per look, at whatever pace the player browses.
   'intro.wake': {
     lines: [
-      { text: 'The bus left you at the bottom of the valley an hour ago. The driver pointed uphill and said only: arriba.' },
-      { text: 'In your bag: her postcards, and her journal, half full. Its first page says: "Ch’aska Pampa. Start where the water is."' },
+      { text: 'The bus left you at the bottom of the valley. The driver pointed uphill: arriba.' },
+      { text: 'Her journal, half full, opens on one line: "Ch’aska Pampa. Start where the water is."' },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
     effects: ['set:intro.done'],
@@ -338,8 +338,8 @@ export const NODES: NodeMap = {
   // The q'epi at the spawn. Each look draws the next card; no card repeats.
   'ex.bag.first': {
     lines: [
-      { text: 'Your bag, set down where your lungs gave out. You told everyone this was a short trip. Nobody believed you, least of all the bag.' },
-      { text: 'Her postcards ride in the top pocket, rubber-banded, in order.' },
+      { text: 'Your bag. You said this was a short trip. Nobody believed you, least of all the bag.' },
+      { text: 'Her postcards ride in the top pocket, in order.' },
     ],
     effects: ['set:bag.opened'],
   },
@@ -364,7 +364,7 @@ export const NODES: NodeMap = {
   'ex.bag.card4': {
     lines: [
       { text: 'The last cards stopped being from elsewhere. Then, last winter, they stopped.' },
-      { text: 'Under them, the lawyer\'s envelope. No money; one note. The empty half of the journal was always yours.' },
+      { text: 'Under them, the lawyer\'s envelope: no money, one note. The empty half of the journal was always yours.' },
     ],
     effects: ['set:bag.done'],
   },
@@ -389,9 +389,8 @@ export const NODES: NodeMap = {
   },
   'aurelio.first.business': {
     lines: [
-      { who: 'Don Aurelio', text: 'Mm. First: did you sleep warm?' },
-      { who: 'Don Aurelio', text: 'And your family, they are well? The rains did not catch you on the pass?' },
-      { text: 'Some minutes go by. By the third answer you have forgotten what you came to ask.' },
+      { who: 'Don Aurelio', text: 'Mm. First: did you sleep warm? Your family is well? No rain on the pass?' },
+      { text: 'By the third answer you have forgotten your question.' },
       { who: 'Don Aurelio', text: 'Now. What did you want to ask?' },
     ],
     effects: ['set:met.aurelio', 'journal:customs.warmup', 'journal:people.aurelio'],
@@ -399,14 +398,13 @@ export const NODES: NodeMap = {
   },
   'aurelio.chaska': {
     lines: [
-      { who: 'Don Aurelio', text: 'This place? Ch’aska Pampa. Star plain.' },
-      { who: 'Don Aurelio', text: 'When it rains, the ground fills with puddles, and the pampa catches stars. You can check my work tonight.' },
+      { who: 'Don Aurelio', text: 'This place? Ch’aska Pampa. Star plain. When it rains, the puddles catch stars. Check my work tonight.' },
     ],
     effects: ['journal:words.chaska'],
   },
   'aurelio.idle': {
     lines: [
-      { who: 'Don Aurelio', text: 'The well is older than the church. The water is older than everything. Have some, it is nobody’s to sell.' },
+      { who: 'Don Aurelio', text: 'The well is older than the church. Have some; water is nobody’s to sell.' },
     ],
   },
 
@@ -423,7 +421,7 @@ export const NODES: NodeMap = {
   },
   'rosa.coins': {
     lines: [
-      { text: 'Rosa looks at the coins the way you would look at a strange beetle.' },
+      { text: 'Rosa looks at the coins like a strange beetle.' },
       { who: 'Rosa', text: 'Keep them. Here, help comes back as help. Eat now, argue after.' },
     ],
     effects: ['set:met.rosa', 'journal:customs.ayni', 'journal:people.rosa'],
@@ -432,49 +430,46 @@ export const NODES: NodeMap = {
   'rosa.thanks': {
     lines: [
       { who: 'Rosa', text: 'Sulpayki, we say. Sool-PIE-kee.' },
-      { who: 'Rosa', text: 'It costs nothing and it pays everything. Now eat before it goes cold.' },
+      { who: 'Rosa', text: 'It costs nothing and it pays everything. Now eat.' },
     ],
     effects: ['set:met.rosa', 'journal:words.sulpayki', 'journal:people.rosa'],
     next: 'rosa.bundle',
   },
   'rosa.bundle': {
     lines: [
-      { who: 'Rosa', text: 'Since your legs work: carry this bundle up to my sister Justina, in the terraces past the lane.' },
-      { who: 'Rosa', text: 'Then we are even. Almost.' },
-      { text: 'You are now carrying a warm cloth bundle. It smells of wool and bread.' },
+      { who: 'Rosa', text: 'Since your legs work: carry this bundle up to my sister Justina, in the terraces. Then we are even. Almost.' },
     ],
     effects: ['errand:rosa-bundle', 'set:errand.rosa-bundle'],
   },
   'rosa.waiting': {
     lines: [
-      { who: 'Rosa', text: 'The bundle, wawa. Justina. Terraces. Up.' },
-      { who: 'Rosa', text: 'She talks a lot. Bring patience, it weighs less than the bundle.' },
+      { who: 'Rosa', text: 'The bundle, wawa. Justina. Terraces. Up. Bring patience; she talks.' },
     ],
   },
   'rosa.even': {
     lines: [
-      { who: 'Rosa', text: 'So she kept you talking. Ha! I warned you and I was right, my favorite combination.' },
-      { who: 'Rosa', text: 'Now we are even. Which means now we can begin. Hold out your pocket.' },
-      { text: 'She pours in a handful of boiled corn. It is still warm.' },
+      { who: 'Rosa', text: 'So she kept you talking. Ha! I warned you.' },
+      { who: 'Rosa', text: 'Now we are even, so now we can begin. Hold out your pocket.' },
+      { text: 'She pours in a handful of warm boiled corn.' },
     ],
     effects: ['set:rosa.thanked', 'journal:dishes.mote'],
   },
   'rosa.idle': {
     lines: [
-      { who: 'Rosa', text: 'If the flag is up, the chicha is fresh. If the flag is down, come back tomorrow and it will be up.' },
+      { who: 'Rosa', text: 'Flag up, chicha fresh. Flag down, come back tomorrow; it will be up.' },
     ],
   },
   'rosa.epilogue': {
     lines: [
-      { who: 'Rosa', text: 'So the journal is full. Good. Now start your own, and put my soup on the first page where it belongs.' },
+      { who: 'Rosa', text: 'So the journal is full. Good. Start your own, and put my soup on the first page.' },
     ],
   },
 
   // ---- the steady-hands chicha delivery (a walking puzzle) ----
   'rosa.chichaAsk': {
     lines: [
-      { who: 'Rosa', text: 'Perfect timing. Teófilo left his caporal on my counter, full to the brim, and his knees refuse the trip back.' },
-      { who: 'Rosa', text: 'Carry it in to him. Full glass, steady legs. Bump into things and the floor drinks better than he does.' },
+      { who: 'Rosa', text: 'Teófilo left his caporal here, full to the brim. His knees refuse the trip back.' },
+      { who: 'Rosa', text: 'Carry it in? Bump into things and the floor drinks it.' },
     ],
     choices: [
       { text: 'Take the glass, carefully', goto: 'rosa.chichaAccept' },
@@ -483,8 +478,7 @@ export const NODES: NodeMap = {
   },
   'rosa.chichaAccept': {
     lines: [
-      { text: 'The glass is fuller than physics should allow. The surface watches you like a nervous passenger.' },
-      { text: 'Three good bumps and it is gone. Walk gently.' },
+      { text: 'The glass is fuller than physics should allow. Three good bumps and it is gone.' },
     ],
     effects: ['set:carry.chicha'],
   },
@@ -493,28 +487,27 @@ export const NODES: NodeMap = {
   },
   'rosa.carrying': {
     lines: [
-      { who: 'Rosa', text: 'Why are you back? The chicha goes THAT way. Walk like a llama on a ledge: slowly, and certain.' },
+      { who: 'Rosa', text: 'The chicha goes THAT way. Walk like a llama on a ledge: slowly, and certain.' },
     ],
   },
   'rosa.refill': {
     lines: [
-      { text: 'Rosa looks at the empty, guilty glass. Then at you. Then she laughs so hard the cuyes relocate.' },
-      { who: 'Rosa', text: 'The floor thanks you. Pachamama got a generous pour today. Here, again, and this time: gently.' },
+      { text: 'Rosa looks at the empty glass, then at you, and laughs so hard the cuyes relocate.' },
+      { who: 'Rosa', text: 'Pachamama got a generous pour. Again: gently.' },
     ],
     effects: ['clear:chicha.spilled', 'set:carry.chicha'],
   },
   'teofilo.chicha': {
     lines: [
-      { text: 'You set the caporal down in front of Teófilo. The surface is calm. Not a drop surrendered.' },
-      { who: 'Don Teófilo', text: 'Not one drop! Rosa sent a llama after all, steady on every ledge.' },
-      { who: 'Don Teófilo', text: 'Tomakusunchis, friend. "Let us drink together." Here there is no other kind of drinking.' },
-      { text: 'He tips the first splash to the floor, for the earth. Then the glass, at last, gets to be a glass.' },
+      { text: 'You set the caporal down in front of Teófilo. Not a drop surrendered.' },
+      { who: 'Don Teófilo', text: 'Not one drop! Tomakusunchis: let us drink together. There is no other kind.' },
+      { text: 'The first splash goes to the earth. Then the glass gets to be a glass.' },
     ],
     effects: ['clear:carry.chicha', 'set:chicha.delivered', 'journal:words.tomakusunchis'],
   },
   'teofilo.epilogue': {
     lines: [
-      { who: 'Don Teófilo', text: 'Zoila\'s grandchild, they tell me. I owed her a laugh for fifty years. You collected it. We are even.' },
+      { who: 'Don Teófilo', text: 'Zoila\'s grandchild, they tell me. I owed her a laugh for fifty years. You collected it.' },
     ],
   },
 
@@ -522,14 +515,13 @@ export const NODES: NodeMap = {
   'justina.first': {
     lines: [
       { who: 'Justina', text: 'You are standing on my potatoes.' },
-      { who: 'Justina', text: 'No, those. Under your feet. Step left. ...There. Now we can talk like people.' },
+      { who: 'Justina', text: 'No, those. Step left. ...There. Now we can talk like people.' },
     ],
     effects: ['set:met.justina', 'journal:people.justina'],
   },
   'justina.bundle': {
     lines: [
       { who: 'Justina', text: 'From Rosa? Give here. Ah. Wool, bread, and worry, as always.' },
-      { who: 'Justina', text: 'She raised me after mama went to Lima. A sister who is half a mother, you carry her bundles forever.' },
       { who: 'Justina', text: 'Sulpayki, wawa. Yes, wawa. Everyone younger than my knees is wawa.' },
     ],
     effects: [
@@ -545,15 +537,13 @@ export const NODES: NodeMap = {
   // its journal page arrives with the first bite, at watia.finish.
   'justina.watia': {
     lines: [
-      { who: 'Justina', text: 'Stay near when the harvest comes in, wawa. The field cooks for the people who dug it.' },
-      { who: 'Justina', text: 'In fact. See those mounds? Early ones, ready. Dig them up for me and I will teach you their names. Every papa has a name.' },
+      { who: 'Justina', text: 'Those mounds? Early papas, ready. Dig them up and I will tell you their names. Every papa has a name.' },
     ],
     effects: ['set:dig.invite'],
   },
   'justina.after': {
     lines: [
-      { who: 'Justina', text: 'These rows? Forty kinds of papa, and I know each one by its face.' },
-      { who: 'Justina', text: 'Some of the names are jokes, and our jokes are long games. Dig, and you will meet the worst of them.' },
+      { who: 'Justina', text: 'Forty kinds of papa in these rows. I know each one by its face.' },
     ],
     choices: [
       { text: 'Build the watia again', when: { has: ['watia.done'] }, goto: 'justina.watiaAgain' },
@@ -562,28 +552,27 @@ export const NODES: NodeMap = {
   },
   'justina.watiaAgain': {
     lines: [
-      { who: 'Justina', text: 'The ground is still warm from last time. No reason to waste good heat. Stack me another dome, just for the eating.' },
+      { who: 'Justina', text: 'The ground is still warm from last time. Stack me another dome, just for the eating.' },
     ],
     effects: ['set:replay.mode', 'set:watia.start'],
   },
   'justina.idle': {
     lines: [
-      { who: 'Justina', text: 'The stream does the talking for both of us today. Listen, it never repeats itself.' },
+      { who: 'Justina', text: 'The stream does the talking for both of us today. It never repeats itself.' },
     ],
   },
 
   // ---------------- Mateo ----------------
   'mateo.first': {
     lines: [
-      { who: 'Mateo', text: 'My grandfather knits faster than I text; I timed us. He heard, and knitted me a hat.' },
-      { who: 'Mateo', text: 'He says a chullu keeps thoughts warm. I say my phone dies by noon anyway, so maybe he wins.' },
+      { who: 'Mateo', text: 'My grandfather knits faster than I text. I timed us. He heard, and knitted me this hat.' },
+      { who: 'Mateo', text: 'A chullu keeps thoughts warm, he says. My phone dies by noon, so maybe he wins.' },
     ],
     effects: ['set:met.mateo', 'journal:people.mateo', 'journal:customs.chullu'],
   },
   'mateo.idle': {
     lines: [
-      { who: 'Mateo', text: 'Everyone says the village is emptying. But the signal is best on the ridge, and from up there the pampa looks full.' },
-      { who: 'Mateo', text: 'Also: the little kids swear something legendary sleeps under the bridge. The little kids swear a lot of things.' },
+      { who: 'Mateo', text: 'Everyone says the village is emptying. From the ridge, where the signal is, it looks full.' },
     ],
     choices: [
       { text: '"Remind me where I was headed?"', when: { has: ['pallay.done'] }, goto: 'mateo.thread' },
@@ -592,7 +581,7 @@ export const NODES: NodeMap = {
   },
   'mateo.thread': {
     lines: [
-      { who: 'Mateo', text: 'You have GPS on your wrist and I climb a ridge for one bar. Hold it out; the old network still beats mine.' },
+      { who: 'Mateo', text: 'You have GPS on your wrist and I climb a ridge for one bar. Hold it out.' },
     ],
     effects: ['thread:'],
   },
@@ -603,14 +592,14 @@ export const NODES: NodeMap = {
   // ---------------- Doña Carmen ----------------
   'carmen.first': {
     lines: [
-      { who: 'Doña Carmen', text: 'Sit if you like, the sun is free. This lliclla is for my granddaughter in Lima.' },
-      { who: 'Doña Carmen', text: 'The zigzag is the river; also the road of stars. The thread is not confused; you are.' },
+      { who: 'Doña Carmen', text: 'Sit; the sun is free. This lliclla is for my granddaughter in Lima.' },
+      { who: 'Doña Carmen', text: 'The zigzag is the river, and the road of stars. The thread is not confused; you are.' },
     ],
     effects: ['set:met.carmen', 'journal:people.carmen', 'journal:words.lliclla'],
   },
   'carmen.idle': {
     lines: [
-      { who: 'Doña Carmen', text: 'My mother wove her stories. I weave mine. When the wawa wraps herself in this, she carries all of us. Heavy? No. Warm.' },
+      { who: 'Doña Carmen', text: 'My mother wove her stories. I weave mine. The wawa who wears this carries all of us. Heavy? No. Warm.' },
     ],
   },
 
@@ -618,8 +607,7 @@ export const NODES: NodeMap = {
   'teofilo.first': {
     lines: [
       { who: 'Don Teófilo', text: 'Ah! The bundle-carrier. Rosa told the whole room before you crossed the bridge.' },
-      { who: 'Don Teófilo', text: 'Sit. Tomakusunchis, let us drink together. The chomba was generous today.' },
-      { text: 'He fills two glasses with cloudy, straw-colored chicha and slides one over.' },
+      { text: 'He slides you a glass of cloudy chicha.' },
     ],
     choices: [
       { text: 'Drink up', goto: 'teofilo.drink' },
@@ -628,72 +616,64 @@ export const NODES: NodeMap = {
   },
   'teofilo.drink': {
     lines: [
-      { text: 'You drink. It is sour, alive, and better than it sounds.' },
-      { who: 'Don Teófilo', text: 'HA! Straight down! And the earth got nothing!' },
-      { text: 'He tips his own glass and lets a little fall to the floor before he drinks.' },
-      { who: 'Don Teófilo', text: 'First splash is for Pachamama. She drinks first, always. Now, again, and this time she goes first.' },
-      { text: 'You pour a little out. The packed earth takes it without comment. Teófilo nods like something is settled.' },
+      { text: 'You drink. Sour, alive, better than it sounds.' },
+      { who: 'Don Teófilo', text: 'HA! Straight down, and the earth got nothing! First splash is for Pachamama. Again.' },
+      { text: 'You pour a little out. Teófilo nods like something is settled.' },
     ],
     effects: ['set:challar.done', 'set:met.teofilo', 'journal:customs.challar', 'journal:people.teofilo'],
   },
   'teofilo.watch': {
     lines: [
-      { text: 'You wait. He tips his glass and lets a little fall to the floor, murmuring something soft, then drinks.' },
-      { text: 'You copy him, splash and all.' },
-      { who: 'Don Teófilo', text: 'Yaw! You watched first. Watching first is its own wisdom, and rarer than it should be.' },
-      { who: 'Don Teófilo', text: 'The splash is for Pachamama. She feeds us all year; she can drink first all year.' },
+      { text: 'You wait. He tips a little to the floor, murmurs something, and drinks. You copy him, splash and all.' },
+      { who: 'Don Teófilo', text: 'Yaw! You watched first. Rarer than it should be. Pachamama always drinks first.' },
     ],
     effects: ['set:challar.done', 'set:met.teofilo', 'journal:customs.challar', 'journal:people.teofilo'],
   },
   'teofilo.haku': {
     lines: [
-      { who: 'Don Teófilo', text: 'Haku! To the terraces! To the ridge! To anywhere!' },
+      { who: 'Don Teófilo', text: 'Haku! Let us go! To the terraces! To the ridge!' },
       { text: 'He does not move. His knees have voted against the motion.' },
-      { who: 'Don Teófilo', text: 'Haku means "let us go." The word still counts. The word is the going. You go; I will supervise.' },
+      { who: 'Don Teófilo', text: 'The word still counts. You go; I supervise.' },
     ],
     effects: ['journal:words.haku'],
   },
   'teofilo.idle': {
     lines: [
-      { who: 'Don Teófilo', text: 'When the flag is up, this seat is mine. It is the only appointment I have kept for forty years.' },
+      { who: 'Don Teófilo', text: 'When the flag is up, this seat is mine. The only appointment I have kept for forty years.' },
     ],
   },
 
   // ---------------- Carmen's wichuna chain ----------------
   'carmen.ask': {
     lines: [
-      { who: 'Doña Carmen', text: 'You have carrying legs, I hear. Rosa rates you highly, and Rosa rates nobody highly.' },
-      { who: 'Doña Carmen', text: 'My wichuna, the little bone pick, is with Justina in the terraces. These fingers miss it. Bring it back?' },
+      { who: 'Doña Carmen', text: 'Rosa rates you highly, and Rosa rates nobody. My wichuna, the bone pick, is with Justina. Bring it back?' },
     ],
     effects: ['errand:carmen-wichuna', 'set:errand.carmen-wichuna'],
   },
   'carmen.waiting': {
     lines: [
-      { who: 'Doña Carmen', text: 'The wichuna, wawa. Justina has it. Llama bone, smooth as river stone. She will pretend she forgot.' },
+      { who: 'Doña Carmen', text: 'Justina has my wichuna, wawa. She will pretend she forgot.' },
     ],
   },
   'justina.wichuna': {
     lines: [
       { who: 'Justina', text: 'The wichuna? I was going to return it. In my own season.' },
-      { text: 'She produces a small polished bone pick from her lliclla, wrapped in cloth like something precious. It is something precious.' },
-      { who: 'Justina', text: 'Tell my sister-in-craft: her pick picked nothing here. My hands kept dropping the pattern. Some tools choose one person.' },
+      { text: 'She unwraps a polished bone pick from her lliclla like something precious. It is.' },
     ],
     effects: ['set:wichuna.have', 'set:met.justina', 'journal:people.justina'],
   },
   'carmen.wichuna': {
     lines: [
       { who: 'Doña Carmen', text: 'Ah. There you are, old friend.' },
-      { text: 'She is talking to the pick, not to you. Then she remembers you, and pats the ground beside her.' },
-      { who: 'Doña Carmen', text: 'Look. This border is my mother. This color is this village. This zigzag is the river and the sky road both.' },
-      { who: 'Doña Carmen', text: 'Sumaq, no? Beautiful. The word also means delicious. We saw no reason to have two words.' },
+      { text: 'She is talking to the pick. Then she remembers you, and pats the ground.' },
+      { who: 'Doña Carmen', text: 'This border is my mother; this zigzag, the river. Sumaq, no? Beautiful. Also delicious. Why keep two words?' },
     ],
     effects: ['set:wichuna.returned', 'errand.done', 'journal:words.sumaq'],
     next: 'carmen.weaveOffer',
   },
   'carmen.weaveOffer': {
     lines: [
-      { who: 'Doña Carmen', text: 'Now. A returned tool must work the same day; that is its thanks.' },
-      { who: 'Doña Carmen', text: 'Sit at the loom. Watch which ball lights when I call, then call them back with your hands. The cloth forgives; I mostly do too.' },
+      { who: 'Doña Carmen', text: 'A returned tool must work the same day; that is its thanks. Sit at the loom.' },
     ],
     choices: [
       { text: 'Sit at the loom', goto: 'carmen.weaveStart' },
@@ -711,11 +691,10 @@ export const NODES: NodeMap = {
   },
   'carmen.woven': {
     lines: [
-      { text: 'Row by row the pattern comes, crooked, then less crooked, then almost right.' },
-      { who: 'Doña Carmen', text: 'Ha! Look at that row. Crooked as the river. Good. Now the cloth has you in it too.' },
-      { who: 'Doña Carmen', text: 'My granddaughter will wear this in Lima and carry a stranger who tried. That is pallay. Nothing written down; everything written in.' },
-      { text: 'She knots your practice rows into a narrow band and ties it at your wrist. "So your hands remember the mountain."' },
-      { who: 'Doña Carmen', text: 'One more thing, wawa. Red runs through the band; when you lose the way, ask your wrist, and walk where it spools.' },
+      { text: 'Row by row the pattern comes: crooked, then less crooked, then almost right.' },
+      { who: 'Doña Carmen', text: 'Ha! Crooked as the river. Good. Now the cloth has you in it too.' },
+      { text: 'She knots your rows into a band at your wrist. "So your hands remember the mountain."' },
+      { who: 'Doña Carmen', text: 'When you lose the way, ask your wrist. Walk where the red spools.' },
     ],
     // The trailing 'thread:' makes her teach line literal: the moment her
     // words close, the thread spools once from the loom, unasked, so the
@@ -724,7 +703,7 @@ export const NODES: NodeMap = {
   },
   'carmen.after': {
     lines: [
-      { who: 'Doña Carmen', text: 'The lliclla grows a row a day. Like the potatoes. Like the wawa it is for. Nothing good hurries.' },
+      { who: 'Doña Carmen', text: 'The lliclla grows a row a day. Like the potatoes. Nothing good hurries.' },
     ],
     choices: [
       { text: 'Sit at the loom again', when: { has: ['pallay.done'] }, goto: 'carmen.weaveAgain' },
@@ -733,7 +712,7 @@ export const NODES: NodeMap = {
   },
   'carmen.weaveAgain': {
     lines: [
-      { who: 'Doña Carmen', text: 'The loom is free most evenings. No lesson this time, no cloth to keep. Only the pleasure of a straight row. Sit.' },
+      { who: 'Doña Carmen', text: 'No lesson this time, no cloth to keep. Only the pleasure of a straight row. Sit.' },
     ],
     effects: ['set:replay.mode', 'set:weave.start'],
   },
@@ -748,16 +727,16 @@ export const NODES: NodeMap = {
   // something; she is finishing a complaint she started in 1974.
   'carmen.zoila': {
     lines: [
-      { who: 'Doña Carmen', text: 'Your hands hold the shuttle the way Zoila held it. Badly, and entirely unbothered about it.' },
-      { text: 'Zoila. You have called her Nani your whole life, because that is what you called her.' },
-      { text: 'A woman at a loom says it the way you say the name of someone who owes you money.' },
+      { who: 'Doña Carmen', text: 'You hold the shuttle the way Zoila did. Badly, and entirely unbothered.' },
+      { text: 'Zoila. You have only ever called her Nani.' },
+      { text: 'Carmen says it like the name of someone who owes her money.' },
     ],
     next: 'carmen.zoila2',
   },
   'carmen.zoila2': {
     lines: [
-      { who: 'Doña Carmen', text: 'We were warping this loom together that week. I slept, and by morning her half was tied off and she was gone down the west road.' },
-      { who: 'Doña Carmen', text: 'She left a note on the post. Fifty years, and I am still not calling that a goodbye.' },
+      { who: 'Doña Carmen', text: 'We were warping this loom together. I slept. By morning her half was tied off and she was gone down the west road.' },
+      { who: 'Doña Carmen', text: 'A note on the post. I am still not calling that a goodbye.' },
     ],
     choices: [
       { text: '"She meant to come back."', goto: 'carmen.zoila.meant' },
@@ -766,15 +745,15 @@ export const NODES: NodeMap = {
   },
   'carmen.zoila.meant': {
     lines: [
-      { who: 'Doña Carmen', text: 'Everyone means to. I kept her side of the warp two years before I used it up on somebody else.' },
-      { text: 'She does not look up. The row grows by exactly as much as it should.' },
+      { who: 'Doña Carmen', text: 'Everyone means to. I kept her side of the warp two years.' },
+      { text: 'She does not look up.' },
     ],
     effects: ['set:her.zoila', 'journal:her.chaska'],
   },
   'carmen.zoila.quiet': {
     lines: [
-      { who: 'Doña Carmen', text: 'Good. There is nothing to say. I kept her side of the warp two years before I used it up on somebody else.' },
-      { text: 'Her hands have not stopped once. She reaches past you for the next color.' },
+      { who: 'Doña Carmen', text: 'Good. There is nothing to say. I kept her side of the warp two years.' },
+      { text: 'Her hands have not stopped once.' },
     ],
     effects: ['set:her.zoila', 'journal:her.chaska'],
   },
@@ -782,8 +761,7 @@ export const NODES: NodeMap = {
   // ---- Carmen's pattern quiz (a riddle from a person, not a system) ----
   'carmen.riddle': {
     lines: [
-      { who: 'Doña Carmen', text: 'Sit. You wove a row, so now you are a student, and students get examined. Do not look so worried, the tea is included.' },
-      { who: 'Doña Carmen', text: 'First question. In the cloth: which one is the river?' },
+      { who: 'Doña Carmen', text: 'Sit. You wove a row, so now you get examined. Which one is the river?' },
     ],
     choices: [
       { text: 'The zigzag', goto: 'carmen.r1right' },
@@ -792,44 +770,27 @@ export const NODES: NodeMap = {
     ],
   },
   'carmen.r1right': {
-    lines: [{ who: 'Doña Carmen', text: 'Mayu q\'enqo. The river that is also the road of stars. Correct, and do not get smug.' }],
-    next: 'carmen.r2',
+    lines: [
+      { who: 'Doña Carmen', text: 'Mayu q\'enqo. Correct, and do not get smug.' },
+    ],
+    next: 'carmen.r3',
   },
   'carmen.r1diamond': {
     lines: [
-      { who: 'Doña Carmen', text: 'That is a qocha, a lake. A river that sat down and gave up. Not the same thing at all.' },
-      { who: 'Doña Carmen', text: 'The zigzag, wawa. Rivers argue with the land. Straight lines are for people in a hurry.' },
+      { who: 'Doña Carmen', text: 'That is a qocha, a lake: a river that sat down and gave up. The zigzag, wawa. Rivers argue.' },
     ],
-    next: 'carmen.r2',
+    next: 'carmen.r3',
   },
   'carmen.r1eye': {
     lines: [
       { who: 'Doña Carmen', text: 'The ñawi? That is an eye. If your rivers have eyes, we should discuss what is in your cup.' },
     ],
-    next: 'carmen.r2',
-  },
-  'carmen.r2': {
-    lines: [{ who: 'Doña Carmen', text: 'Second question. Sumaq means beautiful, or delicious?' }],
-    choices: [
-      { text: 'Beautiful', goto: 'carmen.r2half' },
-      { text: 'Delicious', goto: 'carmen.r2half2' },
-      { text: 'Both, and on purpose', goto: 'carmen.r2right' },
-    ],
-  },
-  'carmen.r2right': {
-    lines: [{ who: 'Doña Carmen', text: 'Both! One word, because why should the eyes and the tongue keep separate books. You HAVE been listening.' }],
-    next: 'carmen.r3',
-  },
-  'carmen.r2half': {
-    lines: [{ who: 'Doña Carmen', text: 'Half marks. It is also delicious. A word big enough for a lliclla and a soup. Most words are too small.' }],
-    next: 'carmen.r3',
-  },
-  'carmen.r2half2': {
-    lines: [{ who: 'Doña Carmen', text: 'Half marks. It is also beautiful. Anything worth eating is worth looking at first.' }],
     next: 'carmen.r3',
   },
   'carmen.r3': {
-    lines: [{ who: 'Doña Carmen', text: 'Last one, and it matters. Who knits the chullus?' }],
+    lines: [
+      { who: 'Doña Carmen', text: 'Last one, and it matters. Who knits the chullus?' },
+    ],
     choices: [
       { text: 'The men', goto: 'carmen.r3right' },
       { text: 'The grandmothers', goto: 'carmen.r3wrong' },
@@ -837,28 +798,28 @@ export const NODES: NodeMap = {
     ],
   },
   'carmen.r3right': {
-    lines: [{ who: 'Doña Carmen', text: 'The men! Since they were boys. Ask Mateo\'s grandfather; better, ask Mateo, and watch him admit it.' }],
+    lines: [
+      { who: 'Doña Carmen', text: 'The men! Since they were boys. Ask Mateo, and watch him admit it.' },
+    ],
     next: 'carmen.riddleEnd',
   },
   'carmen.r3wrong': {
     lines: [
-      { who: 'Doña Carmen', text: 'The grandmothers WEAVE. The men knit. We keep the whole cloth economy carefully divided so everyone stays necessary.' },
+      { who: 'Doña Carmen', text: 'The grandmothers WEAVE. The men knit. We divide the cloth so everyone stays necessary.' },
     ],
     next: 'carmen.riddleEnd',
   },
   'carmen.r3llama': {
     lines: [
       { text: 'Carmen looks at you for a long, level moment.' },
-      { who: 'Doña Carmen', text: 'The llamas GROW the wool. If they also knitted it, wawa, what exactly would be left for us to do?' },
-      { text: 'Somewhere out on the pass road, a llama sneezes with what can only be pride.' },
+      { who: 'Doña Carmen', text: 'The llamas GROW the wool. If they knitted it too, what would be left for us?' },
     ],
     next: 'carmen.riddleEnd',
   },
   'carmen.riddleEnd': {
     lines: [
-      { who: 'Doña Carmen', text: 'Enough. You pass, roughly. Hold out your wrist.' },
-      { text: 'She takes your wrist and turns the band once, reading it. Terracotta, sky, gold, violet.' },
-      { who: 'Doña Carmen', text: 'So the next village knows somebody already started on you.' },
+      { who: 'Doña Carmen', text: 'Enough. You pass, roughly. Wrist.' },
+      { text: 'She turns the band once, reading it, and ties one more knot into it. Tight.' },
     ],
     effects: ['set:riddle.done'],
   },
@@ -869,16 +830,16 @@ export const NODES: NodeMap = {
   // over what he kept. Her portrait lives in the journal's Nani margins.
   'aurelio.nani': {
     lines: [
-      { who: 'Don Aurelio', text: 'Sit. The stone is warm and I have been deciding something.' },
-      { who: 'Don Aurelio', text: 'That journal you carry. I watched Zoila sew that red thread on the spine, right here, in 1974.' },
+      { who: 'Don Aurelio', text: 'Sit. The stone is warm, and I have decided something.' },
+      { who: 'Don Aurelio', text: 'I watched Zoila sew that red thread on your journal. Right here, 1974.' },
     ],
     next: 'aurelio.nani2',
   },
   'aurelio.nani2': {
     lines: [
-      { text: 'From inside his poncho he brings out a letter, soft with fifty years of being carried.' },
-      { who: 'Don Aurelio', text: 'She left it for the road west and never came back for it. She helped my mother with the harvest; ayni does not expire.' },
-      { who: 'Don Aurelio', text: 'You have her way of standing. Take it to the gate. The road will tell you the rest.' },
+      { text: 'From inside his poncho, a letter, soft with fifty years of carrying.' },
+      { who: 'Don Aurelio', text: 'She left it for the road west and never came back for it. Ayni does not expire.' },
+      { who: 'Don Aurelio', text: 'Take it to the gate. The road will tell you the rest.' },
     ],
     effects: ['set:nani.letter', 'errand:nani-letter', 'set:errand.nani-letter'],
   },
@@ -897,7 +858,7 @@ export const NODES: NodeMap = {
   'dig.spot1': {
     lines: [
       { text: 'You dig. A fat golden papa, shaped like a cat\'s paw.' },
-      { who: 'Justina', text: 'Puma maki! Puma\'s paw. Good soil manners; came up on the first ask.' },
+      { who: 'Justina', text: 'Puma maki! Puma\'s paw. Came up on the first ask; good manners.' },
     ],
     // The first named papa carries the papa page: the fact arrives in your
     // hands, dirt still on it, instead of in a speech about the rows.
@@ -905,37 +866,36 @@ export const NODES: NodeMap = {
   },
   'dig.spot2': {
     lines: [
-      { text: 'You dig. Deep purple-red, almost glowing against the soil.' },
-      { who: 'Justina', text: 'Yana wayru. The ceremony one. For weddings and for showing off, which are related events.' },
+      { text: 'You dig. Deep purple-red, almost glowing.' },
+      { who: 'Justina', text: 'Yana wayru. For weddings and for showing off, which are related events.' },
     ],
     effects: ['set:dig.2'],
   },
   'dig.spot3': {
     lines: [
       { text: 'You dig. A smooth, generously rounded potato.' },
-      { who: 'Justina', text: 'Wira pasña. It means... a well-fed young lady. Do not look at me, I did not name them.' },
-      { text: 'In the next row, something small and round pokes up from the soil, considers society, and decides against it.' },
+      { who: 'Justina', text: 'Wira pasña. A well-fed young lady. Do not look at me, I did not name them.' },
     ],
     effects: ['set:dig.3'],
   },
   'dig.spot4': {
     lines: [
-      { text: 'You dig. Pale gold with deep crimson eyes.' },
-      { who: 'Justina', text: 'Puka ñawi pasña, the red-eyed girl. She was up too late listening to the stream, like everyone here.' },
+      { text: 'You dig. Pale gold, crimson eyes.' },
+      { who: 'Justina', text: 'Puka ñawi pasña, the red-eyed girl. Up too late listening to the stream, like everyone here.' },
     ],
     effects: ['set:dig.4'],
   },
   'dig.spot5': {
     lines: [
-      { text: 'You dig. It is... knobbly. Aggressively knobbly. A fist of knuckles with deep, spiteful eyes.' },
-      { who: 'Justina', text: 'AH! Llumchuy waqachi! "Makes the daughter-in-law cry!" Try peeling it thin and clean. Go on. Try.' },
+      { text: 'You dig. Knobbly. Aggressively knobbly. A fist of knuckles with spiteful eyes.' },
+      { who: 'Justina', text: 'AH! Llumchuy waqachi! "Makes the daughter-in-law cry!" Try peeling it thin. Go on.' },
     ],
     effects: ['set:dig.5'],
   },
   'dig.finish': {
     lines: [
-      { who: 'Justina', text: 'Five names, five faces. Now you know this field better than most cousins.' },
-      { text: 'She loads your arms with your own harvest. The knobbly one goes on top, like a warning.' },
+      { who: 'Justina', text: 'Five names, five faces. You know this field better than most cousins now.' },
+      { text: 'She loads your arms with the harvest, the knobbly one on top like a warning.' },
     ],
     effects: ['set:dig.done', 'journal:dishes.llumchuy'],
   },
@@ -943,8 +903,7 @@ export const NODES: NodeMap = {
   // ---------------- the watia, built where it grew ----------------
   'justina.watiaInvite': {
     lines: [
-      { who: 'Justina', text: 'Papas with names deserve better than a pot, wawa. Today the field does its own cooking.' },
-      { who: 'Justina', text: 'The watia. Clods for walls, fire for a heart, papas for a reason. I supervise. You stack.' },
+      { who: 'Justina', text: 'Papas with names deserve better than a pot. Today the field cooks: the watia. You stack.' },
     ],
     choices: [
       { text: 'Build the oven', goto: 'justina.watiaStart' },
@@ -953,22 +912,21 @@ export const NODES: NodeMap = {
   },
   'justina.watiaStart': {
     lines: [
-      { text: 'She kicks a heel into the dry row and up comes a clod, hard as bread crust. The field is full of them.' },
-      { who: 'Justina', text: 'Big ones at the bottom, small ones for the roof. A little house for the fire. Haku.' },
+      { text: 'She kicks up a clod from the dry row, hard as bread crust.' },
+      { who: 'Justina', text: 'Big ones at the bottom, small for the roof. Haku.' },
     ],
     effects: ['set:watia.start'],
   },
   'justina.watiaLater': {
     lines: [
-      { who: 'Justina', text: 'Mm. The field waited all season; it can wait for your lungs. The clods are going nowhere. They are clods.' },
+      { who: 'Justina', text: 'The field waited all season; it can wait for your lungs. The clods are going nowhere. They are clods.' },
     ],
   },
   'watia.finish': {
     lines: [
-      { text: 'Earth over embers over papas. Then the waiting, which smells better every minute of it.' },
-      { text: 'Justina rakes one out with a stick, tosses it palm to palm, splits it. Steam climbs out like something set free.' },
-      { who: 'Justina', text: 'First bite is the field\'s fee. Eat. No pot in Peru can do this; the earth cooks its own, and does it best.' },
-      { text: 'It tastes of smoke and rain and the exact ground you are standing on.' },
+      { text: 'Earth over embers over papas, then the waiting. Justina rakes one out and splits it; the steam escapes.' },
+      { who: 'Justina', text: 'First bite is the field\'s fee. Eat.' },
+      { text: 'It tastes of smoke and rain and the ground you are standing on.' },
     ],
     effects: ['clear:watia.start', 'set:watia.done', 'journal:dishes.watia'],
   },
@@ -976,9 +934,8 @@ export const NODES: NodeMap = {
   // ---------------- the dog ----------------
   'allqu.first': {
     lines: [
-      { text: 'A tan dog is supervising the plaza. You remember your instructions and greet it properly. "Allillanchu."' },
-      { text: 'The dog considers your credentials. The tail renders its verdict.' },
-      { text: 'You appear to have a colleague now.' },
+      { text: 'A tan dog is supervising the plaza. You greet it properly: "Allillanchu."' },
+      { text: 'The tail renders its verdict. You appear to have a colleague now.' },
     ],
     effects: ['set:allqu.friend', 'journal:people.allqu'],
   },
@@ -991,7 +948,7 @@ export const NODES: NodeMap = {
   },
   'allqu.thread': {
     lines: [
-      { text: 'The dog hears the question, sniffs the band once, and points its entire body the way the red goes. Colleagues share leads.' },
+      { text: 'The dog sniffs the band once and points its whole body the way the red goes. Colleagues share leads.' },
     ],
     effects: ['thread:'],
   },
@@ -1021,8 +978,8 @@ export const NODES: NodeMap = {
   // the Bridge Economy. Escalating schemes; the game never wins the argument.
   'pilar.first': {
     lines: [
-      { text: 'A small girl stands by the bridge with her arms crossed. A hand-lettered sign leans on the rail: PUENTE. TOLL. YES REALLY.' },
-      { who: 'Pilar', text: 'Bridge toll. One interesting fact. I do not accept compliments, weather, or facts about llamas. Everyone has facts about llamas.' },
+      { text: 'A small girl by the bridge, arms crossed. Her sign: PUENTE. TOLL. YES REALLY.' },
+      { who: 'Pilar', text: 'Toll is one interesting fact. Not the weather. Not llamas. Everyone has llama facts.' },
     ],
     choices: [
       { text: 'Offer the most interesting thing you know', goto: 'pilar.pay' },
@@ -1031,69 +988,63 @@ export const NODES: NodeMap = {
   },
   'pilar.pay': {
     lines: [
-      { text: 'You offer the best thing you have learned so far. She hears it out with the face of a customs official.' },
-      { who: 'Pilar', text: 'Acceptable. Barely. You may pass forever: lifetime membership. It expires whenever I decide.' },
-      { who: 'Pilar', text: 'Membership includes the bridge, the view from the bridge, and hearing about my other offers. Mostly the last one.' },
+      { text: 'You offer the best thing you have learned. She hears it out like a customs official.' },
+      { who: 'Pilar', text: 'Acceptable. Barely. Lifetime membership. Expires whenever I decide.' },
     ],
     effects: ['set:met.pilar', 'journal:people.pilar'],
   },
   'pilar.around': {
     lines: [
-      { who: 'Pilar', text: 'The river is cold and the toll follows you. It is a very advanced toll.' },
-      { text: 'She presses her thumb to the back of your hand like a stamp.' },
-      { who: 'Pilar', text: 'There. Member. That was the free trial. It ends whenever I decide. Everything here ends whenever I decide.' },
+      { who: 'Pilar', text: 'The river is cold and the toll follows you.' },
+      { text: 'She presses her thumb to your hand like a stamp.' },
+      { who: 'Pilar', text: 'Member. Free trial. It ends whenever I decide.' },
     ],
     effects: ['set:met.pilar', 'journal:people.pilar'],
   },
   'pilar.rocks': {
     lines: [
-      { who: 'Pilar', text: 'New business. Lucky rocks. This one is very lucky: it survived being thrown at Mateo.' },
-      { who: 'Pilar', text: 'No refunds, because no payments. It is a pure business. My caserita gets the friend price, which is also nothing, but WARMER.' },
-      { text: 'You are now the owner of a rock. It does feel a little lucky.' },
+      { who: 'Pilar', text: 'New business. Lucky rocks. This one survived being thrown at Mateo.' },
+      { who: 'Pilar', text: 'No refunds, because no payments. Friend price is also nothing, but WARMER.' },
     ],
     effects: ['set:pilar.s1'],
   },
   'pilar.tour': {
     lines: [
-      { who: 'Pilar', text: 'Special offer. For one fact I will show you the exact spot where nothing sleeps under the bridge.' },
-      { who: 'Pilar', text: 'I discovered the nothing myself. Mateo says the story is made up. The story is about MY bridge, so I decide, and it is real.' },
-      { text: 'She points at a patch of dark water. It is a very convincing patch. There is definitely nothing there.' },
+      { who: 'Pilar', text: 'For one fact I will show you where nothing sleeps under the bridge. I discovered the nothing myself.' },
+      { text: 'She points at dark water. There is definitely nothing there.' },
     ],
     effects: ['set:pilar.s2'],
   },
   'pilar.mayor': {
     lines: [
-      { who: 'Pilar', text: 'When I am mayor of the bridge, the toll will be two facts. Enjoy the old prices while you can.' },
-      { who: 'Pilar', text: 'Don Aurelio says the village has no mayor. Correct. The position is open. I have a sign and everything.' },
+      { who: 'Pilar', text: 'When I am mayor of the bridge, the toll goes up to two facts. The position is open. I have a sign.' },
     ],
     effects: ['set:pilar.s3'],
   },
   'pilar.promoted': {
     lines: [
-      { who: 'Pilar', text: 'Stop. You know too many things now. It is making my toll look small.' },
-      { who: 'Pilar', text: 'Fine. I am promoting you: co-owner of the bridge. Unpaid. The bridge has expenses. Your first job is the expenses.' },
-      { text: 'You are now, apparently, in bridge management. The dog is listed as security.' },
+      { who: 'Pilar', text: 'Stop. You know too many things. It makes my toll look small.' },
+      { who: 'Pilar', text: 'Fine: co-owner of the bridge. Unpaid. The dog is security.' },
     ],
     effects: ['set:pilar.promoted'],
   },
   'pilar.ships': {
     lines: [
-      { who: 'Pilar', text: 'Co-owner briefing. Expansion. The river touches the sea, so the sea is technically bridge water. Follow the logic.' },
-      { who: 'Pilar', text: 'Ships will owe the toll. In principle. The invoices are drafted. The sea has not responded, which legally is agreement.' },
+      { who: 'Pilar', text: 'Expansion. The river touches the sea, so the sea is bridge water. Ships owe the toll.' },
+      { who: 'Pilar', text: 'The sea has not replied, which legally is agreement.' },
     ],
     effects: ['set:pilar.s4'],
   },
   'pilar.epilogue': {
     lines: [
-      { who: 'Pilar', text: 'You finished the whole old book? Adults finish their books and then they leave. You will leave too.' },
-      { text: 'She looks at the water for a moment, conducting some internal negotiation.' },
-      { who: 'Pilar', text: 'Bring me something from the sea. A weird one. Not a fact: a THING. That is the exit toll. It is non-negotiable and I will wait.' },
+      { who: 'Pilar', text: 'You finished the whole old book? Adults finish their books and then they leave.' },
+      { who: 'Pilar', text: 'Bring me something from the sea. A weird one. A THING, not a fact. That is the exit toll.' },
     ],
     effects: ['set:pilar.sea'],
   },
   'pilar.idle': {
     lines: [
-      { who: 'Pilar', text: 'The toll stands. The economy of the bridge is strong. Membership renewal is automatic and free, you are welcome.' },
+      { who: 'Pilar', text: 'The toll stands. The bridge economy is strong.' },
     ],
     choices: [
       { text: '"Which way was I going, mayor?"', when: { has: ['pallay.done'] }, goto: 'pilar.thread' },
@@ -1102,7 +1053,7 @@ export const NODES: NodeMap = {
   },
   'pilar.thread': {
     lines: [
-      { who: 'Pilar', text: 'Directions are one fact each. ...Fine, co-owners navigate free. Wrist out, follow the red, tell it the bridge sent you.' },
+      { who: 'Pilar', text: 'Directions are one fact each. ...Fine, co-owners navigate free. Wrist out.' },
     ],
     effects: ['thread:'],
   },
@@ -1113,8 +1064,8 @@ export const NODES: NodeMap = {
   // ---- Chasca, the traveling photographer ----
   'chasca.first': {
     lines: [
-      { who: 'Chasca', text: 'Stop! Perfect. The light, the ridge, the wind in your poncho. Do not move a single humble thread.' },
-      { who: 'Chasca', text: 'Chasca. I photograph the roads. Somebody should be keeping the evidence.' },
+      { who: 'Chasca', text: 'Stop! Perfect. The light, the ridge, the wind in your poncho. Do not move.' },
+      { who: 'Chasca', text: 'Chasca. I photograph the roads. Somebody should keep the evidence.' },
     ],
     effects: ['set:met.chasca', 'journal:people.chasca'],
     next: 'chasca.offer',
@@ -1132,7 +1083,6 @@ export const NODES: NodeMap = {
     lines: [
       { who: 'Chasca', text: 'Chin up. Eyes on the far water. And... ¡digan papas!' },
       { text: 'You say papas.' },
-      { who: 'Chasca', text: 'Lovely. The picture will be beautiful.' },
     ],
     effects: ['set:photo.taken', 'set:photo.flash'],
   },
@@ -1143,19 +1093,19 @@ export const NODES: NodeMap = {
   },
   'chasca.idle': {
     lines: [
-      { who: 'Chasca', text: 'One day I will show them all in a row: every traveler, every road, one long face the world makes.' },
+      { who: 'Chasca', text: 'One day I will show them all in a row: every traveler, every road.' },
     ],
   },
 
   // ---- epilogues: the village knows what you finished ----
   'justina.epilogue': {
     lines: [
-      { who: 'Justina', text: 'The whole journal? Then write this in the margin: the terraces gave their best papa to Zoila\'s grandchild, and the terraces do not regret it.' },
+      { who: 'Justina', text: 'The whole journal? Then write in the margin: the terraces gave their best papa to Zoila\'s grandchild, and do not regret it.' },
     ],
   },
   'mateo.epilogue': {
     lines: [
-      { who: 'Mateo', text: 'You finished the old book? I told my grandfather. He knitted a whole row without saying anything, which for him is a standing ovation.' },
+      { who: 'Mateo', text: 'You finished the old book? I told my grandfather. He knitted a whole row in silence, which for him is a standing ovation.' },
     ],
   },
 
@@ -1164,16 +1114,15 @@ export const NODES: NodeMap = {
   // mouth. What the road teaches, the road teaches. The cliff shows the rest.
   'faustino.first': {
     lines: [
-      { who: 'Faustino', text: 'Ho! A walker! Sit, the fire is honest and the wind is not.' },
-      { who: 'Faustino', text: 'Faustino. Arriero. I walk roads for a living, and my llamas walk them for a better living; they get paid in grass.' },
-      { who: 'Faustino', text: 'Where does this road go? Down, friend, until the air gets thick and the sea starts talking. The cliff past the signpost will show you.' },
+      { who: 'Faustino', text: 'Ho! A walker! Sit; the fire is honest and the wind is not.' },
+      { who: 'Faustino', text: 'Faustino. Arriero. My llamas and I walk roads for a living. They get paid in grass.' },
     ],
     effects: ['set:met.faustino', 'journal:people.faustino'],
   },
   'faustino.whistle': {
     lines: [
-      { who: 'Faustino', text: 'Paca holds the pass like she pays rent on it. One moment.' },
-      { text: 'Two fingers, one short whistle, one long. Up the road, a llama begins making a large decision, slowly.' },
+      { who: 'Faustino', text: 'Paca holds the pass like she pays rent on it.' },
+      { text: 'One short whistle, one long. Up the road, a llama begins a large decision, slowly.' },
     ],
     effects: ['set:paca.moved'],
   },
@@ -1184,8 +1133,8 @@ export const NODES: NodeMap = {
   },
   'faustino.kintu': {
     lines: [
-      { who: 'Faustino', text: 'Before you walk further: a proper goodbye. Sit.' },
-      { text: 'From his pouch he picks three coca leaves, dark and unbroken, and stacks them shiny side up. He holds them out to you.' },
+      { who: 'Faustino', text: 'Before you walk on: a proper goodbye.' },
+      { text: 'He stacks three coca leaves, shiny side up, and holds them out.' },
     ],
     choices: [
       { text: 'Take it with one hand', goto: 'faustino.kintu1' },
@@ -1194,92 +1143,84 @@ export const NODES: NodeMap = {
   },
   'faustino.kintu1': {
     lines: [
-      { text: 'You reach out with one hand. Faustino does not move. He just waits, holding the k\'intu, patient as the pass.' },
-      { text: 'Your second hand eventually catches up with your manners. He nods.' },
-      { who: 'Faustino', text: 'Both hands. A k\'intu is not change from the market. Now: blow over it, gently, and name what you are grateful to.' },
-      { text: 'You blow across the leaves toward the mountains. The wind takes it from there. It knows the addresses.' },
+      { text: 'You reach with one hand. Faustino waits, patient as the pass, until your other hand catches up with your manners.' },
+      { who: 'Faustino', text: 'Both hands. Now blow over it, gently, and name what you are grateful to.' },
+      { text: 'The wind takes it toward the peaks. It knows the addresses.' },
     ],
     effects: ['set:kintu.done', 'journal:customs.kintu'],
   },
   'faustino.kintu2': {
     lines: [
-      { who: 'Faustino', text: 'Both hands, first try. Somebody already started on you, I think.' },
-      { who: 'Faustino', text: 'Now blow over it, soft, and name what you are grateful to. The mountains collect these. They have room.' },
-      { text: 'You blow across the leaves toward the peaks. The wind takes it from there. It knows the addresses.' },
+      { who: 'Faustino', text: 'Both hands, first try. Now blow over it, soft, and name what you are grateful to.' },
+      { text: 'The wind takes it toward the peaks. It knows the addresses.' },
     ],
     effects: ['set:kintu.done', 'journal:customs.kintu'],
   },
   'paca.block': {
     lines: [
-      { text: 'A llama occupies the exact center of the pass, with the calm of a mountain that recently learned to chew.' },
-      { text: 'You explain your situation. Paca examines your soul. Paca is unmoved.' },
-      { text: 'The muleteer coming up the road files this exact paperwork daily: two fingers, one whistle. Find him.' },
+      { text: 'A llama occupies the exact center of the pass, calm as a mountain that recently learned to chew.' },
+      { text: 'Paca is unmoved. The muleteer up the road moves her daily, with one whistle.' },
     ],
   },
   'paca.after': {
     lines: [
-      { text: 'Paca has relocated by almost a full meter, an enormous concession, generously given.' },
-      { text: 'She hums to herself, low and self-satisfied. If llamas have theme songs, hers is about being right.' },
+      { text: 'Paca has relocated by almost a full meter, an enormous concession. She hums to herself about being right.' },
     ],
     effects: ['set:egg.paca.one'],
   },
   'paca.opinions': {
     lines: [
-      { text: 'Paca inspects your bag, your boots, and your intentions, in that order. Her ears file a full written report on each.' },
-      { text: 'The verdict is sealed. She resumes chewing, which is how a llama adjourns.' },
+      { text: 'Paca inspects your bag, your boots, and your intentions, in that order. She resumes chewing, which is how a llama adjourns.' },
     ],
     effects: ['set:egg.paca.two'],
   },
   'paca.medal': {
     lines: [
-      { text: 'This time she leans her long neck down and breathes one warm breath into your hair, deliberately.' },
-      { text: 'From Paca, this is a medal ceremony. The pass is yours for life; tell nobody, everybody already knows.' },
+      { text: 'She leans her long neck down and breathes one warm breath into your hair. From Paca, this is a medal ceremony.' },
     ],
   },
   'llama.look': {
     lines: [
-      { text: 'The brown llama regards you from a great social distance. Its wool moves in the wind like slow water.' },
+      { text: 'The brown llama regards you from a great social distance.' },
     ],
   },
   'llama.look2': {
     lines: [
-      { text: 'This llama hums, low and thoughtful. Faustino says they hum to keep the herd found. It is a location, sung.' },
+      { text: 'This llama hums, low and thoughtful, to keep the herd found. A location, sung.' },
     ],
   },
   'ex.apacheta': {
     lines: [
-      { text: 'A cairn of traveler stones, older than anyone\'s grandmother. Cloth offerings fade between the layers.' },
-      { text: 'You find a stone that fits your hand, and add your journey to the pile.' },
+      { text: 'A cairn of traveler stones, older than anyone\'s grandmother. You find one that fits your hand and add your journey to the pile.' },
     ],
     effects: ['journal:customs.apacheta'],
   },
   'ex.tent': {
-    lines: [{ text: 'Canvas, rope, and wind-patience. Inside: a bedroll, a coca pouch, and three novels in Spanish.' }],
+    lines: [
+      { text: 'Canvas, rope, wind-patience. Inside: a bedroll, a coca pouch, three Spanish novels.' },
+    ],
   },
   'ex.campfire': {
     lines: [
-      { text: 'A fire built by someone who has built ten thousand fires. It burns exactly as much as it should, and asks nothing for it.' },
+      { text: 'A fire built by someone who has built ten thousand. It burns exactly as much as it should.' },
     ],
   },
   'ex.signpost': {
     lines: [
-      { text: 'The board points west, carved by many hands over many years. Distances have been added, argued with, crossed out.' },
-      { text: 'Someone has simply written: "MORE." The road agrees, and keeps going to prove it.' },
-      { text: 'Past this sign the road drops to the sea, and to a village that smells of salt and fried things. The caleta is real. Keep walking.' },
+      { text: 'The board points west. Distances have been carved, argued with, crossed out. Someone has simply written: "MORE."' },
     ],
   },
   'ex.sea.first': {
     lines: [
       { text: 'The land stops. And there, far below, going on until it becomes the sky:' },
       { text: 'The sea.' },
-      { text: 'It does not look real. It looks like the altiplano lay down at last and turned silver in its sleep.' },
-      { text: 'Somewhere down there, per Faustino, it is talking. You believe him now.' },
+      { text: 'It looks like the altiplano lay down at last and turned silver in its sleep.' },
     ],
     effects: ['set:sea.seen'],
   },
   'ex.sea': {
     lines: [
-      { text: 'Still there. Still enormous. The sea does not require repeat astonishment, but it accepts it graciously.' },
+      { text: 'Still there. Still enormous. The sea accepts repeat astonishment graciously.' },
     ],
   },
   'ex.cliff': {
@@ -1289,24 +1230,26 @@ export const NODES: NodeMap = {
   },
   'ex.bajadasign': {
     lines: [
-      { text: 'A board at the elbow of the last switchback, lettered by a careful hand: LA CALETA, and under it an arrow, pointing down.' },
-      { text: 'The arrow has been repainted more often than the letters. People keep needing to be told that yes, it really is just down there.' },
+      { text: 'LA CALETA, and an arrow pointing down. The arrow has been repainted more often than the letters.' },
     ],
   },
   'ex.ladera': {
     lines: [
-      { text: 'The raw face of the slope, loose rubble at the angle where rubble stops sliding. Nothing walks on it twice.' },
-      { text: 'This is the whole argument for the switchbacks: the mountain would rather you went the long way, and it wins.' },
+      { text: 'Loose rubble at the angle where it stops sliding. The mountain wants you to take the switchbacks, and wins.' },
     ],
   },
   'ex.puna': {
     lines: [{ text: 'Dry gold grass to every horizon. The wind is reading it aloud, softly, to nobody.' }],
   },
   'ex.cactus': {
-    lines: [{ text: 'A column cactus, standing the way only things with no appointments can stand. One pink flower, against all advice.' }],
+    lines: [
+      { text: 'A column cactus with no appointments. One pink flower, against all advice.' },
+    ],
   },
   'ex.shrub': {
-    lines: [{ text: 'A low, wind-bullied shrub. It has chosen to interpret the climate as a challenge.' }],
+    lines: [
+      { text: 'A wind-bullied shrub that takes the climate as a challenge.' },
+    ],
   },
   'ex.path': {
     lines: [{ text: 'The path is older than the village. Feet agreed on it before houses did.' }],
@@ -1316,7 +1259,7 @@ export const NODES: NodeMap = {
   },
   'ex.bench': {
     lines: [
-      { text: 'A bench worn smooth by fifty years of sitting out the afternoon. It has heard everything twice.' },
+      { text: 'A bench worn smooth by fifty years of afternoons. It has heard everything twice.' },
     ],
   },
   'ex.woodpile': {
@@ -1326,24 +1269,22 @@ export const NODES: NodeMap = {
   },
   'ex.planter': {
     lines: [
-      { text: 'Geraniums in a clay box, blazing away at 3,800 meters like it is nothing. Somebody waters these before dawn.' },
+      { text: 'Geraniums blazing away at 3,800 meters like it is nothing.' },
     ],
   },
   'ex.farol': {
     lines: [
-      { text: 'A lamp post, lit each evening by whoever passes first. The village has never discussed this system. It simply works.' },
+      { text: 'A lamp post, lit each evening by whoever passes first. Nobody ever arranged this.' },
     ],
   },
   'ex.stall': {
     lines: [
-      { text: 'A market stall, asleep between Sundays. The awning stays proud all week out of principle.' },
-      { text: 'Someone has left out corn, ají, and greens for whoever needs them. The birds are aware of the policy.' },
+      { text: 'A market stall, asleep between Sundays. Corn, ají, and greens left out for whoever needs them. The birds know the policy.' },
     ],
   },
   'ex.thatchRidge': {
     lines: [
-      { text: 'Along the roofline, two small ceramic bulls flank a cross: the toritos, on guard against bad luck and bad weather.' },
-      { text: 'They have a good record so far.' },
+      { text: 'Two small ceramic bulls flank a cross on the roofline, on guard against bad luck and weather. Good record so far.' },
     ],
   },
   'ex.grass': {
@@ -1353,16 +1294,14 @@ export const NODES: NodeMap = {
   // ---------------- the east gate ----------------
   'gate.closed': {
     lines: [
-      { text: 'A wooden gate across the pass road, gray with weather. Beyond it, the ridge, and beyond that, everything else.' },
-      { text: 'It is not locked. It is just not yet.' },
+      { text: 'A wooden gate across the pass road, gray with weather. It is not locked. It is just not yet.' },
     ],
   },
   'gate.final': {
     lines: [
       { text: 'You unfold Nani\'s letter at the gate, where she meant to open it.' },
-      { text: '"To whoever I become next: the village taught me everything except how to leave it. Go west anyway. Say yes to soup. Start where the water is."' },
-      { text: 'The wind combs through the ichu. Below, smoke rises from four kitchens, straight as loom threads.' },
-      { text: 'You write her name into the journal, on the page it was always waiting for.' },
+      { text: '"To whoever I become next: the village taught me everything except how to leave it. Go west anyway. Say yes to soup."' },
+      { text: 'Below, four kitchens send up smoke, straight as loom threads. You write her name on its waiting page.' },
     ],
     effects: ['errand.done', 'set:story.complete', 'journal:people.nani'],
     next: 'gate.end',
@@ -1374,20 +1313,19 @@ export const NODES: NodeMap = {
   },
   'gate.after': {
     lines: [
-      { text: 'The gate stands easy on its hinges now. The road west hums quietly to itself, waiting for its chapter.' },
+      { text: 'The gate stands easy on its hinges now. The road west hums to itself.' },
     ],
   },
 
   // ---------------- examines ----------------
   'ex.well': {
     lines: [
-      { text: 'Cold, sweet water, a long way down. A tin cup hangs from the post for anyone who thirsts.' },
+      { text: 'Cold, sweet water, a long way down. A tin cup hangs on the post for anyone.' },
     ],
   },
   'ex.flag': {
     lines: [
-      { text: 'A red cloth on a pole over the doorway. The sign, known for a hundred miles, that fresh chicha waits inside.' },
-      { text: 'Under it, someone has poured a first splash onto the ground. The earth drinks first here.' },
+      { text: 'A red cloth over the doorway: fresh chicha inside. Under it, a first splash on the ground. The earth drinks first.' },
     ],
     effects: ['journal:dishes.chicha'],
   },
@@ -1402,9 +1340,7 @@ export const NODES: NodeMap = {
   },
   'ex.bridge': {
     lines: [
-      { text: 'Warped planks, silver with age. They creak in a friendly way.' },
-      { text: 'There is nothing under the bridge. There has never been anything under the bridge. The village is very firm about this.' },
-      { text: '(The firmness is administered by a small girl with a sign.)' },
+      { text: 'Warped planks, silver with age. There is nothing under the bridge. The village is firm about this.' },
     ],
   },
   'ex.tree': {
@@ -1420,7 +1356,9 @@ export const NODES: NodeMap = {
     lines: [{ text: 'Small stubborn flowers, growing at an altitude that argues against them.' }],
   },
   'ex.grass.away': {
-    lines: [{ text: 'Grass, doing what grass does in every village on the road: holding the ground together and asking nothing for it.' }],
+    lines: [
+      { text: 'Grass, doing what grass does on every road: holding the ground together.' },
+    ],
   },
   'ex.tuft.away': {
     lines: [{ text: 'A tuft of wiry grass, combed one way by the wind. It knows where the weather comes from.' }],
@@ -1450,12 +1388,12 @@ export const NODES: NodeMap = {
   },
   'ex.qoncha': {
     lines: [
-      { text: 'The q\'oncha, stones and mud and forty years of fire. The walls above it are glossy black and proud of it.' },
+      { text: 'The q\'oncha: stones, mud, forty years of fire. The wall above is glossy black and proud of it.' },
     ],
   },
   'ex.loom': {
     lines: [
-      { text: 'A backstrap loom, one end lashed to the post, the other end an empty strap, waiting for its weaver.' },
+      { text: 'A backstrap loom lashed to the post, its empty strap waiting for the weaver.' },
     ],
   },
   'ex.bed': {
@@ -1480,13 +1418,19 @@ export const NODES: NodeMap = {
     lines: [{ text: 'A woven rug in the house colors. Your feet feel welcomed.' }],
   },
   'ex.floor': {
-    lines: [{ text: 'Packed earth, swept morning and evening until it shines like something harder. A floor that is also a habit.' }],
+    lines: [
+      { text: 'Packed earth, swept morning and evening until it shines. A floor that is also a habit.' },
+    ],
   },
   'ex.wallStone': {
-    lines: [{ text: 'Dry stone, stacked by hands that trusted gravity and won. No mortar; just patience with corners.' }],
+    lines: [
+      { text: 'Dry stone, no mortar. Just patience with corners.' },
+    ],
   },
   'ex.dirt': {
-    lines: [{ text: 'Bare worked earth. Somebody turns this ground and the ground, on balance, cooperates.' }],
+    lines: [
+      { text: 'Bare worked earth. Somebody turns it, and it mostly cooperates.' },
+    ],
   },
   'ex.wallInt': {
     lines: [{ text: 'Adobe, whitewashed to shoulder height, still warm where the afternoon sun sat on it.' }],
@@ -1496,14 +1440,12 @@ export const NODES: NodeMap = {
   },
   'ex.pot': {
     lines: [
-      { text: 'A clay pot of chuño, potatoes freeze-dried under June stars. Ten years of winters could not outlast it.' },
-      { text: 'You feel a brief, inherited urge to smash it and check inside. You rise above your training. It is somebody\'s dinner.' },
+      { text: 'A clay pot of chuño, potatoes freeze-dried under June stars. You feel an inherited urge to smash it. It is somebody\'s dinner.' },
     ],
   },
   'ex.cuy': {
     lines: [
-      { text: 'A guinea pig considers you briefly, then continues its important business under the furniture.' },
-      { text: 'The kitchen census: about twenty, all opinionated.' },
+      { text: 'A guinea pig considers you, then resumes its business under the furniture. Kitchen census: about twenty, all opinionated.' },
     ],
   },
 
@@ -1511,12 +1453,11 @@ export const NODES: NodeMap = {
   'ex.pirca': {
     lines: [
       { text: 'A pirca, field stones stacked without mortar. Every stone got picked up twice: once to clear the field, once to become the wall.' },
-      { text: 'There is a gap a few steps along. It is not a failure of the wall; it is the door everyone voted for with their feet.' },
     ],
   },
   'ex.michi': {
     lines: [
-      { text: 'On the warmest stone of the wall, a cat has folded itself into a perfect circle. It is off duty. It was never on duty.' },
+      { text: 'On the warmest stone, a cat folded into a perfect circle. Off duty. Never on duty.' },
     ],
     effects: ['set:michi.seen'],
   },
@@ -1527,78 +1468,72 @@ export const NODES: NodeMap = {
   },
   'ex.ajirack': {
     lines: [
-      { text: 'Strings of red ají and gold maize dry on the rack, out of reach of the dogs and almost out of reach of the children.' },
-      { text: 'Every house can read a rack like this the way a bank reads a ledger. It says: a good year.' },
+      { text: 'Red ají and gold maize drying on the rack, just out of reach of the dogs. It says: a good year.' },
     ],
   },
   'ex.chuno': {
     lines: [
-      { text: 'Bitter potatoes spread on straw, freezing all night and drying all day. In a week they will be chuño, and chuño keeps ten years.' },
-      { text: 'The frost works for free. It is the only laborer in the valley nobody owes ayni.' },
+      { text: 'Bitter potatoes freezing by night, drying by day, on their way to chuño. The frost is the only laborer nobody owes ayni.' },
     ],
   },
   'ex.adobera': {
     lines: [
-      { text: 'Adobe bricks curing under a plastic sheet, mud and straw on their way to being somebody\'s second room.' },
-      { text: 'One brick holds a perfect dog print. It will be laid anyway; walls need a little luck worked in.' },
+      { text: 'Adobe bricks curing under plastic. One holds a perfect dog print. It will be laid anyway; walls need a little luck.' },
     ],
   },
   'ex.latacan': {
     lines: [
-      { text: 'Geraniums blazing out of rusty lard cans by the door. Nobody repaints the cans; the flowers are carrying the whole act.' },
+      { text: 'Geraniums blazing out of rusty lard cans. The flowers are carrying the whole act.' },
     ],
   },
   'ex.nicho': {
     lines: [
-      { text: 'A whitewashed niche, and inside, a small saint in a hand-woven manta sized for a doll.' },
-      { text: 'The flowers are fresh today. Whoever tends this does not want to be thanked, so you nod and keep walking.' },
+      { text: 'A whitewashed niche, a small saint in a doll-sized manta, fresh flowers. You nod and walk on.' },
     ],
   },
   'ex.nicho.after': {
     lines: [
-      { text: 'The little saint has a new knitted hat against the coming cold. It fits, which means somebody measured.' },
+      { text: 'The little saint has a new knitted hat for the cold. It fits; somebody measured.' },
     ],
   },
   'ex.sacos.stall': {
     lines: [
-      { text: 'Sacks rolled open at the mouth: white mote, dried habas, coffee-dark chuño. The scoop is a tin cup with firm opinions on fair measure.' },
+      { text: 'Sacks rolled open: mote, habas, dark chuño. The tin scoop has firm opinions on fair measure.' },
     ],
   },
   'ex.sacos': {
     lines: [
-      { text: 'Sacks of sprouted corn resting against the wall. Rosa calls it jora; the chomba in the corner calls it destiny.' },
+      { text: 'Sacks of sprouted corn by the wall. Rosa calls it jora; the chomba calls it destiny.' },
     ],
   },
   'ex.grano': {
     lines: [
-      { text: 'Spilled barley by the stall. The hens found out before you did, and they are working the spill in shifts.' },
+      { text: 'Spilled barley. The hens found it first and are working it in shifts.' },
     ],
   },
   'ex.chakitaqlla': {
     lines: [
-      { text: 'A chakitaqlla leans on the wall: the foot plow, older here than the wheel and considerably less impressed by it.' },
-      { text: 'The footrest is polished bright. That shine is a hundred planting mornings deep.' },
+      { text: 'A chakitaqlla, the foot plow, older here than the wheel. The footrest shines a hundred planting mornings deep.' },
     ],
   },
   'ex.tendedero': {
     lines: [
-      { text: 'Llicllas and a heavy pollera dry on the line, hems weighted so the wind takes no souvenirs.' },
+      { text: 'Llicllas and a pollera drying on the line, hems weighted so the wind takes no souvenirs.' },
     ],
   },
   'ex.tendedero.pallay': {
     lines: [
-      { text: 'You can read the line now: ch\'aska stars, a river border running like the Mayu. Carmen\'s alphabet, out in the sun.' },
+      { text: 'You can read the line now: ch\'aska stars, a river border. Carmen\'s alphabet, out in the sun.' },
     ],
   },
   'ex.sapling': {
     lines: [
-      { text: 'A eucalyptus sapling tied to a cane, planted the same season as somebody\'s baby. They are neck and neck.' },
+      { text: 'A eucalyptus sapling planted the same season as somebody\'s baby. They are neck and neck.' },
     ],
   },
   'ex.pelota': {
     lines: [
-      { text: 'A soccer ball, wedged in the roof grass. It has been up there long enough to fade on one side.' },
-      { text: 'Ask anyone: greatest goal ever scored in this valley. Ask the goalkeeper: wind.' },
+      { text: 'A soccer ball wedged in the roof grass, faded on one side. Greatest goal ever scored in this valley. Ask the goalkeeper: wind.' },
     ],
     effects: ['set:pelota.seen'],
   },
@@ -1609,133 +1544,122 @@ export const NODES: NodeMap = {
   },
   'ex.pelota.down': {
     lines: [
-      { text: 'The greatest goal ever scored in this valley is down from the roof, lightly toothmarked, parked where a certain dog can guard it.' },
-      { text: 'Every ladder in the village remains busy. Nobody is asking the dog anything.' },
+      { text: 'The famous roof ball is down, lightly toothmarked, guarded by a certain dog. Nobody is asking the dog anything.' },
     ],
   },
   'ex.gallina': {
     lines: [
-      { text: 'A hen works the ground with total confidence. She finds something every third step, or claims to.' },
+      { text: 'A hen works the ground with total confidence, finding something every third step, or claiming to.' },
     ],
   },
   'ex.kite': {
     lines: [
-      { text: 'High in the branches, a kite shaped like a condor, tail ribbons still trying. It flew beautifully once, witnesses insist.' },
+      { text: 'High in the branches, a condor kite, tail ribbons still trying. It flew beautifully once, witnesses insist.' },
     ],
   },
   'ex.kite.faustino': {
     lines: [
-      { text: 'Faustino swears a real condor circled it twice and left unconvinced. The kite has chosen to take this as a compliment.' },
+      { text: 'Faustino swears a real condor circled it twice and left unconvinced. The kite takes this as a compliment.' },
     ],
   },
   'ex.hitchpost': {
     lines: [
-      { text: 'A hitching rail rubbed smooth by mule rope, salt going one way over the pass and sugar coming back the other.' },
-      { text: 'The ground nearby has been diplomatically swept. Mules are mules.' },
+      { text: 'A hitching rail rubbed smooth by mule rope: salt one way over the pass, sugar the other.' },
     ],
   },
   'ex.qepi': {
     lines: [
-      { text: 'A traveler\'s q\'epi rests by the cairn: a carrying cloth knotted around everything that matters today.' },
-      { text: 'You do not look inside. The knot is a door, and it is closed.' },
+      { text: 'A traveler\'s q\'epi by the cairn, knotted around everything that matters today. The knot is a door, and it is closed.' },
     ],
   },
   'ex.apachetita': {
     lines: [
-      { text: 'A young apacheta, ankle high. Every traveler leaves a stone, and with it a little of the weight that has no weight.' },
+      { text: 'A young apacheta, ankle high. Every traveler leaves a stone, and a little of the weight that has no weight.' },
     ],
   },
   'ex.apachetita.stone': {
     lines: [
-      { text: 'You add a stone before you have finished deciding to. The pile is one traveler taller now.' },
+      { text: 'You add a stone before you finish deciding to.' },
     ],
   },
   'ex.lagarto': {
     lines: [
-      { text: 'A lizard flat on a warm stone, doing the most important work on this road: nothing, magnificently.' },
+      { text: 'A lizard flat on a warm stone, doing nothing, magnificently.' },
     ],
   },
   'ex.charango': {
     lines: [
-      { text: 'Don Teófilo\'s charango, propped where his hand can find it without looking. The strings are new; the jokes they accompany are not.' },
+      { text: 'Don Teófilo\'s charango, where his hand finds it without looking. New strings; old jokes.' },
     ],
   },
   'ex.pushka': {
     lines: [
-      { text: 'A pushka drop spindle in a basket of cloud-colored wool. It is never idle long; hands here spin even while walking.' },
+      { text: 'A drop spindle in a basket of cloud-colored wool. Hands here spin even while walking.' },
     ],
   },
   'ex.dyepots': {
     lines: [
-      { text: 'Little pots of dye: cochineal red from crushed insects, q\'olle yellow from flowers. A kitchen, but for color.' },
-      { text: 'The red pot is stained a red that will outlive the pot.' },
+      { text: 'Pots of dye: cochineal red, q\'olle yellow. A kitchen, but for color.' },
     ],
   },
   'ex.wellstone': {
     lines: [
-      { text: 'Small dark setts laid in rings around the wellhead, wet in the middle at any hour, swept every morning by whoever arrives first.' },
-      { text: 'Stand on it and you can feel the square lean inward. This is the place the village is measured from.' },
+      { text: 'Dark setts in rings around the wellhead, wet at any hour. The village is measured from here.' },
     ],
   },
   'ex.plazaworn': {
     lines: [
-      { text: 'The paving here is rubbed pale and smooth, the joints packed with dust. Nothing grows in it. Nothing gets the chance.' },
-      { text: 'Four of these tracks cross the square, and every one of them bends toward the well.' },
+      { text: 'Paving rubbed pale by feet. Four of these tracks cross the square, and every one bends toward the well.' },
     ],
   },
   'ex.parva': {
     lines: [
-      { text: 'A parva: barley sheaves stacked into a rick and tied at the crown, with one flat stone on top in case the wind has opinions.' },
-      { text: 'It is taller than you are and smells like a warm afternoon that happened three months ago.' },
+      { text: 'A parva: barley sheaves tied at the crown, a flat stone on top in case the wind has opinions.' },
     ],
   },
   'ex.cantaros': {
     lines: [
-      { text: 'Cántaros set down in a queue at the well, each one holding a place for somebody who is currently busy talking.' },
-      { text: 'The order is not written anywhere. Everyone knows it anyway.' },
+      { text: 'Cántaros queued at the well, holding places for people busy talking. Everyone knows the order.' },
     ],
   },
   'ex.batea.chicheria': {
     lines: [
-      { text: 'The straining trough, hollowed from one block and stained the colour of every batch that has ever gone through it.' },
-      { text: 'Rosa will not have it scrubbed out. She says the wood remembers how, and she is not entirely joking.' },
+      { text: 'The straining trough, stained by every batch it ever held. Rosa will not have it scrubbed. The wood remembers how, she says.' },
     ],
   },
   'ex.cantaros.chicheria': {
     lines: [
-      { text: 'Cántaros lined up in the corner waiting to be filled, each with a different chip out of its lip so nobody argues about whose is whose.' },
+      { text: 'Cántaros waiting to be filled, each with its own chip in the lip so nobody argues whose is whose.' },
     ],
   },
   'ex.grano.chicheria': {
     lines: [
-      { text: 'Sprouted maize spread out to dry on a cloth, sweet and faintly sour. This is the part that takes the days; the rest is just waiting.' },
+      { text: 'Sprouted maize drying on a cloth, sweet and faintly sour. This part takes the days; the rest is waiting.' },
     ],
   },
   'ex.qepi.indoors': {
     lines: [
-      { text: 'Somebody\u2019s q\u2019epi set down inside the door, knot still tied. It will be picked up on the way out and not a moment before.' },
+      { text: 'Somebody’s q’epi inside the door, knot still tied, waiting for the way out.' },
     ],
   },
   'ex.mantas.carmen': {
     lines: [
-      { text: 'Finished mantas folded at the foot of the bed, four deep, each one a season. Doña Carmen keeps the newest on the bottom.' },
+      { text: 'Finished mantas at the foot of the bed, four deep, a season each. Carmen keeps the newest on the bottom.' },
     ],
   },
   'ex.batea': {
     lines: [
-      { text: 'A stone trough worn dish-shaped in the middle, half full of grey water with the soap still on it, one red cloth over the lip.' },
-      { text: 'Whoever is washing today has gone off to say one more thing to somebody.' },
+      { text: 'A stone trough of soapy water, one red cloth over the lip. The washer went off to say one more thing.' },
     ],
   },
   'ex.mantas': {
     lines: [
-      { text: 'Mantas spread out on the paving with stones on the corners: cochineal red, indigo, a yellow that argues with the sun and wins.' },
-      { text: 'Every band of pattern is somebody counting in their head for a week.' },
+      { text: 'Mantas spread on the paving, stones on the corners: cochineal, indigo, a yellow that argues with the sun.' },
     ],
   },
   'ex.mantas.woven': {
     lines: [
-      { text: 'You can read them now, a little. That row of hooks is the one Carmen called out to you, and yours came out crookeder than these.' },
+      { text: 'You can read them now, a little. That row of hooks is the one Carmen called out to you. Yours came out crookeder.' },
     ],
   },
 };
