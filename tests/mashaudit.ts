@@ -27,6 +27,16 @@ const mashArrows = (n: number) => {
 };
 /** Story-telling players where the hard bot has nothing to read. */
 const STORY: Record<string, () => Any> = {
+  // The ofrenda has no hard telling, so no hard bot: a patient hand sets
+  // each thing down on whatever shelf the cursor is on (none is wrong).
+  'c9.ofrenda.start': () => {
+    let last = -1;
+    return (p: Any, t: number) => {
+      if (t - last < 0.4) return;
+      last = t;
+      p.onAction();
+    };
+  },
   'c7.cook.start': () => {
     const plan = [[6, 6, 0, 2], [4, 2, 4, 5]];
     let last = -1;

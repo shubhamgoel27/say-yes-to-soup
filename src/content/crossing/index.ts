@@ -26,7 +26,7 @@ export const CHAPTER: ChapterDef = {
       howTo: [
         'Ben calls for a thing. Arrows find it on his shelf, Space feeds it to the pot.',
         'Reach for the wrong jar and nothing breaks: Ben points you to it, and on the second wrong reach he laughs and hands it over.',
-        'Lid last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
+        'Ben slides the lid on last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
         'Burn it and Ben just scrubs the pot out. He has burnt more dinners than you will ever cook.',
       ],
       hardHow:

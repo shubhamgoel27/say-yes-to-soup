@@ -43,7 +43,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'watia.finish',
       title: 'The watia',
       howTo: [
-        'Big clods hold the base, smaller ones climb the dome.',
+        'Big clods sit well at the base and smaller ones near the top, though the dome forgives any order.',
         'Arrows pick a spot; Space sets the clod where a gap waits.',
         'Then feed the fire on a steady heartbeat; a flurry only smothers it.',
         'Close the earthen oven and the papas cook themselves.',

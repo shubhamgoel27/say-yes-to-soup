@@ -95,7 +95,7 @@ export const CHAPTER: ChapterDef = {
       howTo: [
         'Narrow end of the leaf points left. Auntie Leela points out each seat once as you begin.',
         'Arrows choose a seat, Space serves the course.',
-        'Nothing here can be lost. A wrong seat only buys you an auntie, and an opinion.',
+        'Nothing here can be lost. A wrong seat buys you an auntie and an opinion; two, and she serves that one herself.',
       ],
       hardHow: 'The hard telling: eight courses down to the payasam at the leaf tip, a clock on every ladle, and three slips before the aunties redo the leaf.',
       make: (root, audio) => new SadyaPanel(root, audio as AudioBus),

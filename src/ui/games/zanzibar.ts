@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import { RUN, coach, freshRun, tip, takeCoach } from './run';
+import { Hold } from './attend';
 
 /** The start flags these panels answer to; coach() files advice under them. */
 const SAIL_FLAG = 'c7.sail.start';
@@ -998,6 +999,11 @@ const UROJO_ROUNDS: UrojoRound[] = [
   { call: 'Bi Mwana the teacher is next: "Gentle for me, and extra crunch. I am grading essays tonight; I need courage, not heartburn."', want: 'crunch' },
 ];
 
+/** Story telling: seconds Zuberi keeps the bowl covered after a third same-saucer ladle. */
+const COVER_HOLD = 1.1;
+/** Seconds of reaching at a covered bowl before he lifts his palm anyway. */
+const COVER_PATIENCE = 2;
+
 type UrojoPhase = 'build' | 'served' | 'lost' | 'done';
 
 /** Chalk-short names, for the hard telling's call slate and its coach lines. */
@@ -1194,6 +1200,11 @@ export class UrojoPanel {
   private addT = Infinity; // seconds before the broth closes over
   private answered = 0; // story: bowls that were the bowl the customer asked for
   private oneNote = 0; // story: bowls that were mostly one thing, ladled on repeat
+  // Story attention: the same saucer three times running and Zuberi covers
+  // the bowl a moment (reaching again keeps it covered, a few times).
+  private cover = new Hold();
+  private lastAdd = -1;
+  private sameRun = 0;
 
   // The painted layer: everything from here down is bowls, steam, and light.
   private scene = new Scene();
@@ -1252,6 +1263,9 @@ export class UrojoPanel {
     this.floats = [];
     this.rings = [];
     this.seqPos = 0;
+    this.lastAdd = -1;
+    this.sameRun = 0;
+    this.cover.release();
     this.addT = this.hard ? (UROJO_HARD[this.round]?.window ?? 7) + RUSH_GRACE : Infinity;
   }
 
@@ -1266,6 +1280,7 @@ export class UrojoPanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
+    this.cover.tick(dt);
     if (this.splashT > 0) this.splashT = Math.max(0, this.splashT - dt);
     // The rush clock: in the hard telling, every addition has to land before
     // the broth closes over the last one's splash.
@@ -1421,6 +1436,27 @@ export class UrojoPanel {
       }
       const item = UROJO_ITEMS[this.cur];
       if (!item) return;
+      if (!hr) {
+        if (this.cover.on) {
+          if (this.cover.heldFor < COVER_PATIENCE) {
+            this.cover.start(COVER_HOLD);
+            return;
+          }
+          this.cover.release();
+        }
+        this.sameRun = this.cur === this.lastAdd ? this.sameRun + 1 : 1;
+        this.lastAdd = this.cur;
+        if (this.sameRun >= 3) {
+          // Zuberi's palm over the bowl: one more of those can wait a breath.
+          this.sameRun = 0;
+          this.lastAdd = -1;
+          this.cover.start(COVER_HOLD);
+          this.audio.blip();
+          this.nudgeT = this.scene.time;
+          this.hint = `Zuberi covers the bowl with his palm. "Three ${UROJO_CHALK[this.cur]} in a row, mgeni? Look at the other saucers first; they came all this way."`;
+          return;
+        }
+      }
       if (hr) {
         if (this.seqPos >= hr.seq.length) {
           // The call is complete; the only thing left to add is the handing over.

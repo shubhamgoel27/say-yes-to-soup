@@ -101,7 +101,7 @@ export const CHAPTER: ChapterDef = {
       title: 'Behind the urojo pot',
       howTo: [
         'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in; choose SERVE when the bowl is a bowl.',
-        'There are no wrong bowls here, only bowls Zuberi gets to describe. He said so himself, and he owns the pot.',
+        'There are no wrong bowls here, only bowls Zuberi gets to describe. Ladle the same saucer three times running and he covers the bowl a moment.',
       ],
       hardHow:
         'The hard telling: the evening rush calls exact bowls. Add what is called, in the order it is called, before the broth closes over. Three slips and the line drifts to the other cart.',

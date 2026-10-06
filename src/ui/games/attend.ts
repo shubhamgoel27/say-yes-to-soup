@@ -18,15 +18,19 @@ export class Hold {
   count = 0;
   /** Presses inside the beat standing now; a mercy can read it. */
   streak = 0;
+  /** Seconds this beat has stood, restarts included; a mercy can read it too. */
+  heldFor = 0;
 
   reset(): void {
     this.left = 0;
     this.count = 0;
     this.streak = 0;
+    this.heldFor = 0;
   }
 
   /** Start the beat, or start it over if it is already standing. */
   start(seconds: number): void {
+    if (this.left <= 0) this.heldFor = 0;
     this.streak = this.left > 0 ? this.streak + 1 : 0;
     this.left = seconds;
     this.count++;
@@ -43,6 +47,9 @@ export class Hold {
   }
 
   tick(dt: number): void {
-    if (this.left > 0) this.left = Math.max(0, this.left - dt);
+    if (this.left > 0) {
+      this.left = Math.max(0, this.left - dt);
+      this.heldFor += dt;
+    }
   }
 }

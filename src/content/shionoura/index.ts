@@ -68,7 +68,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The paper scoop',
       howTo: [
         'Arrows drift the poi; Space dips it under a shallow goldfish. The deep ones have done this before.',
-        'Paper always loses to water in the end. When it tears, the uncle just hands you another.',
+        'Dip into empty water and the uncle steadies your wrist a moment. Paper always loses to water in the end; when it tears, he hands you another.',
       ],
       hardHow:
         'The hard telling: the uncle\'s festival-thin paper, quicker fish, and a smaller pool of reach. Every dip counts double, and most of the tub has learned to dive.',

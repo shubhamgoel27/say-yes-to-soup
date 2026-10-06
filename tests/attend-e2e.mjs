@@ -61,13 +61,16 @@ async function drive(flag, keys, step, limitMs = 90000) {
   }
 }
 
+const ONLY = process.env.ONLY ?? 'r1,r2';
+const want = (k) => ONLY.split(',').includes(k);
+
 const mashStep = async () => {
   await page.keyboard.press('Space');
   await sleep(70); // about ten a second with the poll
 };
 
 // ------------------------------------------------------------ the caballito
-{
+if (want('r1')) {
   const F = 'wave.start';
   await open(F, 2);
   const mashed = await drive(F, ['phase'], mashStep);
@@ -86,7 +89,7 @@ const mashStep = async () => {
 }
 
 // ------------------------------------------------------------ behind the pots
-{
+if (want('r1')) {
   const F = 'c2.cook.start';
   await open(F, 2);
   let held = '';
@@ -109,7 +112,7 @@ const mashStep = async () => {
 }
 
 // ------------------------------------------------------------ the hotteok griddle
-{
+if (want('r1')) {
   const F = 'c5.hotteok.start';
   await open(F, 5);
   const mashed = await drive(F, ['phase', 'thumbs', 'darks'], async (s) => {
@@ -127,7 +130,7 @@ const mashStep = async () => {
 }
 
 // ------------------------------------------------------------ the sadya leaf
-{
+if (want('r1')) {
   const F = 'c6.sadya.start';
   await open(F, 6);
   await sleep(4500); // Auntie Leela's walk around the leaf is over
@@ -148,6 +151,104 @@ const mashStep = async () => {
     await sleep(80);
   });
   check(Number.isFinite(done.ms), 'sadya: the leaf is served and folded by real keys');
+}
+
+
+// ============================================================ round two
+const PANTRY = ['Garlic', 'Condensed milk', 'Soy sauce', 'Chicken', 'Dried mango', 'Cane vinegar', 'Bay leaves', 'Peppercorns'];
+const arrowTo = async (cur, at, cols) => {
+  const dx = (at % cols) - (cur % cols);
+  const dy = Math.floor(at / cols) - Math.floor(cur / cols);
+  await page.keyboard.press(dx < 0 ? 'ArrowLeft' : dx > 0 ? 'ArrowRight' : dy < 0 ? 'ArrowUp' : 'ArrowDown');
+  await sleep(60);
+};
+
+// The urojo cart: one saucer mashed vs bowls built for the customer.
+if (want('r2')) {
+  const F = 'c7.cook.start';
+  await open(F, 8);
+  let covered = false;
+  const mashed = await drive(F, ['phase'], async (s) => {
+    if (/covers the bowl/.test(s.hint)) covered = true;
+    await mashStep();
+  });
+  await open(F, 8);
+  const plan = [[6, 6, 0, 2], [4, 2, 4, 5]];
+  const careful = await drive(F, ['phase', 'round', 'cur', 'counts'], async (s) => {
+    if (s.phase !== 'build') {
+      await page.keyboard.press('Space');
+      return sleep(300);
+    }
+    const n = s.counts.reduce((a, b) => a + b, 0);
+    const goal = n < plan[s.round].length ? plan[s.round][n] : 7;
+    if (s.cur === goal) await page.keyboard.press('Space');
+    else await page.keyboard.press('ArrowRight');
+    await sleep(120);
+  });
+  check(covered, 'urojo: the same saucer three times running and Zuberi covers the bowl');
+  check(mashed.ms >= careful.ms, `urojo: mashing (${(mashed.ms / 1000).toFixed(1)}s) is no quicker than care (${(careful.ms / 1000).toFixed(1)}s)`);
+  check(/chalks your name/.test(careful.last) && !/chalks your name/.test(mashed.last), 'urojo: only care earns the slate');
+}
+
+// Kingyo: a still, Space-only hand still meets a fish; care is quicker.
+if (want('r2')) {
+  const F = 'c4.kingyo.start';
+  await open(F, 4);
+  const mashed = await drive(F, ['phase', 'caught'], mashStep, 120000);
+  await open(F, 4);
+  const careful = await drive(F, ['phase', 'cx', 'fish', 'reach'], async (s) => {
+    if (s.phase !== 'scoop') return page.keyboard.press('Space');
+    const shallow = s.fish.filter((f) => !f.deep);
+    if (shallow.some((f) => Math.abs(f.x - s.cx) < s.reach * 0.6)) {
+      await page.keyboard.press('Space');
+      return sleep(150);
+    }
+    if (!shallow.length) return;
+    const near = shallow.reduce((a, b) => (Math.abs(a.x - s.cx) <= Math.abs(b.x - s.cx) ? a : b));
+    if (Math.abs(near.x - s.cx) > 0.05) await page.keyboard.press(near.x < s.cx ? 'ArrowLeft' : 'ArrowRight');
+  });
+  check(Number.isFinite(mashed.ms), `kingyo: Space alone finishes (${(mashed.ms / 1000).toFixed(1)}s)`);
+  check(mashed.ms >= careful.ms, `kingyo: mashing is no quicker than care (${(careful.ms / 1000).toFixed(1)}s)`);
+}
+
+// Adobo: story Ben calls each next thing, and real keys follow his calls.
+if (want('r2')) {
+  const F = 'c3.cook.start';
+  await open(F, 3);
+  const calls = [];
+  let lastStep = -1;
+  const run = await drive(F, ['step', 'cur', 'simmer', 'done'], async (s) => {
+    if (s.step !== lastStep) {
+      lastStep = s.step;
+      calls.push(s.hint);
+    }
+    if (s.simmer >= 0 || s.done) {
+      if (/Now, pare|Ngayon|Press Space/.test(s.hint)) await page.keyboard.press('Space');
+      return;
+    }
+    // Find the jar from Ben's own words: the last pantry name he said.
+    const said = PANTRY.map((n) => [n, s.hint.toLowerCase().lastIndexOf(n.toLowerCase())]).filter((x) => x[1] >= 0);
+    if (!said.length) return;
+    said.sort((a, b) => b[1] - a[1]);
+    const at = PANTRY.indexOf(said[0][0]);
+    if (s.cur === at) {
+      await page.keyboard.press('Space');
+      await sleep(250);
+    } else await arrowTo(s.cur, at, 4);
+  }, 60000);
+  check(Number.isFinite(run.ms), `adobo: cooked by following Ben's calls alone (${(run.ms / 1000).toFixed(1)}s)`);
+  check(/aunties/.test(run.last), 'adobo: no wrong reach, so Ben suspects aunties');
+}
+
+// Sadya: readable seat names during her walk; a hand that ignores her still gets served.
+if (want('r2')) {
+  const F = 'c6.sadya.start';
+  await open(F, 6);
+  await sleep(1300);
+  await page.screenshot({ path: `${SHOTS}sadya-walk.png` });
+  const mashed = await drive(F, ['phase'], mashStep, 120000);
+  check(Number.isFinite(mashed.ms), `sadya: Space alone gets the leaf served, Leela helping (${(mashed.ms / 1000).toFixed(1)}s)`);
+  check(/served half/.test(mashed.last), 'sadya: and the ending says who served it');
 }
 
 check(errors.length === 0, `no page errors${errors.length ? ': ' + errors.join(' | ') : ''}`);

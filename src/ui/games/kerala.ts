@@ -1,6 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun, tip } from './run';
+import { Hold } from './attend';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
@@ -673,7 +674,11 @@ const SLOTS = ['inji puli', 'thoran', 'avial', 'banana', 'rice', 'pappadam', 'le
 const TEACH = [0, 1, 2, 3, 5, 4];
 const TEACH_HARD = [6, ...TEACH];
 /** Seconds her finger rests on each seat, after a short breath to begin. */
-const TEACH_STEP = 0.55;
+const TEACH_STEP = 0.7;
+/** Story telling: seconds Leela keeps a hand on the ladle after a wrong seat. */
+const LEELA_HOLD = 0.7;
+/** Seconds of pushing against her hand before she lets the ladle go. */
+const LEELA_PATIENCE = 1.4;
 const TEACH_START = 0.35;
 
 /** Serving order, each with its home slot and its auntie correction. */
@@ -958,6 +963,9 @@ export class SadyaPanel {
   private missBy = new Map<string, { n: number; at: number }>();
   private courseAt = 0;
   private misses = 0; // wrong seats this leaf, for the ending
+  private courseMiss = 0; // wrong seats for the course on the ladle now
+  private leelaServed = 0; // story: courses Leela set down herself
+  private wrist = new Hold(); // story: Leela's hand on the ladle after a wrong seat
   private pointAt = -1; // the seat Auntie Leela's finger is on after a slip
 
   // Visual state only.
@@ -996,10 +1004,13 @@ export class SadyaPanel {
     this.missBy.clear();
     this.courseAt = 0;
     this.misses = 0;
+    this.courseMiss = 0;
+    this.leelaServed = 0;
+    this.wrist.reset();
     this.pointAt = -1;
     this.hint = this.hard
       ? 'Eight courses tonight, down to the payasam at the leaf tip, and the aunties keep a clock. Space serves the pappadam; be quick and be right.'
-      : 'Auntie Leela points once, quickly: "Pickle in the small corner, where the narrow end points. Thoran, then avial, along the top. ' +
+      : 'Auntie Leela points once, quickly: "Inji puli, the ginger pickle, in the small corner where the narrow end points. Thoran, then avial, along the top. ' +
         'Banana bottom left, pappadam bottom right, and the rice in the middle, last." Arrows choose a seat; Space serves the pappadam.';
     this.scene ??= new Scene();
     this.hints = mountScene(this.root, 'The Sadya Leaf', this.scene, SADYA_LEGEND);
@@ -1021,6 +1032,7 @@ export class SadyaPanel {
     if (!this.isOpen) return;
     const sc = this.scene;
     if (!sc) return;
+    this.wrist.tick(dt);
     const [tx, ty] = SLOT_POS[this.cur] ?? [320, 190];
     const k = Math.min(1, dt * 11);
     this.curX += (tx - this.curX) * k;
@@ -1135,8 +1147,25 @@ export class SadyaPanel {
     if (this.phase === 'serve') {
       const c = this.courses[this.course];
       if (!c) return;
-      if (this.cur === c.slot) {
+      if (this.wrist.on) {
+        // Her hand is still on the ladle; pushing keeps it there a breath.
+        if (this.wrist.heldFor < LEELA_PATIENCE) {
+          this.wrist.start(LEELA_HOLD);
+          return;
+        }
+        this.wrist.release();
+      }
+      // Story: the second wrong seat for one course and Leela serves it herself.
+      const leela = !this.hard && this.cur !== c.slot && this.courseMiss >= 1;
+      if (this.cur === c.slot || leela) {
         this.pointAt = -1;
+        this.courseMiss = 0;
+        if (leela) {
+          this.misses++;
+          this.leelaServed++;
+          this.cur = c.slot;
+          this.wrist.start(LEELA_HOLD);
+        }
         this.placed[c.slot] = c.item;
         this.audio.chime();
         this.ladleDip = 1;
@@ -1145,7 +1174,9 @@ export class SadyaPanel {
         this.courseAt = sc?.time ?? 0;
         const next = this.courses[this.course];
         if (next) {
-          this.hint = `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
+          this.hint = leela
+            ? `Auntie Leela takes the ladle, sets the ${c.item} in its seat, and hands it back warm. "There. Now the ${next.item}, kunje. Watch my finger."`
+            : `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
         } else {
           this.phase = 'fold';
           this.hint =
@@ -1163,6 +1194,8 @@ export class SadyaPanel {
         this.audio.blip();
         this.hint = c.oops;
         this.misses++;
+        this.courseMiss++;
+        if (!this.hard) this.wrist.start(LEELA_HOLD);
         this.pointAt = c.slot; // her finger stays on the right seat until it is served
         // Remember which course went astray and where it tried to sit, so
         // the next how-to card can coach the actual mistake.
@@ -1194,7 +1227,11 @@ export class SadyaPanel {
       this.audio.weaveDone();
       if (sc) sc.flash('#ffe9b0', 0.4);
       this.hint =
-        '"Your whole family folds it wrong and has since 1951," someone adds, delighted. Either way, the leaf says you ate well. Press Space.';
+        !this.hard && this.misses === 0
+          ? '"Your whole family folds it wrong and has since 1951," someone adds. Auntie Leela pats your hand: "Served like a daughter of this house, kunje. Come for Onam." Press Space.'
+          : !this.hard && this.leelaServed >= 2
+            ? '"Your whole family folds it wrong and has since 1951," someone adds. "And she served half of it," says Rosamma, nodding at Leela. The leaf says you ate well anyway. Press Space.'
+            : '"Your whole family folds it wrong and has since 1951," someone adds, delighted. Either way, the leaf says you ate well. Press Space.';
     } else {
       this.root.hidden = true;
       const done = this.onDone;
@@ -1252,7 +1289,7 @@ export class SadyaPanel {
     const order = this.hard ? TEACH_HARD : TEACH;
     const k = Math.floor((t - TEACH_START) / TEACH_STEP);
     const teaching = this.phase === 'serve' && t >= TEACH_START && k < order.length ? (order[k] ?? -1) : -1;
-    const teachA = teaching >= 0 ? Math.sin(Math.PI * Math.min(1, ((t - TEACH_START) % TEACH_STEP) / TEACH_STEP)) : 0;
+    const teachA = teaching >= 0 ? Math.min(1, 1.8 * Math.sin(Math.PI * Math.min(1, ((t - TEACH_START) % TEACH_STEP) / TEACH_STEP))) : 0;
     for (let i = 0; i < nSlots; i++) {
       const [x, y] = SLOT_POS[i]!;
       if (this.landAt[i]! < 0) {
@@ -1262,7 +1299,11 @@ export class SadyaPanel {
           const a = pointed ? 0.55 + 0.25 * wobble(t, 3) : teachA;
           glowSpot(g, x, y + 3, 40, '#fff3c8', 0.32 * a);
           const name = i === 6 ? 'payasam' : SLOTS[i]!;
-          label(g, name, x, y + 7, `rgba(250,246,226,${(0.9 * a).toFixed(3)})`, 16);
+          // A dark chit under the name, so it reads on the bright leaf.
+          g.font = '600 19px Caveat, cursive';
+          const w = g.measureText(name).width + 16;
+          rr(g, x - w / 2, y - 9, w, 24, 8, `rgba(28,34,18,${(0.72 * a).toFixed(3)})`);
+          label(g, name, x, y + 9, `rgba(255,250,232,${Math.min(1, 1.1 * a).toFixed(3)})`, 19);
         }
       } else {
         softShadow(g, x, y + 9, 36, 12, 0.18);

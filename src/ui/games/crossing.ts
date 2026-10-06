@@ -94,6 +94,10 @@ const CHUCKLES = [
 
 const COLS = 4;
 
+/** Story telling: Ben names the next thing out loud (the hard telling keeps his riddles). */
+const STORY_CALLS = ['', '"Now the chicken, pare."', '"Soy sauce next."', '"Then the cane vinegar."', '"Bay leaves."', '"And the peppercorns."'];
+const storyCall = (i: number) => STORY_CALLS[i] ?? '';
+
 /** Story telling: seconds Ben's hand stays up after a wrong reach or a peek. */
 const BEN_HOLD = 0.5;
 /** Grabs inside one of those beats before Ben lets the reach through. */
@@ -456,7 +460,7 @@ export class GalleyPanel {
     this.stepLeft = this.stepTime;
     this.hint = this.hard
       ? 'Ben ties your apron and steps back, arms folded. "Your pot tonight, pare. I only watch." ' + (HARD_STEPS[0]?.call ?? '')
-      : 'Ben ties your apron. "First: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
+      : 'Ben ties your apron. "First, the garlic: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
     makeGalleyBg();
     makePantrySheet();
     galleyGlow ??= bakeGlow('rgba(255,214,150,0.9)', 44);
@@ -515,7 +519,7 @@ export class GalleyPanel {
         this.hint = next ? `A nod from Ben. ${next.call}` : 'A nod from Ben.';
         this.stepLeft = this.stepTime;
       } else {
-        this.hint = STEPS[this.step]?.note ?? '';
+        this.hint = `${STEPS[this.step]?.note ?? ''} ${storyCall(this.step + 1)}`.trim();
       }
       this.launch(want);
     } else if (this.hard) {
@@ -555,7 +559,7 @@ export class GalleyPanel {
       this.wrongBy[this.step] = (this.wrongBy[this.step] ?? 0) + 1;
       this.misses++;
       const note = STEPS[this.step]?.note ?? '';
-      this.hint = `${chuckle} ${want.toLowerCase()}. ${note}`;
+      this.hint = `${chuckle} ${want.toLowerCase()}. ${note} ${storyCall(this.step + 1)}`.trim();
       this.wiggleThenLaunch(this.cur, want);
     }
     this.step++;

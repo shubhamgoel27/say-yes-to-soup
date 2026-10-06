@@ -83,8 +83,9 @@ const CASES: Case[] = [
   { flag: 'c5.hotteok.start', careful: BOTS['c5.hotteok.start']!, masher: () => mash(), before: 5 },
   { flag: 'c8.cook.start', careful: BOTS['c8.cook.start']!, masher: () => mash(), before: 10, slower: 2 },
   { flag: 'watia.start', careful: BOTS['watia.start']!, masher: () => both(BOTS['watia.start']!(), mash(3)), before: 5, slower: 1.5 },
-  { flag: 'c7.cook.start', careful: urojoStory, masher: () => mash(), before: 7 },
-  { flag: 'c4.kingyo.start', careful: BOTS['c4.kingyo.start']!, masher: () => mash(10), before: 5 },
+  { flag: 'c7.cook.start', careful: urojoStory, masher: () => mash(), before: 7, slower: 1.5 },
+  { flag: 'c4.kingyo.start', careful: BOTS['c4.kingyo.start']!, masher: () => mash(), before: 5, slower: 1 },
+  { flag: 'c6.sadya.start', careful: BOTS['c6.sadya.start']!, masher: () => mash(), before: 3, slower: 2 },
 ];
 
 describe('the story tellings reward attention, never lock anyone out', () => {
@@ -130,6 +131,7 @@ describe('the sadya leaf is learned, not read', () => {
     p.open(() => {});
     assert.equal(p.cur, 0);
     p.onAction(); // the pappadam, on the pickle's seat
+    for (let i = 0; i < 60; i++) p.tick(1 / 60); // her hand leaves the ladle
     assert.equal(p.course, 0, 'a wrong seat serves nothing');
     assert.equal(p.pointAt, 5, 'Auntie Leela points at the pappadam seat');
     assert.match(p.hint, /bottom right/);
@@ -147,5 +149,48 @@ describe('the sadya leaf is learned, not read', () => {
     const leaf = src.slice(src.indexOf('private paintOpenLeaf('), src.indexOf('private paintLadle('));
     assert.match(leaf, /teaching === i \|\| pointed/, 'a seat is only named while she points at it');
     assert.doesNotMatch(leaf, /if \(this\.phase === 'serve'\) label\(/);
+  });
+});
+
+describe('nobody is left without help', () => {
+  it('kingyo: a Space-only hand that never moves the poi still lands a fish, every paper', () => {
+    for (let s = 1; s <= 8; s++) {
+      for (const n of [6, 10, 20]) {
+        const r = storyRun('c4.kingyo.start', mash(n), s, 120);
+        assert.ok(r.done, `seed ${s}, Space every ${n} frames: never finished`);
+      }
+    }
+  });
+
+  it('sadya: a hand that ignores her finger still gets the leaf served', () => {
+    for (let s = 1; s <= 6; s++) {
+      const DIRS = ['up', 'down', 'left', 'right'] as const;
+      let f = 0;
+      const random: Bot = (p) => {
+        if (f++ % 8) return;
+        if (Math.random() < 0.5) p.onAction();
+        else p.onDir(DIRS[Math.floor(Math.random() * 4)]);
+      };
+      const r = storyRun('c6.sadya.start', random, s, 120);
+      assert.ok(r.done, `seed ${s}: a random hand never finished the leaf`);
+    }
+  });
+
+  it('adobo: story Ben names every next thing before you reach for it', () => {
+    const p = GAMES.find((x) => x.flag === 'c3.cook.start')!.make(ghost(), ghost(), () => new Set()) as Any;
+    RUN.hard = false;
+    p.open(() => {});
+    assert.match(p.hint, /garlic/i);
+    const order = ['Chicken', 'Soy sauce', 'Cane vinegar', 'Bay leaves', 'Peppercorns'];
+    const bot = BOTS['c3.cook.start']!();
+    for (let i = 0, t = 0; i < order.length; t += 1 / 60) {
+      const before = p.step;
+      bot(p, t);
+      p.tick(1 / 60);
+      if (p.step !== before) {
+        assert.match(p.hint, new RegExp(order[i]!, 'i'), `after step ${before}, Ben never called the ${order[i]}`);
+        i++;
+      }
+    }
   });
 });

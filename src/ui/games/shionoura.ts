@@ -5,6 +5,7 @@ import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow }
 import type { Surface } from '../../art/pix';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
 import { RUN, coach, freshRun } from './run';
+import { Hold } from './attend';
 
 /** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
 function calm(): boolean {
@@ -35,7 +36,9 @@ function fixHint(root: HTMLElement) {
  * miss, so the next how-to can hand the player back their own mistake.
  */
 
-type Fish = { x: number; v: number; deep: boolean; ph: number; ly: number; hv: number; dd: number };
+/** `guide`: the story's one fish that swims, shallow and unhurried, toward the
+ * poi's starting spot, so a hand that never moves still meets a fish. */
+type Fish = { x: number; v: number; deep: boolean; ph: number; ly: number; hv: number; dd: number; guide?: boolean };
 
 type Ripple = { x: number; y: number; r: number; a: number };
 
@@ -45,6 +48,10 @@ const BOWL = { x: 572, y: 244, r: 36 };
 
 /** The poi reaches this far to either side; it is the whole aim of the game. */
 const REACH = 0.09;
+/** Story telling: seconds the uncle steadies a wrist that dipped into empty water. */
+const STEADY_HOLD = 0.8;
+/** Seconds of pushing against his hand before he lets the next dip go. */
+const STEADY_PATIENCE = 1.6;
 /** The hard telling's reach: the same poi, but the uncle's festival paper. */
 const REACH_HARD = 0.062;
 /** The start flag, spoken to coach() so the next how-to can pass advice on. */
@@ -74,6 +81,7 @@ export class KingyoPanel {
   private dips = 0; // dips that lifted no fish
   private deepDips = 0; // of those, dips spent on a deep-lit fish
   private waterDips = 0; // and dips that found only water
+  private steady = new Hold(); // story: the uncle's hand on a wrist that dipped into empty water
 
   // Render-only state. None of it feeds back into the game.
   private scene = new Scene();
@@ -107,6 +115,7 @@ export class KingyoPanel {
     this.dips = 0;
     this.deepDips = 0;
     this.waterDips = 0;
+    this.steady.reset();
     this.phase = 'scoop';
     this.cx = 0.5;
     this.soak = 0;
@@ -122,6 +131,14 @@ export class KingyoPanel {
         hv: 0.2,
         dd: 0,
       });
+    }
+    if (!this.hard) {
+      // One shallow fish drifts toward where the poi starts, unhurried.
+      const f = this.fish[0] as Fish;
+      f.x = 0.1;
+      f.v = 0.42;
+      f.deep = false;
+      f.guide = true;
     }
     this.hint = this.hard
       ? 'The uncle brings out the festival paper, thin as a rumor. The fish have heard about you. Arrows and Space, and no wasted dips.'
@@ -146,9 +163,14 @@ export class KingyoPanel {
     if (!this.isOpen) return;
     if (this.phase === 'scoop' || this.phase === 'torn') {
       // The tub goes on living through the torn beat, so the escape reads.
+      this.steady.tick(dt);
       for (const f of this.fish) {
         f.x += f.v * dt * 0.35;
         if (f.x < 0.04 || f.x > 0.96) f.v = -f.v;
+        if (f.guide) {
+          if (f.x > 0.62) f.guide = false;
+          continue;
+        }
         if (Math.random() < dt * (this.hard ? 0.6 : 0.4)) f.v = (Math.random() - 0.5) * (this.hard ? 1.15 : 0.6);
         if (Math.random() < dt * (this.hard ? 0.45 : 0.25)) f.deep = !f.deep;
       }
@@ -186,6 +208,14 @@ export class KingyoPanel {
       return;
     }
     // The dip. Shallow fish near the poi come up; deep ones just watch.
+    if (this.steady.on) {
+      // The uncle's hand is still on your wrist; pushing keeps it there a while.
+      if (this.steady.heldFor < STEADY_PATIENCE) {
+        this.steady.start(STEADY_HOLD);
+        return;
+      }
+      this.steady.release();
+    }
     const px = this.fishX(this.poiX);
     const py = 168;
     this.dipT = 0.34;
@@ -217,7 +247,8 @@ export class KingyoPanel {
       if (this.caught >= 3 || this.fish.length === 0) this.finish();
     } else {
       this.audio.slosh();
-      this.soak = Math.min(100, this.soak + (this.hard ? 38 : 26));
+      this.soak = Math.min(100, this.soak + (this.hard ? 38 : 18));
+      if (!this.hard) this.steady.start(STEADY_HOLD);
       this.ripples.push({ x: px, y: py, r: 14, a: 0.45 });
       this.dips++;
       const overDeep = this.fish.some((f) => f.deep && Math.abs(f.x - this.cx) < this.reach);
@@ -225,7 +256,9 @@ export class KingyoPanel {
       else this.waterDips++;
       this.hint = overDeep
         ? 'That one dove. The poi drinks the tub instead.'
-        : 'Water, beautifully scooped. The paper darkens.';
+        : this.hard
+          ? 'Water, beautifully scooped. The paper darkens.'
+          : 'Water, beautifully scooped. The uncle steadies your wrist: "Wait for a pale one under the paper, then dip."';
     }
   }
 

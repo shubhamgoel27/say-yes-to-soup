@@ -24,7 +24,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The hotteok griddle',
       howTo: [
         'Space presses and flips in one motion. Time it to the golden middle of the heat gauge, three discs running.',
-        'Burn one and nothing is lost: Mi-ja claims the dark one, hands you fresh dough, and Space begins again.',
+        'Burn one and nothing is lost: Mi-ja eats the dark one herself, and the next dough drops onto the iron on its own.',
         'Press while the dough is still pale and Mi-ja holds your wrist, and your thumb leaves its mark.',
       ],
       hardHow:
