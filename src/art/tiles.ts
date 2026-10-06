@@ -50,10 +50,9 @@ const CAP_LIP = 14;
 
 /**
  * Ground kinds the boundary-feathering pass must leave alone: water and its
- * banks autotile themselves, paths clip their own rounded core, and void and
- * scree are the outside of the world.
+ * banks autotile themselves, and void and scree are the outside of the world.
  */
-const NO_SPILL = new Set(['void', 'scree', 'path', 'bridge', 'water', 'sea']);
+const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea']);
 
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
@@ -1746,24 +1745,10 @@ export class Tileset {
     }
 
     if (kind === 'path') {
-      g.drawImage(this.variant('puna', cx, cy), sx, sy);
-      const l = conn(-1, 0) ? 0 : 8;
-      const rgt = conn(1, 0) ? 0 : 8;
-      const t = conn(0, -1) ? 0 : 8;
-      const b = conn(0, 1) ? 0 : 8;
-      const core = this.variant('pathCore', cx, cy);
-      g.save();
-      g.beginPath();
-      // Round only true outer corners (both adjoining sides open).
-      g.roundRect(sx + l, sy + t, S - l - rgt, S - t - b, [
-        t && l ? 14 : 0,
-        t && rgt ? 14 : 0,
-        b && rgt ? 14 : 0,
-        b && l ? 14 : 0,
-      ]);
-      g.clip();
-      g.drawImage(core, sx, sy);
-      g.restore();
+      // The packed core fills its cell; where it meets another material the
+      // renderer's complementary seams feather it, so a path reads as worn
+      // ground with a wandering edge rather than a row of rounded tiles.
+      g.drawImage(this.variant('pathCore', cx, cy), sx, sy);
       return;
     }
 
@@ -1860,7 +1845,7 @@ export class Tileset {
    */
   groundImage(kind: string, variant: number): HTMLCanvasElement | null {
     if (NO_SPILL.has(kind) || WATERY.has(kind)) return null;
-    const list = this.v.get(this.art(kind));
+    const list = this.v.get(kind === 'path' ? 'pathCore' : this.art(kind));
     if (!list || list.length === 0) return null;
     const cvs = list[variant % list.length];
     if (!cvs || cvs.width !== S || cvs.height !== S) return null;

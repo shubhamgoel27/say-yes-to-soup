@@ -9,6 +9,7 @@ import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
 import { GameState, activeSlot, peekSlot, setActiveSlot } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
+import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
 import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
@@ -826,7 +827,7 @@ function sheetFor(def: NpcDef): HTMLCanvasElement {
   if (def.sprite === 'dog') return makeDogSheet();
   if (def.sprite === 'llama') return makeLlamaSheet('#e8ddc8');
   if (def.sprite === 'llamaBrown') return makeLlamaSheet('#9c6b42');
-  return makeSheet(def.look);
+  return makeSheet(lookFor(def.id, def.look));
 }
 
 const villagers: Villager[] = NPCS.map((def) => {
@@ -837,7 +838,7 @@ const villagers: Villager[] = NPCS.map((def) => {
     sheet,
     rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
     species: def.sprite, greetId: def.id, // renderer idle life: tail wags, chews, greeting nods
-    portrait: def.sprite ? null : makePortrait(def.look),
+    portrait: def.sprite ? null : makePortrait(lookFor(def.id, def.look)),
     think: Math.random() * 2,
     want: null,
     seat: null,
