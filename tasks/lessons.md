@@ -256,3 +256,12 @@ hook that raises a question, show the verbs with sound, and pay the question
 off. Rule: before producing any promotional media, study 3-5 reference works
 in the genre, write down what they do, and plan music and shots first; a
 capture pipeline is the last step, not the first.
+
+## /tmp is not a workshop (2026-10-06)
+The whole trailer pipeline (v3/v4 capture and edit scripts, 13 GB of frames) lived in the session
+scratchpad under /private/tmp, and macOS's periodic cleaner deleted it within days. Only the score
+survived, because it had been delivered into docs/trailer/. The scripts were rebuilt by replaying
+Write/Edit calls and heredocs out of the subagents' transcripts, which worked only because those
+transcripts are kept under ~/.claude. Rule: anything that took real work to build (pipelines,
+renderers, recovered assets) lives in the repo or a worktree and is committed; /tmp is for things
+you would not mind losing tonight.
