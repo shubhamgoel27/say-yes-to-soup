@@ -253,9 +253,12 @@ describe('the task list never leaves the player stuck', () => {
       for (const c of node.choices ?? []) walk(c.goto, seen);
     };
     let guard = 0;
-    let before = -1;
-    while (state.pageCount() !== before && guard++ < 100) {
-      before = state.pageCount();
+    let before = '';
+    // Settle on flags as well as pages: a talk told across two visits
+    // (Carmen's verdict) changes the world without granting a page.
+    const progress = () => `${state.pageCount()}|${[...state.flagSet()].sort().join(',')}`;
+    while (progress() !== before && guard++ < 100) {
+      before = progress();
       for (const npc of NPCS) {
         const entry = npc.entry.find((e) => state.check(e.when));
         if (entry) walk(entry.node, new Set());
@@ -518,10 +521,13 @@ describe('every journal page is reachable by play', () => {
       for (const c of node.choices ?? []) walk(c.goto, seen);
     };
 
-    let before = -1;
+    let before = '';
     let guard = 0;
-    while (state.pageCount() !== before && guard++ < 100) {
-      before = state.pageCount();
+    // Settle on flags as well as pages: a talk told across two visits
+    // (Carmen's verdict) changes the world without granting a page.
+    const progress = () => `${state.pageCount()}|${[...state.flagSet()].sort().join(',')}`;
+    while (progress() !== before && guard++ < 100) {
+      before = progress();
       for (const npc of NPCS) {
         const entry = npc.entry.find((e) => state.check(e.when));
         if (entry) walk(entry.node, new Set());

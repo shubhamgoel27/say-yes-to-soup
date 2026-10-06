@@ -113,8 +113,11 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
       { when: { has: ['c10.arrived'], not: ['c10.carmen.seen'] }, node: 'c10.carmen.reunion' },
       // Beat eleven of the Her thread, and late on purpose: the village can
       // only decide this after the whole road has been walked back to it.
+      // Told in two visits: the grievance first, then, once her row is
+      // closed, the verdict and the stone.
+      { when: { has: ['c10.carmen.told'], not: ['c10.carmen.her'] }, node: 'c10.carmen.stone' },
       {
-        when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen'], not: ['c10.carmen.her'] },
+        when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen'], not: ['c10.carmen.her', 'c10.carmen.told'] },
         node: 'c10.carmen.decided',
       },
       { when: { has: ['story.end'] }, node: 'c10.carmen.post' },
@@ -164,9 +167,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- arrival: the ship docks ----------------
   'c10.arrive': {
     lines: [
-      { text: 'The ship noses in past the pier and La Caleta assembles itself out of the garúa: salt, fish scale, something frying far away.' },
-      { text: 'The road up is the same road down, older now. So are you.' },
-      { text: 'Home is at the top of that road. Everything between here and there wants to say hello first.' },
+      { text: 'The ship noses in past the pier and La Caleta assembles itself out of the garúa: salt, fish scale, something frying.' },
+      { text: 'The road up is the same road down, older now. So are you. Everything between here and home wants to say hello first.' },
     ],
     effects: ['set:c10.arrived', 'journal:words.elsewhere'],
   },
@@ -175,7 +177,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.marisol.reunion': {
     lines: [
       { who: 'Marisol', text: 'CASERO! Off the boat and straight to my stall, as is correct, pe.' },
-      { who: 'Marisol', text: 'Lisa today. Humble fish, honest fish. Some things the world does not dare change.' },
+      { who: 'Marisol', text: 'Lisa today. Humble fish. Some things the world does not dare change.' },
       { text: 'She weighs nothing and drops a yapa on top anyway.' },
     ],
     effects: ['set:c10.marisol.seen'],
@@ -184,9 +186,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Don Simón, and her fairness ----------------
   'c10.simon.reunion': {
     lines: [
-      { text: 'Don Simón is at the pier rail, mending a line with hands that still do not look at their work.' },
       { who: 'Don Simón', text: 'So. She carried you out, and she carried you back. Hard, but fair.' },
-      { who: 'Don Simón', text: 'You crossed her twice and came home saying la mar. I can hear it. That means she heard you too.' },
+      { who: 'Don Simón', text: 'You came home saying la mar. I can hear it. She heard you too.' },
     ],
     effects: ['set:c10.simon.seen'],
   },
@@ -194,9 +195,9 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Doña Petro, the standing pot ----------------
   'c10.petro.reunion': {
     lines: [
-      { text: 'You enter past the pots, because that is still the only way in. Steam, ají, the long table half full of strangers not being strangers.' },
-      { who: 'Doña Petro', text: 'Criatura de la sierra! Sit. Do not tell me the whole ocean yet; in this house the pot goes first.' },
-      { who: 'Doña Petro', text: 'The sudado is on. It has been on, more or less, since you left. Some pots are promises.' },
+      { text: 'Past the pots, still the only way in: steam, ají, a long table of strangers not being strangers.' },
+      { who: 'Doña Petro', text: 'Criatura de la sierra! Sit. The ocean can wait; in this house the pot goes first.' },
+      { who: 'Doña Petro', text: 'The sudado has been on, more or less, since you left. Some pots are promises.' },
     ],
     effects: ['set:c10.petro.seen'],
   },
@@ -205,7 +206,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.nilda.reunion': {
     lines: [
       { who: 'Nilda', text: 'Back up the same sand, then. How many altitudes are you made of now?' },
-      { who: 'Nilda', text: 'My aunt still lives up past the pass. When you climb, tell the sierra that half the coast says hello.' },
+      { who: 'Nilda', text: 'When you climb, tell the sierra half the coast says hello.' },
     ],
     effects: ['set:c10.nilda.seen'],
   },
@@ -214,7 +215,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.rafa.reunion': {
     lines: [
       { who: 'Rafa', text: 'CAUSA! You came back! Tell me the far waves are real. Lie to me if you have to.' },
-      { who: 'Rafa', text: 'Chévere does not cover it, causa. I am inventing a bigger word.' },
+      { who: 'Rafa', text: 'Chévere does not cover it. I am inventing a bigger word.' },
     ],
     effects: ['set:c10.rafa.seen'],
   },
@@ -222,8 +223,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Maestro Félix ----------------
   'c10.felix.reunion': {
     lines: [
-      { text: 'Maestro Félix is partway through his next boat, as promised. The cord walks its long, even wraps.' },
-      { who: 'Maestro Félix', text: 'The traveler returns, and the boat is not finished. Good. It means the time was the right length.' },
+      { text: 'Maestro Félix is partway through his next boat, as promised.' },
+      { who: 'Maestro Félix', text: 'The boat is not finished. Good. The time was the right length.' },
       { who: 'Maestro Félix', text: 'The going wears out; the knowing how comes home.' },
     ],
     effects: ['set:c10.felix.seen'],
@@ -233,15 +234,15 @@ export const RETURN_NODES: NodeMap = {
   'c10.chasca.reunion': {
     lines: [
       { who: 'Chasca', text: 'Stop! Perfect. Do not move a single humble thread.' },
-      { text: 'No camera comes up. She just looks at you, on the road where she first stopped you, walking the other way at last.' },
-      { who: 'Chasca', text: 'Home too, then, both of us. And I kept my word: I developed everything.' },
+      { text: 'No camera comes up. She just looks at you, on the road where she first stopped you.' },
+      { who: 'Chasca', text: 'Home too, both of us. And I developed everything.' },
     ],
     effects: ['set:c10.chasca.seen'],
     next: 'c10.chasca.offer',
   },
   'c10.chasca.offer': {
     lines: [
-      { who: 'Chasca', text: 'The album is heavy now, in the good way. Sit on the rock. It starts with you.' },
+      { who: 'Chasca', text: 'The album is heavy now, in the good way. Sit on the rock.' },
     ],
     choices: [
       { text: 'Open the album', goto: 'c10.album.open' },
@@ -256,7 +257,7 @@ export const RETURN_NODES: NodeMap = {
   'c10.album.open': {
     lines: [
       { text: 'The album opens across both your knees. It is heavier than it looks.' },
-      { who: 'Chasca', text: 'Turn the pages. I will do the remembering out loud if you get stuck.' },
+      { who: 'Chasca', text: 'Turn the pages. I will remember out loud if you get stuck.' },
     ],
     // The engine consumes this signal when the textbox closes and unfolds the
     // album itself: the actual prints, two to a spread. Her closing words run
@@ -272,8 +273,8 @@ export const RETURN_NODES: NodeMap = {
    */
   'c10.album.close': {
     lines: [
-      { text: 'She takes it back with both hands and does not close it yet.' },
-      { who: 'Chasca', text: 'I always leave one empty. A roll of film ends. A road does not, and I will not let the book take sides.' },
+      { text: 'She takes it back with both hands.' },
+      { who: 'Chasca', text: 'I always leave one empty. A roll of film ends. A road does not.' },
     ],
     effects: ['set:c10.album.seen', 'journal:customs.album'],
     choices: [
@@ -285,28 +286,27 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.album.full': {
     lines: [
-      { who: 'Chasca', text: 'Every frame I ever shouted for, you stood still for. Ten out of ten, and not one of them a pose.' },
-      { who: 'Chasca', text: 'The whole road, in order. I am keeping these negatives forever.' },
+      { who: 'Chasca', text: 'Every frame I shouted for, you stood still for. Ten of ten, and not one a pose.' },
       { text: 'She closes the album the way you close a door on a sleeping child.' },
     ],
   },
   'c10.album.most': {
     lines: [
-      { who: 'Chasca', text: 'Most of it. The gaps are the days you got ahead of me, which is the correct direction for a person to get.' },
-      { who: 'Chasca', text: 'I keep the empty corners anyway. A road you walked without me is still a road. It just belongs to you and not to the book.' },
+      { who: 'Chasca', text: 'Most of it. The gaps are days you got ahead of me, the correct direction for a person.' },
+      { who: 'Chasca', text: 'A road you walked without me is still a road. It belongs to you, not the book.' },
       { text: 'She closes the album the way you close a door on a sleeping child.' },
     ],
   },
   'c10.album.few': {
     lines: [
-      { who: 'Chasca', text: 'Mostly corners. Mostly the ones I did not take, and you are about to apologize, and I am telling you not to.' },
-      { who: 'Chasca', text: 'Those blanks are the roads that got away from me. I have never stopped following them. You just made the job a long one.' },
-      { text: 'She closes it gently, on all that kept paper, the way you close a door on a sleeping child.' },
+      { who: 'Chasca', text: 'Mostly corners. You are about to apologize, and I am telling you not to.' },
+      { who: 'Chasca', text: 'Those blanks are roads that got away from me. I never stopped following them.' },
+      { text: 'She closes it gently, the way you close a door on a sleeping child.' },
     ],
   },
   'c10.chasca.after': {
     lines: [
-      { who: 'Chasca', text: 'The album sleeps in my bag with one page still empty. Tomorrow I start the next one; roads keep happening, somebody has to keep up.' },
+      { who: 'Chasca', text: 'The album sleeps in my bag, one page still empty. Tomorrow I start the next one.' },
     ],
     choices: [
       { text: 'Look through it again', goto: 'c10.chasca.again' },
@@ -315,7 +315,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.chasca.again': {
     lines: [
-      { who: 'Chasca', text: 'Always. It starts with you and ends on a page I have not earned yet. The middle is the good part; middles always are.' },
+      { who: 'Chasca', text: 'Always. The middle is the good part; middles always are.' },
     ],
     effects: ['set:album.open'],
   },
@@ -323,8 +323,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Faustino, arriero ----------------
   'c10.faustino.reunion': {
     lines: [
-      { who: 'Faustino', text: 'Ho! The walker walks home! Sit, the fire is honest and the wind has not changed its opinion.' },
-      { text: 'He looks at you the way he looks at a llama that found its own way down a bad pass. It is his highest compliment.' },
+      { who: 'Faustino', text: 'Ho! The walker walks home! Sit, the fire is honest.' },
+      { text: 'He looks at you like a llama that found its own way down a bad pass. His highest compliment.' },
     ],
     effects: ['set:c10.faustino.seen'],
   },
@@ -332,9 +332,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Paca, customs inspector ----------------
   'c10.paca.reunion': {
     lines: [
-      { text: 'Paca occupies her spot at the pass, immovable as policy. As you approach, her nostrils conduct a full inspection.' },
-      { text: 'Salt, diesel, incense, and something floral she cannot place. The ears render the verdict: appalled.' },
-      { text: 'She steps aside almost a full meter to let you pass. For Paca, this is a parade in your honor.' },
+      { text: 'Paca holds the pass, immovable as policy. Her nostrils inspect you: salt, diesel, incense. The ears render the verdict: appalled.' },
+      { text: 'She steps aside almost a full meter. For Paca, this is a parade in your honor.' },
     ],
     effects: ['set:c10.paca.seen'],
   },
@@ -342,9 +341,9 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Rosa, full circle ----------------
   'c10.rosa.reunion': {
     lines: [
-      { who: 'Rosa', text: 'You walked up from the valley? Sit, sit. The soup is hot and you look like wind.' },
+      { who: 'Rosa', text: 'You walked up from the valley? Sit. The soup is hot and you look like wind.' },
       { text: 'A bowl lands in front of you before you can answer. The same steam, the same green sharp something. Your eyes sting before the spoon is in it.' },
-      { who: 'Rosa', text: 'Ha! The whole ocean, and my soup still gets you. Write THAT in your new book, wawa. First page, as agreed.' },
+      { who: 'Rosa', text: 'Ha! The whole ocean, and my soup still gets you. First page of your new book, wawa, as agreed.' },
     ],
     effects: ['set:c10.rosa.seen'],
   },
@@ -361,7 +360,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.aurelio.soup': {
     lines: [
-      { text: 'From beside the well he lifts a cloth off a small pot. Soup. Still warm, as if it knew which boat you were on.' },
+      { text: 'He lifts a cloth off a small pot by the well. Soup, still warm, as if it knew which boat you were on.' },
       { who: 'Don Aurelio', text: 'The letter said it is always on. An old man\'s word should never be bigger than his pot.' },
     ],
     choices: [
@@ -375,30 +374,28 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.aurelio.omiyage': {
     lines: [
-      { text: 'You hand over the small wrapped thing that crossed an ocean to be here. He opens it the way he does everything: eventually.' },
-      { who: 'Don Aurelio', text: 'From the far side of the water. And you carried it the whole way, for an old man at a well.' },
+      { text: 'You hand over the small wrapped thing that crossed an ocean. He opens it the way he does everything: eventually.' },
       { who: 'Don Aurelio', text: 'Ayni, wawa. It crosses oceans fine. I always suspected it would.' },
     ],
     next: 'c10.aurelio.eat',
   },
   'c10.aurelio.ofrenda': {
     lines: [
-      { text: 'You tell him: the little parcel from the Seto sea was for him, and it went on her ofrenda in Oaxaca instead, between the marigolds and the bread.' },
-      { who: 'Don Aurelio', text: 'Then it reached the right hands by the long road. She always did take my share of the good things. Ayni keeps no tally between us two.' },
+      { text: 'You tell him: his parcel from the Seto sea went on her ofrenda in Oaxaca, between the marigolds and the bread.' },
+      { who: 'Don Aurelio', text: 'Then it reached the right hands by the long road. She always did take my share of the good things.' },
     ],
     next: 'c10.aurelio.eat',
   },
   'c10.aurelio.ledger': {
     lines: [
-      { text: 'You tell him about Doña Refugio, and a guelaguetza book, and a line that waited fifty years: Zoila, 1975. Owed.' },
-      { who: 'Don Aurelio', text: 'And you paid it. So the seed came up after all.' },
-      { who: 'Don Aurelio', text: 'A debt does not expire, I told you once. I did not tell you the other half: neither does the thanks.' },
+      { text: 'You tell him about a ledger in a valley, and a line that waited fifty years: Zoila, 1975. Owed.' },
+      { who: 'Don Aurelio', text: 'And you paid it. A debt does not expire, I told you once. Neither does the thanks.' },
     ],
     next: 'c10.aurelio.eat',
   },
   'c10.aurelio.eat': {
     lines: [
-      { text: 'You say yes to soup. The well rope creaks. Somewhere a loom keeps its slow time.' },
+      { text: 'You say yes to soup. The well rope creaks.' },
       { who: 'Don Aurelio', text: 'She would have liked this exact nothing, your grandmother. Most of what she loved was this exact nothing.' },
       { who: 'Don Aurelio', text: 'Eat. Then go be greeted; the village has been rehearsing.' },
     ],
@@ -413,8 +410,8 @@ export const RETURN_NODES: NodeMap = {
   'c10.carmen.reunion': {
     lines: [
       { who: 'Doña Carmen', text: 'The wrist, wawa. Show me the wrist first. Words after.' },
-      { text: 'You hold out the band: terracotta, sky, gold, violet, all of it weathered to something quieter. She reads it row by row.' },
-      { who: 'Doña Carmen', text: 'Salt in this row. Ship rope here, see the shine. This fade is a strong sun, a fair one. And this stain is candle smoke.' },
+      { text: 'You hold out the band, weathered to something quieter. She reads it row by row.' },
+      { who: 'Doña Carmen', text: 'Salt in this row. Ship rope here, see the shine. And this stain is candle smoke.' },
     ],
     effects: ['set:c10.carmen.seen'],
     choices: [
@@ -425,23 +422,22 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.carmen.kanga': {
     lines: [
-      { text: 'You unfold the kanga: printed birds, a border, a proverb along the hem. One was worn. This one was always meant for giving.' },
-      { who: 'Doña Carmen', text: 'Cloth that speaks in letters! Ha. Mine speaks without them. Now they can argue on the same wall.' },
-      { who: 'Doña Carmen', text: 'A cloth kept for giving is a debt kept warm. Whoever taught you that, wawa, she and I would agree on everything.' },
+      { text: 'You unfold the kanga: printed birds, a proverb along the hem, kept for giving.' },
+      { who: 'Doña Carmen', text: 'Cloth that speaks in letters! Mine speaks without them. Now they can argue on the same wall.' },
     ],
     next: 'c10.carmen.sit',
   },
   'c10.carmen.ofrenda': {
     lines: [
-      { text: 'You tell her about a cloth that speaks in letters, folded for giving, and how it went on Nani\'s ofrenda in Oaxaca, under the candles.' },
-      { who: 'Doña Carmen', text: 'Good. A cloth kept for giving went to the one who taught you to keep one. My wall can wait; hers could not.' },
+      { text: 'You tell her about a cloth that speaks in letters, and how it went on Nani\'s ofrenda in Oaxaca, under the candles.' },
+      { who: 'Doña Carmen', text: 'Good. It went to the one who taught you to keep one. My wall can wait; hers could not.' },
     ],
     next: 'c10.carmen.sit',
   },
   'c10.carmen.sit': {
     lines: [
       { text: 'You sit. The wichuna picks, the colors change, the sun does its slow arithmetic across the courtyard.' },
-      { who: 'Doña Carmen', text: 'The granddaughter in Lima wears the other lliclla now. Somewhere down there, your crooked row is keeping a stranger warm.' },
+      { who: 'Doña Carmen', text: 'The granddaughter in Lima wears the other lliclla now. Your crooked row is keeping a stranger warm.' },
     ],
   },
 
@@ -454,9 +450,9 @@ export const RETURN_NODES: NodeMap = {
    */
   'c10.carmen.decided': {
     lines: [
-      { text: 'The wichuna picks, a row closes, another opens. She does not look up, which is how you know this was settled before you walked in.' },
-      { who: 'Doña Carmen', text: 'The well, last night. Half this village around one jug, and your grandmother, who is the argument we never finish.' },
-      { who: 'Doña Carmen', text: 'She went west in a hurry and skipped the goodbyes. Some of us have stayed short about it for fifty years, wawa, and we earned that.' },
+      { text: 'She does not look up from the loom, which is how you know this was settled before you walked in.' },
+      { who: 'Doña Carmen', text: 'The well, last night. Half this village around one jug, and your grandmother, the argument we never finish.' },
+      { who: 'Doña Carmen', text: 'She went west in a hurry and skipped the goodbyes. Some of us stayed short about it for fifty years. We earned that.' },
     ],
     choices: [
       { text: '"She left badly and she meant to come back. Both are true."', goto: 'c10.her.both' },
@@ -468,27 +464,42 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { who: 'Doña Carmen', text: 'Meaning to is not a road. But you walked the one she meant, so her meaning can stand where I can see it.' },
     ],
-    next: 'c10.carmen.stone',
+    next: 'c10.carmen.row',
   },
   'c10.her.angry': {
     lines: [
-      { who: 'Doña Carmen', text: 'We did not ask permission, wawa. Fifty years of short answers do not undo in one afternoon; they wear down, like a step.' },
+      { who: 'Doña Carmen', text: 'We did not ask permission, wawa. Fifty years of short answers wear down like a step, not in one afternoon.' },
     ],
-    next: 'c10.carmen.stone',
+    next: 'c10.carmen.row',
   },
   'c10.her.places': {
     lines: [
-      { text: "You name them in the book's order: a fishing town, a ship, a bay, two markets, a green backwater, a bench in the long rains, a mountain that smokes." },
-      { who: 'Doña Carmen', text: 'Three days you have been telling us where she was. That is more news of her than this village has had in fifty years.' },
+      { text: "You name them in the book's order: a fishing town, a ship, a bay, two markets, a backwater, a bench in the rains, a mountain that smokes." },
+      { who: 'Doña Carmen', text: 'More news of her than this village has had in fifty years.' },
     ],
-    next: 'c10.carmen.stone',
+    next: 'c10.carmen.row',
   },
+  'c10.carmen.row': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Now let me close this row. Come back when it is done. The rest wants my hands still.' },
+    ],
+    effects: ['set:c10.carmen.told'],
+  },
+  // The second visit. The row is finished and the loom stops, which it never
+  // does; the verdict is a stone put in your hands for the apacheta, the
+  // mountain's own way of saying someone arrived.
   'c10.carmen.stone': {
     lines: [
-      { text: 'She ties off the row. Then she does something you have not once seen her do: she stops the loom.' },
-      { who: 'Doña Carmen', text: 'So it is decided, and it is not a pardon. She still went the wrong way out of this village, and that stays said.' },
-      { who: 'Doña Carmen', text: 'She put a stone on the apacheta going out. Nobody laid the one that says she arrived, because nobody knew where to say she arrived at.' },
-      { who: 'Doña Carmen', text: 'Sunday we walk up and lay it, and you carry it. You are the only one here who can say the name of the place.' },
+      { text: 'The row is tied off. Then she does something you have not once seen her do: she stops the loom.' },
+      { who: 'Doña Carmen', text: 'So it is decided, and it is not a pardon. She went the wrong way out of this village, and that stays said.' },
+      { who: 'Doña Carmen', text: 'She put a stone on the apacheta going out. Nobody laid the one that says she arrived; nobody knew where.' },
+    ],
+    next: 'c10.carmen.stone2',
+  },
+  'c10.carmen.stone2': {
+    lines: [
+      { text: 'From the sill she takes a river stone, smooth as a worn step, and sets it in your palm.' },
+      { who: 'Doña Carmen', text: 'Sunday we walk up and you carry it. You are the only one here who can say the name of the place.' },
     ],
     effects: ['set:c10.carmen.her', 'journal:her.return'],
   },
@@ -498,8 +509,7 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'You find Justina in the terraces. You are, of course, standing on her potatoes.' },
       { who: 'Justina', text: 'Off the potatoes, wawa. Some things the ocean cannot teach, clearly.' },
-      { who: 'Justina', text: 'Now come here. Let me see what the world fed you.' },
-      { who: 'Justina', text: 'Hm. Not enough papa. We fix the deficiency first and talk second; the stream will keep your place in the conversation.' },
+      { who: 'Justina', text: 'Now come here. Hm. Not enough papa. We fix that first and talk second.' },
     ],
     effects: ['set:c10.justina.seen'],
   },
@@ -508,8 +518,8 @@ export const RETURN_NODES: NodeMap = {
   'c10.mateo.reunion': {
     lines: [
       { who: 'Mateo', text: 'No way. NO WAY.' },
-      { who: 'Mateo', text: 'I told the whole ridge you were coming back. The signal is good up there, and gossip travels at signal speed.' },
-      { who: 'Mateo', text: 'Everyone says the village is emptying. But you left and came BACK. I am going to be insufferable about this for years.' },
+      { who: 'Mateo', text: 'I told the whole ridge you were coming back. Gossip travels at signal speed.' },
+      { who: 'Mateo', text: 'Everyone says the village is emptying. You left and came BACK. I will be insufferable about this for years.' },
     ],
     effects: ['set:c10.mateo.seen'],
   },
@@ -517,9 +527,9 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Don Teófilo ----------------
   'c10.teofilo.reunion': {
     lines: [
-      { who: 'Don Teófilo', text: 'The bundle-carrier! Rosa told the whole room before your boat touched the pier, I am fairly sure.' },
+      { who: 'Don Teófilo', text: 'The bundle-carrier! Rosa told the room before your boat touched the pier.' },
       { text: 'He fills two glasses. Without thinking, your first splash goes to the floor. The room notices. The room approves.' },
-      { who: 'Don Teófilo', text: 'Ha! The earth still drinks first. Tomakusunchis, friend; sit down forever.' },
+      { who: 'Don Teófilo', text: 'Ha! The earth still drinks first. Tomakusunchis.' },
     ],
     effects: ['set:c10.teofilo.seen'],
   },
@@ -527,8 +537,8 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- the dog ----------------
   'c10.allqu.reunion': {
     lines: [
-      { text: 'A tan blur detonates across the plaza. The dog has identified you from a distance of one entire village.' },
-      { text: 'There is leaning. There is a full-body wag with structural implications. Professional composure is nowhere to be found, and is not missed.' },
+      { text: 'A tan blur detonates across the plaza. The dog has identified you from one village away.' },
+      { text: 'There is leaning. There is a full-body wag with structural implications.' },
       { text: 'You get down to proper petting altitude. It waited the whole time.' },
     ],
     effects: ['set:c10.allqu.seen'],
@@ -537,46 +547,46 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- Pilar, in person at last ----------------
   'c10.pilar.puffer': {
     lines: [
-      { text: 'The sign has been repainted: PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign now, and knows it.' },
-      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I. Nine and a half.' },
-      { text: 'She marches you to the rail. In a crate labeled MUSEUM OF THE SEA: the puffer fish, permanently astonished, on a bed of lucky rocks.' },
-      { who: 'Pilar', text: 'Exhibit one. It came by post from the actual sea. Admission is one fact, waived for staff, and you are staff.' },
+      { text: 'The sign now reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign.' },
+      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I.' },
+      { text: 'In a crate labeled MUSEUM OF THE SEA: the puffer fish, permanently astonished, on lucky rocks.' },
+      { who: 'Pilar', text: 'Exhibit one. Admission is one fact, waived for staff. You are staff.' },
     ],
     effects: ['set:c10.pilar.seen'],
     next: 'c10.pilar.museum',
   },
   'c10.pilar.star': {
     lines: [
-      { text: 'The sign has been repainted: PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign now, and knows it.' },
-      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I. Nine and a half.' },
-      { text: 'She marches you to the rail. In a crate labeled MUSEUM OF THE SEA: the four-armed sea star, arranged on a bed of lucky rocks.' },
-      { who: 'Pilar', text: 'Exhibit one. Proof the sea does things approximately. Visitors argue with the arithmetic; arguing doubles the toll.' },
+      { text: 'The sign now reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign.' },
+      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I.' },
+      { text: 'In a crate labeled MUSEUM OF THE SEA: the four-armed sea star, on lucky rocks.' },
+      { who: 'Pilar', text: 'Exhibit one. Proof the sea does things approximately. Arguing with it doubles the toll.' },
     ],
     effects: ['set:c10.pilar.seen'],
     next: 'c10.pilar.museum',
   },
   'c10.pilar.claw': {
     lines: [
-      { text: 'The sign has been repainted: PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign now, and knows it.' },
-      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I. Nine and a half.' },
-      { text: 'She marches you to the rail. In a crate labeled MUSEUM OF THE SEA: the crab claw, comma of the sea, on a bed of lucky rocks.' },
-      { who: 'Pilar', text: 'Exhibit one. A comma means the sea was not finished. That is real curation; I looked up the word.' },
+      { text: 'The sign now reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign.' },
+      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I.' },
+      { text: 'In a crate labeled MUSEUM OF THE SEA: the crab claw, on lucky rocks.' },
+      { who: 'Pilar', text: 'Exhibit one. A comma means the sea was not finished. That is curation; I looked up the word.' },
     ],
     effects: ['set:c10.pilar.seen'],
     next: 'c10.pilar.museum',
   },
   'c10.pilar.plain': {
     lines: [
-      { text: 'The sign has been repainted: PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign now, and knows it.' },
-      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I. Nine and a half.' },
-      { who: 'Pilar', text: 'The museum has a spot reserved for the sea thing you still owe me. The invoice compounds. Ask Mateo what compounds means.' },
+      { text: 'The sign now reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign.' },
+      { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I.' },
+      { who: 'Pilar', text: 'The museum has a spot reserved for the sea thing you still owe me. The invoice compounds.' },
     ],
     effects: ['set:c10.pilar.seen'],
     next: 'c10.pilar.museum',
   },
   'c10.pilar.museum': {
     lines: [
-      { who: 'Pilar', text: 'The museum accepts donations. It also accepts facts, rocks, and staring respectfully.' },
+      { who: 'Pilar', text: 'The museum accepts donations, facts, rocks, and respectful staring.' },
     ],
     choices: [
       { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] } },
@@ -586,24 +596,23 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.pilar.wing': {
     lines: [
-      { text: 'You hand over the small bright thing from a festival on the far side of the ocean. She inspects it like customs. Twice.' },
+      { text: 'You hand over the small bright thing from the festival. She inspects it like customs. Twice.' },
       { who: 'Pilar', text: 'A foreign acquisition. The museum is now international. That changes the stationery.' },
-      { text: 'It gets its own crate, beside the sea thing. Exhibit two. The museum has doubled; the gift-shop rocks watch enviously.' },
     ],
     next: 'c10.pilar.stare',
   },
   'c10.pilar.ofrenda': {
     lines: [
-      { text: 'You explain: there was an omiyage, bright, from a festival across the ocean, chosen for her. It went on your Nani\'s ofrenda in Oaxaca instead.' },
-      { who: 'Pilar', text: 'Loaned to a sister institution. Acceptable. The museum will display the paperwork.' },
+      { text: 'You explain: her omiyage went on your Nani\'s ofrenda in Oaxaca instead.' },
+      { who: 'Pilar', text: 'Loaned to a sister institution. Acceptable.' },
       { text: 'She writes OMIYAGE (ON LOAN, OAXACA) on a card and props it against an empty crate. It is, somehow, the best exhibit.' },
     ],
     next: 'c10.pilar.stare',
   },
   'c10.pilar.stare': {
     lines: [
-      { text: 'You stare respectfully. The exhibits stare back the way only museum pieces and Pilar can.' },
-      { who: 'Pilar', text: 'The museum closes at dark or when I am called for dinner, whichever wins. Staff may visit whenever. You are staff.' },
+      { text: 'You stare respectfully. The exhibits, and Pilar, stare back.' },
+      { who: 'Pilar', text: 'The museum closes at dark or at dinner, whichever wins. Staff may visit whenever.' },
     ],
   },
   'c10.pilar.after': {
@@ -615,13 +624,13 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- the young traveler at the east gate ----------------
   'c10.traveler.pre': {
     lines: [
-      { text: 'A young traveler stands at the signpost, mouthing the distances. They do not look up. You are scenery today.' },
+      { text: 'A young traveler at the signpost is mouthing the distances. You are scenery today.' },
     ],
   },
   'c10.traveler.first': {
     lines: [
-      { text: 'A young traveler is reading the signpost, boots new, journal newer. They look at you, then at the road down, then back.' },
-      { who: 'Traveler', text: 'You came up from the coast, no? I am going the other way. All the ways, maybe. Is there anything I should know?' },
+      { text: 'A young traveler is reading the signpost, boots new, journal newer.' },
+      { who: 'Traveler', text: 'Up from the coast? I am going the other way. All the ways, maybe. What should I know?' },
     ],
     choices: [
       { text: '"Walk slowly. That is the whole trick."', goto: 'c10.torch.slow' },
@@ -631,7 +640,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.torch.slow': {
     lines: [
-      { who: 'Traveler', text: 'Walk slowly? The road is long. I had planned to hurry the flat parts.' },
+      { who: 'Traveler', text: 'Walk slowly? I had planned to hurry the flat parts.' },
       { text: 'They write it down anyway, on the first page, where it belongs.' },
     ],
     effects: ['set:c10.torch', 'journal:people.traveler'],
@@ -639,33 +648,33 @@ export const RETURN_NODES: NodeMap = {
   'c10.torch.soup': {
     lines: [
       { who: 'Traveler', text: 'Yes to soup. That is the advice? The whole advice?' },
-      { text: 'You nod with the calm of someone who has eaten the evidence. They write it on the first page.' },
+      { text: 'You nod with the calm of someone who has eaten the evidence. They write it down.' },
     ],
     effects: ['set:c10.torch', 'journal:people.traveler'],
   },
   'c10.torch.correct': {
     lines: [
       { who: 'Traveler', text: 'Let people correct me. Huh. At home that is called losing.' },
-      { text: 'Out there it is called learning, you say, and thank them twice. They write it down slowly, like it is already correcting them.' },
+      { text: 'Out there it is called learning, you say. They write it down slowly, like it is already correcting them.' },
     ],
     effects: ['set:c10.torch', 'journal:people.traveler'],
   },
   'c10.traveler.mail': {
     lines: [
-      { who: 'Traveler', text: 'Oh, good, you. The harbor office flagged me down on the way up. Mail that has been chasing you across an ocean, they said.' },
-      { text: 'The envelope has been forwarded so many times the address is mostly corrections. The stamp shows a wave, and a very confident bird.' },
+      { who: 'Traveler', text: 'Oh, good, you. The harbor office gave me this on the way up. It has been chasing you across an ocean.' },
+      { text: 'The address is mostly corrections. The stamp shows a wave and a very confident bird.' },
     ],
     effects: ['set:c10.traveler.mail', 'letter:australia.hook'],
   },
   'c10.traveler.after': {
     lines: [
-      { who: 'Traveler', text: 'I leave with the first light. Down, then out, then we will see. That is the entire itinerary, and I am proud of it.' },
+      { who: 'Traveler', text: 'I leave with the first light. Down, then out, then we will see. That is the entire itinerary.' },
       { text: 'The signpost says MORE. They keep reading it like it is addressed to them. It is.' },
     ],
   },
   'c10.traveler.idle': {
     lines: [
-      { text: 'The traveler paces the gate, checking the signpost against a hand-drawn map that is mostly hope.' },
+      { text: 'The traveler checks the signpost against a hand-drawn map that is mostly hope.' },
     ],
   },
 
@@ -674,22 +683,22 @@ export const RETURN_NODES: NodeMap = {
   // finished the book in front of them.
   'c10.rosa.post': {
     lines: [
-      { who: 'Rosa', text: 'The flag is up, wawa, and you know exactly what that means. The pot never believed you left; do not argue with the pot.' },
+      { who: 'Rosa', text: 'The flag is up, wawa. The pot never believed you left; do not argue with the pot.' },
     ],
   },
   'c10.justina.post': {
     lines: [
-      { who: 'Justina', text: 'You are standing near my potatoes again. Good; Sunday there will be digging, and your legs still owe the terraces.' },
+      { who: 'Justina', text: 'Near my potatoes again. Sunday there is digging; your legs still owe the terraces.' },
     ],
   },
   'c10.mateo.post': {
     lines: [
-      { who: 'Mateo', text: 'The ridge already knows the journal is finished. Signal speed, like I said; I may have been the signal.' },
+      { who: 'Mateo', text: 'The ridge already knows the journal is finished. I may have been the signal.' },
     ],
   },
   'c10.carmen.post': {
     lines: [
-      { who: 'Doña Carmen', text: 'The loom keeps its slow time and so do you now, wawa. Sit when you like; a straight row is still a pleasure.' },
+      { who: 'Doña Carmen', text: 'The loom keeps its slow time, and so do you now, wawa. Sit when you like.' },
     ],
   },
   'c10.teofilo.post': {
@@ -704,7 +713,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.faustino.post': {
     lines: [
-      { who: 'Faustino', text: 'The fire is honest and the wind has conceded nothing. Sit, walker; home roads still count as roads.' },
+      { who: 'Faustino', text: 'The fire is honest. Sit, walker; home roads still count as roads.' },
     ],
   },
   'c10.paca.post': {
@@ -716,8 +725,7 @@ export const RETURN_NODES: NodeMap = {
   // ---------------- the well: the last page ----------------
   'c10.well.wishnani': {
     lines: [
-      { text: 'The well. The tin cup still hangs for anyone who thirsts. In Shionoura you tied a wish to bamboo, and the wish was about her.' },
-      { text: 'You sit where she sat. The wish and the well regard each other. Neither blinks first.' },
+      { text: 'The well. In Shionoura you tied a wish to bamboo, and the wish was about her. You sit where she sat.' },
     ],
     next: 'c10.lastpage',
   },
@@ -788,13 +796,12 @@ export const RETURN_NODES: NodeMap = {
   'c10.well.notyet': {
     lines: [
       { text: 'The well. You reach for the journal, and your hand stops on the band instead.' },
-      { text: 'The last page can wait an afternoon. Doña Carmen has something to say before it is written, and she is at her loom.' },
+      { text: 'The last page can wait. Doña Carmen has something to say first, and she is at her loom.' },
     ],
   },
   'c10.well.after': {
     lines: [
-      { text: 'The well, older than the church. The water, older than everything. Your page, the newest thing here, already settling in.' },
-      { text: 'Have some water. It is nobody\'s to sell.' },
+      { text: 'The well, older than the church. Your page, the newest thing here, already settling in. The water is nobody\'s to sell.' },
     ],
   },
 };

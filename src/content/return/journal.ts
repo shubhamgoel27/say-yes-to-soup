@@ -87,7 +87,12 @@ export const RETURN_TASKS: TaskDef[] = [
     who: 'chasca',
   },
   {
-    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen'], not: ['c10.carmen.her'] },
+    when: { has: ['c10.carmen.told'], not: ['c10.carmen.her'] },
+    text: 'Doña Carmen said the hard half and went back to her row. Give her the length of it, then return to the loom for the rest.',
+    who: 'carmen',
+  },
+  {
+    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen'], not: ['c10.carmen.her', 'c10.carmen.told'] },
     text: 'Word came down from the well: they talked about her last night, all of them, and Doña Carmen is the one who says it out loud. She is at her loom.',
     who: 'carmen',
   },

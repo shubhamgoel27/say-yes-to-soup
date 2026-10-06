@@ -168,6 +168,13 @@ export const SICILY_JOURNAL: JournalEntry[] = [
     you: 'Same men, same table, same argument since 1961. Nobody ever sat in the fifth chair, and nobody ever moved it either.',
   },
   {
+    id: 'customs.sendoff',
+    tab: 'customs',
+    title: 'The send-off',
+    sub: 'A goodbye done properly, by five definitions at once.',
+    you: 'Concetta fed it, Turi sang it, Saro tried to bless it, Alfio corrected it, and the horn ended it. Whatever Alfio shouted last ended in an O, I am sure. ArancinO, probably. Or ritorno. In that town they may be the same word.',
+  },
+  {
     id: 'customs.abbanniata',
     tab: 'customs',
     title: 'The abbanniata',

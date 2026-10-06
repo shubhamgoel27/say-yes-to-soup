@@ -217,10 +217,13 @@ describe('a second reading: the words come with you, nothing else does', () => {
       if (node.next) walk(node.next, seen);
       for (const c of node.choices ?? []) walk(c.goto, seen);
     };
-    let before = -1;
+    let before = '';
     let guard = 0;
-    while (state.pageCount() !== before && guard++ < 100) {
-      before = state.pageCount();
+    // Settle on flags as well as pages: a talk told across two visits
+    // (Carmen's verdict) changes the world without granting a page.
+    const progress = () => `${state.pageCount()}|${[...state.flagSet()].sort().join(',')}`;
+    while (progress() !== before && guard++ < 100) {
+      before = progress();
       for (const npc of NPCS) {
         const entry = npc.entry.find((e) => state.check(e.when));
         if (entry) walk(entry.node, new Set());
