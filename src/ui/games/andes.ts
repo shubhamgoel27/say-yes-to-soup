@@ -38,6 +38,8 @@ const HARD_DECAY = 0.1; // glow lost per second, fire and collapse both
 const HARD_GAIN = 0.1; // per on-beat press; off-beat presses land differently
 const BEAT_MIN = 0.35; // a gap under this chokes the fire
 const BEAT_MAX = 0.95; // a gap over this is a late press, counted for coaching
+/** Story telling: a feed closer than this to the last press smothers, adds nothing. */
+const STORY_BEAT_MIN = 0.25;
 const CHOKE_LOSS = 0.06; // glow lost when the fire chokes on piled presses
 const HARD_FUEL = 20; // seconds of fuel; the glow must peak before it spends
 const COLLAPSE_FLOOR = 0.7; // commit above this heat or the papas stay raw
@@ -416,6 +418,7 @@ export class WatiaPanel {
   private lastFeed = -1; // pulse-clock time of the previous feed press
   private chokes = 0; // presses piled closer than BEAT_MIN
   private lates = 0; // presses further apart than BEAT_MAX
+  private lastLand = -9; // story: pulse-clock time of the last feed that landed
 
   // Visual state only; game logic never reads any of this.
   private scene = new Scene();
@@ -456,6 +459,7 @@ export class WatiaPanel {
     this.lastFeed = -1;
     this.chokes = 0;
     this.lates = 0;
+    this.lastLand = -9;
     this.hint = this.hard
       ? 'Tonight the dome keeps its order: footings, then shoulders, then the crown.'
       : 'Big ones at the bottom. Arrows pick a spot; Space sets the clod.';
@@ -555,6 +559,28 @@ export class WatiaPanel {
         }
       }
     } else if (this.phase === 'fire') {
+      if (!this.hard) {
+        // The story fire forgives a slow hand, never a flurry: presses piled
+        // on top of each other smother the mouth and add nothing.
+        const gap = this.lastFeed < 0 ? 1 : this.pulse - this.lastFeed;
+        this.lastFeed = this.pulse;
+        // Even a flurry lands a clod about once a second, so a mashing hand
+        // is slow, never stuck.
+        if (gap < STORY_BEAT_MIN && this.pulse - this.lastLand < 1) {
+          this.chokes++;
+          if (this.chokes % 4 === 1) {
+            this.scene.burst(300, 254, {
+              n: calm() ? 2 : 5, kind: 'puff', color: 'rgba(120,110,100,0.5)', speed: 36, grav: -60, life: 0.6, size: 4,
+            });
+          }
+          this.hint =
+            this.chokes >= 6
+              ? 'Justina laughs and fans the smoke away. "You are feeding it like a dog feeds itself. One clod a heartbeat, wawa."'
+              : 'Too quick; the clods smother the flame. Steady presses, like a heartbeat.';
+          return;
+        }
+        this.lastLand = this.pulse;
+      }
       if (this.hard) {
         const gap = this.lastFeed < 0 ? -1 : this.pulse - this.lastFeed;
         this.lastFeed = this.pulse;
@@ -581,7 +607,9 @@ export class WatiaPanel {
         this.hint =
           this.best > 1.2
             ? 'Justina whistles, long and low. The clods are practically stars. Space: bring it all down on the papas.'
-            : 'The clods glow like a small sunset. Space: bring the dome down on the papas.';
+            : !this.hard && this.chokes === 0
+              ? 'The clods glow like a small sunset, fed on a true heartbeat. Justina nods once, which is a lot from her. Space: bring the dome down.'
+              : 'The clods glow like a small sunset. Space: bring the dome down on the papas.';
       } else if (this.glow > 0.75) {
         this.hint = 'Almost. The clods are blushing. Keep the rhythm.';
       } else {
@@ -592,7 +620,12 @@ export class WatiaPanel {
       this.phase = 'done';
       this.audio.weaveDone();
       this.animCollapse();
-      this.hint = 'WHUMP. Earth over embers over papas. The field is cooking its own. Press Space.';
+      this.hint =
+        !this.hard && this.chokes >= 6
+          ? 'WHUMP. Earth over embers over papas. Justina is still fanning your smoke out of her braid, grinning. The field is cooking its own. Press Space.'
+          : !this.hard && this.chokes === 0
+            ? 'WHUMP. Earth over embers over papas, and not one clod wasted on the way. The field is cooking its own. Press Space.'
+            : 'WHUMP. Earth over embers over papas. The field is cooking its own. Press Space.';
     } else if (this.phase === 'done' || this.phase === 'lost') {
       this.live = false;
       this.root.hidden = true;

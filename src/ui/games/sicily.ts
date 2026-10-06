@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
+import { Hold } from './attend';
 
 /**
  * Sicily's three hands-on verbs, each painted as a small moving picture.
@@ -2106,6 +2107,11 @@ function miniCannolo(): HTMLCanvasElement {
   return cv;
 }
 
+/** Story telling: seconds Alfio keeps the bag after an end stopped hungry. */
+const ALFIO_HOLD = 0.8;
+/** Grabs inside one hold before he hands it back anyway. */
+const ALFIO_PATIENCE = 3;
+
 type CannoloPhase = 'pipe' | 'burst' | 'garnish' | 'served' | 'failed' | 'done';
 
 const CANNOLO_LEGEND = [
@@ -2134,6 +2140,9 @@ export class CannoloPanel {
   // The run's own record, so the tendency can be coached specifically.
   private overs = 0; // shells burst by riding the flow too far
   private unders = 0; // ends stopped shy of the gold
+  // Story attention: an end stopped hungry and Alfio takes the bag back for a
+  // second to show you the gold; grabbing for it keeps it in his hands.
+  private alfio = new Hold();
 
   private scene: Scene | null = null;
   private setHint: (h: string) => void = () => {};
@@ -2164,6 +2173,7 @@ export class CannoloPanel {
     this.faults = 0;
     this.overs = 0;
     this.unders = 0;
+    this.alfio.reset();
     this.phase = 'pipe';
     this.shell = 0;
     this.end = 0;
@@ -2199,6 +2209,7 @@ export class CannoloPanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
+    this.alfio.tick(dt);
     if (this.phase === 'pipe' && this.flowing) {
       this.fill += dt * this.speed;
       if (this.fill >= 1) {
@@ -2320,6 +2331,14 @@ export class CannoloPanel {
       return;
     }
     if (this.phase === 'pipe') {
+      if (this.alfio.on) {
+        if (this.alfio.streak < ALFIO_PATIENCE) {
+          this.alfio.start(ALFIO_HOLD);
+          return;
+        }
+        this.alfio.release();
+        this.hint = 'Alfio hands the bag back with a sigh. "Fine. But this time, watch the shell, not your thumb."';
+      }
       if (!this.flowing) {
         this.flowing = true;
         this.hint =
@@ -2344,7 +2363,8 @@ export class CannoloPanel {
             '"No. She sat hungry; she would have sagged by the piazza." He scrapes the end clean and eats the evidence. ' +
             `That is ${this.faults} of the three the feast can spare. That end again, from empty, all the way to the gold.`;
         } else {
-          this.hint = 'Alfio squints down the shell. "That end is still hungry, friend. Again, with courage." The flow waits on your thumb.';
+          this.alfio.start(ALFIO_HOLD);
+          this.hint = 'Alfio takes the bag back for a second and squints down the shell. "Still hungry, friend. The gold is further in. Again, with courage."';
         }
       } else if (this.hard && this.fill > this.zoneLo + this.zoneW) {
         // On feast night the gold is the whole law: an end ridden past it
@@ -2419,7 +2439,11 @@ export class CannoloPanel {
         }
         this.hint = this.hard
           ? 'Five shells at feast pace, zero soggy lies. Alfio looks at the bag, then at you, and does not hold out his hand. Tonight you carry it home. Press Space.'
-          : 'Three shells, three moments, zero soggy lies. Alfio holds out his hand for the bag with visible reluctance. Press Space.';
+          : this.overs + this.unders === 0
+            ? 'Three shells, six ends, every one stopped in the gold. Alfio holds out his hand for the bag with visible reluctance. Press Space.'
+            : this.unders >= 4
+              ? 'Three shells, filled a nervous inch at a time. "Cannoli by installment," Alfio says, and eats the crumbs off the board. Press Space.'
+              : 'Three shells, zero soggy lies, and a little ricotta on the board. Alfio holds out his hand for the bag. Press Space.';
         // Even a served queue can carry a tendency worth one warm sentence.
         this.coachTendency(false);
       }

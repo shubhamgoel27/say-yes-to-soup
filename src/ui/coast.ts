@@ -4,6 +4,7 @@ import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag 
 import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
 import { RUN, coach, freshRun, tip } from './games/run';
+import { Hold } from './games/attend';
 import { keysOrTaps } from './responsive';
 
 /**
@@ -302,6 +303,9 @@ function drawSwell(g: CanvasRenderingContext2D, wx: number, baseY: number, h: nu
   oval(g, wx - 46, baseY + 22, 32, 7, 'rgba(246,240,226,0.45)');
 }
 
+/** Story telling: seconds an eager paddle stays out of the water. */
+const EAGER_HOLD = 0.4;
+
 const WAVE_LEGEND = [
   { keys: ['space'], does: 'paddle as the swell reaches you' },
   { keys: ['left', 'right'], does: 'hold the middle on the ride' },
@@ -338,6 +342,18 @@ export class WavePanel {
   private lastEarlySwell = 0;
   private lastLateSwell = 0;
   private escapes = 0; // swells that rolled past unpunched
+
+  // The story telling's attention: an eager stroke leaves the paddle out of
+  // the water for a beat (mashing keeps it there), and two swells lost that
+  // way earn a slow, wide one that waits for you. The ride home leans too,
+  // so the arrows matter; a horse pinned on its rail rights itself in time.
+  private eager = new Hold();
+  private eagerEscapes = 0;
+  private lull = false; // the mercy swell: no hold on this one
+  private pinnedT = 0;
+  private lean = 0; // the chop's standing push on the ride, story only
+  private leanT = 0;
+  private holds = 0; // story: swells lost to an eager paddle, for the ending
 
   // Visual state only; game logic never reads these.
   private scene: Scene | null = null;
@@ -381,6 +397,13 @@ export class WavePanel {
     this.lastEarlySwell = 0;
     this.lastLateSwell = 0;
     this.escapes = 0;
+    this.eager.reset();
+    this.eagerEscapes = 0;
+    this.lull = false;
+    this.pinnedT = 0;
+    this.lean = 0;
+    this.leanT = 0;
+    this.holds = 0;
     this.balance = 0;
     this.drift = 0; // a fresh sea; the last run's chop does not carry over
     this.rideT = 0;
@@ -406,7 +429,8 @@ export class WavePanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     if (this.phase === 'paddle') {
-      this.x -= dt * this.speed;
+      this.x -= dt * (this.lull ? this.speed * 0.8 : this.speed);
+      this.eager.tick(dt);
       if (this.x < -0.08) {
         // The wave passed. In the story telling it shoves, it does not
         // punish; the hard water only offers so many swells. An early stroke
@@ -415,6 +439,7 @@ export class WavePanel {
           this.lateMisses++;
           this.lastLateSwell = this.swellIdx;
         }
+        const eagerLoss = !this.hard && this.earlyOnSwell;
         this.escapes++;
         this.swellIdx++;
         this.earlyOnSwell = false;
@@ -428,17 +453,51 @@ export class WavePanel {
           this.lose('Three swells got away, and the set is done. The sea shrugs you shoreward. Press Space.');
           return;
         }
-        this.hint =
-          this.hard
-            ? `It shoulders past. ${this.escapes === 1 ? 'Two more escapes and the set is spent.' : 'One more escape and the set is spent.'}`
-            : 'It rolls you back a little. Again: Space right as it arrives.';
+        this.eager.release();
+        if (eagerLoss) {
+          this.holds++;
+          this.eagerEscapes++;
+        }
+        if (!this.hard && this.eagerEscapes >= 2) {
+          // The mercy: a slow, wide swell that waits for the paddle.
+          this.lull = true;
+          this.eagerEscapes = 0;
+          this.hint = 'You are rowing the beach, compadre. The sea sends a slow, wide one; let it lift the bow, then Space.';
+        } else {
+          this.hint =
+            this.hard
+              ? `It shoulders past. ${this.escapes === 1 ? 'Two more escapes and the set is spent.' : 'One more escape and the set is spent.'}`
+              : eagerLoss
+                ? 'The paddle was still in the air when it arrived, and it rolls you back. Wait for it to reach the horse.'
+                : 'It rolls you back a little. Again: Space right as it arrives.';
+        }
       }
     } else if (this.phase === 'ride') {
       this.drift += (Math.random() - 0.5) * 2.6 * dt;
       this.drift = Math.max(-1, Math.min(1, this.drift));
       this.balance += this.drift * dt * this.driftMul;
+      if (!this.hard) {
+        // The story chop leans one way at a time, so a ride left alone ends
+        // up on a rail; only the arrows bring it home through the middle.
+        this.leanT -= dt;
+        if (this.leanT <= 0) {
+          this.lean = this.lean > 0 ? -1 : this.lean < 0 ? 1 : Math.random() < 0.5 ? -1 : 1;
+          this.leanT = 2.2 + Math.random() * 1.4;
+        }
+        this.balance += this.lean * dt * 0.42;
+      }
       this.balance = Math.max(-1, Math.min(1, this.balance));
       if (Math.abs(this.balance) < this.rideTol) this.rideT += dt;
+      if (!this.hard) {
+        // Never a wipe: a horse left on its rail rights itself, reed-fashion.
+        this.pinnedT = Math.abs(this.balance) >= this.rideTol ? this.pinnedT + dt : 0;
+        if (this.pinnedT > 4) {
+          this.pinnedT = 0;
+          this.balance *= 0.2;
+          this.drift = 0;
+          this.hint = 'The caballito rights itself, the way reed does. Lean against the drift with the arrows and it carries you home.';
+        }
+      }
       if (this.hard) {
         // A rail held under is a swim; the story telling never wipes.
         if (Math.abs(this.balance) >= 0.98) {
@@ -459,7 +518,12 @@ export class WavePanel {
       if (this.rideT >= this.rideNeed) {
         this.phase = 'done';
         this.audio.weaveDone();
-        this.hint = 'The wave sets you down on the sand like a parcel. Press Space.';
+        this.hint =
+          !this.hard && this.escapes === 0
+            ? 'Three strokes, three swells, not one wasted. The wave sets you down on the sand like a parcel, and the boys on the beach whistle. Press Space.'
+            : !this.hard && this.holds >= 2
+              ? 'The wave sets you down on the sand like a parcel, mostly sideways. Someone on the beach is laughing kindly. Press Space.'
+              : 'The wave sets you down on the sand like a parcel. Press Space.';
         // Won with a wobble: the card promised two escapes, so the win (and
         // the hard star) stands, and the next how-to card owes the fix as a tip.
         if (this.earlyMisses + this.lateMisses > 0) tip('wave.start', this.paddleAdvice());
@@ -512,11 +576,20 @@ export class WavePanel {
 
   onAction() {
     if (this.phase === 'paddle') {
+      if (this.eager.on) {
+        // The paddle is still coming back from the last eager stroke; pushing
+        // again only keeps it in the air.
+        this.eager.start(EAGER_HOLD);
+        this.paddleK = Math.min(this.paddleK, 0.5);
+        return;
+      }
       // The strike zone: the wave is on top of you.
       if (this.x <= this.zoneHi && this.x >= this.zoneLo) {
         this.waves++;
         this.swellIdx++;
         this.earlyOnSwell = false;
+        this.lull = false;
+        this.eagerEscapes = 0;
         this.audio.slosh();
         const sc = this.scene!;
         this.paddleK = 0;
@@ -553,6 +626,8 @@ export class WavePanel {
         this.scene!.thump(calm() ? 0 : 2, 0.02);
         if (!calm()) this.scene!.burst(this.hx + 70, 244, { n: 5, color: 'rgba(246,240,226,0.7)', speed: 60, grav: 200, size: 2.4, life: 0.4 });
         this.hint = this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.';
+        // Story only: an eager stroke leaves the paddle in the air a beat.
+        if (!this.hard && !this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
       }
     } else if (this.phase === 'done' || this.phase === 'lost') {
       this.root.hidden = true;
@@ -1327,6 +1402,9 @@ const MISE: { tag: string; x: number }[] = [
 const MISE_Y = 50;
 let miseCache: Surface | null = null;
 
+/** Story telling: seconds Petro keeps the bowl after an early pull. */
+const PETRO_HOLD = 0.6;
+
 const CEVICHE_LEGEND = [
   { keys: ['space'], does: 'the next move, on the lit thing' },
 ] as const;
@@ -1364,6 +1442,13 @@ export class CevichePanel {
   // The run's own record, for the coach line.
   private earlies = 0; // pulls before the bar brightened
   private lastEarlyKiss = 0;
+
+  // Story attention: an early pull and Petro takes the bowl back for a
+  // second (pulling at her only keeps her holding it). A fish lost that way
+  // earns a fish she lets you pull unhindered, so nobody is locked out.
+  private petro = new Hold();
+  private fishEarly = 0; // early pulls on the fish now in the lime
+  private trust = false; // the mercy fish: no hold
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -1404,6 +1489,9 @@ export class CevichePanel {
     this.lost = false;
     this.earlies = 0;
     this.lastEarlyKiss = 0;
+    this.petro.reset();
+    this.fishEarly = 0;
+    this.trust = false;
     this.hint = 'The dawn lisa, the board, the knife. Space to cut: even pieces, no ceremony.';
     this.root.hidden = false;
     this.scene ??= new Scene();
@@ -1422,10 +1510,15 @@ export class CevichePanel {
     if (!sc) return;
     if (this.step === 'lime' && !this.lost) {
       this.kiss += dt * this.kissRate;
+      this.petro.tick(dt);
       if (this.kiss >= 1) {
         // Too long in the lime. Petro's verdict is warm and non-negotiable.
         this.spoiled++;
         this.kiss = 0;
+        const grabby = !this.hard && this.fishEarly > 0;
+        this.fishEarly = 0;
+        this.petro.release();
+        if (grabby) this.trust = true;
         this.audio.bump();
         sc.thump(calm() ? 0 : 4, 0.05);
         if (!calm()) sc.burst(BOWL_X, BOWL_Y - 20, { n: 12, kind: 'puff', color: 'rgba(214,208,196,0.7)', speed: 40, grav: -30, size: 6, life: 0.8 });
@@ -1440,7 +1533,9 @@ export class CevichePanel {
         this.milk = Math.min(this.milk, 0.3);
         this.hint = this.hard
           ? '"Cooked to death, corazón." She hands you the LAST lisa. "The lime kisses. It does not marry." Out in the bright sliver, or the noon goes on without you.'
-          : this.spoiled === 1
+          : grabby
+            ? '"Cooked to death while you wrestled me for the bowl." She laughs and lets go of it. "This one is yours. Hands off until the bar burns bright."'
+            : this.spoiled === 1
             ? '"Cooked to death, corazón." She eats the evidence and hands you more fish. "The lime kisses. It does not marry."'
             : '"Again dead! Good, I was hungry." More fish arrives. Pull it OUT while the bar burns bright.';
       }
@@ -1507,6 +1602,12 @@ export class CevichePanel {
         break;
       }
       case 'lime': {
+        if (this.petro.on) {
+          // Petro still has the bowl; tugging at it only keeps it in her hands.
+          this.petro.start(PETRO_HOLD);
+          sc?.wobble(2);
+          break;
+        }
         if (this.kiss >= this.zoneLo && this.kiss < this.zoneHi) {
           this.audio.weaveNote(4);
           this.advance();
@@ -1518,7 +1619,13 @@ export class CevichePanel {
           this.lastEarlyKiss = this.kiss;
           this.audio.bump();
           sc?.thump(calm() ? 0 : 2, 0.02);
-          this.hint = 'Too soon; the lime has barely said hello. Back in. Wait for the bright zone, then pull.';
+          this.fishEarly++;
+          if (!this.hard && !this.trust) {
+            this.petro.start(PETRO_HOLD);
+            this.hint = 'Too soon. Petro takes the bowl back for a second. "The lime has barely said hello, corazón. Wait for it to burn bright."';
+          } else {
+            this.hint = 'Too soon; the lime has barely said hello. Back in. Wait for the bright zone, then pull.';
+          }
         }
         break;
       }
@@ -1562,7 +1669,12 @@ export class CevichePanel {
           this.pourAt = sc.time;
           sc.flash('#ffe9c0', 0.3);
         }
-        this.hint = 'The tiger gets its glass. The clock says four minutes past noon, which is exactly on time. Press Space.';
+        this.hint =
+          !this.hard && this.spoiled + this.earlies === 0
+            ? 'The tiger gets its glass. Petro tastes, closes her eyes, and writes nothing down, which in this kitchen is a diploma. Four minutes past noon, exactly on time. Press Space.'
+            : !this.hard && this.trust
+              ? 'The tiger gets its glass. Petro tastes it: "Edible. Next time, let the lime do the talking." Four minutes past noon. Press Space.'
+              : 'The tiger gets its glass. The clock says four minutes past noon, which is exactly on time. Press Space.';
         break;
       }
       case 'done': {

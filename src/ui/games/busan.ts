@@ -3,6 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag } from './scene';
 import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../../art/pix';
 import { RUN, coach, freshRun } from './run';
+import { Hold } from './attend';
 
 /**
  * Busan's hands-on verb: the hotteok griddle.
@@ -24,6 +25,11 @@ import { RUN, coach, freshRun } from './run';
  * iron, a golden window half as wide, the heat climbing after every flip,
  * and Mi-ja pardons exactly one dark one. The second burn ends the batch.
  *
+ * Attention, story telling: a press on pale dough gets your wrist held for
+ * a beat (pressing again keeps it held, until Mi-ja gives up and lets you),
+ * and that disc keeps a thumbprint even if it flips gold. A batch with no
+ * thumbprints and no dark ones earns its own line.
+ *
  * Coaching: every live press is logged against the window (early, gold, a
  * half-beat late, or a full burn). When a batch falls short in either
  * telling, the dominant miss becomes one specific line, spoken in the
@@ -43,6 +49,11 @@ const TELLING = {
 
 /** A press just past gold still reads as "late"; further out it is a burn. */
 const LATE_GRACE = 0.16;
+
+/** Story telling: seconds Mi-ja holds a wrist that pressed pale dough. */
+const WRIST_HOLD = 0.45;
+/** Presses inside one hold before she lets go anyway. */
+const WRIST_PATIENCE = 4;
 
 type Press = 'early' | 'gold' | 'late' | 'burn';
 
@@ -307,6 +318,21 @@ function cookedDisc(
   g.globalAlpha = 1;
 }
 
+/** A thumb's dimple in a gold disc: pale, off-center, unmistakably yours. */
+function thumbprint(g: CanvasRenderingContext2D, x: number, y: number, rx: number, ry: number) {
+  const cx = x + rx * 0.18;
+  const cy = y - ry * 0.1;
+  oval(g, cx, cy + ry * 0.06, rx * 0.26, ry * 0.3, shade(GOLD, -0.28), 0.4);
+  oval(g, cx, cy, rx * 0.22, ry * 0.25, '#f0d79a', 0.4);
+  g.strokeStyle = 'rgba(120,78,34,0.45)';
+  g.lineWidth = 1;
+  for (let i = 0; i < 3; i++) {
+    g.beginPath();
+    g.ellipse(cx, cy, rx * (0.07 + i * 0.05), ry * (0.08 + i * 0.06), 0.4, 0, Math.PI * 2);
+    g.stroke();
+  }
+}
+
 /** The working dough: plump ball easing into a pressed disc, edge browning. */
 function doughBall(g: CanvasRenderingContext2D, x: number, y: number, flat: number, edge: string, glowK: number, tm: number) {
   const rx = 30 + 16 * flat;
@@ -369,11 +395,14 @@ export class HotteokPanel {
   private hi: number = TELLING.story.hi;
   private step: number = TELLING.story.step;
   private presses: Press[] = []; // every live press this batch, for the coach
+  private wrist = new Hold(); // story: Mi-ja's hand on your wrist
+  private poked = false; // story: the disc on the iron was pressed while pale
+  private thumbs = 0; // story: discs that kept a thumbprint
 
   // Visual layer only, below here.
   private scene = new Scene(W, H);
   private setHint: ((h: string) => void) | null = null;
-  private results: ('gold' | 'dark')[] = [];
+  private results: ('gold' | 'dark' | 'thumb')[] = [];
   private landed = 0;
   private anim = -1; // press-and-flip timeline clock, <0 idle
   private animGold = true;
@@ -413,6 +442,9 @@ export class HotteokPanel {
     this.speed = tune.speed;
     this.step = tune.step;
     this.presses = [];
+    this.wrist.reset();
+    this.poked = false;
+    this.thumbs = 0;
     this.hint = this.hard
       ? 'The iron runs hot tonight: five discs, a thin band of gold, and it only gets faster. Mi-ja will pardon one dark one. Not two.'
       : 'The dough sizzles. Space presses and flips: catch the heat in the golden middle.';
@@ -441,6 +473,7 @@ export class HotteokPanel {
     // The heat only counts while a ball is actually on the iron: the gauge and
     // the marker appear and move together, so the rhythm is press, flip, wait
     // for the next dough, press. Nothing sweeps past behind the animation.
+    this.wrist.tick(dt);
     if (this.phase === 'press' && this.anim < 0 && this.hasBall) {
       this.t += this.dirn * this.speed * dt;
       if (this.t > 1) {
@@ -474,6 +507,15 @@ export class HotteokPanel {
       if (done) this.open(done);
       return;
     }
+    if (this.wrist.on) {
+      // Mi-ja still has your wrist. Pushing keeps it held, a few times.
+      if (this.wrist.streak < WRIST_PATIENCE) {
+        this.wrist.start(WRIST_HOLD);
+        this.scene.wobble(2);
+        return;
+      }
+      this.wrist.release();
+    }
     // The golden middle of the griddle. Early and late are different
     // mistakes and must not be told the same story: pressing as early as
     // physically possible used to report "too late".
@@ -481,9 +523,16 @@ export class HotteokPanel {
       // Too soon is not a ruined one. The dough simply is not ready, and
       // Mi-ja will not let you lift it yet. Still, the coach remembers a
       // jumpy wrist: only live presses count, not taps during the flip.
-      if (this.anim < 0 && this.hasBall) this.presses.push('early');
+      const live = this.anim < 0 && this.hasBall;
+      if (live) this.presses.push('early');
       this.audio.bump();
       this.hint = 'Not yet. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.';
+      if (live && !this.hard) {
+        // The story iron: the wrist is held a beat, and the dough remembers.
+        this.wrist.start(WRIST_HOLD);
+        if (!this.poked) this.hint = 'Not yet. Mi-ja catches your wrist, and your thumb leaves a dimple in the pale dough. Wait for the gold.';
+        this.poked = true;
+      }
       this.scene.wobble(4); // the pan says no, gently
       return;
     }
@@ -533,11 +582,15 @@ export class HotteokPanel {
     this.round++;
     this.golden++;
     this.audio.slosh();
-    this.hint = [
-      'A clean flip. The seeds stay tucked in the fold.',
-      'Gold both sides. Mi-ja nods without looking.',
-      'The sugar sighs inside. That is the sound of correct.',
-    ][(this.golden - 1) % 3] as string;
+    const thumbed = this.poked;
+    if (thumbed) this.thumbs++;
+    this.hint = thumbed
+      ? 'Gold, with your thumbprint in the middle like a signature. Mi-ja says it tastes the same. Dae-ho says nothing, loudly.'
+      : ([
+          'A clean flip. The seeds stay tucked in the fold.',
+          'Gold both sides. Mi-ja nods without looking.',
+          'The sugar sighs inside. That is the sound of correct.',
+        ][(this.golden - 1) % 3] as string);
     if (this.round >= this.rounds) {
       this.phase = 'done';
       this.audio.weaveDone();
@@ -545,14 +598,18 @@ export class HotteokPanel {
         ? this.darks === 0
           ? 'Five golden. Mi-ja looks at you the way she looks at the sea. Press Space.'
           : 'Four golden, and the dark one fed the cook. A batch to be proud of. Press Space.'
-        : 'Three golden. Dae-ho pretends not to be impressed and fails. Press Space.';
+        : this.thumbs >= 2
+          ? `Three golden, ${this.thumbs === 3 ? 'all three' : 'two of them'} thumbprinted. "They taste the same," says Mi-ja. Dae-ho is already telling the whole market. Press Space.`
+          : this.thumbs === 0
+            ? 'Three golden, not a thumbprint on them. Dae-ho pretends not to be impressed and fails. Press Space.'
+            : 'Three golden. Dae-ho pretends not to be impressed and fails. Press Space.';
     } else {
       this.t = 0;
       this.dirn = 1;
       this.speed += this.step;
       this.hint += ` Next disc: ${this.rounds - this.round} to go.`;
     }
-    this.startFlip(true);
+    this.startFlip(true, thumbed);
   }
 
   /**
@@ -596,10 +653,12 @@ export class HotteokPanel {
     this.hasBall = false;
   }
 
-  private startFlip(gold: boolean) {
+  private startFlip(gold: boolean, thumbed = false) {
     // If the last disc is still airborne, it lands instantly; one at a time.
     if (this.anim >= 0) this.landed = this.results.length;
-    this.results.push(gold ? 'gold' : 'dark');
+    this.results.push(gold ? (thumbed ? 'thumb' : 'gold') : 'dark');
+    this.poked = false; // the next ball arrives unpoked
+    this.wrist.release();
     this.anim = 0;
     this.animGold = gold;
     this.hasBall = true; // the press needs something under it, even mid-spam
@@ -724,7 +783,8 @@ export class HotteokPanel {
     for (let i = 0; i < shown; i++) {
       const kind = this.results[i]!;
       const [sx, sy] = slot(i, this.hard);
-      cookedDisc(g, sx, sy, 33, 19, kind === 'gold', 101 + i * 7, 0.85);
+      cookedDisc(g, sx, sy, 33, 19, kind !== 'dark', 101 + i * 7, 0.85);
+      if (kind === 'thumb') thumbprint(g, sx, sy, 33, 19);
     }
   }
 

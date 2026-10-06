@@ -1192,6 +1192,8 @@ export class UrojoPanel {
   private slips = 0;
   private slipLog: UrojoSlip[] = [];
   private addT = Infinity; // seconds before the broth closes over
+  private answered = 0; // story: bowls that were the bowl the customer asked for
+  private oneNote = 0; // story: bowls that were mostly one thing, ladled on repeat
 
   // The painted layer: everything from here down is bowls, steam, and light.
   private scene = new Scene();
@@ -1223,6 +1225,8 @@ export class UrojoPanel {
     this.round = 0;
     this.slips = 0;
     this.slipLog = [];
+    this.answered = 0;
+    this.oneNote = 0;
     this.startRound();
     this.hint = this.hard
       ? 'Zuberi hands you the ladle and does not quite let go. "The evening rush, mgeni. They call the bowl; you build it in the order they say it, ' +
@@ -1350,11 +1354,21 @@ export class UrojoPanel {
     if (dir === 'right' || dir === 'down') this.cur = (this.cur + 1) % n;
   }
 
-  /** Zuberi's read of the finished bowl. Every verdict is a passing grade. */
+  /** Zuberi's read of the finished bowl. Every verdict is a passing grade.
+   * Called once per served bowl, so it also tallies the story ending. */
   private verdict(): string {
     const [mango = 0, , bhajia = 0, , crunch = 0, coco = 0, chili = 0] = this.counts;
     const everything = this.counts.every((c) => c > 0);
     const want = UROJO_ROUNDS[this.round]?.want;
+    const most = Math.max(...this.counts);
+    if (most >= 5 && most * 2 > this.total()) {
+      // A ladle that never left one saucer: still served, still funny.
+      this.oneNote++;
+      const name = UROJO_CHALK[this.counts.indexOf(most)] ?? 'mango';
+      return `Zuberi peers in. "That is ${most} ${name} and a rumor of broth, mgeni. A bowl, not a harvest." He serves it anyway, and the customer chews for a long, thoughtful time.`;
+    }
+    const asked = want === 'brave' ? chili + mango >= 3 && chili > 0 : crunch + bhajia >= 3 && chili < 2;
+    if (asked && !everything) this.answered++;
     if (everything) {
       return 'Zuberi tastes the broth. "Ah, the tourist ratio. One of everything, all politely introduced. Also valid. Nobody leaves this cart wrong."';
     }
@@ -1457,7 +1471,12 @@ export class UrojoPanel {
         this.audio.weaveDone();
         this.scene.flash('#ffe9b8', 0.3);
         this.scene.burst(BOWL_X, BOWL_Y - 30, { n: calm() ? 6 : 14, color: '#f2d98a', speed: 90, grav: 140, size: 3, life: 0.8 });
-        this.hint = 'The line is fed. Zuberi reclaims the ladle with the tenderness of a man taking back a sleeping child. Press Space to come out.';
+        this.hint =
+          !this.hard && this.answered === UROJO_ROUNDS.length
+            ? 'The line is fed, every bowl the bowl they asked for. Zuberi chalks your name on the slate under his own. Press Space to come out.'
+            : !this.hard && this.oneNote > 0
+              ? 'The line is fed, one way or another. Zuberi reclaims the ladle and, gently, the saucers. Press Space to come out.'
+              : 'The line is fed. Zuberi reclaims the ladle with the tenderness of a man taking back a sleeping child. Press Space to come out.';
       }
     } else {
       this.root.hidden = true;
