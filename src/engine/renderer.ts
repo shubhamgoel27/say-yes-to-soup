@@ -5,7 +5,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, outlineSheet, surface } from '../art/pix';
+import { cellHash, outlineSheet, surface, type Surface } from '../art/pix';
 
 /**
  * The world composer, smooth-art era. Renders the scene at 4x logical
@@ -775,37 +775,11 @@ export class Renderer {
     sy: number,
     kindAt: (x: number, y: number) => string,
   ) {
-    // Water banks autotile themselves and the outside of the world stays
-    // calm; neither takes part in either direction, so a neighbour of either
-    // kind counts as more of this cell's own ground.
-    if (WATERY.has(kind) || kind === 'void' || kind === 'scree') return;
-    const mats = this.seamMats;
-    mats.length = 1;
-    mats[0] = kind;
-    let code = '';
-    for (let j = 0; j < 3; j++) {
-      for (let i = 0; i < 3; i++) {
-        let k = kindAt(cx + i - 1, cy + j - 1);
-        if (k !== kind && (WATERY.has(k) || k === 'void' || k === 'scree' || !this.tiles.groundImage(k, 0))) k = kind;
-        let at = mats.indexOf(k);
-        if (at < 0) at = mats.push(k) - 1;
-        code += at;
-      }
-    }
-    if (mats.length === 1) return;
-    const px = ((cx % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
-    const py = ((cy % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
-    let key = `${code}|${px}${py}`;
-    for (const m of mats) key += `|${wobbleOf(m)}`;
-    let masks = this.seamMasks.get(key);
-    if (!masks) {
-      masks = seamMasks(code, mats.map(wobbleOf), px, py);
-      this.seamMasks.set(key, masks);
-    }
+    const n = this.seamLayers(cx, cy, kind, kindAt);
     const { cv, g: sg } = this.seamScratch;
-    for (let i = 1; i < mats.length; i++) {
-      const mask = masks[i - 1];
-      const src = this.tiles.groundImage(mats[i]!, 0);
+    for (let i = 1; i < n; i++) {
+      const mask = this.seamLayerMask[i - 1];
+      const src = this.tiles.groundImage(this.seamMats[i]!, 0);
       if (!mask || !src) continue;
       sg.globalCompositeOperation = 'copy';
       sg.drawImage(src, 0, 0);
@@ -815,7 +789,56 @@ export class Renderer {
       g.drawImage(cv, sx, sy);
     }
   }
+
+  /**
+   * One cell's seam layers: fills `seamMats` with [own kind, then every
+   * neighbouring material in name order] and `seamLayerMask` with each
+   * neighbour's mask, and returns how many materials there are (1: no seam).
+   * Name order is global, so a whole chunk can lay each material in one pass
+   * and every cell still receives its layers in the order its masks assume.
+   */
+  private seamLayers(cx: number, cy: number, kind: string, kindAt: (x: number, y: number) => string): number {
+    // Water banks autotile themselves and the outside of the world stays
+    // calm; neither takes part in either direction, so a neighbour of either
+    // kind counts as more of this cell's own ground.
+    if (WATERY.has(kind) || kind === 'void' || kind === 'scree') return 1;
+    const mats = this.seamMats;
+    const near = this.seamNear;
+    mats.length = 1;
+    mats[0] = kind;
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        let k = kindAt(cx + i - 1, cy + j - 1);
+        if (k !== kind && (WATERY.has(k) || k === 'void' || k === 'scree' || !this.tiles.groundImage(k, 0))) k = kind;
+        near[j * 3 + i] = k;
+        if (mats.indexOf(k) < 0) mats.push(k);
+      }
+    }
+    if (mats.length === 1) return 1;
+    if (mats.length > 2) {
+      const rest = mats.slice(1).sort();
+      for (let i = 0; i < rest.length; i++) mats[i + 1] = rest[i]!;
+    }
+    let code = '';
+    for (let c = 0; c < 9; c++) code += mats.indexOf(near[c]!);
+    const px = ((cx % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    const py = ((cy % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    let key = `${code}|${px}${py}`;
+    for (const m of mats) key += `|${wobbleOf(m)}`;
+    let masks = this.seamMasks.get(key);
+    if (!masks) {
+      masks = seamMasks(code, mats.map(wobbleOf), px, py);
+      this.seamMasks.set(key, masks);
+    }
+    this.seamLayerMask = masks;
+    return mats.length;
+  }
   private seamMats: string[] = [];
+  private seamNear: string[] = new Array<string>(9).fill('');
+  private seamLayerMask: (HTMLCanvasElement | null)[] = [];
+  /** Chunk-sized scratch for laying one material's feathers at once. */
+  private chunkMask: Surface | null = null;
+  private chunkLayer: Surface | null = null;
 
   /**
    * Make every seam mask this map can ask for while the screen is still
@@ -824,11 +847,8 @@ export class Renderer {
   private warmSeams(map: TileMap, kindAt: (x: number, y: number) => string) {
     if (this.warmedMaps.has(map.id)) return;
     this.warmedMaps.add(map.id);
-    const scratch = surface(S, S).g;
     for (let y = -1; y <= map.h; y++) {
-      for (let x = -1; x <= map.w; x++) {
-        this.featherCell(scratch, x, y, kindAt(x, y), 0, 0, kindAt);
-      }
+      for (let x = -1; x <= map.w; x++) this.seamLayers(x, y, kindAt(x, y), kindAt);
     }
   }
 
@@ -1673,6 +1693,7 @@ export class Renderer {
     const g = e.g;
     const bx0 = gx * GCHUNK;
     const by0 = gy * GCHUNK;
+    const layers = new Map<string, (number | HTMLCanvasElement)[]>();
     for (let j = 0; j < GCHUNK; j++) {
       for (let i = 0; i < GCHUNK; i++) {
         const cx = bx0 + i;
@@ -1689,8 +1710,42 @@ export class Renderer {
           ? (dx: number, dy: number) => group.has(kindAt(cx + dx, cy + dy))
           : NEVER;
         this.tiles.drawGround(g, kind, sx, sy, cx, cy, conn, 0);
-        this.featherCell(g, cx, cy, kind, sx, sy, kindAt);
+        const n = this.seamLayers(cx, cy, kind, kindAt);
+        for (let m = 1; m < n; m++) {
+          const mask = this.seamLayerMask[m - 1];
+          if (!mask) continue;
+          const mat = this.seamMats[m]!;
+          let list = layers.get(mat);
+          if (!list) layers.set(mat, (list = []));
+          list.push(sx, sy, mask);
+        }
       }
+    }
+    // Then every material's feathers across the whole chunk in one go: its
+    // masks into one alpha sheet, its ground tiled under it, one composite.
+    // Cutting each cell's fragment separately cost a canvas flush apiece and
+    // made a cold chunk thirty times slower to bake.
+    if (layers.size === 0) return;
+    const W2 = GCHUNK * S;
+    this.chunkMask ??= surface(W2, W2);
+    this.chunkLayer ??= surface(W2, W2);
+    const mg = this.chunkMask.g;
+    const lg = this.chunkLayer.g;
+    for (const mat of [...layers.keys()].sort()) {
+      const src = this.tiles.groundImage(mat, 0);
+      const list = layers.get(mat)!;
+      if (!src) continue;
+      mg.clearRect(0, 0, W2, W2);
+      for (let i = 0; i < list.length; i += 3) {
+        mg.drawImage(list[i + 2] as HTMLCanvasElement, list[i] as number, list[i + 1] as number, S, S);
+      }
+      lg.globalCompositeOperation = 'copy';
+      lg.fillStyle = lg.createPattern(src, 'repeat') ?? '#000';
+      lg.fillRect(0, 0, W2, W2);
+      lg.globalCompositeOperation = 'destination-in';
+      lg.drawImage(this.chunkMask.cv, 0, 0);
+      lg.globalCompositeOperation = 'source-over';
+      g.drawImage(this.chunkLayer.cv, 0, 0);
     }
   }
 

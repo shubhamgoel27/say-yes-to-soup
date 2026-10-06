@@ -432,7 +432,7 @@ const BLOOM_THRESHOLD = 0.6;
 /** How strongly the gathered light is added back. */
 const BLOOM_SCALE = 0.9;
 /** How strongly each light's additive halo glows over the scene. */
-const GLOW_ALPHA = 0.2;
+const GLOW_ALPHA = 0.24;
 
 const SOFT_EXTRACT_VERT = `in vec2 aPosition;
 out vec2 vTextureCoord;
