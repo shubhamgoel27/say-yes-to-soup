@@ -140,7 +140,7 @@ export const BUSAN_JOURNAL: JournalEntry[] = [
     title: 'The dawn market',
     sub: 'Auctions from five, chanted numbers, crates of ice. Then a long, unhurried lunch.',
     nani: 'The market runs ppalli ppalli until nine, then sits down like it never heard of hurrying. I trust a place that can do both.',
-    you: 'Sun-hee was here at five. The lane sleeps late because it can afford to: it has her.',
+    you: 'Sun-hee never looked up from the auction. The bag was packed before I got there, one fish too many. It took me half the quay to hear the goodbye in it.',
   },
 
   // ---------------- her ----------------
@@ -204,8 +204,8 @@ export const BUSAN_TASKS: TaskDef[] = [
     who: 'gong',
   },
   {
-    // c5.complete is the evening boat: she sails on it, so the task must
-    // sail too, or the thread points at a quay she is no longer standing on.
+    // c5.complete is the stamped berth: Hana's evening boat has gone by
+    // then, so the task must go too, or the thread points at an empty quay.
     when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed', 'c5.complete'] },
     text: 'Hana is on the quay until the evening boat, armed with one examination question about Shionoura. Sit the exam before six.',
     who: 'hanaC5',
@@ -221,8 +221,14 @@ export const BUSAN_TASKS: TaskDef[] = [
     at: ['busan', 40, 23],
   },
   {
-    when: { has: ['c5.complete'] },
-    text: 'The Malabar Star loads at dusk for Kochi. Until then Mulmang-gol is yours: broth on the honor system, tea upstairs, goodbyes to make.',
+    when: { has: ['c5.complete'], not: ['c5.bye'] },
+    text: 'The Malabar Star sails on the morning tide. Sun-hee has your fish for the boat; collect it at first light, while the auction is on.',
+    who: 'sunhee',
+  },
+  {
+    // Only for a lane revisited later: the goodbye already carried you off.
+    when: { has: ['c5.bye'] },
+    text: 'The Malabar Star is loading for Kochi. Mr. Gong at the ferry window will see you aboard, quickly.',
     who: 'gong',
   },
   {

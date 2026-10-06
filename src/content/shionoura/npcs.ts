@@ -238,13 +238,13 @@ export const SHIONOURA_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c4.ex.wall': {
-    lines: [{ text: 'Cedar boards silvered by salt wind, each with its own grain of grey. Nobody painted them; the sea did.' }],
+    lines: [{ text: 'Cedar boards silvered by salt wind. Nobody painted them; the sea did.' }],
   },
   // ---------------- arrival ----------------
   'c4.arrive': {
     lines: [
-      { text: 'The launch noses in past a stone lantern and the Inland Sea goes glass-flat behind you. Land, after thirty-one days of deck.' },
-      { text: 'Up the pier, boats fly bright banners for a festival that has not happened yet. Hana is already ashore, standing very still, looking at her town.' },
+      { text: 'The launch noses in past a stone lantern, and the Inland Sea goes glass-flat behind you. Land, after thirty-one days of deck.' },
+      { text: 'Boats fly bright banners for a festival that has not happened yet. Hana is already ashore, standing very still, looking at her town.' },
     ],
     effects: ['set:c4.arrived'],
   },
@@ -252,33 +252,31 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Hana, home ----------------
   'c4.hana.first': {
     lines: [
-      { who: 'Hana', text: 'Tadaima. That is what you say when you come home. I have been saying it under my breath since we passed the lighthouse.' },
-      { who: 'Hana', text: 'And the town answers okaeri. Welcome back. You can be gone four years and the word waits for you. It waited for me.' },
-      { who: 'Hana', text: 'Come. My grandmother keeps the minshuku past the shotengai, the one with the noren. She already made up your room, so arguing is useless.' },
+      { who: 'Hana', text: 'Tadaima. That is what you say when you come home. I have been saying it under my breath since the lighthouse.' },
+      { who: 'Hana', text: 'And the town answers okaeri. Four years gone, and the word waited for me.' },
+      { who: 'Hana', text: 'My grandmother keeps the minshuku past the shotengai, behind the noren. Your room is made up; arguing is useless.' },
     ],
     effects: ['set:met.hana', 'journal:people.hanahome', 'journal:words.tadaima'],
   },
   'c4.hana.onigiri': {
     lines: [
-      { text: 'Hana presses a cloth bundle into your hands: two rice balls, still warm, wrapped like something precious. She uses both hands to give it.' },
-      { who: 'Hana', text: 'Onigiri. Ferry food, boat food, everything food. My grandmother makes the umeboshi kind that fights back a little.' },
-      { text: 'She says sumimasen edging past a porter, sumimasen to flag the tea cart, sumimasen over her change. Three jobs, one word.' },
+      { text: 'Hana presses a cloth bundle into your hands with both of hers: two rice balls, still warm.' },
+      { who: 'Hana', text: 'Onigiri. Ferry food, boat food, everything food. Obaachan’s umeboshi fights back a little.' },
+      { text: 'She says sumimasen to a porter, to the tea cart, over her change. Three jobs, one word.' },
     ],
     effects: ['set:c4.hana2', 'journal:dishes.onigiri', 'journal:words.sumimasen'],
   },
   'c4.hana.gran': {
     lines: [
       { who: 'Hana', text: 'So you met Obaachan. Did she scold your shoes? She scolded mine, and I grew up in that genkan.' },
-      { who: 'Hana', text: 'My grandfather fished tai from this water his whole life. His flags are the ones on the pier. She flies them for Tanabata now.' },
-      { who: 'Hana', text: 'The seventh night is almost here. Bamboo up, wishes hanging, stalls creeping onto the quay one by one. Watch the town get younger.' },
+      { who: 'Hana', text: 'My grandfather fished tai from this water his whole life. Those are his flags on the pier. She flies them for Tanabata now.' },
     ],
     effects: ['set:c4.hana3'],
   },
   'c4.matsuri': {
     lines: [
-      { text: 'Dusk. Somebody switches on the chochin and the quay turns paper-orange. Geta clack on stone, a sound saved up all year for this.' },
-      { text: 'Fumi in indigo, Daisuke bellowing prices for things he is giving away, Taro running the pier like it is new. Genji watches the sky.' },
-      { text: 'The bamboo is heavy with wishes. Yours hangs among them, one strip of color in a town of them. The flags crack softly overhead.' },
+      { text: 'Dusk. The chochin come on and the quay turns paper-orange. Geta clack on stone, a sound saved up all year for this.' },
+      { text: 'The bamboo is heavy with wishes, yours among them. Daisuke is bellowing prices for things he is giving away.' },
       { who: 'Hana', text: 'Orihime and Hikoboshi get one night a year, and they chose a good one. Look up. The clouds are thinking about it.' },
     ],
     effects: ['set:c4.complete'],
@@ -290,33 +288,31 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.matsuri.river': {
     lines: [
-      { who: 'Hana', text: 'From the deck, middle of the Pacific. I remember. No lights for a thousand miles and the river ran right over us.' },
-      { who: 'Hana', text: 'Same river, this one. Tonight my whole town hangs its hopes on it, on paper. I think the ocean version and this version are both true.' },
+      { who: 'Hana', text: 'The deck, mid-Pacific. Same river. Tonight my whole town hangs its hopes on it, on paper; I think both versions are true.' },
     ],
     next: 'c4.matsuri.end',
   },
   'c4.matsuri.otsu': {
     lines: [
-      { text: 'Otsukaresama, you say, to the quay, the flags, the whole tired shining town. A few heads turn.' },
-      { who: 'Hana', text: 'Otsukaresama! comes back from three directions at once. You said it right. You said it like you meant the year, not the day.' },
+      { text: 'Otsukaresama, you say, to the whole tired shining town, and it comes back from three directions at once.' },
     ],
     next: 'c4.matsuri.end',
   },
   'c4.matsuri.end': {
     lines: [
-      { text: 'A drum starts somewhere, unhurried. The goldfish in its bag catches lantern light and becomes, briefly, the brightest thing in town.' },
-      { who: 'Hana', text: 'Thank you for walking my home with me. When you sail, take some of tonight along. That is allowed. That is the whole point of omiyage.' },
+      { text: 'A drum starts somewhere. Your goldfish catches the lantern light and becomes, briefly, the brightest thing in town.' },
+      { who: 'Hana', text: 'Thank you for walking my home with me. When you sail, take some of tonight along. That is the whole point of omiyage.' },
     ],
   },
   'c4.hana.after': {
     lines: [
-      { who: 'Hana', text: 'Captain Isao will take you across when you are ready. Busan first, he says, as if the sea were a bus route. For him it is.' },
-      { who: 'Hana', text: 'I stay this time. Somebody has to teach the kids what a cadet does. Write to me from wherever the journal takes you.' },
+      { who: 'Hana', text: 'Captain Isao takes you across when you are ready. Busan first, he says, as if the sea were a bus route.' },
+      { who: 'Hana', text: 'I stay this time. Write to me from wherever the journal takes you.' },
     ],
   },
   'c4.hana.okaeri': {
     lines: [
-      { text: 'Evening. You come up the lane as Hana holds the minshuku noren aside, and the word you have been carrying tries itself out: tadaima.' },
+      { text: 'Evening. Hana holds the minshuku noren aside, and the word you have been carrying tries itself out: tadaima.' },
       { who: 'Hana', text: 'Okaeri.' },
       { who: 'Hana', text: 'No, do not apologize! You said it right, so the door answered. Welcome back, to a house not yours. Yet.' },
     ],
@@ -331,17 +327,16 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Fumi, the hearth ----------------
   'c4.fumi.first': {
     lines: [
-      { text: 'You step up into the cool wooden dark, two steps in before you notice the floor change under your feet. Sand grits on the boards behind you.' },
-      { who: 'Fumi', text: 'Ah, ah, ah! Shoes! The genkan is the low floor, the shoes live there, the house starts where the wood does. Off, off.' },
-      { text: 'She is laughing before you finish apologizing. Slippers appear from nowhere, pointed the right way, as if the house expected you.' },
-      { who: 'Fumi', text: 'Hana radioed about you from the ship. So the room is aired and you are staying. In this house, the argument is the shorter path to yes.' },
+      { text: 'You step up into the cool wooden dark. Sand grits on the boards behind you.' },
+      { who: 'Fumi', text: 'Ah, ah, ah! Shoes! The shoes live down there; the house starts where the wood does. Off, off.' },
+      { text: 'Laughing, she sets out slippers pointed the right way. Hana radioed from the ship; your room is aired, as threatened.' },
     ],
     effects: ['set:met.fumi', 'journal:people.fumi', 'journal:customs.genkan'],
   },
   'c4.fumi.meal': {
     lines: [
-      { text: 'A low table, a fish grilled whole, rice, miso soup, pickles the color of stained glass. She sits, waits, and puts her palms together.' },
-      { who: 'Fumi', text: 'Itadakimasu. I humbly receive. You say it to the fish, the farmer, the sea, the cook. Mostly the cook, in this house.' },
+      { text: 'A low table, a fish grilled whole, pickles the color of stained glass. She puts her palms together.' },
+      { who: 'Fumi', text: 'Itadakimasu. I humbly receive. To the fish, the farmer, the sea, the cook. Mostly the cook.' },
     ],
     effects: ['journal:words.itadakimasu'],
     choices: [
@@ -351,13 +346,13 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.meal.say': {
     lines: [
-      { text: 'Itadakimasu, you say, to the fish and the cook. The word comes out steadier than you expected.' },
+      { text: 'Itadakimasu, you say. It comes out steadier than you expected.' },
     ],
     next: 'c4.fumi.meal2',
   },
   'c4.fumi.meal.copy': {
     lines: [
-      { text: 'You put your palms together the way she does, and bow a little. She nods: the hands said it well enough.' },
+      { text: 'You put your palms together and bow a little. She nods: the hands said it well enough.' },
     ],
     next: 'c4.fumi.meal2',
   },
@@ -372,25 +367,24 @@ export const SHIONOURA_NODES: NodeMap = {
   // the steps in hand, and the dashi page fills when the cooking is done.
   'c4.fumi.dashi': {
     lines: [
-      { who: 'Fumi', text: 'The smell? Iriko, the little dried fish on the shelf there. This house\'s broth; the pot will teach you more than I can say.' },
-      { who: 'Fumi', text: 'A small work with lunch inside it: Daisuke holds a tai for me, and the hill got longer this year. Fetch it for me?' },
+      { who: 'Fumi', text: 'The smell? Iriko, the little dried fish. This house’s broth; the pot will teach you more than I can.' },
+      { who: 'Fumi', text: 'Daisuke is holding a tai for me, and the hill got longer this year. Fetch it?' },
     ],
     effects: ['set:c4.dashi', 'errand:fumi-tai', 'set:errand.fumi-tai'],
   },
   'c4.fumi.taisomen': {
     lines: [
-      { text: 'The tai goes into the pan whole, then over a nest of somen noodles fine as thread. She works without hurry and without one wasted motion.' },
-      { who: 'Fumi', text: 'Tai-somen. Celebration food. A whole sea bream means a wedding, a homecoming, a festival. This week we have two of those, so.' },
-      { text: 'Hana appears at the smell, exactly like a cat. The three of you eat at the low table while the cicadas saw the evening into lengths.' },
+      { text: 'The tai goes into the pan whole, then over a nest of somen fine as thread. Hana appears at the smell, exactly like a cat.' },
+      { who: 'Fumi', text: 'Tai-somen. A whole sea bream means a wedding, a homecoming, a festival. This week, two of those.' },
       { who: 'Fumi', text: 'The cheek is yours; the guest gets the cheek. House rule, no appeal.' },
     ],
     effects: ['set:c4.taisomen', 'journal:dishes.tai', 'errand.done', 'clear:errand.fumi-tai'],
   },
   'c4.fumi.memory': {
     lines: [
-      { who: 'Fumi', text: 'You eat like someone I heard about. My mother-in-law kept this house before me, and she told a story her whole life.' },
-      { who: 'Fumi', text: 'A laughing foreigner, a girl who bowed too deep to everyone, even the postman. Stayed a while, the year of the big Tanabata rain. 1974, I think.' },
-      { who: 'Fumi', text: 'She wrote in a little book at this very table, and she thanked corrections. Twice, always twice. Why are you looking at me like that?' },
+      { who: 'Fumi', text: 'You eat like someone I heard about. My mother-in-law kept this house before me.' },
+      { who: 'Fumi', text: 'She told of a foreign girl who bowed too deep to everyone, even the postman. 1974, the year of the big Tanabata rain.' },
+      { who: 'Fumi', text: 'She wrote in a little book at this table and thanked corrections twice. Why are you looking at me like that?' },
     ],
     choices: [
       { text: 'Take the journal out', goto: 'c4.fumi.memory.show' },
@@ -405,19 +399,19 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.memory.keep': {
     lines: [
-      { text: 'The journal stays in your pack. Your hand rests on the flap a moment, and Fumi pretends not to see it.' },
+      { text: 'Your hand rests on the pack flap a moment, and Fumi pretends not to see it.' },
     ],
     next: 'c4.fumi.memory.end',
   },
   'c4.fumi.memory.end': {
     lines: [
-      { who: 'Fumi', text: 'Mm. The table remembers her weight on its elbows, I think. Tables are sentimental; ask any innkeeper.' },
+      { who: 'Fumi', text: 'Mm. The table remembers her elbows, I think. Tables are sentimental; ask any innkeeper.' },
     ],
     effects: ['set:c4.fumi.nani'],
   },
   'c4.fumi.okaeri': {
     lines: [
-      { who: 'Fumi', text: 'Okaeri. See, you came in from the bath and I said it without thinking. The house has decided you count as coming home.' },
+      { who: 'Fumi', text: 'Okaeri. See, you came in from the bath and I said it without thinking. The house has decided you count.' },
     ],
     effects: ['set:c4.okaeri'],
   },
@@ -428,8 +422,8 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.cookinvite': {
     lines: [
-      { who: 'Fumi', text: 'You keep watching my hands at the pot. Watching is a fine start and a poor finish. So: tomorrow, dawn, before the guests wake.' },
-      { who: 'Fumi', text: 'We make the morning dashi and the breakfast, you and me, while the house still whispers. Guests watch. Hands that help are something else.' },
+      { who: 'Fumi', text: 'You keep watching my hands at the pot. Watching is a fine start and a poor finish.' },
+      { who: 'Fumi', text: 'Tomorrow, dawn, before the guests wake: the morning dashi and the breakfast, you and me.' },
     ],
     choices: [
       { text: 'Be in the kitchen at dawn', goto: 'c4.fumi.cookstart' },
@@ -438,21 +432,20 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.cookstart': {
     lines: [
-      { text: 'Dawn arrives grey-pink through the shoji. The house is all small sounds: water, a knife somewhere, the first ferry clearing its throat.' },
-      { who: 'Fumi', text: 'Quiet hands, quiet pot. I call the steps, you make them. The sea did most of the work already; we only have to ask it politely.' },
+      { text: 'Dawn comes grey-pink through the shoji: water, a knife somewhere, the first ferry clearing its throat.' },
+      { who: 'Fumi', text: 'Quiet hands, quiet pot. I call the steps, you make them.' },
     ],
     effects: ['set:c4.cook.start'],
   },
   'c4.fumi.cooklater': {
     lines: [
-      { who: 'Fumi', text: 'Mm. Dawn does not wait, but it does repeat. The pot and I will be there whichever morning your feet find first.' },
+      { who: 'Fumi', text: 'Mm. Dawn does not wait, but it does repeat.' },
     ],
   },
   'c4.cook.finish': {
     lines: [
-      { text: 'Two trays reach the low table: rice, miso blooming in the iriko dashi, pickles, the onigiri packed firm. The guests wake to a ready house.' },
-      { who: 'Fumi', text: 'They will say itadakimasu to this and never know your hands are in it. Good. That is how a kitchen keeps its secrets.' },
-      { who: 'Fumi', text: 'And you should know: a guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
+      { text: 'Two trays reach the low table: rice, miso blooming in the iriko dashi, pickles. The guests wake to a ready house.' },
+      { who: 'Fumi', text: 'A guest who makes breakfast has stopped being a guest. There is no ceremony for it. Only more work tomorrow.' },
     ],
     effects: ['clear:c4.cook.start', 'set:c4.cook.done', 'journal:dishes.dashi'],
   },
@@ -460,10 +453,9 @@ export const SHIONOURA_NODES: NodeMap = {
   // wonders. Two lines in a ledger, three weeks apart, and no one asked once.
   'c4.fumi.her': {
     lines: [
-      { text: 'She is writing you into the guest book, which is old, and has to turn back a page to find room for the pen.' },
+      { text: 'She writes you into the guest book, turning back a page to find room.' },
       { who: 'Fumi', text: 'Ah. Here she is again, in my mother-in-law’s hand. Zoila-san, written in for one night.' },
-      { who: 'Fumi', text: 'And the next line is three weeks later, and it is her leaving. Nothing in between. She was on her way somewhere.' },
-      { text: 'You wait for the rest of it. There is no rest of it.' },
+      { who: 'Fumi', text: 'The next line is three weeks later, and it is her leaving. Nothing in between.' },
     ],
     choices: [
       { text: 'Say nothing.', goto: 'c4.fumi.her.quiet' },
@@ -490,7 +482,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.cookagain': {
     lines: [
-      { who: 'Fumi', text: 'Dawn happens again tomorrow. It is very reliable that way. The pot does not count how many times you have made it, and neither do I.' },
+      { who: 'Fumi', text: 'Dawn happens again tomorrow. The pot does not count, and neither do I.' },
     ],
     choices: [
       { text: 'Be in the kitchen at dawn again', when: { has: ['c4.cook.done'] }, goto: 'c4.fumi.cookreplay' },
@@ -499,7 +491,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.fumi.cookreplay': {
     lines: [
-      { who: 'Fumi', text: 'Mm. No calling the steps this morning. Your hands know where the kombu goes, and the kombu knows your hands.' },
+      { who: 'Fumi', text: 'No calling the steps this morning. Your hands know where the kombu goes.' },
     ],
     effects: ['set:replay.mode', 'set:c4.cook.start'],
   },
@@ -507,8 +499,8 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Daisuke, tai pride ----------------
   'c4.dai.first': {
     lines: [
-      { who: 'Daisuke', text: 'Irasshai! New face! Off the big ship, ne? Look at this. LOOK at it. Tai, red as a good sunrise, caught before you woke up.' },
-      { who: 'Daisuke', text: 'Tomonoura nets tai one bay over and calls it famous. Fine. Ours swim harder currents, so the meat is sweeter. This is science.' },
+      { who: 'Daisuke', text: 'Irasshai! New face! LOOK at this. Tai, red as a good sunrise, caught before you woke up.' },
+      { who: 'Daisuke', text: 'Tomonoura one bay over calls its tai famous. Ours swim harder currents, so the meat is sweeter. Science.' },
     ],
     effects: ['set:met.daisuke', 'journal:people.daisuke'],
     choices: [
@@ -518,45 +510,75 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.dai.casero': {
     lines: [
-      { who: 'Daisuke', text: 'A regular! Then you know the rules already: come back, and come back again. The fish remembers faces. Well. I remember for it.' },
-      { who: 'Daisuke', text: 'Your fish lady and I would argue happily for hours. Tell her the tai of Shionoura sends its respects to her lisa.' },
+      { who: 'Daisuke', text: 'A regular! Then you know the rules: come back, and come back again. The fish remembers faces. Well. I remember for it.' },
+      { who: 'Daisuke', text: 'Tell your fish lady the tai of Shionoura sends its respects to her lisa.' },
     ],
   },
   'c4.dai.why': {
     lines: [
-      { who: 'Daisuke', text: 'Medetai! Happy, lucky, festive. Tai hides inside the word itself. A pun four hundred years old and still working, that is why.' },
+      { who: 'Daisuke', text: 'Medetai! Happy, lucky, festive. Tai hides inside the word. A pun four hundred years old and still working.' },
       { who: 'Daisuke', text: 'Also Ebisu-sama carries one under his arm, and you do not argue with the fishing god about fish.' },
     ],
   },
+  // The two-hands lesson is something you get wrong, not something you hear.
   'c4.dai.tai': {
     lines: [
-      { who: 'Daisuke', text: 'Fumi-san\'s tai! Held back the best one, do not tell the mayor. For her tai-somen you want it whole, eye clear, proud.' },
-      { text: 'He wraps it and holds it out with both hands, like a diploma. You take it one-handed; his eyebrows climb.' },
-      { who: 'Daisuke', text: 'Both hands, both hands! A gift has weight, ne. You catch the weight with two hands so the giver sees you feel it.' },
+      { who: 'Daisuke', text: 'Fumi-san’s tai! I held back the best one, do not tell the mayor. Whole, eye clear, proud.' },
+      { text: 'He holds it out with both hands, like a diploma.' },
+    ],
+    choices: [
+      { text: 'Take it one-handed', goto: 'c4.dai.tai.one' },
+      { text: 'Take it with both hands', goto: 'c4.dai.tai.two' },
+    ],
+  },
+  'c4.dai.tai.one': {
+    lines: [
+      { who: 'Daisuke', text: 'Both hands, both hands! A gift has weight, ne. Catch it with two so the giver sees you feel it.' },
       { text: 'You take it again properly, with a small bow. He grins like the sunrise on his own flag.' },
+    ],
+    effects: ['set:c4.tai.got'],
+  },
+  'c4.dai.tai.two': {
+    lines: [
+      { text: 'You take it with both hands and a small bow. His eyebrows climb, and then he grins like the sunrise on his own flag.' },
+      { who: 'Daisuke', text: 'Two hands! Somebody raised you right, ne. A gift has weight.' },
     ],
     effects: ['set:c4.tai.got'],
   },
   'c4.dai.udon': {
     lines: [
-      { text: 'Noon. Daisuke waves you onto a crate, sets down two bowls of udon, inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
-      { who: 'Daisuke', text: 'Is it bad? You eat like a funeral; the broth offended you, tell me straight, I can take it.' },
-      { text: 'You try it his way instead, tide over gravel. The noodles taste warmer, somehow.' },
+      { text: 'Noon. Daisuke sets down two bowls of udon and inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
+      { who: 'Daisuke', text: 'Is it bad? You eat like a funeral. Tell me straight, I can take it.' },
+    ],
+    choices: [
+      { text: 'Slurp it his way', goto: 'c4.dai.slurp' },
+      { text: '"It is perfect. I am just quiet."', goto: 'c4.dai.quiet' },
+    ],
+  },
+  'c4.dai.quiet': {
+    lines: [
+      { who: 'Daisuke', text: 'Quiet! Udon cannot hear quiet. Go on, like the tide over gravel.' },
+    ],
+    next: 'c4.dai.slurp',
+  },
+  'c4.dai.slurp': {
+    lines: [
+      { text: 'You try it his way, tide over gravel. The noodles taste warmer, somehow.' },
       { who: 'Daisuke', text: 'THERE it is! Loud means delicious, ne. Silence is for fish still in the water.' },
     ],
     effects: ['set:c4.slurp'],
   },
   'c4.dai.truck': {
     lines: [
-      { text: 'The kei truck is backed to the boats, and the morning\'s crates outnumber the morning\'s hands. You join without being asked.' },
-      { text: 'Ice, fish, ice, fish. The sun climbs. When the tailgate finally bangs shut, Daisuke claps your shoulder with a hand like a docking fender.' },
-      { who: 'Daisuke', text: 'Otsukaresama! Your tiredness is seen, ne; the work happened and you were in it. Now you are inside the word too.' },
+      { text: 'The kei truck is backed to the boats and the crates outnumber the hands. You join in: ice, fish, ice, fish.' },
+      { text: 'The tailgate bangs shut. Daisuke claps your shoulder with a hand like a docking fender.' },
+      { who: 'Daisuke', text: 'Otsukaresama! Your tiredness is seen, ne; the work happened and you were in it.' },
     ],
     effects: ['set:c4.otsukare', 'journal:words.otsukaresama'],
   },
   'c4.dai.idle': {
     lines: [
-      { who: 'Daisuke', text: 'Morning market is gone by eight, ne. The whole ocean, sold before the town brushes its teeth. Come earlier tomorrow!' },
+      { who: 'Daisuke', text: 'Market is gone by eight, ne. The whole ocean, sold before the town brushes its teeth.' },
     ],
     choices: [
       { text: '"Daisuke, which way was I going?"', goto: 'c4.dai.thread' },
@@ -565,7 +587,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.dai.thread': {
     lines: [
-      { who: 'Daisuke', text: 'Ha! Even the fish know where they are going, and they are dead, ne. Wrist out; red thread beats a tide table.' },
+      { who: 'Daisuke', text: 'Ha! Even the fish know where they are going, ne. Wrist out; red thread beats a tide table.' },
     ],
     effects: ['thread:'],
   },
@@ -576,9 +598,8 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Sachiko, the omiyage counter ----------------
   'c4.sachi.first': {
     lines: [
-      { who: 'Sachiko', text: 'Irasshai, irasshai! Come, taste first, questions after. This is the town meibutsu: lemon yokan, made with Setoda lemons since my grandmother.' },
-      { text: 'A pale gold square, cool and dense, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad.' },
-      { text: 'Your people. Doña Petro at her pots. Pilar, Aurelio.' },
+      { who: 'Sachiko', text: 'Irasshai, irasshai! Taste first, questions after. Lemon yokan, made with Setoda lemons since my grandmother.' },
+      { text: 'A pale gold square, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad. You think of Petro, Pilar, Aurelio.' },
     ],
     effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai'],
   },
@@ -586,15 +607,14 @@ export const SHIONOURA_NODES: NodeMap = {
   // once Sachiko has nodded at them. The page fills at the noticing.
   'c4.sachi.lemons': {
     lines: [
-      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. The crates by the counter came across with them; look them over, go on.' },
-      { who: 'Sachiko', text: 'Come back when you have thought about your list. Omiyage is chosen slowly and given fast. Both halves matter.' },
+      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. The crates by the counter came with them; look them over.' },
+      { who: 'Sachiko', text: 'Then think about your list. Omiyage is chosen slowly and given fast.' },
     ],
     effects: ['set:c4.sachiko2', 'journal:dishes.lemonyokan'],
   },
   'c4.sachi.shop': {
     lines: [
-      { who: 'Sachiko', text: 'Ah, the traveler with three ports in her wake. I have thought about your people all morning. It is my favorite kind of puzzle.' },
-      { who: 'Sachiko', text: 'A cook, a museum director, and a man with soup always on. Tell me who first, and I will wrap while you talk.' },
+      { who: 'Sachiko', text: 'A cook, a museum director, and a man with soup always on. Who first?' },
     ],
     choices: [
       { text: 'Lemon yokan for Doña Petro, cook to cook', goto: 'c4.omi.petro', when: { not: ['omiyage.petro'] } },
@@ -604,7 +624,7 @@ export const SHIONOURA_NODES: NodeMap = {
     ],
   },
   'c4.sachi.again': {
-    lines: [{ who: 'Sachiko', text: 'There. Who else is on the list? A list of people who fed you is never short.' }],
+    lines: [{ who: 'Sachiko', text: 'There. Who else? A list of people who fed you is never short.' }],
     choices: [
       { text: 'Lemon yokan for Doña Petro, cook to cook', goto: 'c4.omi.petro', when: { not: ['omiyage.petro'] } },
       { text: 'A tairyō-bata tenugui for Pilar\'s museum', goto: 'c4.omi.pilar', when: { not: ['omiyage.pilar'] } },
@@ -614,52 +634,51 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.omi.petro': {
     lines: [
-      { text: 'Sachiko wraps the yokan in paper the color of sea haze, folds sharp as sails, and presents it with both hands. You receive it with both.' },
-      { who: 'Sachiko', text: 'For the cook who feeds strangers. Tell her the sour is Setoda lemon, and that some grandmother across the sea salutes her pots.' },
+      { text: 'She wraps the yokan in paper the color of sea haze, folds sharp as sails, and presents it with both hands.' },
+      { who: 'Sachiko', text: 'For the cook who feeds strangers. Tell her the sour is Setoda lemon.' },
     ],
     effects: ['set:omiyage.petro', 'set:c4.omiyage', 'journal:customs.omiyage'],
     next: 'c4.sachi.again',
   },
   'c4.omi.pilar': {
     lines: [
-      { text: 'A folded cotton tenugui: a big-catch flag in miniature, sunrise, waves, one emphatic tai. Museum-grade, at least for one museum you know of.' },
-      { who: 'Sachiko', text: 'For the little director. Tell her boats fly these when the hold is FULL. An honest flag for an honest collection. Admission: one fact, I hear.' },
+      { text: 'A folded tenugui: a big-catch flag in miniature, sunrise, waves, one emphatic tai.' },
+      { who: 'Sachiko', text: 'For the little director. Boats fly these when the hold is FULL. An honest flag for an honest collection.' },
     ],
     effects: ['set:omiyage.pilar', 'set:c4.omiyage', 'journal:customs.omiyage'],
     next: 'c4.sachi.again',
   },
   'c4.omi.aurelio': {
     lines: [
-      { text: 'A tin of roasted olive-leaf tea from Shodoshima, where Japan first coaxed olives to grow. It smells like a warm, dry hillside.' },
-      { who: 'Sachiko', text: 'For the man whose soup is always on. A tea for people who understand that slow is a flavor. He will taste what I mean.' },
+      { text: 'A tin of olive-leaf tea from Shodoshima, where Japan first coaxed olives to grow. It smells like a warm, dry hillside.' },
+      { who: 'Sachiko', text: 'For the man whose soup is always on. A tea for people who know slow is a flavor.' },
     ],
     effects: ['set:omiyage.aurelio', 'set:c4.omiyage', 'journal:customs.omiyage'],
     next: 'c4.sachi.again',
   },
   'c4.sachi.browse': {
     lines: [
-      { who: 'Sachiko', text: 'Take your time. Omiyage waits better than fish. The wrapping paper is not going anywhere and neither am I.' },
+      { who: 'Sachiko', text: 'Take your time. Omiyage waits better than fish.' },
     ],
   },
   'c4.sachi.alldone': {
     lines: [
-      { who: 'Sachiko', text: 'Three parcels, three ports, all wrapped. Your pack now carries more of Shionoura than some residents do.' },
-      { who: 'Sachiko', text: 'This is the real trick of travel, you know. You cannot bring your people along, so you carry the place back to them. Heavier, and worth it.' },
+      { who: 'Sachiko', text: 'Three parcels, three ports. You cannot bring your people here, so you carry the place back to them. Heavier, and worth it.' },
     ],
     effects: ['set:c4.sachi.done'],
   },
   'c4.sachi.idle': {
     lines: [
-      { who: 'Sachiko', text: 'Festival week empties my shelves faster than typhoon week. Sweets and weather, the two local economies.' },
+      { who: 'Sachiko', text: 'Festival week empties my shelves faster than typhoon week.' },
     ],
   },
 
   // ---------------- Genji, laconic at the shrine ----------------
   'c4.genji.first': {
     lines: [
-      { text: 'A dry old man sweeps the shrine yard with the exact patience of the stones under him. He does not stop for you.' },
+      { text: 'A dry old man sweeps the shrine yard with the patience of the stones under him. He does not stop for you.' },
       { who: 'Genji', text: 'Ebisu. God of fishermen. He is smiling. I sweep.' },
-      { text: 'The broom continues. It appears the introduction is complete, and, in its way, thorough.' },
+      { text: 'It appears the introduction is complete, and, in its way, thorough.' },
     ],
     effects: ['set:met.genji', 'journal:people.genji'],
   },
@@ -667,10 +686,9 @@ export const SHIONOURA_NODES: NodeMap = {
   // The Amanogawa examine holds the story, the journal rhyme the recognition.
   'c4.genji.amanogawa': {
     lines: [
-      { text: 'The broom stops, which is an event. Genji tips his chin up past the torii, to where the night will be.' },
-      { who: 'Genji', text: 'Orihime and Hikoboshi, the seventh night. Ask the sky over the water after dark; it tells it better than a broom does.' },
-      { text: 'He puts a strip of colored paper in your hands, as if he had always been holding it. Both of his.' },
-      { who: 'Genji', text: 'Tanzaku. Write one wish. The paper is small on purpose.' },
+      { who: 'Genji', text: 'The seventh night. Ask the sky over the water after dark; it tells it better than a broom.' },
+      { text: 'The broom stops, which is an event. He puts a strip of colored paper in your hands, with both of his.' },
+      { who: 'Genji', text: 'Tanzaku. One wish. The paper is small on purpose.' },
     ],
     effects: ['set:c4.tanzaku'],
   },
@@ -683,7 +701,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.genji.idle': {
     lines: [
-      { who: 'Genji', text: 'The cicadas shout for seven years underground and one summer above. Make of that what you like. I sweep.' },
+      { who: 'Genji', text: 'Seven years underground, one summer shouting. Make of that what you like. I sweep.' },
     ],
     choices: [
       { text: '"Which way was I going, Genji-san?"', goto: 'c4.genji.thread' },
@@ -703,15 +721,15 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Taro, whose wish is too big ----------------
   'c4.taro.first': {
     lines: [
-      { text: 'A kid sits at the foot of the shrine steps, surrounded by crumpled tanzaku like fallen petals. He is chewing the pencil, not writing.' },
-      { who: 'Taro', text: 'The paper is TOO SMALL. My wish is that Dad\'s boat comes back full every day, and school stays open, and Gran\'s knees stop hurting, and, and.' },
-      { who: 'Taro', text: 'Genji-san only gives you one strip a year. ONE. Who designed this system?' },
+      { text: 'A kid sits at the foot of the shrine steps among crumpled tanzaku, chewing the pencil.' },
+      { who: 'Taro', text: 'The paper is TOO SMALL. Dad’s boat comes back full, and school stays open, and Gran’s knees stop hurting, and, and.' },
+      { who: 'Taro', text: 'Genji-san gives you one strip a year. ONE. Who designed this system?' },
     ],
     effects: ['set:met.taro', 'journal:people.taro'],
   },
   'c4.taro.help': {
     lines: [
-      { who: 'Taro', text: 'You write stuff in that book all the time. You are clearly a professional. How do I fit a wish this big on a paper this small?' },
+      { who: 'Taro', text: 'You write in that book all the time. Professional. How do I fit a wish this big on a paper this small?' },
     ],
     choices: [
       { text: '"Find the one wish hiding inside all of them."', goto: 'c4.taro.inside' },
@@ -720,28 +738,28 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.taro.inside': {
     lines: [
-      { who: 'Taro', text: 'One wish inside the wishes... boat, school, knees... they are all just: everybody stays okay. THAT FITS.' },
-      { text: 'He writes it in enormous wobbly characters, using the whole strip, and holds it up like a caught fish. Minna genki de. Everyone, be well.' },
-      { who: 'Taro', text: 'Next year I am asking for a bicycle though. This year covers the important stuff.' },
+      { who: 'Taro', text: 'Boat, school, knees... they are all just: everybody stays okay. THAT FITS.' },
+      { text: 'He writes it in enormous wobbly characters across the whole strip: minna genki de. Everyone, be well.' },
+      { who: 'Taro', text: 'Next year I am asking for a bicycle though.' },
     ],
     effects: ['set:c4.taro.wish'],
   },
   'c4.taro.biggest': {
     lines: [
-      { who: 'Taro', text: 'The biggest... Dad\'s boat. If the boat comes back full, Gran gets medicine, and if there are fish there is a town, and a school in it.' },
-      { text: 'He writes it carefully, tongue out, and nods at his own logic. One wish, towing three others like skiffs behind it.' },
+      { who: 'Taro', text: 'Dad’s boat. If it comes back full, Gran gets medicine, and if there are fish there is a school.' },
+      { text: 'He writes it, tongue out. One wish, towing three others like skiffs.' },
       { who: 'Taro', text: 'You are good at this. Do you do weddings?' },
     ],
     effects: ['set:c4.taro.wish'],
   },
   'c4.taro.kingyo': {
     lines: [
-      { who: 'Taro', text: 'Did you try the goldfish stall yet? The uncle acts tough but he has never let a kid walk away empty. Test him. For science.' },
+      { who: 'Taro', text: 'The goldfish uncle acts tough, but he has never let a kid walk away empty. Test him. For science.' },
     ],
   },
   'c4.taro.idle': {
     lines: [
-      { who: 'Taro', text: 'Seventh night soon! If it rains I am personally complaining to the Sky King. Genji-san says get in line.' },
+      { who: 'Taro', text: 'If it rains on the seventh night I am complaining to the Sky King. Genji-san says get in line.' },
     ],
     choices: [
       { text: '"Taro, remind me where I was headed?"', goto: 'c4.taro.thread' },
@@ -750,7 +768,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.taro.thread': {
     lines: [
-      { who: 'Taro', text: 'A grown-up, lost? AMAZING. Okay, okay: hold your wrist up like a hero and follow the red. I do this all the time.' },
+      { who: 'Taro', text: 'A grown-up, lost? AMAZING. Okay: hold your wrist up like a hero and follow the red.' },
     ],
     effects: ['thread:'],
   },
@@ -761,9 +779,8 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- Captain Isao, the timetable ----------------
   'c4.isao.first': {
     lines: [
-      { text: 'By the ferry office, an old captain studies the water with the expression of a man auditing an employee of fifty years.' },
-      { who: 'Captain Isao', text: 'Isao. Forty-one years on this run. The ferry is the town\'s pulse: school, hospital, brides, coffins. All of it rides with me, on time.' },
-      { who: 'Captain Isao', text: 'Art tourists ride too now, photographing my rust. The neighbor islands hang art in empty houses and call it a renaissance. Hmph.' },
+      { text: 'By the ferry office, an old captain studies the water like a man auditing an employee of fifty years.' },
+      { who: 'Captain Isao', text: 'Isao. Forty-one years on this run. School, hospital, brides, coffins: all of it rides with me, on time.' },
     ],
     effects: ['set:met.captain', 'journal:people.captain'],
     choices: [
@@ -773,79 +790,78 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.isao.lamar': {
     lines: [
-      { who: 'Captain Isao', text: 'La mar. Mm. Yes. Here too the sea is somebody, not something. Fishermen apologize to her, thank her, grumble at her moods.' },
-      { who: 'Captain Isao', text: 'Your fisherman and I would understand each other with no common word except that one. That is most of seafaring, honestly.' },
+      { who: 'Captain Isao', text: 'La mar. Mm. Here too the sea is somebody. Fishermen apologize to her, thank her, grumble at her moods.' },
+      { who: 'Captain Isao', text: 'Your fisherman and I would understand each other with only that one word between us.' },
     ],
   },
   'c4.isao.umi': {
     lines: [
-      { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath; a working sea.' },
-      { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You lower your voice, mind your manners, say thank you at the rail.' },
+      { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath.' },
+      { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You say thank you at the rail.' },
     ],
   },
   'c4.isao.ferry': {
     lines: [
-      { who: 'Captain Isao', text: 'So. The festival is hung, the wishes are up, and your pack smells of lemon and wrapping paper. That is a traveler ready to travel.' },
-      { who: 'Captain Isao', text: 'I run you to Shimonoseki on the morning boat. From there the Busan ferry crosses the strait, as it has since before us both. Say the word.' },
+      { who: 'Captain Isao', text: 'So. The wishes are up and your pack smells of lemon and wrapping paper.' },
+      { who: 'Captain Isao', text: 'Shimonoseki on the morning boat, then the Busan ferry. Say the word.' },
     ],
     choices: [
       { text: 'Board for Busan', goto: 'c4.depart' },
       { text: 'Not yet. The town is not finished with me.', goto: 'c4.isao.wait' },
     ],
   },
+  // Miokuri: a house sees its guest off until the guest is out of sight.
+  // Shionoura's goodbye is a bow that outlasts the view of it.
   'c4.depart': {
     lines: [
-      { text: 'The tairyō-bata crack once in the morning wind, as if the pier itself waved. Fumi pressed onigiri on you at dawn; arguing was, again, useless.' },
-      { text: 'Okaeri, the town said when you came. Itterasshai, it says now: go, and come back. The gangway rings under your boots.' },
+      { text: 'The tairyō-bata crack once in the morning wind. Okaeri, the town said when you came; itterasshai, it says now: go, and come back.' },
+      { text: 'Fumi stands at the end of the pier and bows. When the boat rounds the lighthouse, she is still bowing.' },
     ],
     effects: ['travel:busan'],
   },
   'c4.isao.wait': {
     lines: [
-      { who: 'Captain Isao', text: 'Sensible. A town takes longer to leave than to reach. The timetable and I will be here; we are the two most reliable things on this coast.' },
+      { who: 'Captain Isao', text: 'Sensible. A town takes longer to leave than to reach. The timetable and I will be here.' },
     ],
   },
   'c4.isao.notyet': {
     lines: [
-      { who: 'Captain Isao', text: 'Passage to Busan goes through me, but not before the seventh night. Even the timetable respects Tanabata. Even me.' },
+      { who: 'Captain Isao', text: 'Passage to Busan goes through me, but not before the seventh night. Even the timetable respects Tanabata.' },
     ],
   },
 
   // ---------------- Chasca, photographing noren ----------------
   'c4.chasca.noren': {
     lines: [
-      { who: 'Chasca', text: 'The soup-eater! Crossing oceans now! I have been photographing these doorway curtains all morning. A shop that is open hangs its own flag. Poetry!' },
-      { who: 'Chasca', text: 'Stand there, half through the noren, half in the street. In or out, the photo will not say. Perfect for an album about leaving. ¡Digan papas!' },
+      { who: 'Chasca', text: 'The soup-eater! A shop that is open hangs its own flag. Poetry!' },
+      { who: 'Chasca', text: 'Stand half through the noren. In or out, the photo will not say. Perfect for an album about leaving. ¡Digan papas!' },
     ],
     effects: ['set:met.chascaC4', 'set:photo.flash', 'set:photo.c4.noren'],
   },
   'c4.chasca.deck': {
     lines: [
-      { who: 'Chasca', text: 'The deck photo from the crossing came out ALL stars. You are a smudge of person under a river of light. My favorite smudge so far.' },
-      { who: 'Chasca', text: 'And now here you are under paper lanterns instead. The album is learning what light does in different countries. So am I.' },
+      { who: 'Chasca', text: 'The deck photo came out ALL stars, and you a smudge under them. My favorite smudge so far.' },
     ],
     effects: ['set:c4.chasca2'],
   },
   'c4.chasca.idle': {
     lines: [
-      { who: 'Chasca', text: 'I develop everything at the end of the journey. Whose journey? Mine, yours. The album keeps its own counsel.' },
+      { who: 'Chasca', text: 'I develop everything at the end of the journey. Whose journey? The album keeps its own counsel.' },
     ],
   },
 
   // ---------------- Olena, on shore leave while the Yacana unloads ----------------
   'c4.olena.shore': {
     lines: [
-      { text: 'A familiar figure stands at the end of the quay in shore clothes that fit like a disguise, holding a glass jar up toward the green hills.' },
-      { who: 'Olena', text: 'The galley hand. Do not look amazed; the Yacana unloads until tomorrow and I am on shore leave. It is an ancient maritime right.' },
-      { who: 'Olena', text: 'The starter came ashore with me. Six oceans in this jar, and it has never seen a mountain. Today it sees a mountain. Look at it bubble.' },
-      { who: 'Olena', text: 'That is happiness. I have it on good authority. Mine.' },
+      { text: 'At the end of the quay, in shore clothes, a familiar figure holds a glass jar up toward the green hills.' },
+      { who: 'Olena', text: 'The galley hand. Shore leave while the Yacana unloads: an ancient maritime right.' },
+      { who: 'Olena', text: 'This starter has seen six oceans and never a mountain. Look at it bubble.' },
     ],
     effects: ['set:c4.met.olena'],
   },
   'c4.olena.quiz': {
     lines: [
-      { who: 'Olena', text: 'So. One day on land and the crossing is blurring for you already. It happens to everyone; the sea photographs badly in memory.' },
-      { who: 'Olena', text: 'Prove me wrong. One thing from those thirty-one days that is still sharp. I am grading this.' },
+      { who: 'Olena', text: 'One day on land and the crossing blurs. Prove me wrong: one thing from it that is still sharp.' },
     ],
     effects: ['set:c4.olena.quizzed'],
     choices: [
@@ -857,39 +873,38 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.olena.a.neptune': {
     lines: [
-      { who: 'Olena', text: 'Ducked by a bosun in a mop wig, technically. But the certificate is real, and the captain signs very few things twice.' },
-      { who: 'Olena', text: 'Fine. Full marks. Frame the paper before the sea takes the memory back; it does that. Ask any shellback over sixty.' },
+      { who: 'Olena', text: 'Ducked by a bosun in a mop wig, technically. But the certificate is real. Full marks; frame it before the sea takes the memory back.' },
     ],
   },
   'c4.olena.a.river': {
     lines: [
-      { who: 'Olena', text: 'Mayu, Milky Way, Amanogawa. Mm. And tonight this town hangs paper on bamboo for the third name. Convenient timing you have.' },
-      { who: 'Olena', text: 'Full marks. You kept the sky, which is the largest thing we carry. Everything else on that ship is just steel and dinner.' },
+      { who: 'Olena', text: 'Mayu, Milky Way, Amanogawa. Tonight this town hangs paper for the third name. Convenient timing.' },
+      { who: 'Olena', text: 'Full marks. You kept the sky. Everything else on that ship is just steel and dinner.' },
     ],
   },
   'c4.olena.a.family': {
     lines: [
-      { who: 'Olena', text: 'It bubbled immediately, yes. It does not do that for the chief engineer, and he has asked it nicely for two whole contracts.' },
-      { who: 'Olena', text: 'So: family, confirmed on land, which makes it legal. The jar and I expect a letter someday. It reads slowly, so write big.' },
+      { who: 'Olena', text: 'It bubbled immediately. It does not do that for the chief engineer, and he has asked nicely for two contracts.' },
+      { who: 'Olena', text: 'So: family, confirmed on land, which makes it legal. The jar expects a letter. Write big.' },
     ],
   },
   'c4.olena.a.wet': {
     lines: [
       { who: 'Olena', text: 'The sea is a big wet month. No stars, no certificate, no poetry. Finally, an honest sailor.' },
-      { who: 'Olena', text: 'You would be amazed how many pass this quiz by failing it. Go, enjoy your land. It holds still, mostly. That never stops being funny.' },
+      { who: 'Olena', text: 'Go, enjoy your land. It holds still, mostly. That never stops being funny.' },
     ],
   },
   'c4.olena.idle': {
     lines: [
-      { who: 'Olena', text: 'We sail before your festival ends, so this is the goodbye watch. I am spending it here, teaching a jar what a mountain is.' },
+      { who: 'Olena', text: 'We sail before your festival ends, so this is the goodbye watch. I am spending it teaching a jar what a mountain is.' },
     ],
   },
 
   // ---------------- the wish, written ----------------
   'c4.wish.write': {
     lines: [
-      { text: 'The bamboo leans over you, already heavy with the town\'s hopes: exam luck, safe boats, a baby due in autumn, one that just says RAMEN.' },
-      { text: 'Genji\'s tanzaku waits in your pocket, small on purpose. One wish, then. The pen hovers.' },
+      { text: 'The bamboo leans over you, heavy with the town’s hopes: safe boats, a baby due in autumn, one that just says RAMEN.' },
+      { text: 'One wish, then. The pen hovers.' },
     ],
     choices: [
       { text: 'For the road: may it keep opening', goto: 'c4.wish.road' },
@@ -899,22 +914,21 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.wish.road': {
     lines: [
-      { text: 'You write: may the road keep opening. Simple, greedy in the best direction. You tie it high, where the sea wind can read it.' },
-      { text: 'The strip settles among the others, one color in a town of colors. It looks correct there. It looks like it always hung there.' },
+      { text: 'May the road keep opening. Greedy in the best direction. You tie it high, where the sea wind can read it.' },
     ],
     effects: ['set:wish.road', 'set:wish.written', 'set:c4.wish.hung'],
   },
   'c4.wish.people': {
     lines: [
-      { text: 'You write: for everyone who fed me, keep well until I pass again. It barely fits. Taro would sympathize.' },
-      { text: 'You tie it beside a wobbly strip that reads minna genki de, and the two wishes hang there agreeing with each other in different hands.' },
+      { text: 'For everyone who fed me: keep well until I pass again. It barely fits. Taro would sympathize.' },
+      { text: 'You tie it beside a wobbly strip that reads minna genki de.' },
     ],
     effects: ['set:wish.people', 'set:wish.written', 'set:c4.wish.hung'],
   },
   'c4.wish.nani': {
     lines: [
       { text: 'You write her name, and then: let me finish the book you started. The pen presses harder than you meant it to.' },
-      { text: 'You tie it where the morning sun will find it first. Somewhere under the same sky is a village that taught her to bow too deep.' },
+      { text: 'You tie it where the morning sun will find it first.' },
     ],
     effects: ['set:wish.nani', 'set:wish.written', 'set:c4.wish.hung'],
   },
@@ -922,15 +936,14 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- kingyo-sukui ----------------
   'c4.kingyo.offer': {
     lines: [
-      { text: 'The stall uncle looks you over, decides you are a customer, and hands you a paper scoop with the gravity of a sword master.' },
-      { text: 'Poi, he says. Paper. One dip is honest, two is brave, three is goodbye. The goldfish have heard all of this before.' },
+      { text: 'The stall uncle hands you a paper scoop with the gravity of a sword master. Poi, he says. One dip is honest, two is brave, three is goodbye.' },
     ],
     effects: ['set:c4.kingyo.start'],
   },
   'c4.kingyo.won': {
     lines: [
-      { text: 'The uncle ties the bag with a flourish and holds it out with both hands. You receive it with both, which earns an approving grunt.' },
-      { text: 'A goldfish of your own, orange as a struck match, riding a bag of harbor-colored water. Taro will demand a full report.' },
+      { text: 'The uncle holds out the bag with both hands. You take it with both, and he grunts approval.' },
+      { text: 'A goldfish of your own, orange as a struck match.' },
     ],
     effects: ['clear:c4.kingyo.start', 'set:c4.kingyo.done'],
   },
@@ -938,100 +951,112 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- the post ----------------
   'c4.post.pilar': {
     lines: [
-      { text: 'The red pillar box stands at attention. Beside it, the ferry office window doubles as the post counter, and the clerk waves an envelope.' },
-      { text: 'Mail, held for a traveler answering your description. The handwriting is unmistakably an invoice wearing a stamp.' },
+      { text: 'The ferry office window doubles as the post counter, and the clerk waves an envelope: unmistakably an invoice wearing a stamp.' },
     ],
     effects: ['letter:c4.pilar'],
   },
   'c4.post.marisol': {
     lines: [
-      { text: 'The clerk holds up one finger, checks under the ledger, and produces a second envelope. It smells faintly, impossibly, of the morning market.' },
+      { text: 'The clerk checks under the ledger and produces a second envelope. It smells faintly, impossibly, of the morning market.' },
     ],
     effects: ['letter:c4.marisol'],
   },
   'c4.ex.postbox': {
     lines: [
-      { text: 'The red pillar box. Collection at eight and two, says the plate, and the box has never once been late.' },
+      { text: 'The red pillar box. Collection at eight and two, and the box has never once been late.' },
     ],
   },
 
   // ---------------- ofuro ----------------
+  // The order of the bath is a thing you get wrong, then right.
   'c4.ofuro.scene': {
     lines: [
-      { text: 'The hinoki tub steams, hip-deep and inviting. You reach for the rim, and a voice comes through the wall with startling accuracy.' },
-      { who: 'Fumi', text: 'Wash FIRST! Stool, bucket, soap, rinse, all of it, before one toe touches my tub. The bath is for soaking, not for cleaning.' },
-      { text: 'You wash at the low stool until you squeak, then fold into water hot enough to reorganize your opinions. The little towel goes on your head.' },
-      { who: 'Fumi', text: 'Better, ne? The tub water stays clean for the next person. A bath you share with the whole house, just not at the same time.' },
+      { text: 'The hinoki tub steams, hip-deep and inviting. The stool and bucket wait by the wall.' },
+    ],
+    choices: [
+      { text: 'Climb straight into the tub', goto: 'c4.ofuro.tub' },
+      { text: 'Wash at the stool first', goto: 'c4.ofuro.wash' },
+    ],
+  },
+  'c4.ofuro.tub': {
+    lines: [
+      { who: 'Fumi', text: 'Wash FIRST! Stool, bucket, soap, rinse, before one toe touches my tub.' },
+    ],
+    next: 'c4.ofuro.wash',
+  },
+  'c4.ofuro.wash': {
+    lines: [
+      { text: 'You wash at the stool until you squeak, then fold into water hot enough to reorganize your opinions.' },
+      { who: 'Fumi', text: 'Better, ne? The water stays clean for the next person.' },
     ],
     effects: ['set:c4.ofuro', 'journal:customs.ofuro'],
   },
   'c4.ex.ofuro': {
     lines: [
-      { text: 'The wooden tub, faithfully hot. The stool and bucket sit where the actual washing happens; the tub itself is only for arriving.' },
+      { text: 'The wooden tub, faithfully hot. The washing happens at the stool; the tub is only for arriving.' },
     ],
   },
 
   // ---------------- examines: new kinds ----------------
   'c4.ex.machiya': {
     lines: [
-      { text: 'Dark cedar and white plaster under a heavy tile roof. The wood is silver where the salt wind works and black where the eaves defend it.' },
+      { text: 'Dark cedar and white plaster, silver where the salt wind works and black where the eaves defend it.' },
     ],
   },
   'c4.ex.noren': {
     lines: [
-      { text: 'The noren breathes in the doorway. Hung out means open, taken in means closed; a shop that tells the truth with cloth.' },
+      { text: 'Noren hung out means open, taken in means closed: a shop that tells the truth with cloth.' },
     ],
   },
   'c4.ex.torii': {
     lines: [
-      { text: 'The torii frames the steps: this side ordinary, that side sacred, one stride between them. You duck slightly, though there is no need.' },
+      { text: 'This side ordinary, that side sacred, one stride between. You duck slightly, though there is no need.' },
     ],
   },
   'c4.ex.ishidoro': {
     lines: [
-      { text: 'A stone lantern, mossy at the knees. Someone still lights it at dusk; boats coming home late steer small by its glow.' },
+      { text: 'A stone lantern, mossy at the knees. Boats coming home late steer small by its glow.' },
     ],
   },
   'c4.ex.bamboo': {
     lines: [
-      { text: 'Green bamboo, cut fresh for the festival. It grows straight at heaven, which is the entire point of hanging hopes on it.' },
+      { text: 'Bamboo cut fresh for the festival. It grows straight at heaven, which is the point of hanging hopes on it.' },
     ],
   },
   'c4.ex.bambooWish': {
     lines: [
-      { text: 'Tanzaku flutter in five colors: exam luck, safe boats, a wobbly one that says RAMEN. The town\'s hopes, sorted by wind.' },
+      { text: 'Tanzaku flutter in five colors: exam luck, safe boats, RAMEN. The town’s hopes, sorted by wind.' },
     ],
   },
   'c4.ex.tairyobata': {
     lines: [
-      { text: 'Tairyō-bata: big-catch flags, sunrise and waves and one emphatic fish. Boats flew them coming home full; now they fly for festivals and homecomings.' },
+      { text: 'Tairyō-bata, big-catch flags: sunrise, waves, one emphatic fish. Boats flew them coming home full.' },
     ],
     effects: ['journal:customs.tairyobata'],
   },
   'c4.ex.chochin': {
     lines: [
-      { text: 'A paper lantern on its pole, ribs showing through like a fish held to the light. At dusk the whole quay turns this shade of orange.' },
+      { text: 'A paper lantern, ribs showing like a fish held to the light. At dusk the whole quay turns this orange.' },
     ],
   },
   'c4.ex.keitruck': {
     lines: [
-      { text: 'The kei truck, small as a shoe and mighty as a mule. It idles at the port before dawn and knows every lane in town by heart.' },
+      { text: 'The kei truck, small as a shoe and mighty as a mule. It knows every lane in town by heart.' },
     ],
   },
   'c4.ex.ebisudo': {
     lines: [
-      { text: 'Ebisu smiles inside the little hall, a tai tucked under his arm. God of fishermen: the one god you tip in fish.' },
+      { text: 'Ebisu smiles inside the little hall, a tai under his arm: the one god you tip in fish.' },
     ],
   },
   'c4.ex.yatai': {
     lines: [
-      { text: 'A festival stall, red and white, one tub of goldfish rehearsing. The uncle is arranging paper scoops like a surgeon laying out instruments.' },
+      { text: 'A red and white stall, one tub of goldfish rehearsing. The uncle lays out paper scoops like surgical instruments.' },
     ],
   },
   'c4.ex.yatai.after': {
     lines: [
-      { text: 'The goldfish tub ripples with survivors and celebrities. The uncle nods at you: a colleague now, in the paper-scoop trade.' },
-      { text: 'He taps a fresh poi twice against the rim and leaves it lying there, which is how a stall keeper asks a question.' },
+      { text: 'The uncle taps a fresh poi twice on the rim and leaves it there, which is how a stall asks a question.' },
     ],
     choices: [
       { text: 'Take the fresh poi', when: { has: ['c4.kingyo.done'] }, goto: 'c4.kingyo.replay' },
@@ -1040,42 +1065,38 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.kingyo.replay': {
     lines: [
-      { text: 'No ceremony this time, no lecture about one dip being honest. Just paper, water, and the small orange chance of a fish.' },
+      { text: 'No lecture this time. Just paper, water, and the small orange chance of a fish.' },
     ],
     effects: ['set:replay.mode', 'set:c4.kingyo.start'],
   },
   'c4.ex.yatai.watch': {
     lines: [
-      { text: 'You stand and watch instead. A boy in a yukata tears through three poi in a row and is radiantly, completely happy about it.' },
+      { text: 'A boy in a yukata tears through three poi in a row and is radiantly happy about it.' },
     ],
   },
   'c4.ex.tatami': {
     lines: [
-      { text: 'Tatami, green-gold and springy underfoot, smelling faintly of dry grass and summer. Slippers stop at its border.' },
-      { text: 'No two mats are quite the same colour. They were made one at a time, and they have been standing in different amounts of sun ever since.' },
+      { text: 'Tatami, green-gold and springy, smelling faintly of dry grass. Slippers stop at its border.' },
     ],
   },
   'c4.ex.floorWood': {
     lines: [
-      { text: 'Dark boards polished by sixty years of socks. The house creaks in a friendly register, announcing everyone to everyone.' },
+      { text: 'Dark boards polished by sixty years of socks. The house creaks, announcing everyone to everyone.' },
     ],
   },
   'c4.ex.tataki': {
     lines: [
-      { text: 'The genkan: a cool stone floor a step below the house. Shoes stop here, and with them the road. The step up is the real front door.' },
-      { text: 'Lime, earth and brine, beaten down by hand until it set. There is grit all the way through it; that is not wear, that is the recipe.' },
+      { text: 'The genkan: cool stone a step below the house. Shoes stop here, and with them the road.' },
     ],
   },
   'c4.ex.wallShoji': {
     lines: [
-      { text: 'Wood and paper walls that trade in light and rumor. A shoji does not block sound; it just asks everyone to pretend.' },
-      { text: 'Clay above the rail, cedar below it, dark with sixty years of the same fire. The straw in the plaster still shows if you stand close.' },
-      { text: 'One pane is patched with newer paper, a slightly wronger white. It will match in about ten years, and by then there will be another.' },
+      { text: 'Wood and paper walls that trade in light and rumor. A shoji does not block sound; it asks everyone to pretend.' },
     ],
   },
   'c4.ex.irori': {
     lines: [
-      { text: 'The sunken hearth, embers banked under ash. The kettle hook hangs over it like a question the house answers three times a day.' },
+      { text: 'The sunken hearth, embers banked under ash, the kettle hook hanging over it like a question.' },
     ],
   },
 
@@ -1084,15 +1105,15 @@ export const SHIONOURA_NODES: NodeMap = {
   // this is also the local locksmith for the star-river knowledge.
   'c4.ex.amanogawa': {
     lines: [
-      { text: 'Past the last lantern, where the sky leans on the water, the star river shows itself: the Amanogawa, the river of heaven.' },
+      { text: 'Past the last lantern the star river shows itself: the Amanogawa.' },
       { text: 'Orihime wove, Hikoboshi herded, and love stopped the work. The Sky King parted them with this river; magpies bridge it one night a year.' },
-      { text: 'The seventh night of the seventh month. If it rains, no bridge, so a whole town is watching the sky like fishermen.' },
+      { text: 'Rain on the seventh night means no bridge, so the town watches the sky like fishermen.' },
     ],
     effects: ['set:c4.seen.amanogawa', 'journal:customs.tanabata'],
   },
   'c4.ex.sea': {
     lines: [
-      { text: 'The Seto Inland Sea, flat as poured metal, islands stacked blue on blue. A sea with the manners of a lake and the memory of an ocean.' },
+      { text: 'The Inland Sea, flat as poured metal, islands stacked blue on blue: the manners of a lake and the memory of an ocean.' },
     ],
   },
   'c4.ex.sand': {
@@ -1102,301 +1123,296 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.wet': {
     lines: [
-      { text: 'The tide\'s wet hem. Tiny crabs vanish ahead of your shadow with bureaucratic efficiency.' },
+      { text: 'The tide’s wet hem. Tiny crabs vanish ahead of your shadow with bureaucratic efficiency.' },
     ],
   },
   'c4.ex.pier': {
     lines: [
-      { text: 'Concrete and old timber, ringed with truck tires for fenders. The ferry kisses here three times a day, exactly on time.' },
+      { text: 'Concrete ringed with truck tires. The ferry kisses here three times a day, exactly on time.' },
     ],
   },
   // The first stand on the quay carries what the gangway used to narrate:
   // the heat and the cicadas, met at your own pace instead of in a corridor.
   'c4.ex.quay.heat': {
     lines: [
-      { text: 'The heat is a wet towel. From the dark of the hill comes a wall of sound, sizzling like oil: cicadas, thousands, all of them certain.' },
+      { text: 'The heat is a wet towel. From the hill, a wall of sound sizzling like oil: cicadas, thousands, all of them certain.' },
     ],
     effects: ['set:c4.quay.heat'],
   },
   'c4.ex.quay': {
     lines: [
-      { text: 'Fitted stone, swept and sun-warm. By day the market, by dusk the promenade, by festival the whole town\'s living room.' },
+      { text: 'Fitted stone, sun-warm. By day the market, by dusk the promenade, by festival the town’s living room.' },
     ],
   },
   'c4.ex.path': {
     lines: [
-      { text: 'Stone worn smooth in the middle and mossy at the edges. Feet have been agreeing on this exact line for a few hundred years.' },
+      { text: 'Stone worn smooth in the middle, mossy at the edges. Feet have agreed on this line for a few hundred years.' },
     ],
   },
   'c4.ex.yard': {
     lines: [
-      { text: 'The shrine yard\'s raked earth, swept into faint tidy arcs. Genji\'s broom signature, renewed daily.' },
+      { text: 'Raked earth in faint tidy arcs: Genji’s broom signature, renewed daily.' },
     ],
   },
   'c4.ex.hisashi': {
     lines: [
-      { text: 'A shop awning on steel arms, cloth bleached on the seaward half only. No two on this street hang at the same height; no two ever did.' },
+      { text: 'A shop awning bleached on the seaward half only. No two on this street hang at the same height.' },
     ],
   },
   'c4.ex.stall': {
     lines: [
-      { text: 'A market stall, scales and ice and yesterday\'s prices chalked over twice. By eight in the morning it has already had its whole day.' },
+      { text: 'Scales, ice, yesterday’s prices chalked over twice. By eight it has already had its whole day.' },
     ],
   },
   'c4.ex.bench': {
     lines: [
-      { text: 'A bench in the arcade\'s shade, seat polished to a shine. The morning shift is three grandmothers; the afternoon shift is the cat.' },
+      { text: 'A bench in the arcade’s shade. The morning shift is three grandmothers; the afternoon shift is the cat.' },
     ],
   },
   'c4.ex.boat': {
     lines: [
-      { text: 'A small fishing boat, high-prowed, name painted twice, once faded and once fresh. Same name both times.' },
+      { text: 'A high-prowed fishing boat, name painted twice, once faded and once fresh. Same name both times.' },
     ],
   },
   'c4.ex.crate': {
     lines: [
-      { text: 'Styrofoam and wood crates, fish-silver at the seams. The stack is a public calendar: tall means the sea was generous.' },
+      { text: 'Fish crates, silver at the seams. The stack is a public calendar: tall means the sea was generous.' },
     ],
   },
   'c4.ex.net': {
     lines: [
-      { text: 'Nets drying in long green folds, smelling of iodine and patience. Every mend is a different evening of talk; that part is true everywhere.' },
+      { text: 'Nets drying in green folds, smelling of iodine and patience.' },
     ],
   },
   'c4.ex.rock': {
     lines: [
-      { text: 'Grey harbor stone, barnacled below the waterline, warm above it. The sea draws its own plimsoll line on everything.' },
+      { text: 'Harbor stone, barnacled below the waterline, warm above it.' },
     ],
   },
   'c4.ex.tree': {
     lines: [
-      { text: 'The tree is shouting. Cicadas, dozens deep, sizzling like frying oil: jiri jiri jiri. Seven years underground for one loud summer.' },
+      { text: 'The tree is shouting. Cicadas, dozens deep: jiri jiri jiri. Seven years underground for one loud summer.' },
     ],
   },
   'c4.ex.tuft': {
     lines: [
-      { text: 'Summer grass, humming with small lives. Somewhere in it a cicada winds up like a starter motor.' },
+      { text: 'Summer grass. Somewhere in it a cicada winds up like a starter motor.' },
     ],
   },
   'c4.ex.doorshut': {
     lines: [
-      { text: 'A latched shopfront, noren taken in. Behind one, a radio and the smell of tofu; behind another, only dust and a faded FOR RENT in two languages.' },
+      { text: 'A latched shopfront, noren taken in. Behind it, a radio and the smell of tofu.' },
     ],
   },
   'c4.ex.sign': {
     lines: [
-      { text: 'SHIONOURA, the sign says, over a painted tai. Below, the ferry timetable, and below that, smaller: THE TIMETABLE IS THE TOWN. Somebody underlined it.' },
+      { text: 'SHIONOURA, over a painted tai. Below the timetable, smaller: THE TIMETABLE IS THE TOWN. Somebody underlined it.' },
     ],
   },
   'c4.pier.notyet': {
     lines: [
-      { text: 'The ferry office board: Shimonoseki twice daily, connections to the Busan ferry across the strait. Captain Isao\'s handwriting is naval and absolute.' },
-      { text: 'Under the timetable, chalked: NO SAILINGS BEFORE THE SEVENTH NIGHT. THE STARS OUTRANK ME.' },
+      { text: 'Chalked under the ferry board, in Captain Isao’s naval hand: NO SAILINGS BEFORE THE SEVENTH NIGHT.' },
     ],
   },
   'c4.pier.next': {
     lines: [
-      { text: 'THE MORNING BOAT: Shimonoseki, then Busan, the strait ferry that has stitched these two coasts together for a century.' },
-      { text: 'Chapter Five is being provisioned. Captain Isao has already chalked your name on the manifest, spelled almost correctly.' },
+      { text: 'THE MORNING BOAT: Shimonoseki, then Busan. Captain Isao has chalked your name on the manifest, spelled almost correctly.' },
     ],
   },
   // ---------------- examines: the love pass ----------------
   'c4.ex.jizo': {
     lines: [
-      { text: 'A small stone Jizo beside the steps, hands folded, wearing a knitted red bib and cap. Someone has swept the leaves from his feet.' },
-      { text: 'At his feet, one mikan jelly cup and a chipped teacup. The going rate, apparently, for watching over a town.' },
+      { text: 'A small stone Jizo in a knitted red bib. At his feet, a mikan jelly cup and a chipped teacup.' },
     ],
     effects: ['set:c4.seen.jizo'],
   },
   'c4.ex.jizo2': {
     lines: [
-      { text: 'Look closer: the bib\'s wool is new, the stitches small and sure. Somebody in town reknits it every winter, and has for longer than anyone says.' },
+      { text: 'The bib’s wool is new. Somebody reknits it every winter, and has for longer than anyone says.' },
     ],
   },
   'c4.ex.ema': {
     lines: [
-      { text: 'Wooden ema hang two rows deep: safe boats, a fat catch, pass the exam. One just says COME BACK SOON, pressed hard enough to dent the plaque.' },
+      { text: 'Wooden ema two rows deep: safe boats, a fat catch. One says COME BACK SOON, pressed hard enough to dent the plaque.' },
     ],
   },
   'c4.ex.koke': {
     lines: [
-      { text: 'Moss upholsters the edges of the step, older than anyone who climbs it. The middle stays bare, argued smooth by feet with somewhere to be.' },
+      { text: 'Moss on the edges of the step, older than anyone who climbs it. The middle stays bare.' },
     ],
   },
   'c4.ex.jihanki': {
     lines: [
-      { text: 'A vending machine hums alone on the corner, lit like a small shrine. Cold tea, hot coffee, corn soup: all hours, all seasons, no explanation.' },
+      { text: 'A vending machine hums alone on the corner, lit like a small shrine. Corn soup, all hours.' },
     ],
     effects: ['set:c4.seen.jihanki'],
   },
   'c4.ex.jihanki2': {
     lines: [
-      { text: 'Blue tabs for TSUMETAI, red for ATSUI: cold and hot living in one box. At dusk its light comes on, and the corner quietly counts on it.' },
+      { text: 'Blue for TSUMETAI, red for ATSUI. At dusk the corner quietly counts on its light.' },
     ],
   },
   'c4.ex.ukidama': {
     lines: [
-      { text: 'Glass floats in a net bag, green as bottled sea. Plastic took their job years ago; nobody here would dream of letting the old crew go.' },
+      { text: 'Glass floats in a net bag, green as bottled sea. Plastic took their job; nobody here would let the old crew go.' },
     ],
   },
   // The crates Sachiko nodded at, carrying Lemon Valley in stencil form.
   'c4.ex.setoda': {
     lines: [
-      { text: 'SETODA, say the stencils. The crates ride the ferry from Lemon Valley, whole terraced hillsides of it above the water since the sixties.' },
-      { text: 'Most of Japan\'s lemons grow on those slopes. In July the mikan is only juice and jelly, so the lemon does the singing.' },
+      { text: 'SETODA, say the stencils: Lemon Valley, terraced hillsides above the water. Most of Japan’s lemons grow on those slopes.' },
     ],
     effects: ['set:c4.seen.setoda', 'journal:dishes.lemon'],
   },
   'c4.ex.mikanbako': {
     lines: [
-      { text: 'Mikan crates stenciled SETODA, on summer duty with juice and jelly. The fruit itself is asleep on the terraces until autumn.' },
+      { text: 'Mikan crates on summer duty with juice and jelly. The fruit itself is asleep on the terraces until autumn.' },
     ],
   },
   'c4.ex.jitensha': {
     lines: [
-      { text: 'A granny bike with a basket, a bell, and no lock. The clack of its kickstand is one of the town\'s official sounds.' },
+      { text: 'A granny bike with a basket, a bell, and no lock. The clack of its kickstand is an official town sound.' },
     ],
   },
   'c4.ex.ittokan': {
     lines: [
-      { text: 'A square kerosene can, retired into a planter and heavy with hydrangeas. Nothing in Shionoura is thrown away; it is reassigned.' },
+      { text: 'A kerosene can, retired into a planter of hydrangeas. Nothing here is thrown away; it is reassigned.' },
     ],
   },
   'c4.ex.ajisai': {
     lines: [
-      { text: 'Hydrangeas holding the exact blue of seven in the evening. Tsuyu is a tiresome guest, but it does pay its rent in flowers.' },
+      { text: 'Hydrangeas the exact blue of seven in the evening. Tsuyu is a tiresome guest, but it pays its rent in flowers.' },
     ],
   },
   'c4.ex.himono': {
     lines: [
-      { text: 'Small fish dry butterflied on the net rack, salted and stiffening. It stands exactly one cat\'s jump too high, built by a town that knows its cats.' },
+      { text: 'Small fish drying butterflied on the rack, exactly one cat’s jump too high.' },
     ],
   },
   'c4.ex.monohoshi': {
     lines: [
-      { text: 'Towels and aprons pinned hard against the sea wind. Fumi consults the sky like a tide table before trusting it with a single sock.' },
+      { text: 'Towels pinned hard against the sea wind. Fumi consults the sky like a tide table before trusting it with a sock.' },
     ],
   },
   'c4.ex.gyokyo': {
     lines: [
-      { text: 'The co-op board: quota notices, a typhoon drill, a crayon poster for the goldfish stall. Official and unofficial share the same four nails.' },
+      { text: 'The co-op board: quota notices, a typhoon drill, a crayon poster for the goldfish stall.' },
     ],
   },
   'c4.gyokyo.after': {
     lines: [
-      { text: 'A new notice, brushed by hand: THE SEVENTH NIGHT WENT WELL. OTSUKARESAMA, MINNA. The co-op stamp underneath makes it official policy.' },
+      { text: 'A new notice, brushed by hand: THE SEVENTH NIGHT WENT WELL. OTSUKARESAMA, MINNA.' },
     ],
   },
   'c4.ex.furin': {
     lines: [
-      { text: 'A glass furin translating sea wind into small bright syllables. Its paper strip adds a wish to every gust, free of charge.' },
+      { text: 'A glass furin translating sea wind into small bright syllables.' },
     ],
   },
   'c4.ex.neko1': {
     lines: [
-      { text: 'On the warm quay stone, a calico in full loaf: paws stowed, eyes at half mast. You have been seen, filed, and dismissed.' },
+      { text: 'A calico in full loaf on the warm quay stone. You have been seen, filed, and dismissed.' },
     ],
     effects: ['set:c4.seen.neko1'],
   },
   'c4.ex.neko1b': {
     lines: [
-      { text: 'The loaf has not moved, but the eyes track you with the calm of middle management. This stretch of quay is hers; the paperwork is in order.' },
+      { text: 'The loaf has not moved, but the eyes track you with the calm of middle management.' },
     ],
   },
   'c4.neko2.tai': {
     lines: [
-      { text: 'The stall cat has noticed Fumi\'s tai. He falls in beside you with the sudden warm loyalty of an old friend you have never met.' },
+      { text: 'The stall cat has noticed Fumi’s tai, and falls in beside you like an old friend you have never met.' },
     ],
   },
   'c4.ex.neko2': {
     lines: [
-      { text: 'A big scarred tom sits by the fish stall like he holds shares in it. Daisuke calls him Kacho, the section chief. Nobody laughs twice.' },
+      { text: 'A scarred tom by the fish stall, like he holds shares in it. Daisuke calls him Kacho, the section chief.' },
     ],
     effects: ['set:c4.seen.neko2'],
   },
   'c4.ex.neko2b': {
     lines: [
-      { text: 'Kacho inspects the crates, the nets, and you, in that order of importance. Promotion here does not go through him; respect, however, does.' },
+      { text: 'Kacho inspects the crates, the nets, and you, in that order of importance.' },
     ],
   },
   'c4.ex.neko3': {
     lines: [
-      { text: 'Under the bench, a small black cat sleeps in the shade the grandmothers keep warm for it. The afternoon shift, technically on duty.' },
+      { text: 'Under the bench, a small black cat sleeps in the shade the grandmothers keep warm for it.' },
     ],
     effects: ['set:c4.seen.neko3'],
   },
   'c4.ex.neko3b': {
     lines: [
-      { text: 'One ear swivels toward your footsteps, weighs the information, and stands down. You have been classified: harmless, carries no snacks.' },
+      { text: 'One ear swivels toward you and stands down. Classified: harmless, carries no snacks.' },
     ],
   },
   'c4.ex.bathstool': {
     lines: [
-      { text: 'The bath stool, knee-high and scrubbed pale, standing by the ofuro with the pail upended on it. You wash first; the tub is for after.' },
+      { text: 'The bath stool, scrubbed pale, the pail upended on it. You wash first; the tub is for after.' },
     ],
   },
   'c4.ex.chochin.in': {
     lines: [
-      { text: 'A lantern brought in off the quay and stood in the hall, where the wooden floor runs too long for one window to reach the far end.' },
+      { text: 'A lantern brought in off the quay, standing where the hall runs too long for one window.' },
     ],
   },
   'c4.ex.monohoshi.in': {
     lines: [
-      { text: 'The drying rack, moved indoors when the sky looks like this. Towels for six guests and one apron that has never once been a guest\u2019s.' },
+      { text: 'The drying rack, moved indoors when the sky looks like this.' },
     ],
   },
   'c4.ex.kaigara': {
     lines: [
-      { text: 'Shells and sea glass, the tide\'s small change. Taro\'s exchange rate: white is common, pink is money, blue glass is beyond price.' },
+      { text: 'Shells and sea glass. By Taro’s exchange rate, white is common, pink is money, blue glass is beyond price.' },
     ],
   },
   'c4.egg.shell': {
     lines: [
-      { text: 'One pink shell, real money by Taro\'s exchange, finds its way into your pocket. Two streets later it is at Jizo\'s feet, beside the jelly cup.' },
-      { text: 'Some coins only spend one way.' },
+      { text: 'One pink shell finds its way into your pocket. Two streets later it is at Jizo’s feet, beside the jelly cup. Some coins only spend one way.' },
     ],
     effects: ['set:egg.c4.shell'],
   },
   'c4.egg.jizo': {
     lines: [
-      { text: 'Your pink shell has been moved front and center, beside the teacup. Whoever tends Jizo has accepted the deposit and adjusted the display.' },
+      { text: 'Your pink shell has been moved front and center. Whoever tends Jizo has accepted the deposit.' },
     ],
     effects: ['set:egg.c4.shell.seen'],
   },
   'c4.ex.senpuki': {
     lines: [
-      { text: 'An elderly electric fan sweeps the room in slow no\'s, disagreeing with summer on principle. It has outlived three sleeker replacements.' },
+      { text: 'An elderly fan sweeps the room in slow no’s, disagreeing with summer on principle.' },
     ],
   },
   'c4.ex.mugicha': {
     lines: [
-      { text: 'Cold mugicha sweating politely on its tray, one glass already poured for whoever passes. Refusing it is possible in theory only.' },
+      { text: 'Cold mugicha sweating on its tray, one glass poured for whoever passes. Refusing it is possible in theory only.' },
     ],
   },
   'c4.ex.getarow': {
     lines: [
-      { text: 'Geta and sandals at the genkan edge, toes pointed out the door. The house sends you off ready, whichever way your feet decide.' },
+      { text: 'Geta at the genkan edge, toes pointed out the door, ready whichever way your feet decide.' },
     ],
   },
 
   'c4.ex.tablelow': {
     lines: [
-      { text: 'The low table, legs folded under it like a resting animal. Meals, letters, homework, tea: the whole house happens at knee height.' },
+      { text: 'The low table, legs folded under it like a resting animal. The whole house happens at knee height.' },
     ],
   },
   'c4.ex.zabuton': {
     lines: [
-      { text: 'A flat cushion, dented by decades of correct sitting. Your knees file a formal complaint and are overruled.' },
+      { text: 'A flat cushion, dented by decades of correct sitting. Your knees file a complaint and are overruled.' },
     ],
   },
   'c4.ex.kettle': {
     lines: [
-      { text: 'An iron kettle, black and patient. It has outlived three emperors and intends to outlive the electric one on the counter.' },
+      { text: 'An iron kettle, black and patient. It intends to outlive the electric one on the counter.' },
     ],
   },
   'c4.ex.shelf2': {
     lines: [
-      { text: 'Jars of iriko, kombu, pickled plums, and one shelf of guest cups that are never the everyday cups. Guests can tell. That is the point.' },
+      { text: 'Iriko, kombu, pickled plums, and guest cups that are never the everyday cups. Guests can tell. That is the point.' },
     ],
   },
   // Skinned to `goza` on this map in `art/sets/shionoura.ts`: the one room in
@@ -1404,8 +1420,7 @@ export const SHIONOURA_NODES: NodeMap = {
   // Andean weave.
   'c4.ex.mat2': {
     lines: [
-      { text: 'A goza unrolled at the edge of the genkan, rush like the tatami but finer, bound down its long sides with indigo cloth.' },
-      { text: 'Shoes lined up on it with their toes to the door, ready to leave the moment you are. Fumi\'s doing, silent as a tide.' },
+      { text: 'A goza at the genkan’s edge, shoes lined up on it, toes to the door: Fumi’s doing.' },
     ],
   },
 };

@@ -199,12 +199,12 @@ export const KERALA_TASKS: TaskDef[] = [
     who: 'mariamma',
   },
   {
-    when: { has: ['c6.letter.delivered'], not: ['c6.letter.heard'] },
-    text: 'The letter is in Mariamma’s hands and her eyes are already shining. Stay in the kitchen; some readings need a witness.',
+    when: { has: ['c6.letter.delivered'], not: ['c6.kunje'] },
+    text: 'The letter is in Mariamma’s hands and her eyes are already shining. Stay in the kitchen; some readings need a witness, and she is not finished with you.',
     who: 'mariamma',
   },
   {
-    when: { has: ['c6.letter.delivered'], not: ['c6.chaya'] },
+    when: { has: ['c6.kunje'], not: ['c6.chaya'] },
     text: 'Mariamma’s orders: chaya at Shaji’s thattukada, and tell him whose guest you are. The village will do the rest.',
     who: 'shaji',
   },
@@ -225,7 +225,7 @@ export const KERALA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] },
-    text: 'Sunday’s sadya needs serving hands: banana leaves, ten dishes, two aunties, one right hand. Mariamma’s kitchen, whenever you are ready.',
+    text: 'The sadya needs serving hands: banana leaves, ten dishes, two aunties, one right hand. Mariamma’s kitchen, whenever you are ready.',
     who: 'mariamma',
   },
   {
@@ -265,7 +265,7 @@ export const KERALA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c6.complete'], not: ['c6.depart.ready'] },
-    text: 'The whole spit has vouched for you. Moosa, counting cardamom by the jetty office, knows where the spice goes next. Ask him which road is yours.',
+    text: 'Mariamma has sent you on. Moosa, counting cardamom by the jetty office, knows where the spice goes next. Ask him which road is yours.',
     who: 'moosa',
   },
   {
