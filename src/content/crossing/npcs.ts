@@ -334,7 +334,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.baon': {
     lines: [
-      { who: 'Mang Ben', text: 'And since you are fed: favor na, pare. Joseph has the watch and forgot his night lunch again.' },
+      { who: 'Mang Ben', text: 'And since you are fed: favor na, anak. Joseph has the watch and forgot his night lunch again.' },
       { text: 'He tucks a cloth around a covered plate the way you tuck a blanket around a child.' },
       { who: 'Mang Ben', text: 'Port rail, forward. Walk it steady and it stays warm. Sige.' },
     ],
@@ -342,7 +342,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.wait': {
     lines: [
-      { who: 'Mang Ben', text: 'Still holding the plate? It is getting philosophical under that cloth, pare. Port rail. Joseph.' },
+      { who: 'Mang Ben', text: 'Still holding the plate? It is getting philosophical under that cloth, anak. Port rail. Joseph.' },
     ],
   },
   'c3.ben.cookoffer': {
@@ -364,7 +364,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.cooklater': {
     lines: [
-      { who: 'Mang Ben', text: 'The pot is patient and so am I. One of us is lying, pare.' },
+      { who: 'Mang Ben', text: 'The pot is patient and so am I. One of us is lying, anak.' },
     ],
   },
   'c3.cooked': {
@@ -377,7 +377,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.mess': {
     lines: [
-      { who: 'Mang Ben', text: 'Hear the mess tonight? Loud. A healthy heartbeat, pare.' },
+      { who: 'Mang Ben', text: 'Hear the mess tonight? Loud. A healthy heartbeat, anak.' },
       { who: 'Mang Ben', text: 'Also: the bosun keeps looking at the chart and grinning. Pollywogs should stretch. I say no more.' },
     ],
     // Said once, and then the galley goes back to offering you an apron.
@@ -388,7 +388,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.ben.her': {
     lines: [
       { text: 'He is portioning tomorrow’s rice, counting scoops and losing the count.' },
-      { who: 'Mang Ben', text: 'You chop quiet, pare. This run had a loud one once, the cook who taught me said.' },
+      { who: 'Mang Ben', text: 'You chop quiet, anak. This run had a loud one once, the cook who taught me said.' },
       { who: 'Mang Ben', text: 'A passenger girl who would not stay out of the galley. Zoila. Peeled onions and sang the whole watch.' },
     ],
     choices: [
@@ -1193,7 +1193,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
     from: 'Doña Petro, La Picantería',
     when: { has: ['c2.casero'] },
     body: [
-      'Casera. Marisol tells the whole malecón that her casero sailed with the capitana. She says it proudly, like weather she predicted.',
+      'Casero. Marisol tells the whole malecón that her casero sailed with the capitana. She says it proudly, like weather she predicted.',
       'Listen: a galley is only a picantería that moves. Same law applies. Feed them what the pots say, and never argue with the pot.',
       'The capitana taught me her cook’s word once: baon. Food packed for somebody’s watch, the love kept warm under the cloth. We always had the thing; now you have the word.',
       'The sudado was better the week you carried the lisa. That is not sentiment, it is seasoning. Pass this way again and test me.',

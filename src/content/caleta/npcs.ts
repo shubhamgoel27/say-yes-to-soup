@@ -805,7 +805,7 @@ export const CALETA_NODES: NodeMap = {
   // ---------------- Don Wili, emolientero ----------------
   'mar.wili.first': {
     lines: [
-      { who: 'Don Wili', text: 'Emoliente, casera. Barley, flax, herbs, lime. Hot glass for a grey morning.' },
+      { who: 'Don Wili', text: 'Emoliente, casero. Barley, flax, herbs, lime. Hot glass for a grey morning.' },
       { text: 'Thick, faintly sweet, like a field decided to be tea. The warmth reaches your fingertips.' },
     ],
     effects: ['set:met.wili', 'journal:people.wili', 'journal:dishes.emoliente'],
