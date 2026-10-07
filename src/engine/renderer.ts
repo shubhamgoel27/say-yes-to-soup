@@ -1860,6 +1860,15 @@ export class Renderer {
         const oy = (gy * GCHUNK * TILE - cam.y) * A;
         live(e.water, e.waterKind);
         ctx.drawImage(e.cv, ox, oy);
+        // The sub-pixel camera puts every chunk edge mid-pixel, and two
+        // antialiased half-covered edges never add up to an opaque pixel:
+        // a faint line of background showed every eight tiles. So each chunk
+        // also lays its own last two columns and rows one pixel outward,
+        // which fully covers the shared pixel before the neighbour's soft
+        // edge lands on it. The neighbour is drawn later and covers the rest.
+        ctx.drawImage(e.cv, GW - 2, 0, 2, GW, ox + GW - 1, oy, 2, GW);
+        ctx.drawImage(e.cv, 0, GW - 2, GW, 2, ox, oy + GW - 1, GW, 2);
+        ctx.drawImage(e.cv, GW - 2, GW - 2, 2, 2, ox + GW - 1, oy + GW - 1, 2, 2);
         live(e.over, e.overKind);
         if (e.foam.length) {
           // The wash comes up the sand and slides back.
@@ -3648,6 +3657,8 @@ const NEVER = () => false;
 /** Baked ground chunks: 8x8 tiles each; ~20 cover the view plus margins. */
 const GCHUNK = 8;
 const GCHUNK_CAP = 30;
+/** One baked chunk's side in canvas pixels. */
+const GW = GCHUNK * S;
 type GroundChunk = {
   cv: HTMLCanvasElement;
   g: CanvasRenderingContext2D;
