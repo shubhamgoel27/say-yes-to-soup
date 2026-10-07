@@ -1237,7 +1237,7 @@ export const NODES: NodeMap = {
   },
   'ex.signpost': {
     lines: [
-      { text: 'The board points west. Distances have been carved, argued with, crossed out. Someone has simply written: "MORE."' },
+      { text: 'The board points on, down through the pass. Distances have been carved, argued with, crossed out. Someone has simply written: "MORE."' },
     ],
   },
   'ex.sea.first': {
@@ -1404,6 +1404,9 @@ export const NODES: NodeMap = {
   },
   'ex.rock': {
     lines: [{ text: 'A boulder, sitting exactly where the glacier left it. It is not planning to move.' }],
+  },
+  'ex.rock.bajada': {
+    lines: [{ text: 'A boulder the hillside let go of, one wet year. It rolled this far, looked at the sea, and stopped.' }],
   },
   'ex.doorShut': {
     lines: [{ text: 'Latched. From inside: the clack of a loom, a radio speaking Quechua, someone laughing at it.' }],
@@ -1594,7 +1597,7 @@ export const NODES: NodeMap = {
   },
   'ex.kite.faustino': {
     lines: [
-      { text: 'Faustino swears a real condor circled it twice and left unconvinced. The kite takes this as a compliment.' },
+      { text: 'The condor kite in the branches: Faustino swears a real condor circled it twice and left unconvinced. The kite takes this as a compliment.' },
     ],
   },
   'ex.hitchpost': {
@@ -1604,7 +1607,7 @@ export const NODES: NodeMap = {
   },
   'ex.qepi': {
     lines: [
-      { text: 'A traveler\'s q\'epi by the cairn, knotted around everything that matters today. The knot is a door, and it is closed.' },
+      { text: 'A traveler\'s q\'epi set down off the road, knotted around everything that matters today. The knot is a door, and it is closed.' },
     ],
   },
   'ex.apachetita': {
@@ -1717,7 +1720,11 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   blocked: [{ node: 'ex.adobe' }],
   flower: [{ node: 'ex.flower' }],
   tuft: [{ node: 'ex.tuft', scope: 'home' }, { node: 'ex.tuft.away', scope: 'away' }],
-  rock: [{ node: 'ex.rock', scope: 'home' }, { node: 'ex.rock.away', scope: 'away' }],
+  rock: [
+    { map: 'la-bajada', node: 'ex.rock.bajada' },
+    { node: 'ex.rock', scope: 'home' },
+    { node: 'ex.rock.away', scope: 'away' },
+  ],
   doorShut: [{ node: 'ex.doorShut', scope: 'home' }, { node: 'ex.doorShut.away', scope: 'away' }],
   chomba: [{ node: 'ex.chomba' }],
   qoncha: [{ node: 'ex.qoncha' }],

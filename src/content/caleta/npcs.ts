@@ -1108,6 +1108,11 @@ export const CALETA_NODES: NodeMap = {
       { text: 'Dry dune grass, hanging on, firmly.' },
     ],
   },
+  'mar.ex.fogon': {
+    lines: [
+      { text: 'The fogón: bricks, mud, forty years of fire. The wall above is glossy black and proud of it.' },
+    ],
+  },
   'mar.pier.locked': {
     lines: [
       { text: 'The gangway to the launch. Beyond, at anchor, a cargo ship the size of a small opinionated island.' },
@@ -1149,7 +1154,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.ex.gato.pic': {
     lines: [
-      { text: 'The picantería cat, asleep at the warm end. Petro calls it a bad cat. The full bowl by the qoncha is also Petro’s.' },
+      { text: 'The picantería cat, asleep at the warm end. Petro calls it a bad cat. The full bowl by the fogón is also Petro’s.' },
     ],
   },
   'mar.ex.chomba.pic': {
@@ -1324,6 +1329,8 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   // The picantería's shell is skinned to the chapter's own quincha and
   // cement (`art/sets/caleta.ts`), so it gets the chapter's own words too.
   wallInt: [{ map: 'picanteria', node: 'mar.ex.wallquincha' }],
+  // Petro cooks on a coastal fogón; q'oncha is the highland word.
+  qoncha: [{ map: 'picanteria', node: 'mar.ex.fogon' }],
   floorEarth: [{ map: 'picanteria', node: 'mar.ex.floorcemento' }],
   sand: [{ node: 'mar.ex.sand' }],
   sandWet: [
