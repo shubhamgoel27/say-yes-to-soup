@@ -726,8 +726,8 @@ export const CROSSING_NODES: NodeMap = {
   'c3.depart': {
     lines: [
       { text: 'A small brown bird lands on the rail. Then the smell arrives: green, wet, alive. Land birds lead the bow now.' },
-      { text: 'On the bollard by the jackstaff sits a covered plate, its cloth tucked like a blanket. Ben’s. This watch, the baon is yours.' },
-      { text: 'Islands rise out of the haze, and thirty-one days end in one gentle bump. Shionoura. The gangway swings down.' },
+      { text: 'Ben comes up the ladder with a covered plate, its cloth tucked like a blanket, and leaves it in your hands. This watch, the baon is yours.' },
+      { text: 'Islands rise out of the haze. The engine drops to a murmur, the anchor chain runs out, and the pilot’s launch comes alongside for you. Shionoura.' },
     ],
     effects: ['travel:shionoura'],
   },
