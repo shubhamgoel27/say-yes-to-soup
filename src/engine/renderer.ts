@@ -100,6 +100,8 @@ function taperings(src: HTMLCanvasElement): HTMLCanvasElement[] {
  * haystacks side by side are still props, and a prop lies on its own cast
  * shadow rather than on a tile-wide wall strip.
  */
+/** Walls drawn as their top where they run north-south, not as a stack of faces. */
+const RUN_WALLS = new Set(['wallInt', 'wallStone']);
 const WALL_KIND = /wall|mural|fence|pirca|gate|portales|parapet|hedge/i;
 
 /** The seam wobble repeats every this many tiles; masks are cached per phase. */
@@ -1776,11 +1778,16 @@ export class Renderer {
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
           }
-          if (t.kind === 'wallInt' && map.object(t.cx, t.cy + 1)?.t === 'wallInt') {
-            // A room's side wall, seen along its length (see drawWallRun).
+          if (RUN_WALLS.has(t.kind) && map.object(t.cx, t.cy + 1)?.t === t.kind) {
+            // A wall seen along its length: a room's side wall, a stone
+            // ridge running north-south (see drawWallRun).
             const open = (dx: number, dy: number) =>
-              map.inBounds(t.cx + dx, t.cy + dy) && map.object(t.cx + dx, t.cy + dy)?.t !== 'wallInt';
-            this.tiles.drawWallRun(ctx, t.kind, tx, ty, { left: open(-1, 0), right: open(1, 0), top: open(0, -1) });
+              map.inBounds(t.cx + dx, t.cy + dy) && map.object(t.cx + dx, t.cy + dy)?.t !== t.kind;
+            this.tiles.drawWallRun(ctx, t.kind, tx, ty, t.cx, t.cy, {
+              left: open(-1, 0),
+              right: open(1, 0),
+              top: open(0, -1),
+            });
           } else {
             this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
           }

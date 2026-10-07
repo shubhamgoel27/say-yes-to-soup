@@ -593,6 +593,31 @@ export class Tileset {
       if (r.chance(0.4)) dot(g, r.int(S), 10 + r.int(24), 2.4, PAL.greenDark);
     });
 
+    // The same ridge seen along its length, for a wall running north-south:
+    // the face above is a south face with a dark footing, and stacked down a
+    // column it read as a pile of slabs. Boulders all the way down instead,
+    // and no band at either edge, so one cell runs into the next.
+    this.make('wallStoneRun', 5, (g, r) => {
+      rect(g, 0, 0, S, S, shade(PAL.stone, 0.02));
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(S), r.int(S), 10 + r.int(8), 6, `rgba(70,64,56,${0.08 + r.next() * 0.06})`);
+      }
+      for (let row = 0; row < 3; row++) {
+        let x = 2 + r.int(8) - (row % 2) * 6;
+        while (x < S - 4) {
+          const w = 13 + r.int(9);
+          const tone = shade(PAL.stone, (r.next() - 0.35) * 0.24);
+          const by = 11 + row * 21 + r.int(4) - 2;
+          // Each stone sits in its own shadow, so the joints read.
+          blob(g, x + w / 2, by + 1.6, w / 2, shade(PAL.stoneDark, -0.08), r, 0.12);
+          blob(g, x + w / 2, by, w / 2 - 1, tone, r, 0.15);
+          oval(g, x + w / 2 - 2, by - 3, w / 5, 2, 'rgba(255,250,236,0.12)');
+          x += w + 3;
+        }
+      }
+      if (r.chance(0.4)) dot(g, 8 + r.int(S - 16), 6 + r.int(S - 12), 2.4, PAL.greenDark);
+    });
+
     this.make('tree', 3, (g, r) => {
       // 128x144: a full smooth tree: blob canopy in three tones over a
       // gently curved trunk.
@@ -2028,9 +2053,23 @@ export class Tileset {
     kind: string,
     sx: number,
     sy: number,
+    cx: number,
+    cy: number,
     edges: { left: boolean; right: boolean; top: boolean },
   ) {
     const name = this.art(kind);
+    const own = this.v.get(`${name}Run`);
+    if (own && own.length) {
+      // A wall with a run of its own painted (a stone ridge's boulders).
+      g.drawImage(own[Math.floor(cellHash(cx, cy, 5) * own.length)]!, sx, sy);
+    } else {
+      this.fillRun(g, name, sx, sy);
+    }
+    this.runEdges(g, sx, sy, edges);
+  }
+
+  /** The plain run: the skin's own plaster, read off its face. */
+  private fillRun(g: CanvasRenderingContext2D, name: string, sx: number, sy: number) {
     let fill = this.runFill.get(name);
     if (!fill) {
       fill = '#ac8a5e';
@@ -2052,6 +2091,9 @@ export class Tileset {
     }
     g.fillStyle = fill;
     g.fillRect(sx, sy, S, S);
+  }
+
+  private runEdges(g: CanvasRenderingContext2D, sx: number, sy: number, edges: { left: boolean; right: boolean; top: boolean }) {
     // The drop to the floor on each open side, then the ink along it.
     const dropW = 12;
     if (edges.left) {
