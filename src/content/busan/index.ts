@@ -5,6 +5,7 @@ import { BUSAN_JOURNAL, BUSAN_TASKS } from './journal';
 import { BUSAN_MAP, TEAHOUSE_MAP } from './map';
 import { RECALL } from './recall';
 import { HotteokPanel } from '../../ui/games/busan';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Five: Busan, one warm lane between the hillside and the harbor. */
 export const CHAPTER: ChapterDef = {
@@ -23,9 +24,9 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c5.hotteok.flipped',
       title: 'The hotteok griddle',
       howTo: [
-        'Space presses and flips in one motion. Time it to the golden middle of the heat gauge, three discs running.',
+        handWords('Space presses and flips in one motion. Time it to the golden middle of the heat gauge: three for the stall, then two more when the friends arrive.'),
         'Burn one and nothing is lost: Mi-ja eats the dark one herself, and the next dough drops onto the iron on its own.',
-        'Press while the dough is still pale and Mi-ja holds your wrist, and your thumb leaves its mark.',
+        'Press while the dough is still pale and Mi-ja holds your wrist; that disc keeps your thumbprint and never turns gold.',
       ],
       hardHow:
         'The hard telling: five discs on a hotter iron, a thinner band of gold, and the heat climbs with every flip. Mi-ja pardons exactly one dark one; the second ends the batch.',

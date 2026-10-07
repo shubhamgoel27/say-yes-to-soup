@@ -5,6 +5,7 @@ import { CROSSING_JOURNAL, CROSSING_TASKS } from './journal';
 import { GALLEY_MAP, SHIP_MAP } from './map';
 import { RECALL } from './recall';
 import { GalleyPanel, StarPanel } from '../../ui/games/crossing';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Three: the Crossing. Thirty-one days; the ship is a village. */
 export const CHAPTER: ChapterDef = {
@@ -24,7 +25,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c3.cooked',
       title: 'Ben’s adobo',
       howTo: [
-        'Ben calls for a thing. Arrows find it on his shelf, Space feeds it to the pot.',
+        handWords('Ben calls for a thing. Arrows find it on his shelf, Space feeds it to the pot.'),
         'Reach for the wrong jar and nothing breaks: Ben points you to it, and on the second wrong reach he laughs and hands it over.',
         'Ben slides the lid on last. Then watch the sauce go down and lift the pot off when the smell turns sweet and dark.',
         'Burn it and Ben just scrubs the pot out. He has burnt more dinners than you will ever cook.',
@@ -38,7 +39,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c3.starsdone',
       title: 'The dark bow',
       howTo: [
-        'Hana names something in the sky. Arrows walk your eyes across it; Space says "there."',
+        handWords('Hana names something in the sky. Arrows walk your eyes across it; Space says "there."'),
         'Land on it and the lines ink themselves in, and she tells you whose sky it is.',
         'Nothing can be lost up here. Look in the wrong place and she only says warmer.',
       ],

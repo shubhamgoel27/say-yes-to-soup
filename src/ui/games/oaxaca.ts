@@ -1,6 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun } from './run';
+import { Hold } from './attend';
 
 /** The start flag, spoken to coach() so the next how-to can pass advice on. */
 const MOLE_FLAG = 'c9.mole.start';
@@ -60,16 +61,31 @@ function bakeGlow(color: string, r = 64): Surface {
 // ------------------------------------------------------------ the mole
 
 const STIR_ORDER: Dir[] = ['up', 'right', 'down', 'left'];
-const STIR_ROUNDS = 6;
+const STIR_ROUNDS = 9;
 
+/** One line per finished round; the chocolate lands on the round before the last. */
 const STIR_LINES = [
   'Chela: The chilhuacle is from La Cañada. One little valley grows it for the whole world, and barely.',
   'Chela: Burnt tortilla goes in. Burnt on purpose. Black is a flavor if you mean it.',
   'Chela: Almonds, raisins, sesame. Thirty things that argue in the bag and agree in the pot.',
+  'Chela: The plátano goes in fried and nearly black. Sweet that has been through something.',
   'Chela: My mother stirred this the year your Nani ate here. Same pot. Pots remember.',
+  'Chela: Hoja de aguacate, toasted. Smell that? Almost anise. My grandmother called it the quiet one.',
+  'Chela: Canela, the soft bark that crumbles in your fingers. The hard kind is for people in a hurry.',
   'Chela: The chocolate goes in last and thanks you for waiting.',
   'Chela: Slower. Mole can smell a hurry.',
 ];
+
+// The story pot keeps a pace of its own. A stroke that lands before the
+// spoon has finished its last quarter only sloshes, and Chela's hand settles
+// on yours; keep pushing and it stays there a while (attend.ts Hold). A hand
+// rolling the arrows in a circle therefore stirs slower than one that
+// watches the spoon, and never gets locked out: after STIR_PATIENCE of being
+// held she lets the next stroke through.
+const STIR_PACE = 0.42;
+const STIR_HOLD = 0.5;
+const STIR_PATIENCE = 1.6;
+const STIR_HURRY_HINT = 'It sloshes. Chela rests her hand on yours: Slower. Let the spoon finish its quarter before the next.';
 
 /** The mole's hour, as color: raw chile red down to polished-olla black. */
 const MOLE_RAMP = ['#a83a26', '#7c2e1c', '#54211a', '#33170f', '#1c0f0a'];
@@ -77,8 +93,8 @@ const MOLE_RAMP = ['#a83a26', '#7c2e1c', '#54211a', '#33170f', '#1c0f0a'];
 // The comal keeps its own clock. Now and then the chiles start to catch and
 // you have this many seconds to sweep them off before the pot turns bitter.
 const SMOKE_GRACE = 5;
-const SMOKE_FIRST = 9;
-const SMOKE_GAP = 11;
+const SMOKE_FIRST = 7;
+const SMOKE_GAP = 8;
 const SMOKE_WARN =
   '<b>Smoke off the comal.</b> The chiles are catching. Space, now, sweep them off the heat.';
 const SMOKE_SAVED = 'Off the heat in time. Chela, without turning around: good ears. That is most of cooking.';
@@ -96,12 +112,12 @@ const OPENING = 'The spoon stands up in the pot by itself. Stir in circles: up, 
 // HARD_HURRY and the stroke only sloshes; let the spoon rest past HARD_REST
 // and the bottom starts to catch, with HARD_REST_GRACE seconds to get it
 // walking again. A fair share of fiesta pots burn. Chela burns hers too.
-const HARD_ROUNDS = 9;
+const HARD_ROUNDS = 10;
 const HARD_SMOKE_FIRST = 6;
-const HARD_SMOKE_GRACE = 2.6;
-const HARD_SMOKE_GAP = 6.5;
-const HARD_HURRY = 0.24;
-const HARD_REST = 1.9;
+const HARD_SMOKE_GRACE = 2.2;
+const HARD_SMOKE_GAP = 5.5;
+const HARD_HURRY = 0.4;
+const HARD_REST = 1.6;
 const HARD_REST_GRACE = 2.2;
 
 const HARD_OPENING =
@@ -237,11 +253,15 @@ export class MolePanel {
   private goalRounds = STIR_ROUNDS;
   /** Seconds since the last accepted stir stroke (the pace band's clock). */
   private sinceStir = 0;
+  /** Seconds since any stroke at all, right or wrong: a rolled hand's tell. */
+  private sincePress = 9;
   /** Seconds the pot bottom has been catching (hard only); -1 while calm. */
   private potCatch = -1;
   // What this run actually did, so a scorch can be coached specifically.
   private sloshes = 0;
   private hurries = 0;
+  /** Story: Chela's hand on a spoon that hurried. */
+  private steady = new Hold();
 
   private scene: Scene | null = null;
   private setHint: ((h: string) => void) | null = null;
@@ -284,9 +304,11 @@ export class MolePanel {
     this.comalT = hard ? HARD_SMOKE_FIRST : SMOKE_FIRST;
     this.smoke = -1;
     this.sinceStir = 0;
+    this.sincePress = 9;
     this.potCatch = -1;
     this.sloshes = 0;
     this.hurries = 0;
+    this.steady.reset();
     this.hint = this.againHint || (hard ? HARD_OPENING : OPENING);
     this.againHint = '';
     this.spoonA = this.spoonTarget = -Math.PI / 2;
@@ -309,11 +331,15 @@ export class MolePanel {
   onDir(dir: Dir) {
     if (this.done || this.failed) return;
     const sc = this.scene;
+    const sincePress = this.sincePress;
+    this.sincePress = 0;
     if (dir === STIR_ORDER[this.step]) {
       // The fiesta pot's pace band has a fast edge: a stroke crowding the
       // last one does not stir, it splashes. The story pot never minds, and
       // the first stroke of a fresh pot is always free.
-      if (this.hard && (this.step > 0 || this.rounds > 0) && this.sinceStir < HARD_HURRY) {
+      // Measured from the last stroke of any kind, so a hand rolling all
+      // four arrows never finds a clean gap to slip a right one through.
+      if (this.hard && (this.step > 0 || this.rounds > 0) && Math.min(sincePress, this.sinceStir) < HARD_HURRY) {
         this.hurries++;
         this.audio.bump();
         this.sloshT = 0.45;
@@ -324,6 +350,21 @@ export class MolePanel {
         this.hint = HURRY_HINT;
         return;
       }
+      if (!this.hard && (this.step > 0 || this.rounds > 0)) {
+        // The story pot's pace: too soon, or still held, and the stroke
+        // only sloshes. Patience runs out on her side, never on yours.
+        const tooSoon = this.sinceStir < STIR_PACE || this.steady.on;
+        if (tooSoon && (!this.steady.on || this.steady.heldFor < STIR_PATIENCE)) {
+          this.hurries++;
+          this.steady.start(STIR_HOLD);
+          this.audio.bump();
+          this.sloshT = 0.45;
+          sc?.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 4, color: this.moleColor(), speed: 54, grav: 320, life: 0.36, size: 2.4 });
+          this.hint = STIR_HURRY_HINT;
+          return;
+        }
+        this.steady.release();
+      }
       this.sinceStir = 0;
       this.potCatch = -1; // a walking spoon lifts whatever was catching
       this.step = (this.step + 1) % 4;
@@ -331,7 +372,7 @@ export class MolePanel {
       this.spoonTarget += Math.PI / 2;
       if (this.step === 0) {
         this.rounds++;
-        const lines = this.hard ? [...STIR_LINES, ...HARD_LINES] : STIR_LINES;
+        const lines = this.hard ? [...STIR_LINES.slice(0, 6), ...HARD_LINES] : STIR_LINES;
         this.hint = lines[Math.min(this.rounds - 1, lines.length - 1)] ?? '';
         if (sc) for (let i = 0; i < 3; i++) sc.waft(POT_X - 30 + i * 30, POT_Y - 8, 'rgba(250,244,232,0.4)', 9);
         if (this.rounds === this.goalRounds - 1) this.chocoT = 0;
@@ -339,11 +380,16 @@ export class MolePanel {
           this.done = true;
           this.audio.weaveDone();
           sc?.flash('#ffdda8', 0.3);
-          this.hint = 'The mole turns glossy and goes quiet, like it has decided something. Press Space.';
+          this.hint =
+            !this.hard && this.hurries >= 8
+              ? 'The mole turns glossy and goes quiet, in spite of the hurry. Chela tastes it off the spoon: "Next hour, slower. The pot heard every one of those." Press Space.'
+              : 'The mole turns glossy and goes quiet, like it has decided something. Press Space.';
         }
       }
     } else {
       this.sloshes++;
+      // A wrong stroke while her hand is on yours keeps it there.
+      if (!this.hard && this.steady.on && this.steady.heldFor < STIR_PATIENCE) this.steady.start(STIR_HOLD);
       this.audio.bump();
       this.sloshT = 0.45;
       if (sc) {
@@ -468,6 +514,9 @@ export class MolePanel {
         }
         if (this.smoke >= grace) this.scorch('comal');
       }
+      this.steady.tick(dt);
+      this.sincePress += dt;
+      if (!this.hard) this.sinceStir += dt;
       // The fiesta pot's slow edge: a resting spoon lets the bottom catch.
       if (this.hard && !this.failed) {
         this.sinceStir += dt;

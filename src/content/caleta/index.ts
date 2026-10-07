@@ -5,6 +5,7 @@ import { CALETA_JOURNAL, CALETA_TASKS } from './journal';
 import { LA_CALETA_MAP, PICANTERIA_MAP } from './map';
 import { RECALL } from './recall';
 import { CevichePanel, NetPanel, WavePanel } from '../../ui/coast';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Two: La Caleta, where the desert walks down to the sea. */
 export const CHAPTER: ChapterDef = {
@@ -23,8 +24,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.rode',
       title: 'The caballito',
       howTo: [
-        'Space paddles as each swell reaches you. Too eager and it rolls you back; let the horse meet the water.',
-        'Past the break the horse leans; the arrows keep it in the middle while the wave carries you home.',
+        handWords('Space paddles as each swell reaches you. Too eager and it rolls you back; let the horse meet the water.'),
+        handWords('Past the break the horse leans; the arrows keep it in the middle while the wave carries you home.'),
       ],
       hardHow:
         'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. On the ride home, a rail held under is a swim.',
@@ -35,7 +36,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.mended',
       title: 'The net circle',
       howTo: [
-        'The arrows walk the shuttle along the mesh. Space ties a hole shut wherever a gap gapes.',
+        handWords('The arrows walk the shuttle along the mesh. Space ties a hole shut wherever a gap gapes.'),
         'No timer, no losing. The talk mends the evening while you mend the net.',
       ],
       hardHow:
@@ -47,7 +48,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'mar.cook.finish',
       title: 'Behind the pots',
       howTo: [
-        'Space walks the dish through: cut, salt, the lime kiss, onion, the rest.',
+        handWords('Space walks the dish through: cut, salt, the lime kiss, onion, the rest.'),
         'Pull the fish while the bar burns bright. The lime kisses, it does not marry; overcook and Petro eats the proof.',
         'Pull too soon and Petro takes the bowl back for a second.',
       ],

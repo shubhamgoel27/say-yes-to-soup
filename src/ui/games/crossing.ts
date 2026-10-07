@@ -613,7 +613,9 @@ export class GalleyPanel {
         ? 'Off the heat on exactly the right breath, dark and glossy. Ben looks at you with suspicion: "You have aunties, pare?" Press Space.'
         : !this.hard && this.handed >= 3
           ? 'Off the heat, dark and glossy. "I cooked it, you held the spoon," Ben says, delighted with both of you. "Next time, look at the shelf, pare." Press Space.'
-          : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
+          : this.misses === 1
+            ? 'Off the heat, dark and glossy. "One wrong reach, and the pot never noticed," Ben says, satisfied. Press Space.'
+            : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
   }
 
   /** The pot catches. Ben has burnt more dinners than you will ever cook. */
@@ -1131,7 +1133,16 @@ const TARGETS: StarTarget[] = [
       '"The Amanogawa. Two stars wait on its banks all year to meet for one night: Tanabata. In twelve days I watch it from my grandmother\'s roof."',
     rect: [0.6, 0.04, 0.96, 0.44],
   },
+  {
+    // The story telling's fourth reading: one the player keeps.
+    title: 'the Cross',
+    ask: '"One more, and this one is yours to keep. Sailors south of the line steer by it: four stars in a kite, low to the southeast, leaning."',
+    found: '"The Cross. The bosun says it points the way home, and he says it about every port. Write it down; it is yours now."',
+    rect: [0.68, 0.54, 0.92, 0.88],
+  },
 ];
+/** The hard telling keeps the three original skies. */
+const HARD_TARGETS = 3;
 
 /** A fixed hand-laid sky, so the constellations sit where the text says. */
 const STARS: [number, number, number][] = [
@@ -1148,7 +1159,9 @@ const STARS: [number, number, number][] = [
   [0.28, 0.44, 1.3], [0.2, 0.48, 1.2], [0.36, 0.72, 1.5], [0.45, 0.66, 1.3], [0.55, 0.6, 1.4],
   [0.66, 0.56, 1.3], [0.76, 0.5, 1.5], [0.85, 0.42, 1.3], [0.9, 0.3, 1.5], [0.93, 0.55, 1.4],
   [0.82, 0.66, 1.3], [0.7, 0.72, 1.4], [0.6, 0.8, 1.3], [0.5, 0.86, 1.5], [0.38, 0.88, 1.2],
-  [0.9, 0.78, 1.4], [0.79, 0.86, 1.2], [0.68, 0.9, 1.3], [0.96, 0.08, 1.3], [0.03, 0.4, 1.2],
+  [0.9, 0.78, 1.4], [0.68, 0.9, 1.3], [0.96, 0.08, 1.3], [0.03, 0.4, 1.2],
+  // The Cross, leaning southeast: four bright points and a faint fifth.
+  [0.8, 0.6, 2.5], [0.79, 0.8, 2.4], [0.74, 0.69, 2.2], [0.85, 0.7, 2.3], [0.815, 0.735, 1.4],
 ];
 
 const GRID_W = 12;
@@ -1178,6 +1191,11 @@ const LINES: [number, number][][][] = [
     // The Amanogawa: the river's own line, northeast along the bright dust.
     [[0.60, 0.40], [0.655, 0.33], [0.70, 0.25], [0.76, 0.185], [0.83, 0.125], [0.895, 0.075], [0.945, 0.05]],
   ],
+  [
+    // The Cross: the long bar, then the short one.
+    [[0.8, 0.6], [0.79, 0.8]],
+    [[0.74, 0.69], [0.85, 0.7]],
+  ],
 ];
 
 /**
@@ -1200,6 +1218,7 @@ const WHERE_HOME = [
   'the Hunter stands low to the southwest, three belt stars in a row',
   'Yacana drinks near the zenith, where the river is darkest',
   'the Amanogawa bends high to the northeast, along the bright dust',
+  'the Cross leans low in the southeast, four stars in a kite',
 ];
 const HARD_SILENCE = [
   'Hana watches the water. "The sky does not answer twice."',
@@ -1207,10 +1226,10 @@ const HARD_SILENCE = [
   'A gull, somewhere. No word from Hana.',
 ];
 
-const LABEL_AT: [number, number][] = [[0.155, 0.545], [0.485, 0.565], [0.79, 0.27]];
-const LINE_COLOR = ['rgba(240,214,150,0.9)', 'rgba(190,176,224,0.75)', 'rgba(200,222,244,0.8)'];
+const LABEL_AT: [number, number][] = [[0.155, 0.545], [0.485, 0.565], [0.79, 0.27], [0.64, 0.6]];
+const LINE_COLOR = ['rgba(240,214,150,0.9)', 'rgba(190,176,224,0.75)', 'rgba(200,222,244,0.8)', 'rgba(244,226,186,0.9)'];
 /** Whose sky each reading belongs to: the tag says it so nobody has to. */
-const SKY_OF = ["the mate's sky", "Nani's sky", "Hana's sky"];
+const SKY_OF = ["the mate's sky", "Nani's sky", "Hana's sky", 'yours to keep'];
 
 /** Per-star twinkle phases and speeds, fixed so the sky never crawls. */
 const TWINKLE: [number, number][] = STARS.map((_, i) => {
@@ -1402,8 +1421,8 @@ export class StarPanel {
   private ui: { setHint: (h: string) => void } | null = null;
   private rx = 0;
   private ry = 0;
-  private foundP = [0, 0, 0];
-  private labelA = [0, 0, 0];
+  private foundP = [0, 0, 0, 0];
+  private labelA = [0, 0, 0, 0];
   private missT = 1;
   private shoot: Shoot | null = null;
   private shootIn = 5;
@@ -1414,11 +1433,7 @@ export class StarPanel {
   /** Hard only: the watch turned with readings still unnamed. */
   private failed = false;
   /** Per-target miss ledger: count and summed offsets from the mark's heart. */
-  private missBy = [
-    { n: 0, dx: 0, dy: 0 },
-    { n: 0, dx: 0, dy: 0 },
-    { n: 0, dx: 0, dy: 0 },
-  ];
+  private missBy = TARGETS.map(() => ({ n: 0, dx: 0, dy: 0 }));
   private missesTotal = 0;
 
   constructor(
@@ -1437,19 +1452,15 @@ export class StarPanel {
     this.cx = 5;
     this.cy = 3;
     this.done = false;
-    this.foundP = [0, 0, 0];
-    this.labelA = [0, 0, 0];
+    this.foundP = [0, 0, 0, 0];
+    this.labelA = [0, 0, 0, 0];
     this.missT = 1;
     this.shoot = null;
     this.shootIn = 5;
     this.hard = RUN.hard;
     this.left = calm() ? HARD_TIME_CALM : HARD_TIME;
     this.failed = false;
-    this.missBy = [
-      { n: 0, dx: 0, dy: 0 },
-      { n: 0, dx: 0, dy: 0 },
-      { n: 0, dx: 0, dy: 0 },
-    ];
+    this.missBy = TARGETS.map(() => ({ n: 0, dx: 0, dy: 0 }));
     this.missesTotal = 0;
     this.hint = this.hard
       ? `Hana: "Second telling. Smaller marks, and I keep my counsel. Till eight bells." ${TARGETS[0]?.ask ?? ''}`
@@ -1474,6 +1485,11 @@ export class StarPanel {
     if (dir === 'right') this.cx = Math.min(GRID_W - 1, this.cx + 1);
     if (dir === 'up') this.cy = Math.max(0, this.cy - 1);
     if (dir === 'down') this.cy = Math.min(GRID_H - 1, this.cy + 1);
+  }
+
+  /** How many readings this telling asks for. */
+  private get count(): number {
+    return this.hard ? HARD_TARGETS : TARGETS.length;
   }
 
   /** The mark that counts for target `i`: the story rect, or its hard heart. */
@@ -1504,13 +1520,13 @@ export class StarPanel {
       this.audio.chime();
       this.target++;
       this.beginFound(this.target - 1);
-      const next = TARGETS[this.target];
+      const next = this.target < this.count ? TARGETS[this.target] : undefined;
       if (next) {
         this.hint = `${t.found} ${next.ask}`;
       } else {
         this.done = true;
         this.audio.weaveDone();
-        this.hint = `${t.found} Three skies, one river. Press Space.`;
+        this.hint = this.hard ? `${t.found} Three skies, one river. Press Space.` : `${t.found} Three skies, one river, and a cross that is yours to keep. Press Space.`;
         // Found them all, but by long wandering: one pointed line for next time.
         if (this.missesTotal >= 5) {
           let worst = 0;
@@ -1583,7 +1599,7 @@ export class StarPanel {
     this.sc.flash('#1a2438', 0.5);
     this.hint =
       'Eight bells; the watch turns. Hana stretches. "The sky will keep, and so will we." Press Space and the glass is yours again.';
-    coach('c3.stars.start', this.starCoach(Math.min(this.target, TARGETS.length - 1)));
+    coach('c3.stars.start', this.starCoach(Math.min(this.target, this.count - 1)));
   }
 
   tick(dt: number) {
@@ -1712,7 +1728,7 @@ export class StarPanel {
   private constellations(g: CanvasRenderingContext2D, t: number) {
     g.lineCap = 'round';
     g.lineJoin = 'round';
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < LINES.length; i++) {
       const p = this.foundP[i] ?? 0;
       if (p <= 0) continue;
       const segs = LINES[i] ?? [];
@@ -1843,7 +1859,7 @@ export class StarPanel {
     g.font = "16px Caveat, 'Segoe Script', cursive";
     g.textAlign = 'left';
     let x = 20;
-    for (let i = 0; i < TARGETS.length; i++) {
+    for (let i = 0; i < this.count; i++) {
       const foundNow = i < this.target;
       const mark = foundNow ? '✦ ' : '· ';
       g.fillStyle = foundNow ? '#e8c063' : 'rgba(120,134,158,0.85)';

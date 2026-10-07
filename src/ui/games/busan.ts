@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag } from './scene';
+import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag, PressMarks, offBy } from './scene';
 import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../../art/pix';
 import { RUN, coach, freshRun } from './run';
 import { Hold } from './attend';
@@ -38,13 +38,15 @@ import { Hold } from './attend';
 
 type HotteokPhase = 'press' | 'burnt' | 'done';
 
-const ROUNDS = 3;
+/** Three for the stall, then Dae-ho's friends arrive for two more on a hotter iron. */
+const ROUNDS = 5;
+const FRIENDS_AT = 3;
 const START_FLAG = 'c5.hotteok.start';
 
 /** Tuning per telling: [rounds, window lo, window hi, start speed, speed step]. */
 const TELLING = {
-  story: { rounds: ROUNDS, lo: 0.38, hi: 0.62, speed: 0.55, step: 0.12 },
-  hard: { rounds: 5, lo: 0.44, hi: 0.56, speed: 0.78, step: 0.16 },
+  story: { rounds: ROUNDS, lo: 0.38, hi: 0.62, speed: 0.55, step: 0.08 },
+  hard: { rounds: 5, lo: 0.43, hi: 0.57, speed: 0.74, step: 0.12 },
 } as const;
 
 /** A press just past gold still reads as "late"; further out it is a burn. */
@@ -108,10 +110,10 @@ function edgeTone(t: number): string {
 const calm = () => document.body.classList.contains('reduce-motion');
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
-/** Where the i-th finished disc rests in the tin. The hard telling's five
- * discs stack tighter, so the pile stays on the paper. */
-const slot = (i: number, hard: boolean): [number, number] =>
-  hard ? [TINX - 20 + i * 10, TINY - 2 - i * 7] : [TINX - 13 + i * 13, TINY - 2 - i * 10];
+/** Where the i-th finished disc rests in the tin. A five-disc batch stacks
+ * tighter, so the pile stays on the paper. */
+const slot = (i: number, tight: boolean): [number, number] =>
+  tight ? [TINX - 20 + i * 10, TINY - 2 - i * 7] : [TINX - 13 + i * 13, TINY - 2 - i * 10];
 
 // ------------------------------------------------------------------- baking
 // All gradients live here, painted once at 2x and reused every frame.
@@ -398,6 +400,8 @@ export class HotteokPanel {
   private wrist = new Hold(); // story: Mi-ja's hand on your wrist
   private poked = false; // story: the disc on the iron was pressed while pale
   private thumbs = 0; // story: discs that kept a thumbprint
+  /** Where each live press landed on the gauge, so the eye can learn the gap. */
+  private marks = new PressMarks();
 
   // Visual layer only, below here.
   private scene = new Scene(W, H);
@@ -445,6 +449,7 @@ export class HotteokPanel {
     this.wrist.reset();
     this.poked = false;
     this.thumbs = 0;
+    this.marks.clear();
     this.hint = this.hard
       ? 'The iron runs hot tonight: five discs, a thin band of gold, and it only gets faster. Mi-ja will pardon one dark one. Not two.'
       : 'The dough sizzles. Space presses and flips: catch the heat in the golden middle.';
@@ -474,6 +479,7 @@ export class HotteokPanel {
     // the marker appear and move together, so the rhythm is press, flip, wait
     // for the next dough, press. Nothing sweeps past behind the animation.
     this.wrist.tick(dt);
+    this.marks.tick(dt);
     if (this.phase === 'press' && this.anim < 0 && this.hasBall) {
       this.t += this.dirn * this.speed * dt;
       if (this.t > 1) {
@@ -524,9 +530,14 @@ export class HotteokPanel {
       // Mi-ja will not let you lift it yet. Still, the coach remembers a
       // jumpy wrist: only live presses count, not taps during the flip.
       const live = this.anim < 0 && this.hasBall;
-      if (live) this.presses.push('early');
+      if (live) {
+        this.presses.push('early');
+        this.marks.add(this.t, false);
+      }
       this.audio.bump();
-      this.hint = 'Not yet. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.';
+      this.hint = this.hard && live
+        ? `Not yet, ${offBy(-this.secondsOff())}. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.`
+        : 'Not yet. Pale dough, raw fold. Mi-ja taps your wrist and the disc stays down.';
       if (live && !this.hard) {
         // The story iron: the wrist is held a beat, and the dough remembers.
         this.wrist.start(WRIST_HOLD);
@@ -540,6 +551,8 @@ export class HotteokPanel {
       // A burnt one costs that disc, and only that disc. The card promises
       // exactly this, so the batch must not restart underneath it.
       this.presses.push(this.t > this.hi + LATE_GRACE ? 'burn' : 'late');
+      this.marks.add(this.t, false);
+      const lateBy = this.hard ? ` (${offBy(this.secondsOff())})` : '';
       this.round++;
       this.darks++;
       this.audio.bump();
@@ -551,17 +564,19 @@ export class HotteokPanel {
         this.phase = 'burnt';
         const line = this.coachLine();
         coach(START_FLAG, line);
-        this.hint = `Two dark ones, and Mi-ja slides the iron off the coals. ${line} Space starts a fresh batch.`;
+        this.hint = `Two dark ones${lateBy}, and Mi-ja slides the iron off the coals. ${line} Space starts a fresh batch.`;
         return;
       }
       if (this.round >= this.rounds) {
         // The batch is finished either way; a burnt one is not a failure
         // state, it is one hotteok Mi-ja eats standing up.
-        const passed = this.hard ? this.darks <= 1 : this.golden > 0;
+        const passed = this.hard ? this.darks <= 1 : this.golden + this.thumbs > 0;
         this.phase = passed ? 'done' : 'burnt';
         if (passed) {
           this.audio.weaveDone();
-          this.hint = 'Past gold, and that is the batch. "Those are mine, then," says Mi-ja, entirely unbothered. Press Space.';
+          this.hint = this.hard
+            ? 'Past gold, and that is the batch. "Those are mine, then," says Mi-ja, entirely unbothered. Press Space.'
+            : `Past gold, and that is the batch. "That one is mine, then," says Mi-ja. ${this.storyVerdict()}`;
         } else {
           const line = this.coachLine();
           coach(START_FLAG, line);
@@ -570,7 +585,7 @@ export class HotteokPanel {
       } else {
         this.hint =
           this.hard && this.darks === 1
-            ? `Past gold. <b>Burnt.</b> "One dark one I will pardon," says Mi-ja, already rolling the next ball. "Not two." ${this.rounds - this.round} to go.`
+            ? `Past gold${lateBy}. <b>Burnt.</b> "One dark one I will pardon," says Mi-ja, already rolling the next ball. "Not two." ${this.rounds - this.round} to go.`
             : `Past gold. <b>Burnt.</b> "That one is mine, then," says Mi-ja, already rolling the next ball. ${this.rounds - this.round} to go.`;
         this.t = 0;
         this.dirn = 1;
@@ -579,13 +594,17 @@ export class HotteokPanel {
       return;
     }
     this.presses.push('gold');
+    this.marks.add(this.t, true);
     this.round++;
-    this.golden++;
-    this.audio.slosh();
     const thumbed = this.poked;
+    // A disc pressed while pale keeps the dimple and never earns the gold:
+    // it flips, it cooks, and it goes to the family meal, not the paper cup.
+    // Gold is only ever the reward for waiting.
     if (thumbed) this.thumbs++;
+    else this.golden++;
+    this.audio.slosh();
     this.hint = thumbed
-      ? 'Gold, with your thumbprint in the middle like a signature. Mi-ja says it tastes the same. Dae-ho says nothing, loudly.'
+      ? 'It flips, flat where your thumb went in and pale at the fold. Mi-ja sets it aside for the family meal: "The gold is for the ones you wait for."'
       : ([
           'A clean flip. The seeds stay tucked in the fold.',
           'Gold both sides. Mi-ja nods without looking.',
@@ -598,18 +617,34 @@ export class HotteokPanel {
         ? this.darks === 0
           ? 'Five golden. Mi-ja looks at you the way she looks at the sea. Press Space.'
           : 'Four golden, and the dark one fed the cook. A batch to be proud of. Press Space.'
-        : this.thumbs >= 2
-          ? `Three golden, ${this.thumbs === 3 ? 'all three' : 'two of them'} thumbprinted. "They taste the same," says Mi-ja. Dae-ho is already telling the whole market. Press Space.`
-          : this.thumbs === 0
-            ? 'Three golden, not a thumbprint on them. Dae-ho pretends not to be impressed and fails. Press Space.'
-            : 'Three golden. Dae-ho pretends not to be impressed and fails. Press Space.';
+        : this.storyVerdict();
     } else {
       this.t = 0;
       this.dirn = 1;
       this.speed += this.step;
-      this.hint += ` Next disc: ${this.rounds - this.round} to go.`;
+      this.hint += !this.hard && this.round === FRIENDS_AT
+        ? ' Then Dae-ho\'s school friends arrive in a clump, coins out. Mi-ja feeds the coals: two more, and the iron runs hotter.'
+        : ` Next disc: ${this.rounds - this.round} to go.`;
     }
     this.startFlip(true, thumbed);
+  }
+
+  /** Seconds between this press and the nearest edge of the gold, at the marker's speed. */
+  private secondsOff(): number {
+    const d = this.t < this.lo ? this.lo - this.t : this.t - this.hi;
+    return d / Math.max(0.05, this.speed);
+  }
+
+  /** The story batch's last line, told from what actually went into the cups. */
+  private storyVerdict(): string {
+    const n = this.rounds;
+    if (this.golden === n) return `${countWord(n)} golden, not a thumbprint on them. Dae-ho's friends pretend not to be impressed and fail. Press Space.`;
+    if (this.golden === 0 && this.thumbs > 0)
+      return `${countWord(n)} off the iron and not one of them gold: your thumb is in every fold. Mi-ja stacks them for the family meal and sells the friends hers. "Next time, wait for the amber." Press Space.`;
+    const parts = [`${countWord(this.golden)} golden`];
+    if (this.thumbs) parts.push(`${countWord(this.thumbs).toLowerCase()} thumbprinted for the family meal`);
+    if (this.darks) parts.push(`${countWord(this.darks).toLowerCase()} dark for Mi-ja`);
+    return `${parts.join(', ')}. The friends eat theirs standing up and burn their mouths, as is traditional. Press Space.`;
   }
 
   /**
@@ -725,7 +760,7 @@ export class HotteokPanel {
       this.smokeT += dt;
       if (this.smokeT >= (calm() ? 0.5 : 0.2)) {
         this.smokeT = 0;
-        const [bx, by] = slot(this.results.length - 1, this.hard);
+        const [bx, by] = slot(this.results.length - 1, this.rounds > 3);
         const at: [number, number] = this.anim >= 0 ? [DX, DY - 12] : [bx, by - 12];
         s.waft(at[0], at[1], 'rgba(58,44,34,0.5)', 9);
       }
@@ -782,7 +817,7 @@ export class HotteokPanel {
     const shown = Math.min(this.landed, this.results.length) - (this.bite > 0 ? 1 : 0);
     for (let i = 0; i < shown; i++) {
       const kind = this.results[i]!;
-      const [sx, sy] = slot(i, this.hard);
+      const [sx, sy] = slot(i, this.rounds > 3);
       cookedDisc(g, sx, sy, 33, 19, kind !== 'dark', 101 + i * 7, 0.85);
       if (kind === 'thumb') thumbprint(g, sx, sy, 33, 19);
     }
@@ -797,7 +832,7 @@ export class HotteokPanel {
     const onIron = this.hasBall || this.ballDrop >= 0 || this.anim >= 0 ? 1 : 0;
     const left = Math.max(0, this.rounds - this.round - onIron);
     // The hard telling's bigger batch heaps closer together in the same tray.
-    const sp = this.hard ? 24 : 32;
+    const sp = this.rounds > 3 ? 24 : 32;
     const x0 = this.hard ? TRAY_X - ((left - 1) * sp) / 2 : TRAY_X - 32;
     for (let i = 0; i < left; i++) {
       const x = x0 + i * sp;
@@ -862,6 +897,11 @@ export class HotteokPanel {
     // say when; nothing in the frame said with what.
     const mid = at(0.5);
     keyCap(g, cx + Math.cos(mid) * (R + 23), cy + Math.sin(mid) * (R + 23), 'space', 0.95, 0.92);
+    // The last few presses, marked where they landed on the arc.
+    this.marks.paint(g, (u) => {
+      const a = at(clamp01(u));
+      return { x: cx + Math.cos(a) * R, y: cy + Math.sin(a) * R, a };
+    }, 8);
     const ang = at(clamp01(this.t));
     const bx = cx + Math.cos(ang) * R;
     const by = cy + Math.sin(ang) * R;
@@ -897,7 +937,7 @@ export class HotteokPanel {
         // Sliding off to the tin, freckles settling in as it cools.
         const st = easeInOutSine(clamp01((a - T_LAND) / (T_SLIDE1 - T_LAND)));
         const i = this.results.length - 1;
-        const [tx, ty] = slot(i, this.hard);
+        const [tx, ty] = slot(i, this.rounds > 3);
         const x = DX + (tx - DX) * st;
         const y = DY + (ty - DY) * st;
         const r = 46 + (33 - 46) * st;
@@ -942,7 +982,7 @@ export class HotteokPanel {
     const gold = this.golden > 0;
     const move = easeOutCubic(clamp01(k / 0.6));
     const i = this.results.length - 1;
-    const [sx, sy] = slot(i, this.hard);
+    const [sx, sy] = slot(i, this.rounds > 3);
     const x = sx + (DX + 14 - sx) * move;
     const y = sy + (DY - 6 - sy) * move;
     const r = 33 + 16 * move;

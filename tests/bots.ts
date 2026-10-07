@@ -36,6 +36,16 @@ const watia: () => Bot = () => {
       }
     } else if (p.phase === 'fire') {
       if (beat(t)) p.onAction();
+    } else if (p.phase === 'dig') {
+      // Story only: walk the heap to the nearest spot that still steams.
+      if (!beat(t)) return;
+      const order = [0, 2, 4, 3, 1];
+      const want = order
+        .map((slot, i) => ({ slot, i }))
+        .filter((x) => (p.buried as Set<number>).has(x.slot))
+        .sort((a, b) => Math.abs(a.i - p.digCur) - Math.abs(b.i - p.digCur))[0];
+      if (!want || want.i === p.digCur) p.onAction();
+      else p.onDir(want.i < p.digCur ? 'left' : 'right');
     } else p.onAction(); // collapse, then done
   };
 };
@@ -53,7 +63,7 @@ const NET_W = 9;
 const net: () => Bot = () => {
   const step = paced(0.1);
   return (p, t) => {
-    if (p.done) return p.onAction();
+    if (p.done || p.between) return p.onAction();
     if (p.holes.has(p.cur)) return p.onAction();
     if (!step(t)) return;
     let best = -1;
@@ -350,6 +360,41 @@ const scopa: () => Bot = () => {
       else p.onAction();
     } else if (p.phase !== 'wait') p.onAction(); // between, lost, done
   };
+};
+
+/**
+ * Story-telling players where the hard bot has nothing to read: urojo has no
+ * called order in the story (an attentive cook answers the customer), and
+ * the ofrenda has no hard telling at all (a patient hand sets each thing down
+ * on whatever shelf the cursor is on; none is wrong).
+ */
+export const STORY_BOTS: Record<string, () => Bot> = {
+  'c7.cook.start': () => {
+    // Brave, crunch, filling: what each customer asked for, saucer by saucer.
+    const plan = [
+      [6, 6, 0, 2],
+      [4, 2, 4, 5],
+      [3, 1, 5],
+    ];
+    let last = -1;
+    return (p, t) => {
+      if (t - last < 0.3) return;
+      last = t;
+      if (p.phase !== 'build') return p.onAction();
+      const want = plan[p.round] ?? [];
+      const n = (p.counts as number[]).reduce((a, b) => a + b, 0);
+      if (p.cur === (n < want.length ? want[n] : 7)) p.onAction();
+      else p.onDir('right');
+    };
+  },
+  'c9.ofrenda.start': () => {
+    let last = -1;
+    return (p, t) => {
+      if (t - last < 0.4) return;
+      last = t;
+      p.onAction();
+    };
+  },
 };
 
 /** Every hard telling's player, keyed by the game's start flag. */

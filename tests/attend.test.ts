@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { ghost, play, seedRandom, type Bot, type Panel } from './panelrig';
-import { BOTS } from './bots';
+import { BOTS, STORY_BOTS } from './bots';
 
 /**
  * The story tellings cannot be lost, and should not be won by a hand that
@@ -35,23 +35,7 @@ const both = (a: Bot, b: Bot): Bot => (p, t) => {
   b(p, t);
 };
 
-/** Urojo has no called order in the story; an attentive cook answers the customer. */
-const urojoStory = (): Bot => {
-  const plan = [
-    [6, 6, 0, 2],
-    [4, 2, 4, 5],
-  ];
-  let last = -1;
-  return (p, t) => {
-    if (t - last < 0.15) return;
-    last = t;
-    if (p.phase !== 'build') return p.onAction();
-    const want = plan[p.round] ?? [];
-    const n = (p.counts as number[]).reduce((a, b) => a + b, 0);
-    if (p.cur === (n < want.length ? want[n] : 7)) p.onAction();
-    else p.onDir('right');
-  };
-};
+const urojoStory = STORY_BOTS['c7.cook.start']!;
 
 /** One story run: whether it closed, how long it took, and its last words. */
 function storyRun(flag: string, bot: Bot, seed = 1, maxSeconds = 240) {
@@ -75,22 +59,42 @@ function storyRun(flag: string, bot: Bot, seed = 1, maxSeconds = 240) {
   }
 }
 
+/** Arrows rolled in the stirring order, eight a second, Space for the smoke. */
+const roll = (): Bot => {
+  const D = ['up', 'right', 'down', 'left'] as const;
+  let i = 0;
+  let f = 0;
+  return (p) => {
+    if (f++ % 8) return;
+    if (p.smoke >= 0 || p.done || p.failed) p.onAction();
+    else p.onDir(D[i++ % 4]);
+  };
+};
+
+/**
+ * `before` is the careful story run as measured when its last beat was
+ * added (pass 2 gave most story runs a second round or a twist, so these
+ * grew on purpose); the test now guards against careful play getting
+ * slower than that by accident.
+ */
 type Case = { flag: string; careful: () => Bot; masher: () => Bot; before: number; slower?: number };
 const CASES: Case[] = [
-  { flag: 'wave.start', careful: BOTS['wave.start']!, masher: () => mash(), before: 8, slower: 2 },
-  { flag: 'c2.cook.start', careful: BOTS['c2.cook.start']!, masher: () => mash(), before: 5, slower: 1.5 },
+  { flag: 'wave.start', careful: BOTS['wave.start']!, masher: () => mash(), before: 15, slower: 1.5 },
+  { flag: 'c2.cook.start', careful: BOTS['c2.cook.start']!, masher: () => mash(), before: 10, slower: 1.5 },
   { flag: 'c3.cook.start', careful: BOTS['c3.cook.start']!, masher: () => mash(), before: 9 },
-  { flag: 'c5.hotteok.start', careful: BOTS['c5.hotteok.start']!, masher: () => mash(), before: 5 },
+  { flag: 'c5.hotteok.start', careful: BOTS['c5.hotteok.start']!, masher: () => mash(), before: 8.1 },
   { flag: 'c8.cook.start', careful: BOTS['c8.cook.start']!, masher: () => mash(), before: 10, slower: 2 },
-  { flag: 'watia.start', careful: BOTS['watia.start']!, masher: () => both(BOTS['watia.start']!(), mash(3)), before: 5, slower: 1.5 },
-  { flag: 'c7.cook.start', careful: urojoStory, masher: () => mash(), before: 7, slower: 1.5 },
+  { flag: 'watia.start', careful: BOTS['watia.start']!, masher: () => both(BOTS['watia.start']!(), mash(3)), before: 9.4, slower: 1.5 },
+  { flag: 'c7.cook.start', careful: urojoStory, masher: () => mash(), before: 19.1, slower: 1.5 },
   { flag: 'c4.kingyo.start', careful: BOTS['c4.kingyo.start']!, masher: () => mash(), before: 5, slower: 1 },
-  { flag: 'c6.sadya.start', careful: BOTS['c6.sadya.start']!, masher: () => mash(), before: 3, slower: 2 },
+  { flag: 'c6.sadya.start', careful: BOTS['c6.sadya.start']!, masher: () => mash(), before: 4.9, slower: 2 },
+  // The story pot: a hand rolling the arrows round the circle stirs slower than one that watches the spoon.
+  { flag: 'c9.mole.start', careful: BOTS['c9.mole.start']!, masher: roll, before: 17.8, slower: 2 },
 ];
 
 describe('the story tellings reward attention, never lock anyone out', () => {
   for (const c of CASES) {
-    it(`${c.flag}: careful is as quick as ever, mashing finishes differently`, () => {
+    it(`${c.flag}: careful keeps its measured pace, mashing finishes differently`, () => {
       const good = storyRun(c.flag, c.careful());
       const bad = storyRun(c.flag, c.masher());
       assert.ok(good.done, `${c.flag}: the careful story run never finished`);
@@ -192,5 +196,64 @@ describe('nobody is left without help', () => {
         i++;
       }
     }
+  });
+});
+
+describe('the kite roofs keep their weather where it belongs', () => {
+  for (const flag of ['c11.kite.start', 'c11.duel.start']) {
+    it(`${flag}: every story duel meets a gust and a flock before it ends`, () => {
+      const seen = new Map<number, Set<string>>();
+      const bot = BOTS[flag]!();
+      const r = storyRun(
+        flag,
+        (p, t) => {
+          if (p.phase === 'duel') {
+            const s = seen.get(p.rivalIdx) ?? new Set<string>();
+            s.add(p.wind);
+            seen.set(p.rivalIdx, s);
+          }
+          bot(p, t);
+        },
+        1,
+        300,
+      );
+      assert.ok(r.done, `${flag}: the story never finished`);
+      assert.ok(seen.size >= 1);
+      for (const [i, winds] of seen) {
+        assert.ok(winds.has('gust'), `${flag}: rival ${i} was beaten before any gust`);
+        assert.ok(winds.has('birds'), `${flag}: rival ${i} was beaten before any flock`);
+      }
+    });
+  }
+
+  it('the storm after the third cut waits on Space: no wind talks over it', () => {
+    const g = GAMES.find((x) => x.flag === 'c11.duel.start')!;
+    const p = g.make(ghost(), ghost(), () => new Set()) as Any;
+    RUN.hard = false;
+    const bot = BOTS['c11.duel.start']!();
+    let t = 0;
+    p.open(() => {});
+    while (p.phase !== 'storm' && t < 300) {
+      bot(p, t);
+      p.tick(1 / 60);
+      t += 1 / 60;
+    }
+    assert.equal(p.phase, 'storm', 'the tournament never reached the storm');
+    const said = p.hint;
+    for (let i = 0; i < 60 * 12; i++) p.tick(1 / 60);
+    assert.equal(p.phase, 'storm');
+    assert.equal(p.hint, said, 'the wind overwrote the storm line while it waited on Space');
+    p.onAction();
+    assert.equal(p.phase, 'done');
+  });
+});
+
+describe('gold is for the hand that waits', () => {
+  it('a mashed hotteok batch comes off the iron with no gold in it', () => {
+    const r = storyRun('c5.hotteok.start', mash(), 1);
+    assert.ok(r.done, 'the masher was locked out');
+    assert.equal(r.panel.golden, 0, 'mashing still earned gold');
+    const careful = storyRun('c5.hotteok.start', BOTS['c5.hotteok.start']!(), 1);
+    assert.ok(careful.panel.golden >= 4, 'a careful batch should be mostly gold');
   });
 });

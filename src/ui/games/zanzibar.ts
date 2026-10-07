@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap, handWords } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import { RUN, coach, freshRun, tip, takeCoach } from './run';
 import { Hold } from './attend';
@@ -255,6 +255,8 @@ export class SailPanel {
   private runT = 0;
   private gustAt = -99; // runT of the last gust, for slew and for blame
   private stripText = ''; // the paper strip's words in irons / lost
+  /** Story: the run-in to the mangroves, where Bakari goes about. */
+  private tackAt = -1;
 
   // The fault ledger: where the flogging seconds actually went, so the coach
   // line afterward can name the dominant miss instead of shrugging.
@@ -291,7 +293,8 @@ export class SailPanel {
     this.phase = 'sail';
     this.hard = RUN.hard;
     this.band = this.hard ? 0.07 : 0.11;
-    this.need = this.hard ? 18 : 12;
+    this.need = this.hard ? 18 : 16;
+    this.tackAt = -1;
     this.tideLeft = this.hard ? TIDE_S : Infinity;
     this.runT = 0;
     this.gustAt = -99;
@@ -354,6 +357,15 @@ export class SailPanel {
       this.wind += Math.max(-slew * dt, Math.min(slew * dt, d)) + (Math.random() - 0.5) * jitter * dt;
       this.wind = Math.max(0.05, Math.min(0.95, this.wind));
 
+      if (!this.hard && this.tackAt < 0 && this.dist >= this.need * 0.5) {
+        // The story's twist: the reef ahead, and Bakari goes about. The
+        // kaskazi comes over to the other side of the rose in one swing.
+        this.tackAt = this.runT;
+        this.windTarget = this.wind > 0.5 ? 0.22 : 0.78;
+        this.shiftT = 5;
+        this.audio.chime();
+        if (!calm()) this.scene.thump(2.5, 0.03);
+      }
       const trimmed = this.isTrim();
       // The ledger: flogging seconds filed by which side of the wind the
       // sheet was on, and whether a gust had just come through.
@@ -376,7 +388,9 @@ export class SailPanel {
       this.luffT = trimmed ? 0 : this.luffT + dt;
       this.dist += dt * (trimmed ? 1 : 0.15);
       const warnAt = this.hard ? IRONS_WARN_HARD : IRONS_WARN;
-      this.hint = trimmed
+      this.hint = this.tackAt >= 0 && this.runT - this.tackAt < 3.5
+        ? 'Reef ahead. Bakari swings the tiller and calls it: we go about. The kaskazi comes over to the other cheek of the rose; meet it there.'
+        : trimmed
         ? 'The telltale streams. The hull hums; the outriggers barely kiss the water.'
         : this.luffT >= warnAt
           ? 'The sail is flogging and the bow is creeping up into the wind. Trim to the arrow now, before she stops answering.'
@@ -620,7 +634,7 @@ export class SailPanel {
     g.fillStyle = '#2b2118';
     g.font = '600 13px Literata, Georgia, serif';
     g.textAlign = 'center';
-    g.fillText(this.stripText || 'in irons · Space to bear away', W / 2, y + 21);
+    g.fillText(handWords(this.stripText || 'in irons · Space to bear away'), W / 2, y + 21);
     g.globalAlpha = 1;
   }
 
@@ -992,12 +1006,19 @@ const UROJO_ITEMS: UrojoItem[] = [
   { name: 'Chili chutney', color: '#c1512f', splash: 'Red chutney hits the gold and blooms. Somewhere, a customer sits up straighter.' },
 ];
 
-type UrojoRound = { call: string; want: 'brave' | 'crunch' };
+type UrojoRound = { call: string; want: 'brave' | 'crunch' | 'filling' };
 
 const UROJO_ROUNDS: UrojoRound[] = [
   { call: 'Hamisi from the flats leans on the cart: "Sour and brave, please. The tide took my whole morning and I want it back."', want: 'brave' },
   { call: 'Bi Mwana the teacher is next: "Gentle for me, and extra crunch. I am grading essays tonight; I need courage, not heartburn."', want: 'crunch' },
+  {
+    call: 'Last, a boy with coins hot in his fist, sent up from the boats: "For Baba. An egg in it, and potato, and not too much pilipili. He goes back out tonight."',
+    want: 'filling',
+  },
 ];
+
+/** Story: a ladle landing hard on the last one's heels. Zuberi stops the hand. */
+const ADD_GAP = 0.25;
 
 /** Story telling: seconds Zuberi keeps the bowl covered after a third same-saucer ladle. */
 const COVER_HOLD = 1.1;
@@ -1204,6 +1225,7 @@ export class UrojoPanel {
   // the bowl a moment (reaching again keeps it covered, a few times).
   private cover = new Hold();
   private lastAdd = -1;
+  private lastAddT = -9;
   private sameRun = 0;
 
   // The painted layer: everything from here down is bowls, steam, and light.
@@ -1369,6 +1391,12 @@ export class UrojoPanel {
     if (dir === 'right' || dir === 'down') this.cur = (this.cur + 1) % n;
   }
 
+  /** What Space does after a served bowl: the next customer, or the end of the line. */
+  private onward(): string {
+    const more = this.hard ? this.round + 1 < UROJO_HARD.length : this.round + 1 < UROJO_ROUNDS.length;
+    return more ? 'Space for the next bowl.' : 'That was the last bowl; Space, and the line is fed.';
+  }
+
   /** Zuberi's read of the finished bowl. Every verdict is a passing grade.
    * Called once per served bowl, so it also tallies the story ending. */
   private verdict(): string {
@@ -1382,10 +1410,22 @@ export class UrojoPanel {
       const name = UROJO_CHALK[this.counts.indexOf(most)] ?? 'mango';
       return `Zuberi peers in. "That is ${most} ${name} and a rumor of broth, mgeni. A bowl, not a harvest." He serves it anyway, and the customer chews for a long, thoughtful time.`;
     }
-    const asked = want === 'brave' ? chili + mango >= 3 && chili > 0 : crunch + bhajia >= 3 && chili < 2;
+    const [, potato = 0, , egg = 0] = this.counts;
+    const asked =
+      want === 'brave'
+        ? chili + mango >= 3 && chili > 0
+        : want === 'filling'
+          ? egg > 0 && potato > 0 && chili < 2
+          : crunch + bhajia >= 3 && chili < 2;
     if (asked && !everything) this.answered++;
     if (everything) {
       return 'Zuberi tastes the broth. "Ah, the tourist ratio. One of everything, all politely introduced. Also valid. Nobody leaves this cart wrong."';
+    }
+    if (want === 'filling') {
+      if (egg > 0 && potato > 0 && chili < 2)
+        return 'The boy checks the bowl the way his father checks a net: egg, yes; potato, yes; fire, not much. He carries it down the steps with both hands. Zuberi: "A bowl for a night at sea."';
+      if (chili >= 2) return 'The boy sniffs the bowl and his eyes water. "Baba will like it," he decides, bravely. Zuberi laughs and adds a spoon of coconut to make peace.';
+      return 'The boy looks for the egg and does not find it, and takes it anyway; his father, Zuberi says, eats whatever comes up the steps. "Next time, the egg."';
     }
     if (want === 'brave') {
       if (chili + mango >= 3) return 'Hamisi drinks, coughs once, and salutes the pot. Zuberi nods: "Sour AND brave. That bowl argues back. He needed that."';
@@ -1428,7 +1468,7 @@ export class UrojoPanel {
           return;
         }
         this.audio.chime();
-        this.hint = `${hr ? hr.done : this.verdict()} Space for the next bowl.`;
+        this.hint = `${hr ? hr.done : this.verdict()} ${this.onward()}`;
         this.phase = 'served';
         this.limeT = this.scene.time;
         this.limeDropped = false;
@@ -1444,6 +1484,15 @@ export class UrojoPanel {
           }
           this.cover.release();
         }
+        if (this.scene.time - this.lastAddT < ADD_GAP) {
+          // A ladle on the last one's heels: Zuberi stops the hand, gently.
+          this.cover.start(COVER_HOLD);
+          this.audio.blip();
+          this.nudgeT = this.scene.time;
+          this.hint = 'Zuberi\'s hand settles on yours. "One thing at a time, mgeni. Let it land, let it drink, then the next."';
+          return;
+        }
+        this.lastAddT = this.scene.time;
         this.sameRun = this.cur === this.lastAdd ? this.sameRun + 1 : 1;
         this.lastAdd = this.cur;
         if (this.sameRun >= 3) {
@@ -1487,7 +1536,7 @@ export class UrojoPanel {
       this.hint = hr && this.seqPos >= hr.seq.length ? `${item.splash} The call is complete; SERVE while it steams.` : item.splash;
       if (!hr && this.total() >= 10) {
         this.audio.chime();
-        this.hint = `The bowl declines further cargo. ${this.verdict()} Space for the next bowl.`;
+        this.hint = `The bowl declines further cargo. ${this.verdict()} ${this.onward()}`;
         this.phase = 'served';
         this.limeT = this.scene.time;
         this.limeDropped = false;

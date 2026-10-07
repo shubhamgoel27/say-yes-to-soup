@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, PressMarks, offBy } from './scene';
 import { RUN, coach, freshRun, tip } from './run';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art/pix';
 
@@ -644,6 +644,9 @@ export class ParanthaPanel {
   private flipSwapped = false;
   private landSq = 1; // landing squash scale
   private wobA = 1; // failed-roll dough wobble
+  /** Where each press landed on the pin's scale and on the sizzle ring. */
+  private rollMarks = new PressMarks();
+  private tawaMarks = new PressMarks();
   private brownUp = 0; // browning of the side facing up
   private brownDown = 0;
   private slideA = 1; // finished parantha arcing to the thali
@@ -701,8 +704,7 @@ export class ParanthaPanel {
     if (!this.isOpen) return;
     if (this.phase === 'roll') {
       // The rush pin never dawdles; the story pin keeps its original gait.
-      const speed = this.hard ? 1.15 + this.course * 0.2 : 0.9 + this.course * 0.35;
-      this.meter += dt * speed * this.dir;
+      this.meter += dt * this.pinSpeed() * this.dir;
       if (this.meter > 1) {
         this.meter = 1;
         this.dir = -1;
@@ -716,8 +718,7 @@ export class ParanthaPanel {
       // The sizzle climbs; flip inside the singing window near the top.
       // The hard tawa is hotter: the climb is faster and the band, set at
       // open(), is a breath wide instead of a bar.
-      const climb = this.hard ? 0.52 + this.course * 0.07 : 0.34 + this.course * 0.1;
-      this.sizzle = Math.min(1, this.sizzle + dt * climb);
+      this.sizzle = Math.min(1, this.sizzle + dt * this.climb());
       if (this.sizzle >= 1) {
         // Held too long. Once is a scorch ring and a warning; twice on the
         // same parantha and the tawa has made its decision without you.
@@ -748,6 +749,8 @@ export class ParanthaPanel {
       this.brownDown = Math.min(1, this.brownDown + dt * (0.05 + this.sizzle * 0.16));
     }
     if (this.phase === 'served' || this.phase === 'done') this.servedT += dt;
+    this.rollMarks.tick(dt);
+    this.tawaMarks.tick(dt);
     this.driveWafts(s, dt);
     s.frame(dt, (g) => this.paint(g));
     this.setHint?.(this.caption());
@@ -755,6 +758,23 @@ export class ParanthaPanel {
 
   onDir(_dir: Dir) {
     // The griddle has no steering, only timing and Kamla's eyebrows.
+  }
+
+  /** The pin's gait across its scale, per second. */
+  private pinSpeed(): number {
+    return this.hard ? 1.15 + this.course * 0.2 : 0.9 + this.course * 0.35;
+  }
+
+  /** How fast the ghee climbs toward its song, per second. */
+  private climb(): number {
+    return this.hard ? 0.52 + this.course * 0.07 : 0.34 + this.course * 0.1;
+  }
+
+  /** The hard telling says how far off a miss was; the story keeps its own words. */
+  private howFar(seconds: number, line: string): string {
+    if (!this.hard) return line;
+    const far = offBy(seconds);
+    return `${far.charAt(0).toUpperCase()}${far.slice(1)}. ${line.replace(/^(Early|A beat late|Lopsided)[.;] ?/, '')}`;
   }
 
   onAction() {
@@ -783,6 +803,7 @@ export class ParanthaPanel {
     }
     if (this.phase === 'roll') {
       const mid = Math.abs(this.meter - 0.5);
+      this.rollMarks.add(this.meter, mid <= c.zone / 2);
       if (mid <= c.zone / 2) {
         this.rolled++;
         this.audio.chime();
@@ -814,7 +835,10 @@ export class ParanthaPanel {
         // The ledger: a lopsided first disc is a pin problem; a lopsided
         // second one strains the seal, and the coach line should know which.
         this.fault(this.rolled >= 2 ? 'rollSecond' : 'rollFirst');
-        this.hint = OOPS_ROLL[Math.min(2, this.course)] as string;
+        // Early if the pin had not reached the middle yet, late if it had passed it.
+        const off = (mid - c.zone / 2) / this.pinSpeed();
+        const early = (this.meter - 0.5) * this.dir < 0;
+        this.hint = this.howFar(early ? -off : off, OOPS_ROLL[Math.min(2, this.course)] as string);
         if (s) {
           this.wobA = 0;
           s.tween(0, 1, 0.5, easeOutCubic, (v) => (this.wobA = v));
@@ -852,6 +876,8 @@ export class ParanthaPanel {
     if (this.phase === 'tawa') {
       const onTheWord = this.sizzle >= this.winLo && this.sizzle <= this.winHi;
       const early = this.sizzle < this.winLo;
+      const off = (early ? this.sizzle - this.winLo : this.sizzle - this.winHi) / this.climb();
+      this.tawaMarks.add(this.sizzle, onTheWord);
       this.sizzle = 0;
       if (onTheWord) {
         this.audio.slosh();
@@ -863,7 +889,7 @@ export class ParanthaPanel {
         // that acted is always answered. Only ignoring the tawa can burn.
         this.audio.bump();
         this.fault(early ? 'early' : 'late');
-        this.hint = early ? OOPS_EARLY : OOPS_LATE;
+        this.hint = this.howFar(off, early ? OOPS_EARLY : OOPS_LATE);
         if (s) {
           if (!calmMotion()) s.thump(2, 0.02);
           s.burst(TAWA.x, TAWA.y - 6, { n: 4, color: 'rgba(255,226,160,0.7)', speed: 60, grav: 100, size: 2, life: 0.4 });
@@ -932,6 +958,8 @@ export class ParanthaPanel {
    * either way: the courses already plated stay plated.
    */
   private freshDough(hint: string) {
+    this.rollMarks.clear();
+    this.tawaMarks.clear();
     this.phase = 'roll';
     this.meter = 0;
     this.dir = 1;
@@ -1233,6 +1261,7 @@ export class ParanthaPanel {
       const kx = TRACK.x + this.meter * TRACK.w;
       const inZone = Math.abs(this.meter - 0.5) <= c.zone / 2;
       if (inZone) stampGlow(g, kx, TRACK.y, 16, 'rgba(255,226,150,1)', 0.7);
+      this.rollMarks.paint(g, (u) => ({ x: TRACK.x + u * TRACK.w, y: TRACK.y, a: Math.PI / 2 }), 8);
       dot(g, kx, TRACK.y, 5.4, '#2b2118');
       dot(g, kx, TRACK.y, 3.8, inZone ? '#ffe9b0' : '#f2e6d0');
     }
@@ -1307,6 +1336,10 @@ export class ParanthaPanel {
     const wmx = TAWA.x + Math.cos(wm) * (TAWA.rx + 16);
     const wmy = TAWA.y + Math.sin(wm) * (TAWA.ry + 14);
     stampGlow(g, wmx, wmy, 30, 'rgba(255,214,130,1)', inWin ? 0.65 + Math.sin(t * 9) * 0.25 : 0.2);
+    this.tawaMarks.paint(g, (u) => {
+      const a = a0 + span * Math.min(1, Math.max(0, u));
+      return { x: TAWA.x + Math.cos(a) * (TAWA.rx + 16), y: TAWA.y + Math.sin(a) * (TAWA.ry + 14), a };
+    }, 8);
     const tip = a0 + span * this.sizzle;
     const tx = TAWA.x + Math.cos(tip) * (TAWA.rx + 16);
     const ty = TAWA.y + Math.sin(tip) * (TAWA.ry + 14);
@@ -1469,6 +1502,29 @@ const PRACTICE_RIVALS: Rival[] = [
   },
 ];
 
+/**
+ * The story roof's second kite: the black one's owner sends up his nephew's
+ * patang to defend the family name. Story only; the hard telling's practice
+ * is one waxed rival and that is plenty.
+ */
+const PRACTICE_SECOND: Rival = {
+  name: 'the black roof\'s nephew, flying a little white patang',
+  need: 5,
+  line: 'The little white one tumbles off toward the masjid domes. The nephew waves both arms, delighted to have been in a duel at all.',
+};
+
+/**
+ * The story sky's weather, by the pull: after this many good pulls against
+ * this rival, the wind sends this. Every story duel meets a gust and a flock
+ * before it can end, so the two laws (dheel for gusts, give birds the sky)
+ * are learned by flying, not by reading. Practice rivals, then tournament.
+ */
+const STORY_CUES: Record<'practice' | 'tournament', Partial<Record<number, Wind>>[]> = {
+  practice: [{ 2: 'gust', 4: 'birds' }, { 2: 'birds', 4: 'gust' }],
+  // Every cue sits below its rival's need, or the cut would come first.
+  tournament: [{ 1: 'gust', 3: 'birds' }, { 2: 'birds', 4: 'gust' }, { 2: 'gust', 4: 'birds' }],
+};
+
 const TOURNAMENT_RIVALS: Rival[] = [
   {
     name: 'the paper-seller\'s yellow patang',
@@ -1508,7 +1564,10 @@ const K_COACH: Record<KFault, (n: number) => string> = {
     `He sawed you ${timesWord(n)} while you waited; in steady air the first pull has to be yours, the moment the line comes taut.`,
 };
 
-const PRACTICE_LOOKS = [{ paper: '#332b36', patch: '#8a7f98' }];
+const PRACTICE_LOOKS = [
+  { paper: '#332b36', patch: '#8a7f98' },
+  { paper: '#ece4d4', patch: '#3f7fb0' },
+];
 const TOURNAMENT_LOOKS = [
   { paper: '#dcae3c', patch: '#f2e6d0' },
   { paper: '#5d8a4a', patch: '#e8d9a8' },
@@ -1816,6 +1875,8 @@ export class PatangPanel {
   private cuts = 0;
   private altitude = 0.3;
   private blessed = 0; // pigeon crossings honored
+  /** Story cues already sent against the current rival, by pull count. */
+  private cued = new Set<number>();
   /** How far the rival's line has sawed through YOURS. Three and it goes. */
   private selfFray = 0;
   private lost = 0; // dors given to the sky, for the caption's honesty
@@ -1873,7 +1934,9 @@ export class PatangPanel {
     const base = this.tournament ? TOURNAMENT_RIVALS : PRACTICE_RIVALS;
     // The hard telling flies waxed dor on every rival roof: two more passes
     // of the saw per cut, which is two more turns of weather to survive.
-    return this.hard ? base.map((r) => ({ ...r, need: r.need + 2 })) : base;
+    if (this.hard) return base.map((r) => ({ ...r, need: r.need + 2 }));
+    // The story roof flies a second practice kite; the tournament already has three.
+    return this.tournament ? base : [...base, PRACTICE_SECOND];
   }
 
   private get looks() {
@@ -1898,6 +1961,7 @@ export class PatangPanel {
     this.cuts = 0;
     this.altitude = 0.3;
     this.blessed = 0;
+    this.cued.clear();
     this.selfFray = 0;
     this.lost = 0;
     this.bokataMine = false;
@@ -1933,10 +1997,12 @@ export class PatangPanel {
     if (!this.isOpen) return;
     // While the dor is gone there is no weather to answer: the roof simply
     // watches your patang leave, and waits for you to take the next one.
-    if (this.phase !== 'done' && this.phase !== 'between' && this.phase !== 'cut') {
+    // Weather only blows while there is a duel to blow on. Launch, the cut,
+    // the pause between rivals, the storm's first drops and the walk down
+    // all wait on Space, and a wind cue there would only talk over it.
+    if (this.phase === 'duel') {
       this.windT += dt;
-      if (this.phase !== 'launch' && this.windT >= this.windDur) {
-        this.windT = 0;
+      if (this.windT >= this.windDur) {
         // Weather schedule: mostly steady, gusts often, pigeons on their own
         // clock. The hard telling crowds the sky (more birds, meaner gusts)
         // and shortens every window, so no answer gets to be leisurely.
@@ -1944,22 +2010,7 @@ export class PatangPanel {
         const stormRow = this.tournament && this.rivalIdx === 2;
         const gustChance = this.hard ? (stormRow ? 0.58 : 0.42) : stormRow ? 0.5 : 0.32;
         const birdChance = this.hard ? (this.tournament ? 0.34 : 0.3) : this.tournament ? 0.22 : 0.16;
-        if (roll < birdChance) {
-          this.wind = 'birds';
-          this.windDur = this.hard ? 2 : 2.4;
-          this.hint = 'PIGEONS. A flock crosses your line, wings everywhere. Dheel, Down, give the sky back. Yusuf is watching.';
-        } else if (roll < birdChance + gustChance) {
-          this.wind = 'gust';
-          this.windDur = this.hard ? 1.2 + Math.random() * 0.7 : 1.6 + Math.random();
-          this.hint = stormRow
-            ? 'The storm front SHOVES. Dheel, Down, ride it or the dor sings itself apart.'
-            : 'A gust leans hard on the line. Dheel, Down; let her drink some slack.';
-        } else {
-          this.wind = 'steady';
-          this.windDur = this.hard ? 1.3 + Math.random() * 0.9 : 1.8 + Math.random() * 1.4;
-          this.rivalSawT = this.hard ? (stormRow ? 2 : 2.6) : 0;
-          this.hint = 'The line comes taut and steady. Kheench, Up: saw, saw, the cotton knows its work.';
-        }
+        this.blow(roll < birdChance ? 'birds' : roll < birdChance + gustChance ? 'gust' : 'steady');
       }
       // The hard telling's rival does not wait out a taut line. Let steady
       // air idle and his saw takes a pass across YOUR dor; your own pull is
@@ -1979,6 +2030,26 @@ export class PatangPanel {
     this.fly(dt);
     s.frame(dt, (g) => this.paint(g));
     this.setHint?.(this.caption());
+  }
+
+  /** The wind turns. One place for every change of weather, scheduled or cued. */
+  private blow(w: Wind) {
+    const stormRow = this.tournament && this.rivalIdx === 2;
+    this.windT = 0;
+    this.wind = w;
+    if (w === 'birds') {
+      this.windDur = this.hard ? 2 : 2.4;
+      this.hint = 'PIGEONS. A flock crosses your line, wings everywhere. Dheel, Down, give the sky back. Yusuf is watching.';
+    } else if (w === 'gust') {
+      this.windDur = this.hard ? 1.2 + Math.random() * 0.7 : 1.6 + Math.random();
+      this.hint = stormRow
+        ? 'The storm front SHOVES. Dheel, Down, ride it or the dor sings itself apart.'
+        : 'A gust leans hard on the line. Dheel, Down; let her drink some slack.';
+    } else {
+      this.windDur = this.hard ? 1.3 + Math.random() * 0.9 : 1.8 + Math.random() * 1.4;
+      this.rivalSawT = this.hard ? (stormRow ? 2 : 2.6) : 0;
+      this.hint = 'The line comes taut and steady. Kheench, Up: saw, saw, the cotton knows its work.';
+    }
   }
 
   /** Visual flight: springs toward targets; rotation follows velocity. */
@@ -2057,6 +2128,15 @@ export class PatangPanel {
           if (!calmMotion()) s.thump(2, 0.015);
         }
         if (this.progress >= rival.need) this.cutRival(rival);
+        else if (!this.hard) {
+          // The story sky keeps its appointments: a gust and a flock come
+          // to every duel at a set pull, so no duel ends before both laws.
+          const cue = STORY_CUES[this.tournament ? 'tournament' : 'practice'][this.rivalIdx]?.[this.progress];
+          if (cue && !this.cued.has(this.progress)) {
+            this.cued.add(this.progress);
+            this.blow(cue);
+          }
+        }
       } else if (this.wind === 'gust') {
         this.progress = Math.max(0, this.progress - 1);
         this.altitude = Math.max(0.12, this.altitude - 0.1);
@@ -2245,6 +2325,7 @@ export class PatangPanel {
     this.cuts++;
     this.audio.weaveNote(this.cuts + 2);
     this.rivalIdx++;
+    this.cued.clear();
     this.progress = 0;
     // A won round is also a fresh spool: whatever he sawed, you wind past it.
     this.selfFray = 0;

@@ -1,6 +1,6 @@
 import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag } from './games/scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, keyCap, paperTag, PressMarks, offBy } from './games/scene';
 import { surface, type Surface, Rng, dot, oval, rect, rr, vgrad, shade, mute, glowSpot } from '../art/pix';
 import { PAL } from '../engine/config';
 import { RUN, coach, freshRun, tip } from './games/run';
@@ -354,6 +354,10 @@ export class WavePanel {
   private lean = 0; // the chop's standing push on the ride, story only
   private leanT = 0;
   private holds = 0; // story: swells lost to an eager paddle, for the ending
+  /** Story: which set this is. The beach dares you out once more. */
+  private set = 1;
+  /** Where each stroke met the swell, marked on the water by the horse. */
+  private marks = new PressMarks();
 
   // Visual state only; game logic never reads these.
   private scene: Scene | null = null;
@@ -404,6 +408,8 @@ export class WavePanel {
     this.lean = 0;
     this.leanT = 0;
     this.holds = 0;
+    this.set = 1;
+    this.marks.clear();
     this.balance = 0;
     this.drift = 0; // a fresh sea; the last run's chop does not carry over
     this.rideT = 0;
@@ -428,6 +434,7 @@ export class WavePanel {
 
   tick(dt: number) {
     if (!this.isOpen) return;
+    this.marks.tick(dt);
     if (this.phase === 'paddle') {
       this.x -= dt * (this.lull ? this.speed * 0.8 : this.speed);
       this.eager.tick(dt);
@@ -519,11 +526,15 @@ export class WavePanel {
         this.phase = 'done';
         this.audio.weaveDone();
         this.hint =
-          !this.hard && this.escapes === 0
-            ? 'Three strokes, three swells, not one wasted. The wave sets you down on the sand like a parcel, and the boys on the beach whistle. Press Space.'
-            : !this.hard && this.holds >= 2
-              ? 'The wave sets you down on the sand like a parcel, mostly sideways. Someone on the beach is laughing kindly. Press Space.'
-              : 'The wave sets you down on the sand like a parcel. Press Space.';
+          !this.hard && this.set === 1
+            ? 'The wave sets you down on the sand like a parcel. The boys on the beach are already pointing past you at the next set, bigger: "Otra, otra." Space to paddle out again.'
+            : !this.hard && this.escapes === 0
+              ? 'Six strokes, six swells, not one wasted. The second wave sets you down on the sand like a parcel, and the boys on the beach whistle. Press Space.'
+              : !this.hard && this.holds >= 2
+                ? 'The wave sets you down on the sand like a parcel, mostly sideways. Someone on the beach is laughing kindly. Press Space.'
+                : !this.hard
+                  ? 'The bigger set sets you down on the sand like a parcel. The boys concede it with a whistle. Press Space.'
+                  : 'The wave sets you down on the sand like a parcel. Press Space.';
         // Won with a wobble: the card promised two escapes, so the win (and
         // the hard star) stands, and the next how-to card owes the fix as a tip.
         if (this.earlyMisses + this.lateMisses > 0) tip('wave.start', this.paddleAdvice());
@@ -584,6 +595,7 @@ export class WavePanel {
         return;
       }
       // The strike zone: the wave is on top of you.
+      this.marks.add(this.x, this.x <= this.zoneHi && this.x >= this.zoneLo);
       if (this.x <= this.zoneHi && this.x >= this.zoneLo) {
         this.waves++;
         this.swellIdx++;
@@ -625,10 +637,28 @@ export class WavePanel {
         this.paddleK = 0;
         this.scene!.thump(calm() ? 0 : 2, 0.02);
         if (!calm()) this.scene!.burst(this.hx + 70, 244, { n: 5, color: 'rgba(246,240,226,0.7)', speed: 60, grav: 200, size: 2.4, life: 0.4 });
-        this.hint = this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.';
+        const off = this.x > this.zoneHi ? (this.zoneHi - this.x) / this.speed : (this.zoneLo - this.x) / this.speed;
+        const far = this.hard ? ` That was ${offBy(off)}.` : '';
+        this.hint = (this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.') + far;
         // Story only: an eager stroke leaves the paddle in the air a beat.
         if (!this.hard && !this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
       }
+    } else if (this.phase === 'done' && !this.hard && this.set === 1) {
+      // The second set: the same three strokes against taller water.
+      this.set = 2;
+      this.phase = 'paddle';
+      this.waves = 0;
+      this.x = 1;
+      this.speed = 0.62;
+      this.balance = 0;
+      this.drift = 0;
+      this.rideT = 0;
+      this.pinnedT = 0;
+      this.lull = false;
+      this.eager.reset();
+      this.eagerEscapes = 0;
+      this.hx = 170;
+      this.hint = 'The second set stands up taller and comes quicker. Space as each one reaches the horse.';
     } else if (this.phase === 'done' || this.phase === 'lost') {
       this.root.hidden = true;
       const done = this.onDone;
@@ -694,6 +724,7 @@ export class WavePanel {
       stampGlow(g, this.hx + 44, 262, 54, '#f2ead2', near ? 0.32 + wobble(t, 6) * 0.1 : 0.12);
       const wx = this.hx + 44 + this.x * 430;
       const h = 58 + (1 - this.x) * 54;
+      this.marks.paint(g, (u) => ({ x: this.hx + 44 + u * 430, y: 300, a: Math.PI / 2 }), 7);
       drawSwell(g, wx, 266, h, 1 - this.x, t);
     }
 
@@ -887,6 +918,9 @@ export class NetPanel {
   // The run's own record, for the coach line.
   private misties = 0; // knots spent on mesh that held
   private steps = 0; // shuttle walks
+  /** Story: the second stretch of net, the one the pelican went through. */
+  private stretch = 1;
+  private between = false;
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -918,6 +952,8 @@ export class NetPanel {
     this.lost = false;
     this.misties = 0;
     this.steps = 0;
+    this.stretch = 1;
+    this.between = false;
     this.holes.clear();
     while (this.holes.size < this.holesTotal) {
       this.holes.add(Math.floor(Math.random() * NET_W * NET_H));
@@ -974,7 +1010,7 @@ export class NetPanel {
   }
 
   onDir(dir: Dir) {
-    if (this.done || this.lost) return;
+    if (this.done || this.lost || this.between) return;
     const x = this.cur % NET_W;
     const y = Math.floor(this.cur / NET_W);
     const nx = Math.max(0, Math.min(NET_W - 1, x + (dir === 'left' ? -1 : dir === 'right' ? 1 : 0)));
@@ -991,6 +1027,21 @@ export class NetPanel {
       done?.();
       return;
     }
+    if (this.between) {
+      // The pelican's stretch: one long rip three meshes wide, and a few
+      // ordinary gaps around it. The circle shifts along the wall to make room.
+      this.between = false;
+      this.stretch = 2;
+      this.holes.clear();
+      const row = 1 + Math.floor(Math.random() * (NET_H - 2));
+      const col = Math.floor(Math.random() * (NET_W - 3));
+      for (let i = 0; i < 3; i++) this.holes.add(row * NET_W + col + i);
+      while (this.holes.size < 6) this.holes.add(Math.floor(Math.random() * NET_W * NET_H));
+      this.torn = new Set(this.holes);
+      this.sagK = 1;
+      this.hint = 'Here: the pelican came through, and it did not knock. Three meshes wide, and a few small gaps keeping it company.';
+      return;
+    }
     if (this.holes.has(this.cur)) {
       this.holes.delete(this.cur);
       this.audio.weaveNote(this.holes.size % 7);
@@ -1005,7 +1056,13 @@ export class NetPanel {
       this.hint = ['A cousin in Lima...', 'Prices, weather...', 'That pelican again...', 'Knot by knot.'][
         this.holes.size % 4
       ] as string;
-      if (this.holes.size === 0) {
+      if (this.holes.size === 0 && !this.hard && this.stretch === 1) {
+        // Whole, for now. The story circle hands you the next stretch.
+        this.between = true;
+        this.audio.weaveNote(4);
+        sc.tween(this.sagK, 0.4, 0.6, easeOutBack, (v) => (this.sagK = v));
+        this.hint = 'That stretch is whole. Then Don Simón hauls the next one across your knees: "This is where the pelican went through." Space.';
+      } else if (this.holes.size === 0) {
         this.done = true;
         this.audio.weaveDone();
         this.hint = 'The net is whole. So, somehow, is the evening. Press Space.';
@@ -1449,6 +1506,10 @@ export class CevichePanel {
   private petro = new Hold();
   private fishEarly = 0; // early pulls on the fish now in the lime
   private trust = false; // the mercy fish: no hold
+  /** Story: the second plate, for the two fishermen at the front table. */
+  private plate = 1;
+  /** Where each pull landed on the lime bar. */
+  private marks = new PressMarks();
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -1492,6 +1553,8 @@ export class CevichePanel {
     this.petro.reset();
     this.fishEarly = 0;
     this.trust = false;
+    this.plate = 1;
+    this.marks.clear();
     this.hint = 'The dawn lisa, the board, the knife. Space to cut: even pieces, no ceremony.';
     this.root.hidden = false;
     this.scene ??= new Scene();
@@ -1508,6 +1571,7 @@ export class CevichePanel {
     if (!this.isOpen) return;
     const sc = this.scene;
     if (!sc) return;
+    this.marks.tick(dt);
     if (this.step === 'lime' && !this.lost) {
       this.kiss += dt * this.kissRate;
       this.petro.tick(dt);
@@ -1608,6 +1672,7 @@ export class CevichePanel {
           sc?.wobble(2);
           break;
         }
+        this.marks.add(this.kiss, this.kiss >= this.zoneLo && this.kiss < this.zoneHi);
         if (this.kiss >= this.zoneLo && this.kiss < this.zoneHi) {
           this.audio.weaveNote(4);
           this.advance();
@@ -1624,7 +1689,7 @@ export class CevichePanel {
             this.petro.start(PETRO_HOLD);
             this.hint = 'Too soon. Petro takes the bowl back for a second. "The lime has barely said hello, corazón. Wait for it to burn bright."';
           } else {
-            this.hint = 'Too soon; the lime has barely said hello. Back in. Wait for the bright zone, then pull.';
+            this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello. Back in. Wait for the bright zone, then pull.`;
           }
         }
         break;
@@ -1670,14 +1735,36 @@ export class CevichePanel {
           sc.flash('#ffe9c0', 0.3);
         }
         this.hint =
-          !this.hard && this.spoiled + this.earlies === 0
-            ? 'The tiger gets its glass. Petro tastes, closes her eyes, and writes nothing down, which in this kitchen is a diploma. Four minutes past noon, exactly on time. Press Space.'
-            : !this.hard && this.trust
-              ? 'The tiger gets its glass. Petro tastes it: "Edible. Next time, let the lime do the talking." Four minutes past noon. Press Space.'
-              : 'The tiger gets its glass. The clock says four minutes past noon, which is exactly on time. Press Space.';
+          !this.hard && this.plate === 1
+            ? 'The tiger gets its glass. Then a shout from the front table: two fishermen, salt to the elbows, want exactly that. Petro slides the board back to you. "Alone this time. I am watching the rice." Space.'
+            : !this.hard && this.spoiled + this.earlies === 0
+              ? 'The second glass goes out. Petro tastes from the bowl, closes her eyes, and writes nothing down, which in this kitchen is a diploma. Noon, near enough, and exactly on time. Press Space.'
+              : !this.hard && this.trust
+                ? 'The second glass goes out. Petro tastes it: "Edible. Next time, let the lime do the talking." The fishermen do not complain; they are busy. Press Space.'
+                : !this.hard
+                  ? 'The second glass goes out, and the fishermen raise it to the kitchen. Noon, near enough, which is exactly on time. Press Space.'
+                  : 'The tiger gets its glass. Noon, near enough, which is exactly on time. Press Space.';
         break;
       }
       case 'done': {
+        if (!this.hard && this.plate === 1) {
+          // The second plate, start to finish, with nobody steadying the bowl.
+          this.plate = 2;
+          this.step = 'cut';
+          this.cuts = 0;
+          this.sides = 0;
+          this.kiss = 0;
+          this.pour = 0;
+          this.fishEarly = 0;
+          this.trust = false; // her trust is per plate; the second one earns its own
+          this.petro.reset();
+          this.chopT = 1;
+          this.dropAt = this.saltAt = this.onionAt = this.ajiAt = this.pourAt = -1;
+          this.sideAt = [-1, -1];
+          this.milk = 0;
+          this.hint = 'A fresh lisa on the board, and Petro\'s back turned on purpose. The same order: cut, salt, the lime kiss, the rest. Space to cut.';
+          break;
+        }
         this.root.hidden = true;
         const done = this.onDone;
         this.onDone = null;
@@ -2096,12 +2183,13 @@ export class CevichePanel {
       g.strokeRect(zx, 306, zw, 12);
       const cx = 130 + Math.min(0.99, this.kiss) * 380;
       const hot = this.kiss >= this.zoneLo && this.kiss < this.zoneHi;
+      this.marks.paint(g, (u) => ({ x: 130 + Math.min(0.99, u) * 380, y: 312, a: Math.PI / 2 }), 9);
       rr(g, cx - 2, 302, 4, 20, 2, hot ? '#d6ff8c' : '#f2e6d0');
       if (hot) stampGlow(g, cx, 312, 20, '#d6ff8c', 0.5);
     }
 
     // The clock, still approving.
-    const clockMin = 1 + idx * 0.5 + this.spoiled;
+    const clockMin = 1 + idx * 0.5 + this.spoiled + (this.plate - 1) * 4.5;
     g.fillStyle = 'rgba(255,248,235,0.65)';
     g.font = '11px system-ui, sans-serif';
     g.textAlign = 'right';
