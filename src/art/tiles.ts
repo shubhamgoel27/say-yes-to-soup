@@ -1,6 +1,6 @@
 import { ART, PAL, TILE } from '../engine/config';
 import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
-import { ART_SETS, MAP_SKINS, SOFT_KINDS } from './sets';
+import { ART_SETS, MAP_PINS, MAP_SKINS, SOFT_KINDS } from './sets';
 import { floorPour, grit } from './sets/floor';
 
 /**
@@ -119,9 +119,9 @@ export class Tileset {
     this.make('dirt', 5, (g, r) => {
       groundBase(g, r, shade(PAL.earth, 0.01));
       for (let i = 0; i < 5; i++) {
-        oval(g, r.int(S), r.int(S), 3 + r.int(3), 2, shade(PAL.earth, r.chance(0.5) ? -0.12 : 0.1));
+        oval(g, 8 + r.int(S - 16), 4 + r.int(S - 8), 3 + r.int(3), 2, shade(PAL.earth, r.chance(0.5) ? -0.12 : 0.1));
       }
-      for (let i = 0; i < 3; i++) dot(g, r.int(S), r.int(S), 1.8, shade(PAL.stone, 0.05));
+      for (let i = 0; i < 3; i++) dot(g, 3 + r.int(S - 6), 3 + r.int(S - 6), 1.8, shade(PAL.stone, 0.05));
     });
 
     // Swept adobe floor, lifted a step: the puna outside chapter one's two
@@ -137,13 +137,17 @@ export class Tileset {
       if (r.chance(0.35)) oval(g, r.next() * S, r.next() * S, 8, 4, 'rgba(84,58,34,0.09)');
     });
 
+    // Packed earth, a step darker than the dirt around it rather than the
+    // near-black brown it was: on pale puna a one-tile lane that dark read as
+    // a scorch mark. Every pebble lands clear of the tile's edge, because a
+    // pebble cut in half by the next tile is a seam drawn in the ground.
     this.make('pathCore', 5, (g, r) => {
-      rect(g, 0, 0, S, S, shade(PAL.earthDark, 0.02));
+      rect(g, 0, 0, S, S, shade(PAL.earth, -0.12));
       for (let i = 0; i < 5; i++) {
-        dot(g, r.int(S), r.int(S), 2 + r.next() * 1.6, shade(PAL.stone, (r.next() - 0.5) * 0.2));
+        dot(g, 5 + r.int(S - 10), 5 + r.int(S - 10), 2 + r.next() * 1.6, shade(PAL.stone, (r.next() - 0.5) * 0.2));
       }
       for (let i = 0; i < 3; i++) {
-        oval(g, r.int(S), r.int(S), 4, 2, shade(PAL.earthDark, r.chance(0.5) ? -0.07 : 0.08));
+        oval(g, 7 + r.int(S - 14), 5 + r.int(S - 10), 4, 2, shade(PAL.earth, r.chance(0.5) ? -0.2 : -0.04));
       }
     });
 
@@ -1003,14 +1007,18 @@ export class Tileset {
       for (let i = 0; i < 6; i++) {
         dot(g, r.int(S), r.int(S), 1.4 + r.next(), shade('#d9c298', r.chance(0.5) ? -0.09 : 0.1));
       }
-      // A faint wind ripple.
+      // A faint wind ripple, short and inside the tile: one drawn edge to
+      // edge stopped dead at the next tile, which never carried it on, and a
+      // beach of them read as a grid.
       if (r.chance(0.6)) {
-        g.strokeStyle = 'rgba(150,125,85,0.16)';
+        g.strokeStyle = 'rgba(150,125,85,0.14)';
         g.lineWidth = 2;
-        const yy = 10 + r.int(S - 20);
+        g.lineCap = 'round';
+        const yy = 12 + r.int(S - 24);
+        const xx = 10 + r.int(14);
         g.beginPath();
-        g.moveTo(0, yy);
-        g.quadraticCurveTo(S / 2, yy + 5, S, yy);
+        g.moveTo(xx, yy);
+        g.quadraticCurveTo(xx + 15, yy + 4, xx + 30, yy);
         g.stroke();
       }
       if (r.chance(0.16)) dot(g, r.int(S), r.int(S), 2.2, '#f0e7d2'); // a shell
@@ -1018,9 +1026,9 @@ export class Tileset {
 
     this.make('sandWet', 3, (g, r) => {
       groundBase(g, r, shade('#b6a077', -0.02));
+      // The film the last wave left: soft streaks that end inside the tile.
       for (let i = 0; i < 3; i++) {
-        const yy = r.int(S);
-        vgrad(g, 0, yy, S, 4, 'rgba(230,225,205,0.22)', 'rgba(0,0,0,0)');
+        oval(g, 14 + r.int(S - 28), 8 + r.int(S - 16), 9 + r.int(6), 1.6, 'rgba(230,225,205,0.2)');
       }
       if (r.chance(0.3)) oval(g, r.int(S), r.int(S), 5, 2, 'rgba(90,110,115,0.18)');
     });
@@ -1664,7 +1672,9 @@ export class Tileset {
     if (mapId === this.skinnedMap) return;
     this.skinnedMap = mapId;
     this.skin = MAP_SKINS[mapId] ?? null;
+    this.pins = MAP_PINS[mapId] ?? null;
   }
+  private pins: Map<number, { kind: string; v: number }> | null = null;
 
   /** Which painted kind actually supplies this kind's pixels here. */
   private art(kind: string): string {
@@ -1679,6 +1689,8 @@ export class Tileset {
   private variant(kind: string, cx: number, cy: number): HTMLCanvasElement {
     const list = this.v.get(this.art(kind));
     if (!list || list.length === 0) return this.fallback();
+    const pin = this.pins?.get(cy * 4096 + cx);
+    if (pin && pin.kind === kind) return list[pin.v % list.length] ?? this.fallback();
     const pick = list[Math.floor(cellHash(cx, cy, 5) * list.length)];
     return pick ?? this.fallback();
   }
@@ -1713,34 +1725,10 @@ export class Tileset {
     if (kind === 'water') {
       const f = this.water[Math.floor(time * 2.2) % 4];
       if (f) g.drawImage(f, sx, sy);
-      // Soft sandy banks with a lapping waterline.
-      const sand = '#d9c188';
-      const lap = 'rgba(180,220,235,0.7)';
-      const lapOff = Math.sin(time * 2.4 + cx * 0.8 + cy) > 0 ? 1.5 : 0;
-      g.fillStyle = sand;
-      if (!conn(0, -1)) {
-        g.fillRect(sx, sy, S, 4);
-        g.fillStyle = lap;
-        g.fillRect(sx, sy + 4 + lapOff, S, 2.4);
-        g.fillStyle = sand;
-      }
-      if (!conn(0, 1)) {
-        g.fillRect(sx, sy + S - 4, S, 4);
-        g.fillStyle = lap;
-        g.fillRect(sx, sy + S - 7 - lapOff, S, 2.4);
-        g.fillStyle = sand;
-      }
-      if (!conn(-1, 0)) {
-        g.fillRect(sx, sy, 4, S);
-        g.fillStyle = lap;
-        g.fillRect(sx + 4 + lapOff, sy, 2.4, S);
-        g.fillStyle = sand;
-      }
-      if (!conn(1, 0)) {
-        g.fillRect(sx + S - 4, sy, 4, S);
-        g.fillStyle = lap;
-        g.fillRect(sx + S - 7 - lapOff, sy, 2.4, S);
-      }
+      // No banks here: a sand strip and a lap line along every cell edge drew
+      // the grid's stair steps onto every canal. The renderer's shoreline
+      // lays the bank, the wet margin and the foam along one wandering line.
+      void conn;
       return;
     }
 

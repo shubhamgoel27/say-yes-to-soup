@@ -56,6 +56,10 @@ export const ART: ChapterArt = {
   skins: {
     'delhi-langar': { wallInt: 'wallLangar', floorEarth: 'floorTerrazzo' },
     'delhi-haveli': { wallInt: 'wallHaveli', floorEarth: 'floorSandstone', rug: 'rugDari' },
+    // The chowk's open ground is the same dust as the worn edges around it,
+    // not the Andes' orange earth: borrowed, it put a rust-coloured blot
+    // wherever a patch of bare ground met a scuffed one.
+    delhi: { dirt: 'chowkdust' },
   },
 
   paint(make) {
@@ -124,6 +128,17 @@ export const ART: ChapterArt = {
       // A stray brick fragment or a pale grit patch.
       if (r.chance(0.3)) rr(g, r.int(S - 10), r.int(S - 6), 8, 4, 1, 'rgba(157,122,108,0.4)');
       if (r.chance(0.35)) dot(g, r.int(S), r.int(S), 2, 'rgba(220,210,190,0.25)');
+    });
+
+    // Chowk dust: bare ground beaten pale by carts, a shade warmer than the
+    // worn edge so the open square still reads as earth.
+    make('chowkdust', 5, (g, r) => {
+      const base = '#a6875f';
+      rect(g, 0, 0, S, S, base);
+      for (let i = 0; i < 4; i++) {
+        oval(g, 8 + r.int(S - 16), 5 + r.int(S - 10), 3 + r.int(3), 1.8, shade(base, r.chance(0.5) ? -0.08 : 0.08));
+      }
+      for (let i = 0; i < 3; i++) dot(g, 3 + r.int(S - 6), 3 + r.int(S - 6), 1.6, 'rgba(220,210,190,0.3)');
     });
 
     // Rooftop terrace: lime-washed brick, sun-cured, rain-rinsed.
