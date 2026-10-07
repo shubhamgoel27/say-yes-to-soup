@@ -1,5 +1,5 @@
 import type { Cond } from './schema';
-import { CHAPTERS, DIG_SPOTS, LETTERS, NODES, NPCS, REGION_MAPS, type WorldTask } from './world';
+import { CHAPTERS, DIG_SPOTS, LETTERS, MAP_CHAPTER, NODES, NPCS, REGION_MAPS, type WorldTask } from './world';
 
 /**
  * What Nani's red thread is allowed to point at, as pure functions of the
@@ -242,9 +242,12 @@ export function threadWho(
  * met, and (for a task that names people) somebody named still has news.
  * The chip shows the first; the thread follows the first that resolves.
  */
-export function openTasks(tasks: WorldTask[], state: GuideState): WorldTask[] {
+export function openTasks(tasks: WorldTask[], state: GuideState, hereMap?: string): WorldTask[] {
+  // Ground already walked into retires older chapters' threads (see MAP_CHAPTER).
+  const here = hereMap === undefined ? undefined : MAP_CHAPTER[hereMap];
   return tasks.filter(
     (t) =>
+      (here === undefined || t.chapter >= here) &&
       !t.supersededBy.some((f) => state.has(f)) &&
       state.check(t.when) &&
       (t.who === undefined || liveWho(t, state).length > 0),

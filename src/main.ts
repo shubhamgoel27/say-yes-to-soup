@@ -2603,6 +2603,9 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   camera.follow(px, py, map.w, map.h);
   state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
   state.save();
+  // New ground can retire a whole chapter's threads (openTasks scopes by
+  // map), and nothing else would tell the chip until the next flag.
+  refreshTaskChip();
   showPlate(map.name, 2600);
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));

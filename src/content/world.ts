@@ -124,15 +124,26 @@ export const JOURNAL_BY_ID = new Map(JOURNAL.map((e) => [e.id, e]));
  * tasks into one list meant Ch'aska Pampa was still telling you to meet the
  * village while you stood in the endgame, an ocean and ten villages later.
  */
-export type WorldTask = TaskDef & { supersededBy: string[] };
+export type WorldTask = TaskDef & { supersededBy: string[]; chapter: number };
 
 export const TASKS: WorldTask[] = newestFirst.flatMap((c) => {
   const own = CHAPTERS.indexOf(c);
   const later = CHAPTERS.slice(own + 1)
     .map((x) => x.arrival?.flag)
     .filter((f): f is string => !!f);
-  return c.tasks.map((t) => ({ ...t, supersededBy: later }));
+  return c.tasks.map((t) => ({ ...t, supersededBy: later, chapter: own }));
 });
+
+/**
+ * The chapter whose ground a map is, in play order, or null for a map no
+ * chapter owns. Standing on a later chapter's map retires every earlier
+ * chapter's threads at once, before that chapter's arrival flag is set:
+ * the flag lands when the arrival narration ends, and until then the chip
+ * still offered the last chapter's errand on the new chapter's quay.
+ */
+export const MAP_CHAPTER: Record<string, number> = Object.fromEntries(
+  CHAPTERS.flatMap((c, i) => c.maps.map((m) => [m.id, i] as const)),
+);
 
 export const ERRANDS: ErrandDef[] = CHAPTERS.flatMap((c) => c.errands ?? []);
 export const ERRAND_BY_ID = new Map(ERRANDS.map((e) => [e.id, e]));
