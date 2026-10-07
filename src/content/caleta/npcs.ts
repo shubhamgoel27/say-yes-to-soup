@@ -24,10 +24,11 @@ export const CALETA_NPCS: NpcDef[] = [
       skirt: '#3c6e64',
     },
     entry: [
+      // First visit: hello, and Petro's lisa to carry in past the pots. The
+      // lisa goes one way only; the second visit is the one with the yapa.
       { when: { not: ['met.marisol'] }, node: 'mar.marisol.first' },
-      { when: { has: ['errand.petro-lisa'], not: ['c2.lisa'] }, node: 'mar.marisol.lisa' },
-      { when: { has: ['met.simon'], not: ['c2.stall2'] }, node: 'mar.marisol.second' },
-      { when: { has: ['c2.stall2', 'c2.ceviche'], not: ['c2.casero'] }, node: 'mar.marisol.yapa' },
+      { when: { not: ['c2.lisa'] }, node: 'mar.marisol.lisa' },
+      { when: { has: ['c2.lisa.done'], not: ['c2.casero'] }, node: 'mar.marisol.second' },
       { when: { has: ['c2.casero', 'c2.nets.done'], not: ['c2.rematar'] }, node: 'mar.marisol.rematar' },
       { node: 'mar.marisol.idle' },
     ],
@@ -139,11 +140,13 @@ export const CALETA_NPCS: NpcDef[] = [
       skirt: '#7d3f34',
     },
     entry: [
+      // Marisol's lisa is the first thing through the door if you carry it,
+      // whether or not Petro has met you yet: the parcel introduces you.
+      { when: { has: ['c2.lisa'], not: ['c2.lisa.done', 'met.petro'] }, node: 'mar.petro.sudado.first' },
+      { when: { has: ['c2.lisa'], not: ['c2.lisa.done'] }, node: 'mar.petro.sudado' },
       { when: { not: ['met.petro'] }, node: 'mar.petro.first' },
       { when: { has: ['met.petro'], not: ['c2.ceviche'] }, node: 'mar.petro.askceviche' },
       { when: { has: ['c2.ceviche'], not: ['c2.atenoon'] }, node: 'mar.petro.noonmeal' },
-      { when: { has: ['c2.atenoon'], not: ['c2.lisa.ask'] }, node: 'mar.petro.lisa' },
-      { when: { has: ['c2.lisa'], not: ['c2.lisa.done'] }, node: 'mar.petro.sudado' },
       { when: { has: ['c2.atenoon'], not: ['c2.cook.done'] }, node: 'mar.petro.teach' },
       { when: { has: ['c2.cook.done'] }, node: 'mar.petro.cookAgain' },
       { node: 'mar.petro.idle' },
@@ -184,6 +187,11 @@ export const CALETA_NPCS: NpcDef[] = [
       hatStyle: 'montera',
     },
     entry: [
+      // Somebody already, by the time you find her: no lecture about it.
+      {
+        when: { has: ['c2.vouch', 'c2.casero', 'c2.ride.done'], not: ['met.rios'] },
+        node: 'mar.rios.first.ready',
+      },
       { when: { not: ['met.rios'] }, node: 'mar.rios.first' },
       {
         when: { has: ['met.rios', 'c2.vouch', 'c2.casero', 'c2.ride.done'], not: ['c2.complete'] },
@@ -211,7 +219,6 @@ export const CALETA_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c2.faus.met'] }, node: 'mar.faustino.down' },
       { when: { not: ['c2.faus.quiz'] }, node: 'mar.faustino.quiz' },
-      { when: { not: ['c2.faus.news'] }, node: 'mar.faustino.news' },
       { node: 'mar.faustino.idle' },
     ],
   },
@@ -276,13 +283,14 @@ export const CALETA_NODES: NodeMap = {
   'mar.marisol.first': {
     lines: [
       { who: 'Marisol', text: 'Down from the sierra, pe. You smell of woodsmoke. Good smell.' },
-      { who: 'Marisol', text: 'Lisa today. Humble fish, honest fish. Come back, and come back again; a stall is not a shop.' },
+      { who: 'Marisol', text: 'Lisa today. Humble fish, honest fish. A stall is not a shop; you will see.' },
     ],
     effects: ['set:met.marisol', 'journal:people.marisol', 'journal:words.pe'],
+    next: 'mar.marisol.lisa',
   },
   'mar.marisol.second': {
     lines: [
-      { who: 'Marisol', text: 'Back again? Twice is a habit starting.' },
+      { who: 'Marisol', text: 'Back again, and Petro already told half the malecón her lisa came in warm. Twice is a habit starting.' },
       { who: 'Marisol', text: 'Choclo with your fish. It came down the mountain long before you did.' },
     ],
     effects: ['set:c2.stall2', 'journal:words.choclo'],
@@ -295,17 +303,19 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Marisol', text: 'Mote! My grandmother said it exactly so. Same corn, different pot, pe.' },
     ],
+    next: 'mar.marisol.yapa',
   },
   'mar.marisol.cancha': {
     lines: [
       { who: 'Marisol', text: 'Toasted, it is cancha. You eat it by the fistful while you wait for the ceviche. The waiting is part of the recipe.' },
     ],
+    next: 'mar.marisol.yapa',
   },
   // The yapa is not explained, it is received: one fish more on the scale,
   // no word said, and the journal page fills from the weight of it.
   'mar.marisol.yapa': {
     lines: [
-      { who: 'Marisol', text: 'Three visits, casero. Officially a habit.' },
+      { who: 'Marisol', text: 'Two visits and Petro’s word behind you. Casero, officially.' },
       { text: 'She weighs the lisa, then drops one small fish more on top without looking. Not a word.' },
     ],
     effects: ['set:c2.casero', 'journal:words.yapa', 'journal:customs.caserita'],
@@ -331,17 +341,18 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Marisol', text: 'De nada, casero. Tomorrow, maybe bonito. La mar decides; we adjust.' },
     ],
   },
+  // The errand runs one way, stall to pots: Petro never has to send you.
   'mar.marisol.lisa': {
     lines: [
-      { who: 'Marisol', text: 'Petro sent you? Then this is hers, set aside before anyone argued.' },
+      { who: 'Marisol', text: 'You will be going in past the pots; everybody does. Take Doña Petro her lisa. I set it aside before anyone argued.' },
       { text: 'She wraps the fish in yesterday’s newspaper, tight as a gift.' },
       { who: 'Marisol', text: 'Al toque, pe. A sudado does not like to wait.' },
     ],
-    effects: ['set:c2.lisa', 'journal:words.altoque'],
+    effects: ['set:c2.lisa', 'journal:words.altoque', 'errand:petro-lisa', 'set:errand.petro-lisa'],
   },
   'mar.marisol.rematar': {
     lines: [
-      { who: 'Marisol', text: 'Come back when the sun leans, pe. Prices lean with it.' },
+      { who: 'Marisol', text: 'When the sun leans, pe, prices lean with it. Stay and watch the table.' },
     ],
   },
   'mar.marisol.idle': {
@@ -368,6 +379,7 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Don Simón', text: 'The ones she carries say LA mar. You do not respect a postcard. You respect her.' },
     ],
     effects: ['journal:words.lamar'],
+    next: 'mar.simon.trade',
   },
   'mar.simon.watch': {
     lines: [
@@ -375,6 +387,7 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Don Simón', text: 'Most people talk first. La mar, we say. She is not scenery to the ones she feeds.' },
     ],
     effects: ['journal:words.lamar'],
+    next: 'mar.simon.trade',
   },
   'mar.simon.trade': {
     lines: [
@@ -398,7 +411,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.simon.nets': {
     lines: [
-      { who: 'Don Simón', text: 'Evening. The nets come up to the wall and we sew the day’s holes shut before they grow opinions.' },
+      { who: 'Don Simón', text: 'The boats are in, so the nets come up to the wall and we sew the day’s holes shut before they grow opinions.' },
       { who: 'Don Simón', text: 'Sit. Hands busy, tongues loose.' },
     ],
     effects: ['set:net.start'],
@@ -535,14 +548,17 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Maestro Félix', text: 'Caballito de totora. Two big bundles, the madres; two small, the hijos. In a month the sea takes it back.' },
     ],
     effects: ['set:met.felix', 'journal:people.felix'],
+    next: 'mar.felix.ponds',
   },
-  // The generational lore waits at the pond itself, once he points the eye.
+  // Boat, ponds, offer: one telling, the way he binds a bundle, without
+  // letting go of the reed in between.
   'mar.felix.ponds': {
     lines: [
       { who: 'Maestro Félix', text: 'The reeds grow in wachaques, ponds dug at the desert’s edge down to water.' },
-      { who: 'Maestro Félix', text: 'Bad years they sicken, and the village digs new ones together. Go stand by the green.' },
+      { who: 'Maestro Félix', text: 'Bad years they sicken, and the village digs new ones together. Every horse on this sand drank from one.' },
     ],
     effects: ['set:c2.ponds', 'journal:customs.wachaque'],
+    next: 'mar.felix.ride',
   },
   'mar.felix.ride': {
     lines: [
@@ -606,7 +622,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.petro.first': {
     lines: [
       { text: 'In past the pots: steam, ají, one long table half full of strangers not being strangers.' },
-      { who: 'Doña Petro', text: 'Sit. There is no menu, criatura de la sierra. Today the pots say tortitas de choclo.' },
+      { who: 'Doña Petro', text: 'No menu here, criatura de la sierra. Today the pots say tortitas de choclo.' },
     ],
     effects: ['set:met.petro', 'journal:people.petro'],
     choices: [
@@ -624,35 +640,61 @@ export const CALETA_NODES: NodeMap = {
     lines: [
       { who: 'Doña Petro', text: 'You have the look of someone about to ask for ceviche. Go on. I enjoy this part.' },
     ],
-    next: 'mar.petro.noon',
+    choices: [
+      { text: 'Ask for ceviche', goto: 'mar.petro.noon' },
+      { text: 'Eat what the pots say', goto: 'mar.petro.eats', when: { not: ['page.dishes.tortitas'] } },
+    ],
   },
+  // Served the moment it is asked for. The rule is still taught (a lunch
+  // dish, never supper), but no "come back at noon" that no clock honors,
+  // and no claim about the hour that the sky outside could contradict.
   'mar.petro.noon': {
     lines: [
-      { who: 'Doña Petro', text: 'Ceviche? Corazón, look at the light. It is past three; that fish came ashore at dawn and is done being ceviche today.' },
-      { who: 'Doña Petro', text: 'Noon to three, that is the whole dish. Come tomorrow; tonight we eat warm things.' },
+      { who: 'Doña Petro', text: 'Ceviche? Corazón, the boats came in at dawn and that fish is still talking about the sea.' },
+      { who: 'Doña Petro', text: 'Ceviche is lunch, never supper. After three it is old fish wearing lime. Today you are early enough.' },
     ],
     effects: ['set:c2.ceviche', 'journal:customs.noon'],
+    next: 'mar.petro.noonmeal',
   },
   'mar.petro.noonmeal': {
     lines: [
-      { text: 'Noon, and fish that was swimming at dawn: lime, red onion, ají, cancha, camote glowing orange at the rim.' },
+      { text: 'Fish that was swimming at dawn: lime, red onion, ají, cancha, camote glowing orange at the rim.' },
       { who: 'Doña Petro', text: 'And the marinade, in a glass. Leche de tigre. For courage, for hangovers, for existing. Drink.' },
     ],
     effects: ['set:c2.atenoon', 'journal:dishes.ceviche', 'journal:dishes.lechedetigre'],
   },
-  'mar.petro.lisa': {
+  // The parcel as an introduction: first time through the door with it.
+  'mar.petro.sudado.first': {
     lines: [
-      { who: 'Doña Petro', text: 'Useful legs, casera. Marisol holds my lisa every morning and my knees hate the walk.' },
-      { who: 'Doña Petro', text: 'Bring it, and there is sudado in it for you.' },
+      { text: 'In past the pots: steam, ají, one long table half full of strangers not being strangers.' },
+      { text: 'A woman at the stove takes Marisol’s parcel out of your hands before you can explain it.' },
+      { text: 'In it goes, with onion, tomato, ají, and a splash of chicha that hisses like gossip.' },
+      { who: 'Doña Petro', text: 'Petro. Sudado. If that captain needs a galley hand, tell her Petro says your hands are clean.' },
     ],
-    effects: ['set:c2.lisa.ask', 'errand:petro-lisa', 'set:errand.petro-lisa'],
+    effects: [
+      'set:met.petro',
+      'journal:people.petro',
+      'set:c2.lisa.done',
+      'set:c2.vouch',
+      'errand.done',
+      'clear:errand.petro-lisa',
+      'journal:dishes.sudado',
+    ],
   },
   'mar.petro.sudado': {
     lines: [
-      { text: 'The lisa goes in with onion, tomato, ají, and a splash of chicha that hisses like gossip.' },
+      { text: 'Petro has the parcel out of your hands before you can explain it. Onion, tomato, ají, and a splash of chicha that hisses like gossip.' },
       { who: 'Doña Petro', text: 'Sudado. If that captain needs a galley hand, tell her Petro says your hands are clean.' },
     ],
-    effects: ['set:c2.lisa.done', 'set:c2.vouch', 'errand.done', 'clear:errand.petro-lisa', 'journal:dishes.sudado'],
+    effects: [
+      'set:met.petro',
+      'journal:people.petro',
+      'set:c2.lisa.done',
+      'set:c2.vouch',
+      'errand.done',
+      'clear:errand.petro-lisa',
+      'journal:dishes.sudado',
+    ],
   },
   'mar.petro.idle': {
     lines: [
@@ -749,6 +791,14 @@ export const CALETA_NODES: NodeMap = {
     ],
     effects: ['set:met.rios', 'journal:people.rios'],
   },
+  'mar.rios.first.ready': {
+    lines: [
+      { text: 'At the pier’s end, a woman in a salt-white cap checks a clipboard like it owes her money.' },
+      { who: 'Capitana Ríos', text: 'Ríos, of the Yacana. No passengers; working hands only. I was about to tell you to be somebody here first.' },
+    ],
+    effects: ['set:met.rios', 'journal:people.rios'],
+    next: 'mar.rios.yes',
+  },
   'mar.rios.not': {
     lines: [
       { who: 'Capitana Ríos', text: 'Still a stranger here, still a stranger to me. Be someone’s casero. Learn what la mar carries.' },
@@ -790,6 +840,8 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Faustino', text: 'The soup-eater! The mountain misses you already. I brought the llamas down to check.' },
     ],
     effects: ['set:c2.faus.met'],
+    // Greeting, news, the bet: one sitting by the llamas, not three.
+    next: 'mar.faustino.news',
   },
   'mar.faustino.quiz': {
     lines: [
@@ -830,9 +882,10 @@ export const CALETA_NODES: NodeMap = {
   'mar.faustino.news': {
     lines: [
       { who: 'Faustino', text: 'News from up top. Rosa invented a soup she says is for winter. It is for missing you.' },
-      { who: 'Faustino', text: 'And the dog crosses the bridge free now. The toll economy is in a golden age.' },
+      { who: 'Faustino', text: 'And the dog sleeps by the well now, facing the west road. Nobody has the heart to tell him.' },
     ],
     effects: ['set:c2.faus.news'],
+    next: 'mar.faustino.quiz',
   },
   'mar.faustino.idle': {
     lines: [

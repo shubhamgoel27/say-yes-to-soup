@@ -254,11 +254,6 @@ export const CALETA_TASKS: TaskDef[] = [
     who: 'petro',
   },
   {
-    when: { has: ['errand.petro-lisa'], not: ['c2.lisa'] },
-    text: 'Doña Petro’s lisa waits at Marisol’s stall on the malecón. Fetch it before the sudado loses patience.',
-    who: 'marisol',
-  },
-  {
     when: { has: ['c2.gift'], not: ['c2.gift.sent'] },
     text: 'A very weird sea thing rides in your pocket, addressed to a bridge magnate. The harbor office counter is by the office door, up from the pier.',
     at: ['la-caleta', 29, 21],
@@ -274,11 +269,6 @@ export const CALETA_TASKS: TaskDef[] = [
     at: ['la-caleta', 14, 29],
   },
   {
-    when: { has: ['c2.ceviche'], not: ['c2.atenoon'] },
-    text: 'Petro’s orders: come back at noon, when the fish is hours old instead of a day. The clock is the recipe.',
-    who: 'petro',
-  },
-  {
     when: { has: ['c2.cook.start'] },
     text: 'You are behind Petro’s pots with a knife and a clock. Cut, salt, the lime kiss, onion, ají, cancha and camote at the rim, tiger’s milk in its own glass. In that order, pe.',
     who: 'petro',
@@ -287,11 +277,6 @@ export const CALETA_TASKS: TaskDef[] = [
     when: { has: ['c2.atenoon'], not: ['c2.cook.start', 'c2.cook.done'] },
     text: 'Doña Petro has decided you have eaten enough ceviche to be trusted near one. Present yourself behind the pots; the lesson keeps noon hours.',
     who: 'petro',
-  },
-  {
-    when: { has: ['met.felix'], not: ['c2.ponds'] },
-    text: 'Maestro Félix is partway through a boat and a story about ponds. Both halves are worth standing still for.',
-    who: 'felix',
   },
   {
     when: { has: ['c2.ponds'], not: ['c2.ride.done'] },
@@ -304,18 +289,8 @@ export const CALETA_TASKS: TaskDef[] = [
     who: 'simon',
   },
   {
-    when: { has: ['met.simon'], not: ['c2.trade'] },
-    text: 'Sit with Don Simón at the pier rail again. Men who mend line all day finish their stories on the second visit, and his runs up your very road.',
-    who: 'simon',
-  },
-  {
-    when: { has: ['met.marisol', 'met.simon'], not: ['c2.stall2'] },
-    text: 'Go back to Marisol’s stall. She said you would see what a stall is; seeing takes visits.',
-    who: 'marisol',
-  },
-  {
-    when: { has: ['c2.stall2', 'c2.atenoon'], not: ['c2.casero'] },
-    text: 'One more visit to Marisol should make it a habit. Habits have privileges here.',
+    when: { has: ['c2.lisa.done'], not: ['c2.casero'] },
+    text: 'Marisol set Petro’s lisa aside this morning; she will want to hear it arrived. At a stall on the malecón, coming back is how a habit starts.',
     who: 'marisol',
   },
   {
@@ -330,7 +305,7 @@ export const CALETA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c2.arrived'], not: ['c2.complete'] },
-    text: 'La Caleta is small and talkative: the stall on the malecón, the old man on the pier, the picantería you enter past the pots. Meet it.',
+    text: 'The road ends at a fish stall. Marisol sells lisa and directions on the malecón; past her, the picantería breathes ají out of its door, and an old man mends line on the pier.',
     who: ['marisol', 'simon', 'felix', 'petro', 'rios', 'nilda', 'rafa', 'wili'],
   },
 ];

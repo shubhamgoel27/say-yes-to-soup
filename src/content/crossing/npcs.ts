@@ -53,6 +53,7 @@ export const CROSSING_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['c3.baon', 'c3.met.joseph'], not: ['c3.baon.done'] }, node: 'c3.jos.baon.known' },
       { when: { has: ['c3.baon'], not: ['c3.baon.done'] }, node: 'c3.jos.baon' },
       { when: { not: ['c3.met.joseph'] }, node: 'c3.jos.first' },
       { when: { has: ['c3.shellback'], not: ['joseph.letter'] }, node: 'c3.jos.entrust' },
@@ -145,10 +146,16 @@ export const CROSSING_NPCS: NpcDef[] = [
       hatStyle: 'montera',
     },
     entry: [
+      // Found the galley before the captain? Then Ben already gave the
+      // orders she was going to give, and she knows it.
+      { when: { has: ['c3.met.ben'], not: ['c3.met.rios'] }, node: 'c3.rios.first.late' },
       { when: { has: ['c2.casero'], not: ['c3.met.rios'] }, node: 'c3.rios.first.casero' },
       { when: { not: ['c3.met.rios'] }, node: 'c3.rios.first' },
-      { when: { has: ['c3.shellback'], not: ['letter.read.c3.pilar'] }, node: 'c3.rios.mail' },
+      // Pilar writes only to people who owe her a sea thing; everyone else
+      // gets Petro's letter alone.
+      { when: { has: ['c3.shellback', 'pilar.sea'], not: ['letter.read.c3.pilar'] }, node: 'c3.rios.mail' },
       { when: { has: ['letter.read.c3.pilar'], not: ['letter.read.c3.petro'] }, node: 'c3.rios.mail2' },
+      { when: { has: ['c3.shellback'], not: ['letter.read.c3.petro'] }, node: 'c3.rios.mail.one' },
       {
         when: {
           has: ['c3.cook.done', 'joseph.letter', 'c3.stars.done', 'c3.olena.bread', 'letter.read.c3.petro'],
@@ -232,6 +239,23 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'Go find the galley', goto: 'c3.rios.go' },
     ],
   },
+  'c3.rios.first.late': {
+    lines: [
+      { text: 'The captain looks up from a clipboard, and then at the galley grease on your sleeve.' },
+      { who: 'Capitana Ríos', text: 'Ben found you before I did. He finds everyone first; it is the garlic. Petro swears your hands are clean. Ben will find out if she was right.' },
+    ],
+    effects: ['set:c3.met.rios'],
+    choices: [
+      { text: '"La mar. Don Simón taught me."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
+      { text: 'Ask why she says la mar', goto: 'c3.rios.lamar' },
+      { text: 'Back to work', goto: 'c3.rios.work' },
+    ],
+  },
+  'c3.rios.work': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Go on, then. One hand for you, one for the ship, and bus your own tray.' },
+    ],
+  },
   'c3.rios.lamar': {
     lines: [
       { who: 'Capitana Ríos', text: 'El mar is the thing on charts. La mar is the one who carries us, and could decline to.' },
@@ -258,6 +282,13 @@ export const CROSSING_NODES: NodeMap = {
   'c3.rios.mail2': {
     lines: [
       { who: 'Capitana Ríos', text: 'A second envelope was stuck to the first. Grease spot on the flap. The better kind of letter.' },
+    ],
+    effects: ['letter:c3.petro'],
+  },
+  'c3.rios.mail.one': {
+    lines: [
+      { text: 'The captain produces a canvas sack gone soft at the corners.' },
+      { who: 'Capitana Ríos', text: 'Mail. Callao threw it aboard with the last launch. One for you, grease spot on the flap. The better kind of letter.' },
     ],
     effects: ['letter:c3.petro'],
   },
@@ -294,10 +325,12 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Mang Ben', text: 'Mang Ben. Kumusta? No, eat first, answer after. House rule two.' },
     ],
     effects: ['journal:dishes.galleycoffee'],
+    // House rule three, said with your mouth still full: fed hands carry.
+    next: 'c3.ben.baon',
   },
   'c3.ben.baon': {
     lines: [
-      { who: 'Mang Ben', text: 'Favor na, pare. Joseph has the watch and forgot his night lunch again.' },
+      { who: 'Mang Ben', text: 'And since you are fed: favor na, pare. Joseph has the watch and forgot his night lunch again.' },
       { text: 'He tucks a cloth around a covered plate the way you tuck a blanket around a child.' },
       { who: 'Mang Ben', text: 'Port rail, forward. Walk it steady and it stays warm. Sige.' },
     ],
@@ -421,6 +454,13 @@ export const CROSSING_NODES: NodeMap = {
     effects: ['set:c3.met.joseph', 'journal:people.joseph'],
     next: 'c3.jos.baon2',
   },
+  // The same plate for a man who already told you his name at the rail.
+  'c3.jos.baon.known': {
+    lines: [
+      { who: 'Joseph', text: 'Ben sent the baon? You are my favorite person on this watch. My mother will hear about you.' },
+    ],
+    next: 'c3.jos.baon2',
+  },
   'c3.jos.baon2': {
     lines: [
       { text: 'He eats at the rail, plate balanced like it grew there. Aft, the bell strikes twice, bright as a coin.' },
@@ -486,9 +526,10 @@ export const CROSSING_NODES: NodeMap = {
   'c3.hana.first': {
     lines: [
       { text: 'A cadet leans at the bow rail, logging seabirds in a notebook far too neat for this wind.' },
-      { who: 'Hana', text: 'Oh! Hana. Deck cadet. In twelve days I see my own harbor, Shionoura. Home for Tanabata, the star festival.' },
+      { who: 'Hana', text: 'Oh! Hana. Deck cadet. At the end of this crossing I see my own harbor, Shionoura. Home for Tanabata, the star festival.' },
     ],
     effects: ['set:c3.met.hana', 'journal:people.hana'],
+    next: 'c3.hana.stars',
   },
   'c3.hana.stars': {
     lines: [
@@ -518,6 +559,7 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Hana', text: 'And the ship is named for your llama, you know. Somebody’s grandmother knew exactly where to look.' },
     ],
     effects: ['clear:c3.stars.start', 'set:c3.stars.done', 'journal:customs.starriver'],
+    next: 'c3.hana.words',
   },
   'c3.hana.words': {
     lines: [
@@ -543,7 +585,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.hana.idle': {
     lines: [
-      { who: 'Hana', text: 'Eleven days. Ten if the current is kind. My grandmother is already airing the good futons; I can feel it.' },
+      { who: 'Hana', text: 'Fewer days every watch, and fewer still if the current is kind. My grandmother is already airing the good futons; I can feel it.' },
     ],
   },
 
@@ -554,6 +596,7 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Olena', text: 'Ah. The galley hand. Olena, second engineer, Odesa. I keep four thousand tons of machinery alive, mostly by politeness.' },
     ],
     effects: ['set:c3.met.olena', 'journal:people.olena'],
+    next: 'c3.olena.starter',
   },
   'c3.olena.starter': {
     lines: [
@@ -655,7 +698,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.chasca.deck': {
     lines: [
       { who: 'Chasca', text: 'The soup-eater! How else do you photograph the middle of the sea? You ride a cargo ship.' },
-      { who: 'Chasca', text: 'Stand at the rail. Thirty days of nowhere behind you. Say fuzzy pickles!' },
+      { who: 'Chasca', text: 'Stand at the rail with all that nothing behind you. Say fuzzy pickles!' },
     ],
     effects: ['set:c3.met.chasca', 'set:photo.flash', 'set:photo.c3.deck'],
   },
