@@ -442,7 +442,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.carmen.sit': {
     lines: [
-      { text: 'You sit. The wichuna picks, the colors change, the sun does its slow arithmetic across the courtyard.' },
+      { text: 'You sit. The wichuna picks, the colors change, the sun does its slow arithmetic across her doorstep.' },
       { who: 'Doña Carmen', text: 'The granddaughter in Lima wears the other lliclla now. Your crooked row is keeping a stranger warm.' },
     ],
   },

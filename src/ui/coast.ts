@@ -1461,6 +1461,12 @@ let miseCache: Surface | null = null;
 
 /** Story telling: seconds Petro keeps the bowl after an early pull. */
 const PETRO_HOLD = 0.6;
+/**
+ * Story telling: a fish lost while you wrestled her for the bowl is replaced
+ * by Petro herself, slowly, so you can watch: seconds the lime waits, and
+ * presses do nothing, before the mercy fish is yours.
+ */
+const PETRO_RECUT = 3;
 
 const CEVICHE_LEGEND = [
   { keys: ['space'], does: 'the next move, on the lit thing' },
@@ -1506,6 +1512,7 @@ export class CevichePanel {
   private petro = new Hold();
   private fishEarly = 0; // early pulls on the fish now in the lime
   private trust = false; // the mercy fish: no hold
+  private recut = 0; // story: seconds left while Petro cuts the mercy fish herself
   /** Story: the second plate, for the two fishermen at the front table. */
   private plate = 1;
   /** Where each pull landed on the lime bar. */
@@ -1553,6 +1560,7 @@ export class CevichePanel {
     this.petro.reset();
     this.fishEarly = 0;
     this.trust = false;
+    this.recut = 0;
     this.plate = 1;
     this.marks.clear();
     this.hint = 'The dawn lisa, the board, the knife. Space to cut: even pieces, no ceremony.';
@@ -1572,7 +1580,14 @@ export class CevichePanel {
     const sc = this.scene;
     if (!sc) return;
     this.marks.tick(dt);
-    if (this.step === 'lime' && !this.lost) {
+    if (this.step === 'lime' && !this.lost && this.recut > 0) {
+      // Petro's knife, not yours: the lime waits until the fresh fish is in.
+      this.recut = Math.max(0, this.recut - dt);
+      if (this.recut === 0) {
+        this.dropAt = sc.time;
+        this.hint = 'The fresh lisa goes into the lime. "Yours. Hands off until the bar burns bright."';
+      }
+    } else if (this.step === 'lime' && !this.lost) {
       this.kiss += dt * this.kissRate;
       this.petro.tick(dt);
       if (this.kiss >= 1) {
@@ -1582,7 +1597,10 @@ export class CevichePanel {
         const grabby = !this.hard && this.fishEarly > 0;
         this.fishEarly = 0;
         this.petro.release();
-        if (grabby) this.trust = true;
+        if (grabby) {
+          this.trust = true;
+          this.recut = PETRO_RECUT;
+        }
         this.audio.bump();
         sc.thump(calm() ? 0 : 4, 0.05);
         if (!calm()) sc.burst(BOWL_X, BOWL_Y - 20, { n: 12, kind: 'puff', color: 'rgba(214,208,196,0.7)', speed: 40, grav: -30, size: 6, life: 0.8 });
@@ -1593,12 +1611,12 @@ export class CevichePanel {
           this.hint = '"Two lisas cooked to death is enough for one noon, corazón." She takes the board back, kindly, and feeds you anyway. Press Space.';
           return;
         }
-        this.dropAt = sc.time; // more fish arrives, tumbling in fresh
+        if (!this.recut) this.dropAt = sc.time; // more fish arrives, tumbling in fresh
         this.milk = Math.min(this.milk, 0.3);
         this.hint = this.hard
           ? '"Cooked to death, corazón." She hands you the LAST lisa. "The lime kisses. It does not marry." Out in the bright sliver, or the noon goes on without you.'
           : grabby
-            ? '"Cooked to death while you wrestled me for the bowl." She laughs and lets go of it. "This one is yours. Hands off until the bar burns bright."'
+            ? '"Cooked to death while you wrestled me for the bowl." She laughs, takes the knife, and cuts the next lisa herself, slowly, so you can watch.'
             : this.spoiled === 1
             ? '"Cooked to death, corazón." She eats the evidence and hands you more fish. "The lime kisses. It does not marry."'
             : '"Again dead! Good, I was hungry." More fish arrives. Pull it OUT while the bar burns bright.';
@@ -1666,6 +1684,11 @@ export class CevichePanel {
         break;
       }
       case 'lime': {
+        if (this.recut > 0) {
+          // Her knife is going; the bowl has nothing in it to pull yet.
+          sc?.wobble(2);
+          break;
+        }
         if (this.petro.on) {
           // Petro still has the bowl; tugging at it only keeps it in her hands.
           this.petro.start(PETRO_HOLD);
@@ -1757,6 +1780,7 @@ export class CevichePanel {
           this.pour = 0;
           this.fishEarly = 0;
           this.trust = false; // her trust is per plate; the second one earns its own
+          this.recut = 0;
           this.petro.reset();
           this.chopT = 1;
           this.dropAt = this.saltAt = this.onionAt = this.ajiAt = this.pourAt = -1;

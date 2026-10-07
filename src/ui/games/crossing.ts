@@ -102,6 +102,12 @@ const storyCall = (i: number) => STORY_CALLS[i] ?? '';
 const BEN_HOLD = 0.5;
 /** Grabs inside one of those beats before Ben lets the reach through. */
 const BEN_PATIENCE = 4;
+/**
+ * Story telling: a peek under the lid lets the heat out, and the simmer
+ * waits while Ben's hand is up. Up to this many seconds a run, so a hand
+ * that keeps lifting is clearly slower than one that waits, never stuck.
+ */
+const PEEK_COST = 9;
 
 /** Seconds the covered pot takes to go from all-vinegar to catching. */
 const SIMMER_DUR = 11;
@@ -397,6 +403,8 @@ export class GalleyPanel {
   private wrongBy: number[] = [];
   /** Story: Ben's beat after a wrong reach or a peek under the lid. */
   private ben = new Hold();
+  /** Story: seconds the simmer has stood still for peeks this run. */
+  private peeked = 0;
   /** Story: steps Ben had to hand over outright. */
   private handed = 0;
 
@@ -456,6 +464,7 @@ export class GalleyPanel {
     this.hard = RUN.hard;
     this.wrongBy = [];
     this.ben.reset();
+    this.peeked = 0;
     this.handed = 0;
     this.stepLeft = this.stepTime;
     this.hint = this.hard
@@ -588,7 +597,10 @@ export class GalleyPanel {
       }
       this.audio.blip();
       this.ben.start(BEN_HOLD);
-      this.hint = 'Ben puts the lid back with one finger. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
+      this.hint =
+        this.peeked < PEEK_COST
+          ? 'Ben puts the lid back with one finger, and the steam you let out has to build again. "All vinegar still, pare. She has not finished arguing." Give her a little longer.'
+          : 'Ben puts the lid back with one finger. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
       return;
     }
     this.done = true;
@@ -680,7 +692,10 @@ export class GalleyPanel {
     // The reduction runs on its own clock; the engine stops every panel's clock
     // while the pause strip is up, so nothing burns behind a menu. Ben calls
     // it twice before it ever catches.
-    if (this.simmer >= 0 && !this.done && !this.burnt) {
+    // A story peek lets the heat out: while Ben's hand is up, the pot waits.
+    const lidUp = !this.hard && this.simmer >= 0 && this.ben.on && this.peeked < PEEK_COST;
+    if (lidUp) this.peeked += simDt;
+    if (this.simmer >= 0 && !this.done && !this.burnt && !lidUp) {
       const was = this.simmer;
       const dur = this.hard ? (calm() ? HARD_SIMMER_CALM : HARD_SIMMER_DUR) : calm() ? SIMMER_CALM : SIMMER_DUR;
       this.simmer = Math.min(1, this.simmer + simDt / dur);

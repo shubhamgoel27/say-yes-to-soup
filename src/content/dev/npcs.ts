@@ -419,6 +419,7 @@ export const NODES: NodeMap = {
       { who: 'Rosa', text: 'You walked up from the valley? Sit, sit, {name}. The soup is hot and you look like wind.' },
       { text: 'A bowl lands in front of you before you can answer. Steam. Potatoes. Something green and sharp.' },
     ],
+    effects: ['journal:dishes.rosasoup'],
     choices: [
       { text: 'Offer a few coins', goto: 'rosa.coins' },
       { text: 'Just say thank you', goto: 'rosa.thanks' },
