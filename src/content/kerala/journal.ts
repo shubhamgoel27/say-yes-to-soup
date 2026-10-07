@@ -219,7 +219,7 @@ export const KERALA_TASKS: TaskDef[] = [
     who: 'varkey',
   },
   {
-    when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask'] },
+    when: { has: ['c6.chaya'], not: ['c6.mariamma2'] },
     text: 'Something is bubbling in Mariamma’s kitchen besides the curry. Go back; the questions there are decorations.',
     who: 'mariamma',
   },
@@ -234,7 +234,7 @@ export const KERALA_TASKS: TaskDef[] = [
     who: 'shaji',
   },
   {
-    when: { has: ['page.words.chaya'], not: ['c6.cook.done'] },
+    when: { has: ['page.words.chaya', 'c6.mariamma2'], not: ['c6.cook.done'] },
     text: 'Shaji has been looking at your wrists like a coach. He thinks they are ready for the meter-long pour; report to the thattukada.',
     who: 'shaji',
   },
@@ -254,8 +254,8 @@ export const KERALA_TASKS: TaskDef[] = [
     who: 'chascaC6',
   },
   {
-    when: { has: ['c6.letter.delivered'], not: ['letter.read.kochi.pilar'] },
-    text: 'Mail waits at the jetty office window, held under a tin of cardamom. One envelope looks suspiciously like an invoice.',
+    when: { has: ['c6.letter.delivered'], not: ['letter.read.kochi.hana'] },
+    text: 'Mail waits at the jetty office window, held under a tin of cardamom. Somebody far away has been writing to you.',
     at: ['kerala', 25, 25],
   },
   {
@@ -275,7 +275,7 @@ export const KERALA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c6.arrived'], not: ['c6.complete'] },
-    text: 'Kaithappuram is a spit of land between paddy and lagoon: the thattukada, the reading room, the coir yard, the palms. Walk it slowly; it notices.',
+    text: 'News outruns boats in Kaithappuram, and the village is curious about you already. Let it get a good look.',
     who: ['mariamma', 'shaji', 'omana', 'varkey', 'kuttan', 'moosa', 'appu', 'librarian'],
   },
 ];

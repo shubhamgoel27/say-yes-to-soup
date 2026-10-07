@@ -30,8 +30,9 @@ export const BUSAN_NPCS: NpcDef[] = [
       // lane's own business, which once included a foreigner in a queue.
       // The berth is stamped: the next visit is the goodbye, at first light.
       // It outranks the old story; a stall in the auction rush has no time
-      // for one.
-      { when: { has: ['c5.complete'], not: ['c5.bye'] }, node: 'c5.sunhee.bye' },
+      // for one. The goodbye, not the stamp, closes the chapter, so the
+      // journal's closing card follows the best scene instead of a window.
+      { when: { has: ['c5.berth'], not: ['c5.complete'] }, node: 'c5.sunhee.bye' },
       { when: { has: ['c5.deom'], not: ['c5.her'] }, node: 'c5.sunhee.her' },
       { node: 'c5.sunhee.idle' },
     ],
@@ -75,7 +76,6 @@ export const BUSAN_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c5.met.mija'] }, node: 'c5.mija.first' },
       { when: { has: ['c5.met.mija'], not: ['c5.hotteok.done'] }, node: 'c5.mija.offer' },
-      { when: { has: ['c5.hotteok.done'], not: ['c5.mija2'] }, node: 'c5.mija.after' },
       { when: { has: ['c5.hotteok.done'] }, node: 'c5.mija.again' },
       { node: 'c5.mija.idle' },
     ],
@@ -96,7 +96,6 @@ export const BUSAN_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c5.met.daeho'] }, node: 'c5.daeho.first' },
-      { when: { has: ['c5.hotteok.done'], not: ['c5.daeho2'] }, node: 'c5.daeho.props' },
       { node: 'c5.daeho.idle' },
     ],
   },
@@ -160,26 +159,26 @@ export const BUSAN_NPCS: NpcDef[] = [
       {
         when: {
           has: ['c5.met.gong', 'c5.deom', 'riddle.cho', 'c5.hotteok.done', 'joseph.letter'],
-          not: ['c5.complete'],
+          not: ['c5.berth'],
         },
         node: 'c5.gong.berth',
       },
       {
-        when: { has: ['c5.met.gong', 'c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.complete'] },
+        when: { has: ['c5.met.gong', 'c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.berth'] },
         node: 'c5.gong.berth2',
       },
       { when: { has: ['c5.bye'] }, node: 'c5.gong.sail' },
-      { when: { has: ['c5.complete'] }, node: 'c5.gong.wait' },
+      { when: { has: ['c5.berth'] }, node: 'c5.gong.wait' },
       { node: 'c5.gong.not' },
     ],
   },
   {
     // Hana day-trips over on the Shimonoseki ferry, as she has since cadet
-    // days. Present only while the chapter is live; the evening boat is at six.
+    // days. Gone once the berth is stamped; the evening boat is at six.
     id: 'hanaC5',
     name: 'Hana',
     map: 'busan',
-    when: { has: ['c5.arrived'], not: ['c5.complete'] },
+    when: { has: ['c5.arrived'], not: ['c5.berth'] },
     pos: [35, 25],
     range: 1,
     look: {
@@ -316,14 +315,15 @@ export const BUSAN_NODES: NodeMap = {
     ],
   },
   // The goodbye is the deom. No speech, no ceremony: the auction is on, she
-  // is three customers deep, and the bag was packed before you arrived.
+  // is three customers deep, and the bag was packed before you arrived. It
+  // closes the chapter; the gangway is Mr. Gong's, a walk down the quay.
   'c5.sunhee.bye': {
     lines: [
       { text: 'First light, the auction spilling up the lane. Sun-hee does not look up. She presses your bag into your hands, the extra fish already in it.' },
       { who: 'Sun-hee', text: 'Bap meogeosseo? Of course not. Eat on the ferry.' },
       { text: 'She has turned to the next customer. You are halfway down the quay before you understand that was goodbye.' },
     ],
-    effects: ['set:c5.bye', 'journal:customs.dawnmarket', 'travel:kerala'],
+    effects: ['set:c5.bye', 'journal:customs.dawnmarket', 'set:c5.complete'],
   },
 
   // ---------------- Old Man Cho, the tea house ----------------
@@ -437,15 +437,10 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'The good ones go into paper cups.' },
       { who: 'Mi-ja', text: 'Burnt ones are for the cook. Nothing wasted, nobody shamed.' },
       { text: 'You eat yours too fast and the sugar lava finds your chin.' },
-    ],
-    effects: ['clear:c5.hotteok.start', 'set:c5.hotteok.done', 'journal:dishes.hotteok'],
-  },
-  'c5.mija.after': {
-    lines: [
       { who: 'Mi-ja', text: 'The griddle likes you. It does not like everyone; ask my husband.' },
       { who: 'Dae-ho', text: 'It has never liked me. Thirty years.' },
     ],
-    effects: ['set:c5.mija2'],
+    effects: ['clear:c5.hotteok.start', 'set:c5.hotteok.done', 'journal:dishes.hotteok'],
   },
   'c5.mija.again': {
     lines: [
@@ -472,12 +467,6 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Dae-ho', text: 'A tradition is anything your wife has done for thirty years. I stand by it.' },
     ],
     effects: ['set:c5.met.daeho'],
-  },
-  'c5.daeho.props': {
-    lines: [
-      { who: 'Dae-ho', text: 'I saw the flip. Wrist, not elbow. You have worked dough before, or lied to it convincingly.' },
-    ],
-    effects: ['set:c5.daeho2'],
   },
   'c5.daeho.idle': {
     lines: [
@@ -537,10 +526,11 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Emo Byeong-ok', text: 'You did not know, so it cost nothing. Now you know. Eat.' },
     ],
     effects: ['set:c5.sticks.why'],
+    next: 'c5.cook.second',
   },
   'c5.cook.second': {
     lines: [
-      { who: 'Emo Byeong-ok', text: 'Sit. Say it first: jal meokkessumnida. I will eat well.' },
+      { who: 'Emo Byeong-ok', text: 'Before the spoon, the words. Jal meokkessumnida: I will eat well.' },
       { text: 'After, unprompted: jal meogeossumnida, I ate well. Her nod is a whole paragraph.' },
       { text: 'Sikhye arrives, unasked. "Service," she says. That is all the explanation the extra ever gets.' },
     ],
@@ -610,7 +600,7 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'He does not ask who vouched; the lane talks faster than you walk. Stamp. Berth: one. Galley duty: assumed.' },
       { who: 'Mr. Gong', text: 'Your fish is at Sun-hee’s. First light, before the auction eats her.' },
     ],
-    effects: ['set:c5.complete'],
+    effects: ['set:c5.berth'],
   },
   'c5.gong.berth2': {
     lines: [
@@ -618,7 +608,7 @@ export const BUSAN_NODES: NodeMap = {
       { text: 'He does not ask who vouched; the lane talks faster than you walk. Stamp. Berth: one.' },
       { who: 'Mr. Gong', text: 'Your fish is at Sun-hee’s. First light, before the auction eats her.' },
     ],
-    effects: ['set:c5.complete'],
+    effects: ['set:c5.berth'],
   },
   'c5.gong.wait': {
     lines: [
@@ -657,6 +647,7 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Hana', text: 'Iriko for Obaachan’s dashi. Busan iriko is controversial at home, so we call it mine.' },
     ],
     effects: ['set:c5.met.hana5'],
+    next: 'c5.hana.quiz',
   },
   'c5.hana.quiz': {
     lines: [
@@ -671,7 +662,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.hana.kingyo': {
     lines: [
-      { who: 'Hana', text: 'Rigged mercy! He has bankrupted grown men at that stall and never once let a child walk away empty. Full marks.' },
+      { who: 'Hana', text: 'Rigged mercy! You saw it. He has bankrupted grown men at that stall. Full marks.' },
     ],
   },
   'c5.hana.wish': {
@@ -681,8 +672,8 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.hana.fail': {
     lines: [
-      { who: 'Hana', text: 'Ha! Honest. Model answer: the goldfish uncle. All that scowling, and the poi never sinks on a kid.' },
-      { who: 'Hana', text: 'Rigged mercy. Graded on appetite instead: pass, with distinction.' },
+      { who: 'Hana', text: 'Ha! Honest. The model answer was the goldfish uncle and his rigged mercy.' },
+      { who: 'Hana', text: 'Graded on appetite instead: pass, with distinction.' },
     ],
   },
   'c5.hana.idle': {
@@ -723,13 +714,13 @@ export const BUSAN_NODES: NodeMap = {
   // ---------------- the post window ----------------
   'c5.post.pilar': {
     lines: [
-      { text: 'A postal window the size of a biscuit tin. The clerk produces an envelope addressed like an invoice.' },
+      { text: 'A postal window the size of a biscuit tin. The clerk produces an envelope addressed in furious capitals, underlined twice.' },
     ],
     effects: ['letter:c5.pilar'],
   },
   'c5.post.marisol': {
     lines: [
-      { text: 'The clerk checks a pigeonhole and slides out a second envelope, smelling faintly of salt.' },
+      { text: 'The clerk checks a pigeonhole and slides out an envelope that smells faintly of salt and lime.' },
     ],
     effects: ['letter:c5.marisol'],
   },
@@ -1075,8 +1066,9 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   teahouse: [{ node: 'c5.ex.teahouse' }],
   ferrysign: [{ node: 'c5.ex.ferrysign' }],
   postwindow: [
-    { when: { not: ['letter.read.c5.pilar'] }, node: 'c5.post.pilar' },
-    { when: { has: ['letter.read.c5.pilar'], not: ['letter.read.c5.marisol'] }, node: 'c5.post.marisol' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.c5.pilar'] }, node: 'c5.post.pilar' },
+    { when: { not: ['letter.read.c5.marisol'] }, node: 'c5.post.marisol' },
     { node: 'c5.post.idle' },
   ],
   kettle: [{ node: 'c5.ex.kettle' }],
@@ -1104,14 +1096,14 @@ export const BUSAN_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   chilimat: [{ node: 'c5.ex.chilimat' }],
   foambox: [
-    { when: { has: ['c5.complete'] }, node: 'c5.ex.foambox2' },
+    { when: { has: ['c5.berth'] }, node: 'c5.ex.foambox2' },
     { node: 'c5.ex.foambox' },
   ],
   parasol: [{ node: 'c5.ex.parasol' }],
   scooter: [{ node: 'c5.ex.scooter' }],
   lotusline: [{ node: 'c5.ex.lotusline' }],
   magpie: [
-    { when: { has: ['c5.complete'] }, node: 'c5.ex.magpie2' },
+    { when: { has: ['c5.berth'] }, node: 'c5.ex.magpie2' },
     { node: 'c5.ex.magpie1' },
   ],
   pricewall: [{ node: 'c5.ex.pricewall' }],

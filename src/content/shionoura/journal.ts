@@ -251,7 +251,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c4.sachiko2'], not: ['c4.omiyage'] },
-    text: 'Sachiko\'s counter is waiting on your list: Petro, Pilar, Aurelio. Omiyage is chosen slowly and given fast; start the slow half.',
+    text: 'Sachiko\'s counter is waiting on your list of the people who fed you. Omiyage is chosen slowly and given fast; start the slow half.',
     who: 'sachiko',
   },
   {
@@ -260,7 +260,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
     who: 'sachiko',
   },
   {
-    when: { has: ['c4.omiyage'], not: ['omiyage.pilar'] },
+    when: { has: ['c4.omiyage', 'met.pilar'], not: ['omiyage.pilar'] },
     text: 'Somewhere a museum director expects tribute. Sachiko has opinions about what a bridge-and-sea museum needs from this coast.',
     who: 'sachiko',
   },
@@ -295,7 +295,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
     at: ['shionoura', 24, 20],
   },
   {
-    when: { has: ['c4.arrived'], not: ['letter.read.c4.pilar'] },
+    when: { has: ['c4.arrived'], not: ['letter.read.c4.marisol'] },
     text: 'A red pillar box stands by the ferry office, and the clerk has been holding mail for a traveler answering your description.',
     at: ['shionoura', 31, 21],
   },
@@ -306,7 +306,7 @@ export const SHIONOURA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c4.arrived'], not: ['c4.complete'] },
-    text: 'Shionoura is small and loud with cicadas: the quay market at dawn, the shotengai under its noren, the shrine up the steps. Meet it before the seventh night.',
+    text: 'Everyone in Shionoura has a job before the seventh night: fish to land, bamboo to dress, a goldfish stall to guard. Find out whose job could use you.',
     who: ['hana', 'fumi', 'daisuke', 'sachiko', 'genji', 'taro', 'isao'],
   },
   {
