@@ -39,8 +39,8 @@ export const RETURN_JOURNAL: JournalEntry[] = [
     id: 'her.return',
     tab: 'her',
     title: 'What the well decided',
-    sub: 'Doña Carmen at the loom, delivering a verdict she did not soften on the way over.',
-    you: 'Not a pardon: she still left the wrong way and this village will keep saying so. Sunday we walk up and lay the stone she never got to lay.',
+    sub: 'Half the village around one jug at dusk, and Doña Carmen with the last word, unsoftened.',
+    you: 'Not a pardon: she still left the wrong way and this village will keep saying so. Then Carmen and I walked up in the last light and I laid the stone she never got to lay.',
   },
   {
     id: 'customs.album',
@@ -87,24 +87,37 @@ export const RETURN_TASKS: TaskDef[] = [
     who: 'chasca',
   },
   {
-    when: { has: ['c10.carmen.told'], not: ['c10.carmen.her'] },
-    text: 'Doña Carmen said the hard half and went back to her row. Give her the length of it, then return to the loom for the rest.',
+    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen', 'c10.pilar.seen'], not: ['c10.well.called'] },
+    text: 'Something is being arranged for tonight, and the whole village is pretending it is not. Doña Carmen will say what. She is at her loom.',
     who: 'carmen',
   },
   {
-    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.carmen.seen'], not: ['c10.carmen.her', 'c10.carmen.told'] },
-    text: 'Word came down from the well: they talked about her last night, all of them, and Doña Carmen is the one who says it out loud. She is at her loom.',
+    when: { has: ['c10.well.called'], not: ['c10.carmen.her'] },
+    text: 'Dusk at the well. Half the village is round one jug, and the subject is your grandmother. Doña Carmen has the floor.',
     who: 'carmen',
   },
   {
-    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch'] },
+    when: { has: ['c10.carmen.her'], not: ['c10.apacheta.done'] },
+    text: "Carmen's river stone is in your hand. The apacheta is just past the east gate, on the pass road. She walks slowly; walk with her.",
+    // The cairn itself: Space on it is where the stone goes down.
+    at: ['east-road', 14, 5],
+  },
+  {
+    when: { has: ['c10.apacheta.done'], not: ['story.end'] },
+    text: 'One page left. The lamps are lit at the well, where the water is, where it started.',
+    at: ['village', 21, 15],
+  },
+  {
+    // Before the evening starts; after the last page the same face is still
+    // at the signpost, and the post-end arm below finds them again.
+    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.torch', 'c10.well.called'] },
     text: 'Someone new is at the gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
     who: 'traveler',
   },
   {
-    when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end'] },
-    text: 'One page left. The well, where the water is, where it started.',
-    at: ['village', 21, 15],
+    when: { has: ['story.end'], not: ['c10.torch'] },
+    text: 'Someone new is still at the gate with clean boots, reading the signpost the way you once did. Go and be the one who knows something.',
+    who: 'traveler',
   },
   {
     when: { has: ['c10.arrived'], not: ['story.end'] },

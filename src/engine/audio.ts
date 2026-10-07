@@ -209,6 +209,20 @@ const MUSIC: Record<string, MusicStyle> = {
       [[1, 1], [3, 2], [2, 2], [1, 2], [0, 4]],
     ],
   },
+  // The last page, at the well, by lamplight: the Andes band sets its
+  // instruments down and only the hum is left, the first chapter's tunes
+  // slowed to a lullaby over one soft pad. No drum; the rope keeps time.
+  hearth: {
+    bpm: 50, scale: PENTA,
+    chords: [[N.A3, N.C4, N.E4], [N.F3, N.A3, N.C4], [N.C4, N.E4, N.G4], [N.A3, N.C4, N.E4]],
+    shimmer: 'sine', drum: 'none', swing: 0, density: 0.2,
+    voice: 'hum', phraseGap: [12, 18],
+    pad: { vol: 0.022, type: 'triangle', lp: 520 },
+    motifs: [
+      [[4, 2], [3, 1], [2, 2], [0, 4]],
+      [[3, 1], [3, 1], [4, 2], [2, 2], [0, 4]],
+    ],
+  },
   // The camposanto at night: ten-second pad swells over the G-minor turns,
   // a hummed voice barely above the candle hiss, one far toll a minute.
   velacion: {
@@ -697,13 +711,42 @@ export class AudioBus {
   setRegion(region: string) {
     if (region === this.region) return;
     this.region = region;
-    this.style = MUSIC[region] ?? (MUSIC['andes'] as MusicStyle);
+    const next = MUSIC[region] ?? (MUSIC['andes'] as MusicStyle);
+    // Under the hearth hush the region still changes underneath, for later.
+    if (this.hearthPrev) {
+      this.hearthPrev = next;
+      return;
+    }
+    this.style = next;
     this.babblePos = 0;
     // New coast, new clocks: an early hello phrase, a bell not yet due.
     // The drone swap happens in updateDrone on the next tick.
     this.nextPhraseAt = 0;
     this.nextBellAt = 0;
     this.queueKsPrewarm();
+  }
+
+  /**
+   * The ending's hush: the band drops to the hum (the `hearth` style) and the
+   * whole music bus settles lower, then everything comes back as it was.
+   * Edge-guarded like the duck; the region underneath is remembered.
+   */
+  private hearthPrev: MusicStyle | null = null;
+  setHearth(on: boolean) {
+    if (on === (this.hearthPrev !== null)) return;
+    if (on) {
+      this.hearthPrev = this.style;
+      this.style = MUSIC['hearth'] as MusicStyle;
+    } else {
+      this.style = this.hearthPrev ?? this.style;
+      this.hearthPrev = null;
+    }
+    this.nextPhraseAt = 0;
+    this.queueKsPrewarm();
+    if (this.musicGain && this.ctx) {
+      const base = this.ducked ? 0.45 : 0.85;
+      this.musicGain.gain.setTargetAtTime(base * this.mix.music * (on ? 0.7 : 1), this.ctx.currentTime, 2.5);
+    }
   }
 
   /** Buffers tick() renders a budgeted few at a time, as [freq, bright, decay]. */
@@ -738,7 +781,7 @@ export class AudioBus {
     if (on === this.ducked) return;
     this.ducked = on;
     if (!this.musicGain || !this.ctx) return;
-    const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1);
+    const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1) * (this.hearthPrev ? 0.7 : 1);
     this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, on ? 0.2 : 0.5);
   }
 
@@ -1725,7 +1768,9 @@ export class AudioBus {
     // never scheduled over someone talking. Replaces the old per-bar dice.
     if (this.nextPhraseAt === 0) this.nextPhraseAt = now + 5 + Math.random() * 7;
     if (now >= this.nextPhraseAt) {
-      if (this.ducked) {
+      // The hum is the one voice allowed under words: the last page is read
+      // to it, not interrupted by it.
+      if (this.ducked && !this.hearthPrev) {
         this.nextPhraseAt = now + 5 + Math.random() * 6;
       } else {
         this.playMotif(now + 0.1);

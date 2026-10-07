@@ -66,6 +66,9 @@ export const OAXACA_NPCS: NpcDef[] = [
     id: 'chela',
     name: 'Abuela Chela',
     map: 'oaxaca',
+    // After the vigil she is at the colectivo corner instead (chelaBye),
+    // with tlayudas, and still with the spoon for anyone who asks.
+    when: { not: ['c9.vigil.done'] },
     pos: [9, 22],
     range: 1,
     look: {
@@ -189,10 +192,10 @@ export const OAXACA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.caretaker'] }, node: 'c9.care.first' },
-      { when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.complete'] }, node: 'c9.vigil' },
+      { when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.vigil.done'] }, node: 'c9.vigil' },
       { when: { has: ['c9.ledger'], not: ['c9.path.task'] }, node: 'c9.care.path' },
       { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.care.wait' },
-      { when: { has: ['c9.complete'] }, node: 'c9.care.after' },
+      { when: { has: ['c9.vigil.done'] }, node: 'c9.care.after' },
       { node: 'c9.care.idle' },
     ],
   },
@@ -203,7 +206,10 @@ export const OAXACA_NPCS: NpcDef[] = [
     id: 'refugioVigil',
     name: 'Doña Refugio',
     map: 'camposanto',
-    when: { has: ['c9.ofrenda.done'] },
+    // She keeps the wall until she has seen you off at the colectivo corner;
+    // the vigil ends with you carried straight there at first light, so the
+    // two of her are never in sight of each other.
+    when: { has: ['c9.ofrenda.done'], not: ['c9.bye'] },
     pos: [11, 11],
     range: 0,
     look: {
@@ -215,9 +221,50 @@ export const OAXACA_NPCS: NpcDef[] = [
       hatStyle: 'none',
       skirt: '#4a3a4e',
     },
+    entry: [{ node: 'c9.refugio.tonight' }],
+  },
+  // ---- first light at the colectivo corner: the two who fed you see you
+  // off. Nobody arranged it; everybody knew. ----
+  {
+    id: 'refugioBye',
+    name: 'Doña Refugio',
+    map: 'oaxaca',
+    when: { has: ['c9.vigil.done'] },
+    pos: [22, 28],
+    range: 0,
+    look: {
+      skin: '#a06a42',
+      hair: '#b8b2a6',
+      cloth: '#e8dcc4',
+      stripe: '#a02335',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#4a3a4e',
+    },
     entry: [
-      { when: { has: ['c9.complete'] }, node: 'c9.refugio.after' },
-      { node: 'c9.refugio.tonight' },
+      { when: { has: ['c9.vigil.done'], not: ['c9.bye'] }, node: 'c9.bye' },
+      { node: 'c9.refugio.after' },
+    ],
+  },
+  {
+    id: 'chelaBye',
+    name: 'Abuela Chela',
+    map: 'oaxaca',
+    when: { has: ['c9.vigil.done'] },
+    pos: [24, 28],
+    range: 0,
+    look: {
+      skin: '#b97f52',
+      hair: '#cfc8ba',
+      cloth: '#3a4668',
+      stripe: '#c98a2e',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      skirt: '#5c3a30',
+    },
+    entry: [
+      { when: { has: ['c9.vigil.done'], not: ['c9.bye'] }, node: 'c9.bye' },
+      { node: 'c9.chela.moleAgain' },
     ],
   },
   {
@@ -535,8 +582,20 @@ export const OAXACA_NODES: NodeMap = {
   'c9.refugio.after': {
     lines: [
       { who: 'Doña Refugio', text: 'The ledger is closed, both directions. That does not mean you stop being family. It means you start.' },
-      { who: 'Doña Refugio', text: 'Go the long way home. The colectivo passes the south corner of the plaza.' },
+      { who: 'Doña Refugio', text: 'Go the long way home. The colectivo knows the road to the coast; it has been practicing.' },
     ],
+  },
+  // First light at the corner. Short on purpose: these two say goodbye the
+  // way they cook, with their hands busy.
+  'c9.bye': {
+    lines: [
+      { text: 'First light. Refugio and Chela are at the colectivo corner before you, which nobody arranged and everybody knew.' },
+      { who: 'Abuela Chela', text: 'Tlayudas, two. One for the road, and one for whoever on the road looks hungriest. You will know them.' },
+      { who: 'Doña Refugio', text: 'The ledger has a new line. Your name, and nothing owed. I left room under it.' },
+      { who: 'Abuela Chela', text: 'Do not cry on the tlayudas. They are wrapped for dry weather.' },
+      { text: 'Refugio straightens your collar, which did not need it, and steps back so the road can have you.' },
+    ],
+    effects: ['set:c9.bye', 'set:c9.complete'],
   },
   'c9.refugio.idle': {
     lines: [{ who: 'Doña Refugio', text: 'The fiesta has enough people talking. It is short of people doing.' }],
@@ -882,7 +941,10 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'You set it down. Two small lights, facing the road. Someone starts on your grandmother: a borrowed horse, the wrong river, her refusing to dry off.' },
       { text: 'You stay until the candles are low. You will never hear it the same twice.' },
     ],
-    effects: ['set:c9.complete', 'journal:customs.camposanto'],
+    // The night ends where the chapter does: at first light, at the
+    // colectivo corner, with the two women who fed you already waiting.
+    // The chapter closes after their goodbye, not before it.
+    effects: ['set:c9.vigil.done', 'journal:customs.camposanto', 'travel:oaxaca,23,26,down'],
   },
   'c9.care.after': {
     lines: [
@@ -962,7 +1024,7 @@ export const OAXACA_NODES: NodeMap = {
   // ---------------- departure ----------------
   'c9.depart': {
     lines: [
-      { text: 'The colectivo idles at the south corner, pointed at the highway, the coast, the ship, the long way home.' },
+      { text: 'The colectivo idles at the south corner, pointed at the highway, the coast, the ship, the long way home. It smells of tlayuda now.' },
     ],
     choices: [
       { text: 'Board. The long way home.', goto: 'c9.depart.go' },
@@ -971,7 +1033,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.depart.go': {
     lines: [
-      { text: 'The village lets you go the way it took you in: without ceremony, with bread for the road you did not ask for.' },
+      { text: 'The village lets you go the way it took you in: two women waving, one dog escorting the wheels to the edge of town, and no ceremony at all.' },
       { text: 'Weeks fold into wake and coastline. Then a grey morning, a familiar fog, a pier on old sugar-trade legs. La Caleta.' },
     ],
     effects: ['travel:la-caleta,22,28,up'],
@@ -995,9 +1057,28 @@ export const OAXACA_NODES: NodeMap = {
   'c9.ex.cempa': {
     lines: [{ text: 'Cempasúchil to the field’s edge, orange arguing with orange. The scent is loud.' }],
   },
+  /**
+   * The petal path is walked, not chosen: with Melitón's costal on your
+   * shoulder, every step down the lane from the arch lets a handful go (the
+   * engine's step hook in main.ts), and the bottom bend finishes it with
+   * c9.path.lay. Space on the bare lane sows one handful by hand and says so,
+   * then a second press lays the rest, for anyone who would rather not walk.
+   */
+  'c9.path.shoulder': {
+    lines: [
+      { text: 'You shoulder the costal. It weighs almost nothing and smells like the whole valley.' },
+      { text: 'The lane starts just outside the arch. Walk it down to the street and let the petals go. Thick where it bends.' },
+    ],
+  },
+  'c9.path.sow': {
+    lines: [
+      { text: 'You let a handful go. It lands in a little orange argument and stays. The rest wants walking: down the lane, thick where it bends.' },
+    ],
+    effects: ['set:c9.path.sown'],
+  },
   'c9.path.lay': {
     lines: [
-      { text: 'You walk the lane from the camposanto gate, sowing petals by the handful. The road turns the color of embers.' },
+      { text: 'The costal is empty by the last bend. Behind you the lane runs ember-orange all the way up to the arch.' },
       { text: 'A woman crosses herself and thanks you by name. You never told her it.' },
     ],
     effects: ['set:c9.path.laid', 'journal:customs.cempasuchil'],
@@ -1267,7 +1348,8 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   cempa: [{ node: 'c9.ex.cempa' }],
   petalpath: [
-    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay', cue: true },
+    { when: { has: ['c9.path.task'], not: ['c9.path.laid', 'c9.path.sown'] }, node: 'c9.path.sow', cue: true },
+    { when: { has: ['c9.path.task', 'c9.path.sown'], not: ['c9.path.laid'] }, node: 'c9.path.lay', cue: true },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.petals2' },
     { node: 'c9.ex.petals1' },
   ],
@@ -1289,7 +1371,7 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   campogate: [{ node: 'c9.ex.campogate' }],
   tumba: [
-    { when: { has: ['c9.complete'] }, node: 'c9.ex.tumba.night' },
+    { when: { has: ['c9.vigil.done'] }, node: 'c9.ex.tumba.night' },
     { node: 'c9.ex.tumba' },
   ],
   ofrenda: [
@@ -1304,6 +1386,7 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c9.post.idle' },
   ],
   colectivo: [
+    { when: { has: ['c9.vigil.done'], not: ['c9.bye'] }, node: 'c9.bye' },
     { when: { has: ['c9.complete'] }, node: 'c9.depart' },
     { node: 'c9.ex.colectivo' },
   ],
@@ -1353,8 +1436,8 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   costal: [
     { map: 'cocina', node: 'c9.ex.costal.cocina' },
     // The sack Melitón hands over is also where the job starts: shouldering
-    // it walks the lane. The bare path itself only answers when faced.
-    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.lay' },
+    // it is the cue to walk the lane, where the petals actually go down.
+    { when: { has: ['c9.path.task'], not: ['c9.path.laid'] }, node: 'c9.path.shoulder' },
     { when: { has: ['c9.path.laid'] }, node: 'c9.ex.costal.empty' },
     { node: 'c9.ex.costal.full' },
   ],

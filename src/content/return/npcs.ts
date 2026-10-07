@@ -113,13 +113,15 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
       { when: { has: ['c10.arrived'], not: ['c10.carmen.seen'] }, node: 'c10.carmen.reunion' },
       // Beat eleven of the Her thread, and late on purpose: the village can
       // only decide this after the whole road has been walked back to it.
-      // Told in two visits: the grievance first, then, once her row is
-      // closed, the verdict and the stone.
-      { when: { has: ['c10.carmen.told'], not: ['c10.carmen.her'] }, node: 'c10.carmen.stone' },
+      // She names the hour, the afternoon goes, and it is said at the well
+      // with the player standing in it; then she walks the stone up herself.
       {
-        when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen'], not: ['c10.carmen.her', 'c10.carmen.told'] },
-        node: 'c10.carmen.decided',
+        when: { has: ['c10.carmen.seen', 'c10.aurelio.seen', 'c10.album.seen', 'c10.pilar.seen'], not: ['c10.well.called'] },
+        node: 'c10.carmen.call',
       },
+      { when: { has: ['c10.well.called'], not: ['c10.carmen.her'] }, node: 'c10.verdict' },
+      { when: { has: ['c10.carmen.her'], not: ['c10.apacheta.done'] }, node: 'c10.walk.carmen' },
+      { when: { has: ['c10.apacheta.done'], not: ['story.end'] }, node: 'c10.carmen.lamp' },
       { when: { has: ['story.end'] }, node: 'c10.carmen.post' },
     ],
   },
@@ -444,15 +446,30 @@ export const RETURN_NODES: NodeMap = {
   /**
    * Beat eleven of the Her thread. Chapter one planted the ache: she left in
    * a hurry, the goodbyes never happened, and a village stayed faintly short
-   * about it for fifty years. This is that said out loud, and answered. It is
-   * deliberately not a pardon; what changes is the bookkeeping, which in this
-   * village is the only thing that was ever going to change.
+   * about it for fifty years. This is that said out loud, at the well, at
+   * dusk, with the player standing in it, and answered. It is deliberately
+   * not a pardon; what changes is the bookkeeping, which in this village is
+   * the only thing that was ever going to change. Raising `c10.well.called`
+   * runs the afternoon down to dusk and walks the village to the well (the
+   * ending's staging in main.ts; its cells live in ./staging.ts).
    */
-  'c10.carmen.decided': {
+  'c10.carmen.call': {
     lines: [
       { text: 'She does not look up from the loom, which is how you know this was settled before you walked in.' },
-      { who: 'Doña Carmen', text: 'The well, last night. Half this village around one jug, and your grandmother, the argument we never finish.' },
+      { who: 'Doña Carmen', text: 'Tonight, at the well. Half this village around one jug, and your grandmother, the argument we never finish.' },
+      { who: 'Doña Carmen', text: 'Fifty years we had it without her. Tonight we have it with you. Eat first; Rosa calls an hour a minute.' },
+    ],
+    effects: ['set:c10.well.called'],
+  },
+  'c10.verdict': {
+    lines: [
+      { text: 'Dusk at the well. Don Teófilo pours the first splash on the setts, for the earth, and the argument starts where it always starts.' },
       { who: 'Doña Carmen', text: 'She went west in a hurry and skipped the goodbyes. Some of us stayed short about it for fifty years. We earned that.' },
+      { who: 'Rosa', text: 'Some of us. I was six. She gave me her hat on the way out, and I am still not sorry about the hat.' },
+      { who: 'Justina', text: 'She also owed my mother a sack of chuño. I only say it because nobody else will.' },
+      { who: 'Mateo', text: 'The chuño comes up every year. I think it is the same sack.' },
+      { who: 'Don Aurelio', text: 'Mm.' },
+      { text: 'Every face around the jug turns to you. Apparently you are the evidence.' },
     ],
     choices: [
       { text: '"She left badly and she meant to come back. Both are true."', goto: 'c10.her.both' },
@@ -464,44 +481,70 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { who: 'Doña Carmen', text: 'Meaning to is not a road. But you walked the one she meant, so her meaning can stand where I can see it.' },
     ],
-    next: 'c10.carmen.row',
+    next: 'c10.verdict2',
   },
   'c10.her.angry': {
     lines: [
       { who: 'Doña Carmen', text: 'We did not ask permission, wawa. Fifty years of short answers wear down like a step, not in one afternoon.' },
+      { who: 'Rosa', text: 'This one was the afternoon, though. I felt it go.' },
     ],
-    next: 'c10.carmen.row',
+    next: 'c10.verdict2',
   },
   'c10.her.places': {
     lines: [
       { text: "You name them in the book's order: a fishing town, a ship, a bay, two markets, a backwater, a bench in the rains, a mountain that smokes." },
       { who: 'Doña Carmen', text: 'More news of her than this village has had in fifty years.' },
     ],
-    next: 'c10.carmen.row',
+    next: 'c10.verdict2',
   },
-  'c10.carmen.row': {
+  'c10.verdict2': {
     lines: [
-      { who: 'Doña Carmen', text: 'Now let me close this row. Come back when it is done. The rest wants my hands still.' },
-    ],
-    effects: ['set:c10.carmen.told'],
-  },
-  // The second visit. The row is finished and the loom stops, which it never
-  // does; the verdict is a stone put in your hands for the apacheta, the
-  // mountain's own way of saying someone arrived.
-  'c10.carmen.stone': {
-    lines: [
-      { text: 'The row is tied off. Then she does something you have not once seen her do: she stops the loom.' },
+      { who: 'Pilar', text: 'The Bridge Authority abstains. Put it in the minutes.' },
+      { who: 'Justina', text: 'Fine. The chuño is forgiven. The hat was always a gift.' },
       { who: 'Doña Carmen', text: 'So it is decided, and it is not a pardon. She went the wrong way out of this village, and that stays said.' },
       { who: 'Doña Carmen', text: 'She put a stone on the apacheta going out. Nobody laid the one that says she arrived; nobody knew where.' },
     ],
-    next: 'c10.carmen.stone2',
+    next: 'c10.verdict3',
   },
-  'c10.carmen.stone2': {
+  'c10.verdict3': {
     lines: [
-      { text: 'From the sill she takes a river stone, smooth as a worn step, and sets it in your palm.' },
-      { who: 'Doña Carmen', text: 'Sunday we walk up and you carry it. You are the only one here who can say the name of the place.' },
+      { text: 'From her shawl she takes a river stone, smooth as a worn step, and sets it in your palm.' },
+      { who: 'Doña Carmen', text: 'Now, while there is light. You carry it. I walk slow, and tonight so do you.' },
     ],
     effects: ['set:c10.carmen.her', 'journal:her.return'],
+  },
+  // Beside you up the east road: she keeps loom pace, and says so.
+  'c10.walk.carmen': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Slower. The mountain is not going anywhere, and my knees are not going anywhere fast.' },
+    ],
+  },
+  /**
+   * The apacheta, on the pass road just past the gate: the stone she left
+   * going out is somewhere in the bottom of it. Laying this one is the
+   * player's own act (Space on the cairn), with Carmen at your shoulder.
+   * When it is done the clock eases on into lamplight for the walk down.
+   */
+  'c10.apacheta.lay': {
+    lines: [
+      { text: 'The apacheta is taller than when you left. Every traveler since has added a stone, and a worry, and gone on lighter.' },
+      { who: 'Doña Carmen', text: 'Hers is in there somewhere, going out. Do not dig for it. Say the place.' },
+      { text: "You set the river stone on the top and say it out loud: Ch'aska Pampa. She arrived." },
+      { who: 'Doña Carmen', text: 'Good. Now the mountain knows it too. It was always slow with news.' },
+      { text: 'Below you the village lights its first lamps, one kitchen at a time.' },
+      { who: 'Doña Carmen', text: 'Down, then. The well wants your page, and my knees want the flat part.' },
+    ],
+    effects: ['set:c10.apacheta.done'],
+  },
+  'c10.carmen.lamp': {
+    lines: [
+      { who: 'Doña Carmen', text: 'Go on. The page will not write itself, and I am not holding the pen.' },
+    ],
+  },
+  'c10.ex.apacheta.stone': {
+    lines: [
+      { text: 'Your river stone sits on the very top, the newest thing on the mountain. It already looks like it has been there for years. Stones are like that.' },
+    ],
   },
 
   // ---------------- Justina ----------------
@@ -727,26 +770,32 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'The well. In Shionoura you tied a wish to bamboo, and the wish was about her. You sit where she sat.' },
     ],
+    effects: ['set:c10.lamp'],
     next: 'c10.lastpage',
   },
   'c10.well.wishroad': {
     lines: [
       { text: 'The well. You once wished, on paper, on bamboo, for the road to keep going. It did. It went all the way around and became this stone.' },
     ],
+    effects: ['set:c10.lamp'],
     next: 'c10.lastpage',
   },
   'c10.well.wishpeople': {
     lines: [
       { text: 'The well. In Shionoura you wished for the people, all of them, everywhere. From here you can hear about nine of them talking at once.' },
     ],
+    effects: ['set:c10.lamp'],
     next: 'c10.lastpage',
   },
   'c10.lastpage': {
     lines: [
       { text: 'You take out the journal. Every page is full except one, the last. It was never blank. It was waiting.' },
-      { text: 'The stone for the apacheta sits by your knee, waiting for Sunday.' },
-      { text: 'The well rope creaks. Four kitchens send up smoke, straight as loom threads. You uncap the pen.' },
+      { text: "Your palm still has the shape of Carmen's stone. Up on the pass, it is already the mountain's." },
+      { text: 'The well rope creaks. Four kitchen windows go gold, one after another. You uncap the pen.' },
     ],
+    // The lamplit hush: the music sets down everything but the hum, and the
+    // camera leans in slowly. Raised again here for the arm with no wish.
+    effects: ['set:c10.lamp'],
     choices: [
       { text: 'Write: "The word for elsewhere is also the word for home."', goto: 'c10.lastline.word' },
       { text: 'Write: "Walk slowly. Say yes to soup. Thank them twice."', goto: 'c10.lastline.trick' },
@@ -780,16 +829,17 @@ export const RETURN_NODES: NodeMap = {
 
   /**
    * The landing. Whichever last line was written, the thought finishes here:
-   * the pen goes down, nobody arrives, and the well keeps doing what a well
-   * does. The final two effects hand the moment to the closing book, which is
-   * the journal's own last spreads and the door to the credits after them.
+   * the pen goes down, Aurelio pretends he was not watching, and the well
+   * keeps doing what a well does. The final two effects hand the moment to
+   * the closing book, which is the journal's own last spreads and then the
+   * credits, turned like pages in the same book.
    */
   'c10.end.hold': {
     lines: [
       { text: 'You cap the pen. The journal shuts on itself with the sound a full book makes, which is a different sound from an empty one.' },
-      { text: 'Nobody comes. The rope creaks. Behind you a bowl goes down on a table, and somebody laughs at a joke you were not told.' },
+      { text: 'Don Aurelio, two steps off, has been not reading over your shoulder for some time. He nods once, at the page, not at you.' },
       { text: 'Fifty years ago a woman sat on this stone with this same book half written, and got up, and went. You got up, and came back.' },
-      { text: 'You stay a while. The smoke goes straight up.' },
+      { text: 'Behind you a bowl goes down on a table, and somebody laughs at a joke you were not told. The lamps hold. You stay a while.' },
     ],
     effects: ['set:end.book', 'set:album.open'],
   },
@@ -797,6 +847,16 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'The well. You reach for the journal, and your hand stops on the band instead.' },
       { text: 'The last page can wait. Doña Carmen has something to say first, and she is at her loom.' },
+    ],
+  },
+  'c10.well.gathered': {
+    lines: [
+      { text: 'The jug goes round the well, and so does your grandmother. Doña Carmen has the floor, and is waiting for you to stand where she can see you.' },
+    ],
+  },
+  'c10.well.stone': {
+    lines: [
+      { text: "The stone is still warm from Carmen's shawl. The page can wait for the apacheta; Carmen, visibly, cannot." },
     ],
   },
   'c10.well.after': {
@@ -807,39 +867,31 @@ export const RETURN_NODES: NodeMap = {
 };
 
 /** The well speaks for the ending; map-tagged so the Andes keep their own words elsewhere. */
+const HOME = ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'];
+const READY = [...HOME, 'c10.carmen.her', 'c10.apacheta.done'];
 export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
-  // The last page waits on Doña Carmen too: it speaks of the apacheta stone
-  // she hands over, and the road home is not walked until she has read the
-  // wrist and said the village's piece out loud.
+  // The last page waits on the whole evening: the verdict said at the well,
+  // the stone laid on the apacheta, and the lamps coming on for the walk
+  // back down. Until then the well only says what comes first.
   well: [
-    {
-      map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.nani'], not: ['story.end'] },
-      node: 'c10.well.wishnani',
-    },
-    {
-      map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.road'], not: ['story.end'] },
-      node: 'c10.well.wishroad',
-    },
-    {
-      map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her', 'wish.people'], not: ['story.end'] },
-      node: 'c10.well.wishpeople',
-    },
-    {
-      map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen', 'c10.carmen.her'], not: ['story.end'] },
-      node: 'c10.lastpage',
-    },
-    {
-      map: 'village',
-      when: { has: ['c10.album.seen', 'c10.aurelio.seen', 'c10.pilar.seen'], not: ['story.end', 'c10.carmen.her'] },
-      node: 'c10.well.notyet',
-    },
+    { map: 'village', when: { has: [...READY, 'wish.nani'], not: ['story.end'] }, node: 'c10.well.wishnani' },
+    { map: 'village', when: { has: [...READY, 'wish.road'], not: ['story.end'] }, node: 'c10.well.wishroad' },
+    { map: 'village', when: { has: [...READY, 'wish.people'], not: ['story.end'] }, node: 'c10.well.wishpeople' },
+    { map: 'village', when: { has: READY, not: ['story.end'] }, node: 'c10.lastpage' },
+    // At dusk the well is the meeting, and Carmen has the floor.
+    { map: 'village', when: { has: ['c10.well.called'], not: ['c10.carmen.her'] }, node: 'c10.well.gathered' },
+    { map: 'village', when: { has: ['c10.carmen.her'], not: ['c10.apacheta.done'] }, node: 'c10.well.stone' },
+    { map: 'village', when: { has: HOME, not: ['story.end', 'c10.carmen.her'] }, node: 'c10.well.notyet' },
     { map: 'village', when: { has: ['story.end'] }, node: 'c10.well.after' },
   ],
+  // The cairn on the pass road. Tagged to the road so it front-runs the
+  // first chapter's own apacheta words only while the stone is in hand.
+  apacheta: [
+    { map: 'east-road', when: { has: ['c10.carmen.her'], not: ['c10.apacheta.done'] }, node: 'c10.apacheta.lay' },
+    { map: 'east-road', when: { has: ['c10.apacheta.done'] }, node: 'c10.ex.apacheta.stone' },
+  ],
 };
+
 
 /**
  * One ledger entry: the album overlay is an engine panel, so, exactly like a

@@ -197,6 +197,18 @@ export const OAXACA_JOURNAL: JournalEntry[] = [
 /** Valley loose threads; merged ahead of the earlier chapters' lists. */
 export const OAXACA_TASKS: TaskDef[] = [
   {
+    // First, because the night is over: whatever errands are still open,
+    // the morning belongs to the two women at the corner.
+    when: { has: ['c9.vigil.done'], not: ['c9.bye'] },
+    text: 'First light at the colectivo corner. Refugio and Chela are already there, which nobody arranged and everybody knew.',
+    who: ['refugioBye', 'chelaBye'],
+  },
+  {
+    when: { has: ['c9.complete'] },
+    text: 'The ledger is closed, both directions. The colectivo at the plaza’s south corner leaves ahorita, whenever that is. The village stays warm until then.',
+    at: ['oaxaca', 23, 28],
+  },
+  {
     when: { has: ['errand.chela-chiles'], not: ['c9.chiles'] },
     text: 'Chela’s chiles wait at Eugenia’s stall on the market lane: chilhuacle, mulato, pasilla. Say it is for the fiesta mole, and do not shake the bag.',
     who: 'eugenia',
@@ -228,9 +240,10 @@ export const OAXACA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c9.path.task'], not: ['c9.path.laid'] },
-    text: 'Melitón’s costal of petals is over your shoulder. Walk the lane below the camposanto gate and lay the marigold path, thick where it bends.',
-    // A strip of the bare petal lane itself: the thread ends facing it, and
-    // Space on that ground is where the petals go down.
+    text: 'Melitón’s costal of petals is over your shoulder. Walk the lane down from the camposanto arch to the street and let them go, thick where it bends.',
+    // The bare lane itself, near its top: walking down it from the arch is
+    // what sows it (main.ts, the petal step hook), and the bottom bend
+    // finishes the job. Space on the lane sows by hand, for anyone who asks.
     at: ['oaxaca', 40, 4],
   },
   {
@@ -270,7 +283,7 @@ export const OAXACA_TASKS: TaskDef[] = [
     who: 'refugio',
   },
   {
-    when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.complete'] },
+    when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.vigil.done'] },
     text: 'Tonight the camposanto is lit. Follow your own petals through the marigold arch. Don Melitón says the night knows its business.',
     // The vigil begins with Melitón himself; the arch is only the way in.
     who: 'meliton',
@@ -289,11 +302,6 @@ export const OAXACA_TASKS: TaskDef[] = [
     when: { has: ['met.chela'], not: ['met.elias'] },
     text: 'A loom clacks in a doorway on the east lane, walking red up the warp. The weaver says hello in Zapotec first.',
     who: 'elias',
-  },
-  {
-    when: { has: ['c9.complete'] },
-    text: 'The ledger is closed, both directions. The colectivo at the plaza’s south corner leaves ahorita, whenever that is. The village stays warm until then.',
-    at: ['oaxaca', 23, 28],
   },
   {
     when: { has: ['c9.arrived'], not: ['c9.complete'] },

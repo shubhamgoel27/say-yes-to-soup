@@ -15,7 +15,6 @@ import { goSideways, isCoarseTouch, isPhone, keysOrTaps } from './responsive';
 /** Just enough of the GameState to ask one question. */
 type FlagSource = { has(flag: string): boolean };
 let flags: FlagSource | null = null;
-let live: PauseMenu | null = null;
 
 /**
  * The engine constructs this menu without a GameState. The album is built one
@@ -26,9 +25,13 @@ export function lendFlags(src: FlagSource) {
   flags = src;
 }
 
-/** The closing book hands the player here when the last page turns. */
-export function openCredits() {
-  live?.open('credits');
+/**
+ * Once the journal is full, the credits are pages in the closing book, not
+ * a card here. The album owns that book and lends a way to open it.
+ */
+let creditsBook: (() => void) | null = null;
+export function lendCreditsBook(open: () => void) {
+  creditsBook = open;
 }
 
 const journeyDone = () => flags?.has('story.end') ?? false;
@@ -125,7 +128,6 @@ export class PauseMenu {
     private hooks: Hooks,
   ) {
     this.applyPrefs();
-    live = this;
   }
 
   get isOpen(): boolean {
@@ -183,7 +185,17 @@ export class PauseMenu {
       { label: 'How to play', act: () => this.goto('help') },
       // Once the journal is full this stops being a licence card, and the menu
       // says so, because otherwise nothing in the game ever points here.
-      { label: journeyDone() ? 'The end of it' : 'Credits', act: () => this.goto('credits') },
+      {
+        label: journeyDone() ? 'The end of it' : 'Credits',
+        // A finished journey reopens the book's own credits pages in play;
+        // from the title (no world behind it) the card still serves.
+        act: () => {
+          if (journeyDone() && creditsBook && !this.fromTitle) {
+            this.close();
+            creditsBook();
+          } else this.goto('credits');
+        },
+      },
     ];
     // The games shelf earns its row with the first game won, and only while
     // actually playing: opened from the title there is no world to return to.
