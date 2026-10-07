@@ -2251,6 +2251,8 @@ function tryInteract(): boolean {
 
 /** How far the thread unspools, in tiles of actual walking. */
 const THREAD_MAX_TILES = 7;
+/** ...unless the end is no further than this: then it goes all the way. */
+const THREAD_REACH_TILES = 12;
 /** The resting whisper may repeat at most this often, in ms. */
 const THREAD_TOAST_COOLDOWN = 60000;
 /** The band's glint: an invitation to press N, never a spoiler. Seconds;
@@ -2263,6 +2265,27 @@ const GLINT = {
   /** A fresh session is left entirely alone this long. */
   sessionGraceS: 300,
 };
+
+/**
+ * The walk from `from` to a floor tile beside `cell`, the tile Space faces it
+ * from. Never a tile somebody else is standing on (the thread once ended under
+ * Chasca, beside Mr. Bak, and read as pointing at her); only when every side
+ * is taken does it settle for any floor beside. Bodies never block the yarn
+ * on the way, only the place it ends.
+ */
+function pathBeside(from: [number, number], cell: [number, number]): [number, number][] | null {
+  const solid = (x: number, y: number) => map.solid(x, y);
+  const bodies = new Set(villagersHere().map((v) => v.actor.occupies().join(',')));
+  let best: [number, number][] | null = null;
+  for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]] as const) {
+    const nx = cell[0] + dx;
+    const ny = cell[1] + dy;
+    if (solid(nx, ny) || bodies.has(`${nx},${ny}`)) continue;
+    const p = pathBetween(from, nx, ny, solid);
+    if (p && (!best || p.length < best.length)) best = p;
+  }
+  return best ?? pathBetween(from, cell[0], cell[1], solid, true);
+}
 
 /**
  * Where a task continues, as a cell on the current map, measured from `from`.
@@ -2293,7 +2316,7 @@ function threadTargetFor(
       // Here but faded for the night: not somewhere the thread can end.
       if (!v || v.def.map !== map.id || v.fade <= 0.02) continue;
       const cell = v.actor.occupies();
-      const p = pathBetween(from, cell[0], cell[1], solid, true);
+      const p = pathBeside(from, cell);
       if (p && p.length < best) {
         best = p.length;
         bestCell = cell;
@@ -2337,13 +2360,15 @@ function threadPathFrom(
     if (task.who === undefined && !task.at) continue;
     const aim = threadTargetFor(task, from);
     if (!aim) continue;
-    let path = pathBetween(from, aim.cell[0], aim.cell[1], solid, aim.adjacent);
+    let path = aim.adjacent ? pathBeside(from, aim.cell) : pathBetween(from, aim.cell[0], aim.cell[1], solid);
     // A fixed spot can be a prop with no floor of its own; point beside it.
-    if (!path && !aim.adjacent) path = pathBetween(from, aim.cell[0], aim.cell[1], solid, true);
+    if (!path && !aim.adjacent) path = pathBeside(from, aim.cell);
     if (!path) continue;
-    const reaches = path.length <= THREAD_MAX_TILES;
+    // Close enough to arrive, it arrives: a thread that stops four tiles
+    // short of the karaoke reads as pointing at the empty floor it stops on.
+    const reaches = path.length <= THREAD_REACH_TILES;
     return {
-      tiles: [from, ...path.slice(0, THREAD_MAX_TILES)],
+      tiles: [from, ...path.slice(0, reaches ? path.length : THREAD_MAX_TILES)],
       loop: reaches ? aim.cell : null,
       task,
     };
@@ -3649,6 +3674,14 @@ function pathBetween(
   return null;
 }
 
+/** Is this cell where an open task's `at` points, on this map? */
+function isTaskTarget(x: number, y: number): boolean {
+  return journalUI.activeTaskDefs().some((t) => {
+    const at = atFor(t, state);
+    return !!at && at[0] === map.id && at[1] === x && at[2] === y;
+  });
+}
+
 /** Anything on this cell the action button would engage with. */
 function interactableAt(x: number, y: number): boolean {
   if (
@@ -3674,9 +3707,16 @@ function interactableAt(x: number, y: number): boolean {
   // and if the click examines instead of walking, a pointer-only player can
   // stand in the langar reading the threshold forever and never leave.
   if (map.triggerAt(x, y)) return false;
-  const objKind = map.object(x, y)?.t;
+  const obj = map.object(x, y);
+  const objKind = obj?.t;
   if (objKind === undefined || objKind === 'blocked') return false;
   if (sitKindsOn(map.id).has(objKind)) return true;
+  // A prop you can stand on (pecking pigeons, a fallen kite, wires strung
+  // overhead) is floor to a pointer: a click walks onto it and Space still
+  // reads it. Otherwise it ate every click on the red thread laid across it,
+  // and a pointer player following the thread read wire bundles instead of
+  // walking. A task's own target is the one exception: that IS the thing.
+  if (!obj?.solid && !isTaskTarget(x, y)) return false;
   return EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false;
 }
 
