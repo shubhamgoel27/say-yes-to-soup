@@ -54,6 +54,7 @@ import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
+import { BLOCKING, ESCORTS, HOURS, LAMP } from './content/return/staging';
 
 // ---------------------------------------------------------------- boot
 
@@ -1456,6 +1457,218 @@ function updateStations(dt: number) {
   }
 }
 
+// ---------------------------------------------------------------- the ending's staging
+//
+// The last two evenings are staged, not reported (data in
+// content/return/staging.ts): the hour each stretch was written in, the
+// village walking to the well for its verdict, Carmen walking the stone up
+// beside you, and the lamplit hush of the last page (only the hum, the
+// camera leaning in). Everything is derived from flags, so a reload simply
+// stages it again.
+
+type Staged = {
+  v: Villager;
+  home: { map: string; pos: [number, number]; range: number };
+  path: [number, number][];
+  /** A companion lets go at once; a crowd waits for the talk to end. */
+  escort: boolean;
+};
+const staged = new Map<Villager, Staged>();
+const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
+/** The lean of the last page: 0 off, else eased 0..1 toward LAMP.zoom. */
+let lampT = 0;
+let lampOver = false;
+
+/** A walkable cell beside the player, nearest `from`, for a companion to stand on. */
+function besidePlayer(from: [number, number]): [number, number] | null {
+  const [px, py] = player.occupies();
+  const back = OPPOSITE[player.dir];
+  const order: Dir[] = [back, 'left', 'right', 'down', 'up'];
+  const cells = order
+    .map((d) => stepFrom(px, py, d))
+    .filter(([x, y]) => map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y));
+  cells.sort((a, b) => Math.abs(a[0] - from[0]) + Math.abs(a[1] - from[1]) - (Math.abs(b[0] - from[0]) + Math.abs(b[1] - from[1])));
+  return cells[0] ?? null;
+}
+
+/**
+ * Walk a staged villager toward a cell. Unlike a station's walk this one
+ * steps through other villagers (a crowd converging on one well otherwise
+ * deadlocks, each waiting for a neighbor who is waiting for them); only walls
+ * and the player stop it. True once arrived and settled.
+ */
+function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
+  const a = s.v.actor;
+  const [px, py] = player.occupies();
+  const blocked = (x: number, y: number) => map.solid(x, y) || (x === px && y === py);
+  const [ax, ay] = a.occupies();
+  if (ax === tx && ay === ty) {
+    if (a.isMoving) {
+      a.update(dt, { intent: null, blocked });
+      return false;
+    }
+    return true;
+  }
+  while (s.path.length && s.path[0]![0] === ax && s.path[0]![1] === ay) s.path.shift();
+  let next = s.path[0];
+  const tail = s.path[s.path.length - 1];
+  if (!next || Math.abs(next[0] - ax) + Math.abs(next[1] - ay) !== 1 || !tail || tail[0] !== tx || tail[1] !== ty) {
+    s.path = pathBetween([ax, ay], tx, ty, blocked) ?? [];
+    next = s.path[0];
+  }
+  if (!next || blocked(next[0], next[1])) {
+    s.path = [];
+    a.update(dt, { intent: null, blocked });
+    return false;
+  }
+  const dx = next[0] - ax;
+  const dy = next[1] - ay;
+  a.update(dt, { intent: dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up', blocked });
+  return false;
+}
+
+function updateStaging(dt: number) {
+  // The hour the words were written in: eased forward into its window
+  // (a quick time-lapse, ease-out), then held under its end.
+  const hold = Number.isFinite(todOverride)
+    ? undefined
+    : HOURS.find((h) => state.check(h.when) && !(h.notOn ?? []).includes(map.id));
+  if (hold && (dayT < hold.min || dayT > hold.max)) {
+    const past = (dayT - hold.max + 1) % 1;
+    if (past < 0.02) dayT = hold.max;
+    else if (hold.snap) dayT = hold.min;
+    else {
+      const dist = (hold.min - dayT + 1) % 1;
+      const step = Math.max(0.025, dist * 0.7) * dt;
+      dayT = step >= dist ? hold.min : (dayT + step) % 1;
+    }
+  }
+
+  // Who the evening has a place for: an escort beats a blocking.
+  const want = new Map<Villager, { at?: [number, number]; map?: string; dir?: Dir; escort?: boolean }>();
+  for (const e of ESCORTS) {
+    const v = byNpc(e.id);
+    if (v && state.check(e.when)) want.set(v, { escort: true });
+  }
+  for (const b of BLOCKING) {
+    const v = byNpc(b.id);
+    if (v && !want.has(v) && state.check(b.when)) want.set(v, { at: b.at, map: b.map, dir: b.dir });
+  }
+  for (const [v, w] of want) {
+    let s = staged.get(v);
+    if (!s) {
+      s = { v, home: { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]], range: v.def.range }, path: [], escort: false };
+      staged.set(v, s);
+      v.seated = false;
+      v.actor.pose = 'none';
+    }
+    s.escort = !!w.escort;
+    if (v.actor.frozen || v === talkingTo) continue; // mid-word is sacred
+    if (w.escort) {
+      if (v.def.map !== map.id) {
+        // Through the door a moment behind you, as companions are.
+        const spot = besidePlayer(player.occupies());
+        if (!spot || warp) continue;
+        v.def.map = map.id;
+        v.actor.placeAt(spot[0], spot[1], player.dir);
+        s.path = [];
+        continue;
+      }
+      const [ax, ay] = v.actor.occupies();
+      const [px, py] = player.occupies();
+      if (Math.abs(ax - px) + Math.abs(ay - py) <= 1 && !v.actor.isMoving) {
+        v.actor.face(ax < px ? 'right' : ax > px ? 'left' : ay < py ? 'down' : 'up');
+        continue;
+      }
+      const spot = besidePlayer([ax, ay]);
+      if (spot) stageStep(s, spot[0], spot[1], dt);
+      continue;
+    }
+    const [tx, ty] = w.at!;
+    v.def.pos = [tx, ty];
+    if (v.def.map !== w.map) {
+      if (map.id === v.def.map) continue; // never vanish in front of the player
+      v.def.map = w.map!;
+      v.actor.placeAt(tx, ty, w.dir!);
+      s.path = [];
+    } else if (map.id === w.map) {
+      // Arrived, they keep their place; while the talk is on, every face
+      // around the jug turns to the one person who was there.
+      if (stageStep(s, tx, ty, dt)) {
+        const [px, py] = player.occupies();
+        const dx = px - tx;
+        const dy = py - ty;
+        const toward: Dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
+        v.actor.face(textbox.isOpen ? toward : w.dir!);
+      }
+    } else {
+      v.actor.placeAt(tx, ty, w.dir!);
+    }
+  }
+  // The evening let go of them: home on their own feet when watched. The
+  // crowd never leaves mid-talk; Carmen leaves as the pen comes out.
+  for (const [v, s] of staged) {
+    if (want.has(v) || (textbox.isOpen && !s.escort) || v === talkingTo) continue;
+    const release = () => {
+      v.def.map = s.home.map;
+      v.def.pos = s.home.pos;
+      v.def.range = s.home.range;
+      v.actor.placeAt(s.home.pos[0], s.home.pos[1], 'down');
+      staged.delete(v);
+    };
+    if (v.def.map === map.id) {
+      if (s.home.map !== map.id) continue; // stays at the well until unwatched
+      if (stageStep(s, s.home.pos[0], s.home.pos[1], dt)) {
+        v.def.pos = s.home.pos;
+        v.def.range = s.home.range;
+        staged.delete(v);
+      }
+    } else release();
+  }
+
+  // The last page's hush: from its first word until the book is put down.
+  if (state.has('story.end') && !textbox.isOpen && !albumUI.isOpen) lampOver = true;
+  const lampOn = state.has(LAMP.flag) && !lampOver;
+  audio.setHearth(lampOn);
+  lampT = lampOn ? Math.min(1, lampT + dt / LAMP.seconds) : 0;
+}
+
+/** Whether the ending is walking this villager; the leash and seats stand aside. */
+function stagedControls(v: Villager): boolean {
+  return staged.has(v);
+}
+
+/** The lean of the last page, or 0 when the camera is its own. */
+function lampZoom(): number {
+  if (lampT <= 0) return 0;
+  const k = 1 - (1 - lampT) * (1 - lampT) * (1 - lampT);
+  return 1.06 + (LAMP.zoom - 1.06) * k;
+}
+
+/**
+ * The marigold path is walked: with Melitón's costal on your shoulder,
+ * every new cell of the lane lets a handful go, and enough of the lane
+ * sown finishes the job. Space on the lane does the same by hand.
+ */
+const PETAL_SOWN = new Set<string>();
+/** The lane is fifteen cells, arch to street; a walk down it touches twelve.
+ * The last bend (row 11 and below) finishes it once half is sown, so a walk
+ * up from the street works as well as a walk down from the arch. */
+const PETAL_ENOUGH = 12;
+const PETAL_BEND_Y = 11;
+function petalStep(x: number, y: number) {
+  if (map.id !== 'oaxaca' || !state.has('c9.path.task') || state.has('c9.path.laid')) return;
+  if (map.ground(x, y).t !== 'petalpath') return;
+  const k = `${x},${y}`;
+  if (!PETAL_SOWN.has(k)) {
+    PETAL_SOWN.add(k);
+    renderer.burst(x * TILE + TILE / 2, y * TILE + TILE / 2, 'petal', PETALS['oaxaca'] ?? ['#e8862f']);
+    if (!state.has('c9.path.sown')) state.set('c9.path.sown');
+  }
+  const done = PETAL_SOWN.size >= PETAL_ENOUGH || (PETAL_SOWN.size >= PETAL_ENOUGH / 2 && y >= PETAL_BEND_Y);
+  if (done && !textbox.isOpen) startNarration('c9.path.lay');
+}
+
 /**
  * The traveler's look: Nani's sketch, overlaid with whatever was chosen at
  * the flyleaf (persisted in the save), gilded if the older code is known.
@@ -1621,7 +1834,7 @@ function updateVillager(v: Villager, dt: number) {
   }
 
   // A stationed villager is walked by the custom's own code, not the leash.
-  if (stationControls(v)) return;
+  if (stagedControls(v) || stationControls(v)) return;
 
   if (v.def.range === 0 || dev.freezeWander) return;
   const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
@@ -1754,7 +1967,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   if (
     dest.id === 'camposanto' &&
     state.has('c9.ofrenda.done') &&
-    !state.has('c9.complete') &&
+    !state.has('c9.vigil.done') &&
     nightLevel(dayT) < 0.5 &&
     !Number.isFinite(todOverride)
   ) {
@@ -2824,6 +3037,7 @@ function update(dt: number) {
   // Scheduled customs keep moving even while the player sits and watches;
   // sitting through one is, in fact, the whole point of two of them.
   updateStations(dt);
+  updateStaging(dt);
   renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
   renderer.setSun(dayT);
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
@@ -2834,8 +3048,9 @@ function update(dt: number) {
   audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id), dayT);
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
-  const zoomT =
-    sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || anyGameOpen() || uiCardOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1;
+  // The last page leans in further, and slowly, on its own clock.
+  const zoomT = lampZoom() ||
+    (sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || anyGameOpen() || uiCardOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1);
   stage.setZoomTarget(zoomT);
   // Mirror the stage's zoom easing so pointer math maps screen to world
   // without reaching into the presenter's internals.
@@ -3147,6 +3362,7 @@ function update(dt: number) {
       }
       if (ev?.kind === 'arrived') {
         audio.step(map.ground(ev.x, ev.y).t);
+        petalStep(ev.x, ev.y);
         renderer.puffAt(prevX, prevY);
         const trig = map.triggerAt(ev.x, ev.y);
         if (trig?.type === 'door') startWarp(trig);
@@ -4461,7 +4677,7 @@ function installCheats() {
       // Doña Carmen's word, so the last page is one Space away.
       for (const f of [
         'c10.marisol.seen', 'c10.rosa.seen', 'c10.aurelio.seen', 'c10.carmen.seen',
-        'c10.pilar.seen', 'c10.album.seen', 'c10.carmen.her',
+        'c10.pilar.seen', 'c10.album.seen', 'c10.well.called', 'c10.carmen.her', 'c10.apacheta.done',
       ]) state.set(f);
       // The endgame has its own authored ending; nothing here celebrates.
       resyncCelebrations();

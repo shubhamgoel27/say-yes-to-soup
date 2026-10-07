@@ -3,7 +3,8 @@ import type { AudioBus } from '../engine/audio';
 import type { GameState } from '../engine/state';
 import { makePhotoArt } from '../art/albumart';
 import { ROUTE } from '../content/route';
-import { lendFlags, openCredits } from './pause';
+import { CHAPTERS } from '../content/world';
+import { lendCreditsBook, lendFlags } from './pause';
 
 /**
  * Two books share this overlay, because they are the same gesture: cream card
@@ -19,9 +20,12 @@ import { lendFlags, openCredits } from './pause';
  *
  * THE CLOSING BOOK opens once, at the well, after the last line is written.
  * It is the journal's own last spreads: the sentence in the player's hand,
- * Nani's route with every stop inked over, the one stop nobody photographed,
- * and the trick itself. Any key walks it forward; the last page hands the
- * player to the credits, which is where a journey is supposed to end.
+ * the one stop nobody photographed, and the trick itself. Any key walks it
+ * forward, and the book keeps turning into the credits, which are pages in
+ * the same book rather than a card in a menu: the cover, Nani's route with
+ * every stop inked over, the people met along it by name, the thanks, and
+ * the small print, type last. The last page closes the book on the world.
+ * The pause menu's "The end of it" opens the credits pages again.
  */
 
 export type PhotoDef = {
@@ -116,9 +120,57 @@ const LAST_LINES: [string, string][] = [
 
 type Mode = 'album' | 'end';
 
+/** The closing book's leaves, then the credits leaves, in turning order. */
+type Leaf = 'last' | 'home' | 'trick' | 'cover' | 'route' | 'people1' | 'people2' | 'thanks' | 'print';
+const CLOSING: Leaf[] = ['last', 'home', 'trick'];
+const CREDITS: Leaf[] = ['cover', 'route', 'people1', 'people2', 'thanks', 'print'];
+
+/** The route stops whose people fill the first credits page; the rest fill the second. */
+const PEOPLE_SPLIT = 5;
+
+/** Who stood where, by route stop: every named person of each walked chapter, once. */
+function peopleByStop(walked: (i: number) => boolean): { stop: string; names: string[] }[] {
+  const seen = new Set<string>();
+  return ROUTE.map((stop, i) => {
+    const ch = CHAPTERS.find((c) => c.id === (stop.id === 'home' ? 'return' : stop.id));
+    if (!ch || !walked(i)) return { stop: stop.name, names: [] };
+    const names: string[] = [];
+    for (const n of ch.npcs) {
+      // The llamas are all called Llama and would like that kept quiet;
+      // Paca and the dog are colleagues and are credited as such.
+      if (n.name === 'Llama') continue;
+      let name = n.name;
+      if (/^(The|A) /.test(name)) name = name.toLowerCase();
+      if (name === 'a traveler') name = 'a traveler, going the other way';
+      if (seen.has(name)) continue;
+      seen.add(name);
+      names.push(name);
+    }
+    return { stop: stop.name, names };
+  });
+}
+
+/** Credits-only styles, carried by the book that uses them. */
+const CREDIT_CSS = `
+  .cr-cover { margin: auto 0; text-align: center; }
+  .cr-title { font-family: var(--display); font-size: clamp(30px, 5vw, 44px); color: #2f2418; margin: 0; letter-spacing: 0.01em; }
+  .cr-sub { font-family: var(--hand); font-size: 22px; color: #8a6a3c; margin: 2px 0 0; }
+  .cr-people { margin: auto 0; display: grid; gap: 9px; }
+  .cr-stop { font-family: var(--display); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a6a3c; }
+  .cr-stop .end-num { width: 22px; letter-spacing: 0; text-transform: none; }
+  .cr-names { font-size: var(--fs-125, 13.5px); line-height: 1.45; color: #2f2418; margin: 1px 0 0 22px; text-wrap: pretty; }
+  .cr-thanks { margin: auto 0; display: grid; gap: 12px; }
+  .cr-thanks p { margin: 0; font-size: var(--fs-135, 15px); line-height: 1.55; color: #3a2c1e; }
+  .cr-name { font-family: var(--hand); font-size: 24px; color: #2c2740; }
+  .cr-print { margin: auto 0; display: grid; gap: 9px; }
+  .cr-print p { margin: 0; font-size: var(--fs-115, 12.5px); line-height: 1.5; color: #57452f; }
+  .cr-type { font-family: var(--display); font-size: 15px !important; color: #2f2418 !important; }
+`;
+
 export class AlbumUI {
   private spread = 0;
   private mode: Mode = 'album';
+  private leaves: Leaf[] = [];
   private done: (() => void) | null = null;
 
   constructor(
@@ -128,8 +180,12 @@ export class AlbumUI {
   ) {
     // The engine builds the pause menu without a GameState, and the credits
     // need to know whether the journal was finished. The album has one; it
-    // lends it, once, at boot.
+    // lends it, once, at boot, together with a way back into these pages.
     lendFlags(state);
+    lendCreditsBook(() => this.openCredits());
+    const style = document.createElement('style');
+    style.textContent = CREDIT_CSS;
+    document.head.appendChild(style);
   }
 
   get isOpen(): boolean {
@@ -138,7 +194,7 @@ export class AlbumUI {
 
   private get spreadCount(): number {
     // The album keeps one spread past the prints: her blank last page.
-    return this.mode === 'end' ? 4 : Math.ceil(PHOTOS.length / 2) + 1;
+    return this.mode === 'end' ? this.leaves.length : Math.ceil(PHOTOS.length / 2) + 1;
   }
 
   private get onLastPage(): boolean {
@@ -152,9 +208,21 @@ export class AlbumUI {
     // the last pages cannot turn Chasca's album into the ending by accident.
     this.mode = this.state.has('end.book') ? 'end' : 'album';
     if (this.mode === 'end') this.state.clearFlag('end.book');
+    this.leaves = this.mode === 'end' ? [...CLOSING, ...CREDITS] : [];
     this.spread = 0;
     this.done = done ?? null;
     this.root.hidden = false;
+    this.render();
+  }
+
+  /** The credits pages alone, from the pause menu once the journal is full. */
+  openCredits(done?: () => void) {
+    this.mode = 'end';
+    this.leaves = [...CREDITS];
+    this.spread = 0;
+    this.done = done ?? null;
+    this.root.hidden = false;
+    this.audio.pageFlip();
     this.render();
   }
 
@@ -215,8 +283,8 @@ export class AlbumUI {
     const done = this.done;
     this.done = null;
     done?.();
-    // A journey that has ended goes to the names, not back to the grass.
-    if (end) openCredits();
+    // The credits were the book's own last pages; closing it is the end.
+    if (end) this.leaves = [];
   }
 
   /** Record what the album actually contained, for whoever speaks next. */
@@ -290,33 +358,89 @@ export class AlbumUI {
     }).join('');
   }
 
-  private endPageHtml(page: number): string {
-    if (page === 0) {
-      return `
-        <div class="end-kicker">the last page</div>
-        <div class="end-ruled"><p class="end-written">${this.lastLine()}</p></div>
-        <p class="end-note">Written at the well, in your own hand. The page was never blank. It was waiting.</p>`;
+  private peopleHtml(half: 0 | 1): string {
+    const roman = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x', 'xi'];
+    const groups = peopleByStop((i) => {
+      const c = ROUTE[i]?.complete;
+      return !c || this.state.check(c);
+    });
+    const from = half === 0 ? 0 : PEOPLE_SPLIT;
+    const to = half === 0 ? PEOPLE_SPLIT : groups.length;
+    return groups
+      .slice(from, to)
+      .map((g, k) =>
+        g.names.length === 0
+          ? ''
+          : `<div><div class="cr-stop"><span class="end-num">${roman[from + k] ?? ''}</span>${g.stop}</div>
+             <div class="cr-names">${g.names.join(' &middot; ')}</div></div>`,
+      )
+      .join('');
+  }
+
+  private endPageHtml(leaf: Leaf): string {
+    switch (leaf) {
+      case 'last':
+        return `
+          <div class="end-kicker">the last page</div>
+          <div class="end-ruled"><p class="end-written">${this.lastLine()}</p></div>
+          <p class="end-note">Written at the well, in your own hand. The page was never blank. It was waiting.</p>`;
+      case 'home':
+        return `
+          <div class="end-kicker">the stop she never got to write a note for</div>
+          <figure class="end-plate">
+            <div class="end-art" data-art="home"></div>
+            <figcaption class="end-cap">Ch&rsquo;aska Pampa after dark. Four kitchens, one well, the flag up.</figcaption>
+          </figure>
+          <p class="end-note">Nobody photographed this one. You were standing in it.</p>`;
+      case 'trick':
+        return `
+          <div class="end-kicker">and the whole trick, in her handwriting</div>
+          <p class="end-creed">Walk slowly.<br>Say yes to soup.<br>Ask about the bread.<br>If someone corrects you, thank them twice.</p>
+          <p class="end-note">You did all four, in eleven villages, for one grandmother. The journal is full.</p>
+          <p class="end-thanks">Thank you for walking slowly.</p>`;
+      case 'cover':
+        return `
+          <div class="cr-cover">
+            <p class="cr-title">Say Yes to Soup</p>
+            <p class="cr-sub">a journal, full</p>
+          </div>
+          <p class="end-note">Eleven villages, one grandmother, one book she left half written and you did not. Nobody hurried you and you did not hurry. That was the whole assignment.</p>`;
+      case 'route':
+        return `
+          <div class="end-kicker">the route, inside the front cover</div>
+          <ol class="end-route">${this.routeHtml()}</ol>
+          <p class="end-note">Her pencil stops after Sicily. You inked the rest of her line in with your feet.</p>`;
+      case 'people1':
+        return `
+          <div class="end-kicker">the people who walked with you</div>
+          <div class="cr-people">${this.peopleHtml(0)}</div>`;
+      case 'people2':
+        return `
+          <div class="end-kicker">and the rest of the road</div>
+          <div class="cr-people">${this.peopleHtml(1)}</div>
+          <p class="end-note">Every one of them is made up, and every one of them is somebody&rsquo;s neighbor.</p>`;
+      case 'thanks':
+        return `
+          <div class="end-kicker">thank you</div>
+          <div class="cr-thanks">
+            <p><span class="cr-name">Angli</span>, for the idea underneath everything here: that language and food are how strangers become people to each other.</p>
+            <p><span class="cr-name">Nishant</span>, who helped shape the game, its villages, and the traveler&rsquo;s long arc home.</p>
+            <p>Made with love, and with soup.</p>
+          </div>
+          <p class="end-note">The pot is still on. It is always on. Come back whenever.</p>`;
+      case 'print':
+        return `
+          <div class="end-kicker">and the small print, last</div>
+          <div class="cr-print">
+            <p>Every village in this game is fictional; the texture is researched, and corrections from people who know these places are welcome.</p>
+            <p>Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
+            Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
+            the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0);
+            the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).</p>
+            <p>Everything else, the art, the music, the weather and the gulls, is cooked fresh by the game at runtime.</p>
+            <p class="cr-type">Type set in Fraunces, Literata &amp; Caveat (OFL, Google Fonts).</p>
+          </div>`;
     }
-    if (page === 1) {
-      return `
-        <div class="end-kicker">the route, inside the front cover</div>
-        <ol class="end-route">${this.routeHtml()}</ol>
-        <p class="end-note">Her pencil stops after Sicily. You inked the rest of her line in with your feet.</p>`;
-    }
-    if (page === 2) {
-      return `
-        <div class="end-kicker">the stop she never got to write a note for</div>
-        <figure class="end-plate">
-          <div class="end-art" data-art="home"></div>
-          <figcaption class="end-cap">Ch&rsquo;aska Pampa after dark. Four kitchens, one well, the flag up.</figcaption>
-        </figure>
-        <p class="end-note">Nobody photographed this one. You were standing in it.</p>`;
-    }
-    return `
-      <div class="end-kicker">and the whole trick, in her handwriting</div>
-      <p class="end-creed">Walk slowly.<br>Say yes to soup.<br>Ask about the bread.<br>If someone corrects you, thank them twice.</p>
-      <p class="end-note">You did all four, in eleven villages, for one grandmother. The journal is full.</p>
-      <p class="end-thanks">Thank you for walking slowly.</p>`;
   }
 
   // ---------------------------------------------------------------- render
@@ -329,14 +453,18 @@ export class AlbumUI {
     const turnCls = turn === 'r' ? ' al-turn-r' : turn === 'l' ? ' al-turn-l' : ' al-settle';
 
     if (this.mode === 'end') {
+      const leaf = this.leaves[this.spread] ?? 'cover';
       const hint = this.onLastPage
-        ? 'any key for the people who walked with you'
-        : '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on';
+        ? 'any key closes the book'
+        : leaf === 'trick'
+          ? 'any key for the people who walked with you'
+          : '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on';
+      const inCredits = CREDITS.includes(leaf);
       this.root.innerHTML = `
         <div class="al-book end-book">
-          <div class="al-title">the journal, full</div>
+          <div class="al-title">${inCredits ? 'say yes to soup' : 'the journal, full'}</div>
           <div class="al-spread${turnCls}">
-            <div class="end-leaf">${this.endPageHtml(this.spread)}</div>
+            <div class="end-leaf">${this.endPageHtml(leaf)}</div>
           </div>
           <div class="al-dots">${dots}</div>
           <div class="al-hint">${hint}</div>

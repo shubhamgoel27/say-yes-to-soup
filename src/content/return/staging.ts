@@ -1,0 +1,75 @@
+import type { Cond } from '../schema';
+
+/**
+ * Stage directions for the last two evenings of the journey: where people
+ * stand when the village has something to say, who walks beside you, and
+ * what hour the words were written in. Pure data; the engine's ending block
+ * in main.ts reads it every frame and does the walking and the light.
+ *
+ * Everything here is gated on story flags, so a reload in the middle of an
+ * evening simply stages it again.
+ */
+
+type Dir = 'up' | 'down' | 'left' | 'right';
+
+/** A villager who goes and stands somewhere while `when` holds. */
+export type Blocking = { id: string; when: Cond; map: string; at: [number, number]; dir: Dir };
+
+/** A villager who walks beside the player, across doors, while `when` holds. */
+export type Escort = { id: string; when: Cond };
+
+/**
+ * The hour a stretch of story was written in. While `when` holds, the clock
+ * is eased forward into [min, max] and then held below max. `snap` sets it
+ * outright (only used where a door's black hides the change); `notOn` maps
+ * are exempt, so a scene still running there keeps its own hour.
+ */
+export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; notOn?: string[] };
+
+/**
+ * The well at dusk: half the village around one jug, nobody south of it, so
+ * the well stays in sight and the south side is the player's (Carmen is one
+ * step up from it). Every cell keeps a way in however the others arrive.
+ */
+const VERDICT: Cond = { has: ['c10.well.called'], not: ['c10.carmen.her'] };
+
+export const BLOCKING: Blocking[] = [
+  { id: 'teofilo', when: VERDICT, map: 'village', at: [21, 14], dir: 'down' },
+  { id: 'aurelio', when: VERDICT, map: 'village', at: [20, 14], dir: 'down' },
+  { id: 'justina', when: VERDICT, map: 'village', at: [23, 15], dir: 'left' },
+  { id: 'carmen', when: VERDICT, map: 'village', at: [22, 15], dir: 'left' },
+  { id: 'rosa', when: VERDICT, map: 'village', at: [20, 15], dir: 'right' },
+  { id: 'mateo', when: VERDICT, map: 'village', at: [19, 14], dir: 'right' },
+  { id: 'pilar', when: VERDICT, map: 'village', at: [23, 14], dir: 'down' },
+  // The last page: Aurelio keeps his stool by the well, and Rosa, whose
+  // evening wander otherwise parks her right behind the writer, is the bowl
+  // going down on a table two steps off.
+  { id: 'rosa', when: { has: ['c10.lamp'], not: ['story.end'] }, map: 'village', at: [18, 18], dir: 'up' },
+];
+
+/** Carmen walks the stone up with you, and back down to the lit well. */
+export const ESCORTS: Escort[] = [
+  { id: 'carmen', when: { has: ['c10.carmen.her'], not: ['c10.lamp'] } },
+];
+
+export const HOURS: HourHold[] = [
+  // The ofrenda is finished in Refugio's kitchen, and "tonight we take the
+  // last candle to the camposanto": the evening comes down while you are
+  // indoors, so the lane outside is already dusk.
+  { when: { has: ['c9.ofrenda.done'], not: ['c9.vigil.done'] }, min: 0.6, max: 0.85 },
+  // You stay at the vigil until the candles are low, and the colectivo
+  // corner is first light. Set during the journey card's black.
+  { when: { has: ['c9.vigil.done'], not: ['c10.arrived'] }, min: 0.03, max: 0.3, snap: true, notOn: ['camposanto'] },
+  // Carmen names the hour and the afternoon goes: dusk at the well, and the
+  // last light for the walk up to the apacheta.
+  { when: { has: ['c10.well.called'], not: ['c10.apacheta.done'] }, min: 0.555, max: 0.6 },
+  // Down from the pass the lamps come on, and the last page is written by them.
+  { when: { has: ['c10.apacheta.done'], not: ['story.end'] }, min: 0.66, max: 0.7 },
+];
+
+/**
+ * The lamplit hush at the well: from the first word of the last page until
+ * the closing book is put down, the music is only the hum and the camera
+ * leans in. `zoom` is where the lean ends; it gets there slowly.
+ */
+export const LAMP = { flag: 'c10.lamp', zoom: 1.45, seconds: 10 };

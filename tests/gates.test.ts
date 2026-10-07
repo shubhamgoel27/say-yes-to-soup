@@ -34,9 +34,19 @@ describe('the ending waits on Doña Carmen', () => {
     assert.ok(!(NODES[node!]?.effects ?? []).includes('set:story.end'));
   });
 
-  it('with her word the last page opens, wish or no wish', () => {
-    assert.equal(examine('well', 'village', [...homecoming, 'c10.carmen.her']), 'c10.lastpage');
-    assert.equal(examine('well', 'village', [...homecoming, 'c10.carmen.her', 'wish.road']), 'c10.well.wishroad');
+  // The last page now also waits on the apacheta: Carmen's verdict hands
+  // over the stone, and the page is written after it is laid, by lamplight.
+  it('with her word and the stone laid, the last page opens, wish or no wish', () => {
+    const evening = [...homecoming, 'c10.well.called', 'c10.carmen.her'];
+    assert.equal(examine('well', 'village', evening), 'c10.well.stone');
+    assert.equal(examine('well', 'village', [...evening, 'c10.apacheta.done']), 'c10.lastpage');
+    assert.equal(examine('well', 'village', [...evening, 'c10.apacheta.done', 'wish.road']), 'c10.well.wishroad');
+  });
+
+  it('the stone is laid on the apacheta, and only once', () => {
+    assert.equal(examine('apacheta', 'east-road', ['c10.carmen.her']), 'c10.apacheta.lay');
+    assert.notEqual(examine('apacheta', 'east-road', ['c10.carmen.her', 'c10.apacheta.done']), 'c10.apacheta.lay');
+    assert.notEqual(examine('apacheta', 'east-road', []), 'c10.apacheta.lay');
   });
 
   it('no node that sets story.end is reachable from a well arm lacking c10.carmen.her', () => {
@@ -81,12 +91,19 @@ describe('a gift set on the ofrenda is not given again', () => {
 });
 
 describe('the marigold path can be found', () => {
-  it('the petal ground cues while the errand is live, and the costal starts it', () => {
+  // The path is walked now (main.ts sows a handful per lane cell): the
+  // costal only sends you to the lane, and Space on the lane is the slow
+  // by-hand fallback, one handful, then the rest.
+  it('the petal ground cues while the errand is live, and the costal sends you to it', () => {
     const live = ['c9.path.task'];
-    const petal = (EXAMINES.petalpath ?? []).find((a) => a.node === 'c9.path.lay');
-    assert.ok(petal?.cue, 'the live petal arm must carry the curiosity cue');
-    assert.equal(examine('costal', 'camposanto', live), 'c9.path.lay');
-    assert.notEqual(examine('costal', 'camposanto', [...live, 'c9.path.laid']), 'c9.path.lay');
+    for (const node of ['c9.path.sow', 'c9.path.lay']) {
+      const petal = (EXAMINES.petalpath ?? []).find((a) => a.node === node);
+      assert.ok(petal?.cue, `the live petal arm ${node} must carry the curiosity cue`);
+    }
+    assert.equal(examine('costal', 'camposanto', live), 'c9.path.shoulder');
+    assert.equal(examine('petalpath', 'oaxaca', live), 'c9.path.sow');
+    assert.equal(examine('petalpath', 'oaxaca', [...live, 'c9.path.sown']), 'c9.path.lay');
+    assert.notEqual(examine('costal', 'camposanto', [...live, 'c9.path.laid']), 'c9.path.shoulder');
   });
 });
 
