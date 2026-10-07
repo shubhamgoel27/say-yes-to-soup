@@ -277,7 +277,7 @@ export const DELHI_MAP: MapData = {
   triggers: [
     { at: [12, 5], type: 'door', to: 'delhi-haveli', spawn: [8, 9], facing: 'up' },
     { at: [42, 5], type: 'door', to: 'delhi-langar', spawn: [10, 11], facing: 'up' },
-    { at: [18, 11], type: 'door', to: 'delhi-rooftop', spawn: [3, 16], facing: 'up' },
+    { at: [18, 11], type: 'door', to: 'delhi-rooftop', spawn: [4, 16], facing: 'up' },
   ],
   legend: {
     '-': { t: 'galistone' },
@@ -533,7 +533,8 @@ const roof = paintRoof();
 export const DELHI_ROOFTOP_MAP: MapData = {
   id: 'delhi-rooftop',
   name: 'The Rooftop Republic',
-  spawn: [3, 16],
+  // One tile clear of the mumty: at 3,16 its tin hat overhung your shoulder.
+  spawn: [4, 16],
   spawnFacing: 'up',
   triggers: [{ at: [3, 17], type: 'door', to: 'delhi', spawn: [18, 12], facing: 'down' }],
   legend: {
