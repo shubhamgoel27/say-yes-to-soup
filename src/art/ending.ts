@@ -186,13 +186,13 @@ function jug(g: CanvasRenderingContext2D, poured: boolean) {
 
 /** Set the river stone on the east road's cairn, or take it off (a fresh journey). */
 export function setCairnStone(on: boolean) {
-  const pin = MAP_PINS['east-road']?.get(CAIRN_AT[1] * 4096 + CAIRN_AT[0]);
+  const pin = MAP_PINS['east-road']?.get(CAIRN_AT[1] * 4096 + CAIRN_AT[0])?.find((p) => p.kind === 'apacheta');
   if (pin) pin.v = on ? CAIRN_STONE_V : 0;
 }
 
 /** Whether the earth has had its splash from the jug yet (the staging places the jug). */
 export function setJugPoured(on: boolean) {
-  const pin = MAP_PINS[JUG.map]?.get(JUG.at[1] * 4096 + JUG.at[0]);
+  const pin = MAP_PINS[JUG.map]?.get(JUG.at[1] * 4096 + JUG.at[0])?.find((p) => p.kind === 'jug');
   if (pin) pin.v = on ? 1 : 0;
 }
 

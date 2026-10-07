@@ -4,10 +4,10 @@ import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { DevBridge } from './engine/devbridge';
 import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
-import { Input, type Dir } from './engine/input';
+import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState, activeSlot, peekSlot, setActiveSlot } from './engine/state';
+import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
@@ -48,7 +48,8 @@ import {
 } from './content/world';
 import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
-import { atFor, doorsFrom, liveWho, nextMapToward, npcMap } from './content/guide';
+import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/guide';
+import { cheapestPath } from './engine/path';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -407,6 +408,12 @@ const title = new TitleScreen(
   $('letter'),
   () => reloadJourney(),
   (row) => beginSecondReading(row),
+  () => {
+    // Asked and answered on the confirm card: the journal on the table goes.
+    audio.confirm();
+    title.hideTitle();
+    openFlyleaf(freshSlate);
+  },
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -494,9 +501,48 @@ const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
 
 const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
 
-/** A game whose start flag is raised but whose panel is not yet on screen. */
+/**
+ * "Not yet" sticks. A declined card used to re-open after every later
+ * conversation or examine, eighteen tiles away and on other maps, because
+ * the start flag (rightly) stays raised. Now the decline remembers where it
+ * happened and who offered; the card comes back only when the player talks
+ * to that person again, or presses Space in open air near that spot.
+ * Session-scoped: a reload offers each waiting card once more, which is fair.
+ */
+const declinedGames = new Map<string, { map: string; at: [number, number]; npc: string | null }>();
+/** Who spoke last before a card opened: the one who offered it. */
+let howtoOfferedBy: string | null = null;
+/** How close counts as "back at the station" for the open-air re-offer. */
+const DECLINE_NEAR = 2;
+
+/** A game whose start flag is raised but whose panel is not yet on screen,
+ * and which the player has not set aside with "Not yet". */
 function pendingGame(): GameEntry | null {
-  return games.find((g) => state.has(g.def.flag) && !g.panel.isOpen) ?? null;
+  return (
+    games.find((g) => state.has(g.def.flag) && !g.panel.isOpen && !declinedGames.has(g.def.flag)) ??
+    null
+  );
+}
+
+/** Open air near where a card was declined: that card, forgiven. */
+function declinedNearHere(): GameEntry | null {
+  for (const [flag, d] of declinedGames) {
+    if (d.map !== map.id) continue;
+    if (Math.abs(player.x - d.at[0]) + Math.abs(player.y - d.at[1]) > DECLINE_NEAR) continue;
+    const g = games.find((x) => x.def.flag === flag);
+    if (!g || !state.has(flag)) {
+      declinedGames.delete(flag);
+      continue;
+    }
+    declinedGames.delete(flag);
+    return g;
+  }
+  return null;
+}
+
+/** Talking to whoever offered a declined card lets it come back after. */
+function forgiveDeclinesBy(npc: string) {
+  for (const [flag, d] of declinedGames) if (d.npc === npc) declinedGames.delete(flag);
 }
 
 /** Open a panel and route its completion: story narration, or replay joy. */
@@ -623,6 +669,8 @@ function closeHowto(pick: string | null) {
     player.frozen = false;
   } else {
     player.frozen = false; // the story's start flag stays; the offer keeps
+    // ...but it waits where it was made, instead of following the player.
+    declinedGames.set(g.def.flag, { map: map.id, at: [player.x, player.y], npc: howtoOfferedBy });
   }
 }
 
@@ -723,7 +771,11 @@ function journalClosing(): boolean {
 
 state.on('journal', (id) => {
   const entry = JOURNAL_BY_ID.get(id);
-  if (!journalClosing()) toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
+  // A word's page is titled with the word, and a short one ("Pe") read as a
+  // toast cut off mid-name; the word goes in quotes and says it is a word.
+  const title = entry?.title ?? id;
+  const named = entry?.tab === 'words' ? `the word \u201c${title}\u201d` : title;
+  if (!journalClosing()) toasts.show(`✎ a page fills: ${named}`);
   audio.chime();
   {
     const [px, py] = player.renderPos();
@@ -1516,6 +1568,8 @@ type Staged = {
   escort: boolean;
   /** In their place (a crowd member) or on the trail (a companion). */
   arrived: boolean;
+  /** Seconds spent waiting on a body in the way; see stageStep. */
+  wait?: number;
 };
 const staged = new Map<Villager, Staged>();
 const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
@@ -1564,17 +1618,21 @@ function trailSpot(): [number, number] | null {
 }
 
 /**
- * Walk a staged villager toward a cell. Unlike a station's walk this one
- * steps through other villagers (a crowd converging on one well otherwise
- * deadlocks, each waiting for a neighbor who is waiting for them); only walls
- * and the player stop it, both the tile the player is on and the one they
- * are stepping out of. True once arrived and settled.
+ * Walk a staged villager toward a cell. It plans around other bodies when it
+ * can and never steps into a cell another body holds (Carmen once walked into
+ * the player's column after the apacheta, and the three drew as one pile).
+ * A crowd converging on one well could deadlock that way, each waiting for a
+ * neighbour who waits for them, so after a few patient seconds a walker may
+ * plan through the crowd; it still waits for each cell to clear. Only the
+ * player's own cells are absolute. True once arrived and settled.
  */
+const STAGE_PATIENCE = 2.5;
 function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   const a = s.v.actor;
   const [px, py] = player.occupies();
+  const held = (x: number, y: number) => heldByOther(x, y, a);
   const blocked = (x: number, y: number) =>
-    map.solid(x, y) || (x === px && y === py) || (x === player.x && y === player.y);
+    map.solid(x, y) || held(x, y) || (x === px && y === py) || (x === player.x && y === player.y);
   const [ax, ay] = a.occupies();
   if (ax === tx && ay === ty) {
     if (a.isMoving) {
@@ -1587,14 +1645,21 @@ function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   let next = s.path[0];
   const tail = s.path[s.path.length - 1];
   if (!next || Math.abs(next[0] - ax) + Math.abs(next[1] - ay) !== 1 || !tail || tail[0] !== tx || tail[1] !== ty) {
-    s.path = pathBetween([ax, ay], tx, ty, blocked) ?? [];
+    const patient = (s.wait ?? 0) > STAGE_PATIENCE;
+    s.path =
+      pathBetween([ax, ay], tx, ty, blocked) ??
+      (patient ? pathBetween([ax, ay], tx, ty, (x, y) => map.solid(x, y) || playerHolds(x, y)) : null) ??
+      [];
     next = s.path[0];
   }
   if (!next || blocked(next[0], next[1])) {
+    // Someone is in the way: stand, and look again in a moment.
     s.path = [];
+    s.wait = (s.wait ?? 0) + dt;
     a.update(dt, { intent: null, blocked });
     return false;
   }
+  s.wait = 0;
   const dx = next[0] - ax;
   const dy = next[1] - ay;
   a.update(dt, { intent: dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up', blocked });
@@ -2197,6 +2262,31 @@ function blockedFor(self: Actor): (x: number, y: number) => boolean {
   return (x, y) => map.solid(x, y) || occupied(x, y, self);
 }
 
+/** The cells an actor's body is in: where it stands, or both ends of a step. */
+function bodyCells(a: Actor): [number, number][] {
+  const to = a.occupies();
+  return a.isMoving && (a.x !== to[0] || a.y !== to[1]) ? [[a.x, a.y], to] : [to];
+}
+
+/**
+ * The separation rule: is this cell held by any body but `self`, counting
+ * both ends of anyone mid-step? Stepping into a cell its owner is still
+ * stepping out of is how two figures came to draw on top of each other.
+ * The dog is small and agreeable and never counts.
+ */
+function heldByOther(x: number, y: number, self: Actor): boolean {
+  for (const s of spritesHere()) {
+    if (s.actor === self || s === dog) continue;
+    for (const [cx, cy] of bodyCells(s.actor)) if (cx === x && cy === y) return true;
+  }
+  return false;
+}
+
+/** The player's own cells, the one thing no walker may ever enter. */
+function playerHolds(x: number, y: number): boolean {
+  return bodyCells(player).some(([cx, cy]) => cx === x && cy === y);
+}
+
 /**
  * Where arrivals land on each map: its own spawn and the spawn of every door
  * that leads in. A wandering villager never loiters on one; Abuela Chela
@@ -2220,7 +2310,12 @@ const onDoorstep = (x: number, y: number) => doorsteps[map.id]?.has(`${x},${y}`)
  * nearest free cell. Rare, and a one-tile hop beats two bodies in one place.
  */
 function unstack() {
-  const here = spritesHere();
+  // The player claims first, then anyone frozen in a conversation or
+  // mid-step: whoever is standing idle on a taken cell is the one who hops.
+  // (Walking the list in draw order once let a villager claim the cell and
+  // the player, coming later, be skipped, so nobody moved at all.)
+  const rank = (s: Sprite) => (s === playerSprite ? 0 : s.actor.frozen || s.actor.isMoving ? 1 : 2);
+  const here = [...spritesHere()].sort((a, b) => rank(a) - rank(b));
   const taken = new Set<string>();
   for (const s of here) {
     if (s === dog) continue;
@@ -2258,6 +2353,26 @@ function nearestFree(x: number, y: number, avoid: (x: number, y: number) => bool
     ring = next;
   }
   return null;
+}
+
+/**
+ * Is the player walking up to this villager with the keys? Within three
+ * steps, facing them, and on their row or column give or take one: the way
+ * a person heading for you looks. They wait for you then, as the click-to-walk
+ * path already made them do; Petro took five tries and Mang Ben drifted off
+ * mid-approach while they ambled on regardless.
+ */
+function approachedByKeys(v: Villager): boolean {
+  const [ax, ay] = v.actor.occupies();
+  const [px, py] = player.occupies();
+  const dx = ax - px;
+  const dy = ay - py;
+  const d = Math.abs(dx) + Math.abs(dy);
+  if (d === 0 || d > 3) return false;
+  const [fx, fy] = DIR_VEC[player.dir];
+  const ahead = fx * dx + fy * dy;
+  const aside = Math.abs(fx !== 0 ? dy : dx);
+  return ahead > 0 && aside <= 1;
 }
 
 function updateVillager(v: Villager, dt: number) {
@@ -2333,7 +2448,7 @@ function updateVillager(v: Villager, dt: number) {
   if (nk > 0.6 && !outside) return;
   // Someone the player has clicked on and is walking toward finishes the
   // step they are on and waits there, the way a person does when hailed.
-  if (autoGoal?.npc === v && !outside) {
+  if ((autoGoal?.npc === v || approachedByKeys(v)) && !outside) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
@@ -2613,6 +2728,7 @@ function endDialogue() {
   player.frozen = false;
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
+  howtoOfferedBy = speaker?.def.id ?? null;
   // The intro has let go; now the village may introduce itself.
   if (pendingWelcome && !welcomeTimer) welcomeTimer = window.setTimeout(playWelcome, 420);
   if (talkingTo) {
@@ -2671,7 +2787,9 @@ function endDialogue() {
   {
     // A conversation raised a game's start flag: the how-to card goes first,
     // so the hands know what they are about to do (and may decline, kindly).
-    const g = pendingGame();
+    // A declined card returns only after its own villager, or after an
+    // examine back at the spot where it was set aside (a station).
+    const g = pendingGame() ?? (speaker ? null : declinedNearHere());
     if (g) {
       showHowto(g);
       return;
@@ -2732,6 +2850,8 @@ function startNpcDialogue(v: Villager) {
 
   const entry = v.def.entry.find((e) => state.check(e.when));
   if (!entry) return;
+  // Back to whoever offered a declined card: it may come back after this.
+  forgiveDeclinesBy(v.def.id);
   const [ox, oy] = v.actor.occupies();
   v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
   v.actor.frozen = true;
@@ -2955,7 +3075,7 @@ function pathBeside(from: [number, number], cell: [number, number]): [number, nu
     const nx = cell[0] + dx;
     const ny = cell[1] + dy;
     if (solid(nx, ny) || bodies.has(`${nx},${ny}`)) continue;
-    const p = pathBetween(from, nx, ny, solid);
+    const p = yarnPath(from, nx, ny, solid);
     // Bare floor beats a tuft or a coil of hose by a step: the end is where
     // the player stands, and it should read as somewhere to stand.
     const cost = p ? p.length + (dressedCell(nx, ny) ? 1.5 : 0) : Infinity;
@@ -2964,7 +3084,48 @@ function pathBeside(from: [number, number], cell: [number, number]): [number, nu
       bestCost = cost;
     }
   }
-  return best ?? pathBetween(from, cell[0], cell[1], solid, true);
+  return best ?? yarnPath(from, cell[0], cell[1], solid, true);
+}
+
+/** What a step onto floor painted over by a tall prop costs the yarn, in
+ * steps: a detour of up to this many tiles is taken to keep the thread out
+ * from under a lamp's head or a tree's canopy, and none longer. */
+const YARN_OVERHANG_COST = 6;
+
+/**
+ * The thread's own walk: pathBetween's rules (walkable ground, bodies
+ * ignored by the callers, a goal beside the cell when `adjacentTo`), except
+ * that floor under a tall prop's overhang costs extra. Yarn laid there was
+ * drawn straight through a lamppost and under a tree's crown, so it read as
+ * a line through solids, not a way to walk.
+ */
+function yarnPath(
+  from: [number, number],
+  tx: number,
+  ty: number,
+  blocked: (x: number, y: number) => boolean,
+  adjacentTo = false,
+): [number, number][] | null {
+  const w = map.w;
+  const goals = new Set<number>();
+  if (adjacentTo) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const gx = tx + dx;
+      const gy = ty + dy;
+      if (map.inBounds(gx, gy) && !blocked(gx, gy)) goals.add(gy * w + gx);
+    }
+    if (goals.size === 0) return null;
+  } else {
+    if (tx === from[0] && ty === from[1]) return [];
+    if (!map.inBounds(tx, ty) || blocked(tx, ty)) return null;
+    goals.add(ty * w + tx);
+  }
+  const over = renderer.overhung(map);
+  // A rug or a crate lid underfoot costs a step too: bare floor reads as a
+  // way to walk, yarn over a prop reads as pointing at the prop.
+  return cheapestPath(map.w, map.h, from, goals, blocked, (x, y) =>
+    over[y * w + x] ? YARN_OVERHANG_COST : dressedCell(x, y) ? 1 : 0,
+  );
 }
 
 /** A walkable cell with something on it (a tuft, a hose, pigeons): not bare floor. */
@@ -2987,6 +3148,8 @@ function straightenThread(from: [number, number], path: [number, number][]): [nu
   const prev = pts[pts.length - 2]!;
   const finalX = last[0] !== prev[0]; // the axis the walk arrives along
   const solid = (x: number, y: number) => map.solid(x, y);
+  const over = renderer.overhung(map);
+  const under = (c: [number, number]) => over[c[1] * map.w + c[0]] === 1;
   for (let pass = 0; pass < pts.length; pass++) {
     let moved = false;
     for (let i = 1; i < pts.length - 1; i++) {
@@ -3000,6 +3163,8 @@ function straightenThread(from: [number, number], path: [number, number][]): [nu
       const swap: [number, number] = [a[0] + (c[0] - b[0]), a[1] + (c[1] - b[1])];
       // Never through a doorway the shortest walk did not already take.
       if (solid(swap[0], swap[1]) || map.triggerAt(swap[0], swap[1])) continue;
+      // Nor in under a lamp's head the routed walk had stepped around.
+      if (under(swap) && !under(b)) continue;
       pts[i] = swap;
       moved = true;
     }
@@ -3029,7 +3194,12 @@ function threadTargetFor(
     if (m === map.id) return { cell: [x, y], adjacent: map.triggerAt(x, y)?.type !== 'door' };
     targetMap = m;
   } else {
-    const live = liveWho(task, state);
+    // The task's lead first (the person its sentence is about), then anyone
+    // named with news; see threadWho. Only people the thread can reach.
+    const live = threadWho(task, state, (id) => {
+      const m = npcMap(id);
+      return !!m && (m === map.id || nextMapToward(map.id, m, state) !== null);
+    });
     let best = Infinity;
     let bestCell: [number, number] | null = null;
     for (const id of live) {
@@ -3057,7 +3227,7 @@ function threadTargetFor(
   let bestAt: [number, number] | null = null;
   for (const d of doorsFrom(map.id, state)) {
     if (d.to !== hop) continue;
-    const p = pathBetween(from, d.at[0], d.at[1], solid);
+    const p = yarnPath(from, d.at[0], d.at[1], solid);
     if (p && p.length < best) {
       best = p.length;
       bestAt = d.at;
@@ -3081,7 +3251,7 @@ function threadPathFrom(
     if (task.who === undefined && !task.at) continue;
     const aim = threadTargetFor(task, from);
     if (!aim) continue;
-    let path = aim.adjacent ? pathBeside(from, aim.cell) : pathBetween(from, aim.cell[0], aim.cell[1], solid);
+    let path = aim.adjacent ? pathBeside(from, aim.cell) : yarnPath(from, aim.cell[0], aim.cell[1], solid);
     // A fixed spot can be a prop with no floor of its own; point beside it.
     if (!path && !aim.adjacent) path = pathBeside(from, aim.cell);
     if (!path) continue;
@@ -3115,7 +3285,15 @@ let threadToastAt = -Infinity;
 let threadShownAt = -Infinity;
 /** What the last summon resolved, published on the dev bridge so automation
  * can hold the thread honest: the task it followed and where it pointed. */
-let threadLast: { task: string; end: [number, number]; loop: [number, number] | null; dressed: boolean } | null = null;
+let threadLast: {
+  task: string;
+  end: [number, number];
+  loop: [number, number] | null;
+  dressed: boolean;
+  tiles: [number, number][];
+  /** Laid cells that lie under a tall prop's overhang (want: none). */
+  under: number;
+} | null = null;
 
 /** Ask the thread, from the player's feet or from a helpful villager's. */
 function summonThread(from: [number, number] = player.occupies()): boolean {
@@ -3138,6 +3316,8 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
     end,
     loop: found.loop,
     dressed: dressedCell(end[0], end[1]),
+    tiles: found.tiles,
+    under: found.tiles.filter(([x, y]) => renderer.overhung(map)[y * map.w + x] === 1).length,
   };
   queueWhisper();
   return true;
@@ -3349,6 +3529,7 @@ function reloadJourney() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
+  declinedGames.clear();
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
   window.clearTimeout(introTimer);
@@ -3423,9 +3604,20 @@ function titleActivate() {
   }
   title.hideTitle();
   if (choice === 'new') {
-    // The old journey is wiped only when the traveler actually sets out:
-    // Esc on the flyleaf used to return to a title whose journal was gone.
-    openFlyleaf(freshSlate);
+    // Begin again never costs a journey when the shelf has room: it starts
+    // in the first blank journal and the old one stays where it was. (Two
+    // presses of Begin again once erased the active journal outright.) The
+    // switch happens only when the traveler actually sets out: Esc on the
+    // flyleaf returns to the cover with nothing touched.
+    const blank = state.hasSave() ? firstBlankSlot() : null;
+    openFlyleaf(
+      blank === null
+        ? freshSlate
+        : () => {
+            setActiveSlot(blank);
+            freshSlate();
+          },
+    );
   } else {
     beginPlay(false);
   }
@@ -3434,6 +3626,7 @@ function titleActivate() {
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
   state.reset();
+  declinedGames.clear();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();
@@ -3724,7 +3917,24 @@ function update(dt: number) {
       audio.back();
     }
   } else if (mode === 'title') {
-    if (title.shelfOpen) {
+    if (title.confirmOpen) {
+      // The erase question owns the keys: arrows choose, Space answers, Esc keeps.
+      if (menuDir) {
+        title.confirmDir(menuDir);
+        audio.select();
+      }
+      if (act) {
+        const did = title.confirmActivate();
+        if (did === 'cancel') audio.back();
+        else if (did === 'confirm' && !title.titleOpen) {
+          // The deed's own callback already sounded (Begin again) or the
+          // shelf took it; nothing more here.
+        } else if (did === 'confirm') audio.confirm();
+      } else if (back || pauseKey) {
+        title.confirmBack();
+        audio.back();
+      }
+    } else if (title.shelfOpen) {
       // The shelf owns the keys: arrows browse, Space acts, Esc backs out.
       if (menuDir) {
         title.shelfDir(menuDir);
@@ -3852,8 +4062,9 @@ function update(dt: number) {
     } else if (act) {
       if (!tryInteract()) {
         // Open air, and a game still waiting on its start flag: the how-to
-        // card offers itself again. Declined lessons are only postponed.
-        const g = pendingGame();
+        // card offers itself again. Declined lessons are only postponed,
+        // and only re-offered back where they were declined.
+        const g = pendingGame() ?? declinedNearHere();
         if (g) showHowto(g);
       }
     } else {
@@ -4550,18 +4761,71 @@ function requestMove(tx: number, ty: number, hit?: Villager) {
       faceAndInteract(tx, ty);
       return;
     }
-    const path = findPath(tx, ty, true);
-    if (!path) return;
+    // Bodies in the way are walked around as they move (replanAuto on a
+    // bump); only the bare map can make a thing truly out of reach.
+    const path =
+      findPath(tx, ty, true) ?? pathBetween(player.occupies(), tx, ty, (x, y) => map.solid(x, y), true);
+    if (!path) {
+      // Nowhere beside it to stand: walk as near as the ground goes.
+      const near = walkGoalNear(tx, ty);
+      const p = near && pathBetween(player.occupies(), near[0], near[1], (x, y) => map.solid(x, y));
+      if (!near || !p || p.length === 0) return;
+      autoPath = p;
+      autoGoal = { kind: 'walk', cell: near };
+      showMark(near[0], near[1]);
+      return;
+    }
     autoPath = path;
     autoGoal = { kind: 'interact', cell: [tx, ty], npc };
     showMark(tx, ty);
-  } else if (!map.solid(tx, ty)) {
-    const path = findPath(tx, ty, false);
+  } else {
+    // A click on a bench, a lamp, a wall, or ground nobody can reach from
+    // here used to do nothing at all: the walk stopped dead at the bench.
+    // Now it walks as close as the ground allows, around every prop.
+    const goal = walkGoalNear(tx, ty);
+    if (!goal) return;
+    const path = findPath(goal[0], goal[1], false) ?? pathBetween(player.occupies(), goal[0], goal[1], (x, y) => map.solid(x, y));
     if (!path || path.length === 0) return;
     autoPath = path;
-    autoGoal = { kind: 'walk', cell: [tx, ty] };
-    showMark(tx, ty);
+    autoGoal = { kind: 'walk', cell: goal };
+    showMark(goal[0], goal[1]);
   }
+}
+
+/**
+ * Where a click on (tx, ty) should walk to: the cell itself when the player
+ * can reach it, else the reachable floor nearest it (by distance to the
+ * click, then by the walk). Reach is judged on the bare map; villagers are
+ * walked around as they come, since they move. Null only when already there.
+ */
+function walkGoalNear(tx: number, ty: number): [number, number] | null {
+  const [px, py] = player.occupies();
+  const w = map.w;
+  const dist = new Map<number, number>([[py * w + px, 0]]);
+  const queue = [py * w + px];
+  let best: [number, number] | null = null;
+  let bestScore = Infinity;
+  for (let head = 0; head < queue.length; head++) {
+    const ci = queue[head]!;
+    const cx = ci % w;
+    const cy = (ci - cx) / w;
+    const d = dist.get(ci)!;
+    const score = (Math.abs(cx - tx) + Math.abs(cy - ty)) * 1000 + d;
+    if (score < bestScore) {
+      bestScore = score;
+      best = [cx, cy];
+    }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      const ni = ny * w + nx;
+      if (!map.inBounds(nx, ny) || dist.has(ni) || map.solid(nx, ny)) continue;
+      dist.set(ni, d + 1);
+      queue.push(ni);
+    }
+  }
+  if (!best || (best[0] === px && best[1] === py)) return null;
+  return best;
 }
 
 /** Recompute the path to the standing goal (a villager stepped into it). */
@@ -5245,6 +5509,21 @@ function installCheats() {
       state.set(flag);
       showHowto(g);
       return `the card for ${flag} is on the table`;
+    },
+    /** Where a cell's centre is on screen (client px), for automation that
+     * clicks or taps the world the way a player does. */
+    screenOf(x: number, y: number) {
+      return worldToScreen(x * TILE + TILE / 2, y * TILE + TILE / 2);
+    },
+    /** Floor cells on this map the thread steps around (under a lamp's head,
+     * a tree's crown), as "x,y" strings. */
+    overhung() {
+      const o = renderer.overhung(map);
+      const out: string[] = [];
+      o.forEach((v, i) => {
+        if (v) out.push(`${i % map.w},${Math.floor(i / map.w)}`);
+      });
+      return out;
     },
     /** The live panel behind a start flag, for automation that plays it. */
     panel(flag: string) {

@@ -23,6 +23,7 @@ import {
   GameState,
   activeSlot,
   eraseSlot,
+  firstBlankSlot,
   packSlot,
   peekSlot,
   setActiveSlot,
@@ -183,6 +184,29 @@ describe('the shelf: journeys stay independent', () => {
     eraseSlot(0);
     assert.ok(!store.has('elsewhere.save') && !store.has('elsewhere.save.bak') && !store.has('wayfare.save'),
       'erasing slot 0 clears primary, backup, and the pre-rename key');
+  });
+
+  it('Begin again finds the first blank journal, and none when all three are written in', () => {
+    // The title starts a new journey here instead of erasing the active one.
+    assert.equal(firstBlankSlot(), 0, 'an empty shelf offers the first journal');
+    store.set('elsewhere.save', rawSave(['a']));
+    assert.equal(firstBlankSlot(), 1);
+    store.set('elsewhere.save.3', rawSave(['c']));
+    assert.equal(firstBlankSlot(), 1, 'a gap in the middle is found');
+    store.set('elsewhere.save.2', rawSave(['b']));
+    assert.equal(firstBlankSlot(), null, 'only a full shelf ever needs the erase question');
+  });
+
+  it('every save stamps when the journal was last walked', () => {
+    setActiveSlot(0);
+    const before = Date.now();
+    new GameState().set('x');
+    const walked = peekSlot(0)?.walked;
+    assert.equal(typeof walked, 'number');
+    assert.ok((walked as number) >= before, 'the stamp is the time of the save');
+    // An old save without the stamp still reads (the shelf just shows no date).
+    store.set('elsewhere.save.2', rawSave(['old']));
+    assert.equal(peekSlot(1)?.walked, undefined);
   });
 });
 

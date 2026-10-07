@@ -7,6 +7,7 @@ import {
   SLOT_COUNT,
   activeSlot,
   eraseSlot,
+  firstBlankSlot,
   packSlot,
   peekSlot,
   setActiveSlot,
@@ -31,8 +32,6 @@ export type TitleChoice = 'new' | 'continue' | 'journals' | 'settings' | 'credit
  * The same capability test as keysOrTaps and the pad, so every surface
  * agrees; desktop pointers are fine, never coarse, so nothing changes there. */
 const COARSE = isCoarseTouch();
-/** The second press that confirms: a key on a desk, a finger on glass. */
-const AGAIN = COARSE ? 'tap again' : 'press again';
 
 /**
  * One quiet line under Continue: where the journey paused and how far the
@@ -104,8 +103,48 @@ function flyleafLine(data: SaveData | null): string | null {
   return `${name} &middot; ${where} &middot; ${n} page${n === 1 ? '' : 's'}`;
 }
 
-/** Hand a packed journal to the browser as a small download. */
-function downloadPack(name: string | null, text: string) {
+/**
+ * When a journal was last written in, as the shelf says it: today,
+ * yesterday, or a short date (with the year once it is not this one).
+ * Saves from before the date was kept simply have no line.
+ */
+function walkedLine(ms: unknown): string | null {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return null;
+  const d = new Date(ms);
+  const now = new Date();
+  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const ago = Math.round((day(now) - day(d)) / 86400000);
+  if (ago <= 0) return 'last walked today';
+  if (ago === 1) return 'last walked yesterday';
+  const opts: Intl.DateTimeFormatOptions =
+    d.getFullYear() === now.getFullYear()
+      ? { day: 'numeric', month: 'short' }
+      : { day: 'numeric', month: 'short', year: 'numeric' };
+  return `last walked ${d.toLocaleDateString(undefined, opts)}`;
+}
+
+/**
+ * A real question before anything is erased: a small card with the journal
+ * named, plain words about what will be lost, and two buttons. The safe
+ * one is chosen first, and the card ignores presses for a beat after it
+ * opens, so a double press or a double tap can never answer it.
+ */
+type ConfirmCard = {
+  kicker: string;
+  body: string;
+  keep: string;
+  act: string;
+  /** 0 = keep (the default), 1 = act. */
+  sel: 0 | 1;
+  openedAt: number;
+  onAct: () => void;
+};
+/** How long a fresh confirm card ignores presses (ms). */
+const CONFIRM_SETTLE_MS = 450;
+
+/** Hand a packed journal to the browser as a small download; returns the
+ * file's name so the shelf can say where it went. */
+function downloadPack(name: string | null, text: string): string {
   const slug =
     (name ?? '')
       .trim()
@@ -115,12 +154,14 @@ function downloadPack(name: string | null, text: string) {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
   const a = document.createElement('a');
   a.href = url;
-  a.download = `zoila-journal-${slug}.soup`;
+  const file = `zoila-journal-${slug}.soup`;
+  a.download = file;
   document.body.appendChild(a);
   a.click();
   a.remove();
   // Revoked on a delay so slower browsers finish reading the blob first.
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return file;
 }
 
 /** What each shelf row can do. Blank journals only open or receive; a
@@ -149,8 +190,10 @@ export class TitleScreen {
   /** Spent after the first shimmer so returning from the shelf, settings,
    * or credits does not replay it. */
   private shimmered = false;
-  /** "Begin again" over a real save arms first, erases second. */
-  private armNew = false;
+  /** The erase question, when one is being asked; see ConfirmCard. */
+  private confirm: ConfirmCard | null = null;
+  /** Begin again has a blank journal to start in (nothing is erased). */
+  private blankFree = false;
   /** The welcome-back line under Continue; null when there is nothing to say. */
   private welcomeBack: string | null = null;
   /** The journal on the table has been written to its last page. */
@@ -160,11 +203,6 @@ export class TitleScreen {
   private shelf = false;
   private shelfRow = 0;
   private shelfVerb = 0;
-  /** Shelf verbs that change a journal arm first, act second, like Begin
-   * again: erase, unpack-over, and the second reading. */
-  private shelfArmed: 'erase' | 'replace' | 'second' | null = null;
-  /** A valid unpacked journal waiting on a confirm over an occupied slot. */
-  private pendingImport: { row: number; raw: string } | null = null;
   /** One quiet line under the rows: gentle rejections and confirmations. */
   private shelfNote: string | null = null;
 
@@ -178,6 +216,8 @@ export class TitleScreen {
      * engine owns everything after: the fresh journey, the inherited words,
      * the flyleaf. The shelf only carries the request. */
     private onSecondReading?: (row: number) => void,
+    /** Called when Begin again is confirmed over the last full journal. */
+    private onEraseAndBegin?: () => void,
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
@@ -185,7 +225,7 @@ export class TitleScreen {
     // pointerdown, before the steer's re-render can move the verbs line
     // under the point, and acted on at pointerup so the unpack verb's file
     // picker still carries the browser's user activation.
-    onTouchTap(this.titleEl, () => this.shelfOpen, (t) => this.shelfTap(t));
+    onTouchTap(this.titleEl, () => this.shelfOpen || this.confirmOpen, (t) => this.shelfTap(t));
   }
 
   get titleOpen(): boolean {
@@ -197,7 +237,8 @@ export class TitleScreen {
 
   showTitle(hasSave: boolean) {
     this.hasSave = hasSave;
-    this.armNew = false;
+    this.confirm = null;
+    this.blankFree = hasSave && firstBlankSlot() !== null;
     this.shelf = false;
     this.welcomeBack = hasSave ? welcomeBackLine() : null;
     this.finished = hasSave && savedFlag('story.end');
@@ -224,11 +265,12 @@ export class TitleScreen {
 
   hideTitle() {
     this.shelf = false;
+    this.confirm = null;
     this.titleEl.hidden = true;
   }
 
   /** With no argument, Nani's framing letter. With one, mail from a friend.
-   * `playerName` (already limited to letters and spaces) personalises the
+   * `playerName` (already limited to letters, spaces, hyphens and apostrophes) personalises the
    * framing letter's salutation; blank keeps Nani's original line. */
   showLetter(mail?: { from: string; body: string[]; typed?: boolean }, playerName?: string | null) {
     this.letterEl.hidden = false;
@@ -268,23 +310,89 @@ export class TitleScreen {
     if (dir === 'up') this.cursor = (this.cursor + n - 1) % n;
     else if (dir === 'down') this.cursor = (this.cursor + 1) % n;
     else return;
-    this.armNew = false; // moving the cursor stands down the warning
     this.renderMenu();
   }
 
   /**
-   * Returns the chosen option when the title menu is confirmed. Choosing
-   * "Begin again" over an existing journal asks twice: the first press arms
-   * a plainly-worded warning, only the second erases. 'none' = nothing yet.
+   * Returns the chosen option when the title menu is confirmed. "Begin
+   * again" starts in a blank journal on the shelf whenever there is one, so
+   * nothing is lost. Only when all three are written in does it ask, on a
+   * confirm card, before the journal on the table is erased; that path
+   * returns 'none' here and the card's own button calls onEraseAndBegin.
    */
   choose(): TitleChoice | 'none' {
+    if (this.confirm) return 'none';
     const id = this.options[this.cursor]?.id ?? 'new';
-    if (id === 'new' && this.hasSave && !this.armNew) {
-      this.armNew = true;
-      this.renderMenu();
+    if (id === 'new' && this.hasSave && firstBlankSlot() === null) {
+      const line = flyleafLine(peekSlot(activeSlot())) ?? 'this journal';
+      this.openConfirm({
+        kicker: 'every journal on the shelf is written in',
+        body: `To begin again here, the journal on the table is erased:<span class="cf-line">${line}</span>Its pages cannot be brought back. To keep it, erase a different journal from the Journals shelf instead.`,
+        keep: 'Keep it',
+        act: 'Erase it and begin',
+        onAct: () => this.onEraseAndBegin?.(),
+      });
       return 'none';
     }
     return id;
+  }
+
+  // ------------------------------------------------------- the confirm card
+
+  get confirmOpen(): boolean {
+    return this.titleOpen && this.confirm !== null;
+  }
+
+  private openConfirm(c: Omit<ConfirmCard, 'sel' | 'openedAt'>) {
+    this.confirm = { ...c, sel: 0, openedAt: performance.now() };
+    this.renderConfirm();
+  }
+
+  /** Any arrow moves between the two buttons. */
+  confirmDir(_dir: Dir) {
+    if (!this.confirm) return;
+    this.confirm.sel = this.confirm.sel === 0 ? 1 : 0;
+    this.renderConfirm();
+  }
+
+  /** Esc: the safe answer. */
+  confirmBack() {
+    this.confirm = null;
+    this.renderConfirm();
+  }
+
+  /** Space or a click on the card's chosen button. 'none' while the card
+   * is still settling (the second half of a double press lands here). */
+  confirmActivate(): 'confirm' | 'cancel' | 'none' {
+    const c = this.confirm;
+    if (!c) return 'none';
+    if (performance.now() - c.openedAt < CONFIRM_SETTLE_MS) return 'none';
+    this.confirm = null;
+    this.renderConfirm();
+    if (c.sel === 0) return 'cancel';
+    c.onAct();
+    return 'confirm';
+  }
+
+  /** The card sits over whatever is behind it (cover or shelf) as its own
+   * element, so the cover's art is never rebuilt under it. */
+  private renderConfirm() {
+    this.titleEl.querySelector('.cf-veil')?.remove();
+    const c = this.confirm;
+    if (!c || this.titleEl.hidden) return;
+    const veil = document.createElement('div');
+    veil.className = 'cf-veil';
+    veil.innerHTML = `
+      <div class="cf-card" role="alertdialog" aria-label="${c.kicker}">
+        <div class="cf-kicker">${c.kicker}</div>
+        <div class="cf-body">${c.body}</div>
+        <div class="cf-btns">
+          <button type="button" class="cf-btn${c.sel === 0 ? ' sel' : ''}" data-cf="0">${c.keep}</button>
+          <button type="button" class="cf-btn cf-act${c.sel === 1 ? ' sel' : ''}" data-cf="1">${c.act}</button>
+        </div>
+        <div class="cf-hint">${COARSE ? 'tap one' : '&#8592;&#8594; choose &nbsp;&middot;&nbsp; Space answers &nbsp;&middot;&nbsp; Esc keeps it'}</div>
+      </div>`;
+    this.titleEl.appendChild(veil);
   }
 
   // ------------------------------------------------------------- the shelf
@@ -297,26 +405,14 @@ export class TitleScreen {
     this.shelf = true;
     this.shelfRow = activeSlot();
     this.shelfVerb = 0;
-    this.shelfArmed = null;
-    this.pendingImport = null;
+    this.confirm = null;
     this.shelfNote = null;
     this.renderShelf();
   }
 
   /** Back to the cover, with Continue and Begin reflecting the shelf. */
   closeShelf() {
-    if (this.shelfArmed || this.pendingImport) {
-      // First Esc stands down a pending erase or unpack, like moving does.
-      this.standDownShelf();
-      this.renderShelf();
-      return;
-    }
     this.showTitle(slotOccupied(activeSlot()));
-  }
-
-  private standDownShelf() {
-    this.shelfArmed = null;
-    this.pendingImport = null;
   }
 
   private shelfVerbs(row: number): ShelfVerb[] {
@@ -329,13 +425,11 @@ export class TitleScreen {
       const d = dir === 'down' ? 1 : SLOT_COUNT - 1;
       this.shelfRow = (this.shelfRow + d) % SLOT_COUNT;
       this.shelfVerb = 0;
-      this.standDownShelf();
       this.shelfNote = null;
     } else {
       const verbs = this.shelfVerbs(this.shelfRow);
       const d = dir === 'right' ? 1 : verbs.length - 1;
       this.shelfVerb = (this.shelfVerb + d) % verbs.length;
-      this.standDownShelf();
     }
     this.renderShelf();
   }
@@ -346,13 +440,6 @@ export class TitleScreen {
    */
   shelfActivate(): 'confirm' | 'warn' | 'none' {
     const row = this.shelfRow;
-    // An unpack waiting on its confirm takes the press, whatever the verb.
-    if (this.pendingImport && this.shelfArmed === 'replace') {
-      const p = this.pendingImport;
-      this.standDownShelf();
-      this.commitImport(p.row, p.raw);
-      return 'confirm';
-    }
     const verb = this.shelfVerbs(row)[this.shelfVerb] ?? 'open';
     if (verb === 'open') {
       setActiveSlot(row);
@@ -367,8 +454,9 @@ export class TitleScreen {
         this.renderShelf();
         return 'none';
       }
-      downloadPack(packed.name, packed.text);
-      this.shelfNote = 'packed; your browser is keeping the copy safe.';
+      const file = downloadPack(packed.name, packed.text);
+      // Say where it went: a file the browser saved, not a copy it keeps.
+      this.shelfNote = `packed into <b>${file}</b>, in your downloads.`;
       this.renderShelf();
       return 'confirm';
     }
@@ -378,32 +466,33 @@ export class TitleScreen {
     }
     if (verb === 'read again') {
       // A second reading: the same fresh journey Begin again starts, except
-      // the words come along. Arm first, act second, like everything here
-      // that changes a journal.
-      if (this.shelfArmed !== 'second') {
-        this.shelfArmed = 'second';
-        this.shelfNote = null;
-        this.renderShelf();
-        return 'warn';
-      }
-      this.standDownShelf();
-      this.onSecondReading?.(row);
-      return 'confirm';
-    }
-    // erase: arm first, act second, exactly like Begin again on the cover.
-    if (this.shelfArmed !== 'erase') {
-      this.shelfArmed = 'erase';
-      this.shelfNote = null; // a stale note under a warning reads wrong
-      this.renderShelf();
+      // the words come along. It changes a journal, so it asks first.
+      this.shelfNote = null;
+      this.openConfirm({
+        kicker: 'a second reading',
+        body: `This journal starts again from its first page:<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>The words you learned come with you. Every other page goes blank.`,
+        keep: 'Not now',
+        act: 'Begin the second reading',
+        onAct: () => this.onSecondReading?.(row),
+      });
       return 'warn';
     }
-    this.standDownShelf();
-    eraseSlot(row);
-    if (row === activeSlot()) this.onShelfChange?.();
-    this.shelfVerb = 0;
-    this.shelfNote = 'erased; the pages are blank again.';
-    this.renderShelf();
-    return 'confirm';
+    // erase: a real question, never a second press.
+    this.shelfNote = null; // a stale note under a question reads wrong
+    this.openConfirm({
+      kicker: 'erase this journal?',
+      body: `<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>Every page in it will be erased. It cannot be brought back.`,
+      keep: 'Keep it',
+      act: 'Erase it',
+      onAct: () => {
+        eraseSlot(row);
+        if (row === activeSlot()) this.onShelfChange?.();
+        this.shelfVerb = 0;
+        this.shelfNote = 'erased; the pages are blank again.';
+        this.renderShelf();
+      },
+    });
+    return 'warn';
   }
 
   /** Open the browser's file picker for a packed journal. The input lives
@@ -436,10 +525,15 @@ export class TitleScreen {
     }
     if (slotOccupied(row)) {
       this.shelfRow = row;
-      this.pendingImport = { row, raw };
-      this.shelfArmed = 'replace';
-      this.shelfNote = `a journal already rests here. ${AGAIN} to shelve the new one over it.`;
+      this.shelfNote = null;
       this.renderShelf();
+      this.openConfirm({
+        kicker: 'a journal already rests here',
+        body: `<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>Shelving the unpacked journal here erases this one. It cannot be brought back.`,
+        keep: 'Keep this one',
+        act: 'Shelve the new one over it',
+        onAct: () => this.commitImport(row, raw),
+      });
       return;
     }
     this.commitImport(row, raw);
@@ -460,12 +554,20 @@ export class TitleScreen {
   // ---- shelf pointer support, in the title's own hover-then-click idiom ----
 
   private onShelfClick = (e: MouseEvent) => {
-    if (touchActive() || !this.shelfOpen) return;
+    if (touchActive() || !(this.shelfOpen || this.confirmOpen)) return;
     this.shelfTap(e.target as HTMLElement);
   };
 
-  /** One tap or click on the shelf, mouse and touch alike. */
+  /** One tap or click on the shelf (or the confirm card), mouse and touch alike. */
   private shelfTap(t: HTMLElement) {
+    if (this.confirm) {
+      // The card owns every tap while it asks; a tap beside it is no answer.
+      const btn = t.closest<HTMLElement>('.cf-btn');
+      if (!btn) return;
+      this.confirm.sel = btn.dataset.cf === '1' ? 1 : 0;
+      this.confirmActivate();
+      return;
+    }
     const verbEl = t.closest<HTMLElement>('.sh-verb');
     if (verbEl) {
       this.steerShelf(verbEl);
@@ -477,13 +579,12 @@ export class TitleScreen {
       // Clicking the journal itself is the primary deed: open it.
       this.shelfRow = Number.parseInt(rowEl.dataset.row ?? '0', 10);
       this.shelfVerb = 0;
-      this.standDownShelf();
       this.shelfActivate();
     }
   }
 
   private onShelfHover = (e: MouseEvent) => {
-    if (touchActive() || !this.shelfOpen) return;
+    if (touchActive() || !this.shelfOpen || this.confirm) return;
     const el = (e.target as HTMLElement).closest<HTMLElement>('.sh-verb, .sh-row');
     if (el) this.steerShelf(el);
   };
@@ -498,11 +599,9 @@ export class TitleScreen {
     if (row === this.shelfRow && verb === this.shelfVerb) return;
     if (row !== this.shelfRow) {
       this.shelfVerb = el.classList.contains('sh-verb') ? verb : 0;
-      this.standDownShelf();
       this.shelfNote = null;
     } else if (verb !== this.shelfVerb) {
       this.shelfVerb = verb;
-      this.standDownShelf();
     }
     this.shelfRow = row;
     this.renderShelf();
@@ -511,22 +610,15 @@ export class TitleScreen {
   private renderShelf() {
     const open = activeSlot();
     const rows = Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const line = flyleafLine(peekSlot(i));
+      const data = peekSlot(i);
+      const line = flyleafLine(data);
+      const when = walkedLine(data?.walked);
       const sel = i === this.shelfRow;
       const verbs = sel
         ? this.shelfVerbs(i)
             .map((v, j) => {
               const on = j === this.shelfVerb;
-              const armed = on && this.shelfArmed;
-              const label =
-                armed === 'erase'
-                  ? `erase it? ${AGAIN}`
-                  : armed === 'replace'
-                    ? `shelve it over? ${AGAIN}`
-                    : armed === 'second'
-                      ? `begin a second reading? the words come with you. ${AGAIN}`
-                      : v;
-              return `<span class="sh-verb${on ? ' on' : ''}${armed ? ' warn' : ''}" data-verb="${j}">${label}</span>`;
+              return `<span class="sh-verb${on ? ' on' : ''}" data-verb="${j}">${v}</span>`;
             })
             .join('<span class="sh-dot">&middot;</span>')
         : '';
@@ -535,6 +627,7 @@ export class TitleScreen {
           <span class="sh-band"></span>
           <div class="sh-body">
             <div class="sh-fly">${sel ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${line ?? 'a blank journal'}${i === open ? '<span class="sh-mark">open on the table</span>' : ''}</div>
+            ${when ? `<div class="sh-when">${when}</div>` : ''}
             ${sel ? `<div class="sh-verbs">${verbs}</div>` : ''}
           </div>
         </div>`;
@@ -553,24 +646,25 @@ export class TitleScreen {
           }</div>
         </div>
       </div>`;
+    this.renderConfirm();
   }
 
   /** One menu row's markup; shared by the full render and the cursor update. */
   private optHtml(i: number): string {
     const o = this.options[i];
     if (!o) return '';
-    const label =
-      o.id === 'new' && this.armNew ? `Erase the journal and begin again? (${AGAIN})` : o.label;
+    // Begin again says, before it is chosen, that nothing will be lost.
     const sub =
       o.id === 'continue' && this.welcomeBack
         ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
-        : '';
-    return `${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${label}${sub}`;
+        : o.id === 'new' && this.blankFree && i === this.cursor
+          ? '<div class="t-opt-sub">in a blank journal; this one stays on the shelf</div>'
+          : '';
+    return `${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${o.label}${sub}`;
   }
 
   private optClass(i: number): string {
-    const o = this.options[i];
-    return `t-opt${i === this.cursor ? ' sel' : ''}${o?.id === 'new' && this.armNew ? ' warn' : ''}`;
+    return `t-opt${i === this.cursor ? ' sel' : ''}`;
   }
 
   /**
@@ -631,6 +725,7 @@ export class TitleScreen {
       </div>`;
     const art = this.titleEl.querySelector('.t-art');
     if (art) art.insertBefore(makeCoverArt(), art.firstChild);
+    this.renderConfirm();
   }
 }
 
@@ -654,12 +749,19 @@ const CC_ROWS: { label: string; options: string[] }[] = [
   { label: 'hair', options: CC_HAIRS },
 ];
 
-/** Keep whatever the keyboard offers down to letters and single spaces. */
-function ccClean(raw: string): string {
+/** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
+const NAME_MAX = 24;
+/** Keep whatever the keyboard offers down to letters, single spaces, and the
+ * hyphens and apostrophes real names carry (Bartholomew-Ashwini, O'Neill,
+ * N’Dour). Nothing that could be markup survives. */
+export function ccClean(raw: string): string {
   return raw
-    .replace(/[^\p{L} ]/gu, '')
+    .replace(/[\u2018\u2019\u02bc]/g, '\u2019')
+    .replace(/'/g, '\u2019')
+    .replace(/[^\p{L}\p{M} \-\u2019]/gu, '')
     .replace(/ {2,}/g, ' ')
-    .slice(0, 14);
+    .replace(/-{2,}/g, '-')
+    .slice(0, NAME_MAX);
 }
 
 export class NamingCard {
@@ -820,7 +922,7 @@ export class NamingCard {
         <div class="cc-paper">
           <div class="cc-kicker">the name on the flyleaf</div>
           <p class="cc-copy">Nani left the flyleaf blank for you. What do the villages call you?</p>
-          <input class="cc-input" type="text" maxlength="14" spellcheck="false"
+          <input class="cc-input" type="text" maxlength="${NAME_MAX}" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>
           <div class="cc-hint">${

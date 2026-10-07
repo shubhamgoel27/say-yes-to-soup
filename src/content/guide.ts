@@ -216,6 +216,28 @@ export function liveWho(task: { who?: string | string[] }, state: GuideState): s
 }
 
 /**
+ * Who the thread may point at for a task, in the order it should try them.
+ * A crowd task ("meet the village") is written around its first name: the
+ * chip says "Marisol sells lisa and directions", "the galley is the ship's
+ * front door". While that lead still has news, the thread goes to them,
+ * across a door if need be, and never to a nearer stranger the sentence
+ * only mentions in passing (it once pointed at Rafa while the chip named
+ * Marisol, and at Joseph while it named the galley). Once the lead is done,
+ * anyone named who still has news will do, nearest first.
+ */
+export function threadWho(
+  task: { who?: string | string[] },
+  state: GuideState,
+  /** Can the thread get to this person from here at all? A lead behind no
+   * door the player can take yet yields to the rest. */
+  reachable: (id: string) => boolean = () => true,
+): string[] {
+  const live = liveWho(task, state).filter(reachable);
+  const lead = whoOf(task)[0];
+  return lead !== undefined && live.includes(lead) ? [lead] : live;
+}
+
+/**
  * The open threads, most pressing first: in the live chapter, conditions
  * met, and (for a task that names people) somebody named still has news.
  * The chip shows the first; the thread follows the first that resolves.

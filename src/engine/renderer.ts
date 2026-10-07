@@ -1316,6 +1316,67 @@ export class Renderer {
     };
   }
 
+  /**
+   * Floor cells whose middle is painted over by a tall prop standing below
+   * them: the cell above a lamp holds the lamp's head, the cell above a tree
+   * its canopy. Yarn laid there reads as running through the lamp. The red
+   * thread routes around these when it can. Read off the art's own pixels
+   * where the thread would lie, so a thin lamp only claims its own column
+   * and a tree's air beside the canopy stays floor. Worked out once per map.
+   */
+  overhung(map: TileMap): Uint8Array {
+    const hit = this.overhangCache.get(map.id);
+    if (hit) return hit;
+    const out = new Uint8Array(map.w * map.h);
+    const pixels = new Map<HTMLCanvasElement, Uint8ClampedArray | null>();
+    const alphaAt = (cvs: HTMLCanvasElement, px: number, py: number): number => {
+      let data = pixels.get(cvs);
+      if (data === undefined) {
+        try {
+          data = cvs.getContext('2d')?.getImageData(0, 0, cvs.width, cvs.height).data ?? null;
+        } catch {
+          data = null;
+        }
+        pixels.set(cvs, data);
+      }
+      if (!data) return 0;
+      const x = Math.round(px);
+      const y = Math.round(py);
+      if (x < 0 || y < 0 || x >= cvs.width || y >= cvs.height) return 0;
+      return data[(y * cvs.width + x) * 4 + 3] ?? 0;
+    };
+    for (let cy = 0; cy < map.h; cy++) {
+      for (let cx = 0; cx < map.w; cx++) {
+        const o = map.object(cx, cy);
+        if (!o?.tall || o.solid !== true || o.t === 'blocked') continue;
+        const img = this.tiles.tallImage(o.t, cx, cy);
+        if (!img) continue;
+        const rows = Math.ceil(img.oy / S);
+        const left = Math.ceil(img.ox / S);
+        const right = Math.ceil((img.cvs.width - img.ox - S) / S);
+        for (let dy = 1; dy <= rows; dy++) {
+          for (let dx = -left; dx <= right; dx++) {
+            const x = cx + dx;
+            const y = cy - dy;
+            if (!map.inBounds(x, y) || map.solid(x, y)) continue;
+            // Where the yarn would lie in this cell, in the art's own pixels:
+            // the art's origin sits at (cx*S - ox, cy*S - oy) in cell space.
+            const ax = (x - cx) * S + img.ox + S / 2;
+            const ay = (y - cy) * S + img.oy + S / 2 + 3 * A;
+            let covered = false;
+            for (const sx of [-4, 0, 4]) {
+              if (alphaAt(img.cvs, ax + sx * A, ay) > 140) covered = true;
+            }
+            if (covered) out[y * map.w + x] = 1;
+          }
+        }
+      }
+    }
+    this.overhangCache.set(map.id, out);
+    return out;
+  }
+  private overhangCache = new Map<string, Uint8Array>();
+
   /** True while the thread is still out of the band. */
   get threadOut(): boolean {
     return this.thread !== null;

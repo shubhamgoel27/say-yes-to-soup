@@ -325,7 +325,7 @@ export const BUSAN_NODES: NodeMap = {
   'c5.sunhee.bye': {
     lines: [
       { text: 'First light, the auction spilling up the lane. Sun-hee does not look up. She presses your bag into your hands, the extra fish already in it.' },
-      { who: 'Sun-hee', text: 'Bap meogeosseo? Of course not. Eat on the ferry.' },
+      { who: 'Sun-hee', text: 'Bap meogeosseo? Of course not. Eat on the boat.' },
       { text: 'She has turned to the next customer. You are halfway down the quay before you understand that was goodbye.' },
     ],
     effects: ['set:c5.bye', 'journal:customs.dawnmarket', 'set:c5.complete'],

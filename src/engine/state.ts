@@ -54,6 +54,9 @@ export type SaveData = {
   // Added later; saves from before the flyleaf simply have neither.
   name?: string | null;
   look?: PlayerLook | null;
+  /** When this journal was last written to (epoch ms), for the shelf's
+   * "last walked" line. Saves from before it simply have none. */
+  walked?: number;
 };
 
 /** Parse a stored save, returning null for anything we cannot trust. */
@@ -128,6 +131,13 @@ export function slotOccupied(slot: number): boolean {
   } catch {
     return false;
   }
+}
+
+/** The first blank journal on the shelf, or null when all three are written
+ * in. Begin again starts here, so a new journey never costs an old one. */
+export function firstBlankSlot(): number | null {
+  for (let i = 0; i < SLOT_COUNT; i++) if (!slotOccupied(i)) return i;
+  return null;
 }
 
 /** Erase one journal from the shelf: primary, backup, and (slot 0) the
@@ -438,6 +448,7 @@ export class GameState {
         place: this.place,
         name: this.playerName,
         look: this.playerLook,
+        walked: Date.now(),
       });
       // Keep the last known-good copy before overwriting. A journey can be
       // thirty hours long; a single torn write must never be able to end it.
