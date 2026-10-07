@@ -154,7 +154,9 @@ function downloadPack(name: string | null, text: string): string {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
   const a = document.createElement('a');
   a.href = url;
-  const file = `zoila-journal-${slug}.soup`;
+  // Not her name: Carmen says "Zoila" out loud in chapter one, and a file
+  // in the downloads folder must not say it first.
+  const file = `nanis-journal-${slug}.soup`;
   a.download = file;
   document.body.appendChild(a);
   a.click();
