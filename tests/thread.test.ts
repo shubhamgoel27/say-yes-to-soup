@@ -182,6 +182,8 @@ class Walker {
   log: string[] = [];
   private pendingTravel: string | null = null;
   private pendingLetters: string[] = [];
+  /** Conversations this player never has (walks past that person). */
+  avoid: ((nodeId: string) => boolean) | null = null;
 
   constructor() {
     // The travel effect warps once the words close; the walker just goes.
@@ -206,6 +208,7 @@ class Walker {
     dst.journal = new Set(src.journal);
     c.state.errand = this.state.errand;
     c.place = this.place;
+    c.avoid = this.avoid;
     return c;
   }
 
@@ -221,7 +224,7 @@ class Walker {
 
   /** Every open branch of a conversation, effects applied on entry. */
   walk(nodeId: string, seen = new Set<string>()) {
-    if (seen.has(nodeId)) return;
+    if (seen.has(nodeId) || this.avoid?.(nodeId)) return;
     seen.add(nodeId);
     const node = NODES[nodeId];
     if (!node) return;
@@ -343,8 +346,9 @@ const MILESTONES = CHAPTERS.map((c, i) => ({
   next: CHAPTERS[i + 1]?.arrival ?? null,
 }));
 
-function journey(): string[] {
+function journey(avoid: ((nodeId: string) => boolean) | null = null): string[] {
   const w = new Walker();
+  w.avoid = avoid;
   const dumped: unknown[] = [];
   const problems: string[] = [];
   const said = new Set<string>();
@@ -449,7 +453,7 @@ function journey(): string[] {
     }
   }
   if (process.env.THREAD_LOG) console.log(w.log.join('\n'));
-  if (process.env.THREAD_DUMP) {
+  if (process.env.THREAD_DUMP && !avoid) {
     const spawns = Object.fromEntries(Object.entries(REGION_MAPS).map(([id, m]) => [id, m.spawn]));
     writeFileSync(process.env.THREAD_DUMP, JSON.stringify({ states: dumped, spawns }));
   }
@@ -460,6 +464,20 @@ describe("following only Nani's thread", () => {
   it('finishes every chapter, never resting, never circling, never pointing at nothing', () => {
     const problems = journey();
     assertKnown(problems, KNOWN_WALK);
+  });
+
+  it('a player who never stops at Pilar\'s bridge is still led home, and never gets her mail', () => {
+    // She is optional in the first chapter. Skipping her must not leave a
+    // mail task circling a letter that will never come, nor hand over one.
+    let read: string[] = [];
+    const problems = journey((id) => {
+      if (id.startsWith('pilar.')) return true;
+      if (/^c\d+\.post\.pilar$|^mar\.post\.send$/.test(id)) read.push(id);
+      return false;
+    });
+    assert.deepEqual(problems, []);
+    read = [...new Set(read)];
+    assert.deepEqual(read, [], 'a stranger to Pilar was handed her mail');
   });
 
   it('every task.at names a door to walk through or a thing to face', () => {
