@@ -268,8 +268,13 @@ export const SICILY_TASKS: TaskDef[] = [
     who: 'mangbenC8',
   },
   {
-    when: { has: ['c8.walk.done'], not: ['c8.complete'] },
+    when: { has: ['c8.walk.done'], not: ['c8.signed', 'c8.complete'] },
     text: 'Fed, dealt in, rowed, and walked: the town may be ready to sign you out. Signor Patanè keeps the ledger at the end of the mole.',
+    who: 'patane',
+  },
+  {
+    when: { has: ['c8.signed'], not: ['c8.complete'] },
+    text: 'Signed out. Half the town is drifting down the mole to see you off, and nobody agrees how. Patanè will walk you down.',
     who: 'patane',
   },
   {
@@ -279,7 +284,7 @@ export const SICILY_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c8.complete'] },
-    text: 'Veracruz exists, in principle. Until the gangway calls: granita at Alfio’s, the dusk walk, and everyone who fed you owed a goodbye.',
+    text: 'The horn has had the last word. Veracruz exists, in principle; the gangway is at the end of the mole, by Patanè’s table.',
     who: 'patane',
   },
   {
