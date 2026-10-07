@@ -145,7 +145,9 @@ export const BUSAN_NPCS: NpcDef[] = [
     id: 'gong',
     name: 'Mr. Gong',
     map: 'busan',
-    pos: [37, 24],
+    // One step east of the crane's right leg: at 37 the leg ran straight
+    // through him for every word at his window.
+    pos: [38, 24],
     range: 0,
     look: {
       skin: '#d3a678',
@@ -184,7 +186,8 @@ export const BUSAN_NPCS: NpcDef[] = [
     name: 'Hana',
     map: 'busan',
     when: { has: ['c5.arrived'], not: ['c5.berth'] },
-    pos: [35, 25],
+    // West of the crane, with her wander kept clear of its left leg.
+    pos: [33, 25],
     range: 1,
     look: {
       skin: '#e8c39a',
