@@ -855,6 +855,26 @@ let plateTimers: number[] = [];
 let plateHeld = false;
 let plateWaiting: { text: string; holdMs: number } | null = null;
 let plateLive: { text: string; holdMs: number } | null = null;
+/** A phone lying down moves the chip out of the plate's way in CSS. */
+const PLATE_PUSHES_CHIP = matchMedia('(pointer: coarse) and (max-height: 500px) and (orientation: landscape)');
+/**
+ * The plate is centered and as wide as its name; the chip is in the corner
+ * and as tall as its thread. A long name over a three-line chip ran under it
+ * ("THE RIVIERA OF THE CYCLOPS" lost its T at 1280x800), so when the two
+ * would touch, the plate steps down below the chip for this showing.
+ */
+function clearPlateOfChip() {
+  plateEl.style.top = '';
+  if (PLATE_PUSHES_CHIP.matches || errandEl.hidden) return;
+  const p = plateEl.getBoundingClientRect();
+  const e = errandEl.getBoundingClientRect();
+  if (e.width === 0) return;
+  const GAP = 10;
+  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top < e.bottom + GAP && p.bottom > e.top - GAP) {
+    plateEl.style.top = `${Math.round(e.bottom + GAP)}px`;
+  }
+}
+
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
   plateTimers = [];
@@ -867,7 +887,10 @@ function showPlate(text: string, holdMs = 4200) {
   plateEl.textContent = text;
   plateLive = { text, holdMs };
   plateTimers = [
-    window.setTimeout(() => plateEl.classList.add('show'), 350),
+    window.setTimeout(() => {
+      clearPlateOfChip();
+      plateEl.classList.add('show');
+    }, 350),
     window.setTimeout(() => {
       plateEl.classList.remove('show');
       plateLive = null;
