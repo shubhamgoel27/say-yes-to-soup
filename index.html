@@ -344,17 +344,23 @@
       /* Nani's whisper: the thread's once-per-chapter line, in her hand.
        * Same paper and slide as every toast (nothing new for reduced motion
        * to mind), tinted the thread's own red and set in the margin script. */
+      /* It never runs past the frame's edge (it once did, over the ship's red
+       * containers): sized inside the toast column, padding included, and it
+       * settles from above rather than sliding in from the edge. Fully opaque
+       * paper, so a busy deck behind it cannot eat the words. */
       .toast.wh {
-        max-width: min(46vw, 380px);
+        box-sizing: border-box;
+        max-width: min(100%, 380px);
+        background: #f4ead6;
         font-family: var(--hand);
         font-style: normal;
         font-size: var(--fs-hand175);
         line-height: 1.25;
         color: #7c2f18;
         border-left: 3px solid var(--terracotta);
-        transform: translateX(10px) rotate(-0.6deg);
+        transform: translateY(-6px) rotate(-0.6deg);
       }
-      .toast.wh.in { transform: translateX(0) rotate(-0.6deg); }
+      .toast.wh.in { transform: translateY(0) rotate(-0.6deg); }
 
       /* ---- errand chip ---- */
       #errand {
@@ -1799,6 +1805,9 @@
       .p-row.sel { color: var(--ink); }
       .p-label { font-family: var(--hand); font-size: 20px; }
       .p-value { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+      .p-bar { display: inline-flex; gap: 2px; vertical-align: middle; }
+      .p-cell { display: block; width: 8px; height: 13px; border: 1px solid currentColor; opacity: 0.35; box-sizing: border-box; }
+      .p-cell.on { background: currentColor; opacity: 0.85; }
       .p-hint-line { margin-top: 10px; font-size: var(--fs-12); font-style: italic; color: #6b5334; }
       .p-g-all {
         margin-top: 12px;
@@ -2533,7 +2542,7 @@
         }
         #toasts { max-width: none; }
         .toast { max-width: 100%; box-sizing: border-box; }
-        .toast.wh { max-width: min(84vw, 380px); }
+        .toast.wh { max-width: min(100%, 380px); }
 
         /* ---- the dialogue box: full width, riding the home bar ---- */
         #textbox {
@@ -2678,6 +2687,24 @@
        * plus title and hint). Cap the scene by the room's height, keep the
        * panel clear of the touch pad in the corners, and let anything left
        * over scroll. Coarse-gated: a short desktop window never changes. */
+      /* A short landscape screen: Nani's letter is widened and written a
+       * little smaller, rules and all, so the whole sheet and the line
+       * under it ("tap to put the letter down") fit without scrolling. At
+       * 412px tall the hint used to sit below the fold. */
+      @media (max-height: 520px) and (orientation: landscape) {
+        .letter-fold { width: min(100vw - 24px, 680px); max-width: none; }
+        .letter-paper { padding: 14px 26px 4px; background-position: 0 11px, 0 0, 0 0; }
+        .letter-paper {
+          background-image:
+            repeating-linear-gradient(180deg, transparent 0 22px, rgba(122, 90, 58, 0.14) 22px 23px),
+            url('assets/textures/paper-grain-white.jpg'),
+            linear-gradient(#f4ead6, #e9dabb);
+        }
+        .letter-body { font-size: 17px; line-height: 23px; }
+        .letter-body p { margin: 0 0 23px; }
+        .letter-sign { margin: 0; }
+        .letter-hint { padding-top: 2px; padding-bottom: 2px; }
+      }
       @media (pointer: coarse) and (max-height: 500px) {
         .w-panel {
           width: min(96vw, 700px);
@@ -2837,7 +2864,13 @@
           transition: opacity 0.25s ease, top 0.35s ease;
         }
         .toast, .toast.wh { max-width: 100%; box-sizing: border-box; }
-        #plate.show ~ #errand, #plate.show ~ #toasts { top: calc(46px + env(safe-area-inset-top)); }
+        #plate.show ~ #errand, #plate.show ~ #toasts {
+          top: calc(46px + env(safe-area-inset-top));
+          transition: opacity 0.25s ease, top 0.35s ease;
+        }
+        /* Back up only once the nameplate has finished fading (1.1s): the
+         * chip used to rise into a plate still half visible and sit under it. */
+        #errand, #toasts { transition: opacity 0.25s ease, top 0.35s ease 1.1s; }
 
         /* The how-to card opens as a spread: the telling on the left leaf,
          * the hard telling and the choices on the right, so Begin and Not
@@ -3044,11 +3077,16 @@
           position: fixed;
           right: calc(12px + env(safe-area-inset-right, 0px));
           bottom: calc(280px + env(safe-area-inset-bottom, 0px));
-          width: 44px;
+          min-width: 44px;
           height: 44px;
-          display: grid;
-          place-items: center;
-          padding: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          padding: 0 5px;
+          font-family: 'Literata', Georgia, serif;
+          color: var(--ink);
           background: rgba(244, 234, 214, 0.95);
           border: 1px solid var(--ink);
           border-left: 3px solid var(--terracotta);
@@ -3064,6 +3102,7 @@
          * the top-right corner too; the pin waits for the world. The cover
          * keeps it: a fresh landscape boot needs the road to the spread. */
         body:has(#vpad.vp-quiet):not(:has(#title:not([hidden]))) #sidewayspin { visibility: hidden; }
+        .sw-pin-word { font-size: 9.5px; line-height: 1; letter-spacing: 0.02em; white-space: nowrap; }
         .sw-phone-small {
           width: 12px;
           height: 20px;

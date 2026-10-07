@@ -275,7 +275,11 @@ function ensurePin(): HTMLButtonElement {
   const phone = document.createElement('span');
   phone.className = 'sw-phone sw-phone-small';
   phone.setAttribute('aria-hidden', 'true');
-  pin.appendChild(phone);
+  // Says what it does in words: a bare phone glyph in the corner read as a
+  // mystery button. syncPin keeps the word in step with the orientation.
+  const word = document.createElement('span');
+  word.className = 'sw-pin-word';
+  pin.append(phone, word);
   pin.addEventListener('click', () => {
     void goSideways();
   });
@@ -410,6 +414,8 @@ function syncPin(): void {
   const label = inPortrait() ? 'Lay the journal sideways' : 'Back to the full spread';
   pin.title = label;
   pin.setAttribute('aria-label', label);
+  const word = pin.querySelector('.sw-pin-word');
+  if (word) word.textContent = inPortrait() ? 'sideways' : 'full screen';
 }
 
 // ---------------------------------------------------------------------------

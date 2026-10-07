@@ -270,7 +270,7 @@ export class TitleScreen {
   }
 
   /** With no argument, Nani's framing letter. With one, mail from a friend.
-   * `playerName` (already limited to letters and spaces) personalises the
+   * `playerName` (already limited to letters, spaces, hyphens and apostrophes) personalises the
    * framing letter's salutation; blank keeps Nani's original line. */
   showLetter(mail?: { from: string; body: string[]; typed?: boolean }, playerName?: string | null) {
     this.letterEl.hidden = false;
@@ -749,12 +749,19 @@ const CC_ROWS: { label: string; options: string[] }[] = [
   { label: 'hair', options: CC_HAIRS },
 ];
 
-/** Keep whatever the keyboard offers down to letters and single spaces. */
-function ccClean(raw: string): string {
+/** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
+const NAME_MAX = 24;
+/** Keep whatever the keyboard offers down to letters, single spaces, and the
+ * hyphens and apostrophes real names carry (Bartholomew-Ashwini, O'Neill,
+ * N’Dour). Nothing that could be markup survives. */
+export function ccClean(raw: string): string {
   return raw
-    .replace(/[^\p{L} ]/gu, '')
+    .replace(/[\u2018\u2019\u02bc]/g, '\u2019')
+    .replace(/'/g, '\u2019')
+    .replace(/[^\p{L}\p{M} \-\u2019]/gu, '')
     .replace(/ {2,}/g, ' ')
-    .slice(0, 14);
+    .replace(/-{2,}/g, '-')
+    .slice(0, NAME_MAX);
 }
 
 export class NamingCard {
@@ -915,7 +922,7 @@ export class NamingCard {
         <div class="cc-paper">
           <div class="cc-kicker">the name on the flyleaf</div>
           <p class="cc-copy">Nani left the flyleaf blank for you. What do the villages call you?</p>
-          <input class="cc-input" type="text" maxlength="14" spellcheck="false"
+          <input class="cc-input" type="text" maxlength="${NAME_MAX}" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>
           <div class="cc-hint">${

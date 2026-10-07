@@ -245,18 +245,26 @@ export class PauseMenu {
 
   private settingsItems() {
     const pct = (v: number) => Math.round(v * 10);
+    // Ten cells of one fixed width: two different glyphs for full and empty
+    // (▋ and ░) set at different widths, so a bar that was not full drew
+    // wider or narrower than its neighbours.
+    const bar = (v: number) => {
+      const n = pct(v);
+      const cells = Array.from({ length: 10 }, (_, i) => `<i class="p-cell${i < n ? ' on' : ''}"></i>`).join('');
+      return `<span class="p-bar" role="img" aria-label="${n} of 10">${cells}</span>`;
+    };
     const speedNames: Record<Prefs['textSpeed'], string> = {
       cozy: 'cozy', brisk: 'brisk', instant: 'instant',
     };
     return [
       {
         label: 'Music',
-        value: () => '▋'.repeat(pct(this.audio.mix.music)) + '░'.repeat(10 - pct(this.audio.mix.music)),
+        value: () => bar(this.audio.mix.music),
         adjust: (d: number) => this.audio.setMix('music', this.audio.mix.music + d * 0.1),
       },
       {
         label: 'Sounds',
-        value: () => '▋'.repeat(pct(this.audio.mix.sfx)) + '░'.repeat(10 - pct(this.audio.mix.sfx)),
+        value: () => bar(this.audio.mix.sfx),
         adjust: (d: number) => {
           this.audio.setMix('sfx', this.audio.mix.sfx + d * 0.1);
           this.audio.blip();
@@ -264,12 +272,13 @@ export class PauseMenu {
       },
       {
         label: 'Ambience',
-        value: () => '▋'.repeat(pct(this.audio.mix.ambience)) + '░'.repeat(10 - pct(this.audio.mix.ambience)),
+        value: () => bar(this.audio.mix.ambience),
         adjust: (d: number) => this.audio.setMix('ambience', this.audio.mix.ambience + d * 0.1),
       },
       {
         label: 'Sound',
-        value: () => (this.audio.muted ? 'off (M)' : 'on (M)'),
+        // The (M) is a key; a touch screen has none to press.
+        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() ? '' : ' (M)'),
         adjust: () => void this.audio.toggleMute(),
       },
       {

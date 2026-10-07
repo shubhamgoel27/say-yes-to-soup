@@ -769,7 +769,11 @@ function journalClosing(): boolean {
 
 state.on('journal', (id) => {
   const entry = JOURNAL_BY_ID.get(id);
-  if (!journalClosing()) toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
+  // A word's page is titled with the word, and a short one ("Pe") read as a
+  // toast cut off mid-name; the word goes in quotes and says it is a word.
+  const title = entry?.title ?? id;
+  const named = entry?.tab === 'words' ? `the word \u201c${title}\u201d` : title;
+  if (!journalClosing()) toasts.show(`✎ a page fills: ${named}`);
   audio.chime();
   {
     const [px, py] = player.renderPos();
