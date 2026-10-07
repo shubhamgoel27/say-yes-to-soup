@@ -335,7 +335,25 @@ function paint(): { ground: string[]; objects: string[] } {
     objects.push(o);
   }
   sealPockets(ground, objects);
+  pavePatches(ground);
   return { ground, objects };
+}
+
+/**
+ * Where two lanes and the piazza nearly meet, the ellipses leave a single
+ * cell of dirt with paving on three or four sides, and it blends into a
+ * brown smudge on the setts. A street that is paved round a cell is paved
+ * over it too.
+ */
+function pavePatches(ground: string[]) {
+  const at = (x: number, y: number) => ground[y]?.[x];
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      if (at(x, y) !== 'd') continue;
+      const paved = [at(x + 1, y), at(x - 1, y), at(x, y + 1), at(x, y - 1)].filter((g) => g === 'b').length;
+      if (paved >= 3) ground[y] = `${ground[y]?.slice(0, x)}b${ground[y]?.slice(x + 1)}`;
+    }
+  }
 }
 
 const { ground, objects } = paint();
