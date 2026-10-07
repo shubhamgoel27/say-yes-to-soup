@@ -278,8 +278,13 @@ export const SICILY_TASKS: TaskDef[] = [
     who: 'patane',
   },
   {
-    when: { has: ['c8.arrived'], not: ['letter.read.sicily.pilar'] },
+    when: { has: ['c8.arrived', 'met.pilar'], not: ['letter.read.sicily.pilar'] },
     text: 'The POSTE window in the piazza is open, technically. Mail from home crosses two oceans slower than gossip; there should be some waiting.',
+    at: ['sicily', 27, 17],
+  },
+  {
+    when: { has: ['c8.arrived'], not: ['met.pilar', 'letter.read.sicily.mariamma'] },
+    text: 'The POSTE window in the piazza is open, technically. Mail crosses two oceans slower than gossip; there should be some waiting.',
     at: ['sicily', 27, 17],
   },
   {

@@ -31,7 +31,7 @@ export const CHAPTER: ChapterDef = {
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
         'Your puffer fish watches the museum door like it is waiting for somebody. I know exactly how it feels, which is the third sentence, and the last one I will admit to.',
-        'INVOICE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
+        'BALANCE DUE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
       ],
     },
     {
@@ -42,7 +42,7 @@ export const CHAPTER: ChapterDef = {
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
         'Your four-armed sea star sits in the museum reaching in every direction at once. I know exactly how it feels, which is the third sentence, and the last one I will admit to.',
-        'INVOICE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
+        'BALANCE DUE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
       ],
     },
     {
@@ -53,7 +53,7 @@ export const CHAPTER: ChapterDef = {
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
         'Your comma claw sits in the museum like a sentence waiting to go on. I know exactly how it feels, which is the third sentence, and the last one I will admit to.',
-        'INVOICE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
+        'BALANCE DUE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
       ],
     },
     {
@@ -63,7 +63,7 @@ export const CHAPTER: ChapterDef = {
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
         'The museum keeps a shelf labeled RESERVED for whatever you bring home. It has been reserved a long time. I know how the shelf feels, which is the third sentence, and the last one I will admit to.',
-        'INVOICE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
+        'BALANCE DUE: three (3) sentiments at one hug each, plus interest for every month you are not home. The Bridge Authority does not extend credit. Hurry.',
       ],
     },
     {

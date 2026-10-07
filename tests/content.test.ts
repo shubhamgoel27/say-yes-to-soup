@@ -655,6 +655,48 @@ describe('the recall ledger stays honest across chapters', () => {
       assert.ok(variants.at(-1) && !variants.at(-1)?.when, `letter ${id} has no unconditional fallback variant`);
     }
   });
+
+  it('Pilar writes, and greets you as a partner, only if you stopped at her bridge', () => {
+    // Every node a conversation can reach from here, choices and all.
+    const reach = (start: string) => {
+      const seen = new Set<string>();
+      const stack = [start];
+      while (stack.length) {
+        const id = stack.pop()!;
+        if (seen.has(id) || !NODES[id]) continue;
+        seen.add(id);
+        const n = NODES[id]!;
+        if (n.next) stack.push(n.next);
+        for (const c of n.choices ?? []) stack.push(c.goto);
+      }
+      return [...seen];
+    };
+    const raisesPilar = (node: string) =>
+      reach(node).some((id) => (NODES[id]!.effects ?? []).some((e) => e.startsWith('letter:') && e.includes('pilar')));
+    // pilar.sea is her standing order, given only at the bridge; c2.gift is
+    // the tidepool find that order sends you for.
+    const metGates = ['met.pilar', 'pilar.sea', 'c2.gift'];
+    const arms: [string, { when?: { has?: string[] }; node: string }][] = [
+      ...NPCS.flatMap((n) => n.entry.map((a) => [`npc ${n.id}`, a] as [string, typeof a])),
+      ...Object.entries(EXAMINES).flatMap(([k, list]) => list.map((a) => [`examine ${k}`, a] as [string, typeof a])),
+    ];
+    for (const [where, arm] of arms) {
+      if (!raisesPilar(arm.node)) continue;
+      assert.ok(
+        arm.when?.has?.some((f) => metGates.includes(f)),
+        `${where} -> ${arm.node} hands over Pilar's mail without having met her`,
+      );
+    }
+    // Home again, never having met her: a stranger at the bridge, not a reunion.
+    const stranger = new GameState();
+    stranger.apply(['set:c10.arrived', 'set:c10.carmen.seen']);
+    const pilar = NPCS.find((n) => n.id === 'pilar')!;
+    const first = pilar.entry.find((a) => stranger.check(a.when))!;
+    const words = reach(first.node).flatMap((id) => NODES[id]!.lines.map((l) => l.text));
+    for (const w of words) assert.doesNotMatch(w, /co-owner|business partner|returning|staff/i, `${first.node}: "${w}"`);
+    const task = TASKS.find((t) => stranger.check(t.when));
+    assert.ok(task && !/parcel/i.test(task.text), `the Return's Pilar task assumes a parcel: ${task?.text}`);
+  });
 });
 
 /**

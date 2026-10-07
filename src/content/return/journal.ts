@@ -77,8 +77,13 @@ export const RETURN_TASKS: TaskDef[] = [
     who: 'carmen',
   },
   {
-    when: { has: ['c10.carmen.seen'], not: ['c10.pilar.seen'] },
+    when: { has: ['c10.carmen.seen', 'c2.gift.sent'], not: ['c10.pilar.seen'] },
     text: 'The bridge has new signage and its magnate is nine and a half. The museum received a certain parcel from the sea. Attend the exhibit.',
+    who: 'pilar',
+  },
+  {
+    when: { has: ['c10.carmen.seen'], not: ['c10.pilar.seen', 'c2.gift.sent'] },
+    text: 'The bridge has new signage and its magnate is nine and a half. She keeps a list of everyone who owes her something. Go and settle up.',
     who: 'pilar',
   },
   {

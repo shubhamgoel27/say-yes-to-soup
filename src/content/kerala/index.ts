@@ -33,7 +33,7 @@ export const CHAPTER: ChapterDef = {
         'Three months and my contract is done. Keep the pot thinking. Your Joseph.',
       ],
     },
-    // Pilar, now a candidate. Her prose style remains invoices.
+    // Pilar, now a candidate. Her prose style remains paperwork.
     {
       id: 'kochi.pilar',
       from: 'Pilar, Bridge Authority, CANDIDATE',

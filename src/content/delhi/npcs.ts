@@ -1170,7 +1170,7 @@ export const DELHI_NODES: NodeMap = {
     effects: ['letter:delhi.pilar'],
   },
   'c11.post.mariamma': {
-    lines: [{ text: 'The postman produces a second envelope, soft at the corners, postmarked with a green coast, smelling faintly of a kitchen.' }],
+    lines: [{ text: 'The postman produces an envelope soft at the corners, postmarked with a green coast, smelling faintly of a kitchen.' }],
     effects: ['letter:delhi.mariamma'],
   },
   'c11.post.idle': {
@@ -1556,8 +1556,9 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   puddle: [{ node: 'c11.ex.puddle' }],
   charpai: [{ node: 'c11.ex.charpai' }],
   dakkhana: [
-    { when: { not: ['letter.read.delhi.pilar'] }, node: 'c11.post.pilar' },
-    { when: { has: ['letter.read.delhi.pilar'], not: ['letter.read.delhi.mariamma'] }, node: 'c11.post.mariamma' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.delhi.pilar'] }, node: 'c11.post.pilar' },
+    { when: { not: ['letter.read.delhi.mariamma'] }, node: 'c11.post.mariamma' },
     { node: 'c11.post.idle' },
   ],
   chalkpitch: [{ node: 'c11.ex.gullywall' }],

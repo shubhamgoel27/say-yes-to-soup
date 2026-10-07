@@ -156,6 +156,10 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
   {
     npcId: 'pilar',
     entry: [
+      // A player who never stopped at her bridge in the first chapter meets
+      // her now, as a stranger: no co-owner, no reunion, no exhibit owed.
+      { when: { has: ['c10.arrived'], not: ['c10.pilar.seen', 'met.pilar'] }, node: 'c10.pilar.stranger' },
+      { when: { has: ['c10.pilar.seen'], not: ['met.pilar'] }, node: 'c10.pilar.stranger.after' },
       { when: { has: ['c10.arrived', 'pilar.gift.puffer'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.puffer' },
       { when: { has: ['c10.arrived', 'pilar.gift.star'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.star' },
       { when: { has: ['c10.arrived', 'pilar.gift.claw'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.claw' },
@@ -622,7 +626,7 @@ export const RETURN_NODES: NodeMap = {
     lines: [
       { text: 'The sign now reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it is taller than the sign.' },
       { who: 'Pilar', text: 'Halt. Returning co-owner. Your expenses grew while you were away. So did I.' },
-      { who: 'Pilar', text: 'The museum has a spot reserved for the sea thing you still owe me. The invoice compounds.' },
+      { who: 'Pilar', text: 'The museum has a spot reserved for the sea thing you still owe me. It has been reserved a long time.' },
     ],
     effects: ['set:c10.pilar.seen'],
     next: 'c10.pilar.museum',
@@ -660,7 +664,22 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.pilar.after': {
     lines: [
-      { who: 'Pilar', text: 'Co-owner. The bridge held the whole time you were gone. I am not saying it was easy. I am saying the invoice is pending.' },
+      { who: 'Pilar', text: 'Co-owner. The bridge held the whole time you were gone. I am not saying it was easy. I am saying it held.' },
+    ],
+  },
+  'c10.pilar.stranger': {
+    lines: [
+      { text: 'A hand-painted sign reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it looks you over like a customs form.' },
+      { who: 'Pilar', text: 'Halt. You walked past my bridge a whole season and never paid the toll. I keep a list. You are on it.' },
+      { who: 'Pilar', text: 'Pilar. Bridge Authority, Museum of the Sea, mayor. Admission is one fact.' },
+      { text: 'You offer the best thing the road taught you. She hears it out like a customs official.' },
+      { who: 'Pilar', text: 'Acceptable. Barely. You are off the list. The museum closes at dark or at dinner, whichever wins.' },
+    ],
+    effects: ['set:c10.pilar.seen', 'journal:people.pilar'],
+  },
+  'c10.pilar.stranger.after': {
+    lines: [
+      { who: 'Pilar', text: 'Paid up and off the list. Cross whenever you like. On the bridge, like a citizen.' },
     ],
   },
 

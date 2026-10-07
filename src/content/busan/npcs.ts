@@ -603,7 +603,7 @@ export const BUSAN_NODES: NodeMap = {
     effects: ['set:c5.met.gong'],
     choices: [
       { text: 'Slide Joseph’s letter under the glass', goto: 'c5.gong.berth', when: { has: ['joseph.letter'] } },
-      { text: 'Ask for a berth to Kerala', goto: 'c5.gong.berth2', when: { not: ['joseph.letter'] } },
+      { text: 'Ask for a berth to Kerala', goto: 'c5.gong.berth2' },
     ],
   },
   'c5.gong.letter': {

@@ -288,13 +288,19 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
     who: 'riosC7',
   },
   {
-    when: { has: ['c7.arrived'], not: ['letter.read.c7.pilar'] },
+    when: { has: ['c7.arrived', 'met.pilar'], not: ['letter.read.c7.pilar'] },
     text: 'Mail waits on the shipping counter by the jetty: an envelope in the unmistakable handwriting of local government.',
     at: ['zanzibar', 36, 20],
   },
   {
     when: { has: ['letter.read.c7.pilar'], not: ['letter.read.c7.mangben'] },
     text: 'Ali was digging for a second envelope, the one that smells like a galley. Look on the counter again.',
+    at: ['zanzibar', 36, 20],
+  },
+  {
+    // Nobody at the bridge is writing to a player who never stopped there.
+    when: { has: ['c7.arrived'], not: ['met.pilar', 'letter.read.c7.mangben'] },
+    text: 'Mail waits on the shipping counter by the jetty: an envelope that smells faintly of a ship’s galley.',
     at: ['zanzibar', 36, 20],
   },
   {

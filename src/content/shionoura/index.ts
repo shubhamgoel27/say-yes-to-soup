@@ -20,7 +20,7 @@ export const CHAPTER: ChapterDef = {
   tasks: SHIONOURA_TASKS,
   errands: [{ id: 'fumi-tai', label: "Fumi's tai, held at Daisuke's stall on the quay" }],
   letters: [
-    // Pilar: the Museum of the Sea opens. Prose style: invoices.
+    // Pilar: the Museum of the Sea opens. Prose style: paperwork.
     {
       id: 'c4.pilar',
       from: 'Pilar, Museum of the Sea (director; co-owner: you)',

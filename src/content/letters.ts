@@ -7,7 +7,7 @@ import type { LetterDef } from './schema';
  * so letters react to what the player really did.
  */
 export const LETTERS: LetterDef[] = [
-  // Pilar, bridge magnate of Ch'aska Pampa. Her prose style is invoices.
+  // Pilar, bridge magnate of Ch'aska Pampa. Her prose style is paperwork.
   {
     id: 'home.pilar',
     from: 'Pilar, Bridge Authority (co-owner: you)',
@@ -16,7 +16,7 @@ export const LETTERS: LetterDef[] = [
       'Dear business partner. The bridge is fine. Do not worry about the bridge.',
       'Revenue is up. I raised the toll to TWO facts because a tourist argued with the sign. Your half of the profits is being kept safe in a tin I will not describe in writing.',
       'The dog walked across seventeen times today. As security he is free. As a customer he owes us.',
-      'Do not forget the sea thing. A weird one. This is also an invoice.',
+      'Do not forget the sea thing. A weird one. Consider this a formal request, in writing.',
     ],
   },
   {

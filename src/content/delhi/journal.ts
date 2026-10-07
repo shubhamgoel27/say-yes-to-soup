@@ -383,7 +383,12 @@ export const DELHI_TASKS: TaskDef[] = [
     who: 'chascaC11',
   },
   {
-    when: { has: ['c11.arrived'], not: ['letter.read.delhi.pilar'] },
+    when: { has: ['c11.arrived', 'met.pilar'], not: ['letter.read.delhi.pilar'] },
+    text: 'A red post box stands on the chowk, imperially confident. Mail has a way of finding you; it found this box first.',
+    at: ['delhi', 45, 19],
+  },
+  {
+    when: { has: ['c11.arrived'], not: ['met.pilar', 'letter.read.delhi.mariamma'] },
     text: 'A red post box stands on the chowk, imperially confident. Mail has a way of finding you; it found this box first.',
     at: ['delhi', 45, 19],
   },

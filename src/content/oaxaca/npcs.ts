@@ -1021,7 +1021,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.post.concetta': {
     lines: [
-      { text: 'The clerk produces a second envelope, sea-stamped, smelling faintly of lemons that traveled badly.' },
+      { text: 'The clerk produces an envelope, sea-stamped, smelling faintly of lemons that traveled badly.' },
     ],
     effects: ['letter:oax.concetta'],
   },
@@ -1391,8 +1391,9 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c9.ex.ofrenda1' },
   ],
   correo: [
-    { when: { not: ['letter.read.oax.pilar'] }, node: 'c9.post.pilar' },
-    { when: { has: ['letter.read.oax.pilar'], not: ['letter.read.oax.concetta'] }, node: 'c9.post.concetta' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.oax.pilar'] }, node: 'c9.post.pilar' },
+    { when: { not: ['letter.read.oax.concetta'] }, node: 'c9.post.concetta' },
     { node: 'c9.post.idle' },
   ],
   colectivo: [

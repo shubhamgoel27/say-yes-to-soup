@@ -970,7 +970,7 @@ export const ZANZIBAR_NODES: NodeMap = {
     effects: ['letter:c7.pilar'],
   },
   'c7.post.mangben': {
-    lines: [{ text: 'A second envelope, smelling faintly of a galley: garlic, diesel, benevolence.' }],
+    lines: [{ text: 'An envelope smelling faintly of a galley: garlic, diesel, benevolence.' }],
     effects: ['letter:c7.mangben'],
   },
   'c7.post.idle': {
@@ -1211,8 +1211,9 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   mwanirow: [{ node: 'c7.ex.mwanirow' }],
   corallane: [{ node: 'c7.ex.corallane' }],
   postcounter: [
-    { when: { not: ['letter.read.c7.pilar'] }, node: 'c7.post.pilar' },
-    { when: { has: ['letter.read.c7.pilar'], not: ['letter.read.c7.mangben'] }, node: 'c7.post.mangben' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.c7.pilar'] }, node: 'c7.post.pilar' },
+    { when: { not: ['letter.read.c7.mangben'] }, node: 'c7.post.mangben' },
     { node: 'c7.post.idle' },
   ],
   kangaline: [

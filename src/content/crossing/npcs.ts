@@ -275,7 +275,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.rios.mail': {
     lines: [
       { text: 'The captain produces a canvas sack gone soft at the corners.' },
-      { who: 'Capitana Ríos', text: 'Mail. Callao threw it aboard with the last launch. Two for you. This one smells like an invoice.' },
+      { who: 'Capitana Ríos', text: 'Mail. Callao threw it aboard with the last launch. Two for you. This one is addressed in capitals, underlined twice.' },
     ],
     effects: ['letter:c3.pilar'],
   },
@@ -631,7 +631,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.olena.threadNo': {
     lines: [
-      { who: 'Olena', text: 'Good decision. The sun is free, and the company cannot invoice it.' },
+      { who: 'Olena', text: 'Good decision. The sun is free, and the company cannot bill for it.' },
     ],
   },
 
@@ -1175,7 +1175,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
       'Dear business partner. No sea thing has arrived at this office. I am choosing to believe in shipping delays and not in betrayal.',
       'The shelf I built for it stands empty, which the dog finds comfortable. He is not the intended exhibit. Tell the sea to hurry.',
       'Official notice: the Bridge Authority has annexed ships. In principle. Any ship crossing my bridge owes one fact. Inform your captain.',
-      'P.S. This letter is also an invoice, for the shelf.',
+      'P.S. The shelf was not free. Neither is waiting.',
     ],
   },
   {

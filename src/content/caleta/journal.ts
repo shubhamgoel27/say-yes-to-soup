@@ -265,7 +265,7 @@ export const CALETA_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['pilar.sea', 'c2.arrived'], not: ['c2.gift'] },
-    text: 'Pilar’s invoice stands: something from the sea, a weird one. The tidepools along the wet sand look promising.',
+    text: 'Pilar’s order stands: something from the sea, a weird one. The tidepools along the wet sand look promising.',
     at: ['la-caleta', 14, 29],
   },
   {

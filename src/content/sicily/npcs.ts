@@ -1029,7 +1029,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.post.mariamma': {
     lines: [
-      { text: 'Under the blotter, a second envelope: soft blue, smelling faintly of cardamom and sea mail.' },
+      { text: 'Under the blotter, an envelope: soft blue, smelling faintly of cardamom and sea mail.' },
     ],
     effects: ['letter:sicily.mariamma'],
   },
@@ -1342,11 +1342,9 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c8.ex.ventola' },
   ],
   postsign: [
-    { when: { not: ['letter.read.sicily.pilar'] }, node: 'c8.post.pilar' },
-    {
-      when: { has: ['letter.read.sicily.pilar'], not: ['letter.read.sicily.mariamma'] },
-      node: 'c8.post.mariamma',
-    },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.sicily.pilar'] }, node: 'c8.post.pilar' },
+    { when: { not: ['letter.read.sicily.mariamma'] }, node: 'c8.post.mariamma' },
     { node: 'c8.post.idle' },
   ],
   sea: [{ map: 'sicily', node: 'c8.ex.sea' }],
