@@ -2693,6 +2693,9 @@
        * 412px tall the hint used to sit below the fold. */
       @media (max-height: 520px) and (orientation: landscape) {
         .letter-fold { width: min(100vw - 24px, 680px); max-width: none; }
+        /* The sheet's own 470px cap kept it at the old width inside the
+         * widened fold, so it hung off-center to the left. */
+        .letter-fold .letter-paper { max-width: none; }
         .letter-paper { padding: 14px 26px 4px; background-position: 0 11px, 0 0, 0 0; }
         .letter-paper {
           background-image:
@@ -2800,23 +2803,25 @@
         .cc-paper:has(.cc-fig) {
           width: min(94vw, 640px);
           box-sizing: border-box;
-          padding: 16px 28px 12px;
+          padding: 12px 28px 10px;
           display: grid;
           grid-template-columns: 150px 1fr;
+          /* The hint sits under the traveler, level with "set out": stacked
+           * below the button it ran 30px past a 340px-tall iPhone and the
+           * page bottom fell off the screen. */
           grid-template-areas:
             'kicker kicker'
             'fig copy'
             'fig rows'
-            'fig actions'
-            'fig hint';
+            'hint actions';
           column-gap: 18px;
         }
-        .cc-paper:has(.cc-fig) .cc-kicker { grid-area: kicker; margin-bottom: 6px; }
-        .cc-paper:has(.cc-fig) .cc-copy { grid-area: copy; margin: 0 auto 8px; }
+        .cc-paper:has(.cc-fig) .cc-kicker { grid-area: kicker; margin-bottom: 4px; }
+        .cc-paper:has(.cc-fig) .cc-copy { grid-area: copy; margin: 0 auto 4px; }
         .cc-paper:has(.cc-fig) .cc-fig { grid-area: fig; align-self: center; margin: 0; }
-        .cc-paper:has(.cc-fig) .cc-rows { grid-area: rows; width: 100%; margin: 0 auto 4px; }
+        .cc-paper:has(.cc-fig) .cc-rows { grid-area: rows; width: 100%; margin: 0 auto 2px; }
         .cc-paper:has(.cc-fig) .cc-actions { grid-area: actions; }
-        .cc-paper:has(.cc-fig) .cc-hint { grid-area: hint; }
+        .cc-paper:has(.cc-fig) .cc-hint { grid-area: hint; align-self: center; padding-top: 0; }
       }
 
       /* ---- the HUD in the hand ----
