@@ -106,7 +106,9 @@ export const KERALA_NPCS: NpcDef[] = [
     id: 'appu',
     name: 'Appu',
     map: 'kerala',
-    pos: [24, 15],
+    // Out in front of the palm knot: at 24,15 he spawned tucked behind the
+    // trunk at 24,16, which ran straight through him.
+    pos: [22, 15],
     range: 3,
     look: {
       skin: '#8a5636',

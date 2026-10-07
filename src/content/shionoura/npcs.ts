@@ -129,7 +129,9 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'genji',
     name: 'Genji',
     map: 'shionoura',
-    pos: [37, 3],
+    // A row up the yard, so his broom never wanders him into the cedar
+    // crowns along row 4, where only his head showed above the canopy.
+    pos: [37, 2],
     range: 1,
     look: {
       skin: '#c99a6b',
