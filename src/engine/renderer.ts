@@ -1776,7 +1776,14 @@ export class Renderer {
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
           }
-          this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
+          if (t.kind === 'wallInt' && map.object(t.cx, t.cy + 1)?.t === 'wallInt') {
+            // A room's side wall, seen along its length (see drawWallRun).
+            const open = (dx: number, dy: number) =>
+              map.inBounds(t.cx + dx, t.cy + dy) && map.object(t.cx + dx, t.cy + dy)?.t !== 'wallInt';
+            this.tiles.drawWallRun(ctx, t.kind, tx, ty, { left: open(-1, 0), right: open(1, 0), top: open(0, -1) });
+          } else {
+            this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
+          }
         },
       });
     }

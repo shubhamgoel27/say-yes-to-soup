@@ -2013,6 +2013,68 @@ export class Tileset {
     return GROUNDED_TALL.has(ART_ALIAS[kind] ?? kind) || GROUNDED_TALL.has(kind);
   }
 
+  /**
+   * An interior wall seen along its length: the side walls of a room. Every
+   * wall skin is painted as a south face (lime above, a base course or soot
+   * band at the edges), so a column of them stacked into a run of separate
+   * blocks with floor-coloured gaps between, and a window or a calendar hung
+   * on each. Down a run the eye sees the wall's top instead: one continuous
+   * band in the face's own plaster, inked along the sides it shows, a little
+   * darker where it drops to the floor. The colour is read off the skin, so
+   * every chapter's room keeps its own wall.
+   */
+  drawWallRun(
+    g: CanvasRenderingContext2D,
+    kind: string,
+    sx: number,
+    sy: number,
+    edges: { left: boolean; right: boolean; top: boolean },
+  ) {
+    const name = this.art(kind);
+    let fill = this.runFill.get(name);
+    if (!fill) {
+      fill = '#ac8a5e';
+      // The last variant: every skin hangs its decorations on the first few.
+      const list = this.v.get(name);
+      const src = list?.[list.length - 1];
+      const sg = src?.getContext('2d');
+      if (src && sg) {
+        // Mid-height of the face: under the soot band, above the base course.
+        const row = sg.getImageData(0, Math.round(src.height * 0.38), src.width, 1).data;
+        let r = 0, gr = 0, b = 0, n = 0;
+        for (let i = 0; i < row.length; i += 4) {
+          if (row[i + 3]! < 200) continue;
+          r += row[i]!; gr += row[i + 1]!; b += row[i + 2]!; n++;
+        }
+        if (n) fill = `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})`;
+      }
+      this.runFill.set(name, fill);
+    }
+    g.fillStyle = fill;
+    g.fillRect(sx, sy, S, S);
+    // The drop to the floor on each open side, then the ink along it.
+    const dropW = 12;
+    if (edges.left) {
+      const gr = g.createLinearGradient(sx, 0, sx + dropW, 0);
+      gr.addColorStop(0, 'rgba(40,26,14,0.22)');
+      gr.addColorStop(1, 'rgba(40,26,14,0)');
+      g.fillStyle = gr;
+      g.fillRect(sx, sy, dropW, S);
+    }
+    if (edges.right) {
+      const gr = g.createLinearGradient(sx + S - dropW, 0, sx + S, 0);
+      gr.addColorStop(0, 'rgba(40,26,14,0)');
+      gr.addColorStop(1, 'rgba(40,26,14,0.22)');
+      g.fillStyle = gr;
+      g.fillRect(sx + S - dropW, sy, dropW, S);
+    }
+    g.fillStyle = 'rgba(38,26,16,0.5)';
+    if (edges.left) g.fillRect(sx, sy, 2, S);
+    if (edges.right) g.fillRect(sx + S - 2, sy, 2, S);
+    if (edges.top) g.fillRect(sx, sy, S, 2);
+  }
+  private runFill = new Map<string, string>();
+
   /** Whether a kind is a full building sprite (for the renderer's big shadow). */
   isBuilding(kind: string): boolean {
     return BUILDINGS.has(kind);
