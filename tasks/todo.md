@@ -596,3 +596,20 @@ and card fixed; ground blending fixed at the root (centre weights), natural shor
 Perf A/B vs shipped main on an emulated phone at 6x throttle: identical (p95 10.1ms, p99 10.3ms).
 Open: story runs still 8-20s for a bot (likely 15-40s for a reader); urojo/kingyo mash ~1.75x;
 held-item visuals (bowl, harvest) need a renderer hook; trailer predates pass 2.
+
+## 2026-10-07: pass 3 (bugs + the ending's last 10%), shipped 5eac06d
+
+From the d1-d3 critic round (7.5 / 7.5 / 7.0). Three worktree agents (S systems, E ending, C content vs
+art), merged with a hand-resolved main.ts conflict (Carmen keeps E's two-steps-back trail; every staged
+walker keeps S's no-shared-tile rule). 299 tests; prod build boots clean on desktop and phone.
+- [x] S: Begin again uses a blank slot, erase is a confirm card that ignores double taps, shelf dates;
+      "Not yet" sticks; current task beats "meet someone"; thread routes around lamp heads and canopies;
+      bodies never share a tile; approached NPCs stop wandering; click-to-walk falls back to nearest floor;
+      UI list (letter fit, whisper, chip vs label, pin label, volume bars, hyphenated names)
+- [x] E: verdict ring around a drawn jug; a real cairn framed on laying the stone, then a pan over the
+      village lamps; Nani's underline on the last page; the night after the book stays warm
+- [x] C: Carmen's loom, Rosa's steaming olla, a real galley, the picanteria table, the ferry clerk and
+      Olena's jar, a proper gate, papel picado overhead, big Busan cranes, two cultural slips reworded
+Open: four "first talk is an introduction, not the task's scene" cases listed in tests/thread.test.ts
+KNOWN_WALK (bosun, Rios mail, Eugenia, Tacho); post offices that mention clerks but are signposts;
+trailer predates pass 3 (well ring, cairn, underline).
