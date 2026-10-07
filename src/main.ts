@@ -492,9 +492,48 @@ const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
 
 const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
 
-/** A game whose start flag is raised but whose panel is not yet on screen. */
+/**
+ * "Not yet" sticks. A declined card used to re-open after every later
+ * conversation or examine, eighteen tiles away and on other maps, because
+ * the start flag (rightly) stays raised. Now the decline remembers where it
+ * happened and who offered; the card comes back only when the player talks
+ * to that person again, or presses Space in open air near that spot.
+ * Session-scoped: a reload offers each waiting card once more, which is fair.
+ */
+const declinedGames = new Map<string, { map: string; at: [number, number]; npc: string | null }>();
+/** Who spoke last before a card opened: the one who offered it. */
+let howtoOfferedBy: string | null = null;
+/** How close counts as "back at the station" for the open-air re-offer. */
+const DECLINE_NEAR = 2;
+
+/** A game whose start flag is raised but whose panel is not yet on screen,
+ * and which the player has not set aside with "Not yet". */
 function pendingGame(): GameEntry | null {
-  return games.find((g) => state.has(g.def.flag) && !g.panel.isOpen) ?? null;
+  return (
+    games.find((g) => state.has(g.def.flag) && !g.panel.isOpen && !declinedGames.has(g.def.flag)) ??
+    null
+  );
+}
+
+/** Open air near where a card was declined: that card, forgiven. */
+function declinedNearHere(): GameEntry | null {
+  for (const [flag, d] of declinedGames) {
+    if (d.map !== map.id) continue;
+    if (Math.abs(player.x - d.at[0]) + Math.abs(player.y - d.at[1]) > DECLINE_NEAR) continue;
+    const g = games.find((x) => x.def.flag === flag);
+    if (!g || !state.has(flag)) {
+      declinedGames.delete(flag);
+      continue;
+    }
+    declinedGames.delete(flag);
+    return g;
+  }
+  return null;
+}
+
+/** Talking to whoever offered a declined card lets it come back after. */
+function forgiveDeclinesBy(npc: string) {
+  for (const [flag, d] of declinedGames) if (d.npc === npc) declinedGames.delete(flag);
 }
 
 /** Open a panel and route its completion: story narration, or replay joy. */
@@ -621,6 +660,8 @@ function closeHowto(pick: string | null) {
     player.frozen = false;
   } else {
     player.frozen = false; // the story's start flag stays; the offer keeps
+    // ...but it waits where it was made, instead of following the player.
+    declinedGames.set(g.def.flag, { map: map.id, at: [player.x, player.y], npc: howtoOfferedBy });
   }
 }
 
@@ -2341,6 +2382,7 @@ function endDialogue() {
   player.frozen = false;
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
+  howtoOfferedBy = speaker?.def.id ?? null;
   // The intro has let go; now the village may introduce itself.
   if (pendingWelcome && !welcomeTimer) welcomeTimer = window.setTimeout(playWelcome, 420);
   if (talkingTo) {
@@ -2399,7 +2441,9 @@ function endDialogue() {
   {
     // A conversation raised a game's start flag: the how-to card goes first,
     // so the hands know what they are about to do (and may decline, kindly).
-    const g = pendingGame();
+    // A declined card returns only after its own villager, or after an
+    // examine back at the spot where it was set aside (a station).
+    const g = pendingGame() ?? (speaker ? null : declinedNearHere());
     if (g) {
       showHowto(g);
       return;
@@ -2460,6 +2504,8 @@ function startNpcDialogue(v: Villager) {
 
   const entry = v.def.entry.find((e) => state.check(e.when));
   if (!entry) return;
+  // Back to whoever offered a declined card: it may come back after this.
+  forgiveDeclinesBy(v.def.id);
   const [ox, oy] = v.actor.occupies();
   v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
   v.actor.frozen = true;
@@ -3077,6 +3123,7 @@ function reloadJourney() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
+  declinedGames.clear();
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
   window.clearTimeout(introTimer);
@@ -3162,6 +3209,7 @@ function titleActivate() {
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
   state.reset();
+  declinedGames.clear();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();
@@ -3579,8 +3627,9 @@ function update(dt: number) {
     } else if (act) {
       if (!tryInteract()) {
         // Open air, and a game still waiting on its start flag: the how-to
-        // card offers itself again. Declined lessons are only postponed.
-        const g = pendingGame();
+        // card offers itself again. Declined lessons are only postponed,
+        // and only re-offered back where they were declined.
+        const g = pendingGame() ?? declinedNearHere();
         if (g) showHowto(g);
       }
     } else {
