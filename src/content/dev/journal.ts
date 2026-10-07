@@ -302,13 +302,8 @@ export const TASKS: TaskDef[] = [
     who: 'justina',
   },
   {
-    when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
-    text: "Carmen's wichuna, a llama-bone weaving pick, is on loan to Justina in the terraces. Retrieve it.",
-    who: 'justina',
-  },
-  {
     when: { has: ['wichuna.have'], not: ['wichuna.returned'] },
-    text: 'The wichuna is in your bag, wrapped like something precious. Bring it home to Doña Carmen, near the northeast house.',
+    text: "Justina's borrowed wichuna, a llama-bone weaving pick, rides in your bag. It belongs to Doña Carmen, who weaves in her courtyard by the northeast house.",
     who: 'carmen',
   },
   {
@@ -327,13 +322,8 @@ export const TASKS: TaskDef[] = [
     who: 'teofilo',
   },
   {
-    when: { has: ['bundle.delivered'], not: ['errand.carmen-wichuna', 'pallay.done'] },
-    text: 'Doña Carmen, who weaves near the northeast house, has heard about your carrying legs. Go say allillanchu.',
-    who: 'carmen',
-  },
-  {
     when: { has: ['pallay.done'], not: ['her.zoila'] },
-    text: 'Doña Carmen went quiet at the end of the weaving, the way people do when they have decided to say something. Sit at her loom again.',
+    text: 'Doña Carmen was in the middle of saying something about the woman who held a shuttle the way you do. Go back to her loom.',
     who: 'carmen',
   },
   {
@@ -362,14 +352,14 @@ export const TASKS: TaskDef[] = [
   },
   {
     when: { not: ['met.rosa'] },
-    text: 'Meet the village. Someone near the red-flag house is already ladling soup for you.',
+    text: 'Somebody near the red-flag house is already ladling soup, and has decided it is yours. Follow the steam.',
     who: 'rosa',
   },
 ];
 
 export const ERRANDS: ErrandDef[] = [
   { id: 'rosa-bundle', label: "Rosa's bundle, for Justina in the terraces" },
-  { id: 'carmen-wichuna', label: "Carmen's wichuna, on loan to Justina" },
+  { id: 'carmen-wichuna', label: "Carmen's wichuna, home from Justina's terraces" },
   { id: 'nani-letter', label: "Nani's unsent letter, for the road west" },
 ];
 

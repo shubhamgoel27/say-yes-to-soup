@@ -11,6 +11,7 @@ export const RECALL: RecallManifest = {
     'page.words.chaska', // the morning star; rhymes with the star river at sea
     'page.dishes.mote', // highland corn; the coast eats choclo from the same valleys
     'keepsake.band', // Carmen's practice-row band, tied at your wrist
+    'met.pilar', // she is optional: every later Pilar callback gates on having met her
     'pilar.sea', // Pilar's standing order: something weird, from the sea
     'story.complete', // the gate flag; the Return gates its scenes on it
     'photo.taken', // Chasca's first photograph, bound for the album

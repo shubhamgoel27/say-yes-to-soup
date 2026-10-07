@@ -3,6 +3,7 @@ import type { RecallManifest } from '../schema';
 /** The Yacana's side of the cross-chapter ledger. */
 export const RECALL: RecallManifest = {
   consumes: [
+    'pilar.sea', // Pilar only writes to someone who owes her a sea thing
     'pilar.gift.puffer', // the mail bundle names the actual creature sent
     'pilar.gift.star',
     'pilar.gift.claw',

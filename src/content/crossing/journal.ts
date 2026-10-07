@@ -189,11 +189,6 @@ export const CROSSING_TASKS: TaskDef[] = [
     who: 'joseph',
   },
   {
-    when: { has: ['c3.met.ben'], not: ['c3.baon'] },
-    text: 'Ben will find work for any hands that show up twice. The galley is through the house door; follow the garlic.',
-    who: 'mangben',
-  },
-  {
     when: { has: ['c3.baon.done'], not: ['c3.cook.done'] },
     text: 'Lutong bahay night: Ben wants help with the adobo. The pot is patient, he says. One of them is lying.',
     who: 'mangben',
@@ -216,13 +211,18 @@ export const CROSSING_TASKS: TaskDef[] = [
     who: 'joseph',
   },
   {
-    when: { has: ['c3.shellback'], not: ['letter.read.c3.pilar'] },
+    when: { has: ['c3.shellback', 'pilar.sea'], not: ['letter.read.c3.pilar'] },
     text: 'The captain has a canvas sack marked MAIL and two envelopes with your name on them. She stands on deck, forward of the house.',
     who: 'riosC3',
   },
   {
     when: { has: ['letter.read.c3.pilar'], not: ['letter.read.c3.petro'] },
     text: 'There was a second envelope stuck to the first, the kind with a grease spot on the flap. Ask the captain again.',
+    who: 'riosC3',
+  },
+  {
+    when: { has: ['c3.shellback'], not: ['letter.read.c3.petro'] },
+    text: 'The captain has a canvas sack marked MAIL, and an envelope in it with your name and a grease spot on the flap. She stands on deck, forward of the house.',
     who: 'riosC3',
   },
   {
@@ -250,7 +250,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c3.arrived'], not: ['c3.complete'] },
-    text: 'The ship is a village of two dozen: the galley under the house, the bow past the containers, the rail all the way around. Meet her.',
+    text: 'Somewhere under the house, garlic is frying; the galley is the ship’s front door. After that, walk the rail all the way round. Two dozen people live on this deck, and every one of them has a watch to keep.',
     who: ['mangben', 'joseph', 'hanaC3', 'olena', 'bosun', 'riosC3'],
   },
 ];

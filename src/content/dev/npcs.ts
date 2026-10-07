@@ -100,8 +100,10 @@ export const NPCS: NpcDef[] = [
     },
     entry: [
       { when: { has: ['errand.rosa-bundle'], not: ['bundle.delivered'] }, node: 'justina.bundle' },
+      // Normally handed over the moment the watia is eaten; this arm only
+      // catches a journey saved between the two.
       {
-        when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
+        when: { has: ['watia.done'], not: ['wichuna.have'] },
         node: 'justina.wichuna',
       },
       { when: { has: ['dig.done'], not: ['watia.done'] }, node: 'justina.watiaInvite' },
@@ -147,22 +149,16 @@ export const NPCS: NpcDef[] = [
       skirt: '#5c3a52',
     },
     entry: [
-      { when: { not: ['met.carmen'] }, node: 'carmen.first' },
-      {
-        when: { has: ['bundle.delivered'], not: ['errand.carmen-wichuna'] },
-        node: 'carmen.ask',
-      },
+      // The pick comes home in one walk, Justina to Carmen: whoever carries
+      // it gets the loom, met or not. No fetch-and-return.
       {
         when: { has: ['wichuna.have'], not: ['wichuna.returned'] },
         node: 'carmen.wichuna',
       },
+      { when: { not: ['met.carmen'] }, node: 'carmen.first' },
       {
         when: { has: ['wichuna.returned'], not: ['pallay.done'] },
         node: 'carmen.weaveOffer',
-      },
-      {
-        when: { has: ['errand.carmen-wichuna'], not: ['wichuna.have'] },
-        node: 'carmen.waiting',
       },
       // The name, and the half warp. Once you have sat at her loom she is
       // willing to be annoyed at somebody in front of you.
@@ -383,7 +379,7 @@ export const NODES: NodeMap = {
   'aurelio.first.echo': {
     lines: [
       { who: 'Don Aurelio', text: 'Allillanmi! Ha. You said it like a sneeze.' },
-      { who: 'Don Aurelio', text: 'But you said it. Sit, the stone is warm.' },
+      { who: 'Don Aurelio', text: 'But you said it. Here, the stone is warm. There is room.' },
     ],
     effects: ['set:met.aurelio', 'journal:words.allillanchu', 'journal:people.aurelio'],
   },
@@ -592,7 +588,7 @@ export const NODES: NodeMap = {
   // ---------------- Doña Carmen ----------------
   'carmen.first': {
     lines: [
-      { who: 'Doña Carmen', text: 'Sit; the sun is free. This lliclla is for my granddaughter in Lima.' },
+      { who: 'Doña Carmen', text: 'Mind the warp; it bites strangers. This lliclla is for my granddaughter in Lima.' },
       { who: 'Doña Carmen', text: 'The zigzag is the river, and the road of stars. The thread is not confused; you are.' },
     ],
     effects: ['set:met.carmen', 'journal:people.carmen', 'journal:words.lliclla'],
@@ -643,32 +639,32 @@ export const NODES: NodeMap = {
     ],
   },
 
-  // ---------------- Carmen's wichuna chain ----------------
-  'carmen.ask': {
-    lines: [
-      { who: 'Doña Carmen', text: 'Rosa rates you highly, and Rosa rates nobody. My wichuna, the bone pick, is with Justina. Bring it back?' },
-    ],
-    effects: ['errand:carmen-wichuna', 'set:errand.carmen-wichuna'],
-  },
-  'carmen.waiting': {
-    lines: [
-      { who: 'Doña Carmen', text: 'Justina has my wichuna, wawa. She will pretend she forgot.' },
-    ],
-  },
+  // ---------------- Carmen's wichuna, carried one way ----------------
+  // Justina hands it over with the first bite of the watia; it goes downhill
+  // to Carmen in one walk, and the loom is waiting at the other end.
   'justina.wichuna': {
     lines: [
-      { who: 'Justina', text: 'The wichuna? I was going to return it. In my own season.' },
+      { who: 'Justina', text: 'Since you are going down anyway. This is Doña Carmen’s wichuna. I borrowed it at planting.' },
       { text: 'She unwraps a polished bone pick from her lliclla like something precious. It is.' },
+      { who: 'Justina', text: 'Tell her I was returning it. In my own season. She will know which season that is.' },
     ],
-    effects: ['set:wichuna.have', 'set:met.justina', 'journal:people.justina'],
+    effects: ['set:wichuna.have', 'errand:carmen-wichuna', 'set:errand.carmen-wichuna'],
   },
   'carmen.wichuna': {
     lines: [
       { who: 'Doña Carmen', text: 'Ah. There you are, old friend.' },
-      { text: 'She is talking to the pick. Then she remembers you, and pats the ground.' },
-      { who: 'Doña Carmen', text: 'This border is my mother; this zigzag, the river. Sumaq, no? Beautiful. Also delicious. Why keep two words?' },
+      { text: 'She is talking to the pick. Then she remembers you, and pats the ground beside the loom.' },
+      { who: 'Doña Carmen', text: 'This lliclla is for my granddaughter in Lima. The border is my mother; the zigzag, the river.' },
+      { who: 'Doña Carmen', text: 'Sumaq, no? Beautiful. Also delicious. Why keep two words?' },
     ],
-    effects: ['set:wichuna.returned', 'errand.done', 'journal:words.sumaq'],
+    effects: [
+      'set:wichuna.returned',
+      'errand.done',
+      'set:met.carmen',
+      'journal:people.carmen',
+      'journal:words.lliclla',
+      'journal:words.sumaq',
+    ],
     next: 'carmen.weaveOffer',
   },
   'carmen.weaveOffer': {
@@ -700,6 +696,9 @@ export const NODES: NodeMap = {
     // words close, the thread spools once from the loom, unasked, so the
     // player has seen it work before ever pressing N.
     effects: ['clear:weave.start', 'set:pallay.done', 'set:keepsake.band', 'journal:customs.pallay', 'thread:'],
+    // She does not wait for a second visit to say it; the name comes while
+    // her hands are still on your knot.
+    next: 'carmen.zoila',
   },
   'carmen.after': {
     lines: [
@@ -727,7 +726,7 @@ export const NODES: NodeMap = {
   // something; she is finishing a complaint she started in 1974.
   'carmen.zoila': {
     lines: [
-      { who: 'Doña Carmen', text: 'You hold the shuttle the way Zoila did. Badly, and entirely unbothered.' },
+      { who: 'Doña Carmen', text: 'You held that shuttle the way Zoila did. Badly, and entirely unbothered.' },
       { text: 'Zoila. You have only ever called her Nani.' },
       { text: 'Carmen says it like the name of someone who owes her money.' },
     ],
@@ -761,7 +760,7 @@ export const NODES: NodeMap = {
   // ---- Carmen's pattern quiz (a riddle from a person, not a system) ----
   'carmen.riddle': {
     lines: [
-      { who: 'Doña Carmen', text: 'Sit. You wove a row, so now you get examined. Which one is the river?' },
+      { who: 'Doña Carmen', text: 'You wove a row, so now you get examined. Which one is the river?' },
     ],
     choices: [
       { text: 'The zigzag', goto: 'carmen.r1right' },
@@ -830,7 +829,7 @@ export const NODES: NodeMap = {
   // over what he kept. Her portrait lives in the journal's Nani margins.
   'aurelio.nani': {
     lines: [
-      { who: 'Don Aurelio', text: 'Sit. The stone is warm, and I have decided something.' },
+      { who: 'Don Aurelio', text: 'There you are. I have been deciding something all morning, and it is decided.' },
       { who: 'Don Aurelio', text: 'I watched Zoila sew that red thread on your journal. Right here, 1974.' },
     ],
     next: 'aurelio.nani2',
@@ -929,6 +928,7 @@ export const NODES: NodeMap = {
       { text: 'It tastes of smoke and rain and the ground you are standing on.' },
     ],
     effects: ['clear:watia.start', 'set:watia.done', 'journal:dishes.watia'],
+    next: 'justina.wichuna',
   },
 
   // ---------------- the dog ----------------
@@ -1114,10 +1114,11 @@ export const NODES: NodeMap = {
   // mouth. What the road teaches, the road teaches. The cliff shows the rest.
   'faustino.first': {
     lines: [
-      { who: 'Faustino', text: 'Ho! A walker! Sit; the fire is honest and the wind is not.' },
+      { who: 'Faustino', text: 'Ho! A walker! Come in out of the wind; the fire is honest and the wind is not.' },
       { who: 'Faustino', text: 'Faustino. Arriero. My llamas and I walk roads for a living. They get paid in grass.' },
     ],
     effects: ['set:met.faustino', 'journal:people.faustino'],
+    next: 'faustino.whistle',
   },
   'faustino.whistle': {
     lines: [

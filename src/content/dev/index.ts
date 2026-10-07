@@ -67,7 +67,7 @@ export const CHAPTER: ChapterDef = {
       "The well rope creaks its one note. Rosa's flag decides, slowly, which way the wind is.",
       'The dog completes a circuit of the plaza, pausing at your feet on the way past.',
       'A door opens across the plaza and lets out the smell of onions frying. You can tell whose kitchen is whose now.',
-      'On the bridge, Pilar renegotiates something with a chicken. The chicken appears to be winning.',
+      'On the bridge, a small person with a sign renegotiates something with a chicken. The chicken appears to be winning.',
       "The terraces climb the hill row by row, a green ledger of somebody's whole life of afternoons.",
       'Two people have already nodded at you like sitting here is a job done well.',
     ],
