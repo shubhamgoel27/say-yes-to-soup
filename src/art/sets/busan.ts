@@ -557,6 +557,17 @@ function paint(make: MakeTile) {
     rr(g, 19, 42, 26, 20, 3, '#3c3226');
     rr(g, 21, 44, 22, 14, 2, '#e8dcc0');
     glowSpot(g, 32, 51, 12, '#f6ecc8', 0.5);
+    // The clerk, filling the window the way the lines say: grey cardigan,
+    // reading glasses, hair cut very short.
+    rr(g, 25, 53, 14, 6, 3, '#6f7480');
+    dot(g, 32, 49.5, 4.2, '#d6a27a');
+    rr(g, 27.6, 44.8, 8.8, 3.4, 1.6, '#2a2420');
+    g.strokeStyle = '#2b2622';
+    g.lineWidth = 0.9;
+    g.beginPath();
+    g.arc(30.4, 49.8, 1.4, 0, Math.PI * 2);
+    g.arc(33.6, 49.8, 1.4, 0, Math.PI * 2);
+    g.stroke();
     rr(g, 17, 62, 30, 4, 2, '#8a6a44');
     // Postal mark and a waiting envelope.
     dot(g, 32, 74, 5.5, '#c0392b');

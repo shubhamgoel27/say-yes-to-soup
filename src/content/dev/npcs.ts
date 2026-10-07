@@ -334,7 +334,7 @@ export const NODES: NodeMap = {
   // bag itself, one card per look, at whatever pace the player browses.
   'intro.wake': {
     lines: [
-      { text: 'The bus left you at the bottom of the valley. The driver pointed uphill: arriba.' },
+      { text: 'The bus left you at the bottom of the valley. The driver pointed uphill: arriba. The road gave out an hour later, at a well.' },
       { text: 'Her journal, half full, opens on one line: "Ch’aska Pampa. Start where the water is."' },
       { text: 'The rest of her page is blank. The village is not.' },
     ],
@@ -614,8 +614,8 @@ export const NODES: NodeMap = {
   // ---------------- Don Teófilo, and the first splash ----------------
   'teofilo.first': {
     lines: [
-      { who: 'Don Teófilo', text: 'Ah! The bundle-carrier. Rosa told the whole room before you crossed the bridge.' },
-      { text: 'He slides you a glass of cloudy chicha.' },
+      { who: 'Don Teófilo', text: 'Ah! The bundle-carrier. Rosa told the whole room before you reached the door.' },
+      { text: 'He pats the stool beside his, the seat he has kept for forty years, and slides you a glass of cloudy chicha.' },
     ],
     choices: [
       { text: 'Drink up', goto: 'teofilo.drink' },
