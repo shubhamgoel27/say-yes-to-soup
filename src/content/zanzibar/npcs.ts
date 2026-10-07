@@ -688,7 +688,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.zuberi.dusk': {
     lines: [
       { who: 'Zuberi', text: 'A second pot: pweza wa nazi, octopus off the flats in coconut curry. The real food of this island.' },
-      { who: 'Zuberi', text: 'The next stall sells Zanzibar pizza. It is fine. It is from nowhere.' },
+      { who: 'Zuberi', text: 'The next stall folds Zanzibar pizza. Young food, whatever the captains say: born at the night market in my father’s time. Young is still ours.' },
     ],
     effects: ['set:c7.zuberi.dusk', 'journal:dishes.pweza', 'journal:words.hamnashida'],
     choices: [
@@ -1049,7 +1049,7 @@ export const ZANZIBAR_NODES: NodeMap = {
   },
   'c7.ex.stall.pizza': {
     // The Sultan's-kitchen story, retired from the welcome speech to the griddle.
-    lines: [{ text: 'A griddle folds Zanzibar pizza. The captains claim the Sultan’s kitchen; Zuberi claims nowhere.' }],
+    lines: [{ text: 'A griddle folds Zanzibar pizza. The captains claim the Sultan’s kitchen; Zuberi claims the night market, and is prouder of it.' }],
   },
   'c7.ex.dhow.winds': {
     // Issa's two-wind calendar, read off the rig he pointed at.

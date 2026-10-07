@@ -260,6 +260,48 @@ export const CALETA_NPCS: NpcDef[] = [
       { node: 'mar.chasca.album' },
     ],
   },
+  // The long table's strangers, mid-lunch on its stools. They stay seated;
+  // the table is half full whenever you come in, which is what Petro's door
+  // line has always promised.
+  {
+    id: 'lucho',
+    name: 'Don Lucho',
+    map: 'picanteria',
+    pos: [11, 3],
+    range: 0,
+    sits: 'right',
+    look: {
+      skin: '#8f5c38',
+      hair: '#4a4038',
+      cloth: '#4f6e8a',
+      stripe: '#e8dcc4',
+      hat: '#e2d2a8',
+      hatStyle: 'straw',
+      garb: 'shirt',
+      pants: '#3a3a40',
+    },
+    entry: [{ node: 'mar.diner.lucho' }],
+  },
+  {
+    id: 'yesenia',
+    name: 'Yesenia',
+    map: 'picanteria',
+    pos: [11, 5],
+    range: 0,
+    sits: 'right',
+    look: {
+      skin: '#b07a4e',
+      hair: '#241a12',
+      cloth: '#d9694a',
+      stripe: '#f2e6d0',
+      hat: '#241a12',
+      hatStyle: 'none',
+      garb: 'dress',
+      skirt: '#54708a',
+      hairdo: 'braids',
+    },
+    entry: [{ node: 'mar.diner.yesenia' }],
+  },
 ];
 
 export const CALETA_NODES: NodeMap = {
@@ -616,6 +658,19 @@ export const CALETA_NODES: NodeMap = {
       { who: 'Don Simón', text: 'See? The net gets mended, and so does the day. The half of this work nobody photographs.' },
     ],
     effects: ['set:c2.nets.done', 'clear:net.start', 'journal:customs.espera'],
+  },
+
+  // ---------------- the long table ----------------
+  'mar.diner.lucho': {
+    lines: [
+      { text: 'A fisherman in a straw hat, halfway through a sudado, moves his elbow to make room without looking up.' },
+      { who: 'Don Lucho', text: 'Sit, sit. At this table you are a stranger for one spoonful. After that you are passing the ají.' },
+    ],
+  },
+  'mar.diner.yesenia': {
+    lines: [
+      { who: 'Yesenia', text: 'I came in for ten minutes in 2009. Petro keeps a stool warm for anyone who means to leave quickly.' },
+    ],
   },
 
   // ---------------- Doña Petro, picantería ----------------

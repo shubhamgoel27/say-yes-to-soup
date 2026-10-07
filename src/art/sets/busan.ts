@@ -442,11 +442,13 @@ function paint(make: MakeTile) {
     g.stroke();
   }, 64, 96);
 
-  // A container crane at the water: an orange giraffe, grazing. Two tiles
-  // wide and three tall, because a gantry drawn inside one cell reads as a
-  // sawhorse. The portal is left open on purpose: the quay row behind it is
-  // walkable, and you should be able to see whoever is standing under it.
+  // A container crane on the quay edge: an orange giraffe, grazing. Drawn at
+  // half again its old size (three tiles wide, five and a quarter tall) and
+  // stood on the quay rather than in the water: at two tiles by three it read
+  // as a toy wading in the harbor. The portal is left open on purpose, so
+  // whoever walks behind its legs stays visible through it.
   make('crane', 2, (g, r) => {
+    g.scale(1.5, 1.5);
     const orange = shade('#d97b2e', (r.next() - 0.5) * 0.06);
     const dark = shade(orange, -0.18);
     softShadow(g, 64, 212, 50, 9, 0.18);
@@ -541,7 +543,7 @@ function paint(make: MakeTile) {
     g.moveTo(3, 31.5);
     g.lineTo(125, 31.5);
     g.stroke();
-  }, 128, 224);
+  }, 192, 336);
 
   // The post window: a kiosk the size of a biscuit tin.
   make('postwindow', 1, (g) => {

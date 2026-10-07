@@ -317,8 +317,9 @@ function objectAt(x: number, y: number): string {
   // The alley walls: racks in pairs and singles, never at one pitch.
   if (x === 32 && (y === 16 || y === 17 || y === 19 || y === 20 || y === 22)) return 'f';
   if (x === 28 && (y === 18 || y === 19 || y === 21)) return 'f';
-  // Cranes stand in the water so the quay can look up at them.
-  if (y === 26 && (x === 3 || x === 9 || x === 16 || x === 34 || x === 41)) return 'N';
+  // The cranes stand on the quay's edge, on their rail, the sea at their
+  // feet: three of them, big, spaced so the market stays readable behind.
+  if (y === 25 && (x === 4 || x === 12 || x === 36)) return 'N';
   const poi = POIS[`${x},${y}`];
   if (poi) return poi;
   // Weeds in the yard corners, deterministic so the map never crawls.

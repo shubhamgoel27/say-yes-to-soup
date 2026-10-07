@@ -143,7 +143,8 @@ function objectAt(x: number, y: number): string {
   for (const [hx, hy] of MACHIYA) {
     if (x >= hx && x < hx + 5 && y >= hy && y < hy + 5) {
       if (x === hx + 2 && y === hy + 4) return OPEN_DOORS.has(`${hx},${hy}`) ? 'N' : 'D';
-      if (x === hx && y === hy + 4) return 'C';
+      // The ferry office is drawn with its post window open and the clerk in it.
+      if (x === hx && y === hy + 4) return hx === 33 && hy === 17 ? 'O' : 'C';
       return 'x';
     }
   }
@@ -317,6 +318,7 @@ export const SHIONOURA_MAP: MapData = {
     F: { t: 'tree', solid: true, tall: true },
     r: { t: 'rock', solid: true },
     C: { t: 'machiya', solid: true, tall: true },
+    O: { t: 'ferryoffice', solid: true, tall: true },
     x: { t: 'blocked', solid: true, tall: true },
     D: { t: 'doorShut', solid: true, tall: true },
     N: { t: 'noren', tall: true },

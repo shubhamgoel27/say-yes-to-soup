@@ -12,8 +12,10 @@ export const CROSSING_NPCS: NpcDef[] = [
     id: 'mangben',
     name: 'Mang Ben',
     map: 'galley',
+    // At his counter, in front of the range, and staying there: a cook does
+    // not wander off from three pots.
     pos: [3, 2],
-    range: 1,
+    range: 0,
     look: {
       skin: '#a06a42',
       hair: '#3d362e',
@@ -100,6 +102,8 @@ export const CROSSING_NPCS: NpcDef[] = [
       stripe: '#c9a35f',
       hat: '#e8dcc4',
       hatStyle: 'none',
+      // The starter rides with her: her journal line says so.
+      prop: 'jar',
     },
     entry: [
       { when: { not: ['c3.met.olena'] }, node: 'c3.olena.first' },
@@ -951,6 +955,11 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'The range, gimballed against the roll, one stockpot on low forever. The most defended territory aboard.' },
     ],
   },
+  'c3.ex.counter': {
+    lines: [
+      { text: 'The steel counter: a board scarred pale, a cleaver, a heap of peeled garlic, and a tray of rice plated for the next watch.' },
+    ],
+  },
   'c3.ex.karaoke': {
     lines: [
       { text: 'The karaoke machine, under a fitted cover like important equipment. Aboard, it is.' },
@@ -1105,6 +1114,7 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c3.ex.galleyplant' },
   ],
   stove: [{ node: 'c3.ex.stove' }],
+  galleycounter: [{ node: 'c3.ex.counter' }],
   karaoke: [
     { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke' },
     { node: 'c3.ex.karaoke' },

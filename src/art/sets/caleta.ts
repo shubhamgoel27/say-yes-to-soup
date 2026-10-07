@@ -18,9 +18,17 @@ export const ART: ChapterArt = {
   noInk: ['seaweed', 'jellyfish'],
   /** Inside the picantería is inside La Caleta, not inside the Andes. */
   skins: {
-    picanteria: { wallInt: 'wallQuincha', floorEarth: 'floorCemento' },
+    picanteria: { wallInt: 'wallQuincha', floorEarth: 'floorCemento', table: 'longtable' },
   },
 
+  /** The long table is one table: head, middle and foot, top to bottom. */
+  pins: {
+    picanteria: [
+      { kind: 'table', at: [12, 3], v: 0 },
+      { kind: 'table', at: [12, 4], v: 1 },
+      { kind: 'table', at: [12, 5], v: 2 },
+    ],
+  },
   paint(make) {
     // ------------------------------------------------------------- flats
 
@@ -1026,6 +1034,61 @@ export const ART: ChapterArt = {
         rr(g, 14, 12, 14, 18, 1, '#e8e0cc');
         rect(g, 14, 12, 14, 4, '#c1512f');
       }
+    });
+
+    /**
+     * The picantería's long table, laid end to end down the east wall: one
+     * plank top that runs unbroken through three cells (head, middle, foot),
+     * an oilcloth runner, and what the sitting in progress has left on it.
+     * Three separate little tables read as a canteen; this reads as one table
+     * that strangers share.
+     */
+    make('longtable', 3, (g, r, i) => {
+      const wood = '#8a6238';
+      const head = i === 0;
+      const foot = i === 2;
+      const y0 = head ? 10 : 0;
+      const y1 = foot ? 52 : 64;
+      if (foot) softShadow(g, 34, 58, 26, 5, 0.18);
+      // Legs at the two ends only.
+      if (head) {
+        rr(g, 10, 14, 6, 10, 2, shade(wood, -0.18));
+        rr(g, 48, 14, 6, 10, 2, shade(wood, -0.18));
+      }
+      if (foot) {
+        rr(g, 10, 46, 6, 12, 2, shade(wood, -0.18));
+        rr(g, 48, 46, 6, 12, 2, shade(wood, -0.18));
+      }
+      rr(g, 6, y0, 52, y1 - y0, head || foot ? 5 : 0, wood);
+      // Planks run the length of the table.
+      g.strokeStyle = 'rgba(60,40,22,0.28)';
+      g.lineWidth = 1.2;
+      for (const x of [19, 32, 45]) {
+        g.beginPath(); g.moveTo(x, y0 + 2); g.lineTo(x, y1 - 2); g.stroke();
+      }
+      if (head) vgrad(g, 6, y0, 52, 6, 'rgba(255,235,200,0.3)', 'rgba(0,0,0,0)');
+      // The oilcloth runner down the middle, red check gone soft.
+      rect(g, 18, y0 + (head ? 4 : 0), 28, y1 - y0 - (head ? 4 : 0) - (foot ? 4 : 0), 'rgba(193,81,47,0.55)');
+      for (let y = y0 + (head ? 6 : 2); y < y1 - 4; y += 8) rect(g, 18, y, 28, 2, 'rgba(242,234,216,0.4)');
+      // The sitting in progress: plates on the west side, where the stools are.
+      if (i === 0) {
+        oval(g, 24, 34, 8, 5, '#f2efe6');
+        oval(g, 24, 33, 5.5, 3, '#d98b4a'); // sudado, half gone
+        dot(g, 42, 30, 5, '#e8dcc4'); // a glass of chicha morada
+        dot(g, 42, 29, 3.4, '#5a2a4a');
+      } else if (i === 1) {
+        oval(g, 24, 26, 8, 5, '#f2efe6');
+        oval(g, 24, 25, 5, 2.8, '#e8e0cc'); // ceviche, onion on top
+        dot(g, 22, 24, 1.6, '#c1512f');
+        oval(g, 40, 44, 7, 4.5, '#b5713f'); // the shared cancha
+        for (let k = 0; k < 4; k++) dot(g, 37 + k * 2, 43 + (k % 2), 1.3, '#d9b24a');
+      } else {
+        dot(g, 26, 18, 5, '#e8dcc4');
+        // The ají, in its bowl, crossing the table on its own.
+        oval(g, 40, 22, 6, 4, '#f2efe6');
+        oval(g, 40, 21.5, 4, 2.4, '#d9a21b');
+      }
+      void r;
     });
 
     /**

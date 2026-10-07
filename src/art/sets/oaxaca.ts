@@ -18,6 +18,20 @@ const CANTERA = '#87a08a';
 const MARIGOLD = '#e8862f';
 const MARIGOLD_HI = '#ffa53f';
 
+/**
+ * Pins for one horizontal run of papel picado: pole, middles, pole. Indoors
+ * (`walls`) the run is tied wall to wall and needs no poles.
+ */
+function papelRun(x0: number, x1: number, y: number, walls = false) {
+  const out: { kind: string; at: [number, number]; v: number }[] = [];
+  for (let x = x0; x <= x1; x++) {
+    const mid = (x - x0) % 3;
+    const v = walls ? mid : x0 === x1 ? 5 : x === x0 ? 3 : x === x1 ? 4 : mid;
+    out.push({ kind: 'papel', at: [x, y], v });
+  }
+  return out;
+}
+
 export const ART: ChapterArt = {
   aliases: { correo: 'signpost', colectivo: 'signpost' },
   grounded: [
@@ -40,6 +54,21 @@ export const ART: ChapterArt = {
     cocina: { wallInt: 'wallCal', floorEarth: 'floorSaltillo', rug: 'rugPetate' },
   },
 
+  /**
+   * Every papel picado cell, pinned to its place in its run (see `papel`):
+   * the runs in map.ts's PAPEL set and the cocina's one string.
+   */
+  pins: {
+    oaxaca: [
+      ...papelRun(15, 17, 13),
+      ...papelRun(29, 30, 13),
+      ...papelRun(23, 25, 7),
+      ...papelRun(19, 21, 18),
+      ...papelRun(36, 37, 14),
+      ...papelRun(24, 24, 25),
+    ],
+    cocina: papelRun(1, 12, 6, true),
+  },
   paint(make) {
     // ------------------------------------------------------------ grounds
 
@@ -73,19 +102,37 @@ export const ART: ChapterArt = {
 
     // ------------------------------------------------------------ props
 
-    // Papel picado: two strings of pierced tissue, wind in every rectangle.
-    make('papel', 3, (g, r) => {
+    // Papel picado, strung overhead: two strings of pierced tissue high
+    // across the lane, above the head of anyone walking under (176px tall,
+    // the strings in the top quarter). They used to be painted at ground
+    // level in a 64px cell and lay in the street like dropped bunting.
+    // Variants 0-2 are mid-run; 3 and 4 carry the pole at the run's west or
+    // east end, 5 is a short run with a pole at each end. The art set pins
+    // every cell, so a mid-run cell never sprouts a pole.
+    make('papel', 6, (g, r, i) => {
       const colors = ['#c94f7c', MARIGOLD_HI, '#5fb0a5', '#8a5fb0', '#7d9b3f', '#e8dcc4'];
-      for (const sy of [10, 26]) {
+      const H = 176;
+      const west = i === 3 || i === 5;
+      const east = i === 4 || i === 5;
+      const pole = (x: number) => {
+        rr(g, x - 2.5, 10, 5, H - 12, 2, '#6b4a2e');
+        vgrad(g, x - 2.5, 10, 2, H - 12, 'rgba(255,235,200,0.25)', 'rgba(0,0,0,0)');
+        oval(g, x, H - 2, 6, 2.4, 'rgba(40,28,16,0.25)');
+      };
+      if (west) pole(5);
+      if (east) pole(S - 5);
+      const x0 = west ? 5 : 0;
+      const x1 = east ? S - 5 : S;
+      for (const sy of [16, 30]) {
         g.strokeStyle = 'rgba(60,50,40,0.6)';
         g.lineWidth = 1.4;
         g.beginPath();
-        g.moveTo(0, sy);
-        g.quadraticCurveTo(S / 2, sy + 5, S, sy);
+        g.moveTo(x0, sy);
+        g.quadraticCurveTo((x0 + x1) / 2, sy + 5, x1, sy);
         g.stroke();
-        for (let i = 0; i < 5; i++) {
-          const x = 3 + i * 13 + r.int(3);
-          const yy = sy + 2 + Math.sin((x / S) * Math.PI) * 4;
+        for (let k = 0; k < 5; k++) {
+          const x = x0 + 2 + k * ((x1 - x0 - 12) / 4) + r.int(2);
+          const yy = sy + 1 + Math.sin(((x - x0) / (x1 - x0)) * Math.PI) * 4;
           const c = colors[r.int(colors.length)] ?? MARIGOLD_HI;
           rr(g, x, yy, 9, 11, 1, c);
           // The picado: light showing through the cut paper.
@@ -100,7 +147,7 @@ export const ART: ChapterArt = {
           g.stroke();
         }
       }
-    });
+    }, S, 176);
 
     // A comal: clay griddle on three stones over a small patient fire.
     make('comal', 2, (g, r) => {

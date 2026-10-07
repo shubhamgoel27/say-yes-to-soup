@@ -327,7 +327,8 @@ function applyGateState() {
   const village = maps['village'];
   if (!village) return;
   for (const [gx, gy] of [[41, 16], [42, 16]] as const) {
-    village.setObject(gx, gy, { t: 'gateOpen' });
+    // Tall: the open gateway keeps its pillars and lintel, and you walk under it.
+    village.setObject(gx, gy, { t: 'gateOpen', tall: true });
     village.addTrigger({ at: [gx, gy], type: 'door', to: 'east-road', spawn: [1, 6], facing: 'right' });
   }
 }
@@ -872,23 +873,26 @@ const villagers: Villager[] = NPCS.map((def) => {
   const sheet = sheetFor(def);
   return {
     def,
-    actor: new Actor(def.pos[0], def.pos[1], 'down'),
+    actor: new Actor(def.pos[0], def.pos[1], def.sits ?? 'down'),
     sheet,
     rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
     species: def.sprite, greetId: def.id, // renderer idle life: tail wags, chews, greeting nods
     portrait: def.sprite ? null : makePortrait(lookFor(def.id, def.look)),
     think: Math.random() * 2,
     want: null,
-    seat: null,
+    seat: def.sits ? { at: [def.pos[0], def.pos[1]] as [number, number], dir: def.sits } : null,
     glow: null,
     keeper: true,
-    seated: false,
+    seated: !!def.sits,
     fade: 1,
     jitter: Math.random(),
     baseSheet: sheet,
     fadeSheet: null,
   };
 });
+
+// Diners and other permanent sitters start, and stay, seated.
+for (const v of villagers) if (v.def.sits) v.actor.pose = 'sit';
 
 const dog = villagers.find((v) => v.def.id === 'allqu');
 const paca = villagers.find((v) => v.def.id === 'paca');
@@ -1107,7 +1111,7 @@ function updateRhythm(dt: number) {
         v.actor.placeAt(v.seat.at[0], v.seat.at[1], v.seat.dir);
         v.actor.pose = 'sit';
         v.seated = true;
-      } else if (v.seated && !duskish) {
+      } else if (v.seated && !duskish && !v.def.sits) {
         v.actor.pose = 'none';
         v.seated = false;
       }

@@ -127,7 +127,9 @@ export const NPCS: NpcDef[] = [
     name: 'Mateo',
     map: 'village',
     pos: [33, 15],
-    range: 4,
+    // Two, not four: a leash of four reached the cell behind the tree at
+    // 35,12, where he stood with his head growing out of its canopy.
+    range: 2,
     look: {
       skin: '#c98f5f',
       hair: '#3a2a1c',
@@ -1424,6 +1426,11 @@ export const NODES: NodeMap = {
       { text: 'A backstrap loom lashed to the post, its empty strap waiting for the weaver.' },
     ],
   },
+  'ex.olla': {
+    lines: [
+      { text: 'A blackened clay olla on three stones, steaming. Potatoes, something green, a ladle already in it. Somebody has counted you in.' },
+    ],
+  },
   'ex.bed': {
     lines: [{ text: 'Sheepskins and a striped blanket heavy enough to argue with the altiplano night.' }],
   },
@@ -1715,6 +1722,7 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   chomba: [{ node: 'ex.chomba' }],
   qoncha: [{ node: 'ex.qoncha' }],
   loom: [{ node: 'ex.loom' }],
+  olla: [{ node: 'ex.olla' }],
   bed: [{ node: 'ex.bed' }],
   table: [{ node: 'ex.table', scope: 'home' }, { node: 'ex.table.away', scope: 'away' }],
   stool: [{ node: 'ex.stool' }],

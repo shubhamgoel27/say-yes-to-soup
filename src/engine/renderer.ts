@@ -408,6 +408,13 @@ type RegionalArt = {
 /** Market fixtures that plausibly breathe steam: pots, griddles, vents. */
 const STEAMY_KINDS = new Set(['stall', 'eomukcart', 'hotteokcart', 'steamvent']);
 
+/**
+ * Cooking that steams at every hour, on any map, indoors or out: the pots a
+ * line of text tells the player to follow or names as "going". Unlike
+ * chimney smoke these never wait for the hearth hours.
+ */
+const POT_STEAM_KINDS = new Set(['olla', 'stove']);
+
 /** What a map offers its set-pieces to hang from, scanned once per map. */
 type RegionAnchors = {
   water: [number, number][];
@@ -575,6 +582,8 @@ export class Renderer {
   private regionalArt: RegionalArt;
   /** Per-map anchor scan: water cells, market stalls, the open-sea lane. */
   private anchorCache = new Map<string, RegionAnchors>();
+  /** Per map: logical-pixel points steam rises from, with a strength each. */
+  private potCache = new Map<string, [number, number][]>();
   /** Debug knob (`?ambient=1`): keep rare set-pieces (condor, sail) on screen. */
   private ambientDebug = false;
 
@@ -1735,6 +1744,7 @@ export class Renderer {
     this.drawParty(cam);
     this.drawEmotes(cam);
     this.drawSmoke(map, cam);
+    this.drawPotSteam(map, cam);
     if (this.mood !== 'interior') {
       // Fog-lid moods have no sky to cast cloud shadows from.
       if (this.nightK < 0.5 && !this.noClouds.has(this.mood)) this.drawClouds(map, cam);
@@ -3170,6 +3180,49 @@ export class Renderer {
         const y = by - 44 - t * 62;
         const r = 6 + t * 13;
         const a = (t < 0.15 ? t / 0.15 : 1 - (t - 0.15) / 0.85) * 0.28;
+        const puff = this.smokePuffs[(i + p) % this.smokePuffs.length];
+        if (!puff || a < 0.01) continue;
+        ctx.globalAlpha = a;
+        ctx.drawImage(puff, x - r, y - r, r * 2, r * 2);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  /**
+   * Steam off the pots that are always on: Rosa's olla, the galley range.
+   * A column of five wisps per pot, the same baked puffs as the chimneys. With
+   * reduced motion the wisps hold still rather than vanish, because a line
+   * of text may be pointing the player at them.
+   */
+  private drawPotSteam(map: TileMap, cam: Camera) {
+    let pots = this.potCache.get(map.id);
+    if (!pots) {
+      pots = [];
+      for (let y = 0; y < map.h; y++) {
+        for (let x = 0; x < map.w; x++) {
+          const o = map.object(x, y);
+          if (o && POT_STEAM_KINDS.has(o.t)) pots.push([x * TILE + TILE / 2, y * TILE + 4]);
+        }
+      }
+      this.potCache.set(map.id, pots);
+    }
+    if (!pots.length) return;
+    const ctx = this.ctx;
+    const clock = this.reduceMotion ? 0 : this.time;
+    // Indoors the steam meets the deckhead; outdoors it has the whole sky.
+    const rise = this.mood === 'interior' ? 80 : 150;
+    for (let i = 0; i < pots.length; i++) {
+      const [lx, ly] = pots[i]!;
+      const bx = (lx - cam.x) * A;
+      const by = (ly - cam.y) * A;
+      if (bx < -80 || bx > W + 80 || by < -40 || by > H + 200) continue;
+      for (let p = 0; p < 5; p++) {
+        const t = (clock * 0.22 + p / 5 + i * 0.29) % 1;
+        const x = bx + Math.sin(t * 4.6 + i * 1.7 + p * 2.1) * (3 + t * 14);
+        const y = by - t * rise;
+        const r = 9 + t * 24;
+        const a = (t < 0.1 ? t / 0.1 : 1 - (t - 0.1) / 0.9) * 0.9;
         const puff = this.smokePuffs[(i + p) % this.smokePuffs.length];
         if (!puff || a < 0.01) continue;
         ctx.globalAlpha = a;

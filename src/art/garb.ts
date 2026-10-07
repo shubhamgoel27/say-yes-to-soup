@@ -468,6 +468,20 @@ export function drawProp(
         line(g, [cx - 16, bodyTop + 16, cx - 7, bodyTop + 16], '#c1512f', 1.4);
       }
       break;
+    case 'jar': {
+      // A glass jar of sourdough starter under a cloth lid, held up a little.
+      if (dir === 'up') break;
+      const jx = hx;
+      const jy = hy - 6;
+      rr(g, jx - 7, jy - 10, 14, 18, 4, 'rgba(214,232,238,0.82)');
+      rr(g, jx - 5.5, jy - 3, 11, 10, 3, '#efe4c8');
+      dot(g, jx - 2, jy, 1.2, 'rgba(255,255,255,0.8)');
+      dot(g, jx + 2, jy + 3, 1, 'rgba(255,255,255,0.7)');
+      rr(g, jx - 8, jy - 13, 16, 5, 2, '#c9a35f');
+      line(g, [jx - 8, jy - 9, jx + 8, jy - 9], '#7a5636', 1.2);
+      rr(g, jx - 5, jy - 8, 2.4, 13, 1.2, 'rgba(255,255,255,0.45)'); // the glint
+      break;
+    }
     case 'camera':
       if (dir === 'up') break;
       line(g, [cx - 9, bodyTop, cx, bodyTop + 16, cx + 9, bodyTop], '#241a12', 1.4);
@@ -955,6 +969,13 @@ export function drawPortraitGarb(g: CanvasRenderingContext2D, look: Look, P: num
   if (look.prop === 'towel') {
     rr(g, cx - 54, top - 4, 22, P - top + 4, 5, '#f2efe6');
     line(g, [cx - 54, top + 30, cx - 32, top + 30], '#c1512f', 3);
+  }
+  if (look.prop === 'jar') {
+    rr(g, cx + 26, P - 46, 30, 40, 8, 'rgba(214,232,238,0.85)');
+    rr(g, cx + 29, P - 30, 24, 22, 6, '#efe4c8');
+    dot(g, cx + 36, P - 22, 2.4, 'rgba(255,255,255,0.8)');
+    rr(g, cx + 23, P - 52, 36, 10, 4, '#c9a35f');
+    rr(g, cx + 30, P - 40, 5, 28, 2.5, 'rgba(255,255,255,0.45)');
   }
   if (look.prop === 'camera') {
     rr(g, cx - 14, P - 26, 28, 18, 4, '#2b2b33');

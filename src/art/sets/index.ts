@@ -78,7 +78,7 @@ export const WINDOW_OFFSETS: Record<string, [number, number][]> = {
 export const GLOW_KINDS = new Set(['qoncha', 'campfire', 'farol']);
 
 /** Variant pins per map, keyed by cell (y * 4096 + x). */
-export const MAP_PINS: Record<string, Map<number, { kind: string; v: number }>> = {};
+export const MAP_PINS: Record<string, Map<number, { kind: string; v: number }[]>> = {};
 
 /** Soft-decor kinds contributed by chapters; tiles.ts folds these into NO_INK. */
 export const SOFT_KINDS = new Set<string>();
@@ -93,7 +93,13 @@ export function registerArt(set: ChapterArt) {
   }
   for (const [mapId, pins] of Object.entries(set.pins ?? {})) {
     const m = (MAP_PINS[mapId] ??= new Map());
-    for (const p of pins) m.set(p.at[1] * 4096 + p.at[0], { kind: p.kind, v: p.v });
+    // A cell may pin more than one kind: a gate shut and the same gate open.
+    for (const p of pins) {
+      const k = p.at[1] * 4096 + p.at[0];
+      const list = m.get(k) ?? [];
+      list.push({ kind: p.kind, v: p.v });
+      m.set(k, list);
+    }
   }
 }
 

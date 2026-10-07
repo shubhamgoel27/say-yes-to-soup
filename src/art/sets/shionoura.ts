@@ -1,6 +1,6 @@
 import type { ChapterArt } from './index';
 import { floorBed, floorPour, grit } from './floor';
-import { blob, dot, oval, rect, rr, shade, softShadow, vgrad, glowSpot } from '../pix';
+import { blob, dot, oval, rect, rr, shade, softShadow, vgrad, glowSpot, type Rng } from '../pix';
 
 /**
  * Shionoura's kit: weathered machiya wood, indigo noren, vermilion torii,
@@ -24,6 +24,197 @@ const PAPERWARM = '#f2e6d0';
 
 /** Tanzaku strip colors: the five Tanabata colors, roughly. */
 const TANZAKU = ['#c1512f', '#3f7fb0', '#c9a35f', '#8a4a7d', '#4d7440'];
+
+/**
+ * The machiya, and the ferry office, which is a machiya whose west window
+ * is the post counter with the clerk in it.
+ */
+function paintMachiya(g: CanvasRenderingContext2D, r: Rng, office: boolean) {
+  // 352x256: a wooden townhouse in the Inland Sea manner. Same wall and
+  // door geometry as `casa`, so village grids and window lights match.
+  const W = 352;
+  const wallTop = 96;
+  const wallBot = 252;
+  const wood = shade(WOOD, (r.next() - 0.5) * 0.06);
+
+  // Upper wall: plaster; lower: dark cedar boarding.
+  vgrad(g, 16, wallTop, W - 32, 74, shade(PLASTER, 0.03), shade(PLASTER, -0.06));
+  vgrad(g, 16, wallTop + 74, W - 32, wallBot - wallTop - 74, shade(wood, 0.06), shade(wood, -0.1));
+  // Vertical board seams on the lower half.
+  g.strokeStyle = 'rgba(30,20,12,0.35)';
+  g.lineWidth = 2;
+  for (let bx = 26; bx < W - 20; bx += 16) {
+    g.beginPath();
+    g.moveTo(bx, wallTop + 78);
+    g.lineTo(bx, wallBot - 4);
+    g.stroke();
+  }
+  // Weather: salt-pale streaks down the plaster.
+  for (let i = 0; i < 5; i++) {
+    const fx = 24 + r.int(W - 70);
+    vgrad(g, fx, wallTop, 10 + r.int(14), 40 + r.int(30), 'rgba(240,236,222,0.25)', 'rgba(0,0,0,0)');
+  }
+  // Base stain and side shade.
+  vgrad(g, 16, wallBot - 14, W - 32, 14, 'rgba(0,0,0,0)', 'rgba(40,32,24,0.35)');
+  g.save();
+  g.globalAlpha = 0.15;
+  g.fillStyle = '#1c1712';
+  g.fillRect(W - 26, wallTop, 10, wallBot - wallTop);
+  g.restore();
+
+  // The door: a wooden-framed sliding entrance, casa footprint.
+  rr(g, 150, wallBot - 96, 66, 96, 4, shade(wood, -0.3));
+  rr(g, 156, wallBot - 88, 54, 88, 3, shade(wood, -0.06));
+  // Sliding-door lattice with paper behind.
+  g.fillStyle = 'rgba(242,234,214,0.85)';
+  g.fillRect(160, wallBot - 82, 46, 60);
+  g.strokeStyle = 'rgba(50,36,22,0.7)';
+  g.lineWidth = 2.4;
+  for (const lx of [172, 183, 194]) {
+    g.beginPath(); g.moveTo(lx, wallBot - 82); g.lineTo(lx, wallBot - 22); g.stroke();
+  }
+  for (let ly = wallBot - 68; ly < wallBot - 22; ly += 16) {
+    g.beginPath(); g.moveTo(160, ly); g.lineTo(206, ly); g.stroke();
+  }
+  g.beginPath(); g.moveTo(183, wallBot - 82); g.lineTo(183, wallBot - 6); g.stroke();
+  rr(g, 146, wallBot - 102, 74, 9, 4, shade(wood, -0.2));
+
+  // Variant dressing at the door.
+  const dress = r.int(4);
+  if (dress <= 1) {
+    // A noren over the doorway; shops that are, in spirit, open.
+    const cloth = dress === 0 ? INDIGO : '#7d3f34';
+    for (let i = 0; i < 3; i++) {
+      const px = 154 + i * 20;
+      g.fillStyle = shade(cloth, (r.next() - 0.5) * 0.06);
+      g.beginPath();
+      g.moveTo(px, wallBot - 94);
+      g.lineTo(px + 18, wallBot - 94);
+      g.lineTo(px + 17, wallBot - 58);
+      g.quadraticCurveTo(px + 9, wallBot - 54, px + 1, wallBot - 58);
+      g.closePath();
+      g.fill();
+    }
+    dot(g, 183, wallBot - 76, 6, 'rgba(242,230,208,0.85)');
+  } else if (dress === 3) {
+    // Amado shutters drawn: the shuttered storefront, honest and asleep.
+    rect(g, 158, wallBot - 84, 50, 78, shade(wood, -0.22));
+    g.strokeStyle = 'rgba(20,14,8,0.5)';
+    g.lineWidth = 2;
+    for (let ly = wallBot - 70; ly < wallBot - 8; ly += 14) {
+      g.beginPath(); g.moveTo(158, ly); g.lineTo(208, ly); g.stroke();
+    }
+  }
+
+  // Windows: koshi lattice, same offsets as casa so lights line up.
+  for (const wx of office ? [252] : [52, 252]) {
+    rr(g, wx - 4, wallTop + 30, 56, 52, 3, shade(wood, -0.28));
+    g.fillStyle = 'rgba(242,234,214,0.9)';
+    g.fillRect(wx, wallTop + 34, 48, 44);
+    g.strokeStyle = 'rgba(50,36,22,0.75)';
+    g.lineWidth = 2.2;
+    for (let lx = wx + 6; lx < wx + 48; lx += 7) {
+      g.beginPath();
+      g.moveTo(lx, wallTop + 34);
+      g.lineTo(lx, wallTop + 78);
+      g.stroke();
+    }
+    g.beginPath();
+    g.moveTo(wx, wallTop + 56);
+    g.lineTo(wx + 48, wallTop + 56);
+    g.stroke();
+    // A small sill roof over each window.
+    rr(g, wx - 8, wallTop + 22, 64, 8, 3, shade(KAWARA, -0.02));
+  }
+
+  if (office) {
+    rr(g, 48, wallTop + 30, 56, 52, 3, shade(wood, -0.28));
+    rr(g, 44, wallTop + 22, 64, 8, 3, shade(KAWARA, -0.02));
+    // The ferry office: its west window is the post counter, open, with the
+    // clerk in it. Every line about this building has a clerk in it, so the
+    // building has one too.
+    const wx = 52;
+    rect(g, wx, wallTop + 34, 48, 44, '#3b3128'); // the dim room behind
+    vgrad(g, wx, wallTop + 34, 48, 14, 'rgba(255,236,200,0.18)', 'rgba(0,0,0,0)');
+    // The clerk: navy jacket, white shirt, cap, reading glasses.
+    rr(g, wx + 10, wallTop + 58, 28, 22, 8, '#2c3e57');
+    g.fillStyle = '#f2efe6';
+    g.beginPath();
+    g.moveTo(wx + 20, wallTop + 58);
+    g.lineTo(wx + 24, wallTop + 68);
+    g.lineTo(wx + 28, wallTop + 58);
+    g.closePath();
+    g.fill();
+    dot(g, wx + 24, wallTop + 50, 9, '#d6a27a');
+    rr(g, wx + 15, wallTop + 38, 18, 7, 3, '#2c3e57');
+    rr(g, wx + 13, wallTop + 43, 22, 3, 1.5, '#1f2b3d'); // the visor
+    g.strokeStyle = '#2b2622';
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.arc(wx + 20.5, wallTop + 51, 2.6, 0, Math.PI * 2);
+    g.arc(wx + 27.5, wallTop + 51, 2.6, 0, Math.PI * 2);
+    g.stroke();
+    // The counter shelf, an envelope on it, and the stamp pad.
+    rr(g, wx - 6, wallTop + 76, 60, 8, 2, shade(wood, 0.12));
+    rr(g, wx + 30, wallTop + 70, 14, 8, 1, '#f2ead8');
+    g.strokeStyle = 'rgba(193,81,47,0.8)';
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(wx + 30, wallTop + 70);
+    g.lineTo(wx + 37, wallTop + 74);
+    g.lineTo(wx + 44, wallTop + 70);
+    g.stroke();
+    rr(g, wx + 4, wallTop + 72, 9, 5, 1, '#7d3f34');
+    // The post mark on a white enamel plate beside the window.
+    rr(g, wx + 54, wallTop + 36, 18, 18, 2, '#f4f1ea');
+    g.strokeStyle = '#c8322a';
+    g.lineWidth = 2.4;
+    g.beginPath();
+    g.moveTo(wx + 57, wallTop + 40); g.lineTo(wx + 69, wallTop + 40);
+    g.moveTo(wx + 57, wallTop + 45); g.lineTo(wx + 69, wallTop + 45);
+    g.moveTo(wx + 63, wallTop + 45); g.lineTo(wx + 63, wallTop + 52);
+    g.stroke();
+  }
+
+  // The kawara roof: a deep sloped band of tile courses with eaves.
+  g.fillStyle = shade(KAWARA, 0.02);
+  g.beginPath();
+  g.moveTo(2, 92);
+  g.lineTo(26, 40);
+  g.lineTo(W - 26, 40);
+  g.lineTo(W - 2, 92);
+  g.closePath();
+  g.fill();
+  // Tile courses.
+  g.strokeStyle = 'rgba(30,34,42,0.45)';
+  g.lineWidth = 2;
+  for (let i = 1; i < 5; i++) {
+    const t = i / 5;
+    const y = 40 + t * 52;
+    g.beginPath();
+    g.moveTo(26 - t * 24, y);
+    g.lineTo(W - 26 + t * 24, y);
+    g.stroke();
+  }
+  // Vertical tile ridges, fanning slightly.
+  for (let i = 0; i <= 12; i++) {
+    const tx = 26 + (i * (W - 52)) / 12;
+    const bx = 2 + (i * (W - 4)) / 12;
+    g.beginPath();
+    g.moveTo(tx, 40);
+    g.lineTo(bx, 92);
+    g.stroke();
+  }
+  // Ridge cap and end caps.
+  rr(g, 20, 34, W - 40, 10, 5, shade(KAWARA, -0.14));
+  dot(g, 26, 39, 6, shade(KAWARA, -0.2));
+  dot(g, W - 26, 39, 6, shade(KAWARA, -0.2));
+  vgrad(g, 16, 92, W - 32, 16, 'rgba(20,16,12,0.4)', 'rgba(0,0,0,0)'); // eave shadow
+  // Round eave-end tiles.
+  for (let i = 0; i <= 12; i++) {
+    dot(g, 4 + (i * (W - 8)) / 12, 93, 4, shade(KAWARA, -0.08));
+  }
+}
 
 export const ART: ChapterArt = {
   paint(make) {
@@ -1168,143 +1359,8 @@ export const ART: ChapterArt = {
       rr(g, 14, 37, 7, 10, 1, 'rgba(220,235,240,0.75)'); // one glass, waiting
     });
 
-    make('machiya', 4, (g, r) => {
-      // 352x256: a wooden townhouse in the Inland Sea manner. Same wall and
-      // door geometry as `casa`, so village grids and window lights match.
-      const W = 352;
-      const wallTop = 96;
-      const wallBot = 252;
-      const wood = shade(WOOD, (r.next() - 0.5) * 0.06);
-
-      // Upper wall: plaster; lower: dark cedar boarding.
-      vgrad(g, 16, wallTop, W - 32, 74, shade(PLASTER, 0.03), shade(PLASTER, -0.06));
-      vgrad(g, 16, wallTop + 74, W - 32, wallBot - wallTop - 74, shade(wood, 0.06), shade(wood, -0.1));
-      // Vertical board seams on the lower half.
-      g.strokeStyle = 'rgba(30,20,12,0.35)';
-      g.lineWidth = 2;
-      for (let bx = 26; bx < W - 20; bx += 16) {
-        g.beginPath();
-        g.moveTo(bx, wallTop + 78);
-        g.lineTo(bx, wallBot - 4);
-        g.stroke();
-      }
-      // Weather: salt-pale streaks down the plaster.
-      for (let i = 0; i < 5; i++) {
-        const fx = 24 + r.int(W - 70);
-        vgrad(g, fx, wallTop, 10 + r.int(14), 40 + r.int(30), 'rgba(240,236,222,0.25)', 'rgba(0,0,0,0)');
-      }
-      // Base stain and side shade.
-      vgrad(g, 16, wallBot - 14, W - 32, 14, 'rgba(0,0,0,0)', 'rgba(40,32,24,0.35)');
-      g.save();
-      g.globalAlpha = 0.15;
-      g.fillStyle = '#1c1712';
-      g.fillRect(W - 26, wallTop, 10, wallBot - wallTop);
-      g.restore();
-
-      // The door: a wooden-framed sliding entrance, casa footprint.
-      rr(g, 150, wallBot - 96, 66, 96, 4, shade(wood, -0.3));
-      rr(g, 156, wallBot - 88, 54, 88, 3, shade(wood, -0.06));
-      // Sliding-door lattice with paper behind.
-      g.fillStyle = 'rgba(242,234,214,0.85)';
-      g.fillRect(160, wallBot - 82, 46, 60);
-      g.strokeStyle = 'rgba(50,36,22,0.7)';
-      g.lineWidth = 2.4;
-      for (const lx of [172, 183, 194]) {
-        g.beginPath(); g.moveTo(lx, wallBot - 82); g.lineTo(lx, wallBot - 22); g.stroke();
-      }
-      for (let ly = wallBot - 68; ly < wallBot - 22; ly += 16) {
-        g.beginPath(); g.moveTo(160, ly); g.lineTo(206, ly); g.stroke();
-      }
-      g.beginPath(); g.moveTo(183, wallBot - 82); g.lineTo(183, wallBot - 6); g.stroke();
-      rr(g, 146, wallBot - 102, 74, 9, 4, shade(wood, -0.2));
-
-      // Variant dressing at the door.
-      const dress = r.int(4);
-      if (dress <= 1) {
-        // A noren over the doorway; shops that are, in spirit, open.
-        const cloth = dress === 0 ? INDIGO : '#7d3f34';
-        for (let i = 0; i < 3; i++) {
-          const px = 154 + i * 20;
-          g.fillStyle = shade(cloth, (r.next() - 0.5) * 0.06);
-          g.beginPath();
-          g.moveTo(px, wallBot - 94);
-          g.lineTo(px + 18, wallBot - 94);
-          g.lineTo(px + 17, wallBot - 58);
-          g.quadraticCurveTo(px + 9, wallBot - 54, px + 1, wallBot - 58);
-          g.closePath();
-          g.fill();
-        }
-        dot(g, 183, wallBot - 76, 6, 'rgba(242,230,208,0.85)');
-      } else if (dress === 3) {
-        // Amado shutters drawn: the shuttered storefront, honest and asleep.
-        rect(g, 158, wallBot - 84, 50, 78, shade(wood, -0.22));
-        g.strokeStyle = 'rgba(20,14,8,0.5)';
-        g.lineWidth = 2;
-        for (let ly = wallBot - 70; ly < wallBot - 8; ly += 14) {
-          g.beginPath(); g.moveTo(158, ly); g.lineTo(208, ly); g.stroke();
-        }
-      }
-
-      // Windows: koshi lattice, same offsets as casa so lights line up.
-      for (const wx of [52, 252]) {
-        rr(g, wx - 4, wallTop + 30, 56, 52, 3, shade(wood, -0.28));
-        g.fillStyle = 'rgba(242,234,214,0.9)';
-        g.fillRect(wx, wallTop + 34, 48, 44);
-        g.strokeStyle = 'rgba(50,36,22,0.75)';
-        g.lineWidth = 2.2;
-        for (let lx = wx + 6; lx < wx + 48; lx += 7) {
-          g.beginPath();
-          g.moveTo(lx, wallTop + 34);
-          g.lineTo(lx, wallTop + 78);
-          g.stroke();
-        }
-        g.beginPath();
-        g.moveTo(wx, wallTop + 56);
-        g.lineTo(wx + 48, wallTop + 56);
-        g.stroke();
-        // A small sill roof over each window.
-        rr(g, wx - 8, wallTop + 22, 64, 8, 3, shade(KAWARA, -0.02));
-      }
-
-      // The kawara roof: a deep sloped band of tile courses with eaves.
-      g.fillStyle = shade(KAWARA, 0.02);
-      g.beginPath();
-      g.moveTo(2, 92);
-      g.lineTo(26, 40);
-      g.lineTo(W - 26, 40);
-      g.lineTo(W - 2, 92);
-      g.closePath();
-      g.fill();
-      // Tile courses.
-      g.strokeStyle = 'rgba(30,34,42,0.45)';
-      g.lineWidth = 2;
-      for (let i = 1; i < 5; i++) {
-        const t = i / 5;
-        const y = 40 + t * 52;
-        g.beginPath();
-        g.moveTo(26 - t * 24, y);
-        g.lineTo(W - 26 + t * 24, y);
-        g.stroke();
-      }
-      // Vertical tile ridges, fanning slightly.
-      for (let i = 0; i <= 12; i++) {
-        const tx = 26 + (i * (W - 52)) / 12;
-        const bx = 2 + (i * (W - 4)) / 12;
-        g.beginPath();
-        g.moveTo(tx, 40);
-        g.lineTo(bx, 92);
-        g.stroke();
-      }
-      // Ridge cap and end caps.
-      rr(g, 20, 34, W - 40, 10, 5, shade(KAWARA, -0.14));
-      dot(g, 26, 39, 6, shade(KAWARA, -0.2));
-      dot(g, W - 26, 39, 6, shade(KAWARA, -0.2));
-      vgrad(g, 16, 92, W - 32, 16, 'rgba(20,16,12,0.4)', 'rgba(0,0,0,0)'); // eave shadow
-      // Round eave-end tiles.
-      for (let i = 0; i <= 12; i++) {
-        dot(g, 4 + (i * (W - 8)) / 12, 93, 4, shade(KAWARA, -0.08));
-      }
-    }, 352, 256);
+    make('machiya', 4, (g, r) => paintMachiya(g, r, false), 352, 256);
+    make('ferryoffice', 1, (g, r) => paintMachiya(g, r, true), 352, 256);
   },
 
   grounded: [
@@ -1313,9 +1369,13 @@ export const ART: ChapterArt = {
     'chochin', 'postbox', 'yatai', 'keitruck', 'ebisudo',
     'jizo', 'ema', 'jihanki', 'himono', 'monohoshi', 'gyokyo', 'furin',
   ],
-  buildings: ['machiya'],
+  buildings: ['machiya', 'ferryoffice'],
   windows: {
     machiya: [
+      [15, -10],
+      [67, -10],
+    ],
+    ferryoffice: [
       [15, -10],
       [67, -10],
     ],

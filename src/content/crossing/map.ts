@@ -130,7 +130,7 @@ export const SHIP_MAP: MapData = {
   name: 'MV Yacana',
   spawn: [15, 18],
   spawnFacing: 'right',
-  triggers: [{ at: [21, 26], type: 'door', to: 'galley', spawn: [7, 8], facing: 'up' }],
+  triggers: [{ at: [21, 26], type: 'door', to: 'galley', spawn: [4, 7], facing: 'up' }],
   smoke: [[25, 27]],
   legend: {
     d: { t: 'deck' },
@@ -169,18 +169,24 @@ export const SHIP_MAP: MapData = {
   objects,
 };
 
-/** The galley and mess: one long table, the stove, the karaoke machine. */
+/**
+ * The galley and mess: the range, one long bolted table, the karaoke machine.
+ * A ship's room, not a house's: wider than it is deep, the door low and to
+ * the west because that is where the companionway lands, and the galley end
+ * is a working line along the forward bulkhead (range, counter, tray rack)
+ * rather than a hearth in a corner.
+ */
 export const GALLEY_MAP: MapData = {
   id: 'galley',
   name: 'The Galley',
-  spawn: [7, 8],
+  spawn: [4, 7],
   spawnFacing: 'up',
   legend: {
     '.': { t: 'floorSteel' },
     '#': { t: 'wallSteel', solid: true, tall: true },
     S: { t: 'shelf', solid: true, tall: true },
-    q: { t: 'stove', solid: true },
-    p: { t: 'pot', solid: true },
+    q: { t: 'stove', solid: true, tall: true },
+    c: { t: 'galleycounter', solid: true },
     T: { t: 'table', solid: true },
     s: { t: 'stool', solid: true },
     K: { t: 'karaoke', solid: true, tall: true },
@@ -193,43 +199,40 @@ export const GALLEY_MAP: MapData = {
     V: { t: 'deckshrine', solid: true, tall: true },
     y: { t: 'laundry', solid: true, tall: true },
     h: { t: 'hammock', solid: true, tall: true },
-    c: { t: 'shipcat', solid: true },
+    k: { t: 'shipcat', solid: true },
     o: { t: 'portcrate', solid: true, tall: true },
     d: { t: 'oildrum', solid: true },
     L: { t: 'lifering', solid: true, tall: true },
     u: { t: 'rustpatch' },
-    R: { t: 'hosereel', solid: true },
     ' ': { t: 'void' },
   },
   ground: [
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
-    '..............',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '................',
   ],
-  // The galley end and the mess end are different halves, not a mirrored
-  // pair: stove, pots and trayrack in the north-west where Ben works and
-  // where the only fire in the room is, one bolted mess table west of the
-  // door lane, and the off-watch corner aft with the karaoke, the shrine,
-  // the dartboard and the chess. The crate stack by the door is what you
-  // come in past; the lane from the door to the far bulkhead never closes.
+  // The working line runs the forward bulkhead from the west: range, counter,
+  // tray rack, and Ben in front of it. The mess table is bolted athwartships
+  // in the middle with its stools on both sides; the off-watch corner (the
+  // karaoke, the shrine, the life ring, the chess) holds the east end. The
+  // lane up from the door at x=4 to the counter never closes, and nothing
+  // stands between the table and the karaoke.
   objects: [
-    '##SM##S####D##',
-    '#qp t       K#',
-    '#p          V#',
-    '#     s  R   #',
-    '# TTT       L#',
-    '# ss    u    #',
-    '#y   c   s P #',
-    '#  h     G   #',
-    '#  u    o  d #',
-    '#######m######',
+    '##SM##S###D##S##',
+    '#qqcc t      KV#',
+    '#        s s   #',
+    '#       TTTTT L#',
+    '#  y     s s s #',
+    '#    k         #',
+    '#h       G   P #',
+    '#d  uo    u  o #',
+    '####m###########',
   ],
-  triggers: [{ at: [7, 9], type: 'door', to: 'ship', spawn: [21, 27], facing: 'down' }],
+  triggers: [{ at: [4, 8], type: 'door', to: 'ship', spawn: [21, 27], facing: 'down' }],
 };

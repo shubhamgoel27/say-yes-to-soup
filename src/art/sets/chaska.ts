@@ -1,5 +1,5 @@
 import type { ChapterArt } from './index';
-import { Rng, blob, dot, mute, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
+import { Rng, blob, dot, glowSpot, mute, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
 import { PAL } from '../../engine/config';
 
 /**
@@ -45,6 +45,16 @@ export const ART: ChapterArt = {
   grounded: ['ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
   noInk: ['chuno', 'grano', 'gallina', 'lagarto'],
   pathy: ['plazaWorn'],
+  // The east gateway is one drawing across two cells: west half, east half,
+  // shut or swung open.
+  pins: {
+    village: [
+      { kind: 'gate', at: [41, 16], v: 0 },
+      { kind: 'gate', at: [42, 16], v: 1 },
+      { kind: 'gateOpen', at: [41, 16], v: 0 },
+      { kind: 'gateOpen', at: [42, 16], v: 1 },
+    ],
+  },
 
   paint(make) {
     // ------------------------------------------------------ the descent
@@ -404,6 +414,41 @@ export const ART: ChapterArt = {
       g.moveTo(50, 20);
       g.quadraticCurveTo(44, 28, 36, 33);
       g.stroke();
+    });
+
+    // Rosa's soup olla, out by her door on three stones over a low fire:
+    // the steam the first errand says to follow (the renderer breathes it).
+    make('olla', 1, (g) => {
+      softShadow(g, 32, 56, 22, 5, 0.2);
+      // Embers between the stones.
+      glowSpot(g, 32, 50, 14, '#ff9d3f', 0.5);
+      dot(g, 32, 51, 4, '#e8862f');
+      dot(g, 32, 51, 1.8, '#ffe9ad');
+      for (const [sx, sy] of [[19, 52], [45, 52], [32, 57]] as const) {
+        oval(g, sx, sy, 6, 4.2, shade(PAL.stone, -0.1));
+        oval(g, sx - 1, sy - 1.4, 3.2, 1.8, shade(PAL.stone, 0.12));
+      }
+      // The pot: blackened clay, belly and rim.
+      const clay = '#8a5232';
+      oval(g, 32, 38, 18, 14, clay);
+      oval(g, 32, 46, 16, 6, 'rgba(30,20,14,0.45)'); // soot on the belly
+      oval(g, 25, 33, 5, 6, shade(clay, 0.18));
+      oval(g, 32, 26, 14, 5, shade(clay, -0.22));
+      oval(g, 32, 26.5, 11, 3.6, '#d9b26a'); // the soup, gold with potato
+      dot(g, 28, 26, 1.6, '#6b8a3a');
+      dot(g, 35, 27, 1.4, '#6b8a3a');
+      // Handles.
+      oval(g, 14.5, 34, 3, 4, shade(clay, -0.1));
+      oval(g, 49.5, 34, 3, 4, shade(clay, -0.1));
+      // The ladle, propped in it.
+      g.strokeStyle = '#7a5636';
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(36, 26);
+      g.lineTo(50, 8);
+      g.stroke();
+      oval(g, 34, 27, 4, 2, '#5c4630');
     });
 
     // Doña Carmen's dye pots: a kitchen, but for color.

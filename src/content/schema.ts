@@ -34,6 +34,12 @@ export type NpcDef = {
   pos: [number, number];
   /** Wander leash radius in tiles. 0 = stands still. */
   range: number;
+  /**
+   * Seated where they stand, facing this way, for good: diners on the stools
+   * of a long table. Put them on the stool's own cell (it draws under them)
+   * with range 0. They turn to talk and settle back after.
+   */
+  sits?: 'up' | 'down' | 'left' | 'right';
   look: Look;
   /** Animals use a bespoke sheet and no portrait; people are drawn from look. */
   sprite?: 'llama' | 'llamaBrown' | 'dog';

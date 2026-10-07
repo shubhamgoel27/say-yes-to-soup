@@ -220,9 +220,10 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     name: 'Olena',
     map: 'shionoura',
     when: { has: ['c4.arrived'], not: ['c4.complete'] },
-    // Ashore against the ferry office wall while the ship works, out of the
-    // way of the quay's two lanes.
-    pos: [35, 22],
+    // At the end of the quay, where the paving gives out onto sand, holding
+    // the starter up to the hills: exactly where her line puts her, and no
+    // longer standing in the ferry office doorway.
+    pos: [38, 22],
     range: 0,
     look: {
       skin: '#dfb08a',
@@ -231,6 +232,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       stripe: '#c9a35f',
       hat: '#e8dcc4',
       hatStyle: 'none',
+      prop: 'jar',
     },
     entry: [
       { when: { not: ['c4.met.olena'] }, node: 'c4.olena.shore' },
@@ -1025,6 +1027,11 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Dark cedar and white plaster, silver where the salt wind works and black where the eaves defend it.' },
     ],
   },
+  'c4.ex.ferryoffice': {
+    lines: [
+      { text: 'The ferry office. In the post window the clerk looks up over his glasses, sees you are not the ferry, and goes back to the ledger.' },
+    ],
+  },
   'c4.ex.noren': {
     lines: [
       { text: 'Noren hung out means open, taken in means closed: a shop that tells the truth with cloth.' },
@@ -1451,6 +1458,7 @@ export const SHIONOURA_NODES: NodeMap = {
 export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   blocked: [{ map: 'shionoura', node: 'c4.ex.wall' }, { map: 'minshuku', node: 'c4.ex.wall' }],
   machiya: [{ node: 'c4.ex.machiya' }],
+  ferryoffice: [{ node: 'c4.ex.ferryoffice' }],
   noren: [{ node: 'c4.ex.noren' }],
   hisashi: [{ node: 'c4.ex.hisashi' }],
   torii: [{ node: 'c4.ex.torii' }],

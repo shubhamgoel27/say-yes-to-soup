@@ -355,7 +355,8 @@ export const COCINA_MAP: MapData = {
   // shuts. The fire, the metate and the cazuelas run down the west wall
   // where Refugio works, and the table sits east of the door lane instead
   // of across it, so the walk from the door to the altar is never blocked.
-  // Papel picado crosses the room at head height on the way in.
+  // Papel picado crosses the room wall to wall, above head height, on the
+  // way in.
   objects: [
     '##S##R###SS###',
     '#pc     vOO  #',
@@ -363,8 +364,8 @@ export const COCINA_MAP: MapData = {
     '#g           #',
     '#       sTTT #',
     '#  W     s s #',
-    '#r    PPP    #',
-    '#kk   n   le #',
+    '#PPPPPPPPPPPP#',
+    '#kkr  n   le #',
     '#k           #',
     '#######m######',
   ],

@@ -158,26 +158,128 @@ function paint(make: MakeTile) {
     if (r.chance(0.6)) oval(g, r.next() * S, r.next() * S, 10, 5, 'rgba(50,58,54,0.14)');
   });
 
-  make('stove', 1, (g) => {
-    // The galley range: gimballed, railed, permanently on duty.
-    softShadow(g, 32, 58, 24, 6, 0.2);
-    rr(g, 8, 26, 48, 32, 3, '#4c4f4c');
-    vgrad(g, 8, 26, 48, 8, 'rgba(255,255,245,0.16)', 'rgba(0,0,0,0)');
-    rr(g, 14, 40, 20, 14, 2, '#3a3d3a'); // oven door
-    rr(g, 16, 45, 16, 2.4, 1, '#c9c4b4');
-    dot(g, 44, 46, 3.4, '#c94a2e'); // the one knob that matters
-    // Stovetop with fiddle rails and the eternal stockpot.
-    rr(g, 6, 20, 52, 8, 3, '#6a6e6a');
-    oval(g, 26, 20, 11, 4.4, '#8a8e8a');
-    rr(g, 17, 8, 18, 13, 3, '#b8b2a2');
-    oval(g, 26, 8, 9, 3.2, '#8a8478');
-    oval(g, 26, 7, 6, 2, 'rgba(240,240,230,0.5)'); // steam sheen
-    g.strokeStyle = '#3a3d3a';
+  /**
+   * The galley range proper, two cells of it against the forward bulkhead:
+   * a stainless top with fiddle rails and pot clamps, two oven doors, and
+   * the extraction hood on the bulkhead above. Three pots going: the big
+   * stockpot and the rice pot on the west half, the sinigang pot and Ben's
+   * kawali on the east. Variant 0 is the west half, 1 the east, pinned.
+   * The renderer breathes steam off both.
+   */
+  make('stove', 2, (g, _r, i) => {
+    const east = i === 1;
+    const top = 44;
+    // The hood, bolted to the bulkhead, and its duct.
+    rr(g, 0, 2, S, 18, east ? 3 : 3, '#b9b8ae');
+    vgrad(g, 0, 2, S, 6, 'rgba(255,255,250,0.35)', 'rgba(0,0,0,0)');
+    rect(g, 0, 18, S, 3, '#8a8a82');
+    if (!east) rr(g, 40, -2, 16, 6, 2, '#a5a49a');
+    // The body: stainless, two oven doors, a row of knobs.
+    softShadow(g, 32, 92, 30, 5, 0.2);
+    rr(g, east ? -4 : 2, top, S + 2, 48, 3, '#a9aba4');
+    vgrad(g, 0, top, S, 10, 'rgba(255,255,250,0.3)', 'rgba(0,0,0,0)');
+    rr(g, east ? 4 : 10, top + 16, 48, 26, 2, '#8c8e88');
+    rr(g, east ? 8 : 14, top + 20, 40, 3, 1.4, '#d9d6cc'); // door handle
+    for (let k = 0; k < 3; k++) dot(g, (east ? 10 : 16) + k * 16, top + 9, 2.6, '#3a3d3a');
+    if (!east) dot(g, 48, top + 9, 2.6, '#c94a2e'); // the one knob that matters
+    // The cooktop, dark, and its fiddle rail.
+    rr(g, east ? -4 : 2, top - 8, S + 2, 10, 2, '#4c4f4c');
+    g.strokeStyle = '#c9c6bc';
     g.lineWidth = 2;
     g.beginPath();
-    g.moveTo(6, 18);
-    g.lineTo(58, 18);
+    g.moveTo(east ? 0 : 4, top - 10);
+    g.lineTo(east ? S - 4 : S, top - 10);
     g.stroke();
+    const steelPot = (cx: number, w: number, h: number, body: string) => {
+      oval(g, cx, top - 4, w / 2 + 1, 3, 'rgba(20,20,18,0.35)');
+      rr(g, cx - w / 2, top - 4 - h, w, h, 3, body);
+      vgrad(g, cx - w / 2, top - 4 - h, w * 0.35, h, 'rgba(255,255,250,0.32)', 'rgba(0,0,0,0)');
+      oval(g, cx, top - 4 - h, w / 2, 3.2, shade(body, -0.25));
+      oval(g, cx, top - 4 - h, w / 2 - 2, 2, 'rgba(240,236,224,0.55)');
+      rr(g, cx - w / 2 - 4, top - h + 2, 4, 3, 1, shade(body, -0.2));
+      rr(g, cx + w / 2, top - h + 2, 4, 3, 1, shade(body, -0.2));
+    };
+    if (!east) {
+      steelPot(20, 24, 22, '#c4c3bb'); // the stockpot, since Callao
+      steelPot(46, 16, 12, '#b0aea4'); // rice
+    } else {
+      steelPot(18, 20, 15, '#bdbbb2'); // sinigang
+      // The kawali: a wide black pan, handle out over the rail.
+      oval(g, 44, top - 6, 13, 4.6, '#2e2f2c');
+      oval(g, 44, top - 7, 10, 3, '#4a3a28');
+      dot(g, 41, top - 7.5, 1.6, '#e8c87a'); // garlic, frying
+      dot(g, 46, top - 6.8, 1.4, '#e8c87a');
+      rr(g, 55, top - 9, 10, 3, 1.4, '#2e2f2c');
+    }
+  }, S, 96);
+
+  // The steel counter beside the range: a chopping board, a cleaver, garlic.
+  make('galleycounter', 2, (g, r, i) => {
+    softShadow(g, 32, 60, 30, 5, 0.16);
+    rr(g, 0, 18, S, 40, 2, '#9fa19a');
+    rr(g, 0, 14, S, 8, 2, '#c9c9c0');
+    vgrad(g, 0, 14, S, 4, 'rgba(255,255,250,0.4)', 'rgba(0,0,0,0)');
+    rect(g, 0, 36, S, 2, 'rgba(40,40,36,0.25)');
+    if (i === 0) {
+      rr(g, 12, 6, 30, 12, 3, '#c9a46a'); // the board
+      rr(g, 34, 4, 16, 6, 1.5, '#d8d8d0'); // the cleaver's blade
+      rr(g, 48, 5, 8, 4, 1.5, '#3a2a1c');
+      for (let k = 0; k < 4; k++) dot(g, 18 + k * 4 + r.int(2), 10 + r.int(3), 1.8, '#f2ead8');
+    } else {
+      // A tray of plated rice waiting for the next sitting.
+      rr(g, 8, 4, 44, 14, 2, '#c9a35f');
+      for (let k = 0; k < 3; k++) {
+        oval(g, 16 + k * 14, 11, 5.5, 3.6, '#f2efe6');
+        dot(g, 16 + k * 14, 10, 2, '#f8f6f0');
+      }
+    }
+  });
+
+  // The mess table: bolted down, laminate top with a fiddle lip, steel legs.
+  make('messtable', 3, (g, r) => {
+    softShadow(g, 32, 56, 30, 5, 0.18);
+    rect(g, 6, 34, 4, 20, '#8a8a82');
+    rect(g, 54, 34, 4, 20, '#8a8a82');
+    rr(g, 0, 16, S, 22, 2, '#c8cdb8');
+    rect(g, 0, 16, S, 3, '#e2e6d4');
+    rect(g, 0, 36, S, 3, '#6c7a6a');
+    // Whatever the last sitting left: a mug, a bottle of patis, a plate.
+    const pick = r.int(3);
+    if (pick === 0) {
+      rr(g, 22, 18, 9, 10, 2, '#f2efe6');
+      oval(g, 26.5, 18.5, 4, 1.6, '#5a3a22');
+    } else if (pick === 1) {
+      oval(g, 30, 25, 9, 5, '#f2efe6');
+      oval(g, 30, 24.5, 6, 3, '#d9b26a');
+    } else {
+      rr(g, 40, 14, 5, 12, 1.5, '#7a4a28');
+      rect(g, 40, 18, 5, 4, '#e8dcc4');
+    }
+  });
+
+  // Mess stools: bolted chrome posts with red vinyl seats.
+  make('messstool', 1, (g) => {
+    softShadow(g, 32, 52, 12, 4, 0.18);
+    rect(g, 30, 30, 4, 20, '#a9aba4');
+    oval(g, 32, 50, 9, 3, '#8a8a82');
+    oval(g, 32, 28, 12, 6, '#a3322a');
+    oval(g, 30, 26.5, 7, 3, 'rgba(255,230,220,0.25)');
+  });
+
+  // The galley's shelves: steel racks with fiddle bars, tins and sacks lashed in.
+  make('galleyshelf', 2, (g, r) => {
+    vgrad(g, 0, 0, S, S, '#b9b8ae', '#9c9b92');
+    for (const ry of [24, 48]) {
+      rect(g, 4, ry, S - 8, 4, '#7a7a72');
+      rect(g, 4, ry - 10, S - 8, 2, '#d9d8d0'); // the fiddle bar
+    }
+    for (let k = 0; k < 4; k++) {
+      const x = 8 + k * 13;
+      const c = r.pick(['#c1512f', '#3f7fb0', '#d2a548', '#f2ead8']);
+      rr(g, x, 10, 9, 13, 1.5, c);
+      rect(g, x, 14, 9, 3, 'rgba(255,255,255,0.4)');
+      rr(g, x + 1, 36, 10, 11, 3, r.chance(0.5) ? '#e8dcc4' : '#c9b48a');
+    }
   });
 
   make('trayrack', 1, (g) => {
@@ -1256,8 +1358,21 @@ export const ART: ChapterArt = {
   },
   glows: ['stove', 'deckshrine'],
   noInk: ['ropecoil', 'rustpatch', 'flyingfish', 'dunnage'],
-  /** In the galley a mat is a dunnage board, not a woven one. */
+  /**
+   * In the galley a mat is a dunnage board, and the furniture is a ship's:
+   * a bolted laminate mess table, chrome stools, steel shelving. Without
+   * these the room was the picantería's table and stools in a steel box.
+   */
   skins: {
-    galley: { mat: 'dunnage' },
+    galley: { mat: 'dunnage', table: 'messtable', stool: 'messstool', shelf: 'galleyshelf' },
+  },
+  /** The range is one drawing across two cells. */
+  pins: {
+    galley: [
+      { kind: 'stove', at: [1, 1], v: 0 },
+      { kind: 'stove', at: [2, 1], v: 1 },
+      { kind: 'galleycounter', at: [3, 1], v: 0 },
+      { kind: 'galleycounter', at: [4, 1], v: 1 },
+    ],
   },
 };

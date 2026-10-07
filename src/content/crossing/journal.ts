@@ -203,7 +203,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] },
     text: 'The karaoke machine in the mess has come out from under its cover. Attendance is not so much optional as inevitable.',
-    at: ['galley', 12, 1],
+    at: ['galley', 13, 1],
   },
   {
     when: { has: ['c3.shellback'], not: ['joseph.letter'] },

@@ -97,7 +97,7 @@ export type Look = {
   hairdo?: 'bun' | 'braids';
   beard?: 'full' | 'moustache';
   glasses?: boolean;
-  prop?: 'cane' | 'ladle' | 'broom' | 'towel' | 'camera';
+  prop?: 'cane' | 'ladle' | 'broom' | 'towel' | 'camera' | 'jar';
   sleeves?: 'short' | 'long';
 };
 

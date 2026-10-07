@@ -22,7 +22,7 @@ const BUILDINGS = new Set(['house', 'casa']);
 export type Conn = (dx: number, dy: number) => boolean;
 
 /** Soft ground decor that should melt into the earth, never be cut out. */
-const NO_INK = new Set(['rug', 'mat', 'petalpath', 'tuft', 'flower', 'gateOpen', 'cuy', 'mwanirow', 'clovemat']);
+const NO_INK = new Set(['rug', 'mat', 'petalpath', 'tuft', 'flower', 'cuy', 'mwanirow', 'clovemat']);
 
 /** Freestanding tall things that sit on a soft cast shadow. */
 const GROUNDED_TALL = new Set([
@@ -490,18 +490,89 @@ export class Tileset {
       oval(g, x, 28, 5.5, 2.2, '#241a12');
     });
 
-    this.make('gateOpen', 1, (g) => {
-      const wood = '#7a5636';
-      rr(g, 2, 10, 7, S - 14, 2, wood);
-      vgrad(g, 2, 10, 7, 6, 'rgba(255,235,200,0.3)', 'rgba(0,0,0,0)');
-      // Leaf folded back along the top.
-      rr(g, 8, 10, 44, 12, 3, shade(wood, -0.05));
-      g.strokeStyle = 'rgba(50,36,24,0.4)';
-      g.lineWidth = 2;
-      for (const lx of [20, 32, 44]) {
-        g.beginPath(); g.moveTo(lx, 11); g.lineTo(lx, 21); g.stroke();
+    /**
+     * The east gate is a gateway, not a fence: two fieldstone pillars, an
+     * ichu-thatched lintel over the road, and two weathered plank leaves
+     * between them. Two cells wide; variant 0 is the west half and variant 1
+     * the east half, pinned per cell by the chapter's art set. Drawn 176px
+     * tall so the lintel clears a person's head and reads from across the
+     * valley. `gateOpen` is the same gateway with its leaves swung back.
+     */
+    const gateway = (g: CanvasRenderingContext2D, half: number, open: boolean) => {
+      const H = 176;
+      const r = new Rng(4242 + half * 31);
+      const east = half === 1;
+      // Pillar of fitted fieldstones, wider at the base.
+      const px = east ? 44 : 0;
+      softShadow(g, px + 10, H - 4, 18, 5, 0.22);
+      vgrad(g, px, 52, 20, H - 52, shade(PAL.stone, 0.06), shade(PAL.stoneDark, -0.04));
+      for (let y = 58; y < H - 6; y += 14) {
+        for (let x = px + 2; x < px + 18; x += 9) {
+          blob(g, x + 4 + r.int(2), y + r.int(4), 5 + r.next() * 1.5, shade(PAL.stone, (r.next() - 0.4) * 0.22), r, 0.18);
+        }
       }
-    });
+      rr(g, px - 2, 48, 24, 8, 3, shade(PAL.stone, 0.12)); // the cap stone
+      // The lintel beam, and the thatch riding on it.
+      const wood = '#7a6650';
+      rr(g, 0, 40, S, 10, 2, wood);
+      vgrad(g, 0, 40, S, 4, 'rgba(255,235,200,0.28)', 'rgba(0,0,0,0)');
+      const straw = shade(PAL.gold, -0.04);
+      g.fillStyle = straw;
+      g.beginPath();
+      g.moveTo(east ? 0 : -2, 42);
+      g.lineTo(east ? 0 : 6, 22);
+      g.lineTo(east ? S - 6 : S, 18);
+      g.lineTo(east ? S + 2 : S, 42);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = shade(straw, -0.25);
+      g.lineWidth = 1.2;
+      for (let x = 4; x < S; x += 5) {
+        g.beginPath();
+        g.moveTo(x, 22 + r.int(3));
+        g.lineTo(x + 2, 42);
+        g.stroke();
+      }
+      vgrad(g, 0, 38, S, 6, 'rgba(40,28,16,0.0)', 'rgba(40,28,16,0.3)');
+      // The leaves: weathered grey planks with a Z brace, latched in the middle.
+      const plank = '#8a7d6c';
+      if (!open) {
+        const x0 = east ? 0 : 20;
+        const x1 = east ? 44 : S;
+        const top = 92;
+        const bot = H - 10;
+        for (let x = x0; x < x1; x += 8.8) {
+          rr(g, x + 0.6, top + (east ? (x1 - x) * 0.05 : (x - x0) * 0.05), 7.6, bot - top, 1.5, shade(plank, (r.next() - 0.5) * 0.1));
+        }
+        rr(g, x0, top + 10, x1 - x0, 6, 2, shade(plank, -0.14));
+        rr(g, x0, bot - 18, x1 - x0, 6, 2, shade(plank, -0.14));
+        g.strokeStyle = shade(plank, -0.2);
+        g.lineWidth = 5;
+        g.beginPath();
+        g.moveTo(east ? x1 - 2 : x0 + 2, bot - 16);
+        g.lineTo(east ? x0 + 2 : x1 - 2, top + 16);
+        g.stroke();
+        // The latch: a loop of rope over the meeting posts.
+        if (!east) {
+          g.strokeStyle = '#c9a65e';
+          g.lineWidth = 2;
+          g.beginPath();
+          g.ellipse(S - 1, top + 30, 4, 7, 0, 0, Math.PI * 2);
+          g.stroke();
+        }
+      } else {
+        // Swung back against the pillar, seen edge-on.
+        const x = east ? 34 : 20;
+        rr(g, x, 90, 10, H - 98, 2, shade(plank, -0.06));
+        g.strokeStyle = shade(plank, -0.24);
+        g.lineWidth = 1.2;
+        for (let y = 98; y < H - 12; y += 12) {
+          g.beginPath(); g.moveTo(x + 1, y); g.lineTo(x + 9, y); g.stroke();
+        }
+      }
+    };
+
+    this.make('gateOpen', 2, (g, _r, i) => gateway(g, i, true), 64, 176);
 
     // ------------------------------------------------------------ talls
 
@@ -758,16 +829,7 @@ export class Tileset {
       dot(g, 46, 36, 3, PAL.gold);
     });
 
-    this.make('gate', 2, (g) => {
-      const wood = '#7a5636';
-      for (const x of [6, 22, 38, 54]) {
-        rr(g, x, 20, 7, 72, 3, wood);
-        vgrad(g, x, 20, 7, 8, 'rgba(255,235,200,0.25)', 'rgba(0,0,0,0)');
-      }
-      rr(g, 0, 24, S, 8, 3, shade(wood, 0.1));
-      rr(g, 0, 56, S, 8, 3, shade(wood, -0.1));
-      rr(g, 0, 84, S, 8, 3, shade(wood, -0.2));
-    }, 64, 96);
+    this.make('gate', 2, (g, _r, i) => gateway(g, i, false), 64, 176);
 
     this.make('cactus', 3, (g, r) => {
       const green = '#5f7d4a';
@@ -910,23 +972,91 @@ export class Tileset {
       g.fill();
     }, 64, 96);
 
+    // A backstrap loom (away) at rest: the far bar lashed to a planted stake,
+    // the warp running down toward the ground where the weaver kneels, the
+    // finished pallay nearest her, and the strap that goes round her back
+    // lying open in a loop, waiting. It was a standing frame loom once, which
+    // is not the loom anybody in the dialogue sits at.
     this.make('loom', 1, (g) => {
-      softShadow(g, 32, 90, 22, 5, 0.2);
-      rr(g, 8, 8, 6, 80, 2, '#7a5636');
-      rr(g, 50, 14, 6, 74, 2, '#7a5636');
-      // Warp threads.
-      g.strokeStyle = 'rgba(242,230,208,0.8)';
-      g.lineWidth = 1.4;
-      for (let x = 18; x <= 46; x += 4) {
-        g.beginPath(); g.moveTo(x, 20); g.lineTo(x, 72); g.stroke();
+      const wood = '#7a5636';
+      softShadow(g, 50, 88, 40, 6, 0.2);
+      // The stake, planted, with its lashing.
+      rr(g, 78, 22, 7, 70, 3, wood);
+      vgrad(g, 78, 22, 7, 8, 'rgba(255,235,200,0.3)', 'rgba(0,0,0,0)');
+      for (const ly of [30, 34]) {
+        g.strokeStyle = '#c9a65e';
+        g.lineWidth = 1.6;
+        g.beginPath(); g.moveTo(77, ly); g.lineTo(86, ly + 2); g.stroke();
       }
-      // Woven band.
-      rr(g, 16, 40, 32, 32, 3, PAL.terracotta);
-      rect(g, 16, 48, 32, 4, PAL.cream);
-      rect(g, 16, 60, 32, 4, PAL.gold);
-      dot(g, 32, 55, 2.4, PAL.skyDeep);
-      rr(g, 12, 72, 40, 7, 3, '#8a6238');
-    }, 64, 96);
+      // Cords from the stake to the ends of the far bar.
+      g.strokeStyle = '#c9a65e';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(80, 32); g.lineTo(68, 38);
+      g.moveTo(80, 33); g.lineTo(68, 58);
+      g.stroke();
+      // The warp: a band falling from the far bar to the near one.
+      const warp = (x0: number, t0: number, b0: number, x1: number, t1: number, b1: number, c: string) => {
+        g.fillStyle = c;
+        g.beginPath();
+        g.moveTo(x0, t0); g.lineTo(x1, t1); g.lineTo(x1, b1); g.lineTo(x0, b0);
+        g.closePath();
+        g.fill();
+      };
+      warp(68, 40, 56, 22, 62, 80, 'rgba(242,230,208,0.92)');
+      g.strokeStyle = 'rgba(150,120,90,0.45)';
+      g.lineWidth = 1;
+      for (let k = 1; k < 6; k++) {
+        const f = k / 6;
+        g.beginPath();
+        g.moveTo(68, 40 + 16 * f);
+        g.lineTo(22, 62 + 18 * f);
+        g.stroke();
+      }
+      // Heddle rod and the flat shed sword across the open warp.
+      rr(g, 54, 42, 3, 22, 1.5, shade(wood, 0.1));
+      rr(g, 59, 39, 5, 22, 2, '#a07a4e');
+      // The woven part, nearest the weaver: red ground, cream diamonds,
+      // gold and sky edges. Interpolated along the same slope as the warp.
+      const yAt = (x: number, top: boolean) => {
+        const f = (68 - x) / 46;
+        return top ? 40 + 22 * f : 56 + 24 * f;
+      };
+      warp(46, yAt(46, true), yAt(46, false), 23, yAt(23, true), yAt(23, false), PAL.terracotta);
+      warp(46, yAt(46, true), yAt(46, true) + 3, 23, yAt(23, true), yAt(23, true) + 3, PAL.gold);
+      warp(46, yAt(46, false) - 3, yAt(46, false), 23, yAt(23, false) - 3, yAt(23, false), PAL.skyDeep);
+      for (const x of [28, 35, 42]) {
+        const cy = (yAt(x, true) + yAt(x, false)) / 2;
+        g.fillStyle = PAL.cream;
+        g.beginPath();
+        g.moveTo(x, cy - 5); g.lineTo(x + 3, cy); g.lineTo(x, cy + 5); g.lineTo(x - 3, cy);
+        g.closePath();
+        g.fill();
+        dot(g, x, cy, 1.1, PAL.terracotta);
+      }
+      // The far bar and the near (breast) bar.
+      rr(g, 66, 36, 4, 23, 2, shade(wood, -0.05));
+      rr(g, 19, 59, 5, 24, 2.5, shade(wood, -0.1));
+      // The strap, open on the ground where her back would be.
+      g.strokeStyle = '#5c3a28';
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(21, 62);
+      g.quadraticCurveTo(2, 64, 4, 76);
+      g.quadraticCurveTo(6, 88, 21, 81);
+      g.stroke();
+      g.strokeStyle = PAL.gold;
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(17, 63);
+      g.quadraticCurveTo(4, 66, 6, 76);
+      g.stroke();
+      // Two balls of yarn, the spare colors.
+      dot(g, 40, 89, 4.2, PAL.skyDeep);
+      dot(g, 48, 90, 3.8, PAL.gold);
+      dot(g, 39, 87.5, 1.4, 'rgba(255,255,255,0.35)');
+    }, 96, 96);
 
     this.make('shelf', 3, (g, r) => {
       const base = '#6e5138';
@@ -1674,7 +1804,7 @@ export class Tileset {
     this.skin = MAP_SKINS[mapId] ?? null;
     this.pins = MAP_PINS[mapId] ?? null;
   }
-  private pins: Map<number, { kind: string; v: number }> | null = null;
+  private pins: Map<number, { kind: string; v: number }[]> | null = null;
 
   /** Which painted kind actually supplies this kind's pixels here. */
   private art(kind: string): string {
@@ -1689,8 +1819,10 @@ export class Tileset {
   private variant(kind: string, cx: number, cy: number): HTMLCanvasElement {
     const list = this.v.get(this.art(kind));
     if (!list || list.length === 0) return this.fallback();
-    const pin = this.pins?.get(cy * 4096 + cx);
-    if (pin && pin.kind === kind) return list[pin.v % list.length] ?? this.fallback();
+    const pins = this.pins?.get(cy * 4096 + cx);
+    if (pins) {
+      for (const pin of pins) if (pin.kind === kind) return list[pin.v % list.length] ?? this.fallback();
+    }
     const pick = list[Math.floor(cellHash(cx, cy, 5) * list.length)];
     return pick ?? this.fallback();
   }
@@ -1785,7 +1917,7 @@ export class Tileset {
     cy: number,
     time: number,
   ) {
-    if (kind === 'tuft' || kind === 'flower' || kind === 'papel') {
+    if (kind === 'tuft' || kind === 'flower') {
       const sway = Math.sin(time * 2.1 - cx * 0.45 - cy * 0.18 + cellHash(cx, cy, 9) * 0.9) * 2.5;
       g.save();
       g.translate(sx + S / 2, sy + S);

@@ -520,7 +520,7 @@ export const DELHI_NODES: NodeMap = {
   'c11.jog.meal': {
     lines: [
       { text: 'You sit between a porter and a man whose shoes cost the porter\'s month. One ladle serves you both.' },
-      { who: 'Joginder Singh', text: 'Both hands, beta, cupped. Receiving with two hands is the whole theology.' },
+      { who: 'Joginder Singh', text: 'Both hands, beta, cupped, the way you take a gift. Same ladle, same dal, for everyone in the row.' },
       { text: 'This place stands where the ninth Guru gave his head for another faith\'s right to pray.' },
     ],
     effects: ['set:c11.jog.fed', 'journal:customs.langar'],

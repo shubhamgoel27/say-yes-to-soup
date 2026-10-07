@@ -188,6 +188,7 @@ function objectAt(x: number, y: number): string {
   if (x === 22 && y === 17) return 'A';
   if (x === 32 && y === 26) return 'k'; // the chakitaqlla leans on the house wall
   if (x === 13 && y === 26) return 'F'; // Rosa's chicha flag, beside her door
+  if (x === 14 && y === 28) return 'O'; // and her soup olla, steaming, by her corner
   // ---------------------------------------------------------- the plaza
   if (x === 21 && y === 15) return 'W'; // the well, the middle of everything
   if (x === 22 && y === 14) return 'C'; // cántaros queued for their turn at it
@@ -224,7 +225,11 @@ function objectAt(x: number, y: number): string {
   // Geraniums in lard cans by the chichería door: one either side of the turn,
   // so the worn path elbows toward the doorway instead of running on into grass.
   if ((x === 11 && y === 26) || (x === 11 && y === 27)) return 'g';
-  if ((x === 28 && y === 11) || (x === 30 && y === 11)) return 'g'; // and at Carmen's
+  // And at Carmen's: either side of her door, and one more by the loom.
+  if ((x === 28 && y === 11) || (x === 30 && y === 11) || (x === 31 && y === 11)) return 'g';
+  // Her backstrap loom, staked out by the geraniums where she works: the far
+  // bar lashed to the stake, the strap lying open on her side of it.
+  if (x === 31 && y === 12) return 'J';
   if (x === 20 && y === 10) return 'N'; // the votive niche beside the lane
   if (x === 33 && y === 4) return 't'; // the clothesline behind Carmen's house
   if ((x === 6 && y === 9) || (x === 6 && y === 23) || (x === 6 && y === 24)) return 'e'; // eucalyptus saplings
@@ -314,6 +319,8 @@ export const VILLAGE_MAP: MapData = {
     A: { t: 'qepi', solid: true },
     z: { t: 'batea', solid: true },
     m: { t: 'mantas' },
+    J: { t: 'loom', solid: true, tall: true },
+    O: { t: 'olla', solid: true },
   },
   ground,
   objects,
