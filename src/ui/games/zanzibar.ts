@@ -224,8 +224,8 @@ const SAIL_LEGEND_HARD = [
 
 /**
  * The trim card: Bakari's brass rose, lashed to the fore-deck. Wind and sheet
- * ride the same arc on it, so the question the game actually asks — is my
- * sheet where the wind is? — is answered by looking, not by reading.
+ * ride the same arc on it, so the question the game actually asks (is my
+ * sheet where the wind is?) is answered by looking, not by reading.
  */
 const ROSE = { x: 100, y: 94, r: 56 };
 const ROSE_A0 = -Math.PI * 0.86;

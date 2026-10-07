@@ -805,7 +805,7 @@ export const OAXACA_NODES: NodeMap = {
     ],
   },
   'c9.pan.thread': {
-    lines: [{ who: 'Tacho', text: 'Follow the red, amigo. Dough and travelers both rise where they are put.' }],
+    lines: [{ who: 'Tacho', text: 'Follow the red. Dough and travelers both rise where they are put.' }],
     effects: ['thread:'],
   },
   'c9.pan.threadNo': {

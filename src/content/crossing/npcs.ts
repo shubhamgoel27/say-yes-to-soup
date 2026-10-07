@@ -216,7 +216,7 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- Capitana Ríos, la mar's own ----------------
   'c3.rios.first.casero': {
     lines: [
-      { who: 'Capitana Ríos', text: 'So. Marisol calls you casero and Petro swears your hands are clean. Better than paperwork.' },
+      { who: 'Capitana Ríos', text: 'Aboard, then. On land you were somebody’s casero; at sea that makes you crew. Better than paperwork.' },
       { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, so he runs the morale. Report to him. He outranks me.' },
     ],
     effects: ['set:c3.met.rios'],

@@ -624,7 +624,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.sachi.shop': {
     lines: [
-      { who: 'Sachiko', text: 'So. Who fed you on the way here? Name them one at a time.' },
+      { who: 'Sachiko', text: 'Now. Who fed you on the way here? Name them one at a time.' },
     ],
     choices: [
       { text: 'Lemon yokan for Doña Petro, cook to cook', goto: 'c4.omi.petro', when: { not: ['omiyage.petro'] } },
