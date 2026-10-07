@@ -112,12 +112,30 @@ const TALLY = ['album.full', 'album.most', 'album.few'] as const;
 
 const TILTS = [-2.2, 1.7, -1.1, 2.4];
 
-/** The last line the player wrote at the well, whichever one it was. */
-const LAST_LINES: [string, string][] = [
-  ['c10.lastline.word', 'The word for elsewhere is also the word for home.'],
-  ['c10.lastline.trick', 'Walk slowly. Say yes to soup. Thank them twice.'],
-  ['c10.lastline.begun', 'Finished. Which is to say: begun.'],
+/**
+ * The last line the player wrote at the well, whichever one it was, and
+ * whether Nani had already underlined the space for it.
+ */
+const LAST_LINES: [string, string, boolean][] = [
+  ['c10.lastline.word', 'The word for elsewhere is also the word for home.', true],
+  ['c10.lastline.trick', 'Walk slowly. Say yes to soup. Thank them twice.', false],
+  ['c10.lastline.begun', 'Finished. Which is to say: begun.', false],
 ];
+
+/**
+ * Nani's underline: "an old underline in her 1974 ink, already the right
+ * length for the sentence." Faded brown, pressed harder in the middle, a
+ * blot where the nib came down, sitting under the blue of the new line and
+ * exactly as long as it, because it is sized to it.
+ */
+const NANI_UNDERLINE =
+  '<svg class="end-nani" aria-hidden="true" viewBox="0 0 200 12" preserveAspectRatio="none" ' +
+  'style="position:absolute;left:-1.5%;bottom:-0.3em;width:103%;height:0.42em;overflow:visible;pointer-events:none">' +
+  '<path d="M3 7.4 C 40 5.8, 80 7.8, 120 6.2 S 180 5.2, 197 5.5 C 198.6 5.6, 198.6 6.7, 197 6.9 ' +
+  'C 170 7.6, 130 8.4, 100 8.6 S 30 9.6, 4 9.4 C 1.6 9.3, 1.5 7.5, 3 7.4 Z" fill="#7b4a26" opacity="0.7"/>' +
+  '<ellipse cx="4" cy="8.3" rx="2.6" ry="1.9" fill="#6a3d1e" opacity="0.45"/>' +
+  '<path d="M8 8.7 C 60 8.2, 120 7.9, 190 6.6" stroke="#5e3519" stroke-width="0.6" fill="none" opacity="0.3"/>' +
+  '</svg>';
 
 type Mode = 'album' | 'end';
 
@@ -345,9 +363,16 @@ export class AlbumUI {
 
   // ---------------------------------------------------- the closing book
 
-  private lastLine(): string {
-    for (const [flag, text] of LAST_LINES) if (this.state.has(flag)) return text;
-    return 'Finished. Which is to say: begun.';
+  private lastLine(): [string, boolean] {
+    for (const [flag, text, under] of LAST_LINES) if (this.state.has(flag)) return [text, under];
+    return ['Finished. Which is to say: begun.', false];
+  }
+
+  /** The written line; under the one she foresaw, her underline was already waiting. */
+  private lastLineHtml(): string {
+    const [text, underlined] = this.lastLine();
+    if (!underlined) return text;
+    return `<span style="position:relative;display:inline-block">${text}${NANI_UNDERLINE}</span>`;
   }
 
   private routeHtml(): string {
@@ -383,7 +408,7 @@ export class AlbumUI {
       case 'last':
         return `
           <div class="end-kicker">the last page</div>
-          <div class="end-ruled"><p class="end-written">${this.lastLine()}</p></div>
+          <div class="end-ruled"><p class="end-written">${this.lastLineHtml()}</p></div>
           <p class="end-note">Written at the well, in your own hand. The page was never blank. It was waiting.</p>`;
       case 'home':
         return `

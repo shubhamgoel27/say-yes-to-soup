@@ -878,6 +878,16 @@ export const RETURN_NODES: NodeMap = {
       { text: "The stone is still warm from Carmen's shawl. The page can wait for the apacheta; Carmen, visibly, cannot." },
     ],
   },
+  'c10.ex.jug.waiting': {
+    lines: [
+      { text: 'A painted jug of chicha by the well, and one small wooden cup. Nobody has poured yet. The jug has heard this argument before.' },
+    ],
+  },
+  'c10.ex.jug': {
+    lines: [
+      { text: 'The jug, lighter now, and a dark patch on the setts where the earth drank first. The cup has been round the well more times than anyone is admitting.' },
+    ],
+  },
   'c10.well.after': {
     lines: [
       { text: 'The well, older than the church. Your page, the newest thing here, already settling in. The water is nobody\'s to sell.' },
@@ -902,6 +912,11 @@ export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'village', when: { has: ['c10.carmen.her'], not: ['c10.apacheta.done'] }, node: 'c10.well.stone' },
     { map: 'village', when: { has: HOME, not: ['story.end', 'c10.carmen.her'] }, node: 'c10.well.notyet' },
     { map: 'village', when: { has: ['story.end'] }, node: 'c10.well.after' },
+  ],
+  // The jug at the well, from Carmen's call on.
+  jug: [
+    { map: 'village', when: { has: ['c10.well.called'], not: ['c10.carmen.her'] }, node: 'c10.ex.jug.waiting' },
+    { node: 'c10.ex.jug' },
   ],
   // The cairn on the pass road. Tagged to the road so it front-runs the
   // first chapter's own apacheta words only while the stone is in hand.
