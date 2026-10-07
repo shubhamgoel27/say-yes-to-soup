@@ -3618,6 +3618,13 @@ function titleActivate() {
             freshSlate();
           },
     );
+  } else if (!state.has('intro.done')) {
+    // The flyleaf saves the moment it is finished, so a tab closed during
+    // Nani's letter or the three wake lines left a save with no intro in it;
+    // Continue then stood the traveler at the well in silence and her letter
+    // and the game's first words never came back. Pick up at the letter.
+    mode = 'letter';
+    title.showLetter(undefined, state.playerName);
   } else {
     beginPlay(false);
   }
