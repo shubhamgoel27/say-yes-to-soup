@@ -36,6 +36,73 @@ export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch())
   return coarse ? taps : keys;
 }
 
+/** How long a new thread reads in full on a phone before the chip folds. */
+export const CHIP_FRESH_MS = 8000;
+
+/**
+ * The task chip on a phone: a new thread reads in full, then folds to one
+ * line so the world keeps the room (the journal always has the whole of
+ * it). The clock starts only once the chip can be seen, since a thread
+ * usually changes at the end of a conversation, while the HUD is still
+ * hushed. Only the `fresh` class is toggled; the fold itself is CSS behind
+ * a coarse pointer, so a desk never sees anything change.
+ */
+export class ChipFold {
+  private text = '';
+  /** 0 while fresh but unseen; the fold time once the clock is running. */
+  private foldAt = 0;
+
+  constructor(private el: HTMLElement) {}
+
+  /** The chip's text was (re)written; a different thread reads fresh. */
+  note(text: string): void {
+    if (text === this.text) return;
+    this.text = text;
+    this.foldAt = 0;
+    this.el.classList.add('fresh');
+  }
+
+  /** Once per frame with whether the HUD is hushed. */
+  tick(quiet: boolean, now = performance.now()): void {
+    if (!this.el.classList.contains('fresh') || quiet) return;
+    if (this.foldAt === 0) this.foldAt = now + CHIP_FRESH_MS;
+    else if (now >= this.foldAt) this.el.classList.remove('fresh');
+  }
+}
+
+/** The pair watchScrollCue last armed, re-measured when the window turns. */
+let cuePair: [HTMLElement, HTMLElement] | null = null;
+let cueResizeArmed = false;
+
+function syncCue(box: HTMLElement, cue: HTMLElement): void {
+  const more = box.scrollHeight - box.clientHeight - box.scrollTop > 6;
+  cue.classList.toggle('on', more);
+}
+
+/**
+ * A card taller than the room scrolls, but a scroll box shows no sign of
+ * itself on glass until a thumb happens to move it: options below the fold
+ * simply did not exist. `cue` (positioned and shown by CSS only where a
+ * card can overflow) carries `on` while there is more below, and a tap on
+ * it brings the rest up.
+ */
+export function watchScrollCue(box: HTMLElement | null, cue: HTMLElement | null): void {
+  if (!box || !cue) return;
+  cuePair = [box, cue];
+  box.addEventListener('scroll', () => syncCue(box, cue), { passive: true });
+  cue.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    box.scrollBy({ top: Math.max(80, box.clientHeight * 0.7), behavior: 'smooth' });
+  });
+  requestAnimationFrame(() => syncCue(box, cue));
+  if (!cueResizeArmed) {
+    cueResizeArmed = true;
+    window.addEventListener('resize', () => {
+      if (cuePair && cuePair[0].isConnected) syncCue(cuePair[0], cuePair[1]);
+    });
+  }
+}
+
 /**
  * A phone proper: touch-first and the screen's smaller side under 600 CSS px.
  * Screen dimensions, not window: fullscreen and browser chrome move the

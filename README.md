@@ -4,7 +4,7 @@
 
 **Say Yes to Soup** is a cozy, Pokémon-style RPG for the browser about walking through the world's villages and letting culture arrive sideways: through soup, slang, small corrections, and people who disagree with each other. No combat, no timers, no fail states. You can put it down mid-sentence.
 
-You grew up on your grandmother Nani's postcards. Then the postcards stopped. The lawyer's envelope held no money and one journal, half full — her note said the empty half was always yours. So: unpaid leave, one bag, her 1974 route. Her advice from the first letter is the whole game: *say yes to soup, ask about the bread, and if someone corrects you, thank them twice.*
+You grew up on your grandmother Nani's postcards. Then the postcards stopped. The lawyer's envelope held no money and one journal, half full; her note said the empty half was always yours. So: unpaid leave, one bag, her 1974 route. Her advice from the first letter is the whole game: *say yes to soup, ask about the bread, and if someone corrects you, thank them twice.*
 
 ![title](docs/shots/title.png)
 
@@ -14,7 +14,7 @@ You grew up on your grandmother Nani's postcards. Then the postcards stopped. Th
 
 ## The journey
 
-Ten chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos — and the same road home, upward.
+Ten chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos, and the same road home, upward.
 
 | | |
 |---|---|
@@ -38,14 +38,14 @@ deck, and star-spotting over an 1825 chart of Nani's.
 
 ## The world rhymes
 
-What you learn uphill changes how every coast treats you. The reciprocity chain — Quechua *ayni*, the coastal *yapa*, Korean *deom*, Mexican *pilón*, and finally the Zapotec *guelaguetza* ledger that explains why Nani stopped writing — is the game's spine. The journal stitches visible threads between rhyming pages, and margin notes in Nani's hand become legible only when you hold both halves.
+What you learn uphill changes how every coast treats you. The reciprocity chain (Quechua *ayni*, the coastal *yapa*, Korean *deom*, Mexican *pilón*, and finally the Zapotec *guelaguetza* ledger that explains why Nani stopped writing) is the game's spine. The journal stitches visible threads between rhyming pages, and margin notes in Nani's hand become legible only when you hold both halves.
 
 | | |
 |---|---|
 | ![rhyme](docs/shots/journal-rhyme.png) *yapa, stitched to ayni, with her margin note* | ![dishes](docs/shots/journal-dishes.png) *every dish gets its little painting* |
 
 - **Travelers find you**: Faustino trades his llama train down the mountain and bets you've forgotten the pass; Hana ferries over and pointedly never asks what you wished; Joseph walks into his mother's kitchen past his own letter; the ship's cook makes you recite the adobo order and mists up.
-- **Letters chase you** around the world — including the escalating correspondence of a nine-year-old bridge magnate.
+- **Letters chase you** around the world, including the escalating correspondence of a nine-year-old bridge magnate.
 - **Every village cooks with you** once you've cared enough to learn: a watía earth oven, the lime-kiss timing of ceviche, morning dashi, a meter-long chaya pour, urojo built to a customer's call, cannoli filled at the moment and never before.
 - **You can just sit down.** Any bench, baraza, fish crate, or bollard. The camera settles, the music steps aside for the wind, and the place thinks out loud around you.
 - **You can hear where you are**: nine regional generative music styles (bombo, taiko, janggu, chenda, taarab, tarantella, marimba), speech babble shaped by each language's pitch and gait, footsteps that know steel decks from sand.
@@ -120,11 +120,11 @@ soup.end()                    // set up the endgame
 - Vite + TypeScript and a thin custom engine (variable timestep clamped at 50 ms, 16 px logical tiles); PixiJS handles only the final composite: screen-space lighting, bloom, iris wipes, and shimmer-free zoom over a Canvas2D-painted world. The sim advances by exactly the time the display shows, which is what keeps motion smooth on a 120 Hz panel.
 - All world art is procedural: painterly canvas drawing at 4x resolution, no sprite sheets. Buildings cast the sun's shadow at the angle the hour actually implies, ground kinds feather into each other, and floors carry wear where feet have been. All audio is synthesized WebAudio, zero audio files. The only bitmaps are CC0 paper and cloth textures dressing the UI, and four public-domain plates taped into the journal as Nani's own clippings.
 - Content is data: maps are ASCII rows plus a legend; dialogue is a condition-gated node graph; one `effects` array is the entire learning system. Each chapter is a self-contained plugin folder (content, art set, minigames, weather moods, recall manifest).
-- The test suite plays the game abstractly: a reachability fixpoint proves all 234 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, a recall ledger proves every cross-chapter callback was planted before it pays off, a flood fill proves no map has ground a player can see but never stand on, and two coverage tests prove no map names art that does not exist. 45 tests, and each one exists because the thing it checks went wrong once.
+- The test suite plays the game abstractly: a reachability fixpoint proves all 253 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, a recall ledger proves every cross-chapter callback was planted before it pays off, a flood fill proves no map has ground a player can see but never stand on, and two coverage tests prove no map names art that does not exist. 45 tests, and each one exists because the thing it checks went wrong once.
 
 ## On the cultures
 
-Every village in this game is fictional; the texture is researched. Each region was written from a sourced content bible (see `docs/*-content-bible.md`) with explicit lists of claims to verify and clichés to refuse — no mafia Sicily, no Halloween Oaxaca, no monolithic anywhere. Getting a custom wrong in-game is never punished; the wrong branch is always the warmer scene, because that is how strangers are actually treated in most kitchens on Earth. Corrections from people who know these places better are welcome — that is rather the point of the game.
+Every village in this game is fictional; the texture is researched. Each region was written from a sourced content bible (see `docs/*-content-bible.md`) with explicit lists of claims to verify and clichés to refuse: no mafia Sicily, no Halloween Oaxaca, no monolithic anywhere. Getting a custom wrong in-game is never punished; the wrong branch is always the warmer scene, because that is how strangers are actually treated in most kitchens on Earth. Corrections from people who know these places better are welcome; that is rather the point of the game.
 
 An Australia chapter is deliberately deferred until it can be researched with the care First Nations storytelling deserves; in-game, that's a letter you'll receive near the end.
 
