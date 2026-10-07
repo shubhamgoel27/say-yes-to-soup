@@ -46,6 +46,12 @@ export type ChapterArt = {
    * (`ExamineArm.map`) carry the words the way they always did.
    */
   skins?: Record<string, Record<string, string>>;
+  /**
+   * Per-map variant pins: on this map, the `kind` at cell `x,y` always uses
+   * variant `v`. Variants are otherwise picked by cell hash, which is right
+   * for a field of grass and wrong for the one cat the dialogue calls ginger.
+   */
+  pins?: Record<string, { kind: string; at: [number, number]; v: number }[]>;
 };
 
 export const ART_SETS: ChapterArt[] = [];
@@ -71,6 +77,9 @@ export const WINDOW_OFFSETS: Record<string, [number, number][]> = {
 /** Object kinds that get a flickering light at night, extended by chapters. */
 export const GLOW_KINDS = new Set(['qoncha', 'campfire', 'farol']);
 
+/** Variant pins per map, keyed by cell (y * 4096 + x). */
+export const MAP_PINS: Record<string, Map<number, { kind: string; v: number }>> = {};
+
 /** Soft-decor kinds contributed by chapters; tiles.ts folds these into NO_INK. */
 export const SOFT_KINDS = new Set<string>();
 
@@ -81,6 +90,10 @@ export function registerArt(set: ChapterArt) {
   for (const k of set.glows ?? []) GLOW_KINDS.add(k);
   for (const [mapId, skin] of Object.entries(set.skins ?? {})) {
     MAP_SKINS[mapId] = { ...(MAP_SKINS[mapId] ?? {}), ...skin };
+  }
+  for (const [mapId, pins] of Object.entries(set.pins ?? {})) {
+    const m = (MAP_PINS[mapId] ??= new Map());
+    for (const p of pins) m.set(p.at[1] * 4096 + p.at[0], { kind: p.kind, v: p.v });
   }
 }
 

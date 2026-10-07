@@ -26,6 +26,9 @@ export const ART: ChapterArt = {
   glows: ['marketlamp'],
   aliases: { postcounter: 'signpost' },
   noInk: ['starfish', 'flipflopgoal', 'doormat'],
+  // The cat in the pocket of shade by Rashid's bench is the ginger one the
+  // dialogue keeps meeting; the cell hash had dressed her as the tuxedo.
+  pins: { zanzibar: [{ kind: 'paka', at: [14, 10], v: 0 }] },
   /** Bi Amina's shop is coral rag and lime, the same as her house front. */
   skins: {
     kangashop: { wallInt: 'wallCoral', floorEarth: 'floorLimeScreed', rug: 'rugMkeka' },

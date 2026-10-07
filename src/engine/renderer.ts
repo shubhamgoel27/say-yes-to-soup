@@ -107,11 +107,37 @@ const SEAM_PERIOD = 4;
 /** Seam masks are smooth fields, so they are made at half resolution. */
 const SEAM_RES = 32;
 
-/** Which of four wobbles a material's edge follows; stable per name. */
+/**
+ * How a material's edge behaves. Soil, sand and grass (0) blur into their
+ * neighbours over a wandering edge. Laid stone (1) was set by hand: its edge
+ * still wanders a little, but it is an edge, not a smudge; a plaza feathered
+ * like grass reads as cobbles seen through dirty glass. Boards and floors (2)
+ * are cut straight.
+ */
+const EDGE_LAID = new Set([
+  'plaza', 'plazaWorn', 'wellstone', 'chowkbrick', 'galistone', 'lanepave', 'basalto', 'cempa',
+]);
+const EDGE_CUT = new Set([
+  'pierdeck', 'deck', 'bridge', 'floorWood', 'floorSteel', 'floorOndol', 'floorEarth', 'tatami', 'tataki',
+  'terrace', 'terracelime', 'terracerose',
+]);
+/** Per class: wobble amplitude, then the width of the blend in tiles. */
+const EDGE_SHAPE: [number, number][] = [
+  [1.5, 0.3],
+  [0.6, 0.16],
+  [0, 0.1],
+];
+
+/**
+ * Which of four wobbles a material's edge follows, stable per name, plus four
+ * times its edge class: one small number that both shapes the mask and keys
+ * its cache.
+ */
 function wobbleOf(kind: string): number {
   let h = 7;
   for (let i = 0; i < kind.length; i++) h = (h * 31 + kind.charCodeAt(i)) | 0;
-  return (h >>> 0) % 4;
+  const cls = EDGE_CUT.has(kind) ? 2 : EDGE_LAID.has(kind) ? 1 : 0;
+  return ((h >>> 0) % 4) + cls * 4;
 }
 
 /**
@@ -124,12 +150,18 @@ function wobbleOf(kind: string): number {
 function seamMasks(code: string, wob: number[], px: number, py: number): (HTMLCanvasElement | null)[] {
   const k = wob.length;
   const at = (c: number) => code.charCodeAt(c) - 48;
-  // Corner fractions per material: [material][tl, tr, bl, br].
-  const corners: number[][] = [];
+  // Each material's share is interpolated between the CENTRES of the four
+  // nearest cells: a cell is wholly itself at its middle and half and half on
+  // a shared edge, which both sides compute identically. Interpolating the
+  // corners instead (the mean of each corner's four cells) put a one-tile
+  // path at a flat 0.5 across its whole width, so the wobble alone decided
+  // where it was, and every lane and doorstep path dissolved into a blotchy
+  // half-mix two tiles wide: the soot smears.
+  const ind: number[][] = [];
   for (let m = 0; m < k; m++) {
-    const q = (a: number, b: number, c: number, d: number) =>
-      ((at(a) === m ? 1 : 0) + (at(b) === m ? 1 : 0) + (at(c) === m ? 1 : 0) + (at(d) === m ? 1 : 0)) / 4;
-    corners.push([q(0, 1, 3, 4), q(1, 2, 4, 5), q(3, 4, 6, 7), q(4, 5, 7, 8)]);
+    const row: number[] = [];
+    for (let c = 0; c < 9; c++) row.push(at(c) === m ? 1 : 0);
+    ind.push(row);
   }
   const outs: { cv: HTMLCanvasElement; g: CanvasRenderingContext2D; img: ImageData }[] = [];
   for (let m = 1; m < k; m++) {
@@ -141,21 +173,27 @@ function seamMasks(code: string, wob: number[], px: number, py: number): (HTMLCa
   for (let y = 0; y < SEAM_RES; y++) {
     const v = (y + 0.5) / SEAM_RES;
     const ty = (TAU * (py + v)) / SEAM_PERIOD;
+    const r0 = v < 0.5 ? 0 : 3;
+    const fv = v < 0.5 ? v + 0.5 : v - 0.5;
     for (let x = 0; x < SEAM_RES; x++) {
       const u = (x + 0.5) / SEAM_RES;
       const tx = (TAU * (px + u)) / SEAM_PERIOD;
+      const c0 = r0 + (u < 0.5 ? 0 : 1);
+      const fu = u < 0.5 ? u + 0.5 : u - 0.5;
       let sum = 0;
       for (let m = 0; m < k; m++) {
-        const c = corners[m]!;
-        const f = (c[0]! * (1 - u) + c[1]! * u) * (1 - v) + (c[2]! * (1 - u) + c[3]! * u) * v;
-        const o = wob[m]! * 1.7;
-        const n =
+        const c = ind[m]!;
+        const f =
+          (c[c0]! * (1 - fu) + c[c0 + 1]! * fu) * (1 - fv) + (c[c0 + 3]! * (1 - fu) + c[c0 + 4]! * fu) * fv;
+        const o = (wob[m]! % 4) * 1.7;
+        const [amp, width] = EDGE_SHAPE[wob[m]! >> 2]!;
+        const n = amp * (
           0.075 * Math.sin(tx + ty + 0.7 + o) +
           0.06 * Math.sin(2 * tx - ty + 2.1 + o * 2) +
           0.05 * Math.sin(tx - 2 * ty + 4.0 - o) +
           0.03 * Math.sin(3 * ty + tx + 1.3 + o * 3) +
-          0.02 * Math.sin(5 * tx + 3 * ty + 0.4 + o);
-        const t = Math.min(1, Math.max(0, (f + n - 0.3) / 0.4));
+          0.02 * Math.sin(5 * tx + 3 * ty + 0.4 + o));
+        const t = Math.min(1, Math.max(0, (f + n - 0.5 + width / 2) / width));
         // A sliver of the raw fraction keeps the sum off zero where three
         // materials meet and none of them clears the sharpening threshold.
         const wm = t * t * (3 - 2 * t) + f * 0.001;
@@ -180,6 +218,97 @@ function seamMasks(code: string, wob: number[], px: number, py: number): (HTMLCa
     return o.cv;
   });
 }
+
+/** One cell's shoreline: its masks, which side it is on, and both grounds. */
+type ShoreHit = { masks: ShoreMasks; wet: boolean; water: string; land: string };
+
+/** The four masks one shore cell needs, all at SEAM_RES. */
+/**
+ * One shore cell's four masks stacked in one small canvas, a row each, so a
+ * coast costs one texture per neighbourhood rather than four.
+ */
+type ShoreMasks = { cv: HTMLCanvasElement; has: number };
+const SHORE_LAND = 0;
+const SHORE_SEA = SEAM_RES;
+const SHORE_FOAM = SEAM_RES * 2;
+const SHORE_DAMP = SEAM_RES * 3;
+
+/**
+ * Where land meets water inside one cell, from its 3x3 neighbourhood as a
+ * bit per cell (set for wet, row by row) and its phase in the wobble period.
+ * The same centre-interpolated field the material seams use, so two cells sharing an
+ * edge agree on the line exactly, and a coast that the grid lays out in
+ * stair steps comes out as a shoreline: inside corners fill with sand,
+ * outside corners are eaten back by the water.
+ *
+ * Rows: the land's alpha, its complement (the sea), a thin band of foam on
+ * the water side of the line, and a wider damp band on the land side. `has`
+ * holds a bit per row that is not empty, so a cell that only touches water
+ * at a far corner skips the draws that would add nothing.
+ */
+function shoreMasks(wetBits: number, px: number, py: number): ShoreMasks {
+  const dry: number[] = [];
+  for (let c = 0; c < 9; c++) dry.push((wetBits >> c) & 1 ? 0 : 1);
+  const { cv, g } = surface(SEAM_RES, SEAM_RES * 4);
+  const img = g.createImageData(SEAM_RES, SEAM_RES * 4);
+  const d = img.data;
+  const ROW = SEAM_RES * SEAM_RES * 4;
+  let has = 0;
+  const TAU = Math.PI * 2;
+  for (let y = 0; y < SEAM_RES; y++) {
+    const v = (y + 0.5) / SEAM_RES;
+    const ty = (TAU * (py + v)) / SEAM_PERIOD;
+    const r0 = v < 0.5 ? 0 : 3;
+    const fv = v < 0.5 ? v + 0.5 : v - 0.5;
+    for (let x = 0; x < SEAM_RES; x++) {
+      const u = (x + 0.5) / SEAM_RES;
+      const tx = (TAU * (px + u)) / SEAM_PERIOD;
+      const c0 = r0 + (u < 0.5 ? 0 : 1);
+      const fu = u < 0.5 ? u + 0.5 : u - 0.5;
+      const f =
+        (dry[c0]! * (1 - fu) + dry[c0 + 1]! * fu) * (1 - fv) + (dry[c0 + 3]! * (1 - fu) + dry[c0 + 4]! * fu) * fv;
+      const n =
+        0.07 * Math.sin(tx + ty + 2.3) +
+        0.05 * Math.sin(2 * tx - ty + 0.4) +
+        0.04 * Math.sin(tx - 2 * ty + 5.1) +
+        0.025 * Math.sin(3 * tx + 2 * ty + 1.7);
+      const q = f + n;
+      const a = Math.min(1, Math.max(0, (q - 0.45) / 0.1));
+      const i = (y * SEAM_RES + x) * 4;
+      const put = (row: number, al: number, rgb: number[]) => {
+        const k = row * ROW + i;
+        d[k] = rgb[0]!;
+        d[k + 1] = rgb[1]!;
+        d[k + 2] = rgb[2]!;
+        const v = Math.round(255 * Math.min(1, Math.max(0, al)));
+        d[k + 3] = v;
+        if (v > 3) has |= 1 << row;
+      };
+      put(0, a, WHITE);
+      put(1, 1 - a, WHITE);
+      const fz = (q - 0.41) / 0.04;
+      put(2, Math.exp(-fz * fz), FOAM_RGB);
+      put(3, (q > 0.5 ? 1 - (q - 0.5) / 0.22 : a) * 0.22, DAMP_RGB);
+    }
+  }
+  g.putImageData(img, 0, 0);
+  return { cv, has };
+}
+
+const WHITE = [255, 255, 255];
+const FOAM_RGB = [244, 250, 246];
+const DAMP_RGB = [58, 52, 44];
+
+/** Open water, as far as a shoreline is concerned. Bridges stand over it. */
+const SHORE_WET = new Set(['sea', 'water']);
+/** Door overlays that close a building's doorway when it is latched. */
+const LATCH_KINDS = new Set(['doorShut', 'mlango']);
+/**
+ * Built, or the world's edge: these take no side in a shoreline. A pier, a
+ * bridge, a ship's deck or a stone quay keeps the edge it was built with, and
+ * the water beside it stays square to it; only beaches and banks wander.
+ */
+const SHORE_NEUTRAL = new Set(['void', 'scree', ...EDGE_LAID, ...EDGE_CUT]);
 
 /**
  * Every ground kind a seam on this map can ask to be feathered with. The draw
@@ -848,7 +977,10 @@ export class Renderer {
     if (this.warmedMaps.has(map.id)) return;
     this.warmedMaps.add(map.id);
     for (let y = -1; y <= map.h; y++) {
-      for (let x = -1; x <= map.w; x++) this.seamLayers(x, y, kindAt(x, y), kindAt);
+      for (let x = -1; x <= map.w; x++) {
+        this.seamLayers(x, y, kindAt(x, y), kindAt);
+        this.shoreAt(x, y, kindAt(x, y), kindAt);
+      }
     }
   }
 
@@ -918,7 +1050,7 @@ export class Renderer {
    * moves rather than once a frame: nothing below allocates, and no gradient
    * is built after boot.
    *
-   * The throw is cot(altitude), not a ramp — that is what makes a low sun run
+   * The throw is cot(altitude), not a ramp; that is what makes a low sun run
    * five times noon rather than one and a half, and it is the difference
    * between golden hour reading as a direction and reading as a filter. The
    * colour goes with it: high sun casts a near-neutral shadow, low sun casts a
@@ -1421,8 +1553,8 @@ export class Renderer {
     this.groundTint(map, cam, x0, y0, x1, y1);
     this.groundWear(map, cam, x0, y0, x1, y1);
 
-    // Pass 1b2: the water is alive. Sun glints ride the swell by day, and a
-    // breathing line of foam works every edge where the sea meets land.
+    // Pass 1b2: the water is alive. Sun glints ride the swell by day; the
+    // foam breathing along the shoreline went down with the baked ground.
     this.drawWaterLife(map, cam, x0, y0, x1, y1, kindAt);
 
     // Pass 1b3: ground life, clustered. A uniform probability makes static,
@@ -1491,8 +1623,8 @@ export class Renderer {
         const obj = self;
         if (!obj) continue;
         if (obj.t === 'blocked') continue;
-        if (obj.tall) tall.push({ cx, cy, kind: obj.t });
-        else this.tiles.drawFlat(ctx, obj.t, sx, sy, cx, cy, this.time);
+        if (!obj.tall) this.tiles.drawFlat(ctx, obj.t, sx, sy, cx, cy, this.time);
+        else if (!this.doorInFacade(map, obj.t, cx, cy)) tall.push({ cx, cy, kind: obj.t });
       }
     }
 
@@ -1606,7 +1738,13 @@ export class Renderer {
 
   }
 
-  /** Blit the visible baked chunks, then draw their living water fresh. */
+  /**
+   * The visible baked chunks over their living water. Open water, and the
+   * land cells that touch it, are drawn first and live, because the baked
+   * shoreline lets the water show through wherever it eats into the land;
+   * then the chunk goes over them, then bridges, then the foam breathing on
+   * the line where the two meet.
+   */
   private drawBakedGround(
     map: TileMap,
     cam: Camera,
@@ -1621,17 +1759,33 @@ export class Renderer {
     const gy0 = Math.floor(y0 / GCHUNK);
     const gx1 = Math.floor(x1 / GCHUNK);
     const gy1 = Math.floor(y1 / GCHUNK);
+    const live = (list: number[], kinds: string[]) => {
+      for (let i = 0, j = 0; i < list.length; i += 2, j++) {
+        const wx = list[i]!;
+        const wy = list[i + 1]!;
+        const sx = (wx * TILE - cam.x) * A;
+        const sy = (wy * TILE - cam.y) * A;
+        const conn = (dx: number, dy: number) => WATERY.has(kindAt(wx + dx, wy + dy));
+        this.tiles.drawGround(ctx, kinds[j]!, sx, sy, wx, wy, conn, this.time);
+      }
+    };
+    const breathe = Math.sin(this.time * 1.4);
     for (let gy = gy0; gy <= gy1; gy++) {
       for (let gx = gx0; gx <= gx1; gx++) {
         const e = this.groundChunk(map, gx, gy, kindAt);
-        ctx.drawImage(e.cv, (gx * GCHUNK * TILE - cam.x) * A, (gy * GCHUNK * TILE - cam.y) * A);
-        for (let i = 0; i < e.water.length; i += 2) {
-          const wx = e.water[i]!;
-          const wy = e.water[i + 1]!;
-          const sx = (wx * TILE - cam.x) * A;
-          const sy = (wy * TILE - cam.y) * A;
-          const conn = (dx: number, dy: number) => WATERY.has(kindAt(wx + dx, wy + dy));
-          this.tiles.drawGround(ctx, kindAt(wx, wy), sx, sy, wx, wy, conn, this.time);
+        const ox = (gx * GCHUNK * TILE - cam.x) * A;
+        const oy = (gy * GCHUNK * TILE - cam.y) * A;
+        live(e.water, e.waterKind);
+        ctx.drawImage(e.cv, ox, oy);
+        live(e.over, e.overKind);
+        if (e.foam.length) {
+          // The wash comes up the sand and slides back.
+          ctx.globalAlpha = (0.42 + 0.2 * breathe) * (1 - this.nightK * 0.5);
+          const fy = oy - 1.5 - breathe * 1.5;
+          for (let i = 0, j = 0; i < e.foam.length; i += 2, j++) {
+            ctx.drawImage(e.foamMask[j]!, 0, SHORE_FOAM, SEAM_RES, SEAM_RES, ox + e.foam[i]!, fy + e.foam[i + 1]!, S, S);
+          }
+          ctx.globalAlpha = 1;
         }
       }
     }
@@ -1664,9 +1818,14 @@ export class Renderer {
       if (e) {
         e.g.clearRect(0, 0, GCHUNK * S, GCHUNK * S);
         e.water.length = 0;
+        e.waterKind.length = 0;
+        e.over.length = 0;
+        e.overKind.length = 0;
+        e.foam.length = 0;
+        e.foamMask.length = 0;
       } else {
         const { cv, g } = surface(GCHUNK * S, GCHUNK * S);
-        e = { cv, g, water: [], used: 0 };
+        e = { cv, g, water: [], waterKind: [], over: [], overKind: [], foam: [], foamMask: [], used: 0 };
       }
       this.bakeGroundChunk(e, gx, gy, kindAt);
       this.groundChunks.set(key, e);
@@ -1694,6 +1853,7 @@ export class Renderer {
     const bx0 = gx * GCHUNK;
     const by0 = gy * GCHUNK;
     const layers = new Map<string, (number | HTMLCanvasElement)[]>();
+    const shores: (number | ShoreMasks)[] = [];
     for (let j = 0; j < GCHUNK; j++) {
       for (let i = 0; i < GCHUNK; i++) {
         const cx = bx0 + i;
@@ -1701,8 +1861,29 @@ export class Renderer {
         const sx = i * S;
         const sy = j * S;
         const kind = kindAt(cx, cy);
-        if (WATERY.has(kind)) {
+        const shore = this.shoreAt(cx, cy, kind, kindAt);
+        if (shore) {
+          shores.push(sx, sy, shore.wet ? 0 : 2, shore.masks);
+          if (!shore.wet) {
+            e.water.push(cx, cy);
+            e.waterKind.push(shore.water);
+          }
+        }
+        if (SHORE_WET.has(kind)) {
           e.water.push(cx, cy);
+          e.waterKind.push(kind);
+          // The land reaching into this cell goes down with the land's own
+          // feathers, one composite per material for the whole chunk.
+          if (shore && shore.masks.has & 1) {
+            let list = layers.get(shore.land);
+            if (!list) layers.set(shore.land, (list = []));
+            list.push(sx, sy, shore.masks.cv, SHORE_LAND);
+          }
+          continue;
+        }
+        if (WATERY.has(kind)) {
+          e.over.push(cx, cy);
+          e.overKind.push(kind);
           continue;
         }
         const group = PATHY.has(kind) ? PATHY : null;
@@ -1717,7 +1898,7 @@ export class Renderer {
           const mat = this.seamMats[m]!;
           let list = layers.get(mat);
           if (!list) layers.set(mat, (list = []));
-          list.push(sx, sy, mask);
+          list.push(sx, sy, mask, 0);
         }
       }
     }
@@ -1725,7 +1906,7 @@ export class Renderer {
     // masks into one alpha sheet, its ground tiled under it, one composite.
     // Cutting each cell's fragment separately cost a canvas flush apiece and
     // made a cold chunk thirty times slower to bake.
-    if (layers.size === 0) return;
+    if (layers.size === 0 && shores.length === 0) return;
     const W2 = GCHUNK * S;
     this.chunkMask ??= surface(W2, W2);
     this.chunkLayer ??= surface(W2, W2);
@@ -1736,8 +1917,9 @@ export class Renderer {
       const list = layers.get(mat)!;
       if (!src) continue;
       mg.clearRect(0, 0, W2, W2);
-      for (let i = 0; i < list.length; i += 3) {
-        mg.drawImage(list[i + 2] as HTMLCanvasElement, list[i] as number, list[i + 1] as number, S, S);
+      for (let i = 0; i < list.length; i += 4) {
+        const src = list[i + 2] as HTMLCanvasElement;
+        mg.drawImage(src, 0, list[i + 3] as number, SEAM_RES, SEAM_RES, list[i] as number, list[i + 1] as number, S, S);
       }
       lg.globalCompositeOperation = 'copy';
       lg.fillStyle = lg.createPattern(src, 'repeat') ?? '#000';
@@ -1747,6 +1929,80 @@ export class Renderer {
       lg.globalCompositeOperation = 'source-over';
       g.drawImage(this.chunkLayer.cv, 0, 0);
     }
+    if (shores.length === 0) return;
+    // The shore, cell by cell from masks that already carry their colour:
+    // the damp band darkening the sand, then the water let through wherever
+    // the line eats back into the land. The foam is drawn live, so it can
+    // breathe. No chunk-wide composites here; those are what a bake pays for.
+    for (let i = 0; i < shores.length; i += 4) {
+      const m = shores[i + 3] as ShoreMasks;
+      if (m.has & 8) g.drawImage(m.cv, 0, SHORE_DAMP, SEAM_RES, SEAM_RES, shores[i] as number, shores[i + 1] as number, S, S);
+    }
+    g.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < shores.length; i += 4) {
+      // Only land cells are cut; a water cell holds nothing but the land
+      // already masked into it.
+      const m = shores[i + 3] as ShoreMasks;
+      const cut = m.has & (shores[i + 2] as number);
+      if (cut) g.drawImage(m.cv, 0, SHORE_SEA, SEAM_RES, SEAM_RES, shores[i] as number, shores[i + 1] as number, S, S);
+      if (m.has & 4) {
+        e.foam.push(shores[i] as number, shores[i + 1] as number);
+        e.foamMask.push(m.cv);
+      }
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  private shoreCache = new Map<number, ShoreMasks>();
+
+  /**
+   * The shoreline through one cell, or null where land does not meet open
+   * water. `water` is the water a land cell shows through its bites, `land`
+   * the ground a water cell's inside corners fill with.
+   */
+  private shoreAt(
+    cx: number,
+    cy: number,
+    kind: string,
+    kindAt: (x: number, y: number) => string,
+  ): ShoreHit | null {
+    if (SHORE_NEUTRAL.has(kind)) return null;
+    const meWet = SHORE_WET.has(kind);
+    // Every cell of every chunk asks, so the common answer (no water near)
+    // must cost nine lookups and nothing else: no strings, no allocation.
+    let bits = 0;
+    let mixed = false;
+    for (let c = 0; c < 9; c++) {
+      const k = kindAt(cx + (c % 3) - 1, cy + ((c / 3) | 0) - 1);
+      // The world's edge and anything built take no side: they count as
+      // more of whatever this cell is.
+      const wet = SHORE_NEUTRAL.has(k) ? meWet : SHORE_WET.has(k);
+      if (wet) bits |= 1 << c;
+      if (wet !== meWet) mixed = true;
+    }
+    if (!mixed) return null;
+    if (!meWet && !this.tiles.groundImage(kind, 0)) return null;
+    let water = meWet ? kind : '';
+    let land = meWet ? '' : kind;
+    for (let c = 0; c < 9; c++) {
+      const wet = (bits >> c) & 1 ? true : false;
+      if (wet === meWet) continue;
+      const k = kindAt(cx + (c % 3) - 1, cy + ((c / 3) | 0) - 1);
+      // Edge neighbours name the other side before diagonal ones do.
+      const edge = c === 1 || c === 3 || c === 5 || c === 7;
+      if (wet && (!water || edge)) water = k;
+      if (!wet && (!land || edge) && this.tiles.groundImage(k, 0)) land = k;
+    }
+    if (!water || !land) return null;
+    const px = ((cx % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    const py = ((cy % SEAM_PERIOD) + SEAM_PERIOD) % SEAM_PERIOD;
+    const key = bits | (px << 9) | (py << 11);
+    let masks = this.shoreCache.get(key);
+    if (!masks) {
+      masks = shoreMasks(bits, px, py);
+      this.shoreCache.set(key, masks);
+    }
+    return { masks, wet: meWet, water, land };
   }
 
   /** A/B escape hatch: live per-cell ground vs baked chunks (dev probes). */
@@ -2058,6 +2314,25 @@ export class Renderer {
     return true;
   }
 
+  /**
+   * True for a latched-door overlay standing in the doorway of a building
+   * whose own art already paints its door. Every house sprite carries a
+   * closed door of its own, so the overlay drew a second, smaller one a
+   * little lower and in front: the double doors. The cell keeps its object
+   * (it is still solid and still answers when examined); it just stops
+   * painting over the house.
+   */
+  private doorInFacade(map: TileMap, kind: string, cx: number, cy: number): boolean {
+    if (!LATCH_KINDS.has(kind)) return false;
+    for (let c = 1; c <= 4; c++) {
+      const o = map.object(cx - c, cy);
+      if (!o || !this.tiles.isBuilding(o.t)) continue;
+      const span = this.tiles.buildingSpan(o.t);
+      return !!span && c < span.cols;
+    }
+    return false;
+  }
+
   /** World-anchored tonal patches, keyed to a coarse grid so they never move. */
   private groundTint(map: TileMap, cam: Camera, x0: number, y0: number, x1: number, y1: number) {
     const ctx = this.ctx;
@@ -2106,7 +2381,7 @@ export class Renderer {
    *
    * The close-up octave of `groundTint` used to be pure hash: the same amount
    * of information everywhere, which is the same as none. This replaces it at
-   * the same cost with a field that knows the map — damp within reach of the
+   * the same cost with a field that knows the map: damp within reach of the
    * water, grime banked against the walls, and the pale worn lanes where feet
    * have crossed a square for years. Five to fifteen tiles across, which is
    * the scale a two-hundred-tile piazza is empty at; twelve-pixel sprigs were
@@ -2235,50 +2510,6 @@ export class Renderer {
           ctx.globalAlpha = 1;
         }
 
-        // Foam: only the sea works its shoreline this hard.
-        if (kind !== 'sea') continue;
-        const edges: [number, number, boolean][] = [
-          [0, -1, true], // land to the north: foam along the top edge
-          [-1, 0, false], // land west: along the left edge
-          [1, 0, false], // land east: along the right edge
-        ];
-        for (const [dx, dy, horizontal] of edges) {
-          const nk = kindAt(cx + dx, cy + dy);
-          if (watery(nk) || nk === 'void' || nk === 'scree') continue;
-          const breathe = Math.sin(this.time * 1.4 + cx * 0.7 + cy * 0.4) * 2.2;
-          ctx.save();
-          ctx.strokeStyle = 'rgba(240,248,244,0.5)';
-          ctx.lineWidth = 3;
-          ctx.lineCap = 'round';
-          ctx.beginPath();
-          if (horizontal) {
-            const fy = sy + 3 + Math.max(0, breathe);
-            ctx.moveTo(sx + 2, fy);
-            ctx.quadraticCurveTo(sx + S * 0.3, fy + 2.5, sx + S * 0.55, fy);
-            ctx.quadraticCurveTo(sx + S * 0.8, fy - 2, sx + S - 2, fy + 1);
-          } else {
-            const fx = dx < 0 ? sx + 3 + Math.max(0, breathe) : sx + S - 3 - Math.max(0, breathe);
-            ctx.moveTo(fx, sy + 2);
-            ctx.quadraticCurveTo(fx + (dx < 0 ? 2.5 : -2.5), sy + S * 0.4, fx, sy + S * 0.7);
-            ctx.quadraticCurveTo(fx + (dx < 0 ? -2 : 2), sy + S * 0.85, fx + 1, sy + S - 2);
-          }
-          ctx.stroke();
-          // A fainter second line, lagging: the last wave still draining.
-          ctx.globalAlpha = 0.3;
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          if (horizontal) {
-            const fy2 = sy + 9 + Math.max(0, -breathe);
-            ctx.moveTo(sx + 4, fy2);
-            ctx.quadraticCurveTo(sx + S * 0.5, fy2 + 2, sx + S - 4, fy2 - 1);
-          } else {
-            const fx2 = dx < 0 ? sx + 10 : sx + S - 10;
-            ctx.moveTo(fx2, sy + 6);
-            ctx.quadraticCurveTo(fx2 + (dx < 0 ? 2 : -2), sy + S * 0.5, fx2, sy + S - 6);
-          }
-          ctx.stroke();
-          ctx.restore();
-        }
       }
     }
   }
@@ -3294,8 +3525,17 @@ const GCHUNK_CAP = 30;
 type GroundChunk = {
   cv: HTMLCanvasElement;
   g: CanvasRenderingContext2D;
-  /** Watery cells in this chunk (cx,cy interleaved), drawn live each frame. */
+  /** Cells drawn live under the chunk (cx,cy interleaved): open water, and
+   * the land cells whose shoreline lets it show through. */
   water: number[];
+  /** Which water each of those cells shows, one entry per pair. */
+  waterKind: string[];
+  /** Bridges: watery but standing over it, drawn live over the chunk. */
+  over: number[];
+  overKind: string[];
+  /** Shore cells (chunk-local px, interleaved) and their masks, for the foam. */
+  foam: number[];
+  foamMask: HTMLCanvasElement[];
   used: number;
 };
 

@@ -855,11 +855,13 @@ export const ART: ChapterArt = {
     /**
      * The well apron: small dark setts laid in rings around the wellhead,
      * kept wet by a hundred years of buckets and swept every morning by
-     * whoever gets there first. Nine cells of it make a dark middle for a pale
-     * square, which is how a plaza tells you where its middle is.
+     * whoever gets there first. Nine cells of it make a darker middle for a
+     * pale square, which is how a plaza tells you where its middle is. Only a
+     * step darker than the paving, and cool: charcoal setts here read from any
+     * distance as a scorch mark around the well, not as water.
      */
     make('wellstone', 5, (g, r) => {
-      const base = mute(shade(PAL.stoneDark, -0.02), 0.05);
+      const base = mute(shade('#8f8b80', -0.06), 0.05);
       rect(g, 0, 0, S, S, base);
       // Setts, laid in slightly curved courses.
       for (let row = 0; row < 6; row++) {

@@ -237,8 +237,14 @@ export const ART: ChapterArt = {
       g.quadraticCurveTo(62, 56, 58, 90);
       g.closePath();
       g.fill();
+      // Light on the shoulder, shade at the foot, on the straw only: as
+      // plain rectangles they hung a grey box in the air behind every stack,
+      // so they are clipped to the cone just filled.
+      g.save();
+      g.clip();
       vgrad(g, 4, 24, 56, 30, 'rgba(255,244,205,0.35)', 'rgba(0,0,0,0)');
       vgrad(g, 4, 66, 56, 24, 'rgba(0,0,0,0)', 'rgba(74,54,24,0.34)');
+      g.restore();
       // Combed straw, running the way the rain will.
       g.strokeStyle = 'rgba(122,92,36,0.4)';
       g.lineWidth = 1.3;
