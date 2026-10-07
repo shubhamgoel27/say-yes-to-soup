@@ -4495,18 +4495,71 @@ function requestMove(tx: number, ty: number, hit?: Villager) {
       faceAndInteract(tx, ty);
       return;
     }
-    const path = findPath(tx, ty, true);
-    if (!path) return;
+    // Bodies in the way are walked around as they move (replanAuto on a
+    // bump); only the bare map can make a thing truly out of reach.
+    const path =
+      findPath(tx, ty, true) ?? pathBetween(player.occupies(), tx, ty, (x, y) => map.solid(x, y), true);
+    if (!path) {
+      // Nowhere beside it to stand: walk as near as the ground goes.
+      const near = walkGoalNear(tx, ty);
+      const p = near && pathBetween(player.occupies(), near[0], near[1], (x, y) => map.solid(x, y));
+      if (!near || !p || p.length === 0) return;
+      autoPath = p;
+      autoGoal = { kind: 'walk', cell: near };
+      showMark(near[0], near[1]);
+      return;
+    }
     autoPath = path;
     autoGoal = { kind: 'interact', cell: [tx, ty], npc };
     showMark(tx, ty);
-  } else if (!map.solid(tx, ty)) {
-    const path = findPath(tx, ty, false);
+  } else {
+    // A click on a bench, a lamp, a wall, or ground nobody can reach from
+    // here used to do nothing at all: the walk stopped dead at the bench.
+    // Now it walks as close as the ground allows, around every prop.
+    const goal = walkGoalNear(tx, ty);
+    if (!goal) return;
+    const path = findPath(goal[0], goal[1], false) ?? pathBetween(player.occupies(), goal[0], goal[1], (x, y) => map.solid(x, y));
     if (!path || path.length === 0) return;
     autoPath = path;
-    autoGoal = { kind: 'walk', cell: [tx, ty] };
-    showMark(tx, ty);
+    autoGoal = { kind: 'walk', cell: goal };
+    showMark(goal[0], goal[1]);
   }
+}
+
+/**
+ * Where a click on (tx, ty) should walk to: the cell itself when the player
+ * can reach it, else the reachable floor nearest it (by distance to the
+ * click, then by the walk). Reach is judged on the bare map; villagers are
+ * walked around as they come, since they move. Null only when already there.
+ */
+function walkGoalNear(tx: number, ty: number): [number, number] | null {
+  const [px, py] = player.occupies();
+  const w = map.w;
+  const dist = new Map<number, number>([[py * w + px, 0]]);
+  const queue = [py * w + px];
+  let best: [number, number] | null = null;
+  let bestScore = Infinity;
+  for (let head = 0; head < queue.length; head++) {
+    const ci = queue[head]!;
+    const cx = ci % w;
+    const cy = (ci - cx) / w;
+    const d = dist.get(ci)!;
+    const score = (Math.abs(cx - tx) + Math.abs(cy - ty)) * 1000 + d;
+    if (score < bestScore) {
+      bestScore = score;
+      best = [cx, cy];
+    }
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = cx + dx;
+      const ny = cy + dy;
+      const ni = ny * w + nx;
+      if (!map.inBounds(nx, ny) || dist.has(ni) || map.solid(nx, ny)) continue;
+      dist.set(ni, d + 1);
+      queue.push(ni);
+    }
+  }
+  if (!best || (best[0] === px && best[1] === py)) return null;
+  return best;
 }
 
 /** Recompute the path to the standing goal (a villager stepped into it). */
