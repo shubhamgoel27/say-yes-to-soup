@@ -4,7 +4,7 @@ import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { DevBridge } from './engine/devbridge';
 import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
-import { Input, type Dir } from './engine/input';
+import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
 import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
@@ -1557,6 +1557,8 @@ type Staged = {
   path: [number, number][];
   /** A companion lets go at once; a crowd waits for the talk to end. */
   escort: boolean;
+  /** Seconds spent waiting on a body in the way; see stageStep. */
+  wait?: number;
 };
 const staged = new Map<Villager, Staged>();
 const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
@@ -1564,28 +1566,50 @@ const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
 let lampT = 0;
 let lampOver = false;
 
-/** A walkable cell beside the player, nearest `from`, for a companion to stand on. */
-function besidePlayer(from: [number, number]): [number, number] | null {
+/** A walkable cell beside the player, nearest `from`, for a companion to
+ * stand on. Never one another body holds (two companions once both chose
+ * the cell behind the player, and the three drew as one pile), and never
+ * the cell the player is stepping out of. */
+function besidePlayer(from: [number, number], self?: Actor): [number, number] | null {
   const [px, py] = player.occupies();
   const back = OPPOSITE[player.dir];
   const order: Dir[] = [back, 'left', 'right', 'down', 'up'];
-  const cells = order
-    .map((d) => stepFrom(px, py, d))
-    .filter(([x, y]) => map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y));
-  cells.sort((a, b) => Math.abs(a[0] - from[0]) + Math.abs(a[1] - from[1]) - (Math.abs(b[0] - from[0]) + Math.abs(b[1] - from[1])));
+  // The four diagonals too: a step behind and to one side still reads as
+  // walking together, and keeps clear of the player's column.
+  const diagonals: [number, number][] = [[px - 1, py - 1], [px + 1, py - 1], [px - 1, py + 1], [px + 1, py + 1]];
+  const cells = [...order.map((d) => stepFrom(px, py, d)), ...diagonals]
+    .filter(
+      ([x, y]) =>
+        map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y) && !(self && heldByOther(x, y, self)),
+    );
+  // Beside, not behind: a figure in the cell above or below another is drawn
+  // over them (sprites stand taller than a tile), so a companion prefers the
+  // player's left or right, and a cell with nobody else above or below it.
+  const cost = ([x, y]: [number, number]) => {
+    let c = Math.abs(x - from[0]) + Math.abs(y - from[1]);
+    if (x === px) c += 3;
+    else if (y !== py) c += 1;
+    if (self && (heldByOther(x, y - 1, self) || heldByOther(x, y + 1, self)) && !(x === px)) c += 2;
+    return c;
+  };
+  cells.sort((a, b) => cost(a) - cost(b));
   return cells[0] ?? null;
 }
 
 /**
- * Walk a staged villager toward a cell. Unlike a station's walk this one
- * steps through other villagers (a crowd converging on one well otherwise
- * deadlocks, each waiting for a neighbor who is waiting for them); only walls
- * and the player stop it. True once arrived and settled.
+ * Walk a staged villager toward a cell. It plans around other bodies when it
+ * can and never steps into a cell another body holds (Carmen once walked into
+ * the player's column after the apacheta, and the three drew as one pile).
+ * A crowd converging on one well could deadlock that way, each waiting for a
+ * neighbour who waits for them, so after a few patient seconds a walker may
+ * plan through the crowd; it still waits for each cell to clear. Only the
+ * player's own cells are absolute. True once arrived and settled.
  */
+const STAGE_PATIENCE = 2.5;
 function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   const a = s.v.actor;
-  const [px, py] = player.occupies();
-  const blocked = (x: number, y: number) => map.solid(x, y) || (x === px && y === py);
+  const held = (x: number, y: number) => heldByOther(x, y, a);
+  const blocked = (x: number, y: number) => map.solid(x, y) || held(x, y);
   const [ax, ay] = a.occupies();
   if (ax === tx && ay === ty) {
     if (a.isMoving) {
@@ -1598,14 +1622,21 @@ function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   let next = s.path[0];
   const tail = s.path[s.path.length - 1];
   if (!next || Math.abs(next[0] - ax) + Math.abs(next[1] - ay) !== 1 || !tail || tail[0] !== tx || tail[1] !== ty) {
-    s.path = pathBetween([ax, ay], tx, ty, blocked) ?? [];
+    const patient = (s.wait ?? 0) > STAGE_PATIENCE;
+    s.path =
+      pathBetween([ax, ay], tx, ty, blocked) ??
+      (patient ? pathBetween([ax, ay], tx, ty, (x, y) => map.solid(x, y) || playerHolds(x, y)) : null) ??
+      [];
     next = s.path[0];
   }
   if (!next || blocked(next[0], next[1])) {
+    // Someone is in the way: stand, and look again in a moment.
     s.path = [];
+    s.wait = (s.wait ?? 0) + dt;
     a.update(dt, { intent: null, blocked });
     return false;
   }
+  s.wait = 0;
   const dx = next[0] - ax;
   const dy = next[1] - ay;
   a.update(dt, { intent: dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up', blocked });
@@ -1652,7 +1683,7 @@ function updateStaging(dt: number) {
     if (w.escort) {
       if (v.def.map !== map.id) {
         // Through the door a moment behind you, as companions are.
-        const spot = besidePlayer(player.occupies());
+        const spot = besidePlayer(player.occupies(), v.actor);
         if (!spot || warp) continue;
         v.def.map = map.id;
         v.actor.placeAt(spot[0], spot[1], player.dir);
@@ -1661,11 +1692,16 @@ function updateStaging(dt: number) {
       }
       const [ax, ay] = v.actor.occupies();
       const [px, py] = player.occupies();
-      if (Math.abs(ax - px) + Math.abs(ay - py) <= 1 && !v.actor.isMoving) {
+      // Settled beside the player: stay, unless that is in their column
+      // (drawn as one pile) and a cell at their side is free.
+      const near = Math.max(Math.abs(ax - px), Math.abs(ay - py)) === 1;
+      const settled = near && !v.actor.isMoving && !heldByOther(ax, ay, v.actor);
+      const side = settled && ax === px ? besidePlayer([ax, ay], v.actor) : null;
+      if (settled && (!side || side[0] === px)) {
         v.actor.face(ax < px ? 'right' : ax > px ? 'left' : ay < py ? 'down' : 'up');
         continue;
       }
-      const spot = besidePlayer([ax, ay]);
+      const spot = besidePlayer([ax, ay], v.actor);
       if (spot) stageStep(s, spot[0], spot[1], dt);
       continue;
     }
@@ -1973,6 +2009,31 @@ function blockedFor(self: Actor): (x: number, y: number) => boolean {
   return (x, y) => map.solid(x, y) || occupied(x, y, self);
 }
 
+/** The cells an actor's body is in: where it stands, or both ends of a step. */
+function bodyCells(a: Actor): [number, number][] {
+  const to = a.occupies();
+  return a.isMoving && (a.x !== to[0] || a.y !== to[1]) ? [[a.x, a.y], to] : [to];
+}
+
+/**
+ * The separation rule: is this cell held by any body but `self`, counting
+ * both ends of anyone mid-step? Stepping into a cell its owner is still
+ * stepping out of is how two figures came to draw on top of each other.
+ * The dog is small and agreeable and never counts.
+ */
+function heldByOther(x: number, y: number, self: Actor): boolean {
+  for (const s of spritesHere()) {
+    if (s.actor === self || s === dog) continue;
+    for (const [cx, cy] of bodyCells(s.actor)) if (cx === x && cy === y) return true;
+  }
+  return false;
+}
+
+/** The player's own cells, the one thing no walker may ever enter. */
+function playerHolds(x: number, y: number): boolean {
+  return bodyCells(player).some(([cx, cy]) => cx === x && cy === y);
+}
+
 /**
  * Where arrivals land on each map: its own spawn and the spawn of every door
  * that leads in. A wandering villager never loiters on one; Abuela Chela
@@ -1996,7 +2057,12 @@ const onDoorstep = (x: number, y: number) => doorsteps[map.id]?.has(`${x},${y}`)
  * nearest free cell. Rare, and a one-tile hop beats two bodies in one place.
  */
 function unstack() {
-  const here = spritesHere();
+  // The player claims first, then anyone frozen in a conversation or
+  // mid-step: whoever is standing idle on a taken cell is the one who hops.
+  // (Walking the list in draw order once let a villager claim the cell and
+  // the player, coming later, be skipped, so nobody moved at all.)
+  const rank = (s: Sprite) => (s === playerSprite ? 0 : s.actor.frozen || s.actor.isMoving ? 1 : 2);
+  const here = [...spritesHere()].sort((a, b) => rank(a) - rank(b));
   const taken = new Set<string>();
   for (const s of here) {
     if (s === dog) continue;
@@ -2034,6 +2100,26 @@ function nearestFree(x: number, y: number, avoid: (x: number, y: number) => bool
     ring = next;
   }
   return null;
+}
+
+/**
+ * Is the player walking up to this villager with the keys? Within three
+ * steps, facing them, and on their row or column give or take one: the way
+ * a person heading for you looks. They wait for you then, as the click-to-walk
+ * path already made them do; Petro took five tries and Mang Ben drifted off
+ * mid-approach while they ambled on regardless.
+ */
+function approachedByKeys(v: Villager): boolean {
+  const [ax, ay] = v.actor.occupies();
+  const [px, py] = player.occupies();
+  const dx = ax - px;
+  const dy = ay - py;
+  const d = Math.abs(dx) + Math.abs(dy);
+  if (d === 0 || d > 3) return false;
+  const [fx, fy] = DIR_VEC[player.dir];
+  const ahead = fx * dx + fy * dy;
+  const aside = Math.abs(fx !== 0 ? dy : dx);
+  return ahead > 0 && aside <= 1;
 }
 
 function updateVillager(v: Villager, dt: number) {
@@ -2109,7 +2195,7 @@ function updateVillager(v: Villager, dt: number) {
   if (nk > 0.6 && !outside) return;
   // Someone the player has clicked on and is walking toward finishes the
   // step they are on and waits there, the way a person does when hailed.
-  if (autoGoal?.npc === v && !outside) {
+  if ((autoGoal?.npc === v || approachedByKeys(v)) && !outside) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
