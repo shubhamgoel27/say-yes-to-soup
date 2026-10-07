@@ -3608,7 +3608,9 @@ function playWelcome() {
     'walk with the arrow keys or WASD, or click where you want to go',
     'slide a thumb in the lower left to walk, or tap where you want to go',
   ));
-  toasts.show(keysOrTaps('Space talks to people and touches things', '\u2726 talks to people and touches things'));
+  // Not led by the bare glyph: a toast opening on \u2726 is dressed as a journal
+  // moment (ink dot, page curl), and the glyph's fallback font ate the space.
+  toasts.show(keysOrTaps('Space talks to people and touches things', 'tap \u2726 to talk to people and touch things'));
 }
 
 /** Confirm the title menu's current option; shared by Space and click. */
