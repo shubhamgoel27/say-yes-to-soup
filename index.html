@@ -285,6 +285,10 @@
         position: absolute;
         top: 16px;
         right: 16px;
+        /* A long whisper wraps on its own side of the page: the chip owns the
+         * top-left corner (up to min(42%, 440px)) and the nameplate the middle,
+         * and a one-line toast used to slide straight over both. */
+        max-width: min(40%, 520px);
         transition: opacity 0.25s ease;
         display: flex;
         flex-direction: column;
@@ -372,6 +376,7 @@
         overflow: hidden;
         transition: opacity 0.25s ease;
       }
+      #errand[hidden] { display: none; }
       #errand::before { content: '\2709\00a0\00a0'; font-style: normal; }
       /* The band's one-time reminder: a quieter last line on the chip until
        * the first manual N, then gone for the rest of the journey. */
@@ -1622,31 +1627,33 @@
         padding-top: 7px;
         border-top: 1px solid rgba(43, 33, 24, 0.16);
       }
+      /* Sized and inked to be read mid-play, not squinted at: 13px words in
+       * a solid brown (8.7:1 on the paper, up from 5.6:1) and 12px caps. */
       .w-key {
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        font-size: var(--fs-115);
+        font-size: var(--fs-13);
         font-style: normal;
         letter-spacing: 0.01em;
-        color: rgba(43, 33, 24, 0.72);
+        color: #4a3a28;
       }
       .w-key i {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 17px;
-        height: 16px;
-        padding: 0 4px;
+        min-width: 19px;
+        height: 18px;
+        padding: 0 5px;
         margin-right: -2px;
-        border: 1px solid rgba(43, 33, 24, 0.6);
+        border: 1px solid rgba(43, 33, 24, 0.72);
         border-top-color: rgba(43, 33, 24, 0.35);
         border-radius: 3px;
         background: rgba(255, 252, 244, 0.62);
         box-shadow: 0 1px 0 rgba(43, 33, 24, 0.18);
         font-family: var(--display);
         font-style: normal;
-        font-size: 10.5px;
+        font-size: 12px;
         line-height: 1;
         color: var(--ink);
       }
@@ -2090,6 +2097,9 @@
         z-index: 40;
       }
       .ht-veil[hidden] { display: none; }
+      /* The card's "more below" cue: only glass can need it (see the coarse
+       * tiers), so a desk never lays it out at all. */
+      .ht-more { display: none; }
       .ht-card {
         width: min(78%, 440px);
         background:
@@ -2447,6 +2457,7 @@
           right: calc(10px + env(safe-area-inset-right));
           left: calc(10px + env(safe-area-inset-left));
         }
+        #toasts { max-width: none; }
         .toast { max-width: 100%; box-sizing: border-box; }
         .toast.wh { max-width: min(84vw, 380px); }
 
@@ -2697,6 +2708,115 @@
         .cc-paper:has(.cc-fig) .cc-hint { grid-area: hint; }
       }
 
+      /* ---- the HUD in the hand ----
+       * Glass keeps the chip to one line once it has been read: a new thread
+       * reads in full for a few seconds (the `fresh` class, see ChipFold in
+       * responsive.ts), then folds so the world keeps the room. The quiet
+       * reminder line stays on its own line under it. */
+      @media (pointer: coarse) and (max-height: 500px), (pointer: coarse) and (max-width: 700px) {
+        #errand:not(.fresh) {
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        #errand:not(.fresh) .errand-nudge { overflow: hidden; text-overflow: ellipsis; }
+      }
+      /* Lying down, a phone has one short top edge and the pad's button
+       * column down the right (226px tall at most, plus the sideways pin
+       * above it). The chip takes the left half of the edge, whispers the
+       * right half and stop short of the column, and the nameplate, while
+       * it shows, takes the middle and nudges both one band lower. */
+      @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+        #plate {
+          top: calc(6px + env(safe-area-inset-top));
+          max-width: calc(100vw - 200px);
+          box-sizing: border-box;
+          padding: 7px 16px 6px 20px;
+          font-size: 12px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        #errand {
+          top: calc(6px + env(safe-area-inset-top));
+          left: calc(10px + env(safe-area-inset-left));
+          right: auto;
+          max-width: calc(50vw - 22px - env(safe-area-inset-left));
+          box-sizing: border-box;
+          transition: opacity 0.25s ease, top 0.35s ease;
+        }
+        #toasts {
+          top: calc(6px + env(safe-area-inset-top));
+          left: calc(50vw + 8px);
+          right: calc(92px + env(safe-area-inset-right));
+          max-width: none;
+          transition: opacity 0.25s ease, top 0.35s ease;
+        }
+        .toast, .toast.wh { max-width: 100%; box-sizing: border-box; }
+        #plate.show ~ #errand, #plate.show ~ #toasts { top: calc(46px + env(safe-area-inset-top)); }
+
+        /* The how-to card opens as a spread: the telling on the left leaf,
+         * the hard telling and the choices on the right, so Begin and Not
+         * yet sit on the page instead of a scroll below it. */
+        .ht-card {
+          width: min(94vw, 760px);
+          max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+          display: flex;
+          align-items: flex-start;
+          gap: 20px;
+          padding: 14px 20px 12px;
+        }
+        .ht-main { flex: 1.2 1 0; min-width: 0; }
+        .ht-side {
+          flex: 1 1 0;
+          min-width: 0;
+          align-self: stretch;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding-left: 18px;
+          border-left: 1.5px solid rgba(43, 33, 24, 0.18);
+        }
+        .ht-title { font-size: 21px; margin-bottom: 6px; }
+        .ht-lines { margin-bottom: 0; }
+        .ht-side .ht-hard { margin: 0 0 8px; }
+        .ht-side .ht-opts { margin-top: 0; }
+
+        /* The cover's footer used to fall past the bottom edge: the
+         * painting gives up a little height so the controls stay on the
+         * page, even on a 320px-tall phone. */
+        #title { padding: 6px 0; }
+        .t-cover { padding-top: 12px; padding-bottom: 10px; }
+        .t-art { max-width: calc((100vh - 215px) * 1.8); }
+        .t-sub { font-size: 14px; line-height: 1.35; margin-bottom: 4px; }
+        .t-controls { margin-top: 6px; }
+      }
+      /* Any card taller than the glass says so: a pill at its foot while
+       * there is more below, and a tap on it brings the rest up. */
+      @media (pointer: coarse) {
+        .ht-more {
+          display: block;
+          position: absolute;
+          left: 50%;
+          bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+          transform: translateX(-50%);
+          min-height: 32px;
+          box-sizing: border-box;
+          padding: 5px 16px 4px;
+          font-family: var(--hand);
+          font-size: 18px;
+          line-height: 1.2;
+          color: var(--paper);
+          background: rgba(43, 33, 24, 0.9);
+          border-radius: 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.2s ease;
+        }
+        .ht-more.on { opacity: 1; pointer-events: auto; }
+      }
+
       /* ---- landscape-first: the journal reads best sideways ----
        * Phones upright see a quarter of a page drawn wide, so responsive.ts
        * steers them sideways: an offer card where the browser can lock
@@ -2846,6 +2966,10 @@
         @media (max-height: 500px) {
           #sidewayspin { right: calc(10px + env(safe-area-inset-right, 0px)); bottom: calc(238px + env(safe-area-inset-bottom, 0px)); }
         }
+        /* A paper card in play (dialogue, a how-to card, the journal) owns
+         * the top-right corner too; the pin waits for the world. The cover
+         * keeps it: a fresh landscape boot needs the road to the spread. */
+        body:has(#vpad.vp-quiet):not(:has(#title:not([hidden]))) #sidewayspin { visibility: hidden; }
         .sw-phone-small {
           width: 12px;
           height: 20px;

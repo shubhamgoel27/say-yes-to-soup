@@ -22,7 +22,7 @@ import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
-import { initRotateNudge, isCoarseTouch, keysOrTaps } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -367,6 +367,7 @@ renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
 
 const toasts = new Toasts($('toasts'));
 const errandEl = $('errand');
+const chipFold = new ChipFold(errandEl);
 const fadeEl = $('fade');
 const plateEl = $('plate');
 const textbox = new Textbox(
@@ -557,11 +558,14 @@ function renderHowto() {
   const hardDone = state.has(`hard.${g.def.flag}`);
   howtoEl.innerHTML = `
     <div class="ht-card">
+      <div class="ht-main">
       <div class="ht-kicker">hands, not homework</div>
       <div class="ht-title">${g.def.title ?? 'Something to try'}</div>
       ${replaying ? '<div class="ht-replay">Again, for the joy of it.</div>' : ''}
       ${howtoCoach ? `<div class="ht-coach">${howtoCoach}</div>` : ''}
       ${lines ? `<div class="ht-lines">${lines}</div>` : ''}
+      </div>
+      <div class="ht-side">
       ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${g.def.hardHow}</div>` : ''}
       <div class="ht-opts">
         ${howtoOpts
@@ -569,7 +573,10 @@ function renderHowto() {
           .join('')}
       </div>
       <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
-    </div>`;
+      </div>
+    </div>
+    <div class="ht-more" aria-hidden="true">more below &#9662;</div>`;
+  watchScrollCue(howtoEl.querySelector<HTMLElement>('.ht-card'), howtoEl.querySelector<HTMLElement>('.ht-more'));
 }
 
 function showHowto(g: GameEntry) {
@@ -667,6 +674,7 @@ function refreshTaskChip() {
   // and only an empty task list retires it.
   if (top) {
     errandEl.textContent = top;
+    chipFold.note(top);
     // Until the first time the player ever asks the band themselves, the
     // chip carries one quiet reminder that Carmen's lesson is a key. The
     // first manual N sets thread.used and retires this line for good.
@@ -694,7 +702,7 @@ state.on('journal', (id) => {
   }
   if (!state.has('hint.journal')) {
     state.set('hint.journal');
-    toasts.show('press J to open the journal');
+    toasts.show(keysOrTaps('press J to open the journal', 'tap \u270E to open the journal'));
   }
   // Did this page complete a rhyme? Then Nani noticed it first, in 1974.
   const rhymed = JOURNAL.some(
@@ -2183,7 +2191,7 @@ function startSitting() {
   player.frozen = true;
   player.pose = 'sit';
   audio.setSitting(true);
-  toasts.show('you sit. (any key to rise)');
+  toasts.show(keysOrTaps('you sit. (any key to rise)', 'you sit. (tap anywhere to rise)'));
 }
 
 function standUp() {
@@ -2853,6 +2861,7 @@ function update(dt: number) {
       toasts.setHeld(quiet);
       holdPlate(quiet);
     }
+    chipFold.tick(quiet);
   }
   // The touch pad follows the same rhythm: overlays up, pad away.
   syncVpad();

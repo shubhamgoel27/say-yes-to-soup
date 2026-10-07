@@ -17,6 +17,7 @@ import {
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
+import { isCoarseTouch } from './responsive';
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -27,9 +28,11 @@ import { onTouchTap, touchActive } from './pointer';
 export type TitleChoice = 'new' | 'continue' | 'journals' | 'settings' | 'credits';
 
 /** A touch-first device: the hints speak of taps, not of Space and arrows.
- * Desktop pointers are fine, never coarse, so nothing changes there. */
-const COARSE =
-  typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+ * The same capability test as keysOrTaps and the pad, so every surface
+ * agrees; desktop pointers are fine, never coarse, so nothing changes there. */
+const COARSE = isCoarseTouch();
+/** The second press that confirms: a key on a desk, a finger on glass. */
+const AGAIN = COARSE ? 'tap again' : 'press again';
 
 /**
  * One quiet line under Continue: where the journey paused and how far the
@@ -435,7 +438,7 @@ export class TitleScreen {
       this.shelfRow = row;
       this.pendingImport = { row, raw };
       this.shelfArmed = 'replace';
-      this.shelfNote = 'a journal already rests here. press again to shelve the new one over it.';
+      this.shelfNote = `a journal already rests here. ${AGAIN} to shelve the new one over it.`;
       this.renderShelf();
       return;
     }
@@ -517,11 +520,11 @@ export class TitleScreen {
               const armed = on && this.shelfArmed;
               const label =
                 armed === 'erase'
-                  ? 'erase it? press again'
+                  ? `erase it? ${AGAIN}`
                   : armed === 'replace'
-                    ? 'shelve it over? press again'
+                    ? `shelve it over? ${AGAIN}`
                     : armed === 'second'
-                      ? 'begin a second reading? the words come with you. press again'
+                      ? `begin a second reading? the words come with you. ${AGAIN}`
                       : v;
               return `<span class="sh-verb${on ? ' on' : ''}${armed ? ' warn' : ''}" data-verb="${j}">${label}</span>`;
             })
@@ -557,7 +560,7 @@ export class TitleScreen {
     const o = this.options[i];
     if (!o) return '';
     const label =
-      o.id === 'new' && this.armNew ? 'Erase the journal and begin again? (press again)' : o.label;
+      o.id === 'new' && this.armNew ? `Erase the journal and begin again? (${AGAIN})` : o.label;
     const sub =
       o.id === 'continue' && this.welcomeBack
         ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
