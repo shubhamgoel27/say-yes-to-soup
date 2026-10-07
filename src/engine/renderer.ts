@@ -101,7 +101,7 @@ function taperings(src: HTMLCanvasElement): HTMLCanvasElement[] {
  * shadow rather than on a tile-wide wall strip.
  */
 /** Walls drawn as their top where they run north-south, not as a stack of faces. */
-const RUN_WALLS = new Set(['wallInt', 'wallStone']);
+const RUN_WALLS = new Set(['wallInt', 'wallStone', 'wallShoji', 'wallSteel']);
 const WALL_KIND = /wall|mural|fence|pirca|gate|portales|parapet|hedge/i;
 
 /** The seam wobble repeats every this many tiles; masks are cached per phase. */
