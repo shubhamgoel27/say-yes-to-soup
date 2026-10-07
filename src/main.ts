@@ -385,6 +385,13 @@ const textbox = new Textbox(
   },
   state,
   (who) => audio.speak(who),
+  // Whoever is named on the line, by name: this map's villager first, since
+  // a name like Hana or Chasca walks through several chapters.
+  (who) => {
+    const named = villagers.filter((v) => v.def.name === who);
+    if (!named.length) return undefined;
+    return (named.find((v) => v.def.map === map.id) ?? named[0]!).portrait;
+  },
 );
 /**
  * A second reading arrives already knowing the words, and a task whose only
