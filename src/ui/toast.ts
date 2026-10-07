@@ -97,18 +97,17 @@ export class Toasts {
     // get the ink-dot bloom and page-curl entrance instead of the plain slide.
     const journalish = /^[✎✦]/.test(text);
     el.className = journalish ? 'toast jt' : 'toast';
-    // A pad glyph inside the words (tap \u2726 to talk) comes from a fallback
-    // font with no side bearing, and on iPhone it sat glued to the next word.
-    // Each one is set as its own upright little sort, spaced like a letter.
-    for (const part of text.split(/([\u2726\u2933])/)) {
-      if (part === '\u2726' || part === '\u2933') {
-        const g = document.createElement('span');
-        g.className = 'toast-glyph';
-        g.textContent = part;
-        el.appendChild(g);
-      } else if (part) {
-        el.appendChild(document.createTextNode(part));
-      }
+    // Pad glyphs (tap \u2726 to talk, the \u2726 of a margin note) come from a
+    // fallback font with no side bearing, and on iPhone they sat glued to the
+    // next word. Each is set as its own upright little sort, spaced like a letter.
+    if (/[\u2726\u2933]/.test(text)) {
+      el.innerHTML = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/[\u2726\u2933]/g, '<span class="toast-glyph">$&</span>');
+    } else {
+      el.textContent = text;
     }
     this.root.appendChild(el);
     // Next frame so the transition actually runs.

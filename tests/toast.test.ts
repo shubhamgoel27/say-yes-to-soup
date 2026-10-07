@@ -10,6 +10,7 @@ import { beforeEach, describe, it, mock } from 'node:test';
 type FakeEl = {
   className: string;
   textContent: string;
+  innerHTML: string;
   classList: { add(c: string): void; remove(c: string): void; contains(c: string): boolean };
   remove(): void;
   parent: FakeRoot | null;
@@ -26,6 +27,10 @@ function makeEl(): FakeEl {
   const el: FakeEl = {
     className: '',
     textContent: '',
+    // Toasts set glyph-bearing text as markup; the fake keeps only its words.
+    set innerHTML(html: string) {
+      this.textContent = html.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    },
     parent: null,
     classList: {
       add: (c) => void classes.add(c),
