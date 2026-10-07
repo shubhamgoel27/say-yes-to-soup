@@ -223,7 +223,7 @@ if (want('r2')) {
       calls.push(s.hint);
     }
     if (s.simmer >= 0 || s.done) {
-      if (/Now, pare|Ngayon|Press Space/.test(s.hint)) await page.keyboard.press('Space');
+      if (/Now, anak|Ngayon|Press Space/.test(s.hint)) await page.keyboard.press('Space');
       return;
     }
     // Find the jar from Ben's own words: the last pantry name he said.
