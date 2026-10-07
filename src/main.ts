@@ -7,7 +7,7 @@ import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState, activeSlot, peekSlot, setActiveSlot } from './engine/state';
+import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
 import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
@@ -405,6 +405,12 @@ const title = new TitleScreen(
   $('letter'),
   () => reloadJourney(),
   (row) => beginSecondReading(row),
+  () => {
+    // Asked and answered on the confirm card: the journal on the table goes.
+    audio.confirm();
+    title.hideTitle();
+    openFlyleaf(freshSlate);
+  },
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -3198,9 +3204,20 @@ function titleActivate() {
   }
   title.hideTitle();
   if (choice === 'new') {
-    // The old journey is wiped only when the traveler actually sets out:
-    // Esc on the flyleaf used to return to a title whose journal was gone.
-    openFlyleaf(freshSlate);
+    // Begin again never costs a journey when the shelf has room: it starts
+    // in the first blank journal and the old one stays where it was. (Two
+    // presses of Begin again once erased the active journal outright.) The
+    // switch happens only when the traveler actually sets out: Esc on the
+    // flyleaf returns to the cover with nothing touched.
+    const blank = state.hasSave() ? firstBlankSlot() : null;
+    openFlyleaf(
+      blank === null
+        ? freshSlate
+        : () => {
+            setActiveSlot(blank);
+            freshSlate();
+          },
+    );
   } else {
     beginPlay(false);
   }
@@ -3499,7 +3516,24 @@ function update(dt: number) {
       audio.back();
     }
   } else if (mode === 'title') {
-    if (title.shelfOpen) {
+    if (title.confirmOpen) {
+      // The erase question owns the keys: arrows choose, Space answers, Esc keeps.
+      if (menuDir) {
+        title.confirmDir(menuDir);
+        audio.select();
+      }
+      if (act) {
+        const did = title.confirmActivate();
+        if (did === 'cancel') audio.back();
+        else if (did === 'confirm' && !title.titleOpen) {
+          // The deed's own callback already sounded (Begin again) or the
+          // shelf took it; nothing more here.
+        } else if (did === 'confirm') audio.confirm();
+      } else if (back || pauseKey) {
+        title.confirmBack();
+        audio.back();
+      }
+    } else if (title.shelfOpen) {
       // The shelf owns the keys: arrows browse, Space acts, Esc backs out.
       if (menuDir) {
         title.shelfDir(menuDir);
