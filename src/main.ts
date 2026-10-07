@@ -48,7 +48,8 @@ import {
 } from './content/world';
 import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
-import { atFor, doorsFrom, liveWho, nextMapToward, npcMap } from './content/guide';
+import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/guide';
+import { cheapestPath } from './engine/path';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -2735,7 +2736,7 @@ function pathBeside(from: [number, number], cell: [number, number]): [number, nu
     const nx = cell[0] + dx;
     const ny = cell[1] + dy;
     if (solid(nx, ny) || bodies.has(`${nx},${ny}`)) continue;
-    const p = pathBetween(from, nx, ny, solid);
+    const p = yarnPath(from, nx, ny, solid);
     // Bare floor beats a tuft or a coil of hose by a step: the end is where
     // the player stands, and it should read as somewhere to stand.
     const cost = p ? p.length + (dressedCell(nx, ny) ? 1.5 : 0) : Infinity;
@@ -2744,7 +2745,48 @@ function pathBeside(from: [number, number], cell: [number, number]): [number, nu
       bestCost = cost;
     }
   }
-  return best ?? pathBetween(from, cell[0], cell[1], solid, true);
+  return best ?? yarnPath(from, cell[0], cell[1], solid, true);
+}
+
+/** What a step onto floor painted over by a tall prop costs the yarn, in
+ * steps: a detour of up to this many tiles is taken to keep the thread out
+ * from under a lamp's head or a tree's canopy, and none longer. */
+const YARN_OVERHANG_COST = 6;
+
+/**
+ * The thread's own walk: pathBetween's rules (walkable ground, bodies
+ * ignored by the callers, a goal beside the cell when `adjacentTo`), except
+ * that floor under a tall prop's overhang costs extra. Yarn laid there was
+ * drawn straight through a lamppost and under a tree's crown, so it read as
+ * a line through solids, not a way to walk.
+ */
+function yarnPath(
+  from: [number, number],
+  tx: number,
+  ty: number,
+  blocked: (x: number, y: number) => boolean,
+  adjacentTo = false,
+): [number, number][] | null {
+  const w = map.w;
+  const goals = new Set<number>();
+  if (adjacentTo) {
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const gx = tx + dx;
+      const gy = ty + dy;
+      if (map.inBounds(gx, gy) && !blocked(gx, gy)) goals.add(gy * w + gx);
+    }
+    if (goals.size === 0) return null;
+  } else {
+    if (tx === from[0] && ty === from[1]) return [];
+    if (!map.inBounds(tx, ty) || blocked(tx, ty)) return null;
+    goals.add(ty * w + tx);
+  }
+  const over = renderer.overhung(map);
+  // A rug or a crate lid underfoot costs a step too: bare floor reads as a
+  // way to walk, yarn over a prop reads as pointing at the prop.
+  return cheapestPath(map.w, map.h, from, goals, blocked, (x, y) =>
+    over[y * w + x] ? YARN_OVERHANG_COST : dressedCell(x, y) ? 1 : 0,
+  );
 }
 
 /** A walkable cell with something on it (a tuft, a hose, pigeons): not bare floor. */
@@ -2767,6 +2809,8 @@ function straightenThread(from: [number, number], path: [number, number][]): [nu
   const prev = pts[pts.length - 2]!;
   const finalX = last[0] !== prev[0]; // the axis the walk arrives along
   const solid = (x: number, y: number) => map.solid(x, y);
+  const over = renderer.overhung(map);
+  const under = (c: [number, number]) => over[c[1] * map.w + c[0]] === 1;
   for (let pass = 0; pass < pts.length; pass++) {
     let moved = false;
     for (let i = 1; i < pts.length - 1; i++) {
@@ -2780,6 +2824,8 @@ function straightenThread(from: [number, number], path: [number, number][]): [nu
       const swap: [number, number] = [a[0] + (c[0] - b[0]), a[1] + (c[1] - b[1])];
       // Never through a doorway the shortest walk did not already take.
       if (solid(swap[0], swap[1]) || map.triggerAt(swap[0], swap[1])) continue;
+      // Nor in under a lamp's head the routed walk had stepped around.
+      if (under(swap) && !under(b)) continue;
       pts[i] = swap;
       moved = true;
     }
@@ -2809,7 +2855,12 @@ function threadTargetFor(
     if (m === map.id) return { cell: [x, y], adjacent: map.triggerAt(x, y)?.type !== 'door' };
     targetMap = m;
   } else {
-    const live = liveWho(task, state);
+    // The task's lead first (the person its sentence is about), then anyone
+    // named with news; see threadWho. Only people the thread can reach.
+    const live = threadWho(task, state, (id) => {
+      const m = npcMap(id);
+      return !!m && (m === map.id || nextMapToward(map.id, m, state) !== null);
+    });
     let best = Infinity;
     let bestCell: [number, number] | null = null;
     for (const id of live) {
@@ -2837,7 +2888,7 @@ function threadTargetFor(
   let bestAt: [number, number] | null = null;
   for (const d of doorsFrom(map.id, state)) {
     if (d.to !== hop) continue;
-    const p = pathBetween(from, d.at[0], d.at[1], solid);
+    const p = yarnPath(from, d.at[0], d.at[1], solid);
     if (p && p.length < best) {
       best = p.length;
       bestAt = d.at;
@@ -2861,7 +2912,7 @@ function threadPathFrom(
     if (task.who === undefined && !task.at) continue;
     const aim = threadTargetFor(task, from);
     if (!aim) continue;
-    let path = aim.adjacent ? pathBeside(from, aim.cell) : pathBetween(from, aim.cell[0], aim.cell[1], solid);
+    let path = aim.adjacent ? pathBeside(from, aim.cell) : yarnPath(from, aim.cell[0], aim.cell[1], solid);
     // A fixed spot can be a prop with no floor of its own; point beside it.
     if (!path && !aim.adjacent) path = pathBeside(from, aim.cell);
     if (!path) continue;
@@ -2895,7 +2946,15 @@ let threadToastAt = -Infinity;
 let threadShownAt = -Infinity;
 /** What the last summon resolved, published on the dev bridge so automation
  * can hold the thread honest: the task it followed and where it pointed. */
-let threadLast: { task: string; end: [number, number]; loop: [number, number] | null; dressed: boolean } | null = null;
+let threadLast: {
+  task: string;
+  end: [number, number];
+  loop: [number, number] | null;
+  dressed: boolean;
+  tiles: [number, number][];
+  /** Laid cells that lie under a tall prop's overhang (want: none). */
+  under: number;
+} | null = null;
 
 /** Ask the thread, from the player's feet or from a helpful villager's. */
 function summonThread(from: [number, number] = player.occupies()): boolean {
@@ -2918,6 +2977,8 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
     end,
     loop: found.loop,
     dressed: dressedCell(end[0], end[1]),
+    tiles: found.tiles,
+    under: found.tiles.filter(([x, y]) => renderer.overhung(map)[y * map.w + x] === 1).length,
   };
   queueWhisper();
   return true;
@@ -5039,6 +5100,21 @@ function installCheats() {
       state.set(flag);
       showHowto(g);
       return `the card for ${flag} is on the table`;
+    },
+    /** Where a cell's centre is on screen (client px), for automation that
+     * clicks or taps the world the way a player does. */
+    screenOf(x: number, y: number) {
+      return worldToScreen(x * TILE + TILE / 2, y * TILE + TILE / 2);
+    },
+    /** Floor cells on this map the thread steps around (under a lamp's head,
+     * a tree's crown), as "x,y" strings. */
+    overhung() {
+      const o = renderer.overhung(map);
+      const out: string[] = [];
+      o.forEach((v, i) => {
+        if (v) out.push(`${i % map.w},${Math.floor(i / map.w)}`);
+      });
+      return out;
     },
     /** The live panel behind a start flag, for automation that plays it. */
     panel(flag: string) {
