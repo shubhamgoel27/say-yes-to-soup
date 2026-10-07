@@ -255,11 +255,14 @@ export const SICILY_NPCS: NpcDef[] = [
       {
         when: {
           has: ['met.patane', 'c8.pranzo', 'c8.scopa.won', 'c8.pisci.won', 'c8.walk.done'],
-          not: ['c8.complete'],
+          not: ['c8.signed', 'c8.complete'],
         },
         node: 'c8.patane.yes',
       },
-      { when: { has: ['c8.complete'] }, node: 'c8.patane.board' },
+      // The card waits for the send-off: signed out first, argued onto the
+      // mole second, and only then is the chapter over and the gangway open.
+      { when: { has: ['c8.complete'] }, node: 'c8.patane.gangway' },
+      { when: { has: ['c8.signed'] }, node: 'c8.patane.board' },
       { node: 'c8.patane.not' },
     ],
   },
@@ -372,14 +375,14 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.concetta.walk': {
     lines: [
-      { who: 'Nonna Concetta', text: 'The light is going soft. Nothing else may happen today.' },
+      { who: 'Nonna Concetta', text: 'Enough. The work is done, so nothing else may happen today.' },
       { who: 'Nonna Concetta', text: 'Amunì, bedda. We walk.' },
     ],
     effects: ['journal:words.amuni'],
     choices: [
       { text: 'Walk with her', goto: 'c8.walk.go' },
       { text: 'Ask where you are walking to', goto: 'c8.walk.nowhere' },
-      { text: 'Not this evening', goto: 'c8.walk.later' },
+      { text: 'Not now', goto: 'c8.walk.later' },
     ],
   },
   'c8.walk.nowhere': {
@@ -388,17 +391,17 @@ export const SICILY_NODES: NodeMap = {
     ],
     choices: [
       { text: 'Walk with her', goto: 'c8.walk.go' },
-      { text: 'Not this evening', goto: 'c8.walk.later' },
+      { text: 'Not now', goto: 'c8.walk.later' },
     ],
   },
   'c8.walk.later': {
     lines: [
-      { who: 'Nonna Concetta', text: 'Tomorrow the sun sets again, they tell me. I will be here. So will the whole town, walking.' },
+      { who: 'Nonna Concetta', text: 'Tomorrow, then. I will be here. So will the whole town, walking.' },
     ],
   },
   'c8.walk.go': {
     lines: [
-      { text: 'The town comes out when the stones stop burning, dressed nicer than the errand requires.' },
+      { text: 'The town comes out with you, dressed nicer than the errand requires.' },
       { text: 'Nods, gossip, a newborn admired like a moonrise, at the speed of talk.' },
     ],
     choices: [
@@ -413,7 +416,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.walk.polepole': {
     lines: [
       { who: 'Nonna Concetta', text: 'Pole pole. Ha! A whole coast on the far side of the world, walking correctly.' },
-      { who: 'Nonna Concetta', text: 'Everywhere worth living, bedda, somebody invented this exact evening.' },
+      { who: 'Nonna Concetta', text: 'Everywhere worth living, bedda, somebody invented this exact walk.' },
     ],
     next: 'c8.walk.end',
   },
@@ -426,7 +429,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.walk.end': {
     lines: [
-      { text: 'The lamps take over. Three laps, no destination, and the whole town has said goodnight by name.' },
+      { text: 'Three laps, no destination, and by the end the whole town has greeted you by name.' },
     ],
     effects: ['set:c8.walk.done', 'journal:customs.passeggiata'],
   },
@@ -776,7 +779,7 @@ export const SICILY_NODES: NodeMap = {
     ],
     choices: [
       { text: 'Take the oar again', when: { has: ['c8.pisci.won'] }, goto: 'c8.saro.pisciReplay' },
-      { text: 'Leave the sea to itself tonight', goto: 'c8.saro.idle' },
+      { text: 'Leave the sea to itself today', goto: 'c8.saro.idle' },
     ],
   },
   'c8.saro.pisciReplay': {
@@ -845,7 +848,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.rosaria.bread': {
     lines: [
-      { text: 'At noon she splits a flat loaf and dresses it from bottles: oil, tomato, oregano, anchovy, cheese.' },
+      { text: 'She splits a flat loaf and dresses it from bottles: oil, tomato, oregano, anchovy, cheese.' },
       { who: 'Rosaria', text: 'Pane cunzato. When there was nothing, there was still this. Eat.' },
     ],
     effects: ['set:c8.cunzato', 'journal:dishes.panecunzato'],
@@ -932,15 +935,26 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Signor Patanè', text: 'So. Concetta fed you, the circolo seated you, the saint got you soaked, and you walked nowhere like a local.' },
       { who: 'Signor Patanè', text: 'The town signs you out, with regret, the only honorable way. Veracruz, then the mountains of Mexico.' },
     ],
-    effects: ['set:c8.complete'],
+    effects: ['set:c8.signed'],
+    choices: [
+      { text: 'Walk down the mole', goto: 'c8.depart' },
+      { text: 'Not yet', goto: 'c8.patane.wait' },
+    ],
   },
   'c8.patane.board': {
     lines: [
-      { who: 'Signor Patanè', text: 'Provisioned, in principle and in fact. The gangway is that way, and so is Mexico.' },
+      { who: 'Signor Patanè', text: 'Signed, stamped, provisioned. Half the town is on the mole already, pretending to be passing.' },
     ],
     choices: [
-      { text: 'Walk to the gangway', goto: 'c8.depart' },
+      { text: 'Walk down the mole', goto: 'c8.depart' },
       { text: 'Not yet', goto: 'c8.patane.wait' },
+    ],
+  },
+  'c8.patane.gangway': {
+    lines: [{ who: 'Signor Patanè', text: 'The horn has spoken. Even I do not argue with the horn.' }],
+    choices: [
+      { text: 'Up the gangway', goto: 'c8.sail' },
+      { text: 'One more look at the town', goto: 'c8.patane.wait' },
     ],
   },
   'c8.patane.wait': {
@@ -989,19 +1003,27 @@ export const SICILY_NODES: NodeMap = {
     ],
     next: 'c8.depart.horn',
   },
+  // The horn closes the chapter; the card follows the best scene, and the
+  // gangway is one more word with Patanè, so the card never races the ship.
   'c8.depart.horn': {
     lines: [
       { text: 'The ship’s horn lands on all of them at once, one long note that ends every argument on the coast mid-sentence.' },
-      { text: 'Alfio shouts something from the quay, both hands cupped. The horn takes every word.' },
+      { text: 'In the silence after it, Concetta presses the parcel flat against your chest, as if it might try to stay.' },
+    ],
+    effects: ['journal:customs.sendoff', 'set:c8.complete'],
+  },
+  'c8.sail': {
+    lines: [
+      { text: 'From the rail you see Alfio shout something, both hands cupped. The horn takes every word.' },
       { text: 'The faraglioni slide past. Behind you, very small, the town is arguing again.' },
     ],
-    effects: ['journal:customs.sendoff', 'travel:oaxaca'],
+    effects: ['travel:oaxaca'],
   },
 
   // ---------------- post office ----------------
   'c8.post.pilar': {
     lines: [
-      { text: 'One counter, one fan, both from another century. The clerk produces an envelope addressed in invoice handwriting.' },
+      { text: 'One counter, one fan, both from another century. The clerk produces an envelope with a bridge drawn on the back.' },
     ],
     effects: ['letter:sicily.pilar'],
   },

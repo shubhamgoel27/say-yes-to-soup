@@ -17,7 +17,7 @@ const SICILY_LETTERS: LetterDef[] = [
     when: { has: ['pilar.gift.puffer'] },
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
-      'The Museum of the Sea thrives. Your permanently astonished puffer fish remains the main exhibit. Visitors ask if it is real. I invoice the question.',
+      'The Museum of the Sea thrives. Your permanently astonished puffer fish remains the main exhibit. Visitors ask if it is real. I charge for the answer.',
       'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
       'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
     ],
@@ -28,7 +28,7 @@ const SICILY_LETTERS: LetterDef[] = [
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'As deputy, he now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
-      'The Museum of the Sea still awaits your promised weird thing, if the first one got lost at sea. Deputies cannot read invoices. You can.',
+      'The Museum of the Sea still awaits your promised weird thing, if the first one got lost at sea. The deputy cannot read reminders. You can.',
     ],
   },
   {

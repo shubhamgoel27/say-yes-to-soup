@@ -374,7 +374,7 @@ export const DELHI_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c11.kite.done', 'c11.rain'], not: ['c11.duel.done'] },
-    text: 'The mohalla\'s rooftop tournament flies at dusk, and Yusuf has entered you for the kucha. Cotton dor, three rivals, and weather with opinions.',
+    text: 'The rains have opened the rooftop tournament, and Yusuf has entered you for the kucha. Cotton dor, three rivals, and weather with opinions.',
     who: 'yusuf',
   },
   {
@@ -389,12 +389,12 @@ export const DELHI_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c11.duel.done', 'c11.chit.bombay'], not: ['c11.complete'] },
-    text: 'Flown, fed, served, soaked. Go and stand at Kamla Chachi\'s tawa; she has been packing something and pretending she is not.',
-    who: 'kamla',
+    text: 'Flown, fed, served, soaked, and the chit in your pocket. Yusuf is on his roof with one plain patang and no rival in the sky.',
+    who: 'yusuf',
   },
   {
     when: { has: ['c11.complete'] },
-    text: 'Sethji\'s chit is in your pocket; Bantu\'s rickshaw waits at the stand. Rail south to Bombay, then the sea road west. The gali keeps your mornings.',
+    text: 'Sethji\'s chit is in your pocket; Bantu\'s rickshaw waits at the stand. Rail south to Bombay, then the sea road west.',
     who: 'bantu',
   },
   {

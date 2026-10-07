@@ -81,7 +81,7 @@ export const ZANZIBAR_JOURNAL: JournalEntry[] = [
     tab: 'dishes',
     title: 'Mandazi',
     sub: 'Cardamom-coconut fried dough. Breakfast, and the answer to several other questions.',
-    you: 'Arrived hot, with no invoice, because I was a guest. Sweet enough to be kind, plain enough to be daily.',
+    you: 'Arrived hot, with no bill, because I was a guest. Sweet enough to be kind, plain enough to be daily.',
   },
   {
     id: 'dishes.chaitangawizi',
@@ -248,11 +248,6 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
     who: 'juma',
   },
   {
-    when: { has: ['c7.saa'], not: ['c7.juma.cardamom'] },
-    text: 'Saa mbili is eight in the morning, sunrise math. Be at the drying mats while the mats are still full.',
-    who: 'juma',
-  },
-  {
     when: { has: ['c7.met.amina'], not: ['c7.kanga.game'] },
     text: 'Bi Amina wants to play before she sells: she describes the day, you pick the kanga that answers it. Expect cackling either way.',
     who: 'amina',
@@ -264,7 +259,7 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c7.met.bakari'], not: ['c7.sail.ok'] },
-    text: 'Kapteni Bakari watches the water between dominoes, and a ngalawa waits below his table. Go back to him. Aboard, keep the telltale streaming; luffing only slows you.',
+    text: 'Kapteni Bakari watches the water between dominoes, and a ngalawa waits below his table. Aboard, keep the telltale streaming; luffing only slows you.',
     who: 'bakari',
   },
   {
@@ -279,7 +274,7 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c7.met.zuberi'], not: ['c7.zuberi.dusk'] },
-    text: 'Come back to the market corner at dusk, when the lamps kindle and the pweza meets the coconut.',
+    text: 'Zuberi has a second pot on the cart, and it is not urojo. Go back to the market corner.',
     who: 'zuberi',
   },
   {
@@ -294,13 +289,13 @@ export const ZANZIBAR_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c7.arrived'], not: ['letter.read.c7.pilar'] },
-    text: 'Mail waits at the shipping counter by the jetty: an envelope in the unmistakable handwriting of local government.',
-    who: 'ali',
+    text: 'Mail waits on the shipping counter by the jetty: an envelope in the unmistakable handwriting of local government.',
+    at: ['zanzibar', 36, 20],
   },
   {
     when: { has: ['letter.read.c7.pilar'], not: ['letter.read.c7.mangben'] },
-    text: 'Ali was digging for a second envelope, the one that smells like a galley. Ask at the counter again.',
-    who: 'ali',
+    text: 'Ali was digging for a second envelope, the one that smells like a galley. Look on the counter again.',
+    at: ['zanzibar', 36, 20],
   },
   {
     when: { has: ['c7.rashid.past'], not: ['c7.rashid.her'] },

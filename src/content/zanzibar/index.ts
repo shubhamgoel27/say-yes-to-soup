@@ -58,7 +58,7 @@ export const CHAPTER: ChapterDef = {
       body: [
         'Dear constituent abroad. I have been ELECTED. Mayor of the bridge: nine votes for, zero against, one abstention (the dog, on principle).',
         'The puffer fish you posted presides over the swearing-in shelf. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
-        'My first act was to declare the bridge a city. My second was to invoice the city. Government is simple if you keep the books yourself.',
+        'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
         'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
       ],
     },
@@ -76,7 +76,7 @@ export const CHAPTER: ChapterDef = {
       id: 'c7.mangben',
       from: 'Mang Ben, M/V Yacana, at sea',
       body: [
-        'Kumusta from the galley. The pot you scrubbed still shines wrong in one corner. I show the new hands and say: a traveler did this, and the ocean let her pass.',
+        'Kumusta from the galley. The pot you scrubbed still shines wrong in one corner. I show the new hands and say: a traveler did this, and the ocean let us all pass.',
         'If you are in Zanzibar, eat the urojo twice. Once for hunger, once to understand. Sour soup is a doctrine, and we are both believers.',
         'The Capitana says the sea is a village too. She is right, but do not tell her I said so. Sinigang on Sundays, always. Some laws survive any crossing.',
       ],
