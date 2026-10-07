@@ -2463,8 +2463,11 @@ function updateVillager(v: Villager, dt: number) {
         : null;
     v.think = 1.0 + Math.random() * 2.8;
   }
+  // An amble never ends behind a tall prop's head (a lamp, a crane, a
+  // canopy): from up here that cell paints the prop over the face.
+  const over = renderer.overhung(map);
   const leash = (x: number, y: number) =>
-    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y);
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y) || over[y * map.w + x] === 1;
   v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
