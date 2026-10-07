@@ -73,6 +73,22 @@ describe('global whispers speak to the hand that holds the game', () => {
     assert.deepEqual(bad, []);
   });
 
+  it('the album, the closing book and the pause pages never name a key on glass', () => {
+    // Every desk-only phrase in these overlays is the first argument of a
+    // keysOrTaps call (or the desk half of the controls card); whatever is
+    // left over is shown to a thumb as well, so it must not name a key.
+    const KEYISH = /\b(Space|Esc|Enter|WASD|arrow keys|any key)\b|&#8592;|&#8594;/;
+    for (const file of ['src/ui/album.ts', 'src/ui/pause.ts']) {
+      let src = readFileSync(file, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/const desk[\s\S]*?\];/, '');
+      src = src.replace(/keysOrTaps\(\s*(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g, 'keysOrTaps(');
+      const bad = src.split('\n').filter((l) => KEYISH.test(l));
+      assert.deepEqual(bad, [], `${file} shows a thumb a key`);
+    }
+  });
+
   it('the cover never asks a finger to "press again"', () => {
     const src = readFileSync('src/ui/title.ts', 'utf8');
     const raw = src.split('\n').filter((l) => /press again/.test(l) && !/const AGAIN/.test(l));

@@ -5,6 +5,7 @@ import { makePhotoArt } from '../art/albumart';
 import { ROUTE } from '../content/route';
 import { CHAPTERS } from '../content/world';
 import { lendCreditsBook, lendFlags } from './pause';
+import { keysOrTaps } from './responsive';
 
 /**
  * Two books share this overlay, because they are the same gesture: cream card
@@ -454,11 +455,15 @@ export class AlbumUI {
 
     if (this.mode === 'end') {
       const leaf = this.leaves[this.spread] ?? 'cover';
+      // On glass the page is the control: the edges turn, the middle goes on.
       const hint = this.onLastPage
-        ? 'any key closes the book'
+        ? keysOrTaps('any key closes the book', 'tap to close the book')
         : leaf === 'trick'
-          ? 'any key for the people who walked with you'
-          : '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on';
+          ? keysOrTaps('any key for the people who walked with you', 'tap the middle for the people who walked with you')
+          : keysOrTaps(
+              '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on',
+              'tap an edge to turn the page &nbsp;&middot;&nbsp; tap the middle to go on',
+            );
       const inCredits = CREDITS.includes(leaf);
       this.root.innerHTML = `
         <div class="al-book end-book">
@@ -484,7 +489,10 @@ export class AlbumUI {
         <div class="al-title">every traveler, every road</div>
         <div class="al-spread${turnCls}">${pages}</div>
         <div class="al-dots">${dots}</div>
-        <div class="al-hint">&#8592;&#8594; turn the pages &nbsp;&middot;&nbsp; Space closes the album</div>
+        <div class="al-hint">${keysOrTaps(
+          '&#8592;&#8594; turn the pages &nbsp;&middot;&nbsp; Space closes the album',
+          'tap an edge to turn the pages &nbsp;&middot;&nbsp; tap the middle to go on to the end',
+        )}</div>
       </div>`;
     this.mountArt();
   }

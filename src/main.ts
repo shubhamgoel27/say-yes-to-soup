@@ -4537,6 +4537,8 @@ function installCheats() {
   const CARRY: Record<number, { set?: string[]; clear?: string[] }> = {
     1: { set: ['pallay.done', 'keepsake.band', 'paca.moved', 'her.zoila'] },
     3: { set: ['joseph.letter'] },
+    // Gong's stamped berth; without it a skipped Busan reopens his window.
+    5: { set: ['c5.berth'] },
     6: { set: ['c6.letter.delivered'], clear: ['joseph.letter'] },
   };
   /** Mark chapter `c` walked: its flags and whatever it hands onward. */

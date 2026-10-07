@@ -111,6 +111,27 @@ type Hooks = {
   onReplay?: (flag: string) => void;
 };
 
+/** The controls card, in the words of whatever is holding the game. */
+function HELP_ROWS(): [string, string][] {
+  const desk: [string, string][] = [
+    ['Walk', 'arrows / WASD / stick / click a spot'],
+    ['Talk, touch, sit', 'Space / Z / A / click it'],
+    ['The journal', 'J / Tab / Y'],
+    ['Ask the thread', 'N, once the band is on your wrist'],
+    ['Pause', 'Esc / Start'],
+    ['Mute', 'M'],
+  ];
+  const glass: [string, string][] = [
+    ['Walk', 'the stick, or tap a spot'],
+    ['Talk, touch, sit', '&#10022;, or tap them'],
+    ['The journal', '&#9998;'],
+    ['Ask the thread', '&#10547;, once the band is on your wrist'],
+    ['Pause', '&#9776;'],
+    ['Volume', 'Settings'],
+  ];
+  return isCoarseTouch() ? glass : desk;
+}
+
 export class PauseMenu {
   private screen: Screen = 'menu';
   private cursor = 0;
@@ -390,15 +411,10 @@ export class PauseMenu {
         )}</div></div>`;
     } else if (this.screen === 'help') {
       body = `<div class="p-help">
-        <div class="p-row"><span class="p-label">Walk</span><span class="p-value">arrows / WASD / stick / click a spot</span></div>
-        <div class="p-row"><span class="p-label">Talk, touch, sit</span><span class="p-value">Space / Z / A / click it</span></div>
-        <div class="p-row"><span class="p-label">The journal</span><span class="p-value">J / Tab / Y</span></div>
-        <div class="p-row"><span class="p-label">Ask the thread</span><span class="p-value">N, once the band is on your wrist</span></div>
-        <div class="p-row"><span class="p-label">Pause</span><span class="p-value">Esc / Start</span></div>
-        <div class="p-row"><span class="p-label">Mute</span><span class="p-value">M</span></div>
+        ${HELP_ROWS().map(([k, v]) => `<div class="p-row"><span class="p-label">${k}</span><span class="p-value">${v}</span></div>`).join('')}
         <div class="p-note">Nani&rsquo;s actual instructions: say yes to soup, ask about the bread,
         and if someone corrects you, thank them twice. Walk slowly. That is the whole trick.</div>
-        <div class="p-hint-line">Esc back</div>
+        <div class="p-hint-line">${keysOrTaps('Esc back', 'tap beside the page to go back')}</div>
       </div>`;
     } else {
       // The subtitle is the one line here that is allowed to change, because
@@ -428,7 +444,7 @@ export class PauseMenu {
         fresh by the game at runtime.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>
         ${done ? '<p class="end-envoi end-last-word">The pot is still on. It is always on. Come back whenever.</p>' : ''}
-        <div class="p-hint-line">Esc back</div>
+        <div class="p-hint-line">${keysOrTaps('Esc back', 'tap beside the page to go back')}</div>
       </div>`;
     }
     const title =
