@@ -5,6 +5,7 @@ import { OAXACA_JOURNAL, OAXACA_TASKS } from './journal';
 import { CAMPOSANTO_MAP, CAMPO_VIGIL_CELLS, COCINA_MAP, OAXACA_MAP } from './map';
 import { RECALL } from './recall';
 import { MolePanel, OfrendaPanel } from '../../ui/games/oaxaca';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Nine: the valley village, where the ledger closes both directions. */
 export const CHAPTER: ChapterDef = {
@@ -94,12 +95,12 @@ export const CHAPTER: ChapterDef = {
       title: 'The hour of stirring',
       howTo: [
         'The spoon stands up in the pot by itself. Walk it in circles: up, right, down, left.',
-        'With the pot, never against it. The wrong way only sloshes and Chela pretends not to see.',
-        'Chiles toast on the comal beside you. When they start to smoke, Space sweeps them off the heat.',
+        'With the pot, never against it, and never ahead of it: let the spoon finish each quarter before the next. A hurried stroke only sloshes.',
+        handWords('Chiles toast on the comal beside you. When they start to smoke, Space sweeps them off the heat.'),
         'Burn them and the pot goes bitter. Chela has done it twice herself. You wash the pot and begin again.',
       ],
       hardHow:
-        'The fiesta pot: nine rounds, a quicker comal, and a bottom that catches the moment the spoon rests. Somewhere between hurry and rest there is a pace, and Chela swears you have it.',
+        'The fiesta pot: ten rounds, a quicker comal, a stroke crowding the last one only splashes, and the bottom catches the moment the spoon rests. Somewhere between hurry and rest there is a pace, and Chela swears you have it.',
       make: (root, audio) => new MolePanel(root, audio as AudioBus),
     },
     {
@@ -108,8 +109,8 @@ export const CHAPTER: ChapterDef = {
       title: 'Her ofrenda',
       howTo: [
         'Things come into your hands one at a time: what every altar asks for, and what the road gave you.',
-        'Up and down chooses a level: what guides her, what feeds her, what walks beside her.',
-        'Space sets a thing down. No shelf is wrong here, and nobody in this room will correct you.',
+        handWords('Up and down chooses a level: what guides her, what feeds her, what walks beside her.'),
+        handWords('Space sets a thing down. No shelf is wrong here, and nobody in this room will correct you.'),
         'Take all the time you want. The candles are patient, and the village is in no hurry at all.',
       ],
       // Built once, for one person, out of what this particular road carried

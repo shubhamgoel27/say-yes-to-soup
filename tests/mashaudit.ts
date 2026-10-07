@@ -3,7 +3,7 @@
  * hand, and an attentive one. Run with `npx tsx tests/mashaudit.ts [flag]`.
  */
 import { ghost, play, seedRandom } from './panelrig';
-import { BOTS } from './bots';
+import { BOTS, STORY_BOTS } from './bots';
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const { GAMES } = await import('../src/content/world');
@@ -25,33 +25,7 @@ const mashArrows = (n: number) => {
     }
   };
 };
-/** Story-telling players where the hard bot has nothing to read. */
-const STORY: Record<string, () => Any> = {
-  // The ofrenda has no hard telling, so no hard bot: a patient hand sets
-  // each thing down on whatever shelf the cursor is on (none is wrong).
-  'c9.ofrenda.start': () => {
-    let last = -1;
-    return (p: Any, t: number) => {
-      if (t - last < 0.4) return;
-      last = t;
-      p.onAction();
-    };
-  },
-  'c7.cook.start': () => {
-    const plan = [[6, 6, 0, 2], [4, 2, 4, 5]];
-    let last = -1;
-    return (p: Any, t: number) => {
-      if (t - last < 0.15) return;
-      last = t;
-      if (p.phase !== 'build') return p.onAction();
-      const want = plan[p.round] ?? [];
-      const n = p.counts.reduce((a: number, b: number) => a + b, 0);
-      const goal = n < want.length ? want[n] : 7;
-      if (p.cur === goal) p.onAction();
-      else p.onDir('right');
-    };
-  },
-};
+const STORY = STORY_BOTS;
 const only = process.argv[2];
 const verbose = process.argv.includes('-v');
 for (const g of GAMES) {

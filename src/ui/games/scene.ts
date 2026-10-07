@@ -9,6 +9,8 @@
  * tweens, particles, shake, and flash are managed for you.
  */
 
+import { isCoarseTouch, keysOrTaps } from '../responsive';
+
 export type Ease = (t: number) => number;
 
 export const easeOutCubic: Ease = (t) => 1 - (1 - t) ** 3;
@@ -312,6 +314,51 @@ const GLYPH: Record<string, string> = {
   space: 'space',
 };
 
+/** The touch pad's action button, named the way the pad draws it. */
+export const TAP_MARK = '✦';
+
+/** What a thumb steers with inside a panel: the floating stick, or the pad
+ * buttons when the player chose those in Settings. */
+function steerWord(): string {
+  const body = typeof document !== 'undefined' ? document.body : null;
+  return body?.classList?.contains?.('walk-buttons') === true ? 'the pad' : 'the stick';
+}
+
+const PLURAL_VERB = /^(choose|pick|walk|steer|drift|find|keep|move|ease|call|guide|turn)$/;
+
+/** "Arrows choose" becomes "the stick chooses": the subject went singular. */
+function agree(steer: string, verb?: string): string {
+  if (!verb) return steer;
+  return `${steer} ${PLURAL_VERB.test(verb) ? `${verb}s` : verb}`;
+}
+
+/**
+ * A panel hint as a thumb reads it. Copy is written for the keyboard; on
+ * glass every named key becomes the control the player can actually see:
+ * Space is the pad's star button, the arrows are the stick. Pure, so the
+ * tests can hold every hint a run ever shows to the same standard.
+ */
+export function forTouch(h: string, steer = steerWord()): string {
+  const Steer = steer.charAt(0).toUpperCase() + steer.slice(1);
+  return h
+    .replace(/\b([Pp])ress Space\b/g, (_m, p: string) => `${p === 'P' ? 'T' : 't'}ap ${TAP_MARK}`)
+    .replace(/\bUp is (\w+), Down is (\w+)/g, `${Steer} up is $1, ${steer} down is $2`)
+    .replace(/\b(Dheel|Kheench), (Down|Up)\b/g, (_m, w: string, d: string) => `${w}, ${steer} ${d.toLowerCase()}`)
+    .replace(
+      /\b(The |the )?(Left and right|Up and down|left and right|up and down|Arrows|arrows)\b( (\w+))?/g,
+      (_m, art: string | undefined, keys: string, _sp?: string, verb?: string) => {
+        const capital = art === 'The ' || (!art && /^[A-Z]/.test(keys));
+        return agree(capital ? Steer : steer, verb);
+      },
+    )
+    .replace(/\bSpace\b/g, TAP_MARK);
+}
+
+/** A hint for whichever hand is playing: keys on a desk, thumbs on glass. */
+export function handWords(h: string): string {
+  return keysOrTaps(h, forTouch(h));
+}
+
 /**
  * Standard panel chrome: the journal-page frame every minigame lives in.
  * Returns the scene plus a hint setter; panels keep their existing root and
@@ -326,32 +373,45 @@ export function mountScene(
   title: string,
   scene: Scene,
   legend?: readonly LegendItem[],
-): { setHint: (h: string) => void } {
-  const keys = legend
-    ? legend
-        .map(
-          (it) =>
-            `<span class="w-key">${it.keys.map((k) => `<i>${GLYPH[k] ?? k}</i>`).join('')}${it.does}</span>`,
-        )
-        .join('')
-    : '';
+): { setHint: (h: string) => void; setLegend: (l: readonly LegendItem[]) => void } {
   root.innerHTML = `
     <div class="w-panel">
       <div class="w-title">${title}</div>
       <div class="g-stage"></div>
       <div class="w-hint"></div>
-      ${keys ? `<div class="w-legend">${keys}</div>` : ''}
+      <div class="w-legend"${legend ? '' : ' style="display:none"'}>${legendHtml(legend ?? [])}</div>
     </div>`;
   root.querySelector('.g-stage')?.appendChild(scene.cv);
   const hintEl = root.querySelector('.w-hint') as HTMLElement | null;
+  const legendEl = root.querySelector('.w-legend') as HTMLElement | null;
   let last = '';
+  let lastLegend = legend;
   return {
     setHint(h: string) {
       if (h === last || !hintEl) return;
       last = h;
-      hintEl.innerHTML = h;
+      // Every panel speaks through here, so this is where a thumb's words
+      // replace a keyboard's: no panel can forget to.
+      hintEl.innerHTML = handWords(h);
+    },
+    /** A panel whose verbs change mid-run (stack, then feed) swaps its keys. */
+    setLegend(l: readonly LegendItem[]) {
+      if (l === lastLegend || !legendEl) return;
+      lastLegend = l;
+      legendEl.innerHTML = legendHtml(l);
+      // Inline, not [hidden]: the page's own .w-legend rule sets display.
+      legendEl.style.display = l.length ? '' : 'none';
     },
   };
+}
+
+function legendHtml(legend: readonly LegendItem[]): string {
+  return legend
+    .map(
+      (it) =>
+        `<span class="w-key">${it.keys.map((k) => `<i>${k === 'space' ? keysOrTaps('space', TAP_MARK) : (GLYPH[k] ?? k)}</i>`).join('')}${it.does}</span>`,
+    )
+    .join('');
 }
 
 // ------------------------------------------------------------- painted keys
@@ -407,10 +467,12 @@ function capSprite(k: KeyGlyph): HTMLCanvasElement {
   const cy = 1 + CAP_H / 2;
   if (k === 'space') {
     g.fillStyle = '#2b2118';
-    g.font = '600 9.5px Literata, Georgia, serif';
+    // On glass the cap wears the pad's star: the button the thumb will press.
+    const glass = isCoarseTouch();
+    g.font = glass ? '600 13px Literata, Georgia, serif' : '600 9.5px Literata, Georgia, serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText('space', cx, cy + 0.5);
+    g.fillText(glass ? TAP_MARK : 'space', cx, cy + (glass ? 1 : 0.5));
   } else {
     g.translate(cx, cy);
     g.rotate(k === 'up' ? -Math.PI / 2 : k === 'down' ? Math.PI / 2 : k === 'left' ? Math.PI : 0);
@@ -515,4 +577,73 @@ export function squashed(
   g.translate(-x, -y);
   draw(g);
   g.restore();
+}
+
+// ------------------------------------------------------------- press marks
+//
+// The timing games used to say only "early" or "late". A hand that is a
+// tenth of a second off cannot learn from that, so every strike window now
+// keeps the last few presses as small marks on its own bar, and the hard
+// tellings say how far off each one was, in the game's own measures.
+
+/** How far off a press landed, as a cook would say it. Negative is early. */
+export function offBy(seconds: number): string {
+  const s = Math.abs(seconds);
+  const size = s < 0.07 ? 'a hair' : s < 0.16 ? 'a breath' : s < 0.35 ? 'half a beat' : 'a full beat';
+  return `${size} ${seconds < 0 ? 'early' : 'late'}`;
+}
+
+type Mark = { u: number; good: boolean; age: number };
+const MARK_LIFE = 6;
+const MARK_KEEP = 6;
+
+/** The last few presses on one timing bar, in that bar's own units. */
+export class PressMarks {
+  private marks: Mark[] = [];
+
+  /** `u` is where the marker stood when the press landed, in the bar's units. */
+  add(u: number, good: boolean): void {
+    this.marks.push({ u, good, age: 0 });
+    if (this.marks.length > MARK_KEEP) this.marks.shift();
+  }
+
+  clear(): void {
+    this.marks.length = 0;
+  }
+
+  tick(dt: number): void {
+    for (const m of this.marks) m.age += dt;
+    while (this.marks.length && this.marks[0]!.age > MARK_LIFE) this.marks.shift();
+  }
+
+  /**
+   * Paint each mark as a short stroke across the bar. `at` maps a bar unit
+   * to a point and the bar's normal angle there (PI/2 for a flat bar).
+   */
+  paint(g: CanvasRenderingContext2D, at: (u: number) => { x: number; y: number; a: number }, len = 9): void {
+    if (!this.marks.length) return;
+    const a0 = g.globalAlpha;
+    g.lineCap = 'round';
+    const last = this.marks.length - 1;
+    this.marks.forEach((m, i) => {
+      const p = at(m.u);
+      const fade = Math.max(0, 1 - m.age / MARK_LIFE);
+      const k = i === last ? 1 : 0.55;
+      const dx = Math.cos(p.a) * len;
+      const dy = Math.sin(p.a) * len;
+      for (const [color, width] of [
+        ['rgba(20,12,6,0.55)', 4.2],
+        [m.good ? '#ffe7a8' : '#e0785a', 2.2],
+      ] as const) {
+        g.globalAlpha = a0 * fade * k;
+        g.strokeStyle = color;
+        g.lineWidth = width;
+        g.beginPath();
+        g.moveTo(p.x - dx, p.y - dy);
+        g.lineTo(p.x + dx, p.y + dy);
+        g.stroke();
+      }
+    });
+    g.globalAlpha = a0;
+  }
 }

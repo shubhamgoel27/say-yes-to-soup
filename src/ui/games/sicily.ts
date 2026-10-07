@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble } from './scene';
+import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold } from './attend';
@@ -1502,6 +1502,8 @@ export class PisciPanel {
   private brokeLimit = 3; // mistimes one pass carries before the stroke breaks
   // The run's own record, so the drift can be coached specifically.
   private early = 0; // pulls that beat the call
+  /** Where each pull met the call, marked on the water off the bow. */
+  private marks = new PressMarks();
   private late = 0; // calls that rolled past unpulled
 
   private scene: Scene | null = null;
@@ -1534,6 +1536,7 @@ export class PisciPanel {
     this.brokeLimit = this.hard ? 2 : 3;
     this.early = 0;
     this.late = 0;
+    this.marks.clear();
     this.phase = 'row';
     this.strokes = 0;
     this.broke = 0;
@@ -1590,6 +1593,7 @@ export class PisciPanel {
     }
     this.rockT += dt;
     this.pullT += dt;
+    this.marks.tick(dt);
     const sc = this.scene;
     if (!sc) return;
     sc.frame(dt, (g) => this.paint(g));
@@ -1667,6 +1671,7 @@ export class PisciPanel {
       return;
     }
     if (this.phase === 'row') {
+      this.marks.add(this.x, this.x <= this.winHi && this.x >= this.winLo);
       if (this.x <= this.winHi && this.x >= this.winLo) {
         this.strokes++;
         this.audio.slosh();
@@ -1713,11 +1718,21 @@ export class PisciPanel {
           this.hint = `Pull! Together! ${3 - this.strokes} more to close on the fish.`;
         }
       } else {
-        this.early++;
+        // Before the window is early; a call already past the bow is late.
+        const early = this.x > this.winHi;
+        if (early) this.early++;
+        else this.late++;
         this.audio.bump();
         this.rockT = 0;
         sc?.burst(BOAT_AT.x + 40, 196, { n: 2, color: 'rgba(235,248,250,0.7)', size: 1.8, speed: 40, life: 0.4, grav: 180 });
-        this.stumble('Early. The blade slaps air. Wait for the call to reach the boat; the sea keeps the tempo, not you.');
+        const off = (early ? this.winHi - this.x : this.winLo - this.x) / this.speed;
+        const far = this.hard ? offBy(off) : early ? 'Early' : 'Late';
+        const lead = far.charAt(0).toUpperCase() + far.slice(1);
+        this.stumble(
+          early
+            ? `${lead}. The blade slaps air. Wait for the call to reach the boat; the sea keeps the tempo, not you.`
+            : `${lead}. The call has already rolled past the bow. Pull while it still touches the boat.`,
+        );
       }
     } else if (this.phase === 'done') {
       this.root.hidden = true;
@@ -1767,6 +1782,7 @@ export class PisciPanel {
       g.scale(1, 0.42);
       g.drawImage(glowDisc(72, 'rgba(255,220,140,0.9)'), -72, -72);
       g.restore();
+      this.marks.paint(g, (u) => ({ x: callX(u), y: 214, a: Math.PI / 2 }), 8);
       // The call, rolling in as a swell with a lit crest.
       const cx2 = callX(this.x);
       oval(g, cx2, 202, 30, 6, 'rgba(10,30,42,0.25)');
@@ -2140,6 +2156,8 @@ export class CannoloPanel {
   // The run's own record, so the tendency can be coached specifically.
   private overs = 0; // shells burst by riding the flow too far
   private unders = 0; // ends stopped shy of the gold
+  /** Where each stop landed on the brass rail. */
+  private stops = new PressMarks();
   // Story attention: an end stopped hungry and Alfio takes the bag back for a
   // second to show you the gold; grabbing for it keeps it in his hands.
   private alfio = new Hold();
@@ -2173,6 +2191,7 @@ export class CannoloPanel {
     this.faults = 0;
     this.overs = 0;
     this.unders = 0;
+    this.stops.clear();
     this.alfio.reset();
     this.phase = 'pipe';
     this.shell = 0;
@@ -2254,6 +2273,7 @@ export class CannoloPanel {
       if (this.burstT <= 0) this.freshShell();
     }
     this.bagEase += ((this.flowing ? 1 : 0) - this.bagEase) * Math.min(1, dt * 8);
+    this.stops.tick(dt);
     this.servedT += dt;
     this.tweezT += dt;
     const sc = this.scene;
@@ -2348,6 +2368,10 @@ export class CannoloPanel {
         return;
       }
       this.flowing = false;
+      this.stops.add(this.fill, this.fill >= this.zoneLo && this.fill <= this.zoneLo + this.zoneW);
+      // How far off the gold the stop was, in seconds of ricotta.
+      const shy = offBy((this.fill - this.zoneLo) / Math.max(0.05, this.speed));
+      const past = offBy((this.fill - this.zoneLo - this.zoneW) / Math.max(0.05, this.speed));
       if (this.fill < this.zoneLo) {
         this.unders++;
         if (this.hard) {
@@ -2360,7 +2384,7 @@ export class CannoloPanel {
             return;
           }
           this.hint =
-            '"No. She sat hungry; she would have sagged by the piazza." He scrapes the end clean and eats the evidence. ' +
+            `Stopped ${shy}. "No. She sat hungry; she would have sagged by the piazza." He scrapes the end clean and eats the evidence. ` +
             `That is ${this.faults} of the three the feast can spare. That end again, from empty, all the way to the gold.`;
         } else {
           this.alfio.start(ALFIO_HOLD);
@@ -2379,7 +2403,7 @@ export class CannoloPanel {
           return;
         }
         this.hint =
-          '"Past the gold. Hear that? The seam." A hairline crack, and he scrapes the end out and eats the evidence. ' +
+          `Stopped ${past}. "Past the gold. Hear that? The seam." A hairline crack, and he scrapes the end out and eats the evidence. ` +
           `That is ${this.faults} of the three the feast can spare. That end again, from empty; stop inside the gold.`;
       } else {
         const generous = this.fill > this.zoneLo + this.zoneW;
@@ -2600,6 +2624,7 @@ export class CannoloPanel {
       rr(g, zx, 306, zw, 11, 4, '#e0b13d');
       rr(g, zx, 306, zw, 4.5, 2, 'rgba(255,240,200,0.55)');
       for (const f of [0.25, 0.5, 0.75]) rect(g, 160 + f * 280, 307, 1.5, 9, 'rgba(90,70,40,0.3)');
+      this.stops.paint(g, (u) => ({ x: 160 + Math.min(1, u) * 280, y: 311.5, a: Math.PI / 2 }), 9);
       const nx = 160 + fillW;
       rect(g, nx - 0.8, 303, 1.6, 17, '#2b2118');
       g.fillStyle = '#f4efe4';

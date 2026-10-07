@@ -6,6 +6,8 @@ import { DELHI_HAVELI_MAP, DELHI_LANGAR_MAP, DELHI_MAP, DELHI_ROOFTOP_MAP } from
 import { DELHI_STATION_EVENTS, DELHI_STATION_NODES } from './stations';
 import { RECALL } from './recall';
 import { ParanthaPanel, PatangPanel } from '../../ui/games/delhi';
+import { handWords } from '../../ui/games/scene';
+import { keysOrTaps } from '../../ui/responsive';
 
 /** The Delhi chapter: Kucha Aab-o-Daana, where the monsoon you chased north
  * catches up, the langar erases its own ledger, and the roofs are a country. */
@@ -29,8 +31,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c11.cook.finish',
       title: "Kamla Chachi's tawa",
       howTo: [
-        'Space stops the rolling pin. Catch it in the middle of the meter and the disc comes out even.',
-        'Cup the stuffing, seal it, roll again. Then the tawa: Space on the bright band, when the ghee starts to sing.',
+        handWords('Space stops the rolling pin. Catch it in the middle of the meter and the disc comes out even.'),
+        handWords('Cup the stuffing, seal it, roll again. Then the tawa: Space on the bright band, when the ghee starts to sing.'),
         'Burn one and Kamla laughs and slaps down fresh dough. The burnt one goes to Sheru, who is always available.',
       ],
       hardHow:
@@ -45,7 +47,10 @@ export const CHAPTER: ChapterDef = {
       // pigeons each announce themselves in the panel, and the first frayed
       // dor teaches the one law more gently than any card could.
       howTo: [
-        'Space launches her when the breeze leans in. After that, Up is kheench, the pull; Down is dheel, the slack.',
+        keysOrTaps(
+          'Space launches her when the breeze leans in. After that, Up is kheench, the pull; Down is dheel, the slack.',
+          '✦ launches her when the breeze leans in. After that, the stick pushed up is kheench, the pull; pulled down is dheel, the slack.',
+        ),
         'The wind will tell you which it wants. Whatever the sky takes, Yusuf\'s charkhi replaces: paper is cheap, the wind is free.',
       ],
       hardHow:

@@ -3,7 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, handWords } from './scene';
 import { RUN, coach, freshRun } from './run';
 import { Hold } from './attend';
 
@@ -70,7 +70,11 @@ export class KingyoPanel {
   private cx = 0.5; // the poi's position over the tub, 0..1
   private soak = 0; // 0..100; at 100 the paper gives way
   private caught = 0;
-  private phase: 'scoop' | 'torn' | 'done' = 'scoop';
+  private phase: 'scoop' | 'torn' | 'between' | 'done' = 'scoop';
+  /** Story: which paper this is. The second is for the uncle's granddaughter. */
+  private sheet = 1;
+  /** Fish already in the bowl when the second paper went in. */
+  private firstCatch = 0;
   private hint = '';
   private onDone: (() => void) | null = null;
 
@@ -117,29 +121,12 @@ export class KingyoPanel {
     this.waterDips = 0;
     this.steady.reset();
     this.phase = 'scoop';
+    this.sheet = 1;
+    this.firstCatch = 0;
     this.cx = 0.5;
     this.soak = 0;
     this.caught = 0;
-    this.fish = [];
-    for (let i = 0; i < 4; i++) {
-      this.fish.push({
-        x: (i + 0.5) / 4,
-        v: (Math.random() - 0.5) * (this.hard ? 0.9 : 0.5),
-        deep: Math.random() < (this.hard ? 0.55 : 0.4),
-        ph: Math.random() * Math.PI * 2,
-        ly: 80 + Math.random() * 160,
-        hv: 0.2,
-        dd: 0,
-      });
-    }
-    if (!this.hard) {
-      // One shallow fish drifts toward where the poi starts, unhurried.
-      const f = this.fish[0] as Fish;
-      f.x = 0.1;
-      f.v = 0.42;
-      f.deep = false;
-      f.guide = true;
-    }
+    this.stock();
     this.hint = this.hard
       ? 'The uncle brings out the festival paper, thin as a rumor. The fish have heard about you. Arrows and Space, and no wasted dips.'
       : 'The poi is paper. Arrows to drift it, Space to scoop. Gently.';
@@ -157,6 +144,31 @@ export class KingyoPanel {
     this.scene.restart();
     this.root.hidden = false;
     this.setHint(this.hint);
+  }
+
+  /** A tub of four, one of them (story) drifting kindly toward the poi. */
+  private stock() {
+    this.fish = [];
+    const quick = this.sheet > 1 ? 1.3 : 1;
+    for (let i = 0; i < 4; i++) {
+      this.fish.push({
+        x: (i + 0.5) / 4,
+        v: (Math.random() - 0.5) * (this.hard ? 0.9 : 0.5) * quick,
+        deep: Math.random() < (this.hard ? 0.55 : 0.4),
+        ph: Math.random() * Math.PI * 2,
+        ly: 80 + Math.random() * 160,
+        hv: 0.2,
+        dd: 0,
+      });
+    }
+    if (!this.hard) {
+      // One shallow fish drifts toward where the poi starts, unhurried.
+      const f = this.fish[0] as Fish;
+      f.x = 0.1;
+      f.v = 0.42;
+      f.deep = false;
+      f.guide = true;
+    }
   }
 
   tick(dt: number) {
@@ -201,6 +213,18 @@ export class KingyoPanel {
       done?.();
       return;
     }
+    if (this.phase === 'between') {
+      // The second paper: hers. The tub is topped up and a little livelier.
+      this.sheet = 2;
+      this.firstCatch = this.caught;
+      this.phase = 'scoop';
+      this.soak = 0;
+      this.shreds = [];
+      this.steady.reset();
+      this.stock();
+      this.hint = 'A fresh poi, and a small serious face at your elbow. Two for her, and these ones have seen you work.';
+      return;
+    }
     if (this.phase === 'torn') {
       // A fresh sheet of paper, and the tub has not held a grudge in its life.
       const again = this.onDone;
@@ -229,7 +253,7 @@ export class KingyoPanel {
         if (this.flight) this.flight.t = v;
       }, () => {
         this.flight = null;
-        this.bowlFish = Math.min(this.caught, 3);
+        this.bowlFish = Math.min(this.caught, 5);
         this.ripples.push({ x: BOWL.x, y: BOWL.y, r: 5, a: 0.5 });
         this.scene.burst(BOWL.x, BOWL.y - 8, { n: calm() ? 3 : 7, color: '#bfe0ea', size: 2.2, speed: 60, grav: 200, life: 0.45 });
       });
@@ -241,10 +265,16 @@ export class KingyoPanel {
       this.scene.flash('#ffe9c4', 0.16);
       this.scene.burst(px, py, { n: calm() ? 5 : 12, color: '#8fd0e0', size: 2.2, speed: 110, grav: 240, life: 0.55, kind: 'streak' });
       this.soak = Math.min(100, this.soak + (this.hard ? 24 : 18));
-      this.hint = ['One! Level wrist, says the uncle.', 'Two! The uncle raises an eyebrow.', 'Three! Now you are showing off.'][
-        Math.min(this.caught - 1, 2)
-      ] as string;
-      if (this.caught >= 3 || this.fish.length === 0) this.finish();
+      this.hint =
+        this.sheet > 1
+          ? this.caught - this.firstCatch === 1
+            ? 'One for her! She holds the bag up to a lantern to see it properly.'
+            : 'Two! She names them both before they reach the bowl.'
+          : (['One! Level wrist, says the uncle.', 'Two! The uncle raises an eyebrow.', 'Three! Now you are showing off.'][
+              Math.min(this.caught - 1, 2)
+            ] as string);
+      const goal = this.sheet > 1 ? this.firstCatch + 2 : 3;
+      if (this.caught >= goal || this.fish.length === 0) this.finish();
     } else {
       this.audio.slosh();
       this.soak = Math.min(100, this.soak + (this.hard ? 38 : 18));
@@ -272,6 +302,16 @@ export class KingyoPanel {
   }
 
   private finish() {
+    if (!this.hard && this.sheet === 1) {
+      // The story's second beat: the paper is done, the evening is not.
+      this.phase = 'between';
+      this.audio.weaveNote(5);
+      this.scene.flash('#ffe9c4', 0.18);
+      this.scatterShreds();
+      const n = this.caught === 1 ? 'One goldfish' : `${this.caught === 2 ? 'Two' : 'Three'} goldfish`;
+      this.hint = `${n} in the bowl. The uncle's granddaughter has been watching from under the counter, and now she is tugging your sleeve: she wants some of her own. He hands you a second poi. Space.`;
+      return;
+    }
     this.phase = 'done';
     this.audio.weaveDone();
     this.scene.flash('#ffd9a0', 0.32);
@@ -283,12 +323,16 @@ export class KingyoPanel {
     });
     this.scatterShreds();
     const wasted = this.deepDips + this.waterDips;
-    this.hint =
-      !this.hard && this.caught >= 3 && wasted === 0
-        ? 'Three goldfish, three dips, not a drop wasted. The uncle bags them and, very quietly, gives you a fourth paper for later. Space.'
-        : !this.hard && wasted >= 3 && this.caught <= 1
-          ? 'The paper sighs and lets go. One goldfish, and most of the tub, scooped with enthusiasm. The uncle wrings out the scraps, laughing. Space.'
-          : this.caught === 1
+    const hers = this.caught - this.firstCatch;
+    this.hint = !this.hard
+      ? hers === 0
+        ? 'Her paper goes soft and lets go. She is not troubled: she points at a fish in your bag and declares it hers, which settles that. Space.'
+        : wasted === 0
+          ? `${hers === 1 ? 'One' : 'Two'} for her, ${['none', 'one', 'two', 'three'][this.firstCatch] ?? this.firstCatch} for you, and not a dip wasted. The uncle bags them in two bags and, very quietly, gives you a paper for later. Space.`
+          : wasted >= 4
+            ? 'Hers is bagged, and most of the tub with it. The uncle wrings out the scraps, laughing; she carries her bag off like a lantern. Space.'
+            : `${hers === 1 ? 'One' : 'Two'} for her, in a bag of her own. She carries it off like a lantern, and you carry yours. Space.`
+      : this.caught === 1
             ? 'The paper sighs and lets go. One goldfish, bagged with ceremony. Space.'
             : `The paper sighs and lets go. ${this.caught} goldfish, bagged with ceremony. Space.`;
   }
@@ -790,7 +834,7 @@ export class KingyoPanel {
       g.clip();
       rect(g, -30, -8, 60, 46, 'rgba(88,158,182,0.9)');
       oval(g, -6, -4, 16, 4, 'rgba(210,236,244,0.5)');
-      const n = Math.min(3, Math.max(1, this.caught));
+      const n = Math.min(5, Math.max(1, this.caught));
       for (let i = 0; i < n; i++) {
         const fx2 = wobble(t, 1.2, i * 2.4) * 10;
         const fy2 = 10 + i * 8 + wobble(t, 1.6, i) * 3;
@@ -1674,7 +1718,7 @@ export class DashiPanel {
     } else if (this.phase === 'skim') {
       g.font = '13px Georgia, serif';
       g.fillStyle = 'rgba(244,238,224,0.88)';
-      g.fillText(`foam left: ${this.foam.length}. Arrows steer the ladle, Space skims.`, 40, 326);
+      g.fillText(handWords(`foam left: ${this.foam.length}. Arrows steer the ladle, Space skims.`), 40, 326);
     } else if (this.phase === 'onigiri') {
       const dots = '●'.repeat(this.packed);
       const label = this.hard

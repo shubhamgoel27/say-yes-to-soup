@@ -6,6 +6,7 @@ import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
 import { SHIONOURA_STATION_EVENTS, SHIONOURA_STATION_JOURNAL, SHIONOURA_STATION_NODES } from './stations';
 import { RECALL } from './recall';
 import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Four: Shionoura, where the Inland Sea keeps festival time. */
 export const CHAPTER: ChapterDef = {
@@ -67,7 +68,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c4.kingyo.won',
       title: 'The paper scoop',
       howTo: [
-        'Arrows drift the poi; Space dips it under a shallow goldfish. The deep ones have done this before.',
+        handWords('Arrows drift the poi; Space dips it under a shallow goldfish. The deep ones have done this before.'),
         'Dip into empty water and the uncle steadies your wrist a moment. Paper always loses to water in the end; when it tears, he hands you another.',
       ],
       hardHow:
@@ -79,7 +80,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c4.cook.finish',
       title: 'The dawn kitchen',
       howTo: [
-        'Space makes each move when the pot asks for it; arrows move your hands over the water.',
+        handWords('Space makes each move when the pot asks for it; arrows move your hands over the water.'),
         'Fumi calls the steps, once and warmly. The waiting is one of them.',
       ],
       hardHow:

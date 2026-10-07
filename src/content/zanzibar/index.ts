@@ -4,6 +4,7 @@ import { ZANZIBAR_EVENTS, ZANZIBAR_EXAMINES, ZANZIBAR_NODES, ZANZIBAR_NPCS } fro
 import { ZANZIBAR_JOURNAL, ZANZIBAR_TASKS } from './journal';
 import { KANGASHOP_MAP, ZANZIBAR_MAP } from './map';
 import { SailPanel, UrojoPanel } from '../../ui/games/zanzibar';
+import { handWords } from '../../ui/games/scene';
 
 /** Zanzibar's side of the cross-chapter ledger. */
 const RECALL: RecallManifest = {
@@ -88,8 +89,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c7.sail.done',
       title: 'The lateen sail',
       howTo: [
-        'The brass rose shows where the kaskazi leans. Left and right ease the sheet to meet it.',
-        'When the telltale streams, the sail breathes and you make way. A luff only slows you; from irons, Space bears away and you go again.',
+        handWords('The brass rose shows where the kaskazi leans. Left and right ease the sheet to meet it.'),
+        handWords('When the telltale streams, the sail breathes and you make way. A luff only slows you; from irons, Space bears away and you go again.'),
       ],
       hardHow:
         'The hard telling: the kaskazi gusts, the good sector narrows to a hand-width, and the tide gives you thirty breaths to make the whole reach. Irons ends the run outright.',
@@ -100,8 +101,8 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c7.cook.finish',
       title: 'Behind the urojo pot',
       howTo: [
-        'A customer calls their bowl. Arrows walk the saucers, Space drops a thing in; choose SERVE when the bowl is a bowl.',
-        'There are no wrong bowls here, only bowls Zuberi gets to describe. Ladle the same saucer three times running and he covers the bowl a moment.',
+        handWords('A customer calls their bowl. Arrows walk the saucers, Space drops a thing in; choose SERVE when the bowl is a bowl.'),
+        'There are no wrong bowls here, only bowls Zuberi gets to describe. Ladle the same saucer three times running, or one thing on the last one\'s heels, and he covers the bowl a moment.',
       ],
       hardHow:
         'The hard telling: the evening rush calls exact bowls. Add what is called, in the order it is called, before the broth closes over. Three slips and the line drifts to the other cart.',

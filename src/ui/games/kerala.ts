@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold } from './attend';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, PressMarks, offBy } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
 /**
@@ -62,6 +62,8 @@ type RowPhase = 'row' | 'wallow' | 'done';
 
 /** Four ragged strokes in a row before the crew loses the song. Rare, and funny. */
 const RAGGED_LIMIT = 4;
+/** Rowers per file drawn along the hull; the frame cuts the bow off, not the crew. */
+const ROWERS = 20;
 
 /**
  * The hard telling of the race: the pacer sets a champion's tempo, the strike
@@ -69,7 +71,9 @@ const RAGGED_LIMIT = 4;
  * crew's patience runs one stroke shorter. A fair night ends in the water.
  */
 const ROW_HARD = { speed: 0.72, speedInc: 0.06, hi: 0.13, lo: -0.04, goodGain: 0.09, raggedGain: 0, limit: 3 };
-const ROW_EASY = { speed: 0.5, speedInc: 0.04, hi: 0.22, lo: -0.06, goodGain: 0.13, raggedGain: 0.03, limit: RAGGED_LIMIT };
+const ROW_EASY = { speed: 0.5, speedInc: 0.03, hi: 0.22, lo: -0.06, goodGain: 0.1, raggedGain: 0.03, limit: RAGGED_LIMIT };
+/** Story: where the rival boat draws level and the song doubles for the run-in. */
+const RIVAL_AT = 0.55;
 
 /** Deterministic monsoon: fixed drops and stipple rings, phased by scene time. */
 const RAIN = (() => {
@@ -184,6 +188,10 @@ export class RowPanel {
   private tune = ROW_EASY;
   private early = 0;
   private late = 0;
+  /** Story: the rival boat has drawn level and the song has quickened. */
+  private rival = false;
+  /** Where each stroke landed in the lane, so the hand can see its drift. */
+  private marks = new PressMarks();
 
   // Visual state only; game logic above is untouched.
   private scene: Scene | null = null;
@@ -219,6 +227,8 @@ export class RowPanel {
     this.pulled = false;
     this.early = 0;
     this.late = 0;
+    this.rival = false;
+    this.marks.clear();
     this.hint = RUN.hard
       ? 'Race tempo. The song runs fast, the lane is a blade wide, and only clean strokes move her. Space on the call.'
       : 'The singer calls; the oars answer. Space exactly as the beat reaches the blades.';
@@ -255,6 +265,7 @@ export class RowPanel {
       }
     }
     if (this.phase === 'wallow') this.wallowT = Math.min(1, this.wallowT + dt * 1.6);
+    this.marks.tick(dt);
     // Visual decay and drift.
     this.strokeT = Math.max(0, this.strokeT - dt * 2.2);
     this.surge += (0 - this.surge) * Math.min(1, dt * 3);
@@ -309,7 +320,7 @@ export class RowPanel {
       'The stroke dies. A hundred blades go their own way and the boat sits down in the water like a tired buffalo. Space to take the seat again.';
     if (sc && !calm()) {
       sc.thump(5, 0.05);
-      for (let i = 0; i < 5; i++) sc.burst(158 + i * 38, 240, { n: 3, color: '#cfe4da', speed: 60, grav: 240, size: 2.2, life: 0.6 });
+      for (let i = 0; i < 9; i++) sc.burst(170 + i * 54, 240, { n: 3, color: '#cfe4da', speed: 60, grav: 240, size: 2.2, life: 0.6 });
     }
   }
 
@@ -329,6 +340,7 @@ export class RowPanel {
     }
     if (this.phase === 'row') {
       this.pulled = true;
+      this.marks.add(this.x, this.x <= this.tune.hi && this.x >= this.tune.lo);
       if (this.x <= this.tune.hi && this.x >= this.tune.lo) {
         this.good++;
         this.ragged = 0;
@@ -337,14 +349,21 @@ export class RowPanel {
         this.audio.slosh();
         this.call = (this.call + 1) % CALLS.length;
         this.hint = `${CALLS[this.call]} A hundred blades bite as one, and the boat SURGES.`;
+        if (this.tune === ROW_EASY && !this.rival && this.progress >= RIVAL_AT) {
+          // The race's twist: a rival chundan noses level, and the singer
+          // answers by doubling the song. Quicker, never narrower.
+          this.rival = true;
+          this.speed += 0.14;
+          this.hint = 'A rival chundan noses level on the right, its own song loud across the water. Raghavan answers by doubling ours: quicker now, same lane.';
+        }
         // The whole crew pulls: spray at every blade, a lurch, ripples in the reflections.
         this.strokeT = 1;
         this.surge = 11;
         this.rippleE = Math.min(1, this.rippleE + 0.9);
         if (sc && !calm()) {
           sc.thump(4, 0.04);
-          for (let i = 0; i < 5; i++) {
-            const bx = 158 + i * 38;
+          for (let i = 0; i < 9; i++) {
+            const bx = 170 + i * 54;
             sc.burst(bx + 12, 236, { n: 4, color: '#e7f4ee', speed: 120, grav: 300, size: 2.6, life: 0.55 });
             this.vortices.push({ x: bx + 10, y: 240, age: 0, dir: i % 2 ? 1 : -1 });
           }
@@ -357,10 +376,12 @@ export class RowPanel {
         else this.late++;
         this.rowCoach();
         this.audio.bump();
+        const off = this.x > this.tune.hi ? (this.tune.hi - this.x) / this.speed : (this.tune.lo - this.x) / this.speed;
+        const far = this.tune === ROW_HARD ? `, ${offBy(off)}` : '';
         this.hint =
           this.ragged >= this.tune.limit - 1
-            ? 'Ragged again. Raghavan draws breath the way a kettle does. One clean stroke and all is forgiven.'
-            : 'Ragged. Your oar slaps alone; the song scoops you back onto the beat.';
+            ? `Ragged again${far}. Raghavan draws breath the way a kettle does. One clean stroke and all is forgiven.`
+            : `Ragged${far}. Your oar slaps alone; the song scoops you back onto the beat.`;
         this.strokeT = 0.55;
         if (sc && !calm()) {
           sc.burst(310, 238, { n: 5, color: '#cfe4da', speed: 80, grav: 260, size: 2.2, life: 0.5 });
@@ -458,31 +479,9 @@ export class RowPanel {
       if (h.y < 262) hyacinth(g, xx, h.y, h.s, h.seed, t);
     }
 
-    // The beat: a golden call traveling the water toward the blades.
-    if (this.phase === 'row') {
-      const zoneA = 0.16 + 0.07 * (0.5 + 0.5 * wobble(t, 3.2));
-      g.fillStyle = `rgba(255,219,138,${zoneA.toFixed(3)})`;
-      g.beginPath();
-      g.roundRect(298, 226, 76, 22, 10);
-      g.fill();
-      // Two cane poles mark the strike lane the way race courses do.
-      for (const px of [300, 372]) {
-        g.strokeStyle = '#a8824a';
-        g.lineWidth = 3;
-        g.beginPath();
-        g.moveTo(px, 218 + wobble(t, 2, px) * 1.5);
-        g.lineTo(px, 250);
-        g.stroke();
-        dot(g, px, 216 + wobble(t, 2, px) * 1.5, 2.6, '#c1512f');
-      }
-      const mx = 300 + this.x * 320;
-      glowSpot(g, mx, 237, 26, '#ffd98a', 0.5);
-      dot(g, mx, 237 + wobble(t, 6) * 1.5, 4.6, '#f8e7b8');
-      g.strokeStyle = 'rgba(255,226,150,0.5)';
-      g.beginPath();
-      g.ellipse(mx, 240, 10, 3.4, 0, 0, Math.PI * 2);
-      g.stroke();
-    } else if (this.phase === 'wallow') {
+    // While rowing, the beat lane is painted over the hull (paintLane, below),
+    // so the long crew never hides it.
+    if (this.phase === 'wallow') {
       // The strike lane stands empty; the beat has gone on down the channel
       // without you, and the water flattens out into slow, embarrassed swells.
       for (const px of [300, 372]) {
@@ -502,7 +501,7 @@ export class RowPanel {
         g.ellipse(240, 252, rr2, rr2 * 0.2, 0, 0, Math.PI * 2);
         g.stroke();
       }
-    } else {
+    } else if (this.phase !== 'row') {
       // Across the line: the finish post and a bank gone loud with color.
       g.strokeStyle = '#7d5836';
       g.lineWidth = 4;
@@ -523,7 +522,9 @@ export class RowPanel {
       }
     }
 
+    if (this.rival) this.paintRival(g, t);
     this.paintBoat(g, t);
+    if (this.phase === 'row') this.paintLane(g, t);
 
     // Hyacinths in front of the hull.
     for (const h of HYA) {
@@ -553,6 +554,62 @@ export class RowPanel {
     );
   }
 
+  /** The beat: a golden call traveling the water toward the blades. */
+  private paintLane(g: CanvasRenderingContext2D, t: number) {
+      const zoneA = 0.16 + 0.07 * (0.5 + 0.5 * wobble(t, 3.2));
+      g.fillStyle = `rgba(255,219,138,${zoneA.toFixed(3)})`;
+      g.beginPath();
+      g.roundRect(298, 226, 76, 22, 10);
+      g.fill();
+      // Two cane poles mark the strike lane the way race courses do.
+      for (const px of [300, 372]) {
+        g.strokeStyle = '#a8824a';
+        g.lineWidth = 3;
+        g.beginPath();
+        g.moveTo(px, 218 + wobble(t, 2, px) * 1.5);
+        g.lineTo(px, 250);
+        g.stroke();
+        dot(g, px, 216 + wobble(t, 2, px) * 1.5, 2.6, '#c1512f');
+      }
+      this.marks.paint(g, (u) => ({ x: 300 + u * 320, y: 237, a: Math.PI / 2 }), 12);
+      const mx = 300 + this.x * 320;
+      glowSpot(g, mx, 237, 26, '#ffd98a', 0.5);
+      dot(g, mx, 237 + wobble(t, 6) * 1.5, 4.6, '#f8e7b8');
+      g.strokeStyle = 'rgba(255,226,150,0.5)';
+      g.beginPath();
+      g.ellipse(mx, 240, 10, 3.4, 0, 0, Math.PI * 2);
+      g.stroke();
+  }
+
+  /** The rival chundan on the far water: a dark long hull and its own crew. */
+  private paintRival(g: CanvasRenderingContext2D, t: number) {
+    const y = 176 + wobble(t, 1.5, 2) * 1.6;
+    const x0 = 150 + wobble(t, 0.4) * 10;
+    g.globalAlpha = 0.75;
+    g.fillStyle = '#2a2420';
+    g.beginPath();
+    g.moveTo(x0, y);
+    g.quadraticCurveTo(x0 - 10, y - 26, x0 - 6, y - 40);
+    g.quadraticCurveTo(x0 + 4, y - 22, x0 + 18, y - 4);
+    g.quadraticCurveTo(x0 + 260, y + 2, 700, y - 4);
+    g.lineTo(700, y + 5);
+    g.quadraticCurveTo(x0 + 260, y + 10, x0, y);
+    g.closePath();
+    g.fill();
+    const k = 0.5 + 0.5 * Math.sin(t * this.speed * 6.3);
+    for (let i = 0; i < 18; i++) {
+      const rx = x0 + 34 + i * 28;
+      dot(g, rx, y - 7 - k * 1.5, 2.6, i % 3 === 1 ? '#c8a55b' : '#e8dcc2');
+      g.strokeStyle = 'rgba(110,80,50,0.8)';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(rx, y - 5);
+      g.lineTo(rx + 8 - k * 12, y + 8);
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  }
+
   private paintBoat(g: CanvasRenderingContext2D, t: number) {
     const bx = this.surge;
     // Wallowing: she settles a few inches and rolls, the way a boat does when
@@ -562,20 +619,21 @@ export class RowPanel {
     g.save();
     g.translate(bx, by - 214);
     g.rotate(-this.surge * 0.003 + wobble(t, 0.9) * 0.012 * this.wallowT);
-    softShadow(g, 210, 252, 150, 22, 0.28);
+    softShadow(g, 380, 252, 300, 22, 0.28);
 
-    // Hull: long oiled teak, the stern beak rising like a cobra hood astern.
+    // Hull: long oiled teak running out of the frame, so the eye knows there
+    // is more boat than picture; the stern beak rises like a cobra hood astern.
     g.fillStyle = '#35251a';
     g.beginPath();
-    g.moveTo(345, 208);
-    g.quadraticCurveTo(352, 214, 344, 221);
-    g.quadraticCurveTo(230, 230, 110, 219);
+    g.moveTo(700, 206);
+    g.lineTo(700, 222);
+    g.quadraticCurveTo(400, 232, 110, 219);
     g.quadraticCurveTo(96, 216, 96, 210);
     g.quadraticCurveTo(74, 178, 72, 138);
     g.quadraticCurveTo(72, 128, 80, 128);
     g.quadraticCurveTo(92, 130, 94, 142);
     g.quadraticCurveTo(102, 182, 118, 205);
-    g.quadraticCurveTo(230, 214, 345, 208);
+    g.quadraticCurveTo(400, 214, 700, 206);
     g.closePath();
     g.fill();
     // Plank highlight and brass on the beak.
@@ -583,7 +641,7 @@ export class RowPanel {
     g.lineWidth = 2;
     g.beginPath();
     g.moveTo(120, 208);
-    g.quadraticCurveTo(232, 217, 342, 210);
+    g.quadraticCurveTo(400, 218, 700, 209);
     g.stroke();
     g.strokeStyle = '#c8a55b';
     g.lineWidth = 2.2;
@@ -606,57 +664,108 @@ export class RowPanel {
     g.closePath();
     g.fill();
 
-    // The crew: five rowers leaning into the stroke together, seated low.
-    const shirts = ['#f2ead8', '#c1512f', '#f2ead8', '#3e5a77', '#f2ead8'];
-    const pull = easeOutCubic(1 - this.strokeT);
-    for (let i = 0; i < 5; i++) {
-      const x = 158 + i * 38;
-      const lean = this.strokeT > 0 ? -0.5 + pull * 0.8 : wobble(t, 1.5, i) * 0.07;
+    // The helmsmen on the stern rise: standing, long steering oars trailing.
+    for (const [hx, hy, k] of [
+      [104, 176, 0],
+      [116, 192, 1],
+    ] as const) {
+      const sway = wobble(t, 1.2, k * 2) * 0.05 + (this.strokeT > 0 ? 0.06 * this.strokeT : 0);
       g.save();
-      g.translate(x, 208);
-      g.rotate(lean);
-      rr(g, -7, -14, 14, 15, 5, shirts[i]!);
-      dot(g, 0, -18, 4.6, '#7a4a2e');
-      g.fillStyle = '#241a12';
-      g.beginPath();
-      g.arc(0, -19.4, 4.2, Math.PI, Math.PI * 2);
-      g.fill();
-      // The paddle: forward reach, then the sweep astern. In the wallow, five
-      // rowers hold five different opinions about where an oar goes.
-      const ang =
-        this.phase === 'wallow'
-          ? 0.1 + i * 0.42 * this.wallowT + wobble(t, 1.1, i * 3) * 0.18
-          : this.strokeT > 0
-            ? 0.95 - 1.7 * pull
-            : 0.55 + wobble(t, 1.5, i) * 0.12;
-      const tipX = Math.sin(ang) * 40;
-      const tipY = Math.cos(ang) * 40;
+      g.translate(hx, hy);
+      g.rotate(sway);
       g.strokeStyle = '#8a6238';
-      g.lineWidth = 2.8;
+      g.lineWidth = 2.6;
       g.beginPath();
-      g.moveTo(-2, -8);
-      g.lineTo(tipX, tipY - 8);
+      g.moveTo(2, -10);
+      g.lineTo(-40, 44);
       g.stroke();
-      oval(g, tipX, tipY - 8, 3.6, 7.5, '#6e4526', ang * 0.6);
+      oval(g, -40, 44, 3.4, 8, '#6e4526', 0.6);
+      rr(g, -4, -22, 9, 18, 4, k ? '#f2ead8' : '#c1512f');
+      dot(g, 0.5, -26, 4, '#7a4a2e');
+      rect(g, -3.5, -4, 8, 10, '#e8dcc2');
       g.restore();
+    }
+
+    // The crew: a long double file of rowers down the whole hull, all
+    // leaning into the same stroke. The far file sits a little smaller and
+    // darker; the near file carries the oars into the water.
+    const pull = easeOutCubic(1 - this.strokeT);
+    const shirts = ['#f2ead8', '#c1512f', '#f2ead8', '#3e5a77', '#f2ead8', '#e8d44d'];
+    for (const near of [false, true]) {
+      const y = near ? 211 : 206;
+      const sc = near ? 0.78 : 0.66;
+      for (let i = 0; i < ROWERS; i++) {
+        const x = 146 + i * 27 + (near ? 13 : 0);
+        if (x > 660) break;
+        const lean = this.strokeT > 0 ? -0.5 + pull * 0.8 : wobble(t, 1.5, i * 0.7) * 0.07;
+        const ang =
+          this.phase === 'wallow'
+            ? 0.1 + ((i * 7) % 5) * 0.42 * this.wallowT + wobble(t, 1.1, i * 3) * 0.18
+            : this.strokeT > 0
+              ? 0.95 - 1.7 * pull
+              : 0.55 + wobble(t, 1.5, i * 0.7) * 0.12;
+        g.save();
+        g.translate(x, y);
+        g.scale(sc, sc);
+        g.rotate(lean);
+        g.globalAlpha = near ? 1 : 0.86;
+        rr(g, -7, -14, 14, 15, 5, shirts[(i + (near ? 3 : 0)) % shirts.length]!);
+        dot(g, 0, -18, 4.6, '#7a4a2e');
+        g.fillStyle = '#241a12';
+        g.beginPath();
+        g.arc(0, -19.4, 4.2, Math.PI, Math.PI * 2);
+        g.fill();
+        if (near) {
+          const tipX = Math.sin(ang) * 40;
+          const tipY = Math.cos(ang) * 40;
+          g.strokeStyle = '#8a6238';
+          g.lineWidth = 2.8;
+          g.beginPath();
+          g.moveTo(-2, -8);
+          g.lineTo(tipX, tipY - 8);
+          g.stroke();
+          oval(g, tipX, tipY - 8, 3.6, 7.5, '#6e4526', ang * 0.6);
+        }
+        g.globalAlpha = 1;
+        g.restore();
+      }
+    }
+    // Mid-boat, the singer stands and keeps the song with a raised stick.
+    {
+      const sx = 412;
+      const lift = this.strokeT > 0 ? -6 * this.strokeT : wobble(t, 2.2) * 1.5;
+      rr(g, sx - 6, 180, 12, 22, 5, '#f2ead8');
+      dot(g, sx, 175, 4.4, '#7a4a2e');
+      g.strokeStyle = '#7a4a2e';
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(sx + 5, 186);
+      g.lineTo(sx + 13, 172 + lift);
+      g.stroke();
+      g.strokeStyle = '#c8a55b';
+      g.lineWidth = 1.8;
+      g.beginPath();
+      g.moveTo(sx + 13, 172 + lift);
+      g.lineTo(sx + 17, 160 + lift);
+      g.stroke();
     }
     // The gunwale rides over their laps, so the crew sits IN the boat.
     g.strokeStyle = '#31221a';
     g.lineWidth = 7;
     g.beginPath();
     g.moveTo(120, 207);
-    g.quadraticCurveTo(232, 216, 344, 209);
+    g.quadraticCurveTo(400, 217, 700, 208);
     g.stroke();
     g.strokeStyle = '#5c3f28';
     g.lineWidth = 1.8;
     g.beginPath();
     g.moveTo(122, 204);
-    g.quadraticCurveTo(232, 213, 342, 206);
+    g.quadraticCurveTo(400, 214, 700, 205);
     g.stroke();
     g.restore();
     // The hull's reflection, broken by the same water.
     g.globalAlpha = 0.18;
-    oval(g, 224 + bx, 258, 120, 9, '#120d08');
+    oval(g, 400 + bx, 258, 300, 9, '#120d08');
     g.globalAlpha = 1;
   }
 }
@@ -692,6 +801,13 @@ const COURSES: { item: string; slot: number; oops: string }[] = [
 ];
 
 /**
+ * The story's second leaf: the small boy seated beside you, served from
+ * memory with nobody pointing. He wants the banana first, and Rosamma
+ * allows it, this once; every seat is still the seat it was.
+ */
+const BOY_COURSES = [3, 5, 0, 1, 2, 4].map((i) => COURSES.find((c) => c.slot === i)!);
+
+/**
  * The hard telling of the leaf: two more courses after the rice, and the
  * aunties keep a clock now. Sambar goes down over the rice, then the payasam
  * travels all the way out to the leaf tip, sweet things last, at the narrow
@@ -720,7 +836,7 @@ const SADYA_HOME: Record<string, string> = {
   payasam: 'sweet comes last, at the leaf tip',
 };
 
-type SadyaPhase = 'serve' | 'fold' | 'gag' | 'redo' | 'done';
+type SadyaPhase = 'serve' | 'next' | 'fold' | 'gag' | 'redo' | 'done';
 
 const SLOT_POS: [number, number][] = [
   [205, 133],
@@ -967,6 +1083,7 @@ export class SadyaPanel {
   private leelaServed = 0; // story: courses Leela set down herself
   private wrist = new Hold(); // story: Leela's hand on the ladle after a wrong seat
   private pointAt = -1; // the seat Auntie Leela's finger is on after a slip
+  private leaf = 1; // story: the second leaf is the boy's
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -1008,6 +1125,7 @@ export class SadyaPanel {
     this.leelaServed = 0;
     this.wrist.reset();
     this.pointAt = -1;
+    this.leaf = 1;
     this.hint = this.hard
       ? 'Eight courses tonight, down to the payasam at the leaf tip, and the aunties keep a clock. Space serves the pappadam; be quick and be right.'
       : 'Auntie Leela points once, quickly: "Inji puli, the ginger pickle, in the small corner where the narrow end points. Thoran, then avial, along the top. ' +
@@ -1144,6 +1262,20 @@ export class SadyaPanel {
       this.again();
       return;
     }
+    if (this.phase === 'next') {
+      this.leaf = 2;
+      this.phase = 'serve';
+      this.courses = BOY_COURSES;
+      this.course = 0;
+      this.courseMiss = 0;
+      this.placed = [null, null, null, null, null, null, null];
+      this.landAt = [-1, -1, -1, -1, -1, -1, -1];
+      this.pending = null;
+      this.wrist.reset();
+      this.pointAt = -1;
+      this.hint = '"Banana first," the boy announces. Rosamma allows it, this once. Every seat is still the seat it was.';
+      return;
+    }
     if (this.phase === 'serve') {
       const c = this.courses[this.course];
       if (!c) return;
@@ -1176,7 +1308,17 @@ export class SadyaPanel {
         if (next) {
           this.hint = leela
             ? `Auntie Leela takes the ladle, sets the ${c.item} in its seat, and hands it back warm. "There. Now the ${next.item}, kunje. Watch my finger."`
-            : `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
+            : this.leaf > 1
+              ? (this.course % 2
+                  ? `The boy inspects the ${c.item} and allows it. Now the ${next.item}.`
+                  : `Into its seat; he does not look up from it. Now the ${next.item}.`)
+              : `Just so. Now the ${next.item}, with the right hand, like you have done this all your life.`;
+        } else if (!this.hard && this.leaf === 1) {
+          // The story's second beat: the leaf beside yours, from memory.
+          this.phase = 'next';
+          this.hint =
+            'Your leaf is full. Then a small boy is lifted onto the bench beside you, a fresh leaf goes down in front of him, and the ladle comes back to your hand. "Him too, kunje. No finger this time." Space.';
+          sc?.confettiSoft(320, 176, ['#6b8e4e', '#d9a441', '#ffe9b0']);
         } else {
           this.phase = 'fold';
           this.hint =
@@ -1276,7 +1418,9 @@ export class SadyaPanel {
           ? 'the aunties redo the leaf'
           : this.phase === 'fold'
             ? `fold: ${this.fold === 'toward' ? '← toward you' : 'away →'}`
-            : 'the leaf is folded';
+            : this.phase === 'next'
+              ? 'a fresh leaf for the boy'
+              : 'the leaf is folded';
     cap(g, capText);
   }
 
@@ -1466,6 +1610,8 @@ const SPILL_LIMIT = 3;
  * over the rim. A pour served before the pot runs dry is the star.
  */
 const HARD_PULL_TARGETS = [0.6, 0.76, 0.9];
+/** Story: the boatman's glass, pulled higher, two pulls and no warm-up. */
+const BOATMAN_TARGETS = [0.7, 0.86];
 const CHAYA_HARD = { arm: 0.58, armAccel: 0.3, spills: 2, boilOver: 2.2 };
 const CHAYA_EASY = { arm: 0.45, armAccel: 0.25, spills: SPILL_LIMIT, boilOver: Infinity };
 
@@ -1573,6 +1719,8 @@ export class ChayaPanel {
   private lows = 0;
   private overs = 0;
   private boils = 0;
+  /** Story: the first glass is served; this pull is the boatman's. */
+  private glass = 1;
 
   // Visual state only.
   private scene: Scene | null = null;
@@ -1609,6 +1757,7 @@ export class ChayaPanel {
     this.overs = 0;
     this.boils = 0;
     this.serve = 'under';
+    this.glass = 1;
     this.hint = this.hard
       ? 'Milk and tea over the flame. Tonight the chalk marks sit higher, and when the boil comes it will not wait for you.'
       : 'Milk and tea over the flame. Nothing to press yet; the boil is the boil.';
@@ -1781,7 +1930,7 @@ export class ChayaPanel {
         const target = this.targets[this.pullIdx] ?? 0.8;
         if (this.arm >= target) {
           this.audio.chime();
-          this.hint = PULL_PRAISE[this.pullIdx] as string;
+          this.hint = PULL_PRAISE[Math.min(PULL_PRAISE.length - 1, this.pullIdx + (this.glass > 1 ? 1 : 0))] as string;
           this.pullIdx++;
           this.arm = 0;
           this.pourGlow = 1;
@@ -1806,10 +1955,32 @@ export class ChayaPanel {
       }
       return;
     }
+    if (this.phase === 'serve' && !this.hard && this.glass === 1) {
+      // The story's second glass: a boatman ties up and calls his order.
+      this.glass = 2;
+      this.phase = 'pull';
+      this.targets = BOATMAN_TARGETS;
+      this.pullIdx = 0;
+      this.arm = 0;
+      this.lifting = false;
+      this.audio.chime();
+      if (sc) sc.flash('#ffe9b0', 0.25);
+      this.hint =
+        (this.serve === 'under' ? 'One hand under the glass; Shaji approves without a word. ' : 'A flourish; Shaji\'s eyebrow notes it. ') +
+        'Then a boatman ties up at the steps and calls across the rain: "One for me, strong, and pull it high." Two pulls, higher chalk. Space lifts the arm.';
+      return;
+    }
     if (this.phase === 'serve') {
       this.phase = 'done';
       this.audio.weaveDone();
       if (sc) sc.flash('#ffe9b0', 0.4);
+      if (!this.hard) {
+        this.hint =
+          this.serve === 'under'
+            ? 'The boatman takes it one hand under, the way it was given, and drinks it standing in the boat. Shaji nods like a co-conspirator. Press Space.'
+            : 'You hand it down to the boat with a flourish and the boatman toasts you with it. Shaji\'s eyebrow files a small report. Press Space.';
+        return;
+      }
       this.hint =
         this.serve === 'under'
           ? 'One hand pouring, one hand under the glass. Shaji nods like a co-conspirator. Press Space.'

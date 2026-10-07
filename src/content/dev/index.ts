@@ -10,6 +10,7 @@ import { EAST_ROAD_MAP } from './eastroad';
 import { LA_BAJADA_MAP } from './labajada';
 import { WatiaPanel } from '../../ui/games/andes';
 import { WeavePanel } from '../../ui/weave';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter One: Ch'aska Pampa, the star plain. */
 export const CHAPTER: ChapterDef = {
@@ -32,7 +33,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The loom',
       howTo: [
         'Watch which yarn ball lights as Carmen calls, one row at a time.',
-        'Then call them back with the arrows, in order.',
+        handWords('Then call them back with the arrows, in order.'),
         'A slipped thread is nothing. She just calls the row again.',
       ],
       hardHow: 'The fine cloth: rows of five, six, seven, called quick; answer inside a breath, and the third slipped thread sets the cloth aside.',
@@ -44,7 +45,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The watia',
       howTo: [
         'Big clods sit well at the base and smaller ones near the top, though the dome forgives any order.',
-        'Arrows pick a spot; Space sets the clod where a gap waits.',
+        handWords('Arrows pick a spot; Space sets the clod where a gap waits.'),
         'Then feed the fire on a steady heartbeat; a flurry only smothers it.',
         'Close the earthen oven and the papas cook themselves.',
       ],

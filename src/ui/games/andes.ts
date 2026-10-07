@@ -20,7 +20,7 @@ import { RUN, coach, freshRun } from './run';
  * and the dome tumbling down in a golden flash at the end.
  */
 
-type WatiaPhase = 'stack' | 'fire' | 'collapse' | 'done' | 'lost';
+type WatiaPhase = 'stack' | 'fire' | 'collapse' | 'dig' | 'done' | 'lost';
 
 /** This game's start flag, for coach(); must match its GameDef in content. */
 const WATIA_FLAG = 'watia.start';
@@ -66,6 +66,11 @@ function fallenPx(i: number): { x: number; y: number } {
 }
 
 const FALL_DELAY = [0.3, 0.36, 0.16, 0.22, 0.04];
+
+/** The fallen heap, left to right, for the story's dig: slot indexes by x. */
+const DIG_ORDER = [0, 2, 4, 3, 1];
+/** Papas buried under the heap; the story dig finds them by their steam. */
+const DIG_PAPAS = 3;
 
 const calm = () => document.body.classList.contains('reduce-motion');
 
@@ -398,6 +403,14 @@ const WATIA_LEGEND = [
   { keys: ['left', 'right'], does: 'choose a gap in the dome' },
   { keys: ['space'], does: 'set the clod in it' },
 ] as const;
+/** The verbs change as the oven does; the legend follows them. */
+const FIRE_LEGEND = [{ keys: ['space'], does: 'feed the fire, one press a heartbeat' }] as const;
+const COLLAPSE_LEGEND = [{ keys: ['space'], does: 'bring the dome down on the papas' }] as const;
+const DIG_LEGEND = [
+  { keys: ['left', 'right'], does: 'choose a spot in the heap' },
+  { keys: ['space'], does: 'dig where the steam leaks' },
+] as const;
+const DONE_LEGEND = [{ keys: ['space'], does: 'go on' }] as const;
 
 export class WatiaPanel {
   private phase: WatiaPhase = 'stack';
@@ -423,6 +436,12 @@ export class WatiaPanel {
   // Visual state only; game logic never reads any of this.
   private scene = new Scene();
   private setHintFn: ((h: string) => void) | null = null;
+  private setLegendFn: ((l: readonly { keys: readonly string[]; does: string }[]) => void) | null = null;
+  // Story only: the dig, after the dome comes down.
+  private buried = new Set<number>(); // heap spots (slot indexes) still hiding a papa
+  private digCur = 0; // index into DIG_ORDER
+  private found = 0;
+  private dugOut = false;
   private dropOff: number[] = [];
   private squash: number[] = [];
   private fallT: number[] = [];
@@ -465,7 +484,13 @@ export class WatiaPanel {
       : 'Big ones at the bottom. Arrows pick a spot; Space sets the clod.';
     this.root.hidden = false;
     this.scene.restart();
-    this.setHintFn = mountScene(this.root, 'The Watia', this.scene, WATIA_LEGEND).setHint;
+    const ui = mountScene(this.root, 'The Watia', this.scene, WATIA_LEGEND);
+    this.setHintFn = ui.setHint;
+    this.setLegendFn = ui.setLegend;
+    this.buried.clear();
+    this.digCur = 2;
+    this.found = 0;
+    this.dugOut = false;
     const hintEl = this.root.querySelector('.w-hint') as HTMLElement | null;
     if (hintEl) hintEl.style.lineHeight = '1.4'; // a parent zeroes line-height; wrapped hints must not overlap
     this.dropOff = SLOTS.map(() => 0);
@@ -513,9 +538,25 @@ export class WatiaPanel {
     const sdt = this.scene.frame(dt, (g) => this.paint(g));
     this.emit(sdt);
     this.setHintFn?.(this.hint);
+    this.setLegendFn?.(
+      this.phase === 'stack'
+        ? WATIA_LEGEND
+        : this.phase === 'fire'
+          ? FIRE_LEGEND
+          : this.phase === 'collapse'
+            ? COLLAPSE_LEGEND
+            : this.phase === 'dig'
+              ? DIG_LEGEND
+              : DONE_LEGEND,
+    );
   }
 
   onDir(dir: Dir) {
+    if (this.phase === 'dig') {
+      if (dir === 'left' || dir === 'up') this.digCur = Math.max(0, this.digCur - 1);
+      if (dir === 'right' || dir === 'down') this.digCur = Math.min(DIG_ORDER.length - 1, this.digCur + 1);
+      return;
+    }
     if (this.phase !== 'stack') return;
     if (dir === 'left' || dir === 'up') this.cursor = (this.cursor + SLOTS.length - 1) % SLOTS.length;
     if (dir === 'right' || dir === 'down') this.cursor = (this.cursor + 1) % SLOTS.length;
@@ -620,12 +661,48 @@ export class WatiaPanel {
       this.phase = 'done';
       this.audio.weaveDone();
       this.animCollapse();
-      this.hint =
-        !this.hard && this.chokes >= 6
-          ? 'WHUMP. Earth over embers over papas. Justina is still fanning your smoke out of her braid, grinning. The field is cooking its own. Press Space.'
-          : !this.hard && this.chokes === 0
-            ? 'WHUMP. Earth over embers over papas, and not one clod wasted on the way. The field is cooking its own. Press Space.'
-            : 'WHUMP. Earth over embers over papas. The field is cooking its own. Press Space.';
+      const wait = ' Justina makes you wait the length of a long song, then hands you a stick. Space, and dig.';
+      this.hint = this.hard
+        ? 'WHUMP. Earth over embers over papas. The field is cooking its own. Press Space.'
+        : this.chokes >= 6
+          ? `WHUMP. Earth over embers over papas. Justina is still fanning your smoke out of her braid, grinning.${wait}`
+          : this.chokes === 0
+            ? `WHUMP. Earth over embers over papas, and not one clod wasted on the way.${wait}`
+            : `WHUMP. Earth over embers over papas. The field is cooking its own.${wait}`;
+    } else if (this.phase === 'done' && !this.hard && !this.dugOut) {
+      // The story's last beat: the papas come out the way they went in, by hand.
+      this.dugOut = true;
+      this.phase = 'dig';
+      this.buried.clear();
+      const spots = [...DIG_ORDER].sort(() => Math.random() - 0.5);
+      for (const i of spots.slice(0, DIG_PAPAS)) this.buried.add(i);
+      this.hint = 'The heap breathes. Dig where the steam leaks out; the cold earth is only earth.';
+    } else if (this.phase === 'dig') {
+      const spot = DIG_ORDER[this.digCur] ?? 0;
+      const f = fallenPx(spot);
+      if (this.buried.has(spot)) {
+        this.buried.delete(spot);
+        this.found++;
+        this.audio.dig();
+        this.audio.weaveNote(this.found + 2);
+        this.scene.burst(f.x, f.y, { n: calm() ? 4 : 10, kind: 'puff', color: 'rgba(255,250,240,0.6)', speed: 50, grav: -50, life: 0.8, size: 5 });
+        if (!calm()) this.scene.thump(2, 0.02);
+        if (this.found >= DIG_PAPAS) {
+          this.phase = 'done';
+          this.audio.weaveDone();
+          this.scene.flash('#ffd98a', 0.3);
+          this.hint =
+            this.chokes >= 6
+              ? 'Three papas onto the cloth, ash-skinned and steaming, and a little smoky from your fire. Justina breaks one open and hands you half: "Next time, a heartbeat, wawa. Eat." Press Space.'
+              : 'Three papas onto the cloth, ash-skinned and steaming. Justina breaks one open with her thumbs and hands you half, too hot to hold, and you hold it anyway. Press Space.';
+        } else {
+          this.hint = this.found === 1 ? 'A papa, black-skinned and smoking. Another wisp, a little further along.' : 'Two. The last one is still breathing somewhere in the heap.';
+        }
+      } else {
+        this.audio.bump();
+        this.scene.burst(f.x, f.y + 4, { n: calm() ? 2 : 5, kind: 'puff', color: 'rgba(140,105,70,0.5)', speed: 40, grav: -10, life: 0.5, size: 4 });
+        this.hint = 'Only earth, still warm. Follow the steam.';
+      }
     } else if (this.phase === 'done' || this.phase === 'lost') {
       this.live = false;
       this.root.hidden = true;
@@ -734,6 +811,15 @@ export class WatiaPanel {
         this.shimmerAcc -= 1;
         this.scene.waft(230 + Math.random() * 140, 186, 'rgba(255,236,200,0.14)', 14);
       }
+    } else if (this.phase === 'dig') {
+      this.steamAcc += sdt * 3.2 * q;
+      while (this.steamAcc > 1) {
+        this.steamAcc -= 1;
+        for (const i of this.buried) {
+          const f = fallenPx(i);
+          if (Math.random() < 0.6) this.scene.waft(f.x + (Math.random() - 0.5) * 10, f.y - 4, 'rgba(255,252,244,0.5)', 7);
+        }
+      }
     } else if (this.phase === 'done') {
       this.doneT += sdt;
       this.steamAcc += sdt * 2.6 * q;
@@ -785,6 +871,28 @@ export class WatiaPanel {
     if (this.phase === 'stack') this.paintCursor(g, time);
     if (this.popped) this.paintPoppedPapa(g);
     if (this.phase === 'fire') this.paintMeter(g);
+    if (this.phase === 'dig') this.paintDig(g, time);
+    if (this.found > 0) this.paintCloth(g);
+  }
+
+  /** The dig cursor: a stick's ring on the heap, wherever the hand is. */
+  private paintDig(g: CanvasRenderingContext2D, time: number) {
+    const f = fallenPx(DIG_ORDER[this.digCur] ?? 0);
+    g.strokeStyle = '#f4d06f';
+    g.lineWidth = 2.4;
+    g.beginPath();
+    g.ellipse(f.x, f.y + 2, 22 + Math.sin(time * 5) * 1.5, 11 + Math.sin(time * 5), 0, 0, Math.PI * 2);
+    g.stroke();
+  }
+
+  /** The cloth by the row where the dug papas cool. */
+  private paintCloth(g: CanvasRenderingContext2D) {
+    oval(g, 470, 318, 46, 11, '#b8443a');
+    oval(g, 470, 316, 42, 9, '#d0603f');
+    for (let k = 0; k < this.found; k++) {
+      oval(g, 446 + k * 24, 311, 10, 7, '#3b2a1e');
+      oval(g, 444 + k * 24, 309, 4.5, 2.6, '#6a5240');
+    }
   }
 
   private paintGhosts(g: CanvasRenderingContext2D, time: number) {

@@ -5,6 +5,7 @@ import { KERALA_JOURNAL, KERALA_TASKS } from './journal';
 import { KERALA_MAP, MARIAMMA_VEEDU_MAP } from './map';
 import { RECALL } from './recall';
 import { ChayaPanel, RowPanel, SadyaPanel } from '../../ui/games/kerala';
+import { handWords } from '../../ui/games/scene';
 
 /** Chapter Six: Kaithappuram, where the monsoon is the road. */
 export const CHAPTER: ChapterDef = {
@@ -81,7 +82,7 @@ export const CHAPTER: ChapterDef = {
       doneNode: 'c6.rowed',
       title: 'The chundan vallam',
       howTo: [
-        'A golden beat travels the water toward the blades. Space exactly as it arrives.',
+        handWords('A golden beat travels the water toward the blades. Space exactly as it arrives.'),
         'Land it clean and a hundred oars bite at once, and the whole boat surges.',
         'Miss and the song circles back for you. Lose it badly and the boat only wallows a while.',
       ],
@@ -94,7 +95,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The sadya leaf',
       howTo: [
         'Narrow end of the leaf points left. Auntie Leela points out each seat once as you begin.',
-        'Arrows choose a seat, Space serves the course.',
+        handWords('Arrows choose a seat, Space serves the course.'),
         'Nothing here can be lost. A wrong seat buys you an auntie and an opinion; two, and she serves that one herself.',
       ],
       hardHow: 'The hard telling: eight courses down to the payasam at the leaf tip, a clock on every ladle, and three slips before the aunties redo the leaf.',
@@ -106,7 +107,7 @@ export const CHAPTER: ChapterDef = {
       title: 'The meter-long pour',
       howTo: [
         'The boil will not be hurried. Nothing to press yet; waiting is the first ingredient.',
-        'Then Space lifts the pouring arm, Space again lets the tea go. Height is froth.',
+        handWords('Then Space lifts the pouring arm, Space again lets the tea go. Height is froth.'),
         'Reach too far and it rings the counter. Shaji laughs, wipes, and hands you the tumblers again.',
       ],
       hardHow: 'The hard telling: the chalk marks sit higher, the arm climbs quicker, the pot runs dry on the second spill, and a boil left standing goes over the rim.',

@@ -10,7 +10,7 @@ import { keysOrTaps } from './responsive';
  * The weaving mini-game: Carmen calls a color sequence, you call it back with
  * the arrow keys, and each color is a note, so a woven row is also a little
  * tune. Forgiving on purpose: a miss just means she calls the row again.
- * Three rows and the cloth takes you in.
+ * Four rows, the last a pallay border, and the cloth takes you in.
  *
  * Painted as a real backstrap loom: warp under tension between wall peg and
  * strap, the band growing row by row in the Ch'aska Pampa colors, a shuttle
@@ -24,7 +24,8 @@ const COLORS = [
   { dir: 'down' as Dir, hex: '#7a4460', name: 'violet', note: 6 },
 ];
 
-const ROWS = [3, 4, 5];
+/** Three rows of plain cloth, then the pallay border: the longest call of the sit. */
+const ROWS = [3, 4, 5, 6];
 const SHOW_STEP = 0.55;
 
 /**
@@ -477,7 +478,11 @@ export class WeavePanel {
           this.hint = 'The row holds. Carmen nods. Press Space.';
         } else {
           this.phase = 'row-done';
-          this.hint = 'Good. The next row is longer.';
+          const rows = this.hard ? HARD_ROWS : ROWS;
+          this.hint =
+            !this.hard && this.row === rows.length - 1
+              ? 'Good. Carmen reaches for the gold: the last row is the pallay border, six calls long, and she will not slow down for it. Space when ready.'
+              : 'Good. The next row is longer. Space when ready.';
         }
       }
     } else {
