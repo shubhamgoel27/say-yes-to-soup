@@ -557,8 +557,11 @@ function renderHowto() {
   const replaying = state.has('replay.mode');
   const hardOffered = howtoOpts.includes(HARD_OPT);
   const hardDone = state.has(`hard.${g.def.flag}`);
+  // The body scrolls when the glass is short; the foot never does, so the
+  // hint and the "more below" pill sit under the text, never over it.
   howtoEl.innerHTML = `
     <div class="ht-card">
+      <div class="ht-body">
       <div class="ht-main">
       <div class="ht-kicker">hands, not homework</div>
       <div class="ht-title">${g.def.title ?? 'Something to try'}</div>
@@ -573,11 +576,14 @@ function renderHowto() {
           .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}${t === HARD_OPT && hardDone ? '&nbsp;&#10038;' : ''}</div>`)
           .join('')}
       </div>
-      <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
       </div>
-    </div>
-    <div class="ht-more" aria-hidden="true">more below &#9662;</div>`;
-  watchScrollCue(howtoEl.querySelector<HTMLElement>('.ht-card'), howtoEl.querySelector<HTMLElement>('.ht-more'));
+      </div>
+      <div class="ht-foot">
+        <div class="ht-more" aria-hidden="true">more below &#9662;</div>
+        <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
+      </div>
+    </div>`;
+  watchScrollCue(howtoEl.querySelector<HTMLElement>('.ht-body'), howtoEl.querySelector<HTMLElement>('.ht-more'));
 }
 
 function showHowto(g: GameEntry) {
@@ -666,8 +672,21 @@ function stripActivate() {
   // "Keep at it": the panel is still there, exactly as it was.
 }
 
+/**
+ * A story activity is underway from the moment its start flag goes up (the
+ * how-to card, the panel, a "not yet" still owed) until its done narration
+ * clears the flag. Replays never hold anything.
+ */
+function activityUnderway(): boolean {
+  return !state.has('replay.mode') && games.some((g) => state.has(g.def.flag));
+}
+
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
+  // The chip moves on when the activity ENDS, not when it is offered: the
+  // start flag retires the task that asked for it, and the chip used to jump
+  // to the next errand while the watia's how-to card was still open.
+  if (activityUnderway() && errandEl.textContent && !errandEl.hidden) return;
   const top = journalUI.activeTasks()[0];
   // The chip shows whole thoughts; CSS clamps politely at two lines. It kept
   // hiding outright once story.end was set, which orphaned the epilogue task
@@ -693,9 +712,16 @@ function refreshTaskChip() {
   }
 }
 
+/** Journal announcements: the pen and the margin-note spark. */
+const PAGE_TOAST = /^[✎✦]/;
+/** Once the last page is being written, the journal is the moment, not a toast. */
+function journalClosing(): boolean {
+  return state.has('c10.lamp') || state.has('story.end');
+}
+
 state.on('journal', (id) => {
   const entry = JOURNAL_BY_ID.get(id);
-  toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
+  if (!journalClosing()) toasts.show(`✎ a page fills: ${entry?.title ?? id}`);
   audio.chime();
   {
     const [px, py] = player.renderPos();
@@ -713,7 +739,7 @@ state.on('journal', (id) => {
       state.hasPage(e.rhyme.with) &&
       (e.id === id || e.rhyme.with === id),
   );
-  if (rhymed) toasts.show('✦ a margin note of Nani’s has become legible');
+  if (rhymed && !journalClosing()) toasts.show('✦ a margin note of Nani’s has become legible');
 });
 
 /** Mail raised by a `letter:` effect opens once the conversation ends. The
@@ -745,6 +771,9 @@ setInterval(() => {
 }, 30000);
 
 state.on('changed', () => {
+  // The journal is full: anything still waiting to announce a page (held
+  // behind the last page's hush) would arrive after the book has closed.
+  if (journalClosing() && toasts.pending) toasts.drop((t) => PAGE_TOAST.test(t));
   applyDressings();
   // The east gate is a pure function of story.complete, so it opens on the
   // flag itself, not only on the ceremony that usually sets it. Idempotent
@@ -1646,11 +1675,156 @@ function stagedControls(v: Villager): boolean {
   return staged.has(v);
 }
 
+// ---------------------------------------------------------------- the ending's light
+//
+// The clock alone cannot paint the last evening: at the hours the ending
+// holds, the day curve is already the blue of a night on the way, and the
+// verdict and the last page read as an overcast afternoon. So the two
+// evenings carry their own light on top of the clock. `gold` is the verdict
+// and the walk up: a low sun raking in from the west, long warm shadows.
+// `lamp` is the walk down and the last page: the sun on the ridge, the
+// stone going amber, the lamps and the kitchen windows taking over. Both
+// ease, so nothing snaps; both let go slowly after the book is put down.
+
+const END_LIT_MAPS = new Set(['village', 'east-road']);
+/** The well's middle, in village pixels: the ending's centre of everything. */
+const WELL_PX: [number, number] = [21 * TILE + TILE / 2, 15 * TILE + TILE / 2];
+const endLight = { gold: 0, lamp: 0 };
+/** Low sun: warm, a little dimmed, blue held down but not crushed. */
+const GOLD_AMBIENT: [number, number, number] = [255, 206, 150];
+/** Lamplit dusk: the sky's violet on the stone, deep enough for every lamp to carry. */
+const LAMP_AMBIENT: [number, number, number] = [128, 110, 142];
+
+function updateEndLight(dt: number) {
+  const here = END_LIT_MAPS.has(map.id);
+  const gold = here && state.has('c10.well.called') && !state.has('c10.apacheta.done');
+  const lamp = here && state.has('c10.apacheta.done') && !(state.has('story.end') && lampOver);
+  // In over a few seconds (the clock is easing down at the same time); out
+  // slowly, so the night after the book comes on like a night.
+  const ease = (v: number, on: boolean) => v + ((on ? 1 : 0) - v) * (1 - Math.exp(-dt * (on ? 0.6 : 0.12)));
+  endLight.gold = ease(endLight.gold, gold);
+  endLight.lamp = ease(endLight.lamp, lamp);
+  if (endLight.gold < 0.002) endLight.gold = 0;
+  if (endLight.lamp < 0.002) endLight.lamp = 0;
+  updateKitchens(dt);
+}
+
+/** How much of the frame the ending's light owns, 0..1. */
+function endK(): number {
+  return Math.min(1, endLight.gold + endLight.lamp);
+}
+
+/** The night level the world is lit by: the clock's, unless the ending holds it. */
+function nightNow(): number {
+  const nk = nightLevel(dayT);
+  const k = endK();
+  if (k <= 0) return nk;
+  const want = (0.1 * endLight.gold + 0.6 * endLight.lamp) / k;
+  return nk + (want - nk) * k;
+}
+
+/** The sun's hour for shadows: a low western sun through both evenings. */
+function sunNow(): number {
+  const k = endK();
+  if (k <= 0) return dayT;
+  const want = (0.575 * endLight.gold + 0.596 * endLight.lamp) / k;
+  return dayT + (want - dayT) * k;
+}
+
+/** Blend an ambient color toward the ending's evening light. */
+function endAmbient(c: number): number {
+  const k = endK();
+  if (k <= 0) return c;
+  const g = endLight.gold / k;
+  const ch = (i: number, sh: number) => {
+    const want = GOLD_AMBIENT[i]! * g + LAMP_AMBIENT[i]! * (1 - g);
+    return Math.round(((c >> sh) & 0xff) + (want - ((c >> sh) & 0xff)) * k);
+  };
+  return (ch(0, 16) << 16) | (ch(1, 8) << 8) | ch(2, 0);
+}
+
+/**
+ * "Four kitchen windows go gold, one after another." The four windows
+ * nearest the well stay dark through the walk down, and on that line of the
+ * last page they wake in turn. Past the last page (or reloaded after it)
+ * they are simply lit.
+ */
+let kitchenCells: [number, number][] | null = null;
+let kitchenT = -1;
+/** The last page's line that lights them; found by its words, not its index. */
+const KITCHEN_LINE = Math.max(0, NODES['c10.lastpage']?.lines.findIndex((l) => /window/i.test(l.text)) ?? 2);
+const KITCHEN_STEP = 0.75;
+
+function kitchens(): [number, number][] {
+  if (!kitchenCells) {
+    const [wx, wy] = WELL_PX;
+    kitchenCells = [...(houseWindows['village'] ?? [])]
+      .sort((a, b) => Math.hypot(a[0] - wx, a[1] - wy) - Math.hypot(b[0] - wx, b[1] - wy))
+      .slice(0, 4)
+      // One after another, west to east, the way the eye reads them.
+      .sort((a, b) => a[0] - b[0]);
+  }
+  return kitchenCells;
+}
+
+function updateKitchens(dt: number) {
+  const node = textbox.currentNode;
+  const past = state.has('story.end') || /^c10\.(lastline|end)\./.test(node);
+  if (past) kitchenT = 99;
+  else if (node === 'c10.lastpage' && textbox.currentLine >= KITCHEN_LINE) kitchenT = Math.max(0, kitchenT) + dt;
+  else if (!state.has('c10.lamp')) kitchenT = -1;
+}
+
+/** 0..1: how lit a village window is tonight; 1 for every window off the ending. */
+function windowWake(wx: number, wy: number): number {
+  if (map.id !== 'village' || !state.has('c10.apacheta.done') || kitchenT >= 99) return 1;
+  const i = kitchens().findIndex(([x, y]) => x === wx && y === wy);
+  if (i < 0) return 1;
+  if (kitchenT < 0) return 0;
+  const t = Math.max(0, Math.min(1, (kitchenT - i * KITCHEN_STEP) / 0.5));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * The last page's shot. It opens wide enough to hold the well, the people
+ * around it and the two houses above (the windows have to be seen going
+ * gold), and only once the line is written does it lean in, slowly, on its
+ * own clock, toward the stone and the people by it.
+ */
+let leanT = 0;
+let frameK = 0;
+const LAMP_WIDE = 1.1;
+/** Where the shot looks: the well, a little above it for the windows when wide. */
+const LAMP_FOCUS_WIDE: [number, number] = [21 * TILE, 13.2 * TILE];
+const LAMP_FOCUS_NEAR: [number, number] = [21 * TILE, 14.2 * TILE];
+
+function updateLampShot(dt: number) {
+  const on = lampT > 0 && map.id === 'village';
+  frameK += ((on ? 1 : 0) - frameK) * (1 - Math.exp(-dt * (on ? 1.2 : 3)));
+  if (frameK < 0.002) frameK = 0;
+  // The lean waits for the windows, and a breath after them.
+  leanT = on && kitchenT >= 99 ? Math.min(1, leanT + dt / LAMP.seconds) : on ? leanT : 0;
+}
+
+function leanEase(): number {
+  return 1 - (1 - leanT) * (1 - leanT) * (1 - leanT);
+}
+
 /** The lean of the last page, or 0 when the camera is its own. */
 function lampZoom(): number {
   if (lampT <= 0) return 0;
-  const k = 1 - (1 - lampT) * (1 - lampT) * (1 - lampT);
-  return 1.06 + (LAMP.zoom - 1.06) * k;
+  if (map.id !== 'village') return 1.06 + (LAMP.zoom - 1.06) * (1 - (1 - lampT) ** 3);
+  // Lean, but never so far that the people at the well leave the frame.
+  return LAMP_WIDE + (Math.min(LAMP.zoom, 1.3) - LAMP_WIDE) * leanEase();
+}
+
+/** The camera's target for the last page, blended in from the player's own. */
+function lampFocus(px: number, py: number): [number, number] {
+  if (frameK <= 0) return [px, py];
+  const k = leanEase();
+  const fx = LAMP_FOCUS_WIDE[0] + (LAMP_FOCUS_NEAR[0] - LAMP_FOCUS_WIDE[0]) * k;
+  const fy = LAMP_FOCUS_WIDE[1] + (LAMP_FOCUS_NEAR[1] - LAMP_FOCUS_WIDE[1]) * k;
+  return [px + (fx - px) * frameK, py + (fy - py) * frameK];
 }
 
 /**
@@ -1885,6 +2059,12 @@ function updateVillager(v: Villager, dt: number) {
   // Deep evening: the wandering stops. People stand where the hour has led
   // them (lamplight, mostly), finishing conversations as the village settles.
   if (nk > 0.6 && !outside) return;
+  // Someone the player has clicked on and is walking toward finishes the
+  // step they are on and waits there, the way a person does when hailed.
+  if (autoGoal?.npc === v && !outside) {
+    v.actor.update(dt, { intent: null, blocked });
+    return;
+  }
   v.think -= dt;
   if (v.think <= 0) {
     // Outside the leash (walking to the lamp, or home at dawn): head for the
@@ -2498,14 +2678,62 @@ function pathBeside(from: [number, number], cell: [number, number]): [number, nu
   const solid = (x: number, y: number) => map.solid(x, y);
   const bodies = new Set(villagersHere().map((v) => v.actor.occupies().join(',')));
   let best: [number, number][] | null = null;
+  let bestCost = Infinity;
   for (const [dx, dy] of [[0, 1], [1, 0], [-1, 0], [0, -1]] as const) {
     const nx = cell[0] + dx;
     const ny = cell[1] + dy;
     if (solid(nx, ny) || bodies.has(`${nx},${ny}`)) continue;
     const p = pathBetween(from, nx, ny, solid);
-    if (p && (!best || p.length < best.length)) best = p;
+    // Bare floor beats a tuft or a coil of hose by a step: the end is where
+    // the player stands, and it should read as somewhere to stand.
+    const cost = p ? p.length + (dressedCell(nx, ny) ? 1.5 : 0) : Infinity;
+    if (p && cost < bestCost) {
+      best = p;
+      bestCost = cost;
+    }
   }
   return best ?? pathBetween(from, cell[0], cell[1], solid, true);
+}
+
+/** A walkable cell with something on it (a tuft, a hose, pigeons): not bare floor. */
+function dressedCell(x: number, y: number): boolean {
+  const o = map.object(x, y);
+  return !!o && o.t !== 'blocked' && !map.triggerAt(x, y);
+}
+
+/**
+ * The same walk with its turns taken as early as they can be: of all the
+ * equally short ways there, the one that gets onto the target's line first
+ * and arrives along it. A thread to the east road's exit used to run beside
+ * the road and dive onto it at the map's very edge; now it steps onto the
+ * road and follows it out, and a thread to a thing arrives facing it.
+ */
+function straightenThread(from: [number, number], path: [number, number][]): [number, number][] {
+  if (path.length < 2) return path;
+  const pts: [number, number][] = [from, ...path.map((c) => [c[0], c[1]] as [number, number])];
+  const last = pts[pts.length - 1]!;
+  const prev = pts[pts.length - 2]!;
+  const finalX = last[0] !== prev[0]; // the axis the walk arrives along
+  const solid = (x: number, y: number) => map.solid(x, y);
+  for (let pass = 0; pass < pts.length; pass++) {
+    let moved = false;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const a = pts[i - 1]!;
+      const b = pts[i]!;
+      const c = pts[i + 1]!;
+      const abAlong = finalX ? a[1] === b[1] : a[0] === b[0];
+      const bcCross = finalX ? b[0] === c[0] : b[1] === c[1];
+      if (!abAlong || !bcCross) continue;
+      // a -> b runs along the final line, b -> c crosses onto it: cross first.
+      const swap: [number, number] = [a[0] + (c[0] - b[0]), a[1] + (c[1] - b[1])];
+      // Never through a doorway the shortest walk did not already take.
+      if (solid(swap[0], swap[1]) || map.triggerAt(swap[0], swap[1])) continue;
+      pts[i] = swap;
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return pts.slice(1);
 }
 
 /**
@@ -2585,11 +2813,24 @@ function threadPathFrom(
     // A fixed spot can be a prop with no floor of its own; point beside it.
     if (!path && !aim.adjacent) path = pathBeside(from, aim.cell);
     if (!path) continue;
+    path = straightenThread(from, path);
     // Close enough to arrive, it arrives: a thread that stops four tiles
     // short of the karaoke reads as pointing at the empty floor it stops on.
     const reaches = path.length <= THREAD_REACH_TILES;
+    // Running out on the way, it runs out on bare floor: an end lying on a
+    // tuft or a hose reads as pointing at the tuft. Back off a step or two.
+    let n = reaches ? path.length : THREAD_MAX_TILES;
+    if (!reaches) {
+      for (let k = n; k >= Math.max(1, n - 3); k--) {
+        const c = path[k - 1]!;
+        if (!dressedCell(c[0], c[1])) {
+          n = k;
+          break;
+        }
+      }
+    }
     return {
-      tiles: [from, ...path.slice(0, reaches ? path.length : THREAD_MAX_TILES)],
+      tiles: [from, ...path.slice(0, n)],
       loop: reaches ? aim.cell : null,
       task,
     };
@@ -2602,7 +2843,7 @@ let threadToastAt = -Infinity;
 let threadShownAt = -Infinity;
 /** What the last summon resolved, published on the dev bridge so automation
  * can hold the thread honest: the task it followed and where it pointed. */
-let threadLast: { task: string; end: [number, number]; loop: [number, number] | null } | null = null;
+let threadLast: { task: string; end: [number, number]; loop: [number, number] | null; dressed: boolean } | null = null;
 
 /** Ask the thread, from the player's feet or from a helpful villager's. */
 function summonThread(from: [number, number] = player.occupies()): boolean {
@@ -2619,10 +2860,12 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
   // One soft note from Carmen's loom: the terracotta string, same as the band.
   audio.weaveNote(0);
   threadShownAt = performance.now();
+  const end = found.tiles[found.tiles.length - 1] ?? from;
   threadLast = {
     task: found.task.text,
-    end: found.tiles[found.tiles.length - 1] ?? from,
+    end,
     loop: found.loop,
+    dressed: dressedCell(end[0], end[1]),
   };
   queueWhisper();
   return true;
@@ -3071,12 +3314,16 @@ function update(dt: number) {
   // sitting through one is, in fact, the whole point of two of them.
   updateStations(dt);
   updateStaging(dt);
-  renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT));
-  renderer.setSun(dayT);
+  updateEndLight(dt);
+  updateLampShot(dt);
+  renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightNow());
+  renderer.setSun(sunNow());
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
   renderer.setMood(moodFor(map.id));
   renderer.setRaining(rainingOn(map.id));
-  stage.setAmbient(ambientNow());
+  stage.setAmbient(endAmbient(ambientNow()));
+  stage.setGrade(0.28 * endLight.gold + 0.12 * endLight.lamp, 0.45 * endLight.gold + 0.7 * endLight.lamp);
+  renderer.setShadowBoost(1 + 0.9 * endLight.gold + 0.5 * endLight.lamp);
   audio.setDucked(textbox.isOpen || celebrateT > 0);
   audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id), dayT);
 
@@ -3369,11 +3616,13 @@ function update(dt: number) {
         // asking the game a question. After a few insistent knocks, answer
         // it with the open thread the chip is already showing, where their
         // eyes are. Never more than once a minute; stuck, not nagged.
+        // The answer is the chip itself, glowing once and unfolding on a
+        // phone: it used to toast the chip's own sentence again under it,
+        // the same words twice, every minute the wall was leaned on.
         stuckKnocks++;
         if (stuckKnocks >= 4 && performance.now() - lastStuckHint > 60000) {
-          const top = journalUI.activeTasks()[0];
-          if (top) {
-            toasts.show(top);
+          if (!errandEl.hidden) {
+            chipFold.call();
             lastStuckHint = performance.now();
           }
           stuckKnocks = 0;
@@ -3441,8 +3690,10 @@ function update(dt: number) {
     camera.follow(wx, wy, map.w, map.h);
     fitCameraToCrop(wx, wy);
   } else {
-    const [ppx, ppy] = player.renderPos();
-    camera.follow(ppx, ppy, map.w, map.h);
+    const [rpx, rpy] = player.renderPos();
+    // The last page frames its own shot; everywhere else the player is it.
+    const [ppx, ppy] = lampFocus(rpx, rpy);
+    camera.follow(ppx, ppy, map.w, map.h, 1 - frameK);
     fitCameraToCrop(ppx, ppy);
   }
 
@@ -3512,7 +3763,7 @@ function render() {
 
   // Every fire and lamp on this map becomes a flickering point light.
   // Outdoors they wake with the dusk; interior fires carry the room all day.
-  const nk = moodFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
+  const nk = moodFor(map.id) === 'interior' ? 0 : nightNow();
   const outdoorK = moodFor(map.id) === 'interior' ? 1 : 0.25 + 0.75 * Math.min(1, nk * 2);
   const indoors = moodFor(map.id) === 'interior';
   const specs: LightSpec[] = (fireCells[map.id] ?? []).flatMap(([cx, cy, kind]) => {
@@ -3523,20 +3774,35 @@ function render() {
     // reaches it; every other light wakes with the dusk as it always has.
     const wake = stationLampWake(map.id, cx, cy);
     const dayK = wake === null ? outdoorK : 0.25 + Math.max(0, outdoorK - 0.25) * wake;
-    const core: LightSpec = { x, y, r: def.r * (indoors ? 1.35 : 1) * dayK, color: def.color, flicker: def.flicker };
+    // On the last evening the lamps carry the stone: a wider pool each.
+    const pool = indoors ? 1.35 : 1 + 0.35 * endLight.lamp;
+    const core: LightSpec = { x, y, r: def.r * pool * dayK, color: def.color, flicker: def.flicker };
     // Indoors, every fire also pools a broad dim warmth across the room, so
     // the space feels inhabited rather than spot-lit.
     return indoors
       ? [core, { x, y: y + 6, r: def.r * 3.2, color: 0x54331c, flicker: 0.08 }]
       : [core];
   });
+  // The last page is written in a pool of lamplight at the well: the people
+  // round it warm, the plaza beyond going down into the evening.
+  if (map.id === 'village' && endLight.lamp > 0) {
+    specs.push({
+      x: WELL_PX[0] - camera.x,
+      y: WELL_PX[1] + 10 - camera.y,
+      r: 58 * endLight.lamp,
+      color: 0xffc07a,
+      flicker: 0.1,
+    });
+  }
   // At dusk the houses light their windows from inside.
   if (nk > 0.3) {
     for (const [wx, wy] of houseWindows[map.id] ?? []) {
+      const wake = windowWake(wx, wy);
+      if (wake <= 0) continue;
       specs.push({
         x: wx - camera.x,
         y: wy - camera.y,
-        r: 15 + nk * 6,
+        r: (15 + nk * 6) * wake,
         color: 0xffc878,
         flicker: 0.08,
       });
@@ -3953,12 +4219,41 @@ function faceAndInteract(tx: number, ty: number) {
   tryInteract();
 }
 
-function requestMove(tx: number, ty: number) {
+/**
+ * The villager drawn under a world point. A figure stands about a tile and a
+ * half tall, and one mid-stride is drawn between two cells, so a click on a
+ * head or on someone walking used to land on the cell behind them and read
+ * the geraniums there instead. Their drawn body is what the eye clicks.
+ */
+function villagerAtPoint(wx: number, wy: number): Villager | undefined {
+  let best: Villager | undefined;
+  let bestD = Infinity;
+  for (const v of villagersHere()) {
+    if (v.fade <= 0.02) continue;
+    const [rx, ry] = v.actor.renderPos();
+    // The head reaches about half a tile up; the middle of the cell above
+    // stays that cell's own, so a click there (where one stands to talk to
+    // them) still walks.
+    if (wx < rx + 1 || wx > rx + TILE - 1 || wy < ry - 7 || wy > ry + TILE) continue;
+    const d = Math.abs(wx - (rx + TILE / 2)) + Math.abs(wy - (ry + TILE / 2));
+    if (d < bestD) {
+      best = v;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+function requestMove(tx: number, ty: number, hit?: Villager) {
   cancelAuto();
-  const npc = villagersHere().find((v) => {
-    const [ox, oy] = v.actor.occupies();
-    return ox === tx && oy === ty;
-  });
+  const npc =
+    hit ??
+    villagersHere().find((v) => {
+      const [ox, oy] = v.actor.occupies();
+      return ox === tx && oy === ty;
+    });
+  // Whoever was clicked is the goal, wherever their feet have got to.
+  if (npc) [tx, ty] = npc.actor.occupies();
   const d = Math.abs(player.x - tx) + Math.abs(player.y - ty);
   if (npc || interactableAt(tx, ty)) {
     if (d === 0) return;
@@ -4006,6 +4301,14 @@ function replanAuto() {
 function autoIntent(): Dir | null {
   const goal = autoGoal;
   if (!goal) return null;
+  // Walking toward someone who has since moved: the walk follows them.
+  if (goal.npc) {
+    const [nx, ny] = goal.npc.actor.occupies();
+    if (nx !== goal.cell[0] || ny !== goal.cell[1]) {
+      replanAuto();
+      if (!autoGoal) return null;
+    }
+  }
   const [px, py] = player.occupies();
   while (autoPath.length) {
     const head = autoPath[0];
@@ -4062,7 +4365,7 @@ glCanvas.addEventListener('pointerdown', (e) => {
   const [wx, wy] = screenToWorld(e.clientX, e.clientY);
   const tx = Math.floor(wx / TILE);
   const ty = Math.floor(wy / TILE);
-  if (map.inBounds(tx, ty)) requestMove(tx, ty);
+  if (map.inBounds(tx, ty)) requestMove(tx, ty, villagerAtPoint(wx, wy));
 });
 
 // Cursor affordance: a pointer over anything the action button would engage.
@@ -4078,7 +4381,7 @@ glCanvas.addEventListener('pointermove', (e) => {
     const [wx, wy] = screenToWorld(e.clientX, e.clientY);
     const tx = Math.floor(wx / TILE);
     const ty = Math.floor(wy / TILE);
-    if (map.inBounds(tx, ty) && interactableAt(tx, ty)) cursor = 'pointer';
+    if (map.inBounds(tx, ty) && (villagerAtPoint(wx, wy) || interactableAt(tx, ty))) cursor = 'pointer';
   }
   if (glCanvas.style.cursor !== cursor) glCanvas.style.cursor = cursor;
 });

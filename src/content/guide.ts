@@ -30,7 +30,7 @@ const NPC_BY_ID = new Map(NPCS.map((n) => [n.id, n] as const));
  */
 const CODE_READS = new Set([
   'album.open', 'allqu.friend', 'c10.album.seen', 'c11.rain', 'c6.rain', 'c7.complete', 'c7.dawn',
-  'c9.complete', 'c9.of.kanga', 'c9.of.omiyage', 'c9.of.wish', 'c9.ofrenda.done', 'carry.chicha',
+  'c10.lamp', 'c9.complete', 'c9.of.kanga', 'c9.of.omiyage', 'c9.of.wish', 'c9.ofrenda.done', 'carry.chicha',
   'chicha.hinted', 'dig.done', 'dig.invite', 'end.book', 'intro.done', 'keepsake.band', 'paca.moved',
   'photo.flash', 'story.complete', 'story.end', 'wish.nani', 'wish.people',
 ]);

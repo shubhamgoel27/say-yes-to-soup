@@ -377,6 +377,15 @@
         transition: opacity 0.25s ease;
       }
       #errand[hidden] { display: none; }
+      /* Leaning on a wall asks the game a question; the chip answers by
+       * glowing once, not by repeating itself in a toast. */
+      #errand.call { animation: chip-call 1.6s ease-out 1; }
+      @keyframes chip-call {
+        0% { box-shadow: 0 0 0 0 rgba(217, 164, 65, 0); border-color: rgba(200, 165, 91, 0.4); }
+        25% { box-shadow: 0 0 14px 2px rgba(217, 164, 65, 0.55); border-color: rgba(217, 164, 65, 0.95); }
+        100% { box-shadow: 0 0 0 0 rgba(217, 164, 65, 0); border-color: rgba(200, 165, 91, 0.4); }
+      }
+      @media (prefers-reduced-motion: reduce) { #errand.call { animation: none; border-color: rgba(217, 164, 65, 0.95); } }
       #errand::before { content: '\2709\00a0\00a0'; font-style: normal; }
       /* The band's one-time reminder: a quieter last line on the chip until
        * the first manual N, then gone for the rest of the journey. */
@@ -2625,7 +2634,17 @@
         /* The key legend is desk furniture; the pad and taps replace it. */
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }
-        .p-card, .ht-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+        .p-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+        /* The how-to card holds still and its body scrolls: the foot (the
+         * hint, the "more below" pill) stays on the page under the text. */
+        .ht-card {
+          max-height: calc(100vh - 10px);
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .ht-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
         /* A scene capped by height is narrower than its panel: sit it in
          * the middle rather than against the left rule. */
         .g-stage canvas { margin: 0 auto; }
@@ -2761,10 +2780,12 @@
         .ht-card {
           width: min(94vw, 760px);
           max-width: calc(100vw - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+          padding: 14px 20px 10px;
+        }
+        .ht-body {
           display: flex;
           align-items: flex-start;
           gap: 20px;
-          padding: 14px 20px 12px;
         }
         .ht-main { flex: 1.2 1 0; min-width: 0; }
         .ht-side {
@@ -2794,12 +2815,20 @@
       /* Any card taller than the glass says so: a pill at its foot while
        * there is more below, and a tap on it brings the rest up. */
       @media (pointer: coarse) {
+        .ht-foot {
+          flex: 0 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          margin-top: 8px;
+          padding-top: 6px;
+          border-top: 1.5px solid rgba(43, 33, 24, 0.14);
+        }
+        .ht-foot .ht-keys { margin-top: 0; text-align: right; }
         .ht-more {
           display: block;
-          position: absolute;
-          left: 50%;
-          bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-          transform: translateX(-50%);
+          flex: 0 0 auto;
           min-height: 32px;
           box-sizing: border-box;
           padding: 5px 16px 4px;

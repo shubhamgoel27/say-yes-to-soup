@@ -7,8 +7,11 @@
  * does (stand where it runs out, ask again), then face the loop and press
  * Space. Each step must arrive on a free tile beside the loop, the loop must
  * sit on someone the task names (or the thing it names), and Space there must
- * open a scene. Then two pointer checks: a click on a prop you can stand on
- * walks onto it; a click on a solid prop still reads it.
+ * open a scene. Every leg ends on bare floor (never on a tuft or a hose), and
+ * a click on where the first leg ends walks there rather than reading
+ * whatever is drawn on it. Then the pointer checks: a click on a prop you can
+ * stand on walks onto it; a click on a solid prop still reads it; a click on
+ * a person's head talks to them, not to the flowers behind them.
  *
  *   npx vite --port 5881 &
  *   node tests/thread-e2e.mjs                 (every chapter, ~40 minutes)
@@ -25,9 +28,12 @@ const ONLY = process.env.ONLY?.split(',') ?? null;
 const root = new URL('..', import.meta.url).pathname;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
+// Returns the verdict: `if (!check(...)) continue;` relies on it. It used to
+// return nothing, so that guard skipped every check after the first.
 const check = (ok, label) => {
   if (!ok || process.env.VERBOSE) console.log(`${ok ? 'ok  ' : 'FAIL'} ${label}`);
   if (!ok) failures++;
+  return !!ok;
 };
 
 // The abstract walk writes down every state it stood in, and every map's spawn.
@@ -58,6 +64,17 @@ page.on('pageerror', (e) => errors.push(String(e)));
 const st = () => page.evaluate(() => JSON.parse(document.body.dataset.wfState));
 const ask = () => page.evaluate(() => globalThis.soup.thread());
 const warp = (m, x, y) => page.evaluate(([m, x, y]) => globalThis.soup.warp(m, x, y), [m, x, y]);
+/** Screen point of a world pixel, through the live camera and zoom. */
+const screenOf = (wx, wy) =>
+  page.evaluate(([wx, wy]) => {
+    const s = JSON.parse(document.body.dataset.wfState);
+    const c = document.getElementById('stagegl');
+    const r = c.getBoundingClientRect();
+    const k = Math.max(r.width / 320, r.height / 180);
+    const ox = r.left + (r.width - 320 * k) / 2;
+    const oy = r.top + (r.height - 180 * k) / 2;
+    return { x: ox + (wx - s.cam[0]) * k, y: oy + (wy - s.cam[1]) * k };
+  }, [wx, wy]);
 await page.goto(`${BASE}/?skiptitle`);
 await page.waitForFunction(() => !!globalThis.soup, null, { timeout: 20000 });
 
@@ -82,6 +99,33 @@ for (const s of states) {
   await sleep(150);
   let now = await st();
   const label = `[${s.ch}] "${s.task.slice(0, 50)}"`;
+  if (now.thread.last) {
+    // A leg that runs out on the way ends on bare floor. (One that arrives
+    // ends where you stand to act, which may be the only tuft beside them.)
+    if (!now.thread.last.loop) check(!now.thread.last.dressed, `${label}: the thread ends on bare floor, not on a prop (${now.thread.last.end})`);
+    // Clicking where the thread ends walks there; it never reads a prop.
+    const [cx, cy] = now.thread.last.end;
+    const [tx0, ty0] = now.tile;
+    const pt = await screenOf(cx * 16 + 8, cy * 16 + 8);
+    const vp = page.viewportSize();
+    const onScreen = pt.x > 8 && pt.y > 8 && pt.x < vp.width - 8 && pt.y < vp.height - 8;
+    if (onScreen && (cx !== tx0 || cy !== ty0) && (!now.thread.last.loop || Math.abs(cx - now.thread.last.loop[0]) + Math.abs(cy - now.thread.last.loop[1]) === 1)) {
+      await page.mouse.click(pt.x, pt.y);
+      for (let i = 0; i < 40; i++) {
+        await sleep(150);
+        const w = await st();
+        if (w.dialogue || (w.tile[0] === cx && w.tile[1] === cy && !w.auto)) break;
+      }
+      const w = await st();
+      check(!w.dialogue && w.tile[0] === cx && w.tile[1] === cy, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
+      if (w.dialogue) await page.keyboard.press('Escape');
+      await warp(now.map, tx0, ty0);
+      await sleep(900);
+      await ask();
+      await sleep(150);
+      now = await st();
+    }
+  }
   // Follow a thread that runs out before it arrives: stand at its end, ask again.
   for (let k = 0; k < 10 && now.thread.last && !now.thread.last.loop; k++) {
     await warp(now.map, ...now.thread.last.end);
@@ -89,6 +133,7 @@ for (const s of states) {
     await ask();
     await sleep(150);
     now = await st();
+    if (now.thread.last && !now.thread.last.loop) check(!now.thread.last.dressed, `${label}: the thread ends on bare floor, not on a prop (${now.thread.last.end})`);
   }
   const last = now.thread.last;
   if (!check(!!last?.loop, `${label}: the thread arrives somewhere`)) continue;
@@ -161,6 +206,31 @@ for (const [m, px, py, tx, ty, kind, want] of [
   const after = await st();
   const walked = after.tile[0] === tx && after.tile[1] === ty && !after.dialogue;
   check(want === 'walk' ? walked : !!after.dialogue, `a click on ${kind} should ${want} (at ${after.tile}, ${after.dialogue ?? 'no scene'})`);
+}
+
+// A person is drawn a tile and a half tall: a click on their head is a click
+// on them, wherever their feet are, and the walk talks to them on arrival.
+{
+  await page.evaluate(() => globalThis.soup.go(1));
+  await sleep(3000);
+  await quiet();
+  await warp('village', 21, 18);
+  await sleep(1500);
+  await quiet();
+  const s0 = await st();
+  const who = Object.entries(s0.npcs).find(([, c]) => Math.abs(c[0] - 21) + Math.abs(c[1] - 18) >= 3 && Math.abs(c[0] - 21) <= 7 && Math.abs(c[1] - 18) <= 4);
+  if (check(!!who, 'someone in sight to click on')) {
+    const [id, [nx, ny]] = who;
+    const pt = await screenOf(nx * 16 + 8, ny * 16 - 4); // their head: drawn over the cell above their feet
+    await page.mouse.click(pt.x, pt.y);
+    let w = await st();
+    for (let i = 0; i < 60 && !w.dialogue; i++) {
+      await sleep(150);
+      w = await st();
+    }
+    check(!!w.dialogue && !/^ex\./.test(w.dialogue), `a click on ${id}'s head talks to ${id} (${w.dialogue || 'nothing'})`);
+    await quiet();
+  }
 }
 
 check(errors.length === 0, `no page errors (${errors.slice(0, 3).join(' | ')})`);

@@ -63,6 +63,9 @@ export class PixiStage {
     new URLSearchParams(location.search).has('gl') ? 'webgl' : 'webgpu';
   /** Ambient tint survives a rebuild; the sprite holding it does not. */
   private ambient = 0xffffff;
+  private washSprite: Sprite | null = null;
+  private vigSprite: Sprite | null = null;
+  private grade = { wash: 0, vignette: 0 };
   private recovering = false;
   private renderFails = 0;
 
@@ -209,6 +212,18 @@ export class PixiStage {
 
     s.scene.addChild(lightLayer);
     for (const gl of s.glowPool) s.scene.addChild(gl);
+    // The evening grade: a low sun's gold raking in from one side, and the
+    // frame's edges going down into dusk around whatever the camera holds.
+    // Both are off (alpha 0) except where a scene asks for them.
+    s.washSprite = new Sprite(makeWashTexture());
+    s.washSprite.width = VIEW_W * ART;
+    s.washSprite.height = VIEW_H * ART;
+    s.washSprite.blendMode = 'screen';
+    s.vigSprite = new Sprite(makeVignetteTexture());
+    s.vigSprite.width = VIEW_W * ART;
+    s.vigSprite.height = VIEW_H * ART;
+    s.scene.addChild(s.washSprite, s.vigSprite);
+    s.applyGrade();
     // A touch of gouache richness: figures and props carry slightly more
     // chroma than the receding grounds, so the saturation lands where it should.
     const grade = new ColorMatrixFilter();
@@ -319,6 +334,24 @@ export class PixiStage {
   setAmbient(color: number) {
     this.ambient = color;
     if (this.live) this.ambientSprite.tint = color;
+  }
+
+  /**
+   * The evening grade, 0..1 each: `wash` is the low sun's gold coming in
+   * from the upper left, `vignette` the edges of the frame settling into
+   * dusk. Survives a rebuild like the ambient does.
+   */
+  setGrade(wash: number, vignette: number) {
+    this.grade = { wash, vignette };
+    this.applyGrade();
+  }
+
+  private applyGrade() {
+    if (!this.washSprite || !this.vigSprite) return;
+    this.washSprite.alpha = this.grade.wash;
+    this.washSprite.visible = this.grade.wash > 0.003;
+    this.vigSprite.alpha = this.grade.vignette;
+    this.vigSprite.visible = this.grade.vignette > 0.003;
   }
 
   setLights(specs: LightSpec[]) {
@@ -540,6 +573,50 @@ function makeRadialTexture(stops: [number, number][]): Texture {
   for (const [at, a] of stops) grad.addColorStop(at, `rgba(255,255,255,${a})`);
   g.fillStyle = grad;
   g.fillRect(0, 0, RADIAL_SIZE, RADIAL_SIZE);
+  return Texture.from(cv);
+}
+
+/**
+ * The low sun's wash: warm gold strongest at the upper left, where the light
+ * comes in over the ridge, gone by the far corner. Screened over the frame,
+ * so it lifts and warms without ever clipping to white.
+ */
+function makeWashTexture(): Texture {
+  const W = 256;
+  const H = 144;
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const g = cv.getContext('2d');
+  if (!g) throw new Error('no 2d ctx');
+  const grad = g.createLinearGradient(0, 0, W * 0.8, H * 1.1);
+  grad.addColorStop(0, 'rgba(255,170,70,0.55)');
+  grad.addColorStop(0.45, 'rgba(240,130,60,0.22)');
+  grad.addColorStop(1, 'rgba(120,60,40,0)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, W, H);
+  return Texture.from(cv);
+}
+
+/** The frame's edge going down into dusk: clear middle, warm dark corners. */
+function makeVignetteTexture(): Texture {
+  const W = 320;
+  const H = 180;
+  const cv = document.createElement('canvas');
+  cv.width = W;
+  cv.height = H;
+  const g = cv.getContext('2d');
+  if (!g) throw new Error('no 2d ctx');
+  // Stretched to the frame's aspect, so the clear middle is an oval that
+  // follows the screen rather than a circle cut off at the sides.
+  g.setTransform(W / H, 0, 0, 1, 0, 0);
+  const cx = H / 2;
+  const grad = g.createRadialGradient(cx, H / 2, H * 0.22, cx, H / 2, H * 0.78);
+  grad.addColorStop(0, 'rgba(26,12,8,0)');
+  grad.addColorStop(0.55, 'rgba(26,12,8,0.32)');
+  grad.addColorStop(1, 'rgba(18,8,6,0.82)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, H, H);
   return Texture.from(cv);
 }
 

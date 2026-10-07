@@ -36,13 +36,14 @@ export class Camera {
     this.leadY = 0;
   }
 
-  follow(targetPx: number, targetPy: number, mapW: number, mapH: number) {
+  /** `leadK` scales the lookahead: a composed shot (the ending) sets its own frame. */
+  follow(targetPx: number, targetPy: number, mapW: number, mapH: number, leadK = 1) {
     const worldW = mapW * TILE;
     const worldH = mapH * TILE;
 
     // Centre on the target's middle, not its top-left corner.
-    let x = targetPx + TILE / 2 - VIEW_W / 2 + this.leadX;
-    let y = targetPy + TILE / 2 - VIEW_H / 2 + this.leadY;
+    let x = targetPx + TILE / 2 - VIEW_W / 2 + this.leadX * leadK;
+    let y = targetPy + TILE / 2 - VIEW_H / 2 + this.leadY * leadK;
 
     // Small maps sit centred instead of pinning to a corner.
     x = worldW <= VIEW_W ? (worldW - VIEW_W) / 2 : clamp(x, 0, worldW - VIEW_W);

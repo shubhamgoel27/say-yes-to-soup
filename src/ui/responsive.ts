@@ -62,6 +62,19 @@ export class ChipFold {
     this.el.classList.add('fresh');
   }
 
+  /**
+   * Point at the chip without repeating it: it unfolds fresh (a phone shows
+   * the whole thread again) and glows once.
+   */
+  call(): void {
+    this.foldAt = 0;
+    this.el.classList.add('fresh');
+    this.el.classList.remove('call');
+    // Restart the glow even if it is mid-run: a reflow between the two.
+    void (this.el as { offsetWidth?: number }).offsetWidth;
+    this.el.classList.add('call');
+  }
+
   /** Once per frame with whether the HUD is hushed. */
   tick(quiet: boolean, now = performance.now()): void {
     if (!this.el.classList.contains('fresh') || quiet) return;

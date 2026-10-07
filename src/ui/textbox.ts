@@ -59,6 +59,11 @@ export class Textbox {
     return this.isOpen ? this.nodeId : '';
   }
 
+  /** Which line of the current node is on the page (0 when closed). */
+  get currentLine(): number {
+    return this.isOpen ? this.lineIdx : 0;
+  }
+
   /** True while the typewriter is still revealing the current line. */
   get isTyping(): boolean {
     return this.isOpen && this.typing;

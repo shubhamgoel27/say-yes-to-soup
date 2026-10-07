@@ -1024,6 +1024,18 @@ export class Renderer {
     this.flierKind = kind;
   }
 
+  /**
+   * Weight of the sun's cast shadows, 1 as the hour paints them. The ending's
+   * low sun asks for more: long shadows are the whole of golden hour.
+   */
+  private shadowBoost = 1;
+  setShadowBoost(k: number) {
+    if (Math.abs(k - this.shadowBoost) < 0.01) return;
+    this.shadowBoost = k;
+    this.sunQ = -1;
+    this.refreshSun();
+  }
+
   /** 0 = full day, 1 = deep night; gates the fireflies. */
   setNight(k: number) {
     this.nightK = k;
@@ -1090,7 +1102,7 @@ export class Renderer {
     // there is nothing left to throw one, so the whole pass goes out with it
     // rather than leaving grey wedges lying across the lamplight all night.
     this.shadowA =
-      0.3 * (1 - Math.min(0.32, (len - 0.45) * 0.16)) * (1 - this.nightK * 0.62) * this.sunUp;
+      0.3 * (1 - Math.min(0.32, (len - 0.45) * 0.16)) * (1 - this.nightK * 0.62) * this.sunUp * this.shadowBoost;
   }
 
   /**

@@ -74,6 +74,11 @@ export class Toasts {
     return this.queue.length;
   }
 
+  /** Drop the queued lines a predicate picks (the one on screen stays). */
+  drop(which: (text: string) => boolean) {
+    this.queue = this.queue.filter((t) => !which(t));
+  }
+
   /** Drop everything queued and showing. A journal switch must not carry
    * the old journey's announcements into the new one's morning. */
   dismissAll() {

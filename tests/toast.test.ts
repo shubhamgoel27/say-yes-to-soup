@@ -140,4 +140,19 @@ describe('toasts: the hush holds the queue', () => {
     mock.timers.tick(500);
     assert.deepEqual(shown(root), ['new']);
   });
+
+  it('drop takes the closed journal\'s page lines out of a held queue, and only those', () => {
+    // The last page is written behind the hush; a page toast still waiting
+    // there used to play over the first free frame after the book closed.
+    const root = makeRoot();
+    const t = new Toasts(root as unknown as HTMLElement);
+    t.setHeld(true);
+    t.show('✎ a page fills: Haku!');
+    t.show('✉ delivered');
+    t.show('✦ a margin note of Nani’s has become legible');
+    t.drop((x) => /^[✎✦]/.test(x));
+    assert.equal(t.pending, 1);
+    t.setHeld(false);
+    assert.deepEqual(shown(root), ['✉ delivered']);
+  });
 });
