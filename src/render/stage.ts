@@ -66,6 +66,7 @@ export class PixiStage {
   private washSprite: Sprite | null = null;
   private vigSprite: Sprite | null = null;
   private grade = { wash: 0, vignette: 0 };
+  private bloom: AdvancedBloomFilter | null = null;
   private recovering = false;
   private renderFails = 0;
 
@@ -247,6 +248,8 @@ export class PixiStage {
     // reach. This one ramps in from zero and weighs the very brightest most.
     (bloom as unknown as { _extractFilter: Filter })._extractFilter = new SoftExtractFilter(BLOOM_THRESHOLD);
     s.scene.filters = [grade, bloom];
+    s.bloom = bloom;
+    s.applyBloom();
 
     // Compose at native art resolution, then scale smoothly to the window.
     s.prescaleRT = RenderTexture.create({
@@ -332,8 +335,26 @@ export class PixiStage {
 
   /** Ambient light color: 0xffffff = full day (multiply no-op). */
   setAmbient(color: number) {
+    if (color === this.ambient) return;
     this.ambient = color;
     if (this.live) this.ambientSprite.tint = color;
+    this.applyBloom();
+  }
+
+  /**
+   * Bloom is for lamps and fires, and in full daylight there are none worth
+   * the name: what crossed the threshold instead was every cream apron and
+   * white shirt, which bloomed into a glowing cut-out (Rosa at her pot, the
+   * fishmonger under his awning). Under a bright ambient the gathered light
+   * goes back at a third; as the ambient darkens toward dusk, or indoors, it
+   * returns to full.
+   */
+  private applyBloom() {
+    if (!this.bloom) return;
+    const c = this.ambient;
+    const lum = (0.2126 * ((c >> 16) & 255) + 0.7152 * ((c >> 8) & 255) + 0.0722 * (c & 255)) / 255;
+    const dark = Math.min(1, Math.max(0, (0.97 - lum) / 0.25));
+    this.bloom.bloomScale = BLOOM_SCALE * (0.35 + 0.65 * dark);
   }
 
   /**
