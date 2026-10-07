@@ -578,10 +578,21 @@ edges in Kerala, square shade box behind haystacks.
 ## 2026-10-06: pass 2 (8 worktree agents), from the four-critic re-review (~8/10)
 
 Brief: ~/work/wayfare-review/pass2/BRIEF.md; critic reports r1-r4 alongside.
-- [ ] T thread engine: never point at someone with nothing new; end on the actionable tile; props stop eating walk clicks; strict test
-- [ ] K1/K2/K3 continuity + pacing per chapter group (Pilar gating, stale scene order, chapter-close cards after the best scene in Busan and Sicily, second-visit gates, "Sit." openings, Delhi goodbye, Delhi/Zanzibar -20%)
-- [ ] E stage the climax at the well at dusk, apacheta walk, Oaxaca goodbye, walked rituals, closing-book credits
-- [ ] M patang storm, mole pace, hotteok gold, one more beat per story run (~30-60s), early/late feedback on hard timing, touch-aware hints, long crew on the vallam
-- [ ] P phone HUD overlaps, iPhone how-to card fit, touch copy, legend contrast, README count
-- [ ] A ground smears and seams, doubled doors, ginger cat, haystack box, Kerala water edges
-- [ ] Merge, gate, fresh review, ship
+- [x] T thread engine: never point at someone with nothing new; end on the actionable tile; props stop eating walk clicks; strict test
+- [x] K1/K2/K3 continuity + pacing per chapter group (Pilar gating, stale scene order, chapter-close cards after the best scene in Busan and Sicily, second-visit gates, "Sit." openings, Delhi goodbye, Delhi/Zanzibar -20%)
+- [x] E stage the climax at the well at dusk, apacheta walk, Oaxaca goodbye, walked rituals, closing-book credits
+- [x] M patang storm, mole pace, hotteok gold, one more beat per story run (~30-60s), early/late feedback on hard timing, touch-aware hints, long crew on the vallam
+- [x] P phone HUD overlaps, iPhone how-to card fit, touch copy, legend contrast, README count
+- [x] A ground smears and seams, doubled doors, ginger cat, haystack box, Kerala water edges
+- [x] Merge, gate, fresh review, ship
+
+### Review
+Eight worktree agents, an integrator, three critics (all stalled partway; partial reviews 7.5 / 7.5 /
+6.5 provisional), then two fix agents. Shipped 24f7e37. Thread known-fault lists empty and a
+177-state engine walk honest; the well staged at golden dusk into lamplight; closing-book credits;
+Busan and Sicily cards after their best scenes; Pilar gated everywhere; ~25 second-visit gates
+merged; story minigames longer with early/late feedback and mashing ~2x slower than care; phone HUD
+and card fixed; ground blending fixed at the root (centre weights), natural shorelines. 292 tests.
+Perf A/B vs shipped main on an emulated phone at 6x throttle: identical (p95 10.1ms, p99 10.3ms).
+Open: story runs still 8-20s for a bot (likely 15-40s for a reader); urojo/kingyo mash ~1.75x;
+held-item visuals (bowl, harvest) need a renderer hook; trailer predates pass 2.
