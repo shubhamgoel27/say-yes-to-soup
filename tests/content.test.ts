@@ -198,6 +198,10 @@ describe('no chapter shadows another chapter\'s examines', () => {
   it('the four letter counters hand over their own letters', () => {
     // The concrete casualties the general test above must forbid forever:
     // each post point's first letter, on its own map, on a fresh visit.
+    // Pilar writes only to players who met her at the bridge, so her
+    // counters are probed with that one flag.
+    const metPilar = new GameState();
+    metPilar.apply(['set:met.pilar']);
     const cases: [string, string, string][] = [
       ['shionoura', 'postbox', 'c4.post.pilar'],
       ['kerala', 'postbox', 'c6.ex.postbox'],
@@ -211,7 +215,8 @@ describe('no chapter shadows another chapter\'s examines', () => {
       ['zanzibar', 'doormat', 'c7.ex.doormat'],
     ];
     for (const [mapId, kind, node] of cases) {
-      const winner = EXAMINES[kind]?.find((a) => (!a.map || a.map === mapId) && fresh.check(a.when));
+      const state = node.includes('.pilar') ? metPilar : fresh;
+      const winner = EXAMINES[kind]?.find((a) => (!a.map || a.map === mapId) && state.check(a.when));
       assert.equal(winner?.node, node, `${mapId}/${kind}: expected ${node}, got ${winner?.node}`);
     }
   });
@@ -1059,7 +1064,7 @@ describe('the thread never lies', () => {
           assert.ok(npc, `[${c.id}] ${where}: active task names unknown npc ${who}`);
           // Only the not-direction of the villager's gate is checked: a set
           // not-flag means the flags themselves sent them away (Hana sails on
-          // c5.complete), so a task still pointing at them is stale. Their
+          // c5.berth), so a task still pointing at them is stale. Their
           // when.has may rest on prerequisites the sim never granted (meeting
           // Joseph implies the delivery that summons him), which play implies
           // but a task-list walk cannot see.

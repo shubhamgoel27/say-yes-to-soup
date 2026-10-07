@@ -116,6 +116,11 @@ export const SHIONOURA_NPCS: NpcDef[] = [
         when: { has: ['omiyage.petro', 'omiyage.pilar', 'omiyage.aurelio'], not: ['c4.sachi.done'] },
         node: 'c4.sachi.alldone',
       },
+      // A player who never paid Pilar's toll has two people on the list.
+      {
+        when: { has: ['omiyage.petro', 'omiyage.aurelio'], not: ['met.pilar', 'c4.sachi.done'] },
+        node: 'c4.sachi.alldone',
+      },
       { when: { has: ['c4.sachiko2'], not: ['c4.sachi.done'] }, node: 'c4.sachi.shop' },
       { node: 'c4.sachi.idle' },
     ],
@@ -257,6 +262,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Hana', text: 'My grandmother keeps the minshuku past the shotengai, behind the noren. Your room is made up; arguing is useless.' },
     ],
     effects: ['set:met.hana', 'journal:people.hanahome', 'journal:words.tadaima'],
+    next: 'c4.hana.onigiri',
   },
   'c4.hana.onigiri': {
     lines: [
@@ -332,6 +338,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Laughing, she sets out slippers pointed the right way. Hana radioed from the ship; your room is aired, as threatened.' },
     ],
     effects: ['set:met.fumi', 'journal:people.fumi', 'journal:customs.genkan'],
+    next: 'c4.fumi.meal',
   },
   'c4.fumi.meal': {
     lines: [
@@ -567,10 +574,11 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Daisuke', text: 'THERE it is! Loud means delicious, ne. Silence is for fish still in the water.' },
     ],
     effects: ['set:c4.slurp'],
+    next: 'c4.dai.truck',
   },
   'c4.dai.truck': {
     lines: [
-      { text: 'The kei truck is backed to the boats and the crates outnumber the hands. You join in: ice, fish, ice, fish.' },
+      { text: 'After, the kei truck is backed to the boats and the crates outnumber the hands. You join in: ice, fish, ice, fish.' },
       { text: 'The tailgate bangs shut. Daisuke claps your shoulder with a hand like a docking fender.' },
       { who: 'Daisuke', text: 'Otsukaresama! Your tiredness is seen, ne; the work happened and you were in it.' },
     ],
@@ -599,26 +607,27 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.sachi.first': {
     lines: [
       { who: 'Sachiko', text: 'Irasshai, irasshai! Taste first, questions after. Lemon yokan, made with Setoda lemons since my grandmother.' },
-      { text: 'A pale gold square, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad. You think of Petro, Pilar, Aurelio.' },
+      { text: 'A pale gold square, sweet and then sharply, wonderfully sour. It tastes like sunshine that studied abroad. You think at once of the people at home.' },
     ],
     effects: ['set:met.sachiko', 'journal:people.sachiko', 'journal:words.irasshai'],
+    next: 'c4.sachi.lemons',
   },
   // The lemon lore rides where the lemons do: on the stenciled crates, found
   // once Sachiko has nodded at them. The page fills at the noticing.
   'c4.sachi.lemons': {
     lines: [
-      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over. The crates by the counter came with them; look them over.' },
-      { who: 'Sachiko', text: 'Then think about your list. Omiyage is chosen slowly and given fast.' },
+      { who: 'Sachiko', text: 'The lemons ride the ferry from Setoda, one island over; the crates by the counter came with them. Omiyage is chosen slowly and given fast.' },
     ],
     effects: ['set:c4.sachiko2', 'journal:dishes.lemonyokan'],
+    next: 'c4.sachi.shop',
   },
   'c4.sachi.shop': {
     lines: [
-      { who: 'Sachiko', text: 'A cook, a museum director, and a man with soup always on. Who first?' },
+      { who: 'Sachiko', text: 'So. Who fed you on the way here? Name them one at a time.' },
     ],
     choices: [
       { text: 'Lemon yokan for Doña Petro, cook to cook', goto: 'c4.omi.petro', when: { not: ['omiyage.petro'] } },
-      { text: 'A tairyō-bata tenugui for Pilar\'s museum', goto: 'c4.omi.pilar', when: { not: ['omiyage.pilar'] } },
+      { text: 'A tairyō-bata tenugui for Pilar\'s museum', goto: 'c4.omi.pilar', when: { has: ['met.pilar'], not: ['omiyage.pilar'] } },
       { text: 'Shodoshima olive tea for Aurelio', goto: 'c4.omi.aurelio', when: { not: ['omiyage.aurelio'] } },
       { text: 'Still thinking. Choosing slowly, like you said.', goto: 'c4.sachi.browse' },
     ],
@@ -627,7 +636,7 @@ export const SHIONOURA_NODES: NodeMap = {
     lines: [{ who: 'Sachiko', text: 'There. Who else? A list of people who fed you is never short.' }],
     choices: [
       { text: 'Lemon yokan for Doña Petro, cook to cook', goto: 'c4.omi.petro', when: { not: ['omiyage.petro'] } },
-      { text: 'A tairyō-bata tenugui for Pilar\'s museum', goto: 'c4.omi.pilar', when: { not: ['omiyage.pilar'] } },
+      { text: 'A tairyō-bata tenugui for Pilar\'s museum', goto: 'c4.omi.pilar', when: { has: ['met.pilar'], not: ['omiyage.pilar'] } },
       { text: 'Shodoshima olive tea for Aurelio', goto: 'c4.omi.aurelio', when: { not: ['omiyage.aurelio'] } },
       { text: 'That is all for today', goto: 'c4.sachi.browse' },
     ],
@@ -663,7 +672,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.sachi.alldone': {
     lines: [
-      { who: 'Sachiko', text: 'Three parcels, three ports. You cannot bring your people here, so you carry the place back to them. Heavier, and worth it.' },
+      { who: 'Sachiko', text: 'A parcel for everyone who fed you. You cannot bring your people here, so you carry the place back to them. Heavier, and worth it.' },
     ],
     effects: ['set:c4.sachi.done'],
   },
@@ -681,6 +690,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'It appears the introduction is complete, and, in its way, thorough.' },
     ],
     effects: ['set:met.genji', 'journal:people.genji'],
+    next: 'c4.genji.amanogawa',
   },
   // The myth is not recited; Genji points and the sky over the water tells it.
   // The Amanogawa examine holds the story, the journal rhyme the recognition.
@@ -726,6 +736,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Taro', text: 'Genji-san gives you one strip a year. ONE. Who designed this system?' },
     ],
     effects: ['set:met.taro', 'journal:people.taro'],
+    next: 'c4.taro.help',
   },
   'c4.taro.help': {
     lines: [
@@ -858,6 +869,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Olena', text: 'This starter has seen six oceans and never a mountain. Look at it bubble.' },
     ],
     effects: ['set:c4.met.olena'],
+    next: 'c4.olena.quiz',
   },
   'c4.olena.quiz': {
     lines: [
@@ -951,13 +963,13 @@ export const SHIONOURA_NODES: NodeMap = {
   // ---------------- the post ----------------
   'c4.post.pilar': {
     lines: [
-      { text: 'The ferry office window doubles as the post counter, and the clerk waves an envelope: unmistakably an invoice wearing a stamp.' },
+      { text: 'The ferry office window doubles as the post counter, and the clerk waves an envelope addressed in very large, very certain capitals.' },
     ],
     effects: ['letter:c4.pilar'],
   },
   'c4.post.marisol': {
     lines: [
-      { text: 'The clerk checks under the ledger and produces a second envelope. It smells faintly, impossibly, of the morning market.' },
+      { text: 'The clerk checks under the ledger and produces an envelope. It smells faintly, impossibly, of the morning market.' },
     ],
     effects: ['letter:c4.marisol'],
   },
@@ -1446,8 +1458,9 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   keitruck: [{ node: 'c4.ex.keitruck' }],
   ebisudo: [{ node: 'c4.ex.ebisudo' }],
   postbox: [
-    { when: { not: ['letter.read.c4.pilar'] }, node: 'c4.post.pilar' },
-    { when: { has: ['letter.read.c4.pilar'], not: ['letter.read.c4.marisol'] }, node: 'c4.post.marisol' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.c4.pilar'] }, node: 'c4.post.pilar' },
+    { when: { not: ['letter.read.c4.marisol'] }, node: 'c4.post.marisol' },
     { node: 'c4.ex.postbox' },
   ],
   yatai: [

@@ -199,14 +199,14 @@ export const BUSAN_TASKS: TaskDef[] = [
     who: 'cho',
   },
   {
-    when: { has: ['c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.complete'] },
+    when: { has: ['c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.berth'] },
     text: 'The lane knows you now. Mr. Gong at the ferry window, down by the quay, arranges berths for the vouched-for. He will want it done ppalli ppalli.',
     who: 'gong',
   },
   {
-    // c5.complete is the stamped berth: Hana's evening boat has gone by
+    // c5.berth is the stamped berth: Hana's evening boat has gone by
     // then, so the task must go too, or the thread points at an empty quay.
-    when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed', 'c5.complete'] },
+    when: { has: ['c5.met.hana5'], not: ['c5.hana.quizzed', 'c5.berth'] },
     text: 'Hana is on the quay until the evening boat, armed with one examination question about Shionoura. Sit the exam before six.',
     who: 'hanaC5',
   },
@@ -216,24 +216,26 @@ export const BUSAN_TASKS: TaskDef[] = [
     who: 'sunhee',
   },
   {
-    when: { has: ['c5.arrived'], not: ['letter.read.c5.pilar'] },
-    text: 'A postal window the size of a biscuit tin sits by the ferry office. Mail crosses oceans faster than you do; ask.',
-    at: ['busan', 40, 23],
-  },
-  {
-    when: { has: ['c5.complete'], not: ['c5.bye'] },
+    when: { has: ['c5.berth'], not: ['c5.bye'] },
     text: 'The Malabar Star sails on the morning tide. Sun-hee has your fish for the boat; collect it at first light, while the auction is on.',
     who: 'sunhee',
   },
   {
-    // Only for a lane revisited later: the goodbye already carried you off.
-    when: { has: ['c5.bye'] },
+    // After the goodbye: the closing card, then the walk down the quay.
+    when: { has: ['c5.complete'] },
     text: 'The Malabar Star is loading for Kochi. Mr. Gong at the ferry window will see you aboard, quickly.',
     who: 'gong',
   },
   {
-    when: { has: ['c5.arrived'], not: ['c5.complete'] },
-    text: 'One warm lane between the hillside and the harbor: fish stalls, a griddle, a tea house up the stairs. Meet it slowly; it moves fast.',
-    who: ['sunhee', 'byeongok', 'mija', 'cho', 'gong', 'daeho', 'bak'],
+    when: { has: ['c5.arrived'], not: ['letter.read.c5.marisol'] },
+    text: 'A postal window the size of a biscuit tin sits by the ferry office. Mail crosses oceans faster than you do; ask.',
+    at: ['busan', 40, 23],
+  },
+  {
+    when: { has: ['c5.arrived'], not: ['c5.berth', 'c5.complete'] },
+    text: 'Nobody on this lane has time for a stranger yet. Keep turning up at the same stalls; a regular gets treated differently.',
+    // Not Mr. Bak: he finds you, at ramming speed, and never stands still
+    // long enough to be a destination.
+    who: ['sunhee', 'byeongok', 'mija', 'cho', 'gong', 'daeho'],
   },
 ];

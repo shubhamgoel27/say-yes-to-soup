@@ -29,12 +29,14 @@ export const KERALA_NPCS: NpcDef[] = [
       // The umbrella visit ends with her deciding something; this is it.
       { when: { has: ['c6.letter.heard'], not: ['c6.kunje'] }, node: 'c6.mariamma.adopt' },
       { when: { not: ['met.mariamma'] }, node: 'c6.mariamma.nofirst' },
-      { when: { has: ['c6.letter.delivered'], not: ['c6.mariamma2'] }, node: 'c6.mariamma.kitchen' },
-      // After the kitchen lesson, once you are sitting in her house the way a
-      // guest of the house sits. She is not planning to say any of this.
-      { when: { has: ['c6.mariamma2'], not: ['c6.her'] }, node: 'c6.mariamma.her' },
+      // Back from Shaji's with chaya in you: the kitchen lesson, and the
+      // sadya plan in the same sitting.
+      { when: { has: ['c6.letter.delivered', 'c6.chaya'], not: ['c6.mariamma2'] }, node: 'c6.mariamma.kitchen' },
       { when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask'] }, node: 'c6.mariamma.sadyaplan' },
       { when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] }, node: 'c6.mariamma.sadyastart' },
+      // After the feast, once you are sitting in her house the way a guest
+      // of the house sits. She is not planning to say any of this.
+      { when: { has: ['c6.sadya.done'], not: ['c6.her'] }, node: 'c6.mariamma.her' },
       {
         when: { has: ['c6.row.done', 'c6.sadya.done', 'c6.rain'], not: ['c6.complete'] },
         node: 'c6.mariamma.blessing',
@@ -83,13 +85,13 @@ export const KERALA_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
-      { when: { has: ['c6.letter.delivered'], not: ['met.shaji'] }, node: 'c6.shaji.firstwarm' },
+      { when: { has: ['c6.kunje'], not: ['met.shaji'] }, node: 'c6.shaji.firstwarm' },
       { when: { not: ['met.shaji'] }, node: 'c6.shaji.first' },
       { when: { has: ['met.shaji', 'c6.kunje'], not: ['c6.chaya'] }, node: 'c6.shaji.chaya' },
-      { when: { has: ['c6.chaya'], not: ['c6.wobble'] }, node: 'c6.shaji.wobble' },
+      { when: { has: ['c6.chaya', 'c6.mariamma2'], not: ['c6.wobble'] }, node: 'c6.shaji.wobble' },
       { when: { has: ['c6.chaya', 'page.words.chetta'], not: ['c6.chetta'] }, node: 'c6.shaji.chetta' },
       { when: { has: ['c6.rain'], not: ['c6.rainchaya'] }, node: 'c6.shaji.rainstall' },
-      { when: { has: ['page.words.chaya'], not: ['c6.cook.done'] }, node: 'c6.shaji.cookoffer' },
+      { when: { has: ['page.words.chaya', 'c6.mariamma2'], not: ['c6.cook.done'] }, node: 'c6.shaji.cookoffer' },
       { when: { has: ['c6.cook.done'] }, node: 'c6.shaji.pourAgain' },
       { node: 'c6.shaji.idle' },
     ],
@@ -153,7 +155,7 @@ export const KERALA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.omana'] }, node: 'c6.omana.first' },
-      { when: { has: ['met.omana', 'c6.letter.delivered'], not: ['c6.rope.errand'] }, node: 'c6.omana.rope' },
+      { when: { has: ['met.omana'], not: ['c6.rope.errand'] }, node: 'c6.omana.rope' },
       { when: { has: ['c6.rope.given'], not: ['c6.omana2'] }, node: 'c6.omana.paddy' },
       { node: 'c6.omana.idle' },
     ],
@@ -264,12 +266,12 @@ export const KERALA_NODES: NodeMap = {
   // ---------------- Mariamma, the front door ----------------
   // The delivery runs through the letter channel: the conversation ends, the
   // page you carried across an ocean unfolds on screen, and her reaction
-  // waits for the next word. Reading, gift and adoption are two visits, not
-  // one long sitting: the umbrella first, then what she decides about you.
+  // waits for the next word. Reading, gift and adoption are the second
+  // visit: the umbrella first, then what she decides about you.
   'c6.mariamma.letter': {
     lines: [
       { text: 'The open door breathes woodsmoke and curry leaves. A small woman looks up and somehow knows before you speak.' },
-      { who: 'Mariamma', text: 'That is my Joseph’s knot on that parcel. Sit. Sit! Did you eat? You will eat.' },
+      { who: 'Mariamma', text: 'That is my Joseph’s knot on that parcel. Come in, come in! Did you eat? You will eat.' },
       { text: 'You hand her the letter. She unfolds it like something that might fly away.' },
     ],
     effects: [
@@ -308,6 +310,7 @@ export const KERALA_NODES: NodeMap = {
       { text: 'She opens it indoors without a flicker of worry, stands it by the door like a guest of honor, and looks at you as if deciding something.' },
     ],
     effects: ['journal:people.mariamma'],
+    next: 'c6.mariamma.adopt',
   },
   'c6.mariamma.adopt': {
     lines: [
@@ -350,6 +353,7 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Mariamma', text: 'And anyone older is chetta or chechi. Address the village correctly and it is all relatives.' },
     ],
     effects: ['journal:words.chetta'],
+    next: 'c6.mariamma.sadyaplan',
   },
   // The one thing this kitchen kept. She does not diagnose it, does not dress
   // it up, and stops the moment she hears who she is saying it to.
@@ -385,7 +389,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.mariamma.sadyaplan': {
     lines: [
-      { who: 'Mariamma', text: 'Today I lay a sadya, for the letter and the village that raised my Joseph.' },
+      { who: 'Mariamma', text: 'And today I lay a sadya, for the letter and the village that raised my Joseph.' },
       { who: 'Mariamma', text: 'My knees can cook but they cannot also serve. Your hands, kunje?' },
       { text: 'In this kitchen, the questions are decorations.' },
     ],
@@ -471,7 +475,7 @@ export const KERALA_NODES: NodeMap = {
   'c6.shaji.first': {
     lines: [
       { text: 'A stall the size of a wardrobe, a kettle the size of a temple bell.' },
-      { who: 'Shaji', text: 'Chaya, guest? Puttu? Sit, sit. The bench is for customers and philosophers, and the rate is the same.' },
+      { who: 'Shaji', text: 'Chaya, guest? Puttu? The bench is for customers and philosophers, and the rate is the same.' },
     ],
     effects: ['set:met.shaji', 'journal:people.shaji'],
   },
@@ -481,6 +485,7 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Shaji', text: 'For that, the good glass. This is a thattukada; news and chaya are both served hot.' },
     ],
     effects: ['set:met.shaji', 'journal:people.shaji'],
+    next: 'c6.shaji.chaya',
   },
   'c6.shaji.chaya': {
     lines: [
@@ -507,7 +512,8 @@ export const KERALA_NODES: NodeMap = {
     ],
     effects: ['journal:dishes.parotta'],
   },
-  // Its own visit now: the plate is one sitting, the head wobble the next.
+  // Its own visit: the plate is one sitting; the head wobble comes when you
+  // are back from Mariamma's kitchen, and Shaji's dare follows it.
   'c6.shaji.wobble': {
     lines: [
       { text: 'Puttu tomorrow? Shaji tilts his head side to side. You take it as a no and start to stand.' },
@@ -515,6 +521,7 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Shaji', text: 'The boy translates for tourists and crows. Yes, puttu.' },
     ],
     effects: ['set:c6.wobble', 'journal:customs.headwobble'],
+    next: 'c6.shaji.cookoffer',
   },
   'c6.shaji.chetta': {
     lines: [
@@ -680,6 +687,7 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Omana', text: 'The cooperative is eleven women and one ledger. The rope holds boats. The ledger holds the eleven of us.' },
     ],
     effects: ['set:met.omana', 'journal:people.omana'],
+    next: 'c6.omana.rope',
   },
   'c6.omana.rope': {
     lines: [
@@ -798,8 +806,8 @@ export const KERALA_NODES: NodeMap = {
   },
 
   // ---------------- Joseph, home from the sea ----------------
-  // One story per visit: the homecoming, the testimony, and on a third
-  // visit the star river, when he has had time to sit down.
+  // The homecoming runs straight into the testimony; the star river waits
+  // for a second visit, when he has had time to sit down.
   'c6.joseph.home': {
     lines: [
       { text: 'A duffel hits the floor with the sound of nine months ending. In the doorway, salt-stained and grinning: Joseph.' },
@@ -807,6 +815,7 @@ export const KERALA_NODES: NodeMap = {
       { who: 'Joseph', text: 'You beat me home, friend. I sent you the slow road so I would win the race to my own kitchen.' },
     ],
     effects: ['set:c6.joseph.met'],
+    next: 'c6.joseph.quiz',
   },
   'c6.joseph.quiz': {
     lines: [
@@ -929,13 +938,13 @@ export const KERALA_NODES: NodeMap = {
   // ---------------- the post office ----------------
   'c6.post.pilar': {
     lines: [
-      { text: 'One plank, one stamp pad, mail under a tin of cardamom. The clerk slides over an envelope that is clearly an invoice wearing a stamp.' },
+      { text: 'One plank, one stamp pad, mail under a tin of cardamom. The clerk slides over an envelope with VOTE written on the back.' },
     ],
     effects: ['letter:kochi.pilar'],
   },
   'c6.post.hana': {
     lines: [
-      { text: 'The clerk checks the ledger twice and produces a second envelope, postmarked with a small inland sea.' },
+      { text: 'The clerk checks the ledger twice and produces an envelope postmarked with a small inland sea.' },
     ],
     effects: ['letter:kochi.hana'],
   },
@@ -1316,8 +1325,9 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   shaapsign: [{ node: 'c6.ex.shaap' }],
   aduppu: [{ node: 'c6.ex.aduppu' }],
   postsign: [
-    { when: { not: ['letter.read.kochi.pilar'] }, node: 'c6.post.pilar' },
-    { when: { has: ['letter.read.kochi.pilar'], not: ['letter.read.kochi.hana'] }, node: 'c6.post.hana' },
+    // Pilar writes only to someone who has met her at the bridge.
+    { when: { has: ['met.pilar'], not: ['letter.read.kochi.pilar'] }, node: 'c6.post.pilar' },
+    { when: { not: ['letter.read.kochi.hana'] }, node: 'c6.post.hana' },
     { node: 'c6.post.idle' },
   ],
   nilavilakku: [{ node: 'c6.ex.nilavilakku' }],
