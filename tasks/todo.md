@@ -574,3 +574,14 @@ careful play in every game (mashaudit), no-fail kept. Art: ~100 NPCs in region-t
 dress (garb.ts, looks.ts), continuous ground seams, soft bloom; perf at 6x throttle: chunk bake
 max 1.1ms, frame gap p95 ~9ms. 226/226 tests. Known pre-existing, not fixed: square water
 edges in Kerala, square shade box behind haystacks.
+
+## 2026-10-06: pass 2 (8 worktree agents), from the four-critic re-review (~8/10)
+
+Brief: ~/work/wayfare-review/pass2/BRIEF.md; critic reports r1-r4 alongside.
+- [ ] T thread engine: never point at someone with nothing new; end on the actionable tile; props stop eating walk clicks; strict test
+- [ ] K1/K2/K3 continuity + pacing per chapter group (Pilar gating, stale scene order, chapter-close cards after the best scene in Busan and Sicily, second-visit gates, "Sit." openings, Delhi goodbye, Delhi/Zanzibar -20%)
+- [ ] E stage the climax at the well at dusk, apacheta walk, Oaxaca goodbye, walked rituals, closing-book credits
+- [ ] M patang storm, mole pace, hotteok gold, one more beat per story run (~30-60s), early/late feedback on hard timing, touch-aware hints, long crew on the vallam
+- [ ] P phone HUD overlaps, iPhone how-to card fit, touch copy, legend contrast, README count
+- [ ] A ground smears and seams, doubled doors, ginger cat, haystack box, Kerala water edges
+- [ ] Merge, gate, fresh review, ship
