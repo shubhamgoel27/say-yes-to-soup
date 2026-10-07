@@ -71,7 +71,7 @@ const STEPS: Ingredient[] = [
   { name: 'Chicken', note: 'In it goes, skin down, until the edges brown and gossip.' },
   { name: 'Soy sauce', note: 'A long dark pour. "Half the argument," says Ben.' },
   { name: 'Cane vinegar', note: 'The other half. Do not stir yet! The vinegar needs its dignity.' },
-  { name: 'Bay leaves', note: 'Three, no more. "They are loud leaves, pare."' },
+  { name: 'Bay leaves', note: 'Three, no more. "They are loud leaves, anak."' },
   { name: 'Peppercorns', note: 'A rattling spoonful, whole. Now the lid, and now patience.' },
 ];
 
@@ -88,14 +88,14 @@ const PANTRY: string[] = [
 
 const CHUCKLES = [
   'Ben chuckles. "For halo-halo maybe, not adobo." He hands you the',
-  'Ben laughs into his towel. "My auntie would faint, pare." He hands you the',
+  'Ben laughs into his towel. "My auntie would faint, anak." He hands you the',
   '"Bold! Wrong, but bold." He grins and hands you the',
 ];
 
 const COLS = 4;
 
 /** Story telling: Ben names the next thing out loud (the hard telling keeps his riddles). */
-const STORY_CALLS = ['', '"Now the chicken, pare."', '"Soy sauce next."', '"Then the cane vinegar."', '"Bay leaves."', '"And the peppercorns."'];
+const STORY_CALLS = ['', '"Now the chicken, anak."', '"Soy sauce next."', '"Then the cane vinegar."', '"Bay leaves."', '"And the peppercorns."'];
 const storyCall = (i: number) => STORY_CALLS[i] ?? '';
 
 /** Story telling: seconds Ben's hand stays up after a wrong reach or a peek. */
@@ -125,7 +125,7 @@ const SIMMER_EDGE = 0.86;
  */
 const HARD_STEPS: { name: string; call: string }[] = [
   { name: 'Garlic', call: '"The thing that wakes the pot up."' },
-  { name: 'Garlic', call: '"Again. Double it, pare; we are not cowards tonight."' },
+  { name: 'Garlic', call: '"Again. Double it, anak; we are not cowards tonight."' },
   { name: 'Chicken', call: '"Now the one that goes in skin down."' },
   { name: 'Soy sauce', call: '"Half the argument."' },
   { name: 'Cane vinegar', call: '"The other half. Still no stirring."' },
@@ -468,7 +468,7 @@ export class GalleyPanel {
     this.handed = 0;
     this.stepLeft = this.stepTime;
     this.hint = this.hard
-      ? 'Ben ties your apron and steps back, arms folded. "Your pot tonight, pare. I only watch." ' + (HARD_STEPS[0]?.call ?? '')
+      ? 'Ben ties your apron and steps back, arms folded. "Your pot tonight, anak. I only watch." ' + (HARD_STEPS[0]?.call ?? '')
       : 'Ben ties your apron. "First, the garlic: the thing that wakes the pot up." Arrows choose, Space feeds the pot.';
     makeGalleyBg();
     makePantrySheet();
@@ -537,7 +537,7 @@ export class GalleyPanel {
       this.wrongBy[this.step] = (this.wrongBy[this.step] ?? 0) + 1;
       this.misses++;
       this.stepLeft -= HARD_WRONG_COST;
-      this.hint = 'Ben does not move. "Not that one, pare." The pot does not wait for second guesses.';
+      this.hint = 'Ben does not move. "Not that one, anak." The pot does not wait for second guesses.';
       this.wobIdx = this.cur;
       this.sc.tween(0, 1, 0.38, easeOutCubic, (v) => {
         this.wobT = v;
@@ -552,7 +552,7 @@ export class GalleyPanel {
       this.wrongBy[this.step] = 1;
       this.misses++;
       this.ben.start(BEN_HOLD);
-      this.hint = `Ben shakes his head, smiling. "Not that one, pare. The ${want.toLowerCase()} sits ${shelfSpot(want)}."`;
+      this.hint = `Ben shakes his head, smiling. "Not that one, anak. The ${want.toLowerCase()} sits ${shelfSpot(want)}."`;
       this.wobIdx = this.cur;
       this.sc.tween(0, 1, 0.38, easeOutCubic, (v) => {
         this.wobT = v;
@@ -576,7 +576,7 @@ export class GalleyPanel {
       this.lidding = true;
       this.hint = this.hard
         ? 'Ben slides the lid over without a word. The sauce goes down fast tonight; the gold band is one breath wide.'
-        : 'Six things and no more. Ben slides the lid over. "Now she argues with herself, pare. Watch the sauce go down."';
+        : 'Six things and no more. Ben slides the lid over. "Now she argues with herself, anak. Watch the sauce go down."';
     }
   }
 
@@ -599,8 +599,8 @@ export class GalleyPanel {
       this.ben.start(BEN_HOLD);
       this.hint =
         this.peeked < PEEK_COST
-          ? 'Ben puts the lid back with one finger, and the steam you let out has to build again. "All vinegar still, pare. She has not finished arguing." Give her a little longer.'
-          : 'Ben puts the lid back with one finger. "All vinegar still, pare. She has not finished arguing." Give her a little longer.';
+          ? 'Ben puts the lid back with one finger, and the steam you let out has to build again. "All vinegar still, anak. She has not finished arguing." Give her a little longer.'
+          : 'Ben puts the lid back with one finger. "All vinegar still, anak. She has not finished arguing." Give her a little longer.';
       return;
     }
     this.done = true;
@@ -622,9 +622,9 @@ export class GalleyPanel {
     this.sc.waft(POT_X + 32, POT_MOUTH_Y, 'rgba(255,252,244,0.4)', 9);
     this.hint =
       this.misses === 0
-        ? 'Off the heat on exactly the right breath, dark and glossy. Ben looks at you with suspicion: "You have aunties, pare?" Press Space.'
+        ? 'Off the heat on exactly the right breath, dark and glossy. Ben looks at you with suspicion: "You have aunties, anak?" Press Space.'
         : !this.hard && this.handed >= 3
-          ? 'Off the heat, dark and glossy. "I cooked it, you held the spoon," Ben says, delighted with both of you. "Next time, look at the shelf, pare." Press Space.'
+          ? 'Off the heat, dark and glossy. "I cooked it, you held the spoon," Ben says, delighted with both of you. "Next time, look at the shelf, anak." Press Space.'
           : this.misses === 1
             ? 'Off the heat, dark and glossy. "One wrong reach, and the pot never noticed," Ben says, satisfied. Press Space.'
             : 'Off the heat, dark and glossy. "Wrong answers included, that was cooking," Ben says, satisfied. Press Space.';
@@ -660,7 +660,7 @@ export class GalleyPanel {
     }
     if (mode === 'burn') {
       this.hint =
-        'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, pare. Every cook owes the pot a few." Press Space and the garlic goes back in.';
+        'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, anak. Every cook owes the pot a few." Press Space and the garlic goes back in.';
       coach(
         'c3.cook.start',
         'You let the sarsa argue past dark; lift the pot the moment the gauge finds the gold band, on the first sweet-and-dark breath.',
@@ -668,7 +668,7 @@ export class GalleyPanel {
     } else if (mode === 'scorch') {
       const want = this.wantName(this.step) ?? 'garlic';
       const fumbled = (this.wrongBy[this.step] ?? 0) >= 2;
-      this.hint = `The garlic scorches while the pot waits. Ben lifts it off. "She lost patience at the ${want.toLowerCase()}, pare." Press Space and it starts over.`;
+      this.hint = `The garlic scorches while the pot waits. Ben lifts it off. "She lost patience at the ${want.toLowerCase()}, anak." Press Space and it starts over.`;
       coach(
         'c3.cook.start',
         fumbled
@@ -677,7 +677,7 @@ export class GalleyPanel {
       );
     } else {
       this.hint =
-        'Ben tastes it and winces. "Labnaw. All vinegar still, pare; she had not finished arguing." Press Space and the garlic goes back in.';
+        'Ben tastes it and winces. "Labnaw. All vinegar still, anak; she had not finished arguing." Press Space and the garlic goes back in.';
       coach(
         'c3.cook.start',
         'You pulled the pot while the sauce was still all vinegar; hold on until the gauge enters the gold band, then lift.',
@@ -703,7 +703,7 @@ export class GalleyPanel {
         this.audio.chime();
         this.hint = this.hard
           ? 'The galley turns sweet and dark. Ben says nothing, but his eyebrows say now. Space lifts the pot off.'
-          : 'The whole galley goes sweet and dark at once. Ben, not looking up: "Ngayon na. Now, pare." Space lifts the pot off.';
+          : 'The whole galley goes sweet and dark at once. Ben, not looking up: "Ngayon na. Now, anak." Space lifts the pot off.';
       } else if (was < this.edge && this.simmer >= this.edge) {
         this.hint = this.hard
           ? 'A thin sharp note under the sweet. Off. Now.'

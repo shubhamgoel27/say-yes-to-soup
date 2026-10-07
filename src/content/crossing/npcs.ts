@@ -424,7 +424,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ben.cookagain': {
     lines: [
-      { who: 'Mang Ben', text: 'Pare! The freezer surrendered another chicken. Same pot, same argument. Again?' },
+      { who: 'Mang Ben', text: 'Anak! The freezer surrendered another chicken. Same pot, same argument. Again?' },
     ],
     choices: [
       { text: 'Tie the apron on again', when: { has: ['c3.cook.done'] }, goto: 'c3.ben.cookreplay' },
