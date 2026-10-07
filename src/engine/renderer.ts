@@ -1866,6 +1866,22 @@ export class Renderer {
         this.tiles.drawGround(ctx, kinds[j]!, sx, sy, wx, wy, conn, this.time);
       }
     };
+    // The night ambient is a blue multiply, and over teal water it came out
+    // a bright royal blue, livelier than the land around it. Water alone
+    // takes a little ink as night comes, so the sea goes dark before it
+    // goes blue. Whole-pixel rects: neighbours meet exactly, never overlap.
+    const ink = this.nightK * 0.36;
+    const dim = (list: number[]) => {
+      if (ink < 0.01 || list.length === 0) return;
+      ctx.fillStyle = `rgba(58,56,46,${ink.toFixed(3)})`;
+      for (let i = 0; i < list.length; i += 2) {
+        const x0 = Math.floor((list[i]! * TILE - cam.x) * A);
+        const y0 = Math.floor((list[i + 1]! * TILE - cam.y) * A);
+        const x1 = Math.floor(((list[i]! + 1) * TILE - cam.x) * A);
+        const y1 = Math.floor(((list[i + 1]! + 1) * TILE - cam.y) * A);
+        ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      }
+    };
     const breathe = Math.sin(this.time * 1.4);
     for (let gy = gy0; gy <= gy1; gy++) {
       for (let gx = gx0; gx <= gx1; gx++) {
@@ -1873,6 +1889,7 @@ export class Renderer {
         const ox = (gx * GCHUNK * TILE - cam.x) * A;
         const oy = (gy * GCHUNK * TILE - cam.y) * A;
         live(e.water, e.waterKind);
+        dim(e.water);
         ctx.drawImage(e.cv, ox, oy);
         // The sub-pixel camera puts every chunk edge mid-pixel, and two
         // antialiased half-covered edges never add up to an opaque pixel:
