@@ -34,6 +34,11 @@ export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; n
 const VERDICT: Cond = { has: ['c10.well.called'], not: ['c10.carmen.her'] };
 
 export const BLOCKING: Blocking[] = [
+  // The first chapter, not an evening: while the pick is in your bag and her
+  // loom is the errand, Carmen keeps to it (her door, the geraniums) instead
+  // of wandering, so the chip's "outside the northeast house" stays true and
+  // she is where a walking player arrives.
+  { id: 'carmen', when: { has: ['wichuna.have'], not: ['pallay.done'] }, map: 'village', at: [30, 12], dir: 'down' },
   { id: 'teofilo', when: VERDICT, map: 'village', at: [21, 14], dir: 'down' },
   { id: 'aurelio', when: VERDICT, map: 'village', at: [20, 14], dir: 'down' },
   { id: 'justina', when: VERDICT, map: 'village', at: [23, 15], dir: 'left' },

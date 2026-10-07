@@ -107,11 +107,11 @@ export const CHAPTER: ChapterDef = {
       flag: 'c9.ofrenda.start',
       doneNode: 'c9.ofrenda.built',
       title: 'Her ofrenda',
+      // A moment, not a game: no goal, no score, nothing to get right.
       howTo: [
-        'Things come into your hands one at a time: what every altar asks for, and what the road gave you.',
-        handWords('Up and down chooses a level: what guides her, what feeds her, what walks beside her.'),
-        handWords('Space sets a thing down. No shelf is wrong here, and nobody in this room will correct you.'),
-        'Take all the time you want. The candles are patient, and the village is in no hurry at all.',
+        'Refugio hands you her things one at a time: what every altar asks for, and what the road gave you.',
+        handWords('Set each thing where it belongs. Up and down chooses the shelf, and Space lays it down.'),
+        'There is no wrong answer here, only her. Take as long as you like.',
       ],
       // Built once, for one person, out of what this particular road carried
       // here. Offering to do it again would turn a remembering into a task.

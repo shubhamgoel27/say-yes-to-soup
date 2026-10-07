@@ -62,6 +62,13 @@ export const RETURN_TASKS: TaskDef[] = [
     who: 'marisol',
   },
   {
+    // On the way up, not after: La Bajada is the first map above the pier,
+    // so the album is opened on the climb and the climb happens once.
+    when: { has: ['c10.marisol.seen'], not: ['c10.album.seen', 'c10.rosa.seen'] },
+    text: 'Chasca is back on La Bajada, on the road where she first stopped you. The album is finished, and it starts with you. Sit on the rock before the climb.',
+    who: 'chasca',
+  },
+  {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
     text: "The road up is the same road down, older now: La Bajada, the pass, the gate. Ch'aska Pampa is at the top, and the flag will be up.",
     who: 'rosa',
@@ -87,8 +94,9 @@ export const RETURN_TASKS: TaskDef[] = [
     who: 'pilar',
   },
   {
+    // Only for a walker who climbed past her: the evening waits on the album.
     when: { has: ['c10.pilar.seen'], not: ['c10.album.seen'] },
-    text: 'Chasca is back on La Bajada, where she first stopped you. The album is finished, and it starts with you. Sit on the rock.',
+    text: 'Chasca is still on La Bajada, where she first stopped you. The album is finished, and the evening waits on it. Go down and sit on the rock.',
     who: 'chasca',
   },
   {

@@ -14,7 +14,9 @@ import { Hold } from './attend';
  * batch and costs nothing: Mi-ja claims the dark one, hands you fresh dough,
  * and Space starts the batch over on the spot. Nothing wasted, nobody shamed.
  *
- * Visual layer: a market cart at night. Lantern bokeh in the dark, a real
+ * Visual layer: a market cart at first light, the way Busan's story plays
+ * it: an oyster-shell sky over the stall roofs, last night's lanterns still
+ * lit and paling, a real
  * cast-iron griddle with an oil sheen, a dough ball that lands with a squash,
  * a brass press that flattens it with a thump and an oil-sparkle burst, then
  * an honest arc of a flip and an eased browning with char freckles. The
@@ -27,6 +29,8 @@ import { Hold } from './attend';
  *
  * Attention, story telling: a press on pale dough gets your wrist held for
  * a beat (pressing again keeps it held, until Mi-ja gives up and lets you),
+ * and while she holds it the disc waits on the cool edge (the heat stops,
+ * up to COOL_EDGE seconds a disc, so mashing is clearly slower than waiting),
  * and that disc keeps a thumbprint even if it flips gold. A batch with no
  * thumbprints and no dark ones earns its own line.
  *
@@ -56,6 +60,12 @@ const LATE_GRACE = 0.16;
 const WRIST_HOLD = 0.45;
 /** Presses inside one hold before she lets go anyway. */
 const WRIST_PATIENCE = 4;
+/**
+ * Story telling: while she holds your wrist she also slides the disc to the
+ * cool edge, so the heat waits with you. Per disc, up to this many seconds;
+ * after that the dough cooks on regardless, so a masher is slowed, never stuck.
+ */
+const COOL_EDGE = 2.4;
 
 type Press = 'early' | 'gold' | 'late' | 'burn';
 
@@ -136,26 +146,28 @@ function bakeBg(): HTMLCanvasElement {
   const { cv, g } = surface(W * 2, H * 2);
   g.scale(2, 2);
   const rng = new Rng(4177);
-  vgrad(g, 0, 0, W, H, '#141126', '#2e1e2c');
-  vgrad(g, 0, 140, W, 100, 'rgba(193,81,47,0)', 'rgba(193,81,47,0.18)');
-  // Distant stall silhouettes, barely there.
-  g.fillStyle = '#1c1730';
+  // Dawn the color of oyster shell: cool grey-lilac overhead, warming to
+  // peach where the sun is about to come up behind the stalls.
+  vgrad(g, 0, 0, W, 150, '#8e8aa3', '#d9b6a6');
+  vgrad(g, 0, 150, W, H - 150, '#e3bc9c', '#b98a72');
+  glowSpot(g, GX + 40, 150, 260, '#ffd9a8', 0.4);
+  // Distant stall roofs against the light, soft and blue with morning haze.
   for (let i = 0; i < 5; i++) {
     const x = 20 + i * 130 + rng.int(40);
-    rr(g, x, 128 + rng.int(24), 84 + rng.int(50), 80, 6, '#1c1730');
+    rr(g, x, 128 + rng.int(24), 84 + rng.int(50), 80, 6, 'rgba(92,86,112,0.3)');
   }
-  // Market-lantern bokeh, warm and out of focus.
-  const boke = ['#e8a84d', '#d9a441', '#c1512f', '#f2e6d0', '#8a4a7d'];
-  for (let i = 0; i < 34; i++) {
+  // What is left of the night's lantern bokeh, thinning in the daylight.
+  const boke = ['#e8a84d', '#d9a441', '#c1512f', '#f2e6d0'];
+  for (let i = 0; i < 20; i++) {
     const x = rng.int(W);
     const y = 16 + rng.int(160);
     const r = 3 + rng.next() * 12;
-    g.globalAlpha = 0.07 + rng.next() * 0.2;
+    g.globalAlpha = 0.05 + rng.next() * 0.12;
     dot(g, x, y, r, rng.pick(boke));
   }
   g.globalAlpha = 1;
   // A sagging string of small lanterns across the top.
-  g.strokeStyle = 'rgba(20,14,24,0.9)';
+  g.strokeStyle = 'rgba(52,40,48,0.85)';
   g.lineWidth = 1.6;
   g.beginPath();
   for (let i = 0; i <= 24; i++) {
@@ -170,14 +182,14 @@ function bakeBg(): HTMLCanvasElement {
     const t = i / 8;
     const x = 20 + t * 600;
     const y = 26 + Math.sin(Math.PI * t) * 30;
-    glowSpot(g, x, y + 10, 24, '#e8a84d', 0.4);
+    glowSpot(g, x, y + 10, 20, '#e8a84d', 0.22);
     rr(g, x - 5, y + 2, 10, 13, 4, i % 3 === 1 ? '#d9a441' : '#c1512f');
     rect(g, x - 3, y, 6, 2.4, '#8a6a2f');
     rect(g, x - 3, y + 14.4, 6, 2, '#8a6a2f');
   }
   // Two big paper lanterns flanking the cart, mostly glow.
-  glowSpot(g, 86, 66, 84, '#d9a441', 0.3);
-  glowSpot(g, 560, 74, 92, '#e07a3f', 0.26);
+  glowSpot(g, 86, 66, 70, '#d9a441', 0.16);
+  glowSpot(g, 560, 74, 76, '#e07a3f', 0.14);
   oval(g, 86, 66, 20, 25, '#d9a441');
   oval(g, 86, 66, 20, 25, 'rgba(255,240,200,0.25)');
   oval(g, 560, 74, 22, 27, '#c1512f');
@@ -208,8 +220,8 @@ function bakeBg(): HTMLCanvasElement {
   g.stroke();
   rr(g, TRAY_X + 86, TRAY_Y - 36, 10, 8, 2, '#6e675e');
   // A quiet vignette so the griddle owns the light.
-  vgrad(g, 0, 0, W, 46, 'rgba(8,5,12,0.5)', 'rgba(8,5,12,0)');
-  vgrad(g, 0, H - 30, W, 30, 'rgba(8,5,12,0)', 'rgba(8,5,12,0.4)');
+  vgrad(g, 0, 0, W, 46, 'rgba(60,52,76,0.28)', 'rgba(60,52,76,0)');
+  vgrad(g, 0, H - 30, W, 30, 'rgba(8,5,12,0)', 'rgba(8,5,12,0.35)');
   return cv;
 }
 
@@ -400,6 +412,7 @@ export class HotteokPanel {
   private wrist = new Hold(); // story: Mi-ja's hand on your wrist
   private poked = false; // story: the disc on the iron was pressed while pale
   private thumbs = 0; // story: discs that kept a thumbprint
+  private cooled = 0; // story: seconds this disc has waited on the cool edge
   /** Where each live press landed on the gauge, so the eye can learn the gap. */
   private marks = new PressMarks();
 
@@ -449,9 +462,10 @@ export class HotteokPanel {
     this.wrist.reset();
     this.poked = false;
     this.thumbs = 0;
+    this.cooled = 0;
     this.marks.clear();
     this.hint = this.hard
-      ? 'The iron runs hot tonight: five discs, a thin band of gold, and it only gets faster. Mi-ja will pardon one dark one. Not two.'
+      ? 'The iron runs hot this morning: five discs, a thin band of gold, and it only gets faster. Mi-ja will pardon one dark one. Not two.'
       : 'The dough sizzles. Space presses and flips: catch the heat in the golden middle.';
     this.root.hidden = false;
     this.scene.restart();
@@ -480,7 +494,9 @@ export class HotteokPanel {
     // for the next dough, press. Nothing sweeps past behind the animation.
     this.wrist.tick(dt);
     this.marks.tick(dt);
-    if (this.phase === 'press' && this.anim < 0 && this.hasBall) {
+    const onEdge = this.wrist.on && this.cooled < COOL_EDGE;
+    if (onEdge) this.cooled += dt;
+    if (this.phase === 'press' && this.anim < 0 && this.hasBall && !onEdge) {
       this.t += this.dirn * this.speed * dt;
       if (this.t > 1) {
         this.t = 1;
@@ -541,7 +557,7 @@ export class HotteokPanel {
       if (live && !this.hard) {
         // The story iron: the wrist is held a beat, and the dough remembers.
         this.wrist.start(WRIST_HOLD);
-        if (!this.poked) this.hint = 'Not yet. Mi-ja catches your wrist, and your thumb leaves a dimple in the pale dough. Wait for the gold.';
+        if (!this.poked) this.hint = 'Not yet. Mi-ja catches your wrist and slides the disc to the cool edge; your thumb has left a dimple in the pale dough. Wait for the gold.';
         this.poked = true;
       }
       this.scene.wobble(4); // the pan says no, gently
@@ -693,6 +709,7 @@ export class HotteokPanel {
     if (this.anim >= 0) this.landed = this.results.length;
     this.results.push(gold ? (thumbed ? 'thumb' : 'gold') : 'dark');
     this.poked = false; // the next ball arrives unpoked
+    this.cooled = 0;
     this.wrist.release();
     this.anim = 0;
     this.animGold = gold;
@@ -766,7 +783,7 @@ export class HotteokPanel {
       }
     }
 
-    // Steam wafting all through the night; sizzle glints while dough cooks.
+    // Steam wafting all through the morning; sizzle glints while dough cooks.
     this.steamT += dt;
     const steamEvery = calm() ? 0.7 : 0.38;
     if (this.steamT >= steamEvery) {
@@ -791,10 +808,10 @@ export class HotteokPanel {
     const bk = bake();
     const tm = this.scene.time;
     g.drawImage(bk.bg, 0, 0, W, H);
-    // Lanterns breathe.
-    g.globalAlpha = 0.22 + 0.1 * wobble(tm, 2.1);
+    // The lanterns, still lit from the night, breathe faintly in the dawn.
+    g.globalAlpha = 0.12 + 0.06 * wobble(tm, 2.1);
     g.drawImage(bk.glow, 86 - 52, 66 - 52, 104, 104);
-    g.globalAlpha = 0.2 + 0.09 * wobble(tm, 1.7, 2.2);
+    g.globalAlpha = 0.11 + 0.05 * wobble(tm, 1.7, 2.2);
     g.drawImage(bk.glow, 560 - 56, 74 - 56, 112, 112);
     g.globalAlpha = 1;
     g.drawImage(bk.griddle, 0, 0, W, H);
@@ -859,7 +876,7 @@ export class HotteokPanel {
     const A1 = -0.52;
     const at = (k: number) => A0 + (A1 - A0) * k;
     g.lineCap = 'round';
-    // A dark backing so the track never dissolves into the night market.
+    // A dark backing so the track never dissolves into the market behind it.
     g.strokeStyle = 'rgba(16,10,20,0.5)';
     g.lineWidth = 10;
     g.beginPath();

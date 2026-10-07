@@ -72,6 +72,15 @@ export const JOURNAL: JournalEntry[] = [
 
   // ---- dishes ----
   {
+    // Filled the moment the bowl lands, so the first soup arrives on the
+    // page (and in a toast) while the words say it is in front of you.
+    id: 'dishes.rosasoup',
+    tab: 'dishes',
+    title: "Rosa's soup",
+    sub: 'Potatoes, steam, and something green and sharp. The first bowl.',
+    you: 'Nobody asked if I was hungry. The bowl arrived first, and the question never did.',
+  },
+  {
     id: 'dishes.mote',
     tab: 'dishes',
     title: 'Mote',
@@ -145,7 +154,7 @@ export const JOURNAL: JournalEntry[] = [
     id: 'people.carmen',
     tab: 'people',
     title: 'Doña Carmen',
-    sub: 'Weaves in her courtyard, facing the morning sun.',
+    sub: 'Weaves outside her door, facing the morning sun.',
     you: 'Her backstrap loom is tied to a post; the other end is tied to her. She says the tension is the point.',
   },
   {
@@ -303,7 +312,7 @@ export const TASKS: TaskDef[] = [
   },
   {
     when: { has: ['wichuna.have'], not: ['wichuna.returned'] },
-    text: "Justina's borrowed wichuna, a llama-bone weaving pick, rides in your bag. It belongs to Doña Carmen, who weaves in her courtyard by the northeast house.",
+    text: "Justina's borrowed wichuna, a llama-bone weaving pick, rides in your bag. It belongs to Doña Carmen, who sits at her loom outside the northeast house, by the geraniums.",
     who: 'carmen',
   },
   {
