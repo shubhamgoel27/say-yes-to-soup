@@ -501,7 +501,7 @@ export class AlbumUI {
       const hint = this.onLastPage
         ? keysOrTaps('any key closes the book', 'tap to close the book')
         : leaf === 'trick'
-          ? keysOrTaps('any key for the people who walked with you', 'tap the middle for the people who walked with you')
+          ? keysOrTaps('any key for the credits', 'tap the middle for the credits')
           : keysOrTaps(
               '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on',
               'tap an edge to turn the page &nbsp;&middot;&nbsp; tap the middle to go on',
