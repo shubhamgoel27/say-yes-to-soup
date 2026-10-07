@@ -80,9 +80,11 @@ input.attach();
 const dev = new DevBridge();
 const audio = new AudioBus();
 
-// Browsers require a user gesture before audio; catch the first one.
-window.addEventListener('keydown', () => audio.ensure(), { once: true });
-window.addEventListener('pointerdown', () => audio.ensure(), { once: true });
+// Browsers require a user gesture before audio. Every gesture, not only the
+// first: iOS parks the context ("interrupted") when the tab goes to the
+// background, and only a later gesture may wake it. Cheap when running.
+window.addEventListener('keydown', () => audio.ensure());
+window.addEventListener('pointerdown', () => audio.ensure());
 
 const state = new GameState();
 state.load();
