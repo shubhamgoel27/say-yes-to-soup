@@ -54,7 +54,8 @@ import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
-import { BLOCKING, ESCORTS, HOURS, LAMP } from './content/return/staging';
+import { BLOCKING, ESCORTS, HOURS, JUG, LAMP, MEETING } from './content/return/staging';
+import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
 
@@ -1513,6 +1514,8 @@ type Staged = {
   path: [number, number][];
   /** A companion lets go at once; a crowd waits for the talk to end. */
   escort: boolean;
+  /** In their place (a crowd member) or on the trail (a companion). */
+  arrived: boolean;
 };
 const staged = new Map<Villager, Staged>();
 const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
@@ -1520,15 +1523,43 @@ const byNpc = (id: string) => villagers.find((x) => x.def.id === id);
 let lampT = 0;
 let lampOver = false;
 
-/** A walkable cell beside the player, nearest `from`, for a companion to stand on. */
-function besidePlayer(from: [number, number]): [number, number] | null {
-  const [px, py] = player.occupies();
-  const back = OPPOSITE[player.dir];
-  const order: Dir[] = [back, 'left', 'right', 'down', 'up'];
-  const cells = order
-    .map((d) => stepFrom(px, py, d))
-    .filter(([x, y]) => map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y));
-  cells.sort((a, b) => Math.abs(a[0] - from[0]) + Math.abs(a[1] - from[1]) - (Math.abs(b[0] - from[0]) + Math.abs(b[1] - from[1])));
+/**
+ * The player's last few cells on this map, newest last. A companion walks
+ * this path two steps back, so there is always a clear tile between you:
+ * she never steps into the tile you are on, or the one you are leaving.
+ */
+const trail: [number, number][] = [];
+let trailMap = '';
+function noteTrail() {
+  if (trailMap !== map.id) {
+    trail.length = 0;
+    trailMap = map.id;
+  }
+  const [x, y] = player.occupies();
+  const last = trail[trail.length - 1];
+  if (last && last[0] === x && last[1] === y) return;
+  trail.push([x, y]);
+  if (trail.length > 6) trail.shift();
+}
+const manhattan = (a: [number, number], b: [number, number]) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+
+/** Where a companion arriving through a door stands: two steps off, behind if the ground allows. */
+function trailSpot(): [number, number] | null {
+  const p = player.occupies();
+  const [bx, by] = stepFrom(...stepFrom(p[0], p[1], OPPOSITE[player.dir]), OPPOSITE[player.dir]);
+  const open = (x: number, y: number) => map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y);
+  const cells: [number, number][] = [];
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const c: [number, number] = [p[0] + dx, p[1] + dy];
+      if (manhattan(c, p) !== 2 || !open(c[0], c[1])) continue;
+      // A tile between must be open too, or she is on the far side of a wall.
+      const mids: [number, number][] = [[p[0] + Math.sign(dx), p[1]], [p[0], p[1] + Math.sign(dy)]];
+      if (!mids.some(([mx, my]) => (mx !== p[0] || my !== p[1]) && open(mx, my))) continue;
+      cells.push(c);
+    }
+  }
+  cells.sort((a, b) => manhattan(a, [bx, by]) - manhattan(b, [bx, by]));
   return cells[0] ?? null;
 }
 
@@ -1536,12 +1567,14 @@ function besidePlayer(from: [number, number]): [number, number] | null {
  * Walk a staged villager toward a cell. Unlike a station's walk this one
  * steps through other villagers (a crowd converging on one well otherwise
  * deadlocks, each waiting for a neighbor who is waiting for them); only walls
- * and the player stop it. True once arrived and settled.
+ * and the player stop it, both the tile the player is on and the one they
+ * are stepping out of. True once arrived and settled.
  */
 function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   const a = s.v.actor;
   const [px, py] = player.occupies();
-  const blocked = (x: number, y: number) => map.solid(x, y) || (x === px && y === py);
+  const blocked = (x: number, y: number) =>
+    map.solid(x, y) || (x === px && y === py) || (x === player.x && y === player.y);
   const [ax, ay] = a.occupies();
   if (ax === tx && ay === ty) {
     if (a.isMoving) {
@@ -1571,9 +1604,13 @@ function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
 function updateStaging(dt: number) {
   // The hour the words were written in: eased forward into its window
   // (a quick time-lapse, ease-out), then held under its end.
+  // After the book, the night at the well keeps its hour for as long as you stay.
+  if (afterglow && map.id !== 'village') afterglow = false;
   const hold = Number.isFinite(todOverride)
     ? undefined
-    : HOURS.find((h) => state.check(h.when) && !(h.notOn ?? []).includes(map.id));
+    : afterglow
+      ? AFTERGLOW_HOUR
+      : HOURS.find((h) => state.check(h.when) && !(h.notOn ?? []).includes(map.id));
   if (hold && (dayT < hold.min || dayT > hold.max)) {
     const past = (dayT - hold.max + 1) % 1;
     if (past < 0.02) dayT = hold.max;
@@ -1598,7 +1635,13 @@ function updateStaging(dt: number) {
   for (const [v, w] of want) {
     let s = staged.get(v);
     if (!s) {
-      s = { v, home: { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]], range: v.def.range }, path: [], escort: false };
+      s = {
+        v,
+        home: { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]], range: v.def.range },
+        path: [],
+        escort: false,
+        arrived: false,
+      };
       staged.set(v, s);
       v.seated = false;
       v.actor.pose = 'none';
@@ -1608,21 +1651,29 @@ function updateStaging(dt: number) {
     if (w.escort) {
       if (v.def.map !== map.id) {
         // Through the door a moment behind you, as companions are.
-        const spot = besidePlayer(player.occupies());
+        const spot = trailSpot();
         if (!spot || warp) continue;
         v.def.map = map.id;
         v.actor.placeAt(spot[0], spot[1], player.dir);
         s.path = [];
         continue;
       }
-      const [ax, ay] = v.actor.occupies();
-      const [px, py] = player.occupies();
-      if (Math.abs(ax - px) + Math.abs(ay - py) <= 1 && !v.actor.isMoving) {
-        v.actor.face(ax < px ? 'right' : ax > px ? 'left' : ay < py ? 'down' : 'up');
+      // Two steps back along your own path; standing, she turns to you.
+      const a = v.actor.occupies();
+      const p = player.occupies();
+      const tgt = trail.length >= 3 ? trail[trail.length - 3]! : null;
+      const onYou = tgt && (manhattan(tgt, p) === 0 || (tgt[0] === player.x && tgt[1] === player.y));
+      const near = manhattan(a, p) <= 2 && !player.isMoving;
+      if (!tgt || onYou || (near && manhattan(a, tgt) > 0 && manhattan(a, p) <= manhattan(tgt, p))) {
+        if (!v.actor.isMoving) {
+          const [ax, ay] = a;
+          const dx = p[0] - ax;
+          const dy = p[1] - ay;
+          v.actor.face(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up');
+        } else stageStep(s, a[0], a[1], dt);
         continue;
       }
-      const spot = besidePlayer([ax, ay]);
-      if (spot) stageStep(s, spot[0], spot[1], dt);
+      s.arrived = stageStep(s, tgt[0], tgt[1], dt);
       continue;
     }
     const [tx, ty] = w.at!;
@@ -1635,7 +1686,8 @@ function updateStaging(dt: number) {
     } else if (map.id === w.map) {
       // Arrived, they keep their place; while the talk is on, every face
       // around the jug turns to the one person who was there.
-      if (stageStep(s, tx, ty, dt)) {
+      s.arrived = stageStep(s, tx, ty, dt);
+      if (s.arrived) {
         const [px, py] = player.occupies();
         const dx = px - tx;
         const dy = py - ty;
@@ -1668,10 +1720,79 @@ function updateStaging(dt: number) {
   }
 
   // The last page's hush: from its first word until the book is put down.
-  if (state.has('story.end') && !textbox.isOpen && !albumUI.isOpen) lampOver = true;
+  // The book put down in front of you (not a reload after it) leaves the
+  // night it was written in: the afterglow, held while you stay.
+  if (!lampOver && state.has('story.end') && !textbox.isOpen && !albumUI.isOpen) {
+    lampOver = true;
+    if (lampT > 0 && map.id === 'village') afterglow = true;
+  }
   const lampOn = state.has(LAMP.flag) && !lampOver;
   audio.setHearth(lampOn);
   lampT = lampOn ? Math.min(1, lampT + dt / LAMP.seconds) : 0;
+
+  noteTrail();
+  updateProps();
+  updateMeeting(dt);
+}
+
+/** The night after the book: lamps, windows and the well's pool held, and the hour with them. */
+let afterglow = false;
+const AFTERGLOW_HOUR: { min: number; max: number; snap?: boolean } = { min: 0.66, max: 0.7 };
+
+/**
+ * The evening's props follow the story: the jug is at the well from the call
+ * on, and the river stone is on the cairn from the moment it is laid (in the
+ * scene, from the line that lays it; the flag itself is raised as the scene
+ * opens).
+ */
+const STONE_LINE = Math.max(0, NODES['c10.apacheta.lay']?.lines.findIndex((l) => /river stone/i.test(l.text)) ?? 2);
+function updateProps() {
+  const jm = maps[JUG.map];
+  if (jm) {
+    const want = state.check(JUG.when);
+    const [jx, jy] = JUG.at;
+    const has = jm.object(jx, jy)?.t === 'jug';
+    if (want !== has) jm.setObject(jx, jy, want ? { t: 'jug', solid: true } : null);
+  }
+  // Don Teófilo's splash for the earth is the meeting's first act.
+  setJugPoured(state.has('c10.carmen.her') || /^c10\.(verdict|her\.)/.test(textbox.currentNode));
+  const laying = textbox.currentNode === 'c10.apacheta.lay' && textbox.currentLine < STONE_LINE;
+  const stone = state.has('c10.apacheta.done') && !laying;
+  // Watched, the stone going on catches the light for a moment.
+  if (stone && cairnStone === false && map.id === 'east-road' && textbox.currentNode === 'c10.apacheta.lay') {
+    renderer.burst(CAIRN_AT[0] * TILE + TILE / 2, (CAIRN_AT[1] + 1) * TILE - 37, 'sparkle', ['#f2e6d0', '#cfe0dc', '#d9a441']);
+  }
+  cairnStone = stone;
+  setCairnStone(stone);
+}
+let cairnStone: boolean | null = null;
+
+/**
+ * Taking your place: once the ring has formed, stepping into its open side
+ * starts the meeting, so nobody has to find Carmen's elbow through a crowd.
+ * If someone is still on their way, the ring waits a few seconds for them
+ * and then begins anyway.
+ */
+let meetingWait = 0;
+function updateMeeting(dt: number) {
+  if (map.id !== MEETING.map || !state.check(MEETING.when) || mode !== 'play') return;
+  if (textbox.isOpen || warp || anyGameOpen() || journalUI.isOpen || albumUI.isOpen) return;
+  // The step into the place counts, not the stop: a held key would carry
+  // you on into the well itself before a standing check ever saw you.
+  const [sx, sy] = MEETING.spot;
+  const [ox, oy] = player.occupies();
+  const inRing = ox === sx && oy === sy;
+  const speaker = byNpc(MEETING.speaker);
+  if (!inRing || !speaker || speaker.def.map !== map.id) {
+    meetingWait = 0;
+    return;
+  }
+  const ring = [...staged.values()].filter((s) => !s.escort && s.v.def.map === map.id);
+  meetingWait += dt;
+  if (!staged.get(speaker)?.arrived || (ring.some((s) => !s.arrived) && meetingWait < 5)) return;
+  meetingWait = 0;
+  player.face('up');
+  startNpcDialogue(speaker);
 }
 
 /** Whether the ending is walking this villager; the leash and seats stand aside. */
@@ -1701,8 +1822,12 @@ const LAMP_AMBIENT: [number, number, number] = [128, 110, 142];
 
 function updateEndLight(dt: number) {
   const here = END_LIT_MAPS.has(map.id);
-  const gold = here && state.has('c10.well.called') && !state.has('c10.apacheta.done');
-  const lamp = here && state.has('c10.apacheta.done') && !(state.has('story.end') && lampOver);
+  // The stone is laid in the last of the gold; the lamps are the walk down
+  // (and the village below, seen from the pass).
+  const onPass = map.id === 'east-road' && textbox.currentNode === 'c10.apacheta.lay';
+  const gold = here && !vistaOn && state.has('c10.well.called') && (!state.has('c10.apacheta.done') || onPass);
+  const lamp =
+    here && state.has('c10.apacheta.done') && (!onPass || vistaOn) && (afterglow || !(state.has('story.end') && lampOver));
   // In over a few seconds (the clock is easing down at the same time); out
   // slowly, so the night after the book comes on like a night.
   const ease = (v: number, on: boolean) => v + ((on ? 1 : 0) - v) * (1 - Math.exp(-dt * (on ? 0.6 : 0.12)));
@@ -1779,11 +1904,11 @@ function updateKitchens(dt: number) {
   else if (!state.has('c10.lamp')) kitchenT = -1;
 }
 
-/** 0..1: how lit a village window is tonight; 1 for every window off the ending. */
-function windowWake(wx: number, wy: number): number {
-  if (map.id !== 'village' || !state.has('c10.apacheta.done') || kitchenT >= 99) return 1;
+/** 0..1: how lit a window on `mapId` is tonight; 1 for every window off the ending. */
+function windowWake(mapId: string, wx: number, wy: number): number {
+  if (mapId !== 'village' || !state.has('c10.apacheta.done') || kitchenT >= 99) return 1;
   const i = kitchens().findIndex(([x, y]) => x === wx && y === wy);
-  if (i < 0) return 1;
+  if (i < 0) return vistaWake(wx, wy);
   if (kitchenT < 0) return 0;
   const t = Math.max(0, Math.min(1, (kitchenT - i * KITCHEN_STEP) / 0.5));
   return t * t * (3 - 2 * t);
@@ -1829,6 +1954,149 @@ function lampFocus(px: number, py: number): [number, number] {
   const fx = LAMP_FOCUS_WIDE[0] + (LAMP_FOCUS_NEAR[0] - LAMP_FOCUS_WIDE[0]) * k;
   const fy = LAMP_FOCUS_WIDE[1] + (LAMP_FOCUS_NEAR[1] - LAMP_FOCUS_WIDE[1]) * k;
   return [px + (fx - px) * frameK, py + (fy - py) * frameK];
+}
+
+// ---------------------------------------------------------------- the ending's other shots
+//
+// Three more composed frames: the ring at the well while the verdict is
+// said; the cairn, the moment the stone is laid on it; and, as the line says
+// the village lights its first lamps, the camera leaving the pass westward
+// down the road, through a dip, into the village itself, still travelling
+// west, while its lamps and windows come on one at a time ahead of it. Back
+// on the pass for Carmen's last word, and the camera is the player's again.
+
+let ringK = 0;
+/** The ring's middle, held a little low so the box under it never hides a face. */
+const RING_FOCUS: [number, number] = [21 * TILE, 16.1 * TILE];
+let passK = 0;
+/** The cairn's face, in road pixels (the camera centres a tile on its target). */
+const CAIRN_FOCUS: [number, number] = [CAIRN_AT[0] * TILE, CAIRN_AT[1] * TILE - 12];
+const VISTA_LINE = NODES['c10.apacheta.lay']?.lines.findIndex((l) => /first lamps/i.test(l.text)) ?? -1;
+/**
+ * The village from the pass: its own camera, drifting from the lower houses
+ * (whose windows are the first to wake) up toward the well, where the four
+ * kitchens nearest it are still dark, waiting for the page.
+ */
+const vcam = new Camera();
+const VISTA_FROM: [number, number] = [30 * TILE, 23.4 * TILE];
+const VISTA_TO: [number, number] = [21.5 * TILE, 14.4 * TILE];
+const VISTA_DRIFT = 7;
+/** Seconds into the pan west, when the dip starts to come down. */
+const VISTA_DIP = 1.1;
+let vistaT = -1; // seconds since the line began; -1 when not running
+let vistaClock = 0; // seconds the village has been on screen
+let vistaOn = false;
+let vistaFade = 0;
+let vistaFadeShown = false;
+
+const smooth01 = (t: number) => {
+  const k = Math.max(0, Math.min(1, t));
+  return k * k * (3 - 2 * k);
+};
+
+function setVista(on: boolean) {
+  vistaOn = on;
+  vistaClock = 0;
+  // A cut, under the dip: the light belongs to the place on screen at once.
+  endLight.gold = on ? 0 : 1;
+  endLight.lamp = on ? 1 : 0;
+  renderer.setFires((fireCells[on ? 'village' : map.id] ?? []).map(([fx, fy]) => [fx, fy]));
+}
+
+/** The map and camera the frame is drawn from: the village during the vista. */
+function shownMap(): TileMap {
+  return vistaOn ? (maps['village'] ?? map) : map;
+}
+function shownCam(): Camera {
+  return vistaOn ? vcam : camera;
+}
+
+/** 0..1: in the vista, lamps and windows come on one at a time, nearest the camera's start first. */
+function vistaWake(x: number, y: number): number {
+  if (!vistaOn) return 1;
+  const far = Math.hypot(x - VISTA_FROM[0], y - VISTA_FROM[1]) / (18 * TILE);
+  return smooth01((vistaClock - 0.6 - Math.min(1, far) * 3.6) / 0.5);
+}
+
+function updateShots(dt: number) {
+  const node = textbox.currentNode;
+  const line = textbox.currentLine;
+  const toward = (v: number, on: boolean, rateIn: number, rateOut: number) => {
+    const n = v + ((on ? 1 : 0) - v) * (1 - Math.exp(-dt * (on ? rateIn : rateOut)));
+    return n < 0.002 ? 0 : n > 0.998 && on ? 1 : n;
+  };
+  ringK = toward(ringK, map.id === 'village' && textbox.isOpen && /^c10\.(verdict|her\.)/.test(node), 1.4, 1.2);
+  const laying = map.id === 'east-road' && node === 'c10.apacheta.lay';
+  passK = toward(passK, laying && line >= STONE_LINE, 1.1, 1.0);
+
+  // The vista runs while its line is up, and lets go the moment it is not.
+  const onLine = laying && line === VISTA_LINE;
+  if (onLine && vistaT < 0) vistaT = 0;
+  if (!onLine) vistaT = -1;
+  let fadeWant = 0;
+  if (vistaT >= 0) {
+    vistaT += dt;
+    if (!vistaOn) {
+      fadeWant = vistaT > VISTA_DIP ? 1 : 0;
+      if (vistaFade > 0.985) setVista(true);
+    }
+  } else if (vistaOn) {
+    fadeWant = 1;
+    if (vistaFade > 0.985) setVista(false);
+  }
+  if (vistaOn) {
+    vistaClock += dt;
+    // Slow at both ends: it lingers on the first windows, and arrives at the well.
+    const k = smooth01(vistaClock / VISTA_DRIFT);
+    const vm = shownMap();
+    vcam.follow(
+      VISTA_FROM[0] + (VISTA_TO[0] - VISTA_FROM[0]) * k,
+      VISTA_FROM[1] + (VISTA_TO[1] - VISTA_FROM[1]) * k,
+      vm.w,
+      vm.h,
+    );
+  }
+  vistaFade += (fadeWant - vistaFade) * (1 - Math.exp(-dt * 6.5));
+  if (fadeWant === 1 && vistaFade > 0.99) vistaFade = 1;
+  if (vistaFade > 0.002) {
+    fadeEl.style.opacity = String(vistaFade);
+    vistaFadeShown = true;
+  } else if (vistaFadeShown) {
+    vistaFade = 0;
+    fadeEl.style.opacity = '0';
+    vistaFadeShown = false;
+  }
+}
+
+/** Where the ending points the camera, blended in from the player's own frame. */
+function endFocus(px: number, py: number): [number, number] {
+  let [x, y] = lampFocus(px, py);
+  if (ringK > 0) {
+    x += (RING_FOCUS[0] - x) * ringK;
+    y += (RING_FOCUS[1] - y) * ringK;
+  }
+  if (passK > 0) {
+    // On the line about the lamps the camera sets off down the road toward them.
+    const pan = vistaT >= 0 && !vistaOn ? -5 * TILE * Math.min(1, vistaT / 1.3) ** 2 : 0;
+    x += (CAIRN_FOCUS[0] + pan - x) * passK;
+    y += (CAIRN_FOCUS[1] - y) * passK;
+  }
+  return [x, y];
+}
+
+/** How much of the frame the ending composes (the walk lookahead stands down by as much). */
+function endFrameK(): number {
+  return Math.max(frameK, ringK, passK);
+}
+
+/** The ending's zoom, or 0 when the camera is its own. */
+function endZoom(): number {
+  if (vistaOn) return 1.12;
+  const lz = lampZoom();
+  if (lz) return lz;
+  if (passK > 0) return 1.06 + 0.4 * passK;
+  if (ringK > 0) return 1.06 + 0.1 * ringK;
+  return 0;
 }
 
 /**
@@ -3320,10 +3588,11 @@ function update(dt: number) {
   updateStaging(dt);
   updateEndLight(dt);
   updateLampShot(dt);
-  renderer.setNight(moodFor(map.id) === 'interior' ? 0 : nightNow());
+  updateShots(dt);
+  renderer.setNight(moodFor(shownMap().id) === 'interior' ? 0 : nightNow());
   renderer.setSun(sunNow());
   // The coast's mood follows the clock (garúa lid, noon glare), so keep it live.
-  renderer.setMood(moodFor(map.id));
+  renderer.setMood(moodFor(shownMap().id));
   renderer.setRaining(rainingOn(map.id));
   stage.setAmbient(endAmbient(ambientNow()));
   stage.setGrade(0.28 * endLight.gold + 0.12 * endLight.lamp, 0.45 * endLight.gold + 0.7 * endLight.lamp);
@@ -3333,7 +3602,7 @@ function update(dt: number) {
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
   // The last page leans in further, and slowly, on its own clock.
-  const zoomT = lampZoom() ||
+  const zoomT = endZoom() ||
     (sitting ? 1.15 : celebrateT > 0 ? 1.12 : textbox.isOpen || anyGameOpen() || uiCardOpen() || journalUI.isOpen || pauseMenu.isOpen || albumUI.isOpen ? 1.06 : 1);
   stage.setZoomTarget(zoomT);
   // Mirror the stage's zoom easing so pointer math maps screen to world
@@ -3695,9 +3964,9 @@ function update(dt: number) {
     fitCameraToCrop(wx, wy);
   } else {
     const [rpx, rpy] = player.renderPos();
-    // The last page frames its own shot; everywhere else the player is it.
-    const [ppx, ppy] = lampFocus(rpx, rpy);
-    camera.follow(ppx, ppy, map.w, map.h, 1 - frameK);
+    // The ending frames its own shots; everywhere else the player is it.
+    const [ppx, ppy] = endFocus(rpx, rpy);
+    camera.follow(ppx, ppy, map.w, map.h, 1 - endFrameK());
     fitCameraToCrop(ppx, ppy);
   }
 
@@ -3763,20 +4032,27 @@ function update(dt: number) {
 }
 
 function render() {
-  renderer.drawWorld(map, camera, [...spritesHere(), ...moundsHere()]);
+  // The vista draws the village below the pass, from its own camera.
+  const vm = shownMap();
+  const cam = shownCam();
+  const sprites = vistaOn
+    ? villagers.filter((v) => v.def.map === vm.id && v.fade > 0.02 && state.check(v.def.when))
+    : [...spritesHere(), ...moundsHere()];
+  renderer.drawWorld(vm, cam, sprites);
 
   // Every fire and lamp on this map becomes a flickering point light.
   // Outdoors they wake with the dusk; interior fires carry the room all day.
-  const nk = moodFor(map.id) === 'interior' ? 0 : nightNow();
-  const outdoorK = moodFor(map.id) === 'interior' ? 1 : 0.25 + 0.75 * Math.min(1, nk * 2);
-  const indoors = moodFor(map.id) === 'interior';
-  const specs: LightSpec[] = (fireCells[map.id] ?? []).flatMap(([cx, cy, kind]) => {
+  const indoors = moodFor(vm.id) === 'interior';
+  const nk = indoors ? 0 : nightNow();
+  const outdoorK = indoors ? 1 : 0.25 + 0.75 * Math.min(1, nk * 2);
+  const specs: LightSpec[] = (fireCells[vm.id] ?? []).flatMap(([cx, cy, kind]) => {
     const def = GLOW_STYLE[kind] ?? { r: 30, color: 0xffb066, flicker: 0.4, lift: 3 };
-    const x = cx * TILE + TILE / 2 - camera.x;
-    const y = cy * TILE + TILE / 2 - def.lift - camera.y;
+    const x = cx * TILE + TILE / 2 - cam.x;
+    const y = cy * TILE + TILE / 2 - def.lift - cam.y;
     // A lamp on a lamplighter's round holds its daytime ember until she
-    // reaches it; every other light wakes with the dusk as it always has.
-    const wake = stationLampWake(map.id, cx, cy);
+    // reaches it; every other light wakes with the dusk as it always has,
+    // except in the vista, where they come on ahead of the camera.
+    const wake = stationLampWake(vm.id, cx, cy) ?? (vistaOn ? vistaWake(cx * TILE, cy * TILE) : null);
     const dayK = wake === null ? outdoorK : 0.25 + Math.max(0, outdoorK - 0.25) * wake;
     // On the last evening the lamps carry the stone: a wider pool each.
     const pool = indoors ? 1.35 : 1 + 0.35 * endLight.lamp;
@@ -3788,24 +4064,33 @@ function render() {
       : [core];
   });
   // The last page is written in a pool of lamplight at the well: the people
-  // round it warm, the plaza beyond going down into the evening.
-  if (map.id === 'village' && endLight.lamp > 0) {
+  // round it warm, the plaza beyond going down into the evening. Not yet in
+  // the vista: the well is still waiting for the page.
+  if (vm.id === 'village' && endLight.lamp > 0 && !vistaOn) {
     specs.push({
-      x: WELL_PX[0] - camera.x,
-      y: WELL_PX[1] + 10 - camera.y,
+      x: WELL_PX[0] - cam.x,
+      y: WELL_PX[1] + 10 - cam.y,
       r: 58 * endLight.lamp,
       color: 0xffc07a,
       flicker: 0.1,
     });
   }
+  // And after the book, wherever you wander in the village, a little of it goes with you.
+  // (At the well itself its own pool already holds you.)
+  if (afterglow && !vistaOn) {
+    const [rx, ry] = player.renderPos();
+    const fromWell = Math.hypot(rx + TILE / 2 - WELL_PX[0], ry + TILE / 2 - WELL_PX[1]);
+    const k = smooth01((fromWell - 20) / 40) * endLight.lamp;
+    if (k > 0) specs.push({ x: rx + TILE / 2 - cam.x, y: ry + 4 - cam.y, r: 34 * k, color: 0xffc58a, flicker: 0.06 });
+  }
   // At dusk the houses light their windows from inside.
   if (nk > 0.3) {
-    for (const [wx, wy] of houseWindows[map.id] ?? []) {
-      const wake = windowWake(wx, wy);
+    for (const [wx, wy] of houseWindows[vm.id] ?? []) {
+      const wake = windowWake(vm.id, wx, wy);
       if (wake <= 0) continue;
       specs.push({
-        x: wx - camera.x,
-        y: wy - camera.y,
+        x: wx - cam.x,
+        y: wy - cam.y,
         r: (15 + nk * 6) * wake,
         color: 0xffc878,
         flicker: 0.08,

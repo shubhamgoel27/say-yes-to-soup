@@ -27,9 +27,13 @@ export type Escort = { id: string; when: Cond };
 export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; notOn?: string[] };
 
 /**
- * The well at dusk: half the village around one jug, nobody south of it, so
- * the well stays in sight and the south side is the player's (Carmen is one
- * step up from it). Every cell keeps a way in however the others arrive.
+ * The well at dusk: half the village in a loose ring round the well and its
+ * jug, three across the top, one at each side, two closing the bottom, and
+ * the gap at the bottom middle left for the player (MEETING). The ring is an
+ * ellipse, three tiles out each side of the well and two deep, which is what
+ * a circle looks like from up here. Nobody stands directly above, below or
+ * beside anybody else, so no two people overlap; Carmen has the floor at the
+ * top, facing the one who was there across the well.
  */
 const VERDICT: Cond = { has: ['c10.well.called'], not: ['c10.carmen.her'] };
 
@@ -39,18 +43,29 @@ export const BLOCKING: Blocking[] = [
   // of wandering, so the chip's "outside the northeast house" stays true and
   // she is where a walking player arrives.
   { id: 'carmen', when: { has: ['wichuna.have'], not: ['pallay.done'] }, map: 'village', at: [30, 12], dir: 'down' },
-  { id: 'teofilo', when: VERDICT, map: 'village', at: [21, 14], dir: 'down' },
-  { id: 'aurelio', when: VERDICT, map: 'village', at: [20, 14], dir: 'down' },
-  { id: 'justina', when: VERDICT, map: 'village', at: [23, 15], dir: 'left' },
-  { id: 'carmen', when: VERDICT, map: 'village', at: [22, 15], dir: 'left' },
-  { id: 'rosa', when: VERDICT, map: 'village', at: [20, 15], dir: 'right' },
-  { id: 'mateo', when: VERDICT, map: 'village', at: [19, 14], dir: 'right' },
-  { id: 'pilar', when: VERDICT, map: 'village', at: [23, 14], dir: 'down' },
+  { id: 'teofilo', when: VERDICT, map: 'village', at: [19, 13], dir: 'down' },
+  { id: 'carmen', when: VERDICT, map: 'village', at: [21, 13], dir: 'down' },
+  { id: 'pilar', when: VERDICT, map: 'village', at: [23, 13], dir: 'down' },
+  { id: 'rosa', when: VERDICT, map: 'village', at: [18, 15], dir: 'right' },
+  { id: 'justina', when: VERDICT, map: 'village', at: [24, 15], dir: 'left' },
+  { id: 'mateo', when: VERDICT, map: 'village', at: [19, 17], dir: 'right' },
+  { id: 'aurelio', when: VERDICT, map: 'village', at: [23, 17], dir: 'left' },
+  // Allqu attends, on the outside of the ring by Aurelio, which is where dogs attend from.
+  { id: 'allqu', when: VERDICT, map: 'village', at: [25, 17], dir: 'left' },
   // The last page: Aurelio keeps his stool by the well, and Rosa, whose
   // evening wander otherwise parks her right behind the writer, is the bowl
   // going down on a table two steps off.
   { id: 'rosa', when: { has: ['c10.lamp'], not: ['story.end'] }, map: 'village', at: [18, 18], dir: 'up' },
 ];
+
+/**
+ * The ring's open place. Walking into it, or anywhere between it and the
+ * well, is taking your place, and the meeting begins with Carmen.
+ */
+export const MEETING = { when: VERDICT, map: 'village', spot: [21, 17] as [number, number], speaker: 'carmen' };
+
+/** The jug the argument goes round, on the setts at the well's front-left from the call on. */
+export const JUG = { when: { has: ['c10.well.called'] } as Cond, map: 'village', at: [20, 16] as [number, number] };
 
 /** Carmen walks the stone up with you, and back down to the lit well. */
 export const ESCORTS: Escort[] = [

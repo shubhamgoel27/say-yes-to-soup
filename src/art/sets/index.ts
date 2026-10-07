@@ -124,3 +124,6 @@ registerArt(DELHI_ART);
 registerArt(ZANZIBAR_ART);
 registerArt(SICILY_ART);
 registerArt(OAXACA_ART);
+// The ending's props last, so its apacheta replaces the plain one.
+import { ART as ENDING_ART } from '../ending';
+registerArt(ENDING_ART);
