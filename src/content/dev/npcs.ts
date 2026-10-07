@@ -37,6 +37,15 @@ export const NPCS: NpcDef[] = [
       hatStyle: 'chullu',
     },
     entry: [
+      {
+        // A player who reaches the letter without ever sitting at the well
+        // gets his greeting first, in the same sitting, not a second visit.
+        when: {
+          has: ['bundle.delivered', 'challar.done', 'pallay.done', 'her.zoila'],
+          not: ['nani.letter', 'met.aurelio'],
+        },
+        node: 'aurelio.nani.meet',
+      },
       { when: { not: ['met.aurelio'] }, node: 'aurelio.first' },
       {
         // He will not hand over the letter until somebody has said her name
@@ -827,9 +836,26 @@ export const NODES: NodeMap = {
   // By the time this fires the player has already found Zoila at Carmen's
   // loom (her.zoila gates the entry). Aurelio does not retell her; he hands
   // over what he kept. Her portrait lives in the journal's Nani margins.
+  'aurelio.nani.meet': {
+    lines: [{ who: 'Don Aurelio', text: 'Allillanchu. At last. I have watched you run errands past my well since you came up the valley.' }],
+    choices: [
+      { text: '"...Alli... llanchu?"', goto: 'aurelio.nani.echo' },
+      { text: 'Sit down on the warm stone', goto: 'aurelio.nani.sit' },
+    ],
+  },
+  'aurelio.nani.echo': {
+    lines: [{ who: 'Don Aurelio', text: 'Allillanmi! Ha. You said it like a sneeze. But you said it.' }],
+    effects: ['set:met.aurelio', 'journal:words.allillanchu', 'journal:people.aurelio'],
+    next: 'aurelio.nani',
+  },
+  'aurelio.nani.sit': {
+    lines: [{ text: 'He shifts over without being asked. The stone is warm where he was.' }],
+    effects: ['set:met.aurelio', 'journal:people.aurelio'],
+    next: 'aurelio.nani',
+  },
   'aurelio.nani': {
     lines: [
-      { who: 'Don Aurelio', text: 'There you are. I have been deciding something all morning, and it is decided.' },
+      { who: 'Don Aurelio', text: 'I have been deciding something all morning, and it is decided.' },
       { who: 'Don Aurelio', text: 'I watched Zoila sew that red thread on your journal. Right here, 1974.' },
     ],
     next: 'aurelio.nani2',

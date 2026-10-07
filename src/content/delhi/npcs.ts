@@ -626,6 +626,7 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Ustad Yusuf Miyan', text: 'Every keeper calls his birds in his own tongue. Mine came from my ustad, forty years dead.' },
     ],
     effects: ['set:c11.names', 'journal:customs.kabootar'],
+    next: 'c11.yusuf.offer',
   },
   'c11.yusuf.offer': {
     lines: [
@@ -844,6 +845,7 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Akhtar Bhai', text: 'A girl with that same journal asked my father, monsoon of 1974. Her December IOU is still in this tin. Yours goes under it.' },
     ],
     effects: ['set:c11.promise.daulat', 'journal:dishes.daulat'],
+    next: 'c11.akhtar.storm',
   },
   'c11.akhtar.rooh': {
     lines: [

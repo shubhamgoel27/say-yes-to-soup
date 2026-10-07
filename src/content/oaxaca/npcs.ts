@@ -191,6 +191,7 @@ export const OAXACA_NPCS: NpcDef[] = [
       hatStyle: 'montera',
     },
     entry: [
+      { when: { has: ['c9.ledger'], not: ['met.caretaker', 'c9.path.task'] }, node: 'c9.care.meet' },
       { when: { not: ['met.caretaker'] }, node: 'c9.care.first' },
       { when: { has: ['c9.debt.paid', 'c9.ofrenda.done'], not: ['c9.vigil.done'] }, node: 'c9.vigil' },
       { when: { has: ['c9.ledger'], not: ['c9.path.task'] }, node: 'c9.care.path' },
@@ -904,6 +905,15 @@ export const OAXACA_NODES: NodeMap = {
       { who: 'Don Melitón', text: 'The dead, joven. First night the angelitos, with sweets. Second night the grown ones, with mezcal.' },
       { who: 'Don Melitón', text: 'It is not a mourning. It is a reunion with candles.' },
     ],
+  },
+  // Sent here by Refugio before ever meeting him: a welcome, then the petals.
+  'c9.care.meet': {
+    lines: [
+      { text: 'An old man sweeps between the graves, moving the dust only as far as it agrees to go.' },
+      { who: 'Don Melitón', text: 'Welcome. We are getting the beds ready; company is coming from far away.' },
+    ],
+    effects: ['set:met.caretaker', 'journal:people.caretaker'],
+    next: 'c9.care.path',
   },
   'c9.care.path': {
     lines: [

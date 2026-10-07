@@ -1,4 +1,4 @@
-import type { ExamineArm, NodeMap, NpcDef } from '../schema';
+import type { ExamineArm, Line, NodeMap, NpcDef } from '../schema';
 
 /**
  * Kaithappuram's people. Malayalam arrives by ear: nanni, sukhamano, chetta,
@@ -36,6 +36,12 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] }, node: 'c6.mariamma.sadyastart' },
       // After the feast, once you are sitting in her house the way a guest
       // of the house sits. She is not planning to say any of this.
+      // If the race and the rain both came first, her story runs straight
+      // into the blessing, so the last visit is one sitting, not two.
+      {
+        when: { has: ['c6.row.done', 'c6.sadya.done', 'c6.rain'], not: ['c6.her', 'c6.complete'] },
+        node: 'c6.mariamma.herLast',
+      },
       { when: { has: ['c6.sadya.done'], not: ['c6.her'] }, node: 'c6.mariamma.her' },
       {
         when: { has: ['c6.row.done', 'c6.sadya.done', 'c6.rain'], not: ['c6.complete'] },
@@ -132,6 +138,7 @@ export const KERALA_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['c6.chaya'], not: ['met.kuttan', 'c6.rain'] }, node: 'c6.kuttan.meet' },
       { when: { not: ['met.kuttan'] }, node: 'c6.kuttan.first' },
       { when: { has: ['met.kuttan', 'c6.chaya'], not: ['c6.rain'] }, node: 'c6.kuttan.smell' },
       { when: { has: ['c6.rain'], not: ['c6.kuttan2'] }, node: 'c6.kuttan.rain' },
@@ -195,6 +202,7 @@ export const KERALA_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['errand.coir-rope'], not: ['met.varkey', 'c6.rope.given'] }, node: 'c6.varkey.meet' },
       { when: { not: ['met.varkey'] }, node: 'c6.varkey.first' },
       { when: { has: ['errand.coir-rope'], not: ['c6.rope.given'] }, node: 'c6.varkey.rope' },
       { when: { has: ['c6.rope.given', 'c6.letter.delivered'], not: ['c6.row.done'] }, node: 'c6.varkey.invite' },
@@ -218,6 +226,7 @@ export const KERALA_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['c6.complete'], not: ['met.moosa', 'c6.depart.ready'] }, node: 'c6.moosa.meet' },
       { when: { not: ['met.moosa'] }, node: 'c6.moosa.first' },
       { when: { has: ['c6.complete'], not: ['c6.depart.ready'] }, node: 'c6.moosa.berth' },
       { when: { has: ['c6.depart.ready'] }, node: 'c6.moosa.sail' },
@@ -245,6 +254,39 @@ export const KERALA_NPCS: NpcDef[] = [
       { node: 'c6.chasca.album' },
     ],
   },
+];
+
+// Scenes that can be heard on their own or folded into a later visit share
+// their words, so the two tellings never drift apart.
+const HER_OPEN: Line[] = [
+  { text: 'She scrapes coconut and nods at the step by the door.' },
+  { who: 'Mariamma', text: 'A Peru girl sat there in the rain year, writing. Zoila. Every morning I asked sukhamano, and she said sukham.' },
+  { who: 'Mariamma', text: 'For two weeks that was not true. She would not let me send for a doctor, or put it in any letter.' },
+];
+const HER_QUIET: Line[] = [
+  { text: 'The scraper keeps the time neither of you wants to name.' },
+];
+const HER_WHY: Line[] = [
+  { who: 'Mariamma', text: 'Because she asked the way you ask for salt, kunje. Some things you only argue with after the boat has gone.' },
+];
+const HER_CLOSE: Line[] = [
+  { who: 'Mariamma', text: 'She walked onto the boat herself. That is the part I keep. Ayyo, my mouth; you have her face when you listen.' },
+  { text: 'She turns back to the blade, faster than before.' },
+];
+const KUTTAN_HELLO: Line[] = [
+  { text: 'A man comes down a palm with a frog’s confidence, a pot at his hip.' },
+  { who: 'Kuttan', text: 'Sixty feet, twice a day, forty years. Afraid of the palm? We are colleagues.' },
+  { who: 'Kuttan', text: 'This pot is kallu. Sweet at dawn, sour by dark, same pot. Most people also.' },
+];
+const VARKEY_HELLO: Line[] = [
+  { text: 'On the bank, a crew rows an imaginary boat, counting in song.' },
+  { who: 'Captain Varkey', text: 'A hundred and one seats, and I am one rower short, which is the same as being short a lung.' },
+  { who: 'Captain Varkey', text: 'Mind Raghavan, the stroke caller. He acknowledges only rowers. You are currently scenery.' },
+];
+const MOOSA_HELLO: Line[] = [
+  { text: 'Sacks stenciled CARDAMOM wait under tarpaulin. A white-bearded man counts them without appearing to count.' },
+  { who: 'Moosa', text: 'Moosa. Spices go down this water to Kochi, then wherever the wind takes them.' },
+  { who: 'Moosa', text: 'My grandfather said the monsoon is not weather, it is a road. Half the year one way, then it comes home.' },
 ];
 
 export const KERALA_NODES: NodeMap = {
@@ -358,34 +400,38 @@ export const KERALA_NODES: NodeMap = {
   // The one thing this kitchen kept. She does not diagnose it, does not dress
   // it up, and stops the moment she hears who she is saying it to.
   'c6.mariamma.her': {
-    lines: [
-      { text: 'She scrapes coconut and nods at the step by the door.' },
-      { who: 'Mariamma', text: 'A Peru girl sat there in the rain year, writing. Zoila. Every morning I asked sukhamano, and she said sukham.' },
-      { who: 'Mariamma', text: 'For two weeks that was not true. She would not let me send for a doctor, or put it in any letter.' },
-    ],
+    lines: HER_OPEN,
     choices: [
       { text: 'Say nothing.', goto: 'c6.mariamma.her.quiet' },
       { text: '"Why did you agree?"', goto: 'c6.mariamma.her.why' },
     ],
   },
   'c6.mariamma.her.quiet': {
-    lines: [
-      { text: 'The scraper keeps the time neither of you wants to name.' },
-    ],
+    lines: HER_QUIET,
     next: 'c6.mariamma.her2',
   },
   'c6.mariamma.her.why': {
-    lines: [
-      { who: 'Mariamma', text: 'Because she asked the way you ask for salt, kunje. Some things you only argue with after the boat has gone.' },
-    ],
+    lines: HER_WHY,
     next: 'c6.mariamma.her2',
   },
   'c6.mariamma.her2': {
-    lines: [
-      { who: 'Mariamma', text: 'She walked onto the boat herself. That is the part I keep. Ayyo, my mouth; you have her face when you listen.' },
-      { text: 'She turns back to the blade, faster than before.' },
-    ],
+    lines: HER_CLOSE,
     effects: ['set:c6.her', 'journal:her.kerala'],
+  },
+  // The same story on the last visit, ending in the blessing instead of the blade.
+  'c6.mariamma.herLast': {
+    lines: HER_OPEN,
+    choices: [
+      { text: 'Say nothing.', goto: 'c6.mariamma.herLast.quiet' },
+      { text: '"Why did you agree?"', goto: 'c6.mariamma.herLast.why' },
+    ],
+  },
+  'c6.mariamma.herLast.quiet': { lines: HER_QUIET, next: 'c6.mariamma.herLast2' },
+  'c6.mariamma.herLast.why': { lines: HER_WHY, next: 'c6.mariamma.herLast2' },
+  'c6.mariamma.herLast2': {
+    lines: HER_CLOSE,
+    effects: ['set:c6.her', 'journal:her.kerala'],
+    next: 'c6.mariamma.blessing',
   },
   'c6.mariamma.sadyaplan': {
     lines: [
@@ -643,12 +689,14 @@ export const KERALA_NODES: NodeMap = {
 
   // ---------------- Kuttan, toddy tapper and philosopher ----------------
   'c6.kuttan.first': {
-    lines: [
-      { text: 'A man comes down a palm with a frog’s confidence, a pot at his hip.' },
-      { who: 'Kuttan', text: 'Sixty feet, twice a day, forty years. Afraid of the palm? We are colleagues.' },
-      { who: 'Kuttan', text: 'This pot is kallu. Sweet at dawn, sour by dark, same pot. Most people also.' },
-    ],
+    lines: KUTTAN_HELLO,
     effects: ['set:met.kuttan', 'journal:people.kuttan'],
+  },
+  // First met with the chaya already drunk: hello, then straight to the sky.
+  'c6.kuttan.meet': {
+    lines: KUTTAN_HELLO,
+    effects: ['set:met.kuttan', 'journal:people.kuttan'],
+    next: 'c6.kuttan.smell',
   },
   'c6.kuttan.smell': {
     lines: [
@@ -732,12 +780,13 @@ export const KERALA_NODES: NodeMap = {
 
   // ---------------- Captain Varkey, the race ----------------
   'c6.varkey.first': {
-    lines: [
-      { text: 'On the bank, a crew rows an imaginary boat, counting in song.' },
-      { who: 'Captain Varkey', text: 'A hundred and one seats, and I am one rower short, which is the same as being short a lung.' },
-      { who: 'Captain Varkey', text: 'Mind Raghavan, the stroke caller. He acknowledges only rowers. You are currently scenery.' },
-    ],
+    lines: VARKEY_HELLO,
     effects: ['set:met.varkey'],
+  },
+  'c6.varkey.meet': {
+    lines: VARKEY_HELLO,
+    effects: ['set:met.varkey'],
+    next: 'c6.varkey.rope',
   },
   'c6.varkey.rope': {
     lines: [
@@ -861,12 +910,13 @@ export const KERALA_NODES: NodeMap = {
 
   // ---------------- Moosa, the jetty office ----------------
   'c6.moosa.first': {
-    lines: [
-      { text: 'Sacks stenciled CARDAMOM wait under tarpaulin. A white-bearded man counts them without appearing to count.' },
-      { who: 'Moosa', text: 'Moosa. Spices go down this water to Kochi, then wherever the wind takes them.' },
-      { who: 'Moosa', text: 'My grandfather said the monsoon is not weather, it is a road. Half the year one way, then it comes home.' },
-    ],
+    lines: MOOSA_HELLO,
     effects: ['set:met.moosa'],
+  },
+  'c6.moosa.meet': {
+    lines: MOOSA_HELLO,
+    effects: ['set:met.moosa'],
+    next: 'c6.moosa.berth',
   },
   'c6.moosa.berth': {
     lines: [

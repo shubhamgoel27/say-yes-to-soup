@@ -185,6 +185,7 @@ export const SHIONOURA_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['c4.complete'], not: ['met.captain'] }, node: 'c4.isao.meet' },
       { when: { not: ['met.captain'] }, node: 'c4.isao.first' },
       { when: { has: ['c4.complete'] }, node: 'c4.isao.ferry' },
       { node: 'c4.isao.notyet' },
@@ -810,6 +811,15 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Captain Isao', text: 'The Seto Naikai. Seven hundred islands, calm as a held breath.' },
       { who: 'Captain Isao', text: 'The old crews speak of it like a grandmother in the next room. You say thank you at the rail.' },
     ],
+  },
+  // Met for the first time on the last morning: one introduction, then the boat.
+  'c4.isao.meet': {
+    lines: [
+      { text: 'By the ferry office, an old captain studies the water like a man auditing an employee of fifty years.' },
+      { who: 'Captain Isao', text: 'Isao. Forty-one years on this run. I wondered when the festival would finish with you.' },
+    ],
+    effects: ['set:met.captain', 'journal:people.captain'],
+    next: 'c4.isao.ferry',
   },
   'c4.isao.ferry': {
     lines: [

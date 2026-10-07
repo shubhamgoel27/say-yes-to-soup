@@ -64,33 +64,8 @@ const npcById = new Map(NPCS.map((n) => [n.id, n] as const));
  * then delete the line: a listed fault that no longer happens fails the suite
  * too, so this list can only shrink.
  */
-const KNOWN_WALK: string[] = [
-  // K1: src/content/dev/npcs.ts, src/content/caleta/npcs.ts
-  `[chaska-pampa] "Doña Carmen, who weaves near the northeast house, ": the first talk to carmen (carmen.first) is not the one it promises (carmen.ask)`,
-  `[chaska-pampa] "Don Aurelio has been watching you with a decision ": the first talk to aurelio (aurelio.first) is not the one it promises (aurelio.nani)`,
-  `[chaska-pampa] "A llama holds the pass out of the village and is n": the first talk to faustino (faustino.first) is not the one it promises (faustino.whistle)`,
-  `[la-caleta] "Doña Petro has decided you have eaten enough cevic": the first talk to petro (mar.petro.lisa) is not the one it promises (mar.petro.teach)`,
-  // K2: src/content/shionoura, busan, kerala npcs.ts
-  `[shionoura] "The festival is folded away and the morning boat w": the first talk to isao (c4.isao.first) is not the one it promises (c4.isao.ferry)`,
-  `[busan] "Carry the extra fish and the question it raised up": the first talk to cho (c5.cho.first) is not the one it promises (c5.cho.riddle)`,
-  `[busan] "The lane knows you now. Mr. Gong at the ferry wind": the first talk to gong (c5.gong.first) is not the one it promises (c5.gong.berth)`,
-  `[kerala] "The letter is in Mariamma’s hands and her eyes are": the first talk to mariamma (c6.mariamma.read) is not the one it promises (c6.mariamma.adopt)`,
-  `[kerala] "Mariamma’s orders: chaya at Shaji’s thattukada, an": the first talk to shaji (c6.shaji.firstwarm) is not the one it promises (c6.shaji.chaya)`,
-  `[kerala] "Shaji has been looking at your wrists like a coach": the first talk to shaji (c6.shaji.wobble) is not the one it promises (c6.shaji.cookoffer)`,
-  `[kerala] "Kuttan by the eastern palms keeps sniffing the air": the first talk to kuttan (c6.kuttan.first) is not the one it promises (c6.kuttan.smell)`,
-  `[kerala] "Omana’s coil of good three-strand rides on your sh": the first talk to varkey (c6.varkey.first) is not the one it promises (c6.varkey.rope)`,
-  `[kerala] "Something is bubbling in Mariamma’s kitchen beside": the first talk to mariamma (c6.mariamma.her) is not the one it promises (c6.mariamma.sadyaplan)`,
-  // K3: src/content/delhi/npcs.ts
-  `[delhi] "Yusuf Miyan will teach the patang to anyone who le": the first talk to yusuf (c11.yusuf.names) is not the one it promises (c11.yusuf.offer)`,
-  `[delhi] "Akhtar Bhai keeps looking at the sky like it owes ": the first talk to akhtar (c11.akhtar.menu) is not the one it promises (c11.akhtar.storm)`,
-  // E: src/content/oaxaca/npcs.ts
-  `[oaxaca] "The camposanto path wants petals. Don Melitón is s": the first talk to meliton (c9.care.first) is not the one it promises (c9.care.path)`,
-];
-const KNOWN_FINISH: string[] = [
-  // K3: src/content/zanzibar/journal.ts, both mail tasks: who 'ali' becomes at ['zanzibar', 36, 20].
-  `"Mail waits at the shipping counter by the jetty: an envelope" names ali, who never raises letter.read.c7.pilar`,
-  `"Ali was digging for a second envelope, the one that smells l" names ali, who never raises letter.read.c7.mangben`,
-];
+const KNOWN_WALK: string[] = [];
+const KNOWN_FINISH: string[] = [];
 
 function assertKnown(problems: string[], known: string[]) {
   const fresh = problems.filter((p) => !known.includes(p));

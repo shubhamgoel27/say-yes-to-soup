@@ -52,6 +52,7 @@ export const BUSAN_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      { when: { has: ['c5.deom'], not: ['c5.met.cho', 'riddle.cho'] }, node: 'c5.cho.meet' },
       { when: { not: ['c5.met.cho'] }, node: 'c5.cho.first' },
       { when: { has: ['c5.met.cho', 'c5.deom'], not: ['riddle.cho'] }, node: 'c5.cho.riddle' },
       { when: { has: ['riddle.cho'], not: ['c5.riddle2'] }, node: 'c5.cho.again' },
@@ -155,6 +156,10 @@ export const BUSAN_NPCS: NpcDef[] = [
       hatStyle: 'montera',
     },
     entry: [
+      {
+        when: { has: ['c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.met.gong', 'c5.berth'] },
+        node: 'c5.gong.meet',
+      },
       { when: { not: ['c5.met.gong'] }, node: 'c5.gong.first' },
       {
         when: {
@@ -350,6 +355,16 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Old Man Cho', text: 'Did you? Then why did the ferry feel so long?' },
       { text: 'The kettle laughs first, in steam.' },
     ],
+  },
+  // Climbing the stairs with the question already in hand: the tea and the
+  // riddle in one sitting.
+  'c5.cho.meet': {
+    lines: [
+      { text: 'Shoes off at the step. A kettle breathing, light through paper the color of morning.' },
+      { text: 'An old man pours ssanghwacha, dark as bark and honey, and looks at the fish in your hands before he looks at you.' },
+    ],
+    effects: ['set:c5.met.cho', 'journal:people.cho'],
+    next: 'c5.cho.riddle',
   },
   'c5.cho.riddle': {
     lines: [
@@ -578,6 +593,17 @@ export const BUSAN_NODES: NodeMap = {
     choices: [
       { text: 'Show him the address on Joseph’s letter', goto: 'c5.gong.letter', when: { has: ['joseph.letter'] } },
       { text: 'Ask about passage to Kerala', goto: 'c5.gong.ask' },
+    ],
+  },
+  // First time at the window, already vouched for: no form, just the stamp.
+  'c5.gong.meet': {
+    lines: [
+      { text: 'FERRY AND FREIGHT. The window is small, the stamp is loud, and the man behind both is faster.' },
+    ],
+    effects: ['set:c5.met.gong'],
+    choices: [
+      { text: 'Slide Joseph’s letter under the glass', goto: 'c5.gong.berth', when: { has: ['joseph.letter'] } },
+      { text: 'Ask for a berth to Kerala', goto: 'c5.gong.berth2', when: { not: ['joseph.letter'] } },
     ],
   },
   'c5.gong.letter': {
