@@ -47,7 +47,8 @@ export const STAGING: Staging = {
   blocking: [
     // Out in the piazza for the walk, between Concetta's door and the chair
     // she takes at golden hour, so they are round her wherever she is.
-    { id: 'donsaro', when: WALKING, map: 'sicily', at: [24, 13], dir: 'left' },
+    // A row up from the house front, which at 24,13 was drawn across him.
+    { id: 'donsaro', when: WALKING, map: 'sicily', at: [24, 12], dir: 'left' },
     { id: 'alfio', when: WALKING, map: 'sicily', at: [16, 12], dir: 'right' },
     { id: 'turi', when: WALKING, map: 'sicily', at: [24, 10], dir: 'left' },
     { id: 'rosaria', when: WALKING, map: 'sicily', at: [19, 11], dir: 'up' },

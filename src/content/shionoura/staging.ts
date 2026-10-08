@@ -9,8 +9,11 @@ import type { Staging } from '../staging';
  * round as she does every evening, and the people who made the chapter
  * drift down to the quay to wait for the sky. When the matsuri starts every
  * chochin is lit, whether or not Fumi has reached it, and the evening is
- * held until you sail; Isao's morning boat then runs the night past in the
- * time it takes to say goodbye.
+ * held until you sail. Isao's boat is the morning one, so saying the word
+ * to him lets the festival night go in one dark: the chochin go out, the
+ * town goes home to bed, and you come down to the pier in the morning wind
+ * with Isao at his boat and Fumi already at the end of the pier, where her
+ * bow is written.
  *
  * The quay, rows 21-23, faces the sea at the bottom of the screen, so the
  * crowd faces down: toward the water and the sky over it, and toward you.
@@ -23,6 +26,12 @@ const READY = ['c4.omiyage', 'c4.wish.hung', 'c4.kingyo.done', 'met.fumi', 'met.
 
 /** The town is ready and the evening is coming down. */
 const EVENING: Cond = { has: READY, not: ['c4.complete'] };
+/** The morning boat, from the word to Isao until Busan. */
+const SAILING: Cond = { has: ['c4.sailing'], not: ['c5.arrived'] };
+
+/** Where the morning sets you down: the root of the pier, Fumi at its end. */
+export const PIER_LANDING: [number, number] = [21, 27];
+
 /** The festival itself, from Hana's first line until Isao's boat. */
 const FESTIVAL: Cond = { has: ['c4.complete'], not: ['c4.sailing'] };
 /** The quay is full from the moment the town is ready until you sail. */
@@ -52,9 +61,12 @@ export const STAGING: Staging = {
     // The festival keeps that hour, lanterns lit, until you go.
     { when: FESTIVAL, min: 0.585, max: 0.615 },
     // "The tairyō-bata crack once in the morning wind": Isao's boat is the
-    // morning one, so the goodbye runs the night past to it.
-    { when: { has: ['c4.sailing'], not: ['c5.arrived'] }, min: 0.12, max: 0.2, notOn: ['busan'] },
+    // morning one. Set in the dark the night passes in, never in view.
+    { when: SAILING, min: 0.12, max: 0.2, snap: true, notOn: ['busan'] },
   ],
+  // The goodbye itself, read as the morning comes up on the pier.
+  // (Its own map is the gate: once Busan has you, no door leads back here.)
+  cues: [{ when: { has: ['c4.sailing'] }, map: 'shionoura', node: 'c4.depart' }],
   lamps: [{ when: FESTIVAL, map: 'shionoura' }],
   blocking: [
     // The arrival: "Hana is already ashore, standing very still, looking at
@@ -68,10 +80,15 @@ export const STAGING: Staging = {
     { id: 'daisuke', when: GATHERED, map: 'shionoura', at: [16, 22], dir: 'down' },
     { id: 'genji', when: GATHERED, map: 'shionoura', at: [25, 22], dir: 'down' },
     { id: 'taro', when: GATHERED, map: 'shionoura', at: [28, 23], dir: 'down' },
-    { id: 'isao', when: GATHERED, map: 'shionoura', at: [31, 22], dir: 'down' },
+    // One step west of the corner, out from under the pillar box (at 31 it
+    // stood on his cap for every word of the goodbye).
+    { id: 'isao', when: GATHERED, map: 'shionoura', at: [30, 22], dir: 'down' },
     // Fumi lights the lane first (her round), then comes down to the quay.
     { id: 'fumi', when: FESTIVAL, map: 'shionoura', at: [24, 24], dir: 'down' },
-    // And sees the boat off from the end of the pier, bowing.
-    { id: 'fumi', when: { has: ['c4.sailing'], not: ['c5.arrived'] }, map: 'shionoura', at: [22, 28], dir: 'down' },
+    // And sees the boat off from the end of the pier, bowing toward you.
+    // (At 22,30, the last plank, the map's edge put her under the words.)
+    { id: 'fumi', when: SAILING, map: 'shionoura', at: [22, 29], dir: 'up' },
+    // Isao waits at his boat, which is the morning one.
+    { id: 'isao', when: SAILING, map: 'shionoura', at: [25, 26], dir: 'left' },
   ],
 };

@@ -200,7 +200,7 @@ export const BUSAN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c5.deom', 'riddle.cho', 'c5.hotteok.done'], not: ['c5.berth'] },
-    text: 'The lane knows you now. Mr. Gong at the ferry window, down by the quay, arranges berths for the vouched-for. He will want it done ppalli ppalli.',
+    text: 'The lane knows you now. Mr. Gong, under the ferry board down by the quay, arranges berths for the vouched-for. He will want it done ppalli ppalli.',
     who: 'gong',
   },
   {
@@ -223,7 +223,7 @@ export const BUSAN_TASKS: TaskDef[] = [
   {
     // After the goodbye: the closing card, then the walk down the quay.
     when: { has: ['c5.complete'] },
-    text: 'The Malabar Star is loading for Kochi. Mr. Gong at the ferry window will see you aboard, quickly.',
+    text: 'The Malabar Star is loading for Kochi. Mr. Gong under the ferry board will see you aboard, quickly.',
     who: 'gong',
   },
   {

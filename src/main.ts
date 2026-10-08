@@ -9,7 +9,7 @@ import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
 import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
-import { PLAYER_LOOK, makePortrait, makeSheet } from './art/character';
+import { PLAYER_LOOK, makePortrait, makeSheet, type Look } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
@@ -58,7 +58,7 @@ import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
-import { BLOCKING, HOURS, LAMPS_LIT } from './content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -391,6 +391,8 @@ errandEl.addEventListener('pointerdown', (e) => {
   chipFold.call();
 });
 const fadeEl = $('fade');
+/** The dialogue box itself, for the one dip (the vista) that must not dim it. */
+const textboxEl = $('textbox');
 /** Seconds into the held dark after the closing book, or null (see startCurtain). */
 let curtainT: number | null = null;
 const plateEl = $('plate');
@@ -1043,6 +1045,8 @@ type Villager = Sprite & {
   jitter: number;
   baseSheet: HTMLCanvasElement;
   fadeSheet: HTMLCanvasElement | null;
+  /** The scene's costume this villager is wearing (see `dress`), if any. */
+  costume?: string;
 };
 
 function sheetFor(def: NpcDef): HTMLCanvasElement {
@@ -1837,6 +1841,111 @@ function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
   return false;
 }
 
+type Want = {
+  at?: [number, number];
+  map?: string;
+  dir?: Dir;
+  escort?: boolean;
+  sit?: boolean;
+  busy?: boolean;
+  look?: Partial<Look>;
+};
+
+/** Who the story has a place for right now: an escort beats a blocking. */
+function stageWants(): Map<Villager, Want> {
+  const want = new Map<Villager, Want>();
+  for (const e of ESCORTS) {
+    const v = byNpc(e.id);
+    if (v && state.check(e.when)) want.set(v, { escort: true });
+  }
+  for (const b of BLOCKING) {
+    const v = byNpc(b.id);
+    if (v && !want.has(v) && state.check(b.when)) {
+      want.set(v, { at: b.at, map: b.map, dir: b.dir, sit: b.sit, busy: b.sit || b.busy, look: b.look });
+    }
+  }
+  return want;
+}
+
+/** A villager's staging record, begun the first time a scene wants them. */
+function stagedOf(v: Villager): Staged {
+  let s = staged.get(v);
+  if (!s) {
+    // A lamplighter caught mid-round is staged from where she lives, not
+    // from the lamp she was standing under.
+    const home = stationHomeOf(v) ?? { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]] as [number, number] };
+    s = {
+      v,
+      home: { map: home.map, pos: [home.pos[0], home.pos[1]], range: v.def.range },
+      path: [],
+      escort: false,
+      arrived: false,
+    };
+    staged.set(v, s);
+    v.seated = false;
+    v.actor.pose = 'none';
+  }
+  return s;
+}
+
+const costumeKey = (look?: Partial<Look>) => (look ? JSON.stringify(look) : '');
+
+/** Could the player see this villager change right now? */
+function watched(v: Villager): boolean {
+  if (v.def.map !== map.id || warp?.phase === 'out') return v.def.map === map.id;
+  const [x, y] = v.actor.renderPos();
+  const m = 2 * TILE;
+  return x > camera.x - m && x < camera.x + VIEW_W + m && y > camera.y - m && y < camera.y + VIEW_H + m;
+}
+
+/** Dress a villager for a scene (a mop wig, a little umbrella), or back in their own clothes. */
+function dress(v: Villager, look: Partial<Look> | undefined) {
+  if (v.def.sprite) return;
+  const lk = { ...lookFor(v.def.id, v.def.look), ...(look ?? {}) };
+  v.baseSheet = makeSheet(lk);
+  v.sheet = v.baseSheet;
+  v.fadeSheet = null;
+  v.portrait = makePortrait(lk);
+  v.costume = costumeKey(look) || undefined;
+  if (v.fade < 1) applyFade(v);
+}
+
+/**
+ * A door's dark is a cut: nobody watched the scene get ready, so it is ready.
+ * Everyone a scene wants on the map just entered is put on their mark,
+ * dressed for it, and anyone a finished scene let go is simply home. Time
+ * passing in place (a night, two weeks of watches) is a door onto the same
+ * map, so the next scene is already standing there when the light comes up.
+ */
+function settleInDark() {
+  const want = stageWants();
+  for (const [v, w] of want) {
+    if (w.escort || w.map !== map.id || !w.at) continue;
+    const s = stagedOf(v);
+    const [tx, ty] = w.at;
+    v.def.map = w.map;
+    v.def.pos = [tx, ty];
+    v.actor.placeAt(tx, ty, w.dir!);
+    v.actor.pose = w.sit ? 'sit' : 'none';
+    v.seated = !!w.sit;
+    s.path = [];
+    s.arrived = true;
+    if (costumeKey(w.look) !== (v.costume ?? '')) dress(v, w.look);
+  }
+  for (const [v, s] of [...staged]) {
+    if (want.has(v) || s.escort) continue;
+    if (v.def.map !== map.id && s.home.map !== map.id) continue;
+    if (v.actor.pose === 'sit' && !v.def.sits) v.actor.pose = 'none';
+    v.seated = !!v.def.sits;
+    v.def.map = s.home.map;
+    v.def.pos = s.home.pos;
+    v.def.range = s.home.range;
+    v.actor.placeAt(s.home.pos[0], s.home.pos[1], 'down');
+    if (v.costume) dress(v, undefined);
+    staged.delete(v);
+  }
+}
+
 function updateStaging(dt: number) {
   // The hour the words were written in: eased forward into its window
   // (a quick time-lapse, ease-out), then held under its end.
@@ -1862,37 +1971,12 @@ function updateStaging(dt: number) {
     }
   }
 
-  // Who the evening has a place for: an escort beats a blocking.
-  const want = new Map<
-    Villager,
-    { at?: [number, number]; map?: string; dir?: Dir; escort?: boolean; sit?: boolean; busy?: boolean }
-  >();
-  for (const e of ESCORTS) {
-    const v = byNpc(e.id);
-    if (v && state.check(e.when)) want.set(v, { escort: true });
-  }
-  for (const b of BLOCKING) {
-    const v = byNpc(b.id);
-    if (v && !want.has(v) && state.check(b.when)) want.set(v, { at: b.at, map: b.map, dir: b.dir, sit: b.sit, busy: b.sit || b.busy });
-  }
+  const want = stageWants();
   for (const [v, w] of want) {
-    let s = staged.get(v);
-    if (!s) {
-      // A lamplighter caught mid-round is staged from where she lives, not
-      // from the lamp she was standing under.
-      const home = stationHomeOf(v) ?? { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]] as [number, number] };
-      s = {
-        v,
-        home: { map: home.map, pos: [home.pos[0], home.pos[1]], range: v.def.range },
-        path: [],
-        escort: false,
-        arrived: false,
-      };
-      staged.set(v, s);
-      v.seated = false;
-      v.actor.pose = 'none';
-    }
+    const s = stagedOf(v);
     s.escort = !!w.escort;
+    // Dressed for the scene (or out of it) only where nobody sees the change.
+    if (costumeKey(w.look) !== (v.costume ?? '') && !watched(v)) dress(v, w.look);
     // Someone busy at their work answers without looking up from it: the
     // talk may turn everyone else, never them.
     if (w.busy && s.arrived && v.def.map === map.id && !v.actor.isMoving) v.actor.face(w.dir!);
@@ -1989,6 +2073,7 @@ function updateStaging(dt: number) {
   // crowd never leaves mid-talk; Carmen leaves as the pen comes out.
   for (const [v, s] of staged) {
     if (want.has(v) || (textbox.isOpen && !s.escort) || v === talkingTo) continue;
+    if (v.costume && !watched(v)) dress(v, undefined);
     if (v.actor.pose === 'sit' && !v.def.sits) {
       v.actor.pose = 'none';
       v.seated = false;
@@ -2149,9 +2234,15 @@ function updateEndLight(dt: number) {
   // The stone is laid in the last of the gold; the lamps are the walk down
   // (and the village below, seen from the pass).
   const onPass = map.id === 'east-road' && textbox.currentNode === 'c10.apacheta.lay';
-  const gold = here && !vistaOn && state.has('c10.well.called') && (!state.has('c10.apacheta.done') || onPass);
+  // Once the lamps line has been read the sun is down on the pass too.
+  const lit = onPass && textbox.currentLine > VISTA_LINE;
+  const gold =
+    here && !vistaOn && !lit && state.has('c10.well.called') && (!state.has('c10.apacheta.done') || onPass);
   const lamp =
-    here && state.has('c10.apacheta.done') && (!onPass || vistaOn) && (afterglow || !(state.has('story.end') && lampOver));
+    here &&
+    state.has('c10.apacheta.done') &&
+    (!onPass || vistaOn || lit) &&
+    (afterglow || !(state.has('story.end') && lampOver));
   // In over a few seconds (the clock is easing down at the same time); out
   // slowly, so the night after the book comes on like a night.
   const ease = (v: number, on: boolean) => v + ((on ? 1 : 0) - v) * (1 - Math.exp(-dt * (on ? 0.6 : 0.12)));
@@ -2322,9 +2413,17 @@ function setVista(on: boolean) {
   vistaOn = on;
   vistaClock = 0;
   // A cut, under the dip: the light belongs to the place on screen at once.
-  endLight.gold = on ? 0 : 1;
-  endLight.lamp = on ? 1 : 0;
+  // Back on the pass the sun has gone the way the line said it went, so the
+  // pass keeps the village's lamplit dusk rather than its gold.
+  const after = !on && pastVista();
+  endLight.gold = on || after ? 0 : 1;
+  endLight.lamp = on || after ? 1 : 0;
   renderer.setFires((fireCells[on ? 'village' : map.id] ?? []).map(([fx, fy]) => [fx, fy]));
+}
+
+/** The lamps line has been read: from here the evening on the pass is lamplit. */
+function pastVista(): boolean {
+  return textbox.currentNode !== 'c10.apacheta.lay' || textbox.currentLine > VISTA_LINE;
 }
 
 /** The map and camera the frame is drawn from: the village during the vista. */
@@ -2384,10 +2483,13 @@ function updateShots(dt: number) {
   if (fadeWant === 1 && vistaFade > 0.99) vistaFade = 1;
   if (vistaFade > 0.002) {
     fadeEl.style.opacity = String(vistaFade);
+    // The dip is the camera's, not the words': the line stays readable over it.
+    textboxEl.style.zIndex = '1';
     vistaFadeShown = true;
   } else if (vistaFadeShown) {
     vistaFade = 0;
     fadeEl.style.opacity = '0';
+    textboxEl.style.zIndex = '';
     vistaFadeShown = false;
   }
 }
@@ -3078,10 +3180,16 @@ function startWarp(trig: TriggerDef & { type: 'door' }) {
   }
 }
 
+/** The last door led back onto the map it left: a dark that was time passing. */
+let timePassed = false;
+
 /** The map swap at the dark middle of any transition. */
 function arriveAt(trig: TriggerDef & { type: 'door' }) {
   const dest = maps[trig.to];
   if (!dest) return;
+  // A door onto the map you are already on is time passing, not a new place.
+  const samePlace = dest === map;
+  timePassed = samePlace;
   map = dest;
   settleSteps.clear();
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
@@ -3120,6 +3228,8 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
     const free = spots.find(([x, y]) => !map.solid(x, y));
     if (free) dog.actor.placeAt(free[0], free[1], player.dir);
   }
+  // Whoever a scene wants here is already on their mark.
+  settleInDark();
   camera.resetLead();
   // The thread stays on the floor it was laid on; a door winds it back in.
   renderer.clearThread();
@@ -3130,7 +3240,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   // New ground can retire a whole chapter's threads (openTasks scopes by
   // map), and nothing else would tell the chip until the next flag.
   refreshTaskChip();
-  showPlate(map.name, 2600);
+  if (!samePlace) showPlate(map.name, 2600);
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
@@ -3181,7 +3291,13 @@ function endWarp() {
     const hour = ARRIVAL_HOUR[map.id];
     if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
     startNarration(arr.node);
+    return;
   }
+  // Or the scene a dark was let fall for: it plays as the light comes up.
+  // Only after time passing in place; a door from somewhere else could land
+  // you across the map from where the scene is standing.
+  const cue = timePassed ? CUES.find((c) => c.map === map.id && state.check(c.when)) : undefined;
+  if (cue && !textbox.isOpen) startNarration(cue.node);
 }
 
 function updateWarp(dt: number) {

@@ -283,6 +283,48 @@ export const DELHI_NPCS: NpcDef[] = [
       { node: 'c11.sheru.idle' },
     ],
   },
+  {
+    // "Oye Rafiq bhaiya, the tire!": Bantu's shout needs somebody to land on.
+    // At the rickshaw stand below the dak khana, crouched at a back wheel.
+    id: 'rafiq',
+    name: 'Rafiq',
+    map: 'delhi',
+    pos: [44, 25],
+    range: 0,
+    look: {
+      skin: '#8a5636',
+      hair: '#2b2118',
+      cloth: '#e3dccb',
+      stripe: '#8a6a48',
+      hat: '#b8483a',
+      hatStyle: 'kerchief',
+      garb: 'kurta',
+      pants: '#5a5248',
+      beard: 'moustache',
+    },
+    entry: [{ node: 'c11.rafiq' }],
+  },
+  {
+    // "Meena didi, your cards came!": out of the dak khana with the parcel.
+    id: 'meena',
+    name: 'Meena',
+    map: 'delhi',
+    pos: [46, 20],
+    range: 0,
+    look: {
+      skin: '#9c6a42',
+      hair: '#1f1712',
+      cloth: '#2f7d74',
+      stripe: '#e8b04a',
+      hat: '#e8dcc4',
+      hatStyle: 'none',
+      garb: 'salwar',
+      pants: '#2f7d74',
+      shawl: '#e8b04a',
+      hairdo: 'braids',
+    },
+    entry: [{ node: 'c11.meena' }],
+  },
 ];
 
 export const DELHI_NODES: NodeMap = {
@@ -306,6 +348,17 @@ export const DELHI_NODES: NodeMap = {
       { who: 'Bantu', text: 'I am Bantu. My uncle owns the rickshaw; I own the knowledge.' },
     ],
     effects: ['set:c11.met.bantu', 'journal:people.bantu'],
+  },
+  // The two Bantu shouts at, so the shout has somewhere to land.
+  'c11.rafiq': {
+    lines: [
+      { who: 'Rafiq', text: 'The tire is fine. Bantu shouts at it every morning, and that is what keeps it fine.' },
+    ],
+  },
+  'c11.meena': {
+    lines: [
+      { who: 'Meena', text: 'Two hundred wedding cards, and the press spelled the groom wrong on every one. My sister says it is a sign. Of what, she will not say.' },
+    ],
   },
   'c11.bantu.bhaiya': {
     lines: [

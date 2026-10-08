@@ -44,7 +44,9 @@ export const BLOCKING: Blocking[] = [
     dir: 'right',
     sit: true,
   },
-  { id: 'teofilo', when: VERDICT, map: 'village', at: [19, 13], dir: 'down' },
+  // One step west of the plaza lamp: at 19,13 its post rose straight out of
+  // his hat for the whole verdict.
+  { id: 'teofilo', when: VERDICT, map: 'village', at: [18, 13], dir: 'down' },
   { id: 'carmen', when: VERDICT, map: 'village', at: [21, 13], dir: 'down' },
   { id: 'pilar', when: VERDICT, map: 'village', at: [23, 13], dir: 'down' },
   { id: 'rosa', when: VERDICT, map: 'village', at: [18, 15], dir: 'right' },

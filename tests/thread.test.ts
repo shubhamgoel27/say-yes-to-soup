@@ -29,6 +29,7 @@ import {
   whoOf,
 } from '../src/content/guide';
 import { cheapestPath } from '../src/engine/path';
+import { CUES } from '../src/content/staging';
 
 /**
  * Follow Nani's red thread, and nothing else, from the first morning in
@@ -273,8 +274,18 @@ class Walker {
   }
 
   enter(mapId: string) {
+    const same = this.place === mapId;
     this.place = mapId;
+    const arrival = ARRIVALS.some((a) => a.map === mapId && !this.state.has(a.flag) && this.state.check(a.when));
     this.settle();
+    // A scene waiting beyond a dark that was time passing in place plays as
+    // the light comes up (content/staging.ts cues), unless a first footfall
+    // had the floor.
+    const cue = arrival || !same ? undefined : CUES.find((c) => c.map === mapId && this.state.check(c.when));
+    if (cue) {
+      this.walk(cue.node);
+      this.settle();
+    }
   }
 
   /** Walk the door chain to a map, one first footfall at a time. */

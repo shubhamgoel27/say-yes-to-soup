@@ -1,9 +1,11 @@
-import type { Cond } from './schema';
+import type { Look } from '../art/character';
+import type { Cond, EventNode } from './schema';
 import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS } from './return/staging';
 import { STAGING as CROSSING } from './crossing/staging';
 import { STAGING as SHIONOURA } from './shionoura/staging';
 import { STAGING as BUSAN } from './busan/staging';
 import { STAGING as SICILY } from './sicily/staging';
+import { STAGING as KERALA } from './kerala/staging';
 
 /**
  * Stage directions: where people stand when a scene has something to say,
@@ -26,6 +28,9 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
  * place turns to the player while words are on screen, except the `busy`,
  * who keep facing `dir` (a fishwife three customers deep does not look up).
  * With `sit` they also sit down there once arrived, busy at what they sat to.
+ * With `look` they are dressed for the scene (a mop wig and a bedsheet, a
+ * little umbrella), but only where nobody sees the change: in a door's dark,
+ * or off the map or the screen; they change back the same way.
  */
 export type Blocking = {
   id: string;
@@ -35,6 +40,7 @@ export type Blocking = {
   dir: Dir;
   sit?: boolean;
   busy?: boolean;
+  look?: Partial<Look>;
 };
 
 /** A villager who walks beside the player, across doors, while `when` holds. */
@@ -56,11 +62,31 @@ export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; n
  */
 export type LampHold = { when: Cond; map: string };
 
-/** One chapter's stage directions. */
-export type Staging = { blocking?: Blocking[]; hours?: HourHold[]; lamps?: LampHold[] };
+/**
+ * A scene that is waiting on the far side of a door's dark: when you come
+ * through any door onto `map` while `when` holds, its narration starts as the
+ * light comes up. This is how time passes in place: a node says "after
+ * dinner" or "the next morning", travels you to the same map (the dark is
+ * the night, or the day), and the scene it promised is already standing
+ * there when the light returns, everyone in their places (see the staging
+ * block in main.ts, which puts the staged on their marks in the dark).
+ * Each cue is an EventNode too, so the walkers can prove it reachable.
+ */
+export type Cue = EventNode & { when: Cond; map: string };
 
-const CHAPTERS: Staging[] = [{ blocking: RETURN_BLOCKING, hours: RETURN_HOURS }, CROSSING, SHIONOURA, BUSAN, SICILY];
+/** One chapter's stage directions. */
+export type Staging = { blocking?: Blocking[]; hours?: HourHold[]; lamps?: LampHold[]; cues?: Cue[] };
+
+const CHAPTERS: Staging[] = [
+  { blocking: RETURN_BLOCKING, hours: RETURN_HOURS },
+  CROSSING,
+  SHIONOURA,
+  BUSAN,
+  KERALA,
+  SICILY,
+];
 
 export const BLOCKING: Blocking[] = CHAPTERS.flatMap((c) => c.blocking ?? []);
 export const HOURS: HourHold[] = CHAPTERS.flatMap((c) => c.hours ?? []);
 export const LAMPS_LIT: LampHold[] = CHAPTERS.flatMap((c) => c.lamps ?? []);
+export const CUES: Cue[] = CHAPTERS.flatMap((c) => c.cues ?? []);

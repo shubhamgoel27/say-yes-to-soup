@@ -589,7 +589,7 @@ export const BUSAN_NODES: NodeMap = {
   // ---------------- Mr. Gong, ferry and freight ----------------
   'c5.gong.first': {
     lines: [
-      { text: 'FERRY AND FREIGHT. The window is small, the stamp is loud, and the man behind both is faster.' },
+      { text: 'Under the FERRY AND FREIGHT board a man works the quay on his feet. No window, no desk: a loud stamp, and hands faster than it.' },
       { who: 'Mr. Gong', text: 'Name, destination, purpose. Quickly. The boats respect neither of us.' },
     ],
     effects: ['set:c5.met.gong'],
@@ -601,11 +601,11 @@ export const BUSAN_NODES: NodeMap = {
   // First time at the window, already vouched for: no form, just the stamp.
   'c5.gong.meet': {
     lines: [
-      { text: 'FERRY AND FREIGHT. The window is small, the stamp is loud, and the man behind both is faster.' },
+      { text: 'Under the FERRY AND FREIGHT board a man works the quay on his feet. No window, no desk: a loud stamp, and hands faster than it.' },
     ],
     effects: ['set:c5.met.gong'],
     choices: [
-      { text: 'Slide Joseph’s letter under the glass', goto: 'c5.gong.berth', when: { has: ['joseph.letter'] } },
+      { text: 'Hand him Joseph’s letter', goto: 'c5.gong.berth', when: { has: ['joseph.letter'] } },
       { text: 'Ask for a berth to Kerala', goto: 'c5.gong.berth2' },
     ],
   },

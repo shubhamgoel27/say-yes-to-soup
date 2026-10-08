@@ -131,7 +131,9 @@ export const CROSSING_NPCS: NpcDef[] = [
       { when: { has: ['c3.cook.done'], not: ['c3.met.bosun', 'c3.wog'] }, node: 'c3.bosun.first.summons' },
       { when: { not: ['c3.met.bosun'] }, node: 'c3.bosun.first' },
       { when: { has: ['c3.cook.done'], not: ['c3.wog'] }, node: 'c3.bosun.summons' },
-      { when: { has: ['c3.wog'], not: ['c3.shellback'] }, node: 'c3.bosun.court' },
+      // Summoned, and the night before the Line still to pass.
+      { when: { has: ['c3.wog'], not: ['c3.court.noon', 'c3.shellback'] }, node: 'c3.bosun.summoned' },
+      { when: { has: ['c3.court.noon'], not: ['c3.shellback'] }, node: 'c3.bosun.court' },
       { when: { has: ['c3.shellback'] }, node: 'c3.bosun.after' },
       { node: 'c3.bosun.idle' },
     ],
@@ -181,7 +183,9 @@ export const CROSSING_NPCS: NpcDef[] = [
     id: 'chascaC3',
     name: 'Chasca',
     map: 'ship',
-    pos: [18, 15],
+    // In the pocket by the short bay: one step east of the green stack, which
+    // at 18,15 stood drawn across her from the knees down.
+    pos: [19, 15],
     range: 0,
     look: {
       skin: '#c98f5e',
@@ -495,6 +499,17 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'Joseph', text: 'Two bells. One hour of the watch down, and better fed. Tell Ben the plate came home warm.' },
     ],
     effects: ['set:c3.baon.done', 'errand.done', 'clear:errand.ben-baon', 'journal:customs.watches'],
+    next: 'c3.weeks',
+  },
+  // A ship's days are all one day; this is where two weeks of them go, in
+  // one dark, so that Ben's "Week three" is the next thing anybody says.
+  'c3.weeks': {
+    lines: [
+      { text: 'You carry the warm plate back down to Ben. After that the days go by in watches.' },
+      { text: 'Chipping, painting, sleeping; the sea the same size every morning, the salad a little smaller.' },
+      { text: 'Two weeks of it. Then one afternoon Ben leans out of the galley and crooks a finger at you.' },
+    ],
+    effects: ['travel:galley,4,2,left'],
   },
   'c3.jos.entrust': {
     lines: [
@@ -678,7 +693,7 @@ export const CROSSING_NODES: NodeMap = {
     ],
     effects: ['set:c3.met.bosun', 'journal:people.bosun', 'set:c3.wog', 'journal:words.pollywog'],
     choices: [
-      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.court' },
+      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.tonoon' },
       { text: 'Ask what happens to refusers', goto: 'c3.bosun.refuse' },
     ],
   },
@@ -689,18 +704,37 @@ export const CROSSING_NODES: NodeMap = {
     ],
     effects: ['set:c3.wog', 'journal:words.pollywog'],
     choices: [
-      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.court' },
+      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.tonoon' },
       { text: 'Ask what happens to refusers', goto: 'c3.bosun.refuse' },
     ],
+  },
+  // Asked about refusers first: the scroll is still up and so is he.
+  'c3.bosun.summoned': {
+    lines: [
+      { who: 'The Bosun', text: 'Tomorrow, noon, on the hatch. The court does not adjourn for nerves, wog.' },
+    ],
+    choices: [
+      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.tonoon' },
+      { text: 'Ask what happens to refusers', goto: 'c3.bosun.refuse' },
+    ],
+  },
+  // "Tomorrow at noon": the night goes by in one dark, and the court is
+  // sitting on the foredeck when the light comes back (./staging.ts).
+  'c3.bosun.tonoon': {
+    lines: [
+      { text: 'You sleep badly. Somewhere aft, someone is practising a royal voice through a funnel of rolled cardboard.' },
+    ],
+    effects: ['set:c3.court.noon', 'travel:ship,22,9,up'],
   },
   'c3.bosun.refuse': {
     lines: [
       { who: 'The Bosun', text: 'Nothing, wog. They watch from the rail with dry hair, and regret it at every karaoke night after.' },
     ],
   },
-  // The deck gathers for this from the summons on (./staging.ts), and the
-  // shellback is only raised on the last line, so the court is not
-  // dismissed while the bucket is still in the air.
+  // Played as the light comes up on the noon of the Line, with the deck
+  // already gathered round the hatch beams (./staging.ts); the shellback is
+  // only raised on the last line, so the court is not dismissed while the
+  // bucket is still in the air.
   'c3.bosun.court': {
     lines: [
       { text: 'Noon, on the Line. Neptune holds court on the hatch: the bosun in a mop wig and a bedsheet, trident of taped boat hooks.' },
@@ -752,6 +786,14 @@ export const CROSSING_NODES: NodeMap = {
   },
 
   // ---------------- karaoke night ----------------
+  // Lifting the cover calls the night; dinner passes in one dark, and the
+  // mess is full when the light comes back (./staging.ts).
+  'c3.karaoke.call': {
+    lines: [
+      { text: 'You lift a corner of the cover. From the range, without turning round, Ben: "After dinner, anak. Everybody comes. That is the rule."' },
+    ],
+    effects: ['set:c3.karaoke.night', 'travel:galley,10,2,right'],
+  },
   'c3.karaoke': {
     lines: [
       { text: 'After dinner the karaoke machine is wheeled out with the reverence of an altar.' },
@@ -1005,6 +1047,14 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'The karaoke machine, under a fitted cover like important equipment. Aboard, it is.' },
     ],
   },
+  // The court's furniture, left on the foredeck after it: nobody aboard
+  // will be the one to put Neptune's things away.
+  'c3.ex.bucket': {
+    lines: [{ text: 'Neptune’s bucket, still half full of warm sea. It has been promoted; nobody washes the deck with it now.' }],
+  },
+  'c3.ex.flour': {
+    lines: [{ text: 'A sack of the galley’s flour, open at the mouth. Ben has counted what is missing and decided to call it tradition.' }],
+  },
   'c3.ex.trayrack': {
     lines: [
       { text: 'BUS YOUR OWN TRAY, in three languages and one stern drawing.' },
@@ -1156,10 +1206,12 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   stove: [{ node: 'c3.ex.stove' }],
   galleycounter: [{ node: 'c3.ex.counter' }],
   karaoke: [
-    { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke' },
+    { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke.call' },
     { node: 'c3.ex.karaoke' },
   ],
   trayrack: [{ node: 'c3.ex.trayrack' }],
+  cubeta: [{ map: 'ship', node: 'c3.ex.bucket' }],
+  sacos: [{ map: 'ship', node: 'c3.ex.flour' }],
   wallSteel: [{ node: 'c3.ex.wallsteel' }],
   floorSteel: [{ node: 'c3.ex.floorsteel' }],
   // Shared kinds, spoken in this chapter's voice only on this chapter's maps.

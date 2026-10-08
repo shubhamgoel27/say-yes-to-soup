@@ -5,7 +5,7 @@ import { SHIONOURA_JOURNAL, SHIONOURA_TASKS } from './journal';
 import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
 import { SHIONOURA_STATION_EVENTS, SHIONOURA_STATION_JOURNAL, SHIONOURA_STATION_NODES } from './stations';
 import { RECALL } from './recall';
-import { FESTIVAL_DRESSING } from './staging';
+import { FESTIVAL_DRESSING, STAGING } from './staging';
 import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
 import { handWords } from '../../ui/games/scene';
 
@@ -16,7 +16,8 @@ export const CHAPTER: ChapterDef = {
   npcs: SHIONOURA_NPCS,
   nodes: { ...SHIONOURA_NODES, ...SHIONOURA_STATION_NODES },
   examines: SHIONOURA_EXAMINES,
-  events: [...SHIONOURA_EVENTS, ...SHIONOURA_STATION_EVENTS],
+  // The cue is the goodbye, read on the pier after the festival night's dark.
+  events: [...SHIONOURA_EVENTS, ...SHIONOURA_STATION_EVENTS, ...(STAGING.cues ?? [])],
   journal: [...SHIONOURA_JOURNAL, ...SHIONOURA_STATION_JOURNAL],
   tasks: SHIONOURA_TASKS,
   errands: [{ id: 'fumi-tai', label: "Fumi's tai, held at Daisuke's stall on the quay" }],

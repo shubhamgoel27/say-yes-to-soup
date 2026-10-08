@@ -1,11 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BLOCKING, HOURS, LAMPS_LIT } from '../src/content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT } from '../src/content/staging';
 import { DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
 import { DAWN_LANDING } from '../src/content/busan/staging';
 import { SHIP_AT, SIGNING_SPOT } from '../src/content/sicily/staging';
+import { COURT_LANDING, KARAOKE_LANDING } from '../src/content/crossing/staging';
+import { PIER_LANDING } from '../src/content/shionoura/staging';
+import { TICKET_SPOT } from '../src/content/kerala/staging';
+import { MEETING } from '../src/content/return/staging';
 import { GameState } from '../src/engine/state';
 import type { MapData } from '../src/engine/grid';
 
@@ -39,6 +43,8 @@ type Scene = {
   player: [number, number];
   nodes: string[];
   hour?: [number, number];
+  /** People the words name without giving them a line: they must be on screen too. */
+  cast?: string[];
 };
 
 const SCENES: Scene[] = [
@@ -77,10 +83,54 @@ const SCENES: Scene[] = [
   {
     name: 'the court of Neptune',
     hour: [0.35, 0.5],
-    flags: ['c3.arrived', 'c3.cook.done', 'c3.met.bosun', 'c3.wog'],
+    flags: ['c3.arrived', 'c3.cook.done', 'c3.met.bosun', 'c3.wog', 'c3.court.noon'],
     map: 'ship',
-    player: [23, 14],
+    player: COURT_LANDING,
     nodes: ['c3.bosun.court', 'c3.bosun.rise'],
+    cast: ['hanaC3', 'joseph', 'olena', 'chascaC3'],
+  },
+  {
+    name: 'the karaoke night',
+    hour: [0.7, 0.85],
+    flags: ['c3.arrived', 'c3.cook.done', 'c3.karaoke.night'],
+    map: 'galley',
+    player: KARAOKE_LANDING,
+    nodes: ['c3.karaoke'],
+    cast: ['joseph', 'mangben', 'olena', 'bosun', 'hanaC3', 'chascaC3'],
+  },
+  {
+    name: 'the Shionoura morning boat',
+    hour: [0.1, 0.25],
+    flags: ['c4.arrived', 'met.hana', 'c4.omiyage', 'c4.wish.hung', 'c4.kingyo.done', 'met.fumi', 'met.daisuke', 'met.sachiko', 'met.genji', 'c4.complete', 'c4.sailing'],
+    map: 'shionoura',
+    player: PIER_LANDING,
+    nodes: ['c4.depart'],
+    cast: ['fumi', 'isao'],
+  },
+  {
+    name: 'the Kerala jetty goodbye',
+    flags: ['c6.arrived', 'c6.letter.delivered', 'c6.complete', 'c6.depart.ready', 'met.moosa'],
+    map: 'kerala',
+    player: TICKET_SPOT,
+    nodes: ['c6.moosa.sail', 'c6.depart'],
+    cast: ['mariamma', 'josephC6'],
+  },
+  {
+    name: 'the verdict at the well',
+    hour: [0.55, 0.65],
+    flags: ['c9.complete', 'c10.arrived', 'c10.well.called'],
+    map: 'village',
+    player: MEETING.spot,
+    nodes: ['c10.verdict'],
+  },
+  {
+    name: 'Bantu working the gali',
+    flags: ['c11.arrived', 'c11.met.bantu'],
+    map: 'delhi',
+    // West of Bantu's own spot, where his first talk leaves you.
+    player: [40, 22],
+    nodes: ['c11.bantu.bhaiya'],
+    cast: ['rafiq', 'meena'],
   },
 ];
 
@@ -120,6 +170,35 @@ describe('staging: the climaxes are on screen', () => {
           );
           assert.ok(seen, `${id}: ${line.who} speaks from ${where.map((p) => `${p.map} ${p.at}`).join(' or ')}, off screen`);
         }
+      }
+      for (const id of sc.cast ?? []) {
+        const n = NPCS.find((x) => x.id === id);
+        assert.ok(n, `${id} is nobody in the roster`);
+        const p = placed.get(id) ?? { map: n.map, at: n.pos };
+        const seen = p.map === sc.map && Math.abs(p.at[0] - sc.player[0]) <= 9 && Math.abs(p.at[1] - sc.player[1]) <= 5;
+        assert.ok(seen, `the words name ${id}, who is at ${p.map} ${p.at}, off screen`);
+      }
+    });
+
+    it(`${sc.name}: nobody stands behind a tall thing, or under a thin one`, () => {
+      const m = REGION_MAPS[sc.map]!;
+      const { placed } = bodies(sc);
+      const tallAt = (x: number, y: number) => {
+        let t = objectAt(m, x, y)?.tall ? objectAt(m, x, y)!.t : undefined;
+        for (const d of DRESSINGS) {
+          if (d.map !== sc.map || !bodies(sc).st.check(d.when)) continue;
+          for (const [cx, cy, def] of d.cells ?? []) if (cx === x && cy === y) t = def?.tall ? def.t : undefined;
+        }
+        return t;
+      };
+      // An awning is a roof you stand under, not a post that grows out of you.
+      const canopy = new Set(['hongawning']);
+      const who = [...placed.entries()].filter(([, p]) => p.staged && p.map === sc.map).map(([id, p]) => ({ id, at: p.at }));
+      for (const { id, at } of [...who, { id: 'the player', at: sc.player }]) {
+        const below = tallAt(at[0], at[1] + 1);
+        assert.ok(!below, `${id} at ${at} stands behind ${below}, which is drawn across them`);
+        const above = tallAt(at[0], at[1] - 1);
+        assert.ok(!above || canopy.has(above), `${id} at ${at} has ${above} growing out of their head`);
       }
     });
 
@@ -191,6 +270,31 @@ describe('staging: places and hours', () => {
     assert.ok(!solidAt(m, ...DAWN_LANDING));
     const sunhee = BLOCKING.find((b) => b.id === 'sunhee' && b.map === 'busan')!;
     assert.deepEqual([sunhee.at[0] + 1, sunhee.at[1]], DAWN_LANDING, 'Sun-hee is not the one to the left of the landing');
+  });
+
+  it('lets every cued scene in through a dark that a node actually falls', () => {
+    for (const cue of CUES) {
+      assert.ok(NODES[cue.node], `cue names a missing node ${cue.node}`);
+      const falls = Object.entries(NODES).some(
+        ([, n]) =>
+          n.effects?.some((e) => e.startsWith(`travel:${cue.map},`)) &&
+          n.effects?.some((e) => (cue.when.has ?? []).some((f) => e === `set:${f}`)),
+      );
+      assert.ok(falls, `nothing raises ${cue.node}'s flags and travels to ${cue.map}: the scene can never play`);
+    }
+  });
+
+  it('lands each passing of time on the scene it promised', () => {
+    const lands: [string, [number, number], string][] = [
+      ['c3.bosun.tonoon', COURT_LANDING, 'ship'],
+      ['c3.karaoke.call', KARAOKE_LANDING, 'galley'],
+      ['c4.depart.night', PIER_LANDING, 'shionoura'],
+    ];
+    for (const [id, at, mapId] of lands) {
+      const t = NODES[id]?.effects?.find((e) => e.startsWith('travel:'));
+      assert.ok(t?.startsWith(`travel:${mapId},${at[0]},${at[1]},`), `${id} must land on ${mapId} ${at}, not ${t}`);
+      assert.ok(!solidAt(REGION_MAPS[mapId]!, ...at), `${id} lands inside something`);
+    }
   });
 
   it('moors the ship in open water, clear of the mole and everyone on it', () => {
