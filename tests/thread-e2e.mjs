@@ -117,7 +117,15 @@ for (const s of states) {
         if (w.dialogue || (w.tile[0] === cx && w.tile[1] === cy && !w.auto)) break;
       }
       const w = await st();
-      check(!w.dialogue && w.tile[0] === cx && w.tile[1] === cy, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
+      // A figure is two tiles tall: when the thread ends directly above its
+      // person, that floor is where their face is drawn, and a click there is
+      // a click on them (walk beside, talk). What it must never do is read a
+      // prop (an ex.* examine).
+      const loop = now.thread.last.loop;
+      const underHead = !!loop && loop[0] === cx && loop[1] === cy + 1;
+      const walked = !w.dialogue && w.tile[0] === cx && w.tile[1] === cy;
+      const talked = underHead && !!w.dialogue && !/^ex\./.test(w.dialogue);
+      check(walked || talked, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
       if (w.dialogue) await page.keyboard.press('Escape');
       await warp(now.map, tx0, ty0);
       await sleep(900);
