@@ -169,8 +169,27 @@ function peopleByStop(walked: (i: number) => boolean): { stop: string; names: st
   });
 }
 
+/**
+ * How long the closing book takes to go dark once it is shut: the book does
+ * not vanish, the lamplight goes out over it. The engine then holds the dark
+ * a beat in quiet before the well comes back (main.ts, the curtain).
+ */
+export const CURTAIN_MS = 1600;
+
 /** Credits-only styles, carried by the book that uses them. */
 const CREDIT_CSS = `
+  #album.al-curtain { cursor: default; }
+  #album.al-curtain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #17120e;
+    animation: al-curtain ${CURTAIN_MS}ms ease-in forwards;
+  }
+  @keyframes al-curtain { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    #album.al-curtain::after { animation-duration: ${Math.round(CURTAIN_MS / 2)}ms; }
+  }
   .cr-cover { margin: auto 0; text-align: center; }
   .cr-title { font-family: var(--display); font-size: clamp(30px, 5vw, 44px); color: #2f2418; margin: 0; letter-spacing: 0.01em; }
   .cr-sub { font-family: var(--hand); font-size: 22px; color: #8a6a3c; margin: 2px 0 0; }
@@ -205,7 +224,14 @@ export class AlbumUI {
   private spread = 0;
   private mode: Mode = 'album';
   private leaves: Leaf[] = [];
-  private done: (() => void) | null = null;
+  /** Called once the book is put away; `curtain` when it went dark over the
+   * end of the journey, so the engine holds the dark before the well. */
+  private done: ((curtain: boolean) => void) | null = null;
+  /** The closing book opened at the well (not the credits from the pause
+   * menu): shutting it is the end of the journey, and is not instant. */
+  private curtain = false;
+  /** Going dark: every key is swallowed until the book is gone. */
+  private closing = false;
 
   constructor(
     private root: HTMLElement,
@@ -235,7 +261,7 @@ export class AlbumUI {
     return this.spread >= this.spreadCount - 1;
   }
 
-  open(done?: () => void) {
+  open(done?: (curtain: boolean) => void) {
     // The well raises `end.book` just before it raises `album.open`, which is
     // the only difference between the two books this overlay knows how to be.
     // Consumed on sight, like `album.open`, so a journey closed halfway through
@@ -243,6 +269,7 @@ export class AlbumUI {
     this.mode = this.state.has('end.book') ? 'end' : 'album';
     if (this.mode === 'end') this.state.clearFlag('end.book');
     this.leaves = this.mode === 'end' ? [...CLOSING, ...CREDITS] : [];
+    this.curtain = this.mode === 'end';
     this.spread = 0;
     this.done = done ?? null;
     this.root.hidden = false;
@@ -250,9 +277,10 @@ export class AlbumUI {
   }
 
   /** The credits pages alone, from the pause menu once the journal is full. */
-  openCredits(done?: () => void) {
+  openCredits(done?: (curtain: boolean) => void) {
     this.mode = 'end';
     this.leaves = [...CREDITS];
+    this.curtain = false;
     this.spread = 0;
     this.done = done ?? null;
     this.root.hidden = false;
@@ -266,7 +294,7 @@ export class AlbumUI {
    * simply walks the last pages forward and the final one draws the curtain.
    */
   close() {
-    if (this.root.hidden) return;
+    if (this.root.hidden || this.closing) return;
     if (this.mode === 'end' && !this.onLastPage) {
       this.step(true);
       return;
@@ -275,6 +303,7 @@ export class AlbumUI {
   }
 
   onDir(dir: Dir) {
+    if (this.closing) return;
     // The closing book's last page says "any key", and an arrow is a key.
     if (this.mode === 'end' && this.onLastPage) {
       this.onAction();
@@ -286,6 +315,7 @@ export class AlbumUI {
 
   /** Pointer middle-third: keep going; past the last page, close the book. */
   onAction() {
+    if (this.closing) return;
     if (!this.onLastPage) {
       this.step(false);
       return;
@@ -311,12 +341,30 @@ export class AlbumUI {
   }
 
   private finish() {
+    const end = this.mode === 'end';
+    if (end && this.curtain) {
+      // The last page of the journey is not snatched away: the dark comes
+      // down over the open book, and only then is it gone.
+      this.closing = true;
+      this.root.classList.add('al-curtain');
+      window.setTimeout(() => {
+        this.closing = false;
+        this.curtain = false;
+        this.root.classList.remove('al-curtain');
+        this.put(true);
+      }, CURTAIN_MS);
+      return;
+    }
+    this.put(false);
+  }
+
+  private put(curtain: boolean) {
     this.root.hidden = true;
     const end = this.mode === 'end';
     if (!end) this.tally();
     const done = this.done;
     this.done = null;
-    done?.();
+    done?.(curtain);
     // The credits were the book's own last pages; closing it is the end.
     if (end) this.leaves = [];
   }

@@ -628,16 +628,20 @@ export const BUSAN_NODES: NodeMap = {
       { who: 'Mr. Gong', text: 'Thomas sails for Kochi on the morning tide. Joseph’s letter rides in warm hands, not a mailbag.' },
       { text: 'He does not ask who vouched; the lane talks faster than you walk. Stamp. Berth: one. Galley duty: assumed.' },
       { who: 'Mr. Gong', text: 'Your fish is at Sun-hee’s. First light, before the auction eats her.' },
+      { text: 'You sleep in a bunk above the ferry office, the cranes clanking until the small hours.' },
     ],
-    effects: ['set:c5.berth'],
+    // The night passes in one door's dark and you wake into the lane at
+    // first light (the hour and the auction are staged in ./staging.ts).
+    effects: ['set:c5.berth', 'travel:busan,18,12,left'],
   },
   'c5.gong.berth2': {
     lines: [
       { who: 'Mr. Gong', text: 'The Malabar Star, morning tide, Kochi.' },
       { text: 'He does not ask who vouched; the lane talks faster than you walk. Stamp. Berth: one.' },
       { who: 'Mr. Gong', text: 'Your fish is at Sun-hee’s. First light, before the auction eats her.' },
+      { text: 'You sleep in a bunk above the ferry office, the cranes clanking until the small hours.' },
     ],
-    effects: ['set:c5.berth'],
+    effects: ['set:c5.berth', 'travel:busan,18,12,left'],
   },
   'c5.gong.wait': {
     lines: [
@@ -876,7 +880,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.farol': {
     lines: [
-      { text: 'A harbor lamp burning against the dawn.' },
+      { text: 'A harbor lamp, lit at dusk for the boats and left burning until the auction calls the dawn.' },
     ],
   },
   'c5.ex.crate': {
@@ -893,7 +897,7 @@ export const BUSAN_NODES: NodeMap = {
   },
   'c5.ex.sea': {
     lines: [
-      { text: 'Harbor water, dawn-grey, an oil-sheen rainbow at the pilings. Gulls work it end to end.' },
+      { text: 'Harbor water, grey-green, an oil-sheen rainbow at the pilings. Gulls work it end to end.' },
     ],
   },
   'c5.ex.gukbap': {

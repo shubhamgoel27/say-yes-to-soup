@@ -81,6 +81,12 @@ export type ExamineArm = {
    * grass ("the only place in the valley") once answered in Kerala.
    */
   scope?: 'home' | 'away';
+  /**
+   * Only after dark: the arm is passed over while there is daylight on the
+   * map, so words about a sky at night are only said under one (the star
+   * river over Shionoura). List a daylight arm after it for the same kind.
+   */
+  dark?: boolean;
 };
 
 /**
@@ -180,6 +186,9 @@ export type MapMeta = {
   mood: string;
   /** When dusk falls, outdoors maps may change into their evening light. */
   moodDusk?: string;
+  /** The first half hour of light, where a chapter's words are written at
+   * first light (Busan's "dawn the color of oyster shell"). */
+  moodDawn?: string;
   /** Music + babble region key; falls back to a central per-map table. */
   region?: string;
 };

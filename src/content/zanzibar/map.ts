@@ -158,6 +158,9 @@ const DECOR: Record<string, string> = {
   '7,8': 'q', // madafu stacked in the alley yard, out of the sun
   '17,11': 'J', // Rashid's kahawa round, parked mid-conversation
   '14,10': 'P', // the ginger cat, in the pocket of shade, unmovable
+  // Rashid's own end of the bench, beside the cat. Walkable, like a diner's
+  // stool, so he is drawn sitting on it rather than standing in front of it.
+  '15,10': 'I',
   '19,6': 'T', // the courtyard mango, which is what the courtyard is for
   '20,7': 'q', // a heap of madafu under it, machete in the top one
   '18,8': 'z', // a spice sack open at the mouth
@@ -320,6 +323,7 @@ export const ZANZIBAR_MAP: MapData = {
     x: { t: 'blocked', solid: true, tall: true },
     D: { t: 'mlango', solid: true, tall: true },
     b: { t: 'baraza', solid: true },
+    I: { t: 'baraza' },
     M: { t: 'stall', solid: true, tall: true },
     k: { t: 'kangarack', solid: true, tall: true },
     z: { t: 'spicesack', solid: true },

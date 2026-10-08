@@ -399,11 +399,14 @@ export const SICILY_NODES: NodeMap = {
       { who: 'Nonna Concetta', text: 'Tomorrow, then. I will be here. So will the whole town, walking.' },
     ],
   },
+  // c8.walking brings the evening down and the town out into the piazza
+  // while this is read (./staging.ts).
   'c8.walk.go': {
     lines: [
       { text: 'The town comes out with you, dressed nicer than the errand requires.' },
       { text: 'Nods, gossip, a newborn admired like a moonrise, at the speed of talk.' },
     ],
+    effects: ['set:c8.walking'],
     choices: [
       {
         text: '"In Zanzibar they taught me this pace. Pole pole."',
@@ -454,7 +457,7 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'A signora holds up a swordfish steak like evidence. Turi clutches his chest.' },
       { who: 'Turi', text: 'Signora, at that price I row out and apologize to the fish personally!' },
-      { text: 'They meet in the middle and shake like old dance partners. The crowd applauds.' },
+      { text: 'They meet in the middle and shake like old dance partners, and you find you are applauding.' },
     ],
     effects: ['set:c8.haggle', 'journal:customs.abbanniata'],
   },

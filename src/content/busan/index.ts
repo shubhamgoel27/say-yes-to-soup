@@ -4,6 +4,7 @@ import { BUSAN_EVENTS, BUSAN_EXAMINES, BUSAN_LETTERS, BUSAN_NODES, BUSAN_NPCS } 
 import { BUSAN_JOURNAL, BUSAN_TASKS } from './journal';
 import { BUSAN_MAP, TEAHOUSE_MAP } from './map';
 import { RECALL } from './recall';
+import { AUCTION_DRESSING, AUCTION_NODES, AUCTION_NPCS } from './staging';
 import { HotteokPanel } from '../../ui/games/busan';
 import { handWords } from '../../ui/games/scene';
 
@@ -11,8 +12,8 @@ import { handWords } from '../../ui/games/scene';
 export const CHAPTER: ChapterDef = {
   id: 'busan',
   maps: [BUSAN_MAP, TEAHOUSE_MAP],
-  npcs: BUSAN_NPCS,
-  nodes: BUSAN_NODES,
+  npcs: [...BUSAN_NPCS, ...AUCTION_NPCS],
+  nodes: { ...BUSAN_NODES, ...AUCTION_NODES },
   examines: BUSAN_EXAMINES,
   events: BUSAN_EVENTS,
   journal: BUSAN_JOURNAL,
@@ -35,7 +36,7 @@ export const CHAPTER: ChapterDef = {
   ],
   recall: RECALL,
   meta: {
-    busan: { scene: 'outdoor', mood: 'jagalchi' },
+    busan: { scene: 'outdoor', mood: 'jagalchi', moodDawn: 'oystershell' },
     teahouse: { scene: 'interior', mood: 'interior' },
   },
   moods: {
@@ -46,6 +47,16 @@ export const CHAPTER: ChapterDef = {
       bottom: 'rgba(255,178,122,0.07)',
       vig: 0.24,
       ambient: 0xe8edf4,
+    },
+    // First light on the lane, the hour the auction and the goodbye are
+    // written in: "a dawn the color of oyster shell", pearl and pink above,
+    // a cool sea haze low, everything a little soft.
+    oystershell: {
+      top: 'rgba(222,188,196,0.24)',
+      mid: 'rgba(244,224,214,0.1)',
+      bottom: 'rgba(164,182,204,0.16)',
+      vig: 0.3,
+      ambient: 0xf2dcd4,
     },
   },
   sitKinds: ['stool'],
@@ -67,6 +78,8 @@ export const CHAPTER: ChapterDef = {
   },
   // Story beats leave marks on the lane itself.
   dressings: [
+    // First light: the auction's crates down both shoulders of the lane.
+    AUCTION_DRESSING,
     {
       // Once the extra fish is a habit, the market cat quits the stack yard
       // and takes up a post beside Sun-hee's ice. Cats audit generosity.

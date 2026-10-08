@@ -33,6 +33,7 @@ export const ART: ChapterArt = {
     'lavagna',
     'ventola',
     'banco',
+    'nave',
   ],
   buildings: ['casedda'],
   windows: {
@@ -1472,5 +1473,154 @@ export const ART: ChapterArt = {
       for (let x = 3; x < S; x += 6) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, S); g.stroke(); }
       if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 12, 6, 'rgba(40,32,24,0.1)');
     });
+
+    // ------------------------------------------------------------ the send-off
+
+    make('nave', 1, (g, r) => {
+      // The ship to Veracruz, alongside the mole for the send-off: a small
+      // working coaster, seen from the town's height. Bow east to the open
+      // sea, house aft, two hatches with a few boxes on them, and the
+      // gangway climbing from her far rail to the mole's edge. Five and a
+      // half tiles is as long as any sprite in the world may be; she is a
+      // little ship, and the town is a little town.
+      const hullC = '#2f3a46';
+      const deckC = '#b7ad94';
+      const white = '#efe9dc';
+      const wl = 176; // waterline
+      // The dark water she sits in, and a wake of foam along her side.
+      oval(g, 178, wl + 4, 160, 12, 'rgba(18,40,58,0.28)');
+      // Deck, seen from above: far rail along the top, sheer rising to the bow.
+      g.fillStyle = deckC;
+      g.beginPath();
+      g.moveTo(22, 120);
+      g.lineTo(24, 84);
+      g.quadraticCurveTo(170, 76, 296, 80);
+      g.lineTo(338, 104);
+      g.lineTo(300, 118);
+      g.closePath();
+      g.fill();
+      vgrad(g, 24, 80, 300, 10, 'rgba(0,0,0,0.12)', 'rgba(0,0,0,0)');
+      // Far bulwark, a thin painted rail.
+      g.strokeStyle = shade(hullC, 0.25);
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(24, 84);
+      g.quadraticCurveTo(170, 76, 296, 80);
+      g.lineTo(338, 104);
+      g.stroke();
+      // Hatch covers, and a few boxes riding on the forward one.
+      for (const [hx, hw] of [
+        [130, 70],
+        [214, 70],
+      ] as const) {
+        rr(g, hx, 88, hw, 24, 3, '#6f7f74');
+        rect(g, hx, 88, hw, 4, shade('#6f7f74', 0.18));
+        for (let k = 1; k < 4; k++) rect(g, hx + (hw * k) / 4, 90, 1.5, 21, 'rgba(30,36,32,0.35)');
+      }
+      for (const [bx, c] of [
+        [220, '#9d4530'],
+        [246, '#3f6e8c'],
+      ] as const) {
+        rr(g, bx, 72, 24, 26, 2, c);
+        rect(g, bx, 72, 24, 6, shade(c, 0.2));
+        for (let k = 0; k < 5; k++) rect(g, bx + 3 + k * 4.5, 80, 1.2, 16, shade(c, -0.25));
+      }
+      // Masts: a derrick post between the hatches and a foremast at the bow.
+      for (const [mx, top] of [
+        [118, 22],
+        [306, 34],
+      ] as const) {
+        rr(g, mx - 2, top, 4, 100 - top, 2, shade(white, -0.12));
+        dot(g, mx, top, 3, top === 34 ? '#f3d27a' : shade(white, -0.2));
+      }
+      g.strokeStyle = 'rgba(60,52,44,0.5)';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(118, 24);
+      g.lineTo(170, 90);
+      g.moveTo(306, 36);
+      g.lineTo(336, 102);
+      g.moveTo(306, 36);
+      g.lineTo(118, 24);
+      g.stroke();
+      // The house aft: roof, then its sunlit face with the bridge windows.
+      rr(g, 30, 40, 82, 22, 4, shade(white, -0.08));
+      rect(g, 30, 58, 82, 56, white);
+      vgrad(g, 30, 58, 82, 56, 'rgba(255,255,255,0.12)', 'rgba(60,50,40,0.12)');
+      for (let k = 0; k < 6; k++) rr(g, 36 + k * 12.5, 66, 9, 8, 1.5, '#2a3a4a');
+      for (let k = 0; k < 4; k++) rr(g, 40 + k * 18, 86, 7, 7, 3.5, '#3a4a58');
+      rect(g, 26, 62, 90, 3, shade(white, -0.18)); // bridge wings
+      // Funnel: buff, a navy band, a soot-dark lip.
+      const fun = '#d9b77a';
+      g.fillStyle = fun;
+      g.beginPath();
+      g.moveTo(66, 46);
+      g.lineTo(70, 6);
+      g.lineTo(92, 6);
+      g.lineTo(96, 46);
+      g.closePath();
+      g.fill();
+      rect(g, 69, 16, 24, 9, '#2c3e57');
+      oval(g, 81, 6, 11, 3.5, '#2a2520');
+      // A thread of smoke: she is ready.
+      blob(g, 90, 2, 7, 'rgba(230,226,218,0.5)', r);
+      // Near side of the hull: the long dark band, sheer rising to the bow.
+      const hg = g.createLinearGradient(0, 112, 0, wl);
+      hg.addColorStop(0, shade(hullC, 0.14));
+      hg.addColorStop(1, shade(hullC, -0.12));
+      g.fillStyle = hg;
+      g.beginPath();
+      g.moveTo(20, 118);
+      g.quadraticCurveTo(170, 124, 300, 118);
+      g.lineTo(340, 104);
+      g.quadraticCurveTo(334, 150, 310, wl);
+      g.lineTo(36, wl);
+      g.quadraticCurveTo(16, 156, 20, 118);
+      g.closePath();
+      g.fill();
+      // White sheer line, red boot-topping at the waterline, portholes.
+      g.strokeStyle = shade(white, -0.05);
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(20, 119);
+      g.quadraticCurveTo(170, 125, 300, 119);
+      g.lineTo(340, 105);
+      g.stroke();
+      g.fillStyle = '#a8443a';
+      g.beginPath();
+      g.moveTo(30, wl - 12);
+      g.lineTo(318, wl - 12);
+      g.quadraticCurveTo(314, wl - 4, 310, wl);
+      g.lineTo(36, wl);
+      g.closePath();
+      g.fill();
+      for (let k = 0; k < 9; k++) dot(g, 58 + k * 26, 136, 3, k < 3 ? '#e9dfc4' : '#55606c');
+      // Her name on the bow, too small to read from the mole, as names are.
+      rr(g, 268, 128, 34, 6, 2, shade(white, -0.08));
+      // Anchor hawse and the stern's fender.
+      dot(g, 326, 120, 3, '#1c232b');
+      oval(g, 28, 150, 5, 9, '#5c4630');
+      // The gangway, from her far rail up to the mole's edge.
+      g.strokeStyle = '#8a7a62';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(286, 82);
+      g.lineTo(300, 0);
+      g.moveTo(298, 84);
+      g.lineTo(312, 0);
+      g.stroke();
+      g.strokeStyle = 'rgba(90,72,52,0.8)';
+      g.lineWidth = 1.6;
+      for (let k = 0; k < 8; k++) {
+        const t = k / 8;
+        g.beginPath();
+        g.moveTo(286 + 14 * t, 82 - 82 * t);
+        g.lineTo(298 + 14 * t, 84 - 84 * t);
+        g.stroke();
+      }
+      // Foam where she rubs the water.
+      oval(g, 176, wl + 1, 150, 3, 'rgba(234,246,250,0.55)');
+      oval(g, 336, wl - 30, 6, 16, 'rgba(234,246,250,0.35)');
+    }, 352, 192);
   },
 };

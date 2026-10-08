@@ -1,30 +1,18 @@
 import type { Cond } from '../schema';
+import type { Blocking, Escort, HourHold } from '../staging';
 
 /**
  * Stage directions for the last two evenings of the journey: where people
  * stand when the village has something to say, who walks beside you, and
- * what hour the words were written in. Pure data; the engine's ending block
- * in main.ts reads it every frame and does the walking and the light.
+ * what hour the words were written in. Pure data; the engine's staging block
+ * in main.ts reads it every frame and does the walking and the light (the
+ * types, and the other chapters' climaxes, are in ../staging.ts).
  *
  * Everything here is gated on story flags, so a reload in the middle of an
  * evening simply stages it again.
  */
 
-type Dir = 'up' | 'down' | 'left' | 'right';
-
-/** A villager who goes and stands somewhere while `when` holds. */
-export type Blocking = { id: string; when: Cond; map: string; at: [number, number]; dir: Dir };
-
-/** A villager who walks beside the player, across doors, while `when` holds. */
-export type Escort = { id: string; when: Cond };
-
-/**
- * The hour a stretch of story was written in. While `when` holds, the clock
- * is eased forward into [min, max] and then held below max. `snap` sets it
- * outright (only used where a door's black hides the change); `notOn` maps
- * are exempt, so a scene still running there keeps its own hour.
- */
-export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; notOn?: string[] };
+export type { Blocking, Escort, HourHold };
 
 /**
  * The well at dusk: half the village in a loose ring round the well and its
@@ -43,6 +31,19 @@ export const BLOCKING: Blocking[] = [
   // of wandering, so the chip's "outside the northeast house" stays true and
   // she is where a walking player arrives.
   { id: 'carmen', when: { has: ['wichuna.have'], not: ['pallay.done'] }, map: 'village', at: [30, 12], dir: 'down' },
+  // Home again, and she is where the Return's words keep finding her: sat at
+  // the free end of the backstrap loom (the strap lies open on that side of
+  // its art), facing the stake, weaving. "She does not look up from the
+  // loom" is then simply true, and "Sit while she weaves" has someone to
+  // sit beside. She gets up when she names the hour.
+  {
+    id: 'carmen',
+    when: { has: ['c10.arrived'], not: ['c10.well.called'] },
+    map: 'village',
+    at: [30, 12],
+    dir: 'right',
+    sit: true,
+  },
   { id: 'teofilo', when: VERDICT, map: 'village', at: [19, 13], dir: 'down' },
   { id: 'carmen', when: VERDICT, map: 'village', at: [21, 13], dir: 'down' },
   { id: 'pilar', when: VERDICT, map: 'village', at: [23, 13], dir: 'down' },
