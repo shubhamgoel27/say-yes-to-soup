@@ -829,10 +829,10 @@ export class Tileset {
     // standing by the door, so the first errand's landmark is seen from the
     // plaza and never reads as a feather in Rosa's hat.
     this.make('chichaflag', 1, (g) => {
-      softShadow(g, 62, 280, 13, 4, 0.2);
+      softShadow(g, 62, 328, 13, 4, 0.2);
       // The cane: a slight lean, with its nodes.
       const bx = 60;
-      const by = 282;
+      const by = 330;
       const tx = 70;
       const ty = 26;
       g.lineCap = 'round';
@@ -844,14 +844,14 @@ export class Tileset {
       g.beginPath(); g.moveTo(bx - 1.5, by); g.lineTo(tx - 1.5, ty); g.stroke();
       g.strokeStyle = shade('#8a6a3e', -0.3);
       g.lineWidth = 2;
-      for (let k = 1; k < 7; k++) {
-        const f = k / 7;
+      for (let k = 1; k < 8; k++) {
+        const f = k / 8;
         const nx = bx + (tx - bx) * f;
         const ny = by + (ty - by) * f;
         g.beginPath(); g.moveTo(nx - 3.5, ny); g.lineTo(nx + 3.5, ny - 0.4); g.stroke();
       }
       // A few stones wedged round the foot.
-      for (const [sx, sy] of [[52, 280], [68, 281], [60, 284]] as const) {
+      for (const [sx, sy] of [[52, 328], [68, 329], [60, 332]] as const) {
         oval(g, sx, sy, 5, 3.2, shade(PAL.stone, -0.08));
       }
       // The red cloth, big and bellying in the wind.
@@ -879,7 +879,7 @@ export class Tileset {
       g.stroke();
       // The knot that ties it on.
       dot(g, tx + 1, ty + 4, 3.2, shade(red, -0.3));
-    }, 128, 288);
+    }, 128, 336);
 
     this.make('doorShut', 2, (g) => {
       // Drawn over the house doorway when latched.
