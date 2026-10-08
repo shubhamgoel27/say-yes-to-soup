@@ -990,7 +990,9 @@ export class NamingCard {
       if (!this.isOpen || this.step !== 2) return;
       this.animT += (now - last) / 1000;
       last = now;
-      if (!this.sheet) this.sheet = makeSheet({ ...PLAYER_LOOK, ...this.currentLook() });
+      // Bareheaded in the margin: the chullu covers the whole crown, and a
+      // hair colour chosen under it could not be seen being chosen.
+      if (!this.sheet) this.sheet = makeSheet({ ...PLAYER_LOOK, ...this.currentLook(), hatStyle: 'none' });
       const frame = Math.floor(this.animT / 0.13) % 6;
       const dir = dirs[Math.floor(this.animT / 2.1) % dirs.length] ?? 'down';
       g.clearRect(0, 0, cv.width, cv.height);
