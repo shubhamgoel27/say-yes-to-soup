@@ -428,7 +428,13 @@ const TASKS_GUARDED: WorldTask[] = TASKS.map((t) => {
   return { ...t, when: { ...t.when, has: [...(t.when.has ?? []), gate] } };
 });
 
-const journalUI = new JournalUI($('journal'), JOURNAL, TASKS_GUARDED, ROUTE, state);
+// Chapters and route stops run in the same order, one stop per chapter.
+const PAGE_PLACE = new Map<string, string>();
+CHAPTERS.forEach((c, i) => {
+  const place = ROUTE.find((r) => r.id === c.id)?.name ?? ROUTE[i]?.name;
+  if (place) for (const e of c.journal) PAGE_PLACE.set(e.id, place);
+});
+const journalUI = new JournalUI($('journal'), JOURNAL, TASKS_GUARDED, ROUTE, state, (id) => PAGE_PLACE.get(id));
 const title = new TitleScreen(
   $('title'),
   $('letter'),

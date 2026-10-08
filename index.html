@@ -644,6 +644,26 @@
       .j-progress { margin-left: auto; }
       /* The book's own close: only a finger needs it (J closes on a desk). */
       .j-close { display: none; }
+      /* Every finger gets it, tablets included: the open book dims the pad's
+       * ✎ under its veil, and an iPad's footer named a close it could not see. */
+      @media (pointer: coarse) {
+        .j-close {
+          display: grid;
+          place-items: center;
+          flex: 0 0 auto;
+          width: 40px;
+          height: 40px;
+          margin: -6px -4px -6px 0;
+          border: 1.5px solid rgba(43, 33, 24, 0.35);
+          border-radius: 50%;
+          background: rgba(43, 33, 24, 0.07);
+          color: var(--ink);
+          font-size: 18px;
+          line-height: 1;
+          padding: 0;
+          align-self: center;
+        }
+      }
       .j-tabrow { position: relative; }
       .j-tabs {
         position: relative;
@@ -754,8 +774,26 @@
       }
       .j-thread-to { font-size: var(--fs-12); font-style: normal; color: #a3542f; margin-top: 6px; }
       .j-native { font-size: var(--fs-15); color: #6a4c2e; margin-left: 8px; font-weight: normal; }
+      /* The dish takes the page's width (it used to sit small at the left of
+       * an empty half page), painted at three times the size so it stays
+       * crisp there. */
       .j-dishart { margin: 6px 0 8px; }
-      .j-dishart canvas { display: block; width: 165px; height: auto; border-radius: 4px; }
+      .j-dishart canvas { display: block; width: min(100%, 300px); height: auto; margin: 0 auto; border-radius: 4px; }
+      /* The place a run of pages was written in: a chapter divider in her
+       * book's own small capitals, with a pencil rule. */
+      .j-place {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 10px 6px 3px;
+        font-family: var(--display);
+        font-size: var(--fs-115);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #7a5f3c;
+      }
+      .j-place:first-child { margin-top: 0; }
+      .j-place::after { content: ''; flex: 1; border-top: 1px dashed rgba(107, 83, 52, 0.45); }
       .j-route { flex: 1; overflow-y: auto; padding-right: 8px; }
       .j-route-stop { padding: 4px 2px; opacity: 0.55; }
       .j-route-stop.been { opacity: 0.85; }
@@ -793,7 +831,22 @@
         color: var(--ink);
       }
       .j-task.now::before { content: '\25B8'; color: #c1512f; }
-      .j-hint { font-size: var(--fs-11); color: #6b5334; text-align: center; padding-top: 6px; }
+      /* The foot is ruled off from the page, and a page that scrolls fades out
+       * above the rule instead of running its last line into the hint. */
+      .j-hint {
+        font-size: var(--fs-11);
+        color: #6b5334;
+        text-align: center;
+        padding-top: 6px;
+        margin-top: 4px;
+        border-top: 1px solid rgba(43, 33, 24, 0.18);
+      }
+      .j-route, .j-list, .j-detail, .j-tasks {
+        -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
+        mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent);
+        padding-bottom: 16px;
+        box-sizing: border-box;
+      }
 
       /* ---- journal photos: Chasca's prints, pasted where you can visit them ---- */
       .j-ph-grid {
@@ -2639,22 +2692,6 @@
         .j-tabrow::before { left: -10px; background: linear-gradient(90deg, #ece0c8, rgba(236, 224, 200, 0)); }
         .j-tabrow::after { right: -10px; background: linear-gradient(270deg, #ece0c8, rgba(236, 224, 200, 0)); }
         .j-tabrow.more-l::before, .j-tabrow.more-r::after { opacity: 1; }
-        .j-close {
-          display: grid;
-          place-items: center;
-          flex: 0 0 auto;
-          width: 40px;
-          height: 40px;
-          margin: -6px -4px -6px 0;
-          border: 1.5px solid rgba(43, 33, 24, 0.35);
-          border-radius: 50%;
-          background: rgba(43, 33, 24, 0.07);
-          color: var(--ink);
-          font-size: 18px;
-          line-height: 1;
-          padding: 0;
-          align-self: center;
-        }
         .j-tab { flex: 0 0 auto; padding: 8px 13px 7px; }
         /* One column: the page list above, the open page below. */
         .j-body { flex-direction: column; gap: 8px; }
