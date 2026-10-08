@@ -371,7 +371,7 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.bantu.langar': {
     lines: [
-      { text: 'Bantu sits cross-legged in the row, plate held out for the dal.' },
+      { text: 'Bantu has found his place on the long dari, plate held out for the dal.' },
       { who: 'Bantu', text: 'Same dal for the teacher, the uncle and me. Best restaurant in Delhi, and nobody gets a bill.' },
     ],
   },

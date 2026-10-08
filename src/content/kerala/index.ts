@@ -24,13 +24,13 @@ export const CHAPTER: ChapterDef = {
     // Mariamma's hands: the chapter's front door, read rather than recapped.
     {
       id: 'joseph.amma',
-      from: 'Joseph, at sea',
+      from: 'Your Joseph, at sea',
       body: [
         'Amma. I eat well, nobody cooks like you. I stand my watches and I am careful on the ladders. That is the whole news, but you would call a short letter rude.',
         'The cook aboard is Filipino and very good. Do not tell the cook, but Amma, your meen curry wins. I have tasted three oceans now and it is not close.',
         'There is a parcel with this letter. Do not shake it and do not save it for Onam; open it before the rains come.',
         'The friend who carries this stood galley duty beside me across the Pacific. Feed them until they surrender. You know the fee; I have apologized to them already.',
-        'Three months and my contract is done. Keep the pot thinking. Your Joseph.',
+        'Three months and my contract is done. Keep the pot thinking.',
       ],
     },
     // Pilar, now a candidate. Her prose style remains paperwork.

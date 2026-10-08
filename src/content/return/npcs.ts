@@ -33,8 +33,19 @@ export const RETURN_NPCS: NpcDef[] = [
       // scene never happened and its journal page could never be filled,
       // while the game still announced that the journal was full.
       // Met on the climb, you are up from the coast; met after the village,
-      // you are walking down from it. The question follows your feet.
-      { when: { has: ['c10.arrived'], not: ['c10.torch', 'c10.rosa.seen'] }, node: 'c10.traveler.firstup' },
+      // you are walking down from it. The question follows your feet:
+      // `c10.home` is set the moment you walk into the village, and the
+      // reunion flags cover saves made before that flag existed. Rosa alone
+      // was not enough: the evening never needs her, so a player who went
+      // straight to the well was still asked "Up from the coast?" after the
+      // last page.
+      {
+        when: {
+          has: ['c10.arrived'],
+          not: ['c10.torch', 'c10.home', 'c10.rosa.seen', 'c10.aurelio.seen', 'c10.carmen.seen', 'c10.pilar.seen', 'c10.well.called', 'story.end'],
+        },
+        node: 'c10.traveler.firstup',
+      },
       { when: { has: ['c10.arrived'], not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { when: { has: ['story.end'], not: ['c10.traveler.mail'] }, node: 'c10.traveler.mail' },
       { when: { has: ['story.end'] }, node: 'c10.traveler.after' },
@@ -411,7 +422,7 @@ export const RETURN_NODES: NodeMap = {
   },
   'c10.aurelio.after': {
     lines: [
-      { who: 'Don Aurelio', text: 'The stone is warm. The soup is on. I plan to keep saying both until they stop being true, which is never.' },
+      { who: 'Don Aurelio', text: 'The well is full. The soup is on. I plan to keep saying both until they stop being true, which is never.' },
     ],
   },
 
