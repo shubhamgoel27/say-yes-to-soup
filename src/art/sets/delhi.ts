@@ -53,6 +53,23 @@ export const ART: ChapterArt = {
    * wipeable, the haveli is a private one kept cool. Sharing a wall between
    * them would have been almost as wrong as sharing one with Peru.
    */
+  /**
+   * The rickshaw stand is a stand, not a showroom: Bantu's uncle's fleet and
+   * the two at the chowk end are pinned to different rickshaws, one waiting
+   * with its wallah on the saddle, one with its wallah asleep in it, one
+   * parked empty with the hood up, one seen from behind, one loaded with
+   * somebody's whole household. Five of the same
+   * red cart in a row read as toys.
+   */
+  pins: {
+    delhi: [
+      { kind: 'rickshaw', at: [40, 24], v: 0 },
+      { kind: 'rickshaw', at: [43, 25], v: 4 },
+      { kind: 'rickshaw', at: [31, 27], v: 3 },
+      { kind: 'rickshaw', at: [32, 26], v: 1 },
+      { kind: 'rickshaw', at: [33, 26], v: 2 },
+    ],
+  },
   skins: {
     'delhi-langar': { wallInt: 'wallLangar', floorEarth: 'floorTerrazzo' },
     'delhi-haveli': { wallInt: 'wallHaveli', floorEarth: 'floorSandstone', rug: 'rugDari' },
@@ -110,30 +127,37 @@ export const ART: ChapterArt = {
           g.stroke();
         }
       }
-      if (r.chance(0.4)) oval(g, r.int(S), r.int(S), 6, 3, shade(base, -0.08));
-      if (r.chance(0.3)) dot(g, r.int(S), r.int(S), 2.4, shade(base, 0.12));
+      if (r.chance(0.4)) oval(g, 8 + r.int(S - 16), 5 + r.int(S - 10), 6, 3, shade(base, -0.08));
+      if (r.chance(0.3)) dot(g, 4 + r.int(S - 8), 4 + r.int(S - 8), 2.4, shade(base, 0.12));
     });
 
     // The worn edge: where two pavings meet, feet and cart wheels grind a
     // strip of neither-one, half stone dust, half packed earth.
     make('wornedge', 5, (g, r) => {
-      const base = '#a28468';
+      // Every mark stays a margin clear of the tile's edge: an oval cut in
+      // half by the next tile is a straight line ruled across the chowk,
+      // and a row of them laid the whole square out in a grid.
+      const base = '#a88e74';
+      const at = (m: number) => m + r.int(S - m * 2);
       rect(g, 0, 0, S, S, shade(base, (r.next() - 0.5) * 0.03));
       // Stone ghosts surfacing through the scuff.
-      oval(g, r.int(S), r.int(S), 8, 4, 'rgba(154,141,124,0.4)');
-      if (r.chance(0.6)) oval(g, r.int(S), r.int(S), 6, 3, 'rgba(154,141,124,0.3)');
+      oval(g, at(10), at(6), 8, 4, 'rgba(154,141,124,0.4)');
+      if (r.chance(0.6)) oval(g, at(8), at(5), 6, 3, 'rgba(154,141,124,0.3)');
       // Packed-earth streaks, wheel-width.
-      oval(g, r.int(S), r.int(S), 9, 3, 'rgba(169,124,80,0.35)', 0.1);
-      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 7, 2.4, 'rgba(125,88,54,0.25)', -0.1);
+      oval(g, at(11), at(5), 9, 3, 'rgba(169,124,80,0.3)', 0.1);
+      if (r.chance(0.5)) oval(g, at(9), at(4), 7, 2.4, 'rgba(125,88,54,0.22)', -0.1);
       // A stray brick fragment or a pale grit patch.
-      if (r.chance(0.3)) rr(g, r.int(S - 10), r.int(S - 6), 8, 4, 1, 'rgba(157,122,108,0.4)');
-      if (r.chance(0.35)) dot(g, r.int(S), r.int(S), 2, 'rgba(220,210,190,0.25)');
+      if (r.chance(0.3)) rr(g, at(6), at(6), 8, 4, 1, 'rgba(157,122,108,0.4)');
+      if (r.chance(0.35)) dot(g, at(4), at(4), 2, 'rgba(220,210,190,0.25)');
     });
 
     // Chowk dust: bare ground beaten pale by carts, a shade warmer than the
     // worn edge so the open square still reads as earth.
+    // It was a saturated tan under an orange grade, and the arrival frame
+    // came out one flat orange: paler, greyer dust gives the reds and the
+    // people something to stand out of.
     make('chowkdust', 5, (g, r) => {
-      const base = '#a6875f';
+      const base = '#b19d80';
       rect(g, 0, 0, S, S, base);
       for (let i = 0; i < 4; i++) {
         oval(g, 8 + r.int(S - 16), 5 + r.int(S - 10), 3 + r.int(3), 1.8, shade(base, r.chance(0.5) ? -0.08 : 0.08));
@@ -688,42 +712,259 @@ export const ART: ChapterArt = {
     }, 64, 128);
 
     // The cycle rickshaw: tinsel, painted flowers, and a bell that has
-    // outlasted three governments. Bantu's uncle owns four; all are "the good one".
-    make('rickshaw', 2, (g, r) => {
-      softShadow(g, 32, 90, 26, 6, 0.22);
-      // Rear wheels and axle.
-      for (const wx of [16, 48]) {
-        dot(g, wx, 76, 11, '#33302c');
-        dot(g, wx, 76, 8, '#4a4640');
-        dot(g, wx, 76, 2.4, '#94a0a2');
-        g.strokeStyle = 'rgba(180,190,195,0.5)';
+    // outlasted three governments. Bantu's uncle owns four; all are "the
+    // good one", and no two are the same machine. Variants: 0 side on with
+    // its wallah on the saddle waiting for a fare, 1 parked with the hood up,
+    // 2 from behind (the old drawing), 3 the wallah asleep across his own
+    // seat, feet up on the bar, gamcha over his eyes, 4 the goods tricycle.
+    const wheel = (g: CanvasRenderingContext2D, x: number, y: number, rad: number, r: { next(): number }) => {
+      dot(g, x, y, rad, '#2f2c29');
+      dot(g, x, y, rad - 2.6, '#4a4640');
+      g.strokeStyle = 'rgba(190,198,202,0.55)';
+      g.lineWidth = 0.9;
+      for (let k = 0; k < 8; k++) {
+        const a = (k / 8) * Math.PI * 2 + r.next() * 0.3;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + Math.cos(a) * (rad - 2.8), y + Math.sin(a) * (rad - 2.8));
+        g.stroke();
+      }
+      dot(g, x, y, 2, '#a4adb0');
+    };
+    const flowers = (g: CanvasRenderingContext2D, pts: [number, number][], petal: string, eye: string) => {
+      for (const [fx, fy] of pts) {
+        for (let p = 0; p < 5; p++) {
+          const a = (p / 5) * Math.PI * 2;
+          oval(g, fx + Math.cos(a) * 2.2, fy + Math.sin(a) * 2.2, 1.5, 0.9, petal, a);
+        }
+        dot(g, fx, fy, 1.1, eye);
+      }
+    };
+    /** A wallah in a vest and lungi, gamcha on the shoulder. */
+    const wallah = (g: CanvasRenderingContext2D, skin: string, vest: string) => {
+      // The far leg down to the pedal, the near one up on it.
+      g.strokeStyle = '#5a4a3a';
+      g.lineWidth = 4;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(45, 60);
+      g.lineTo(40, 72);
+      g.moveTo(47, 60);
+      g.lineTo(46, 68);
+      g.lineTo(44, 74);
+      g.stroke();
+      // Lungi, checked, tucked up for pedalling.
+      rr(g, 40, 52, 12, 10, 3, '#5f7aa6');
+      g.strokeStyle = 'rgba(240,232,214,0.45)';
+      g.lineWidth = 0.8;
+      for (const lx of [43, 47]) {
+        g.beginPath();
+        g.moveTo(lx, 52);
+        g.lineTo(lx, 62);
+        g.stroke();
+      }
+      // Vest, arms out to the bar, gamcha over one shoulder.
+      rr(g, 41, 37, 11, 17, 4, vest);
+      g.strokeStyle = skin;
+      g.lineWidth = 3;
+      g.beginPath();
+      g.moveTo(50, 41);
+      g.lineTo(55, 48);
+      g.lineTo(56, 47);
+      g.stroke();
+      rr(g, 40, 37, 4, 12, 2, '#c84a3a');
+      rect(g, 40, 40, 4, 1.2, 'rgba(255,240,220,0.5)');
+      rect(g, 40, 44, 4, 1.2, 'rgba(255,240,220,0.5)');
+      // Head: hair, a moustache that has seen things.
+      dot(g, 47, 31, 5.6, skin);
+      oval(g, 46.5, 27.6, 5.6, 3, '#26201c');
+      rect(g, 47.5, 33, 4, 1.3, '#2b2420');
+      dot(g, 49.5, 30.6, 0.9, '#1e1a16');
+    };
+    /** The machine itself, side on, facing right: frame, wheels, seat, hood. */
+    const sideOn = (
+      g: CanvasRenderingContext2D,
+      r: { next(): number; int(n: number): number },
+      paint: string,
+      hood: 'up' | 'down',
+    ) => {
+      softShadow(g, 32, 90, 28, 6, 0.22);
+      wheel(g, 17, 78, 12, r);
+      wheel(g, 53, 81, 9, r);
+      // The frame: rear axle forward to the crank, up to the saddle, the fork.
+      g.strokeStyle = '#2d2a28';
+      g.lineWidth = 2.6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(17, 78);
+      g.lineTo(40, 74);
+      g.lineTo(46, 58);
+      g.moveTo(40, 74);
+      g.lineTo(53, 81);
+      g.moveTo(53, 81);
+      g.lineTo(52, 50);
+      g.moveTo(49, 48);
+      g.lineTo(56, 47);
+      g.stroke();
+      dot(g, 40, 74, 2.6, '#2d2a28'); // the crank
+      oval(g, 45.5, 57.5, 4.6, 1.8, '#2b2420'); // the saddle
+      dot(g, 56, 46.5, 1.5, '#d8c46a'); // the bell that outranks the brakes
+      // The footboard and the bench, painted.
+      rect(g, 8, 66, 30, 4, '#3a3530');
+      rr(g, 6, 52, 27, 15, 4, paint);
+      vgrad(g, 6, 52, 27, 5, 'rgba(255,255,255,0.2)', 'rgba(0,0,0,0)');
+      flowers(g, [[13, 60], [24, 60]], '#f2e2b0', '#d07a2c');
+      // The backrest, raked.
+      g.fillStyle = shade(paint, -0.12);
+      g.beginPath();
+      g.moveTo(4, 54);
+      g.lineTo(9, 30);
+      g.lineTo(15, 31);
+      g.lineTo(12, 54);
+      g.closePath();
+      g.fill();
+      if (hood === 'up') {
+        // The hood up against the sun: black oilcloth on its ribs, a fringe.
+        g.fillStyle = '#25282a';
+        g.beginPath();
+        g.moveTo(4, 50);
+        g.quadraticCurveTo(2, 18, 20, 16);
+        g.quadraticCurveTo(34, 16, 35, 38);
+        g.lineTo(30, 38);
+        g.quadraticCurveTo(28, 24, 18, 24);
+        g.quadraticCurveTo(10, 26, 11, 50);
+        g.closePath();
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.12)';
         g.lineWidth = 1;
-        for (let k = 0; k < 5; k++) {
-          const a = (k / 5) * Math.PI * 2 + r.next();
+        for (const k of [0.35, 0.65]) {
           g.beginPath();
-          g.moveTo(wx, 76);
-          g.lineTo(wx + Math.cos(a) * 7.5, 76 + Math.sin(a) * 7.5);
+          g.moveTo(4 + k * 7, 48);
+          g.quadraticCurveTo(4 + k * 10, 20 + k * 2, 20 + k * 6, 18 + k * 4);
           g.stroke();
         }
+        g.strokeStyle = 'rgba(220,180,90,0.85)';
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(21, 17);
+        g.quadraticCurveTo(30, 18, 34, 36);
+        g.stroke();
+        for (let k = 0; k < 6; k++) dot(g, 24 + k * 1.8, 19 + k * 3, 0.9, '#e2b84a');
+      } else {
+        // Folded down behind the backrest, striped like a deckchair.
+        rr(g, 1, 26, 12, 9, 4, '#25443c');
+        rect(g, 4, 26, 2.4, 9, '#e8d9a8');
+        rect(g, 9, 26, 2.4, 9, '#e8d9a8');
       }
-      // The bench seat and its painted backrest.
+      // Tinsel along the bench, and the registration plate nobody reads.
+      g.strokeStyle = 'rgba(226,184,90,0.85)';
+      g.lineWidth = 1.3;
+      g.beginPath();
+      g.moveTo(6, 53);
+      g.quadraticCurveTo(19, 58, 33, 53);
+      g.stroke();
+      rr(g, 9, 68, 9, 4, 1, '#e8d24a');
+    };
+    make('rickshaw', 5, (g, r, i) => {
+      if (i === 4) {
+        // The goods rickshaw: a flatbed tricycle, sacks and a tin trunk
+        // roped on, a mattress folded on top, nobody aboard yet.
+        softShadow(g, 32, 90, 28, 6, 0.22);
+        wheel(g, 15, 80, 10, r);
+        wheel(g, 51, 80, 10, r);
+        g.strokeStyle = '#2d2a28';
+        g.lineWidth = 2.6;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(15, 80);
+        g.lineTo(51, 80);
+        g.moveTo(51, 80);
+        g.lineTo(52, 50);
+        g.moveTo(48, 49);
+        g.lineTo(57, 48);
+        g.stroke();
+        oval(g, 46, 60, 4.6, 1.8, '#2b2420');
+        rect(g, 4, 66, 40, 5, '#7a5a3a'); // the flatbed's planks
+        rect(g, 4, 66, 40, 1.4, 'rgba(255,240,210,0.25)');
+        // Gunny sacks, a blue tin trunk, a rolled mattress.
+        rr(g, 5, 50, 14, 17, 5, '#b89a68');
+        rr(g, 18, 52, 13, 15, 5, '#a88a5a');
+        g.strokeStyle = 'rgba(80,60,40,0.4)';
+        g.lineWidth = 1;
+        for (const sx of [12, 24]) {
+          g.beginPath();
+          g.moveTo(sx - 4, 54);
+          g.lineTo(sx + 3, 54);
+          g.stroke();
+        }
+        rr(g, 29, 54, 14, 13, 2, '#3f6fa8');
+        rect(g, 29, 59, 14, 1.4, '#c9a23c');
+        rr(g, 8, 40, 30, 11, 5, '#c84a5a');
+        g.strokeStyle = 'rgba(255,236,220,0.5)';
+        g.lineWidth = 1;
+        for (const sx of [14, 22, 30]) {
+          g.beginPath();
+          g.moveTo(sx, 41);
+          g.lineTo(sx, 50);
+          g.stroke();
+        }
+        // The rope over all of it.
+        g.strokeStyle = '#d8c48a';
+        g.lineWidth = 1.2;
+        g.beginPath();
+        g.moveTo(4, 66);
+        g.quadraticCurveTo(20, 34, 44, 66);
+        g.stroke();
+        return;
+      }
+      if (i === 0) {
+        // Waiting at the stand, the wallah on the saddle, the hood folded.
+        sideOn(g, r, '#3f7fb0', 'down');
+        wallah(g, '#8a5a3a', '#e8e2d2');
+        return;
+      }
+      if (i === 1) {
+        // Parked empty with the hood up, green, the bench a garden.
+        g.save();
+        g.translate(64, 0);
+        g.scale(-1, 1);
+        sideOn(g, r, '#3d7a52', 'up');
+        g.restore();
+        return;
+      }
+      if (i === 3) {
+        // The wallah asleep in his own rickshaw, which is what it is for at
+        // two in the afternoon: curled on the bench, feet up on the bar.
+        sideOn(g, r, '#c9822c', 'up');
+        const skin = '#7f5236';
+        g.strokeStyle = skin;
+        g.lineWidth = 3.6;
+        g.lineCap = 'round';
+        g.beginPath();
+        g.moveTo(26, 52);
+        g.lineTo(38, 44);
+        g.lineTo(50, 47);
+        g.stroke();
+        rr(g, 12, 44, 16, 10, 4, '#e8e2d2'); // the vest, bunched
+        rr(g, 22, 46, 10, 8, 3, '#5f7aa6'); // the lungi
+        dot(g, 11, 44, 5.2, skin);
+        oval(g, 9.5, 41.5, 5, 2.6, '#26201c');
+        rr(g, 7, 42, 9, 4, 2, '#c84a3a'); // the gamcha over his eyes
+        rect(g, 7, 43.4, 9, 1, 'rgba(255,240,220,0.5)');
+        return;
+      }
+      // From behind, as the stand mostly sees them: the bench, the painted
+      // backrest, the hood folded on top.
+      softShadow(g, 32, 90, 26, 6, 0.22);
+      for (const wx of [16, 48]) wheel(g, wx, 76, 11, r);
       rr(g, 12, 52, 40, 18, 5, shade('#b5382e', (r.next() - 0.5) * 0.08));
       rr(g, 14, 40, 36, 16, 5, '#c94a34');
       vgrad(g, 14, 40, 36, 6, 'rgba(255,255,255,0.2)', 'rgba(0,0,0,0)');
-      // Painted flowers on the back panel.
-      for (const [fx, fy] of [[22, 48], [32, 46], [42, 48]] as const) {
-        for (let p = 0; p < 5; p++) {
-          const a = (p / 5) * Math.PI * 2;
-          oval(g, fx + Math.cos(a) * 2.6, fy + Math.sin(a) * 2.6, 1.8, 1.1, '#e8d9a8', a);
-        }
-        dot(g, fx, fy, 1.3, '#c9822c');
-      }
-      // The folded canopy behind, striped.
+      flowers(g, [[22, 48], [32, 46], [42, 48]], '#e8d9a8', '#c9822c');
       rr(g, 16, 30, 32, 9, 4, '#25443c');
       g.fillStyle = '#e8d9a8';
       g.fillRect(22, 30, 5, 9);
       g.fillRect(36, 30, 5, 9);
-      // Tinsel garland on the handle side.
       g.strokeStyle = 'rgba(220,180,90,0.8)';
       g.lineWidth = 1.4;
       g.beginPath();
