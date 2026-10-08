@@ -580,20 +580,52 @@ export class Tileset {
     // ------------------------------------------------------------ talls
 
     this.make('wallStone', 5, (g, r) => {
-      // Dry-stone ridge: a soft mound of fitted boulders.
-      vgrad(g, 0, 0, S, 40, shade(PAL.stone, 0.1), shade(PAL.stone, -0.02));
-      vgrad(g, 0, 40, S, 24, shade(PAL.stoneDark, 0.02), shade(PAL.stoneDark, -0.12));
-      let x = 4;
-      while (x < S - 6) {
-        const w = 12 + r.int(10);
-        const tone = shade(PAL.stone, (r.next() - 0.35) * 0.2);
-        blob(g, x + w / 2, 14 + r.int(14), w / 2, tone, r, 0.15);
-        x += w + 3;
+      // Dry-stone ridge: fitted boulders in two courses, each stone in its
+      // own shadow. It used to be a full-cell gradient with faint blobs on
+      // it, and run along the bottom edge of a map it read as one flat pale
+      // band ruled across the frame (lavender at dusk). Now the ground shows
+      // between the capstones, the joints are dark, and the stones carry.
+      // The backing meets the cell's sides at a fixed height, so a run of
+      // cells is one wall with no step at the seams.
+      const joint = shade(PAL.stoneDark, -0.1);
+      g.fillStyle = joint;
+      g.beginPath();
+      g.moveTo(0, 16);
+      for (let x = 8; x < S; x += 8) g.lineTo(x, 12 + r.int(7));
+      g.lineTo(S, 16);
+      g.lineTo(S, S);
+      g.lineTo(0, S);
+      g.closePath();
+      g.fill();
+      const course = (y: number, hMin: number, light: number) => {
+        let x = 1 + r.int(4);
+        while (x < S - 8) {
+          const w = Math.min(S - 1 - x, 12 + r.int(9));
+          const tone = shade(PAL.stone, (r.next() - 0.4) * 0.22 + light);
+          const by = y + r.int(5) - 2;
+          blob(g, x + w / 2 + 0.8, by + 2, w / 2, shade(joint, 0.06), r, 0.12);
+          blob(g, x + w / 2, by, w / 2 - 0.6, tone, r, 0.16);
+          oval(g, x + w / 2 - 1.5, by - w / 5, w / 4, 1.8, 'rgba(255,248,232,0.16)');
+          if (r.chance(0.25)) dot(g, x + 3 + r.int(Math.max(1, w - 6)), by + 2, 1.2, 'rgba(120,140,90,0.5)'); // lichen
+          x += w + 1 + r.int(3);
+        }
+        void hMin;
+      };
+      course(19, 10, 0.06); // the capstones, in the sun
+      course(38, 10, -0.06); // the face course
+      // The footing: the wall's own shade, and grass grown against it.
+      vgrad(g, 0, 50, S, 14, 'rgba(30,24,18,0)', 'rgba(30,24,18,0.35)');
+      for (let k = 0; k < 3; k++) {
+        const gx = 6 + r.int(S - 12);
+        g.strokeStyle = PAL.greenDark;
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(gx, S - 2);
+        g.lineTo(gx - 2, S - 9);
+        g.moveTo(gx + 2, S - 2);
+        g.lineTo(gx + 3, S - 8);
+        g.stroke();
       }
-      for (let i = 0; i < 3; i++) {
-        blob(g, 8 + r.int(S - 16), 46 + r.int(10), 6, shade(PAL.stoneDark, (r.next() - 0.4) * 0.16), r, 0.18);
-      }
-      if (r.chance(0.4)) dot(g, r.int(S), 10 + r.int(24), 2.4, PAL.greenDark);
     });
 
     // The same ridge seen along its length, for a wall running north-south:
