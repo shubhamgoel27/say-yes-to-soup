@@ -31,7 +31,8 @@ const SEEING_OFF: Cond = { has: READY, not: ['c9.arrived'] };
 const WALKING: Cond = { has: ['c8.walking'], not: ['c8.walk.done'] };
 
 /** The ship alongside, its anchor cell (the sprite stands three rows tall above it, below the mole). */
-export const SHIP_AT: [number, number] = [37, 23];
+// One row clear of the mole's stone face (row 21), so the hull lies alongside it.
+export const SHIP_AT: [number, number] = [37, 24];
 
 /** Where the player stands to sign out: west of Patanè's table. */
 export const SIGNING_SPOT: [number, number] = [41, 19];
