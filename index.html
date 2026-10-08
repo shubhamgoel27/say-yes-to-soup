@@ -636,7 +636,13 @@
       .j-name { font-family: var(--display); font-weight: 600; font-size: 20px; letter-spacing: 0.01em; }
       .j-progress { font-size: var(--fs-125); font-style: italic; color: #5d4b35; font-variant-numeric: tabular-nums; }
       /* Physical index tabs, cut into the page edge like a real notebook. */
+      .j-head { gap: 10px; }
+      .j-progress { margin-left: auto; }
+      /* The book's own close: only a finger needs it (J closes on a desk). */
+      .j-close { display: none; }
+      .j-tabrow { position: relative; }
       .j-tabs {
+        position: relative;
         display: flex;
         gap: 3px;
         margin: 10px -6px 12px;
@@ -2584,6 +2590,38 @@
           scrollbar-width: none;
         }
         .j-tabs::-webkit-scrollbar { display: none; }
+        /* A strip wider than the glass fades where it goes on, so the
+         * hidden tabs read as there, a thumb-swipe away. */
+        .j-tabrow::before, .j-tabrow::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          bottom: 2px;
+          width: 34px;
+          pointer-events: none;
+          opacity: 0;
+          transition: opacity 0.2s;
+          z-index: 1;
+        }
+        .j-tabrow::before { left: -10px; background: linear-gradient(90deg, #ece0c8, rgba(236, 224, 200, 0)); }
+        .j-tabrow::after { right: -10px; background: linear-gradient(270deg, #ece0c8, rgba(236, 224, 200, 0)); }
+        .j-tabrow.more-l::before, .j-tabrow.more-r::after { opacity: 1; }
+        .j-close {
+          display: grid;
+          place-items: center;
+          flex: 0 0 auto;
+          width: 40px;
+          height: 40px;
+          margin: -6px -4px -6px 0;
+          border: 1.5px solid rgba(43, 33, 24, 0.35);
+          border-radius: 50%;
+          background: rgba(43, 33, 24, 0.07);
+          color: var(--ink);
+          font-size: 18px;
+          line-height: 1;
+          padding: 0;
+          align-self: center;
+        }
         .j-tab { flex: 0 0 auto; padding: 8px 13px 7px; }
         /* One column: the page list above, the open page below. */
         .j-body { flex-direction: column; gap: 8px; }

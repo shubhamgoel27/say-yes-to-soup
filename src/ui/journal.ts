@@ -188,7 +188,57 @@ export class JournalUI {
     return PHOTOS.filter((p) => this.state.has(p.flag));
   }
 
+  /**
+   * The book's head, the same on every tab: the title, the count (threads
+   * included, which once showed only on the page tabs), the close, and the
+   * tab strip. On a phone the open book covers the ✎ that opened it, so the
+   * book carries its own ✎ to close with (shown only under a finger), and a
+   * strip too wide for the glass fades at the edge it continues past.
+   */
+  private headHtml(found: number, total: number, tabsHtml: string): string {
+    const n = this.stitchedCount();
+    const threads = n > 0 ? `${n} thread${n > 1 ? 's' : ''} &middot; ` : '';
+    return `<div class="j-head">
+          <div class="j-name">Nani&rsquo;s Journal</div>
+          <div class="j-progress">${threads}${found} / ${total} pages</div>
+          <button class="j-close" type="button" aria-label="close the journal">&#9998;</button>
+        </div>
+        <div class="j-tabrow"><div class="j-tabs">${tabsHtml}</div></div>`;
+  }
+
+  /**
+   * Every render rebuilds the strip, so the strip would snap back to its
+   * start and hide the tab just chosen. Keep its scroll, bring the open tab
+   * into view, and keep the edge fades honest as it scrolls.
+   */
+  private fitTabs(prevScroll: number) {
+    const strip = this.root.querySelector<HTMLElement>('.j-tabs');
+    const row = this.root.querySelector<HTMLElement>('.j-tabrow');
+    if (!strip || !row) return;
+    strip.scrollLeft = prevScroll;
+    const on = strip.querySelector<HTMLElement>('.j-tab.on');
+    if (on) {
+      const l = on.offsetLeft; // .j-tabs is positioned: offsets are strip-relative
+      const r = l + on.offsetWidth;
+      if (l < strip.scrollLeft) strip.scrollLeft = l - 12;
+      else if (r > strip.scrollLeft + strip.clientWidth) strip.scrollLeft = r - strip.clientWidth + 12;
+    }
+    const sync = () => {
+      const max = strip.scrollWidth - strip.clientWidth;
+      row.classList.toggle('more-l', strip.scrollLeft > 4);
+      row.classList.toggle('more-r', strip.scrollLeft < max - 4);
+    };
+    strip.addEventListener('scroll', sync, { passive: true });
+    sync();
+  }
+
   private render() {
+    const prev = this.root.querySelector<HTMLElement>('.j-tabs')?.scrollLeft ?? 0;
+    this.renderTab();
+    this.fitTabs(prev);
+  }
+
+  private renderTab() {
     if (TABS[this.tab]?.id === 'tasks') {
       this.renderTasks();
       return;
@@ -259,15 +309,7 @@ export class JournalUI {
 
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">
-        <div class="j-head">
-          <div class="j-name">Nani&rsquo;s Journal</div>
-          <div class="j-progress">${
-            this.stitchedCount() > 0
-              ? `${this.stitchedCount()} thread${this.stitchedCount() > 1 ? 's' : ''} &middot; `
-              : ''
-          }${found} / ${total} pages</div>
-        </div>
-        <div class="j-tabs">${tabsHtml}</div>
+        ${this.headHtml(found, total, tabsHtml)}
         <div class="j-body">
           <div class="j-list">${listHtml}</div>
           <div class="j-detail">${detailHtml}</div>
@@ -327,11 +369,7 @@ export class JournalUI {
     const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">
-        <div class="j-head">
-          <div class="j-name">Nani&rsquo;s Journal</div>
-          <div class="j-progress">${found} / ${total} pages</div>
-        </div>
-        <div class="j-tabs">${tabsHtml}</div>
+        ${this.headHtml(found, total, tabsHtml)}
         <div class="j-body">
           <div class="j-ph-grid">${cells}</div>
           <div class="j-detail">${detailHtml}</div>
@@ -391,11 +429,7 @@ export class JournalUI {
     const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">
-        <div class="j-head">
-          <div class="j-name">Nani&rsquo;s Journal</div>
-          <div class="j-progress">${found} / ${total} pages</div>
-        </div>
-        <div class="j-tabs">${tabsHtml}</div>
+        ${this.headHtml(found, total, tabsHtml)}
         <div class="j-body"><div class="j-route">
           <div class="j-sub" style="margin-bottom:8px">Inside the front cover, in pencil, 1974:</div>
           ${rows}
@@ -418,11 +452,7 @@ export class JournalUI {
 
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">
-        <div class="j-head">
-          <div class="j-name">Nani&rsquo;s Journal</div>
-          <div class="j-progress">${found} / ${total} pages</div>
-        </div>
-        <div class="j-tabs">${tabsHtml}</div>
+        ${this.headHtml(found, total, tabsHtml)}
         <div class="j-body">
           <div class="j-tasks">
             <div class="j-sub" style="margin-bottom:10px">Loose threads, most pressing first:</div>

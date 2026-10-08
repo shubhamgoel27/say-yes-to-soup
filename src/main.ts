@@ -5182,6 +5182,11 @@ pauseRoot.addEventListener('mouseover', (e) => {
 
 const journalRoot = $('journal');
 function journalTap(t: HTMLElement, viaTouch: boolean) {
+  if (t.closest('.j-close')) {
+    journalUI.close();
+    audio.pageFlip();
+    return;
+  }
   const tab = t.closest('.j-tab');
   if (tab) {
     if (steerTo(journalRoot, '.j-tab', tab, (d) => journalUI.onDir(d), 'h')) audio.select();
