@@ -67,7 +67,7 @@ export const ART: ChapterArt = {
       ...papelRun(36, 37, 14),
       ...papelRun(24, 24, 25),
     ],
-    cocina: papelRun(1, 12, 6, true),
+    cocina: papelRun(2, 12, 8, true),
   },
   paint(make) {
     // ------------------------------------------------------------ grounds

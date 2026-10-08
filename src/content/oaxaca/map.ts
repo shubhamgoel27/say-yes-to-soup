@@ -355,8 +355,8 @@ export const COCINA_MAP: MapData = {
   // shuts. The fire, the metate and the cazuelas run down the west wall
   // where Refugio works, and the table sits east of the door lane instead
   // of across it, so the walk from the door to the altar is never blocked.
-  // Papel picado crosses the room wall to wall, above head height, on the
-  // way in.
+  // Papel picado crosses the room wall to wall, above head height, by the
+  // door on the way in: strung over the table it hid the diners' faces.
   objects: [
     '##S##R###SS###',
     '#pc     vOO  #',
@@ -364,9 +364,9 @@ export const COCINA_MAP: MapData = {
     '#g           #',
     '#       sTTT #',
     '#  W     s s #',
-    '#PPPPPPPPPPPP#',
+    '#            #',
     '#kkr  n   le #',
-    '#k           #',
+    '#kPPPPPPPPPPP#',
     '#######m######',
   ],
   triggers: [{ at: [7, 9], type: 'door', to: 'oaxaca', spawn: [8, 21], facing: 'down' }],

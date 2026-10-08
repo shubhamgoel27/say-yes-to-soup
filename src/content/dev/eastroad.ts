@@ -16,17 +16,20 @@ const ROAD_Y = 6;
 // Near the pass mouth the road opens out, three tiles wide, so the way into
 // La Bajada reads as a gate and not a pinhole in the ridge wall.
 const FLARE_X = W - 8;
+// The village end flares too, a little: holding left on the row beside the
+// road walks you home instead of into the ridge.
+const WEST_FLARE_X = 3;
 
 function groundAt(x: number, y: number): string {
   if (y === ROAD_Y) return '-';
-  if (x >= FLARE_X && Math.abs(y - ROAD_Y) === 1) return '-';
+  if ((x >= FLARE_X || x <= WEST_FLARE_X) && Math.abs(y - ROAD_Y) === 1) return '-';
   return ',';
 }
 
 function objectAt(x: number, y: number): string {
   // Ridge walls top and bottom; open at both ends of the road.
   if (y <= 1 || y >= H - 2) return 'o';
-  if (x === 0 && y !== ROAD_Y) return 'o';
+  if (x === 0 && groundAt(x, y) !== '-') return 'o';
   // The east wall opens the full width of the flared road, not one square.
   if (x === W - 1 && groundAt(x, y) !== '-') return 'o';
 
@@ -112,7 +115,9 @@ export const EAST_ROAD_MAP: MapData = {
   ground,
   objects,
   triggers: [
+    { at: [0, ROAD_Y - 1], type: 'door', to: 'village', spawn: [40, 16], facing: 'left' },
     { at: [0, ROAD_Y], type: 'door', to: 'village', spawn: [40, 16], facing: 'left' },
+    { at: [0, ROAD_Y + 1], type: 'door', to: 'village', spawn: [40, 16], facing: 'left' },
     // The whole open mouth of the pass carries you through, row for row.
     { at: [W - 1, ROAD_Y - 1], type: 'door', to: 'la-bajada', spawn: [1, 3], facing: 'right' },
     { at: [W - 1, ROAD_Y], type: 'door', to: 'la-bajada', spawn: [1, 4], facing: 'right' },
