@@ -692,3 +692,11 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   - art: Sicily mole and water seams, east road dim, a stray saguaro, Gong behind his window.
   - small: "week three" time beat, adobo burn window, sideways offer only once, HUD scale above 1600px, journal as
     a book, Aurelio's stone, patang flock counter, traveler "Up from the coast?".
+
+## 2026-10-08: pass 6 (the last pass, 8 to 9). Brief: ../wayfare-review/pass6/BRIEF.md
+- [ ] B bodies/camera/touch: clean sidesteps (test every NPC from every side), props over heads fade, companions yield, textbox tap leak, talk camera above the textbox, click on walkers, facing highlight
+- [ ] C clarity/UI: dig mounds, portrait chip, sideways offer once, wide-screen HUD scale, first-frame overlays, journal as a book, title painting, N before the band, Space at the well
+- [ ] S staging: Neptune court + karaoke, Kerala + Delhi goodbyes, Shionoura morning under a fade, vista hour, Gong at his window, week-three beat
+- [ ] A art: Sicily arrival mole + water seams, east road, saguaros, Busan ground, Delhi carts + grade, bottom band, card hair
+- [ ] W words/tuning: Aurelio's stone, traveler greeting, patang counter + tuning, adobo window, mash audit
+- [ ] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live (SHA-matched deploy, cache-busted bundle)
