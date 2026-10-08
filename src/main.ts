@@ -23,7 +23,7 @@ import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
-import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, watchScrollCue } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -379,7 +379,16 @@ renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
 
 const toasts = new Toasts($('toasts'));
 const errandEl = $('errand');
+trackUiScale();
 const chipFold = new ChipFold(errandEl);
+// On glass the folded chip opens again under a tap (the fold mark says so),
+// and the tap stays on the chip instead of walking you toward it.
+errandEl.addEventListener('pointerdown', (e) => {
+  if (!isCoarseTouch()) return;
+  e.preventDefault();
+  e.stopPropagation();
+  chipFold.call();
+});
 const fadeEl = $('fade');
 /** Seconds into the held dark after the closing book, or null (see startCurtain). */
 let curtainT: number | null = null;
@@ -419,7 +428,13 @@ const TASKS_GUARDED: WorldTask[] = TASKS.map((t) => {
   return { ...t, when: { ...t.when, has: [...(t.when.has ?? []), gate] } };
 });
 
-const journalUI = new JournalUI($('journal'), JOURNAL, TASKS_GUARDED, ROUTE, state);
+// Chapters and route stops run in the same order, one stop per chapter.
+const PAGE_PLACE = new Map<string, string>();
+CHAPTERS.forEach((c, i) => {
+  const place = ROUTE.find((r) => r.id === c.id)?.name ?? ROUTE[i]?.name;
+  if (place) for (const e of c.journal) PAGE_PLACE.set(e.id, place);
+});
+const journalUI = new JournalUI($('journal'), JOURNAL, TASKS_GUARDED, ROUTE, state, (id) => PAGE_PLACE.get(id));
 const title = new TitleScreen(
   $('title'),
   $('letter'),
@@ -783,6 +798,67 @@ function refreshTaskChip() {
   }
 }
 
+/**
+ * The HUD steps aside for a face. The chip, the nameplate and the whispers
+ * sit at the top of the frame, and the person just north of the player
+ * stands exactly there: on a phone lying down the chip covered Don
+ * Aurelio's face on the very first frame. Whoever is near enough to talk
+ * to has their head measured against each overlay. The chip, which has to
+ * stay readable, moves to the foot of the frame (`face-moved`); the plate
+ * and the whispers, which pass, go faint (`over-face`), as does the chip if
+ * a face is down there too. Measured a few times a second, and the chip is
+ * judged from its home corner (cached), never from where it went, or it
+ * would bounce between the two.
+ */
+const FACE_HUD_MS = 120;
+let faceHudAt = 0;
+let chipHome: DOMRect | null = null;
+let chipHomeText = '';
+window.addEventListener('resize', () => {
+  chipHome = null;
+});
+function faceClearHud(quiet: boolean) {
+  const now = performance.now();
+  if (now - faceHudAt < FACE_HUD_MS) return;
+  faceHudAt = now;
+  const toastsEl = $('toasts');
+  if (quiet || mode !== 'play') {
+    for (const el of [errandEl, plateEl, toastsEl]) el.classList.remove('over-face');
+    return;
+  }
+  const s = viewScale();
+  const [px, py] = player.occupies();
+  const heads: [number, number, number, number][] = [];
+  for (const v of villagersHere()) {
+    const [ox, oy] = v.actor.occupies();
+    if (Math.abs(ox - px) + Math.abs(oy - py) > 6) continue;
+    const [rx, ry] = v.actor.renderPos();
+    // The head and hat: the top of a two-tile figure, crown to chin.
+    const [l, t] = worldToScreen(rx + 2, ry - 14);
+    heads.push([l, t, l + (TILE - 4) * s, t + 16 * s]);
+  }
+  const hits = (r: DOMRect) =>
+    r.width > 0 && heads.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
+  for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', hits(el.getBoundingClientRect()));
+  // The chip is measured at home whenever it is home, so a new thread (a
+  // new height) or a turned phone is judged from the corner it holds.
+  const moved = errandEl.classList.contains('face-moved');
+  const text = errandEl.textContent ?? '';
+  if (moved && (text !== chipHomeText || !chipHome)) {
+    // Away when the thread changed or the window turned: come home first.
+    errandEl.classList.remove('face-moved', 'over-face');
+    chipHome = null;
+    return;
+  }
+  if (!moved) {
+    chipHome = errandEl.getBoundingClientRect();
+    chipHomeText = text;
+  }
+  const away = !!chipHome && hits(chipHome);
+  errandEl.classList.toggle('face-moved', away);
+  errandEl.classList.toggle('over-face', away && moved && hits(errandEl.getBoundingClientRect()));
+}
+
 /** Journal announcements: the pen and the margin-note spark. */
 const PAGE_TOAST = /^[✎✦]/;
 /** Once the last page is being written, the journal is the moment, not a toast. */
@@ -890,8 +966,13 @@ function clearPlateOfChip() {
   const p = plateEl.getBoundingClientRect();
   const e = errandEl.getBoundingClientRect();
   if (e.width === 0) return;
-  const GAP = 10;
-  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top < e.bottom + GAP && p.bottom > e.top - GAP) {
+  // The plate is measured mid-entrance, still 6px low (its slide in), and a
+  // 10px gap on top of that pushed it below a phone's chip even though the
+  // two have their own bands there: it then sat over the well and the first
+  // face on screen, with the walking tip under it. Measure where it settles.
+  const GAP = 4;
+  const bottom = p.bottom - 6;
+  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top - 6 < e.bottom + GAP && bottom > e.top - GAP) {
     plateEl.style.top = `${Math.round(e.bottom + GAP)}px`;
   }
 }
@@ -3048,9 +3129,42 @@ function afterTalkHush(): boolean {
   return true;
 }
 
+/**
+ * The hush grows with the hand. A fixed 550ms was shorter than a steady
+ * key-hammer (one press every ~600ms), so each press past the last line
+ * landed in the world and re-read the well, which closed, and the next press
+ * read it again, forever. While Space was coming at a cadence, the hush after
+ * the words close is half again that cadence (capped), and every swallowed
+ * press renews it; a press after a real breath still acts, and so does one
+ * aimed somewhere new: a step or a turn since the words closed is intent.
+ */
+let lastActAt = -Infinity;
+let actGap = Infinity;
+let spamHushUntil = 0;
+let spamHushAim = '';
+function noteAct(now: number) {
+  actGap = now - lastActAt < 1500 ? now - lastActAt : Infinity;
+  lastActAt = now;
+}
+const spamHushMs = () => Math.min(1400, actGap * 1.6);
+function spamHush(): boolean {
+  const now = performance.now();
+  if (now >= spamHushUntil) return false;
+  if (player.facingCell().join(',') !== spamHushAim) {
+    spamHushUntil = 0;
+    return false;
+  }
+  spamHushUntil = now + spamHushMs();
+  return true;
+}
+
 function endDialogue() {
   player.frozen = false;
   talkHushUntil = performance.now() + TALK_HUSH_MS;
+  if (Number.isFinite(actGap)) {
+    spamHushUntil = performance.now() + spamHushMs();
+    spamHushAim = player.facingCell().join(',');
+  }
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   howtoOfferedBy = speaker?.def.id ?? null;
@@ -3360,8 +3474,50 @@ function threadPersonBeside(): Villager | null {
   return Math.abs(px - ox) + Math.abs(py - oy) === 1 ? v : null;
 }
 
+/** An undug mound at (x, y), while Justina's invitation stands. */
+function moundAt(x: number, y: number) {
+  if (map.id !== 'village' || !state.has('dig.invite') || state.has('dig.done')) return undefined;
+  return DIG_SPOTS.find((s) => s.at[0] === x && s.at[1] === y && !state.has(s.flag));
+}
+
+/**
+ * Dig the mound you face, or (`near`) the one underfoot or at your side.
+ * Mounds are soft ground you can walk over, so a player often ends up on one
+ * or beside one facing the terrace wall; Space read the terraces and
+ * Justina's lines while the mound sat at their feet, and one tester spent
+ * ten minutes learning to stand exactly beside and facing it. Near a mound,
+ * Space digs it.
+ */
+function tryDig(near: boolean): boolean {
+  const cell = near ? nearMound() : player.facingCell();
+  const spot = cell && moundAt(cell[0], cell[1]);
+  if (!cell || !spot) return false;
+  const [px, py] = player.occupies();
+  // Turn to a mound at your side; one underfoot is dug where you stand.
+  if (cell[0] !== px || cell[1] !== py) {
+    player.face(cell[0] > px ? 'right' : cell[0] < px ? 'left' : cell[1] > py ? 'down' : 'up');
+  }
+  audio.dig();
+  startNarration(spot.node);
+  return true;
+}
+
+/** The mound Space would dig: the one faced, else underfoot, else beside. */
+function nearMound(): [number, number] | null {
+  const [fx, fy] = player.facingCell();
+  if (moundAt(fx, fy)) return [fx, fy];
+  const [px, py] = player.occupies();
+  for (const [dx, dy] of [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1]] as const) {
+    if (moundAt(px + dx, py + dy)) return [px + dx, py + dy];
+  }
+  return null;
+}
+
 /** `aimFirst`: Space and the button; a click names its own target. */
 function tryInteract(aimFirst = true): boolean {
+  // The dig is the errand in hand: a mound you face, stand on or stand
+  // beside answers Space before anything else does.
+  if (tryDig(aimFirst)) return true;
   const [fx, fy] = player.facingCell();
   const v = villagersHere().find((n) => {
     const [ox, oy] = n.actor.occupies();
@@ -3379,15 +3535,6 @@ function tryInteract(aimFirst = true): boolean {
     player.face(ox > player.x ? 'right' : ox < player.x ? 'left' : oy > player.y ? 'down' : 'up');
     startNpcDialogue(aim);
     return true;
-  }
-  // The dig mounds, while Justina's invitation stands.
-  if (map.id === 'village' && state.has('dig.invite') && !state.has('dig.done')) {
-    const spot = DIG_SPOTS.find((s) => s.at[0] === fx && s.at[1] === fy && !state.has(s.flag));
-    if (spot) {
-      audio.dig();
-      startNarration(spot.node);
-      return true;
-    }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
   if (sitKindsOn(map.id).has(kind)) {
@@ -3974,7 +4121,9 @@ function playWelcome() {
   // new thread's chip and the walking tip) stacked over the first face on
   // screen, Don Aurelio's at the well on an upright tablet; one at a time
   // each is read and none covers the plaza for long.
-  welcomeTimer = window.setTimeout(playWelcomeTips, WELCOME_PLATE_MS + 300);
+  // The plate takes 1.1s to fade; the tips wait until it has, or for a
+  // second three overlays shared the top of a phone.
+  welcomeTimer = window.setTimeout(playWelcomeTips, WELCOME_PLATE_MS + 1200);
 }
 
 /** How long the first place plate holds before the welcome tips come in. */
@@ -4240,6 +4389,7 @@ function update(dt: number) {
       holdPlate(quiet);
     }
     chipFold.tick(quiet);
+    faceClearHud(quiet);
   }
   // The touch pad follows the same rhythm: overlays up, pad away.
   syncVpad();
@@ -4267,13 +4417,7 @@ function update(dt: number) {
     const groundCue =
       groundKind !== undefined &&
       (EXAMINES[groundKind]?.some((a) => a.cue && (!a.map || a.map === map.id) && state.check(a.when)) ?? false);
-    const digThere =
-      map.id === 'village' &&
-      state.has('dig.invite') &&
-      !state.has('dig.done') &&
-      DIG_SPOTS.some((sp) => sp.at[0] === fx && sp.at[1] === fy && !state.has(sp.flag));
     const examThere =
-      digThere ||
       groundCue ||
       (objKind !== undefined &&
         objKind !== 'blocked' &&
@@ -4281,7 +4425,9 @@ function update(dt: number) {
           (EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false)));
     // Space goes to the thread's person before a prop (tryInteract): so does the dot.
     const aim = npcThere ? null : threadPersonBeside();
-    renderer.setHint(aim ? aim.actor.occupies() : npcThere || examThere ? [fx, fy] : null);
+    // A mound near your feet is what Space digs (tryDig), so the dot sits on it.
+    const mound = nearMound();
+    renderer.setHint(mound ?? (aim ? aim.actor.occupies() : npcThere || examThere ? [fx, fy] : null));
   } else {
     renderer.setHint(null);
   }
@@ -4316,6 +4462,7 @@ function update(dt: number) {
 
   input.pollGamepad();
   const act = input.takeAction() || dev.takeAction();
+  if (act) noteAct(performance.now());
   const menuDir = input.takeMenuDir() ?? dev.takeMenuDir();
   const back = input.takeBack();
   const pauseKey = input.takePause();
@@ -4487,17 +4634,27 @@ function update(dt: number) {
     } else if (journalKey) {
       journalUI.open();
       audio.pageFlip();
+    } else if (threadKey && !state.has('keepsake.band') && !player.frozen && celebrateT <= 0) {
+      // Before Carmen ties the band, N used to do nothing at all, and a
+      // silent key reads as a broken one. One quiet line that does not spoil
+      // the band (the reveal is hers) and points at the ribbon instead.
+      const now = performance.now();
+      if (now - threadToastAt > 20000) {
+        threadToastAt = now;
+        toasts.show('nothing on your wrist to ask yet; the journal’s ribbon knows the way');
+      }
     } else if (threadKey && state.has('keepsake.band') && !player.frozen && celebrateT <= 0) {
-      // Ask the band. Before Carmen ties it, the key simply does nothing:
-      // chapter one's opening is guided enough, and the reveal is hers.
-      // The first deliberate press, ever, also retires the chip's nudge:
-      // only a manual N counts, never a villager's offer or an effect.
+      // Ask the band. The first deliberate press, ever, also retires the
+      // chip's nudge: only a manual N counts, never a villager's offer or an
+      // effect.
       state.set('thread.used');
       summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
-    } else if (act && afterTalkHush()) {
-      // The press that closed the last line had company: swallowed.
+    } else if (act && (afterTalkHush() || spamHush() || introTimer !== 0)) {
+      // The press that closed the last line had company: swallowed. So is
+      // a press in the breath between the letter and the first words: it
+      // used to read the well before the game had said anything at all.
     } else if (act) {
       if (!tryInteract()) {
         // Open air, and a game still waiting on its start flag: the how-to
@@ -4687,7 +4844,9 @@ function render() {
   const cam = shownCam();
   const sprites = vistaOn
     ? villagers.filter((v) => v.def.map === vm.id && v.fade > 0.02 && state.check(v.def.when))
-    : [...spritesHere(), ...moundsHere()];
+    : // Mounds first: the sort is stable, so a body standing on one draws
+      // over the soil instead of wearing it on its feet.
+      [...moundsHere(), ...spritesHere()];
   renderer.drawWorld(vm, cam, sprites);
 
   // Every fire and lamp on this map becomes a flickering point light.
@@ -5123,14 +5282,7 @@ function interactableAt(x: number, y: number): boolean {
   ) {
     return true;
   }
-  if (
-    map.id === 'village' &&
-    state.has('dig.invite') &&
-    !state.has('dig.done') &&
-    DIG_SPOTS.some((s) => s.at[0] === x && s.at[1] === y && !state.has(s.flag))
-  ) {
-    return true;
-  }
+  if (moundAt(x, y)) return true;
   // Only THINGS invite the pointer (props, seats, mounds, people), matching
   // the curiosity dot: bare ground still answers the button, but a click on
   // it should simply walk there.
@@ -5199,7 +5351,11 @@ function requestMove(tx: number, ty: number, hit?: Villager) {
   const [ox, oy] = player.occupies();
   const d = Math.abs(ox - tx) + Math.abs(oy - ty);
   if (npc || interactableAt(tx, ty)) {
-    if (d === 0) return;
+    // Standing on the very mound you clicked: dig it where you stand.
+    if (d === 0) {
+      if (!npc && !player.isMoving) tryDig(true);
+      return;
+    }
     if (d === 1 && !player.isMoving && !npc?.actor.isMoving) {
       faceAndInteract(tx, ty);
       return;
@@ -5803,7 +5959,14 @@ for (const btn of vpad.querySelectorAll<HTMLElement>('.vp-b')) {
   }
 }
 
-initRotateNudge();
+// The sideways offer waits for a tap in the world: on the cover or a card it
+// ate Begin, then the name card's "write it down". Its pin joins the column.
+initRotateNudge({
+  canOffer: () =>
+    mode === 'play' && !warp && !textbox.isOpen && !journalUI.isOpen && !pauseMenu.isOpen &&
+    !albumUI.isOpen && !chapterClose.isOpen && !title.letterOpen && !uiCardOpen() && !anyGameOpen(),
+  pinHost: vpad.querySelector<HTMLElement>('.vp-side') ?? undefined,
+});
 
 // ---------------------------------------------------------------- start
 

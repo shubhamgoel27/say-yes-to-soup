@@ -10,9 +10,11 @@
  * wide, so phones are still steered sideways, firmly but kindly:
  *
  * - Where the browser can lock orientation (Android, mostly): on the first
- *   natural tap while upright, a journal card offers to lay the journal
- *   sideways. Accepting goes fullscreen and locks landscape. Declining twice
- *   retires the card for the session and leaves a small corner pin instead.
+ *   natural tap in the world while upright (never on the cover or a card,
+ *   whose taps are spoken for), a journal card offers to lay the journal
+ *   sideways. Accepting goes fullscreen and locks landscape. One decline
+ *   retires the card for the session and leaves a small pin at the top of
+ *   the pad's button column instead.
  * - Where it cannot (iOS, or any lock failure): a full paper page asks for
  *   the turn and waits. It leaves the instant the phone turns.
  *
@@ -34,6 +36,24 @@ export function isCoarseTouch(): boolean {
  */
 export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch()): string {
   return coarse ? taps : keys;
+}
+
+/**
+ * How much the HUD grows on a wide screen: 1 up to the 1280x800 frame the
+ * HUD was drawn for, then the smaller of the two stretches, capped at 1.7.
+ * A phone or tablet never exceeds 1.
+ */
+export function uiScaleFor(w: number, h: number): number {
+  const k = Math.min(w / 1280, h / 800);
+  return Math.round(Math.min(1.7, Math.max(1, k)) * 100) / 100;
+}
+
+/** Keep --ui-k on the root in step with the window (see index.html). */
+export function trackUiScale(): void {
+  const apply = () =>
+    document.documentElement.style.setProperty('--ui-k', String(uiScaleFor(window.innerWidth, window.innerHeight)));
+  apply();
+  window.addEventListener('resize', apply);
 }
 
 /** How long a new thread reads in full on a phone before the chip folds. */
@@ -167,8 +187,6 @@ function writeDeclines(n: number): void {
   }
 }
 
-/** After a decline, the next few taps belong to the player, not the card. */
-const REOFFER_COOLDOWN_MS = 5000;
 
 // ---------------------------------------------------------------------------
 // Shared state (module-scoped; initRotateNudge arms everything once).
@@ -178,7 +196,10 @@ let armed = false;
 let fallbackMode = false;
 let lockActive = false;
 let declines = 0;
-let lastDeclineAt = 0;
+/** Whether a tap right now belongs to the world (main.ts knows). */
+let offerAllowed: () => boolean = () => true;
+/** Where the pin goes: the pad's side column. */
+let pinHost: HTMLElement | null = null;
 
 let offerEl: HTMLElement | null = null;
 let holdEl: HTMLElement | null = null;
@@ -275,6 +296,7 @@ function ensurePin(): HTMLButtonElement {
   const pin = document.createElement('button');
   pin.type = 'button';
   pin.id = 'sidewayspin';
+  pin.className = 'vp-b vp-small';
   pin.hidden = true;
   pin.setAttribute('aria-label', 'Lay the journal sideways');
   pin.title = 'Lay the journal sideways';
@@ -289,7 +311,8 @@ function ensurePin(): HTMLButtonElement {
   pin.addEventListener('click', () => {
     void goSideways();
   });
-  document.body.appendChild(pin);
+  if (pinHost) pinHost.prepend(pin);
+  else document.body.appendChild(pin);
   pinEl = pin;
   return pin;
 }
@@ -309,7 +332,6 @@ function hideOffer(): void {
 function declineOffer(): void {
   hideOffer();
   declines += 1;
-  lastDeclineAt = Date.now();
   writeDeclines(declines);
   syncPin();
 }
@@ -354,8 +376,11 @@ function offerEligible(): boolean {
   if (document.fullscreenElement) return false;
   if (!inPortrait()) return false;
   if (offerEl && !offerEl.hidden) return false;
-  if (Date.now() - lastDeclineAt < REOFFER_COOLDOWN_MS) return false;
-  return declines < 2;
+  // Once a session. It used to come back on the next tap after five
+  // seconds, which was the name card's "write it down": two interruptions
+  // in the first half minute.
+  if (declines >= 1) return false;
+  return offerAllowed();
 }
 
 /**
@@ -413,7 +438,7 @@ function swallowGesture(e: PointerEvent): void {
 function syncPin(): void {
   if (fallbackMode || !canLockLandscape()) return;
   const bare = !lockActive && !document.fullscreenElement;
-  const wanted = bare && (!inPortrait() || declines >= 2);
+  const wanted = bare && (!inPortrait() || declines >= 1);
   if (!wanted && !pinEl) return;
   const pin = ensurePin();
   pin.hidden = !wanted;
@@ -442,9 +467,11 @@ function syncHold(): void {
  * portrait whisper; the name stays so main.ts needs no change. On tablets and
  * desktops it does nothing at all.
  */
-export function initRotateNudge(): void {
+export function initRotateNudge(opts: { canOffer?: () => boolean; pinHost?: HTMLElement } = {}): void {
   if (armed || !isPhone()) return;
   armed = true;
+  if (opts.canOffer) offerAllowed = opts.canOffer;
+  pinHost = opts.pinHost ?? null;
   declines = readDeclines();
 
   const onOrientationSettled = (): void => {

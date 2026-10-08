@@ -89,6 +89,9 @@ export class JournalUI {
     private tasks: WorldTask[],
     private route: RouteStop[],
     private state: GameState,
+    /** The place a page was written in (a route stop's name), for the
+     * chapter dividers in the long lists. */
+    private placeOf: (id: string) => string | undefined = () => undefined,
   ) {
     for (const e of entries) {
       if (!this.state.hasPage(e.id)) continue;
@@ -262,16 +265,27 @@ export class JournalUI {
       (t, i) => `<span class="j-tab${i === this.tab ? ' on' : ''}">${t.label}</span>`,
     ).join('');
 
+    // A book, not an app list: fifty-two dishes ran as one flat column. Each
+    // place the pages were written in heads its own run, in her route's
+    // words, once the list spans more than one.
+    const places = new Set(unlocked.map((e) => this.placeOf(e.id)));
+    let lastPlace: string | undefined;
     const listHtml =
       unlocked
-        .map(
-          (e) =>
+        .map((e) => {
+          const place = this.placeOf(e.id);
+          const head =
+            places.size > 1 && place && place !== lastPlace ? `<div class="j-place">${place}</div>` : '';
+          lastPlace = place;
+          return (
+            head +
             `<div class="j-item${e === sel ? ' sel' : ''}${
               this.seenPages.has(e.id) ? '' : ' j-new'
             }">${e === sel ? '&#9656; ' : ''}${e.title}${
               this.rhymeFor(e.id) ? ' <span class="j-stitch">&#10087;</span>' : ''
-            }</div>`,
-        )
+            }</div>`
+          );
+        })
         .join('') +
       (locked > 0
         ? `<div class="j-locked">${'&middot; '.repeat(3)}${locked} page${locked > 1 ? 's' : ''} still blank</div>`
@@ -319,7 +333,7 @@ export class JournalUI {
     // The dish gets its little painting, mounted after the HTML lands.
     if (sel?.tab === 'dishes') {
       const slot = this.root.querySelector('.j-dishart');
-      const art = slot ? makeDishArt(sel.id) : null;
+      const art = slot ? makeDishArt(sel.id, 3) : null;
       if (slot && art) slot.appendChild(art);
     }
     // One-time flourishes stay one-time: whatever this render just showed is

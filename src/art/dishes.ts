@@ -98,11 +98,17 @@ export function hasDishArt(id: string): boolean {
   return id in D;
 }
 
-/** Paints the dish for a journal page id, or null when no spec exists. */
-export function makeDishArt(id: string): HTMLCanvasElement | null {
+/**
+ * Paints the dish for a journal page id, or null when no spec exists.
+ * `res` paints at that many pixels per unit: the journal now shows the dish
+ * large across the page's empty half, and a 132px painting stretched there
+ * went soft.
+ */
+export function makeDishArt(id: string, res = 1): HTMLCanvasElement | null {
   const spec = D[id];
   if (!spec) return null;
-  const { cv, g } = surface(W, H);
+  const { cv, g } = surface(Math.round(W * res), Math.round(H * res));
+  g.scale(res, res);
   const r = new Rng(id.length * 7919 + 31);
   const cx = W / 2;
   const cy = H / 2 + 8;
