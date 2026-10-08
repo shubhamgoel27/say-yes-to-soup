@@ -65,7 +65,9 @@ function welcomeBackLine(): string | null {
     ]
       .filter(Boolean)
       .join(', ');
-    return `${where} &middot; ${tally}`;
+    // Two lines, each whole: as one line it ran under the cover's woven band
+    // at desk widths, and a wrap left the middot dangling at a line's head.
+    return `<span class="t-nw">${where}</span><br><span class="t-nw">${tally}</span>`;
   } catch {
     return null;
   }

@@ -1097,8 +1097,13 @@
         font-style: italic;
         letter-spacing: 0.02em;
         color: #b8a077;
-        margin-top: -3px;
+        /* Clear of the woven band on the cover's right, and centered, so the
+         * line stays off the band on either side. */
+        max-width: calc(100% - 150px);
+        margin: -3px auto 0;
+        text-wrap: balance;
       }
+      .t-nw { white-space: nowrap; }
       .t-opt.sel .t-opt-sub { color: #c4ac83; }
       .t-controls {
         display: flex;
