@@ -1388,6 +1388,17 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'A lantern brought in off the quay, standing where the hall runs too long for one window.' },
     ],
   },
+  'c4.ex.tokonoma': {
+    lines: [
+      { text: 'The tokonoma: a scroll of one wave under one moon, and a single stem in a low vase. Nobody stands in it.' },
+      { text: 'Fumi changes the flower before she changes anything else.' },
+    ],
+  },
+  'c4.ex.tansu': {
+    lines: [
+      { text: 'A step tansu, drawers climbing like a staircase. The futons sleep in it by day. A folded yukata waits on the bottom step for whoever comes in wet.' },
+    ],
+  },
   'c4.ex.monohoshi.in': {
     lines: [
       { text: 'The drying rack, moved indoors when the sky looks like this.' },
@@ -1510,6 +1521,8 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
   ittokan: [{ node: 'c4.ex.ittokan' }],
   ajisai: [{ node: 'c4.ex.ajisai' }],
   himono: [{ node: 'c4.ex.himono' }],
+  tokonoma: [{ node: 'c4.ex.tokonoma' }],
+  tansu: [{ node: 'c4.ex.tansu' }],
   monohoshi: [
     { map: 'minshuku', node: 'c4.ex.monohoshi.in' },
     { node: 'c4.ex.monohoshi' },

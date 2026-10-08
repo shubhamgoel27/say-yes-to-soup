@@ -15,10 +15,10 @@ export const ART: ChapterArt = {
     'pelicanpost', 'gallinazos', 'mototaxi', 'picchairs', 'pizarra',
     'tendal', 'pintura',
   ],
-  noInk: ['seaweed', 'jellyfish'],
+  noInk: ['seaweed', 'jellyfish', 'rugEstera'],
   /** Inside the picantería is inside La Caleta, not inside the Andes. */
   skins: {
-    picanteria: { wallInt: 'wallQuincha', floorEarth: 'floorCemento', table: 'longtable' },
+    picanteria: { wallInt: 'wallQuincha', floorEarth: 'floorCemento', table: 'longtable', rug: 'rugEstera', shelf: 'shelfPicante' },
   },
 
   /** The long table is one table: head, middle and foot, top to bottom. */
@@ -1110,6 +1110,56 @@ export const ART: ChapterArt = {
       }
       // The mop's last pass, still drying.
       if (r.chance(0.4)) oval(g, r.int(64), r.int(64), 15, 5, 'rgba(226,230,228,0.09)');
+    });
+
+    // A totora estera on the cement: the reed mat every coast kitchen lays
+    // under the long table, pale straw, bound with cord every sixteen pixels
+    // so a run of cells is one mat and the seam never shows.
+    make('rugEstera', 3, (g, r) => {
+      const straw = '#d6c08a';
+      rect(g, 0, 0, 64, 64, straw);
+      // Reeds run across; their value wobbles by row, never by tile.
+      for (let y = 0; y < 64; y += 4) {
+        rect(g, 0, y, 64, 3, shade(straw, ((y / 4) % 3) * 0.04 - 0.03));
+        rect(g, 0, y + 3, 64, 1, 'rgba(110,86,46,0.22)');
+      }
+      // Binding cords, twined over the reeds.
+      for (let x = 8; x < 64; x += 16) {
+        rect(g, x - 1, 0, 2.4, 64, '#9c7a46');
+        for (let y = 2; y < 64; y += 8) rect(g, x - 1.6, y, 3.6, 1.6, '#7e6036');
+      }
+      // Where the plates get set down and the chairs scrape.
+      oval(g, r.next() * 64, r.next() * 64, 15, 8, 'rgba(90,70,40,0.08)');
+    });
+
+    // The picantería's shelf: sky-blue board, a row of glass bottles of
+    // ají and chicha de jora's cousins, enamel plates stood on edge, limes.
+    make('shelfPicante', 3, (g, r) => {
+      const board = '#6f97ad';
+      vgrad(g, 0, 0, 64, 64, shade(board, 0.04), shade(board, -0.12));
+      vgrad(g, 0, 0, 64, 10, 'rgba(20,30,40,0.35)', 'rgba(0,0,0,0)');
+      rr(g, 3, 24, 58, 5, 2, '#e8e2d2');
+      rr(g, 3, 48, 58, 5, 2, '#e8e2d2');
+      // Top shelf: bottles, each a different sauce.
+      const sauces = ['#d9a32f', '#b5432f', '#4d7440', '#e8d9a8'];
+      for (let k = 0; k < 4; k++) {
+        const x = 9 + k * 14 + r.int(3);
+        const c = sauces[(k + r.int(2)) % sauces.length]!;
+        rr(g, x - 4, 9, 8, 15, 2.5, 'rgba(230,240,240,0.55)');
+        rr(g, x - 3, 13, 6, 10, 2, c);
+        rect(g, x - 1.5, 5, 3, 5, '#d8dcd8');
+        dot(g, x - 2, 15, 1, 'rgba(255,255,255,0.6)');
+      }
+      // Lower shelf: two enamel plates on edge and a little heap of limes.
+      for (const [x, c] of [[14, '#f2efe6'], [26, '#f2efe6']] as const) {
+        oval(g, x, 39, 8, 9, c);
+        g.strokeStyle = '#3f6f9a';
+        g.lineWidth = 1.4;
+        g.beginPath();
+        g.ellipse(x, 39, 7.4, 8.4, 0, 0, Math.PI * 2);
+        g.stroke();
+      }
+      for (let k = 0; k < 5; k++) dot(g, 42 + (k % 3) * 6, 44 - Math.floor(k / 3) * 5, 3.2, k % 2 ? '#8fbf5a' : '#7aad48');
     });
   },
 };
