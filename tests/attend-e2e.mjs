@@ -173,7 +173,8 @@ if (want('r2')) {
     await mashStep();
   });
   await open(F, 8);
-  const plan = [[6, 6, 0, 2], [4, 2, 4, 5]];
+  // Hamisi wants brave, Bi Mwana crunch, the boy's Baba egg and potato, mild.
+  const plan = [[6, 6, 0, 2], [4, 2, 4, 5], [3, 1, 5, 4]];
   const careful = await drive(F, ['phase', 'round', 'cur', 'counts'], async (s) => {
     if (s.phase !== 'build') {
       await page.keyboard.press('Space');
