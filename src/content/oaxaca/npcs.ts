@@ -1007,7 +1007,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Nine chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
+      { who: 'Chasca', text: 'Ten chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
     ],
   },
 
