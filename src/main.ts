@@ -73,6 +73,8 @@ console.info('[soup] boot: world composer');
 const renderer = new Renderer(worldCanvas);
 console.info('[soup] boot: gpu stage');
 const stage = PixiStage.create(worldCanvas, $('frame'));
+// The frame turns with the screen (an upright phone gets an upright frame).
+stage.onViewChange(() => renderer.resizeView());
 console.info('[soup] boot: stage ready');
 const debugEl = $('debug') as HTMLPreElement;
 const input = new Input();
@@ -4426,9 +4428,10 @@ function worldToScreen(wx: number, wy: number): [number, number] {
 }
 
 /**
- * Cover-fit crops the long axis: a portrait phone shows only the middle ~83
- * of the 320 logical px the camera frames. The engine camera clamps to the
- * full 320x180 view, so within a few tiles of a map edge the player could
+ * Cover-fit crops the long axis: a very tall or very wide window shows only
+ * the middle of the frame the camera frames (the frame itself turns upright
+ * on upright screens, config.viewFor, so the crop stays modest). The engine
+ * camera clamps to the full frame, so within a few tiles of a map edge the player could
  * stand entirely outside the visible slice. After each follow, re-center the
  * followed point inside what is actually on screen, letting the camera run
  * into the cropped margin, which is off-screen by definition. On 16:9

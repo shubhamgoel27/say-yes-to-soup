@@ -13,7 +13,7 @@ import {
   TilingSprite,
 } from 'pixi.js';
 import { AdvancedBloomFilter } from 'pixi-filters';
-import { ART, VIEW_H, VIEW_W } from '../engine/config';
+import { ART, VIEW_H, VIEW_W, setView } from '../engine/config';
 
 /**
  * The GPU presentation layer. The Canvas2D world composer keeps doing what it
@@ -76,6 +76,12 @@ export class PixiStage {
   private canaryArmed = false;
   /** Callers who need the live canvas (pointer bindings); re-run per build. */
   private canvasHooks: ((c: HTMLCanvasElement) => void)[] = [];
+  /** Who repaints at the frame's size (the world composer); run when it turns. */
+  private viewHooks: (() => void)[] = [];
+  /** The frame-sized pieces of the build, resized in place when the frame turns. */
+  private grain: TilingSprite | null = null;
+  private worldSprite!: Sprite;
+  private lightLayer!: Sprite;
 
   /**
    * Synchronous on purpose. Awaiting this at main.ts's top level deadlocked
@@ -154,6 +160,7 @@ export class PixiStage {
     // The world frame, uploaded from the Canvas2D composer every render.
     s.worldSource = new CanvasSource({ resource: worldCanvas, scaleMode: 'linear' });
     const worldSprite = new Sprite(new Texture({ source: s.worldSource }));
+    s.worldSprite = worldSprite;
 
     // Light map: ambient base + screened radial lights, multiplied over the world.
     // Linear, because the map is authored at a quarter of the art's resolution
@@ -181,6 +188,7 @@ export class PixiStage {
       s.lightPool.push(l);
     }
     const lightLayer = new Sprite(s.lightRT);
+    s.lightLayer = lightLayer;
     lightLayer.blendMode = 'multiply';
     lightLayer.scale.set(ART); // light map is authored at logical resolution
 
@@ -207,6 +215,7 @@ export class PixiStage {
       grain.blendMode = 'multiply';
       grain.alpha = 0.09;
       s.scene.addChild(grain);
+      s.grain = grain;
     } catch {
       // No texture, no tooth; the game plays on.
     }
@@ -313,14 +322,58 @@ export class PixiStage {
    * the game IS the page.
    */
   resize() {
-    if (!this.live) return;
     const w = window.innerWidth;
     const h = window.innerHeight;
+    // The frame turns with the screen (config.viewFor). The world composer
+    // goes first so the canvas this stage uploads is already the new size.
+    if (setView(w, h)) {
+      for (const fn of this.viewHooks) fn();
+      this.fitView();
+    }
+    if (!this.live) return;
     this.base = Math.max(1, Math.max(w / VIEW_W, h / VIEW_H));
     this.app.renderer.resize(w, h);
     this.app.canvas.style.width = `${w}px`;
     this.app.canvas.style.height = `${h}px`;
     this.layout();
+  }
+
+  /** Run whenever the frame turns (after the frame has changed). */
+  onViewChange(fn: () => void) {
+    this.viewHooks.push(fn);
+  }
+
+  /** Resize every frame-sized surface the build owns to the current frame. */
+  private fitView() {
+    if (!this.live) return; // init() reads the frame fresh
+    const w = VIEW_W * ART;
+    const h = VIEW_H * ART;
+    // Fresh GPU surfaces rather than resized ones: a resized source kept its
+    // old GPU allocation on WebGL and the turned frame drew squeezed into a
+    // third of the screen. A turn is rare; new textures are cheap.
+    const oldWorld = this.worldSprite.texture;
+    this.worldSource = new CanvasSource({ resource: this.worldCanvas, scaleMode: 'linear' });
+    this.worldSprite.texture = new Texture({ source: this.worldSource });
+    oldWorld.destroy(true);
+    const oldLight = this.lightRT;
+    this.lightRT = RenderTexture.create({ width: VIEW_W, height: VIEW_H, scaleMode: 'linear' });
+    this.lightLayer.texture = this.lightRT;
+    oldLight.destroy(true);
+    const oldPre = this.prescaleRT;
+    this.prescaleRT = RenderTexture.create({ width: w, height: h, scaleMode: 'linear' });
+    this.present.texture = this.prescaleRT;
+    oldPre.destroy(true);
+    this.ambientSprite.width = VIEW_W;
+    this.ambientSprite.height = VIEW_H;
+    if (this.grain) {
+      this.grain.width = w;
+      this.grain.height = h;
+    }
+    for (const sp of [this.washSprite, this.vigSprite]) {
+      if (!sp) continue;
+      sp.width = w;
+      sp.height = h;
+    }
   }
 
   private layout() {

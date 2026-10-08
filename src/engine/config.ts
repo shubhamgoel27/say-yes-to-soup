@@ -10,11 +10,38 @@ export const TILE = 16;
 export const ART = 4;
 
 /**
- * 320x180 logical: modern 16:9 that integer-scales to 1080p (6x), 1440p (8x)
+ * 320x180 logical (landscape): modern 16:9 that integer-scales to 1080p (6x), 1440p (8x)
  * and 4K (12x). Twenty tiles across; the cinematic cozy frame.
  */
-export const VIEW_W = 320;
-export const VIEW_H = 180;
+export let VIEW_W = 320;
+export let VIEW_H = 180;
+
+/**
+ * The frame turns with the screen. Held upright, a phone cover-fitting the
+ * landscape frame showed a keyhole about five tiles across; the same pixel
+ * budget stood on end shows about nine across on a phone and eleven on a
+ * tall tablet, and nothing changes for a desk or anything held sideways.
+ * These are live bindings: every importer reads the current frame.
+ */
+export const VIEW_LANDSCAPE: readonly [number, number] = [320, 180];
+export const VIEW_PORTRAIT: readonly [number, number] = [180, 320];
+
+/** The frame for a window of this size: upright windows get the upright frame. */
+export function viewFor(w: number, h: number): readonly [number, number] {
+  return h > w ? VIEW_PORTRAIT : VIEW_LANDSCAPE;
+}
+
+/** Adopt the frame for this window; true when it changed. */
+export function setView(w: number, h: number): boolean {
+  const [vw, vh] = viewFor(w, h);
+  if (vw === VIEW_W && vh === VIEW_H) return false;
+  VIEW_W = vw;
+  VIEW_H = vh;
+  return true;
+}
+
+// The first frame is chosen before anything sizes a canvas against it.
+if (typeof window !== 'undefined' && window.innerWidth > 0) setView(window.innerWidth, window.innerHeight);
 
 /** Seconds to cross one tile. Lower is snappier; 0.14 is a comfortable walk. */
 export const STEP_DUR = 0.14;

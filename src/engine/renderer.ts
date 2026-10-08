@@ -50,8 +50,10 @@ const LIFE_FAMILY: Record<string, string> = {
 const LIFE_DENSITY: Record<string, number> = { green: 0.19, earth: 0.15, sand: 0.15, stone: 0.18 };
 const AW = CHAR_W * A;
 const AH = CHAR_H * A;
-const W = VIEW_W * A;
-const H = VIEW_H * A;
+// The frame in art pixels. `let`, because the frame turns with the screen
+// (config.setView); Renderer.resizeView re-reads it.
+let W = VIEW_W * A;
+let H = VIEW_H * A;
 
 /**
  * The sun's shadows are composed in a small buffer and blown back up to the
@@ -59,8 +61,8 @@ const H = VIEW_H * A;
  * soft painterly edge comes from, for free.
  */
 const SH_DIV = 7;
-const SHW = Math.ceil(W / SH_DIV);
-const SHH = Math.ceil(H / SH_DIV);
+let SHW = Math.ceil(W / SH_DIV);
+let SHH = Math.ceil(H / SH_DIV);
 
 /** How far past the view a caster can stand and still throw into it. */
 const SH_MX = 12;
@@ -1013,8 +1015,34 @@ export class Renderer {
   /** Chapters bring their own weather. */
   registerMoods(specs: Record<string, MoodPaint>) {
     for (const [name, s] of Object.entries(specs)) {
+      this.moodSpecs[name] = s;
       this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
       if (s.noClouds) this.noClouds.add(name);
+    }
+  }
+
+  /** Chapter moods as registered, so the frame-sized passes can be re-baked. */
+  private moodSpecs: Record<string, MoodPaint> = {};
+
+  /**
+   * The frame turned (config.setView): resize the canvas and re-bake every
+   * pass that is painted at the frame's size. Nothing else holds the frame.
+   */
+  resizeView() {
+    W = VIEW_W * A;
+    H = VIEW_H * A;
+    SHW = Math.ceil(W / SH_DIV);
+    SHH = Math.ceil(H / SH_DIV);
+    if (this.canvas.width === W && this.canvas.height === H) return;
+    this.canvas.width = W;
+    this.canvas.height = H;
+    // A resized canvas drops its context state.
+    this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
+    this.shadowBuf = surface(SHW, SHH);
+    this.atmospheres = buildAtmospheres();
+    for (const [name, s] of Object.entries(this.moodSpecs)) {
+      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
     }
   }
 
