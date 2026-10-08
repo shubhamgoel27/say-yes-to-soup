@@ -3173,14 +3173,44 @@ function updateSitting(dt: number) {
   }
 }
 
-function tryInteract(): boolean {
+/** The person the red thread last pointed at, and the map it was laid on. */
+let threadAim: Villager | null = null;
+let threadAimMap = '';
+
+/**
+ * The thread's person, if they are standing right beside you now. The yarn
+ * ends on a free cell beside them, but you arrive facing along the yarn, and
+ * that is often a crate, an awning or a bicycle; Space read the prop and the
+ * person the whole thread was about stood ignored at your elbow (Mr. Gong's
+ * crate, Shionoura's bicycle). While the thread's person is at your side,
+ * they come first. Talking to them settles it.
+ */
+function threadPersonBeside(): Villager | null {
+  const v = threadAim;
+  if (!v || threadAimMap !== map.id || !villagersHere().includes(v) || v.actor.isMoving) return null;
+  const [px, py] = player.occupies();
+  const [ox, oy] = v.actor.occupies();
+  return Math.abs(px - ox) + Math.abs(py - oy) === 1 ? v : null;
+}
+
+/** `aimFirst`: Space and the button; a click names its own target. */
+function tryInteract(aimFirst = true): boolean {
   const [fx, fy] = player.facingCell();
   const v = villagersHere().find((n) => {
     const [ox, oy] = n.actor.occupies();
     return ox === fx && oy === fy;
   });
   if (v) {
+    if (v === threadAim) threadAim = null;
     startNpcDialogue(v);
+    return true;
+  }
+  const aim = aimFirst ? threadPersonBeside() : null;
+  if (aim) {
+    threadAim = null;
+    const [ox, oy] = aim.actor.occupies();
+    player.face(ox > player.x ? 'right' : ox < player.x ? 'left' : oy > player.y ? 'down' : 'up');
+    startNpcDialogue(aim);
     return true;
   }
   // The dig mounds, while Justina's invitation stands.
@@ -3428,7 +3458,7 @@ function threadTargetFor(
  */
 function threadPathFrom(
   from: [number, number],
-): { tiles: [number, number][]; loop: [number, number] | null; task: WorldTask } | null {
+): { tiles: [number, number][]; loop: [number, number] | null; task: WorldTask; person: [number, number] | null } | null {
   const solid = (x: number, y: number) => map.solid(x, y);
   for (const task of journalUI.activeTaskDefs()) {
     if (task.who === undefined && !task.at) continue;
@@ -3458,6 +3488,8 @@ function threadPathFrom(
       tiles: [from, ...path.slice(0, n)],
       loop: reaches ? aim.cell : null,
       task,
+      // Where the person it leads to stands (a thing or a door: null).
+      person: aim.adjacent && villagersHere().some((v) => v.actor.occupies().join() === aim.cell.join()) ? aim.cell : null,
     };
   }
   return null;
@@ -3490,6 +3522,16 @@ function summonThread(from: [number, number] = player.occupies()): boolean {
     return false;
   }
   renderer.showThread(found.tiles, found.loop);
+  // Remember who the thread leads to: at its end, Space greets them
+  // before any crate or bicycle that happens to be in front of you.
+  const loop = found.person;
+  threadAim = loop
+    ? (villagersHere().find((v) => {
+        const [ox, oy] = v.actor.occupies();
+        return ox === loop[0] && oy === loop[1];
+      }) ?? null)
+    : null;
+  threadAimMap = map.id;
   // One soft note from Carmen's loom: the terracotta string, same as the band.
   audio.weaveNote(0);
   threadShownAt = performance.now();
@@ -4048,7 +4090,9 @@ function update(dt: number) {
         objKind !== 'blocked' &&
         (sitKindsOn(map.id).has(objKind) ||
           (EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false)));
-    renderer.setHint(npcThere || examThere ? [fx, fy] : null);
+    // Space goes to the thread's person before a prop (tryInteract): so does the dot.
+    const aim = npcThere ? null : threadPersonBeside();
+    renderer.setHint(aim ? aim.actor.occupies() : npcThere || examThere ? [fx, fy] : null);
   } else {
     renderer.setHint(null);
   }
@@ -4918,7 +4962,7 @@ function faceAndInteract(tx: number, ty: number) {
   const dir: Dir =
     tx > player.x ? 'right' : tx < player.x ? 'left' : ty > player.y ? 'down' : 'up';
   player.face(dir);
-  tryInteract();
+  tryInteract(false);
 }
 
 /**
@@ -4933,10 +4977,12 @@ function villagerAtPoint(wx: number, wy: number): Villager | undefined {
   for (const v of villagersHere()) {
     if (v.fade <= 0.02) continue;
     const [rx, ry] = v.actor.renderPos();
-    // The head reaches about half a tile up; the middle of the cell above
-    // stays that cell's own, so a click there (where one stands to talk to
-    // them) still walks.
-    if (wx < rx + 1 || wx > rx + TILE - 1 || wy < ry - 7 || wy > ry + TILE) continue;
+    // A figure is two tiles tall: the head and hat fill most of the cell
+    // above. The box used to stop half a tile up, so a click on the face of
+    // someone walking past landed on the ground behind them and walked you
+    // to where they had been (Bantu, the Caleta stalls). The hat's crown,
+    // the top couple of pixels, still belongs to whatever is up there.
+    if (wx < rx + 2 || wx > rx + TILE - 2 || wy < ry - 13 || wy > ry + TILE) continue;
     const d = Math.abs(wx - (rx + TILE / 2)) + Math.abs(wy - (ry + TILE / 2));
     if (d < bestD) {
       best = v;
@@ -4956,11 +5002,19 @@ function requestMove(tx: number, ty: number, hit?: Villager) {
     });
   // Whoever was clicked is the goal, wherever their feet have got to.
   if (npc) [tx, ty] = npc.actor.occupies();
-  const d = Math.abs(player.x - tx) + Math.abs(player.y - ty);
+  const [ox, oy] = player.occupies();
+  const d = Math.abs(ox - tx) + Math.abs(oy - ty);
   if (npc || interactableAt(tx, ty)) {
     if (d === 0) return;
-    if (d === 1) {
+    if (d === 1 && !player.isMoving && !npc?.actor.isMoving) {
       faceAndInteract(tx, ty);
+      return;
+    }
+    if (d === 1) {
+      // Somebody's feet are still in the air: hold the hail until both land
+      // (autoIntent), instead of turning toward where they are leaving.
+      autoPath = [];
+      autoGoal = { kind: 'interact', cell: [tx, ty], npc };
       return;
     }
     // Bodies in the way are walked around as they move (replanAuto on a
@@ -5073,6 +5127,8 @@ function autoIntent(): Dir | null {
   const next = autoPath[0];
   if (!next) {
     if (player.isMoving) return null; // let the last step land first
+    // Hailed mid-stride, they finish the step and wait; talk once they have.
+    if (goal.npc?.actor.isMoving) return null;
     cancelAuto();
     if (goal.kind === 'interact') {
       const [tx, ty] = goal.npc ? goal.npc.actor.occupies() : goal.cell;
