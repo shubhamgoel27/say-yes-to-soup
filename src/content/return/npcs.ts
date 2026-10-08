@@ -32,6 +32,9 @@ export const RETURN_NPCS: NpcDef[] = [
       // play order (well, last page, east gate) shadowed it forever: the
       // scene never happened and its journal page could never be filled,
       // while the game still announced that the journal was full.
+      // Met on the climb, you are up from the coast; met after the village,
+      // you are walking down from it. The question follows your feet.
+      { when: { has: ['c10.arrived'], not: ['c10.torch', 'c10.rosa.seen'] }, node: 'c10.traveler.firstup' },
       { when: { has: ['c10.arrived'], not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { when: { has: ['story.end'], not: ['c10.traveler.mail'] }, node: 'c10.traveler.mail' },
       { when: { has: ['story.end'] }, node: 'c10.traveler.after' },
@@ -672,7 +675,7 @@ export const RETURN_NODES: NodeMap = {
       { text: 'A hand-painted sign reads PUENTE. MUSEO. MAYOR\'S OFFICE. The girl behind it looks you over like a customs form.' },
       { who: 'Pilar', text: 'Halt. You walked past my bridge a whole season and never paid the toll. I keep a list. You are on it.' },
       { who: 'Pilar', text: 'Pilar. Bridge Authority, Museum of the Sea, mayor. Admission is one fact.' },
-      { text: 'You offer the best thing the road taught you. She hears it out like a customs official.' },
+      { text: 'You offer the best thing the road taught you. She hears it out with her pencil raised, and writes nothing down, which is high praise.' },
       { who: 'Pilar', text: 'Acceptable. Barely. You are off the list. The museum closes at dark or at dinner, whichever wins.' },
     ],
     effects: ['set:c10.pilar.seen', 'journal:people.pilar'],
@@ -690,6 +693,17 @@ export const RETURN_NODES: NodeMap = {
     ],
   },
   'c10.traveler.first': {
+    lines: [
+      { text: 'A young traveler is reading the signpost, boots new, journal newer.' },
+      { who: 'Traveler', text: 'Down from the village? Me too, after this. Then all the ways, maybe. What should I know?' },
+    ],
+    choices: [
+      { text: '"Walk slowly. That is the whole trick."', goto: 'c10.torch.slow' },
+      { text: '"Say yes to soup. Every soup."', goto: 'c10.torch.soup' },
+      { text: '"Let people correct you. Thank them twice."', goto: 'c10.torch.correct' },
+    ],
+  },
+  'c10.traveler.firstup': {
     lines: [
       { text: 'A young traveler is reading the signpost, boots new, journal newer.' },
       { who: 'Traveler', text: 'Up from the coast? I am going the other way. All the ways, maybe. What should I know?' },
