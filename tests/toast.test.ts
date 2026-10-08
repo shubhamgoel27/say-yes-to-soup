@@ -65,7 +65,20 @@ function makeRoot(): FakeRoot {
 (globalThis as { document?: unknown }).document = { createElement: () => makeEl() };
 (globalThis as { requestAnimationFrame?: unknown }).requestAnimationFrame = (fn: () => void) => fn();
 
-const { Toasts } = await import('../src/ui/toast');
+const { Toasts, toastHtml } = await import('../src/ui/toast');
+
+describe('a toast glyph is its own little sort', () => {
+  it('the mail glyph is spaced from its words', () => {
+    const html = toastHtml('✉ you are carrying something for someone');
+    assert.equal(html, '<span class="toast-glyph">✉</span> you are carrying something for someone');
+  });
+
+  it('every pad and journal glyph is set apart, and plain text stays plain', () => {
+    for (const g of ['✦', '⤳', '✎']) assert.match(toastHtml(`tap ${g} now`) ?? '', /toast-glyph/);
+    assert.equal(toastHtml('a quiet line'), null);
+    assert.equal(toastHtml('✉ <b>&'), '<span class="toast-glyph">✉</span> &lt;b&gt;&amp;');
+  });
+});
 
 const shown = (root: FakeRoot) => root.children.map((c) => c.textContent);
 

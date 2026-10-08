@@ -108,18 +108,9 @@ export class Toasts {
     // get the ink-dot bloom and page-curl entrance instead of the plain slide.
     const journalish = /^[✎✦]/.test(text);
     el.className = journalish ? 'toast jt' : 'toast';
-    // Pad glyphs (tap \u2726 to talk, the \u2726 of a margin note) come from a
-    // fallback font with no side bearing, and on iPhone they sat glued to the
-    // next word. Each is set as its own upright little sort, spaced like a letter.
-    if (/[\u2726\u2933]/.test(text)) {
-      el.innerHTML = text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/[\u2726\u2933]/g, '<span class="toast-glyph">$&</span>');
-    } else {
-      el.textContent = text;
-    }
+    const html = toastHtml(text);
+    if (html !== null) el.innerHTML = html;
+    else el.textContent = text;
     this.root.appendChild(el);
     // Next frame so the transition actually runs.
     requestAnimationFrame(() => el.classList.add('in'));
@@ -146,4 +137,21 @@ export class Toasts {
     }, SHOW_MS) as unknown as number;
     this.current = { el, item, timer, since: Date.now() };
   }
+}
+
+/**
+ * Symbol glyphs (the \u2726 of tap-to-talk, the \u2933 of the thread, the
+ * \u2709 of the mail, the \u270E of a page) come from a fallback font with no
+ * side bearing, so they sat glued to the next word: "\u2709you are carrying
+ * something". Each is set as its own upright little sort, spaced like a
+ * letter. Null when the text has none and can go in as plain text.
+ */
+const TOAST_GLYPHS = /[\u2709\u270E\u2726\u2933]/g;
+export function toastHtml(text: string): string | null {
+  if (!text.match(TOAST_GLYPHS)) return null;
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(TOAST_GLYPHS, '<span class="toast-glyph">$&</span>');
 }
