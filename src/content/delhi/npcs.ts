@@ -35,8 +35,10 @@ export const DELHI_NPCS: NpcDef[] = [
     id: 'kamla',
     name: 'Kamla Chachi',
     map: 'delhi',
-    pos: [17, 15],
-    range: 1,
+    // At her own tawa (16,14), and still: her wander used to carry her
+    // under the cloth line, which hung across her for every word.
+    pos: [17, 14],
+    range: 0,
     look: {
       skin: '#8a5636',
       hair: '#3a2e22',
@@ -255,7 +257,9 @@ export const DELHI_NPCS: NpcDef[] = [
     id: 'sheru',
     name: 'Sheru',
     map: 'delhi',
-    pos: [25, 26],
+    // North-east of the peepal: from 25,26 his wander reached row 29, where
+    // the south wall's art swallowed him whole, and the crown hid him.
+    pos: [28, 24],
     range: 3,
     sprite: 'dog',
     look: {
@@ -875,7 +879,7 @@ export const DELHI_NODES: NodeMap = {
   },
   'c11.rain.arrives': {
     lines: [
-      { text: 'The first drop hits the tarpaulin like a drumbeat. Then the lane is ankle-deep and delighted.' },
+      { text: 'The first drop hits the chai stall’s striped awning like a drumbeat. Then the lane is ankle-deep and delighted.' },
       { text: 'Somebody starts frying pakoras. The whole gali stands out in it, faces up.' },
     ],
     effects: ['set:c11.rain'],
@@ -1139,7 +1143,7 @@ export const DELHI_NODES: NodeMap = {
     effects: ['set:c11.met.sheru'],
   },
   'c11.sheru.rain': {
-    lines: [{ text: 'Sheru has relocated under the widest tarpaulin, dead center, dry as a minister. He blinks at you slowly.' }],
+    lines: [{ text: 'Sheru is soaked to the ears and bears it like a minister at a ribbon-cutting. He blinks at you slowly.' }],
     effects: ['set:c11.sheru2'],
   },
   'c11.egg.sheru1': {
@@ -1363,6 +1367,10 @@ export const DELHI_NODES: NodeMap = {
   'c11.ex.neemtub': {
     lines: [{ text: 'A neem in a bus-blue oil drum: the roof\'s only shade, the lane\'s only free toothbrushes.' }],
   },
+  // Down in the gali there are four of these, so none is the only shade.
+  'c11.ex.neemtub.lane': {
+    lines: [{ text: 'A neem in a bus-blue oil drum, watered with whatever is left in the kettle. The lane\'s only free toothbrushes.' }],
+  },
   'c11.ex.kitemast': {
     lines: [{ text: 'A cut kite tied to a bamboo mast at shoulder height. Not decoration. A receipt.' }],
   },
@@ -1567,7 +1575,7 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   tanktrio: [{ node: 'c11.ex.tanktrio' }],
   dishantenna: [{ node: 'c11.ex.dishantenna' }],
   mumty: [{ node: 'c11.ex.mumty' }],
-  neemtub: [{ node: 'c11.ex.neemtub' }],
+  neemtub: [{ map: 'delhi', node: 'c11.ex.neemtub.lane' }, { node: 'c11.ex.neemtub' }],
   kitemast: [{ node: 'c11.ex.kitemast' }],
   wirespan: [{ node: 'c11.ex.wirebundle' }],
   clothspan: [{ node: 'c11.ex.dhobiline' }],

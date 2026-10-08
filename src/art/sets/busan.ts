@@ -23,11 +23,17 @@ function paint(make: MakeTile) {
   // ------------------------------------------------------------ grounds
 
   // The market lane: paving washed dark before dawn, scales catching light.
+  // A warm granite grey, not a cool one: the night grade is blue, and a blue-
+  // grey slab under it read as standing water across the whole lane.
   make('lanepave', 5, (g, r) => {
-    const base = '#84868c';
+    const base = '#7b736a';
     rect(g, 0, 0, S, S, base);
+    // Granite grain, so the slab stays stone when the light goes flat.
+    for (let i = 0; i < 26; i++) {
+      dot(g, r.int(S), r.int(S), 0.9 + r.next() * 0.8, r.chance(0.5) ? 'rgba(62,54,48,0.22)' : 'rgba(236,228,214,0.18)');
+    }
     // Slab joints, soft and wet.
-    g.strokeStyle = 'rgba(45,48,58,0.4)';
+    g.strokeStyle = 'rgba(48,40,34,0.5)';
     g.lineWidth = 2;
     const jy = 20 + r.int(24);
     const jx = 14 + r.int(36);
@@ -39,7 +45,7 @@ function paint(make: MakeTile) {
     g.stroke();
     // Hose-water sheen and the odd fish scale.
     for (let i = 0; i < 3; i++) {
-      oval(g, r.int(S), r.int(S), 5 + r.int(4), 2, 'rgba(205,215,228,0.12)');
+      oval(g, r.int(S), r.int(S), 5 + r.int(4), 2, 'rgba(222,220,212,0.12)');
     }
     if (r.chance(0.3)) dot(g, r.int(S), r.int(S), 1.6, 'rgba(225,235,240,0.5)');
     if (r.chance(0.2)) oval(g, r.int(S), r.int(S), 3, 1.6, 'rgba(60,64,74,0.25)');

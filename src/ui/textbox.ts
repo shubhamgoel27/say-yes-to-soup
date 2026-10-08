@@ -49,6 +49,11 @@ export class Textbox {
     /** Called once per newly revealed character, with the speaker (if any),
      * so the tick can babble in the speaker's language. */
     private onType?: (who?: string) => void,
+    /** The face for a named speaker, when the game knows one. A conversation
+     * opens with one villager's portrait, but other people speak in it too:
+     * Appu in Shaji's, Dae-ho in Mi-ja's. Undefined means no such person, and
+     * the opener's face stands in; null means a known speaker without one. */
+    private portraitOf?: (who: string) => HTMLCanvasElement | null | undefined,
   ) {}
 
   get isOpen(): boolean {
@@ -134,14 +139,16 @@ export class Textbox {
     this.els.name.textContent = line.who ?? '';
     this.els.name.hidden = narrator;
     this.els.text.classList.toggle('narrator', narrator);
-    // Portrait only while a named person is speaking.
+    // Portrait only while a named person is speaking, and it is their own.
+    const known = line.who ? this.portraitOf?.(line.who) : undefined;
+    const face = narrator ? null : known === undefined ? this.portraitCv : known;
     this.els.portrait.innerHTML = '';
-    if (!narrator && this.portraitCv) this.els.portrait.appendChild(this.portraitCv);
-    this.els.portrait.hidden = narrator || !this.portraitCv;
+    if (face) this.els.portrait.appendChild(face);
+    this.els.portrait.hidden = !face;
     // Portrait personality: an exclaimed line earns a tiny hop; a speaker
     // taking over the box gets a 2px settle into the tape. CSS keyframes,
     // so both the reduce-motion setting and the OS preference silence them.
-    if (!narrator && this.portraitCv) {
+    if (face) {
       const cls = this.lineText.includes('!') ? 'hop' : line.who !== this.lastWho ? 'settle' : '';
       this.els.portrait.classList.remove('hop', 'settle');
       if (cls) {

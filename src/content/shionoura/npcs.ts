@@ -129,7 +129,9 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     id: 'genji',
     name: 'Genji',
     map: 'shionoura',
-    pos: [37, 3],
+    // A row up the yard, so his broom never wanders him into the cedar
+    // crowns along row 4, where only his head showed above the canopy.
+    pos: [37, 2],
     range: 1,
     look: {
       skin: '#c99a6b',
@@ -321,9 +323,9 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.hana.okaeri': {
     lines: [
-      { text: 'Evening. Hana holds the minshuku noren aside, and the word you have been carrying tries itself out: tadaima.' },
+      { text: 'Before you can say hello, the word you have been carrying tries itself out on Hana: tadaima. I am home.' },
       { who: 'Hana', text: 'Okaeri.' },
-      { who: 'Hana', text: 'No, do not apologize! You said it right, so the door answered. Welcome back, to a house not yours. Yet.' },
+      { who: 'Hana', text: 'No, do not apologize! You said it right, so the town answered. Welcome back, to a home not yours. Yet.' },
     ],
     effects: ['set:c4.hana.okaeri'],
   },
@@ -369,7 +371,7 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.fumi.meal2': {
     lines: [
       { text: 'The fish tastes like the morning it was caught. When the bowls are empty she bows a centimeter, and you copy her: gochisosama.' },
-      { who: 'Fumi', text: 'Gochisosama deshita, yes. It was a feast, you say, even for barley tea and a rice ball. Especially then.' },
+      { who: 'Fumi', text: 'Gochisosama deshita, yes. It means it was a feast, and you say it even for barley tea and a rice ball. Especially then.' },
     ],
     effects: ['set:c4.meal', 'journal:words.gochisosama'],
   },
@@ -1215,7 +1217,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.rock': {
     lines: [
-      { text: 'Harbor stone, barnacled below the waterline, warm above it.' },
+      { text: 'A stone the sea rounded long ago, warm on top. Nearer the water its cousins still wear barnacles.' },
     ],
   },
   'c4.ex.tree': {
