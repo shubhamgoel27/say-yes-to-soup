@@ -141,7 +141,9 @@ export const DELHI_NPCS: NpcDef[] = [
     id: 'sethji',
     name: 'Sethji Onkar Nath',
     map: 'delhi',
-    pos: [5, 12],
+    // Beside his gaddi rather than under its bolster, which stood up out of
+    // his head.
+    pos: [4, 12],
     range: 0,
     look: {
       skin: '#8a5636',

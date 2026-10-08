@@ -98,7 +98,8 @@ export const SHIONOURA_NPCS: NpcDef[] = [
     map: 'shionoura',
     // Behind her counter, framed by it and the mikan crates. A shopkeeper
     // minding her wares does not wander into the middle of her own street.
-    pos: [13, 10],
+    // (One step east of the wish bamboo, whose post rose out of her head.)
+    pos: [14, 10],
     range: 0,
     look: {
       skin: '#e3b58c',
@@ -843,7 +844,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Captain Isao', text: 'Six sharp. The boat does not wait for festivals, and neither, tomorrow, do I.' },
       { text: 'One more night at the minshuku. Down on the quay the chochin go out one by one, and the town goes home to bed.' },
     ],
-    effects: ['set:c4.sailing', 'travel:shionoura,21,27,down'],
+    effects: ['set:c4.sailing', 'travel:shionoura,21,26,down'],
   },
   // Miokuri: a house sees its guest off until the guest is out of sight.
   // Shionoura's goodbye is a bow that outlasts the view of it.

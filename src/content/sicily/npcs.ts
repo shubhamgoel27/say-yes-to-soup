@@ -41,7 +41,8 @@ export const SICILY_NPCS: NpcDef[] = [
     id: 'turi',
     name: 'Turi',
     map: 'sicily',
-    pos: [31, 18],
+    // In front of his crates, a row clear of the stall's post.
+    pos: [31, 19],
     range: 0,
     look: {
       skin: '#b97f52',

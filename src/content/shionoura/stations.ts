@@ -24,10 +24,12 @@ export const SHIONOURA_STATIONS: StationDef[] = [
     // in the object pass, so the round keeps to the five that truly hang.)
     cells: [
       { at: [11, 12], dir: 'right', lamp: [12, 12] },
-      { at: [23, 11], dir: 'up', lamp: [23, 10] },
+      // Beside her lamps, not under them: under, the lantern's post rose
+      // straight out of her head while she lit it.
+      { at: [22, 10], dir: 'right', lamp: [23, 10] },
       { at: [28, 12], dir: 'left', lamp: [27, 12] },
-      { at: [25, 21], dir: 'up', lamp: [25, 20] },
-      { at: [26, 21], dir: 'down', lamp: [26, 22] },
+      { at: [26, 20], dir: 'left', lamp: [25, 20] },
+      { at: [27, 22], dir: 'left', lamp: [26, 22] },
     ],
     actors: ['fumi'],
     grant: { node: 'c4.ev.chochin', flag: 'c4.chochin.seen' },

@@ -72,7 +72,9 @@ export const AUCTION_NPCS: NpcDef[] = [
     name: 'A restaurant buyer',
     map: 'busan',
     when: DAWN,
-    pos: [24, 10],
+    // Off the shoulder past the foam boxes: at 24,10 the magpie's post
+    // stood up out of the visor.
+    pos: [27, 10],
     range: 0,
     look: {
       skin: '#e0b48a',
