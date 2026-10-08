@@ -831,9 +831,19 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Captain Isao', text: 'Shimonoseki on the morning boat, then the Busan ferry. Say the word.' },
     ],
     choices: [
-      { text: 'Board for Busan', goto: 'c4.depart' },
+      { text: 'Board for Busan', goto: 'c4.depart.night' },
       { text: 'Not yet. The town is not finished with me.', goto: 'c4.isao.wait' },
     ],
+  },
+  // "The morning boat": the festival night goes by in one dark (the town
+  // goes home, the chochin go out), and the goodbye below is read on the
+  // pier as the morning comes up (./staging.ts).
+  'c4.depart.night': {
+    lines: [
+      { who: 'Captain Isao', text: 'Six sharp. The boat does not wait for festivals, and neither, tomorrow, do I.' },
+      { text: 'One more night at the minshuku. Down on the quay the chochin go out one by one, and the town goes home to bed.' },
+    ],
+    effects: ['set:c4.sailing', 'travel:shionoura,21,27,down'],
   },
   // Miokuri: a house sees its guest off until the guest is out of sight.
   // Shionoura's goodbye is a bow that outlasts the view of it.
@@ -842,9 +852,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'The tairyō-bata crack once in the morning wind. Okaeri, the town said when you came; itterasshai, it says now: go, and come back.' },
       { text: 'Fumi stands at the end of the pier and bows. When the boat rounds the lighthouse, she is still bowing.' },
     ],
-    // c4.sailing runs the festival night past to Isao's morning boat and
-    // walks Fumi out to the pier (./staging.ts) while these lines are read.
-    effects: ['set:c4.sailing', 'travel:busan'],
+    effects: ['travel:busan'],
   },
   'c4.isao.wait': {
     lines: [
