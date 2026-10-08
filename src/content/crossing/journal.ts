@@ -212,7 +212,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c3.shellback', 'pilar.sea'], not: ['letter.read.c3.pilar'] },
-    text: 'The captain has a canvas sack marked MAIL and two envelopes with your name on them. She stands on deck, forward of the house.',
+    text: 'The captain has a canvas sack marked MAIL and two envelopes with your name on them. She stands on deck, forward of the deckhouse.',
     who: 'riosC3',
   },
   {
@@ -222,7 +222,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c3.shellback'], not: ['letter.read.c3.petro'] },
-    text: 'The captain has a canvas sack marked MAIL, and an envelope in it with your name and a grease spot on the flap. She stands on deck, forward of the house.',
+    text: 'The captain has a canvas sack marked MAIL, and an envelope in it with your name and a grease spot on the flap. She stands on deck, forward of the deckhouse.',
     who: 'riosC3',
   },
   {
@@ -247,6 +247,13 @@ export const CROSSING_TASKS: TaskDef[] = [
     when: { has: ['c3.complete'] },
     text: 'Land birds lead the bow now. Go stand at the very point of it, by the jackstaff, and let Japan happen to you.',
     at: ['ship', 21, 2],
+  },
+  {
+    // Once Ben has fed you the galley half of the arrival line is stale; the
+    // chip kept sending you to the garlic between every errand.
+    when: { has: ['c3.arrived', 'c3.met.ben'], not: ['c3.complete'] },
+    text: 'Ben has fed you; the ship is yours to walk. Go round the rail all the way: two dozen people live on this deck, and every one of them has a watch to keep.',
+    who: ['hanaC3', 'olena', 'joseph', 'bosun', 'riosC3', 'mangben'],
   },
   {
     when: { has: ['c3.arrived'], not: ['c3.complete'] },

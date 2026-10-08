@@ -127,6 +127,8 @@ export const CROSSING_NPCS: NpcDef[] = [
       hatStyle: 'none',
     },
     entry: [
+      // Summoned before you ever met him: the chip promised the grin.
+      { when: { has: ['c3.cook.done'], not: ['c3.met.bosun', 'c3.wog'] }, node: 'c3.bosun.first.summons' },
       { when: { not: ['c3.met.bosun'] }, node: 'c3.bosun.first' },
       { when: { has: ['c3.cook.done'], not: ['c3.wog'] }, node: 'c3.bosun.summons' },
       { when: { has: ['c3.wog'], not: ['c3.shellback'] }, node: 'c3.bosun.court' },
@@ -150,16 +152,13 @@ export const CROSSING_NPCS: NpcDef[] = [
       hatStyle: 'montera',
     },
     entry: [
-      // Found the galley before the captain? Then Ben already gave the
-      // orders she was going to give, and she knows it.
-      { when: { has: ['c3.met.ben'], not: ['c3.met.rios'] }, node: 'c3.rios.first.late' },
-      { when: { has: ['c2.casero'], not: ['c3.met.rios'] }, node: 'c3.rios.first.casero' },
-      { when: { not: ['c3.met.rios'] }, node: 'c3.rios.first' },
+      // The mail comes first once the chip has promised it, met or not.
       // Pilar writes only to people who owe her a sea thing; everyone else
       // gets Petro's letter alone.
       { when: { has: ['c3.shellback', 'pilar.sea'], not: ['letter.read.c3.pilar'] }, node: 'c3.rios.mail' },
       { when: { has: ['letter.read.c3.pilar'], not: ['letter.read.c3.petro'] }, node: 'c3.rios.mail2' },
       { when: { has: ['c3.shellback'], not: ['letter.read.c3.petro'] }, node: 'c3.rios.mail.one' },
+      // Landfall too: a task that sends you to her must be what she says.
       {
         when: {
           has: ['c3.cook.done', 'joseph.letter', 'c3.stars.done', 'c3.olena.bread', 'letter.read.c3.petro'],
@@ -167,6 +166,13 @@ export const CROSSING_NPCS: NpcDef[] = [
         },
         node: 'c3.rios.landfall',
       },
+      // Met only after the adobo: Ben has long since made up his mind.
+      { when: { has: ['c3.cook.done'], not: ['c3.met.rios'] }, node: 'c3.rios.first.cooked' },
+      // Found the galley before the captain? Then Ben already gave the
+      // orders she was going to give, and she knows it.
+      { when: { has: ['c3.met.ben'], not: ['c3.met.rios'] }, node: 'c3.rios.first.late' },
+      { when: { has: ['c2.casero'], not: ['c3.met.rios'] }, node: 'c3.rios.first.casero' },
+      { when: { not: ['c3.met.rios'] }, node: 'c3.rios.first' },
       { when: { has: ['c3.complete'] }, node: 'c3.rios.after' },
       { node: 'c3.rios.idle' },
     ],
@@ -241,6 +247,18 @@ export const CROSSING_NODES: NodeMap = {
       { text: '"La mar. Don Simón taught me."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
       { text: 'Ask why she says la mar', goto: 'c3.rios.lamar' },
       { text: 'Go find the galley', goto: 'c3.rios.go' },
+    ],
+  },
+  'c3.rios.first.cooked': {
+    lines: [
+      { text: 'The captain looks up from a clipboard, and then at the galley grease on your sleeve.' },
+      { who: 'Capitana Ríos', text: 'So you are the hands Ben keeps bragging about. Joseph ate sinigang twice; I had it in the log. Petro was right about you.' },
+    ],
+    effects: ['set:c3.met.rios'],
+    choices: [
+      { text: '"La mar. Don Simón taught me."', goto: 'c3.rios.lamar.knows', when: { has: ['page.words.lamar'] } },
+      { text: 'Ask why she says la mar', goto: 'c3.rios.lamar' },
+      { text: 'Back to work', goto: 'c3.rios.work' },
     ],
   },
   'c3.rios.first.late': {
@@ -649,6 +667,19 @@ export const CROSSING_NODES: NodeMap = {
   },
   // The summons is a summons. The history and the gag live on the scroll he
   // posts (see c3.ex.manifest); the court itself carries the doing.
+  'c3.bosun.first.summons': {
+    lines: [
+      { text: 'The bosun stands in the container canyon, testing a lashing rod like a drum, and grinning at you.' },
+      { who: 'The Bosun', text: 'Two rules on my deck: one hand for you, one for the ship. And no whistling; the wind takes requests.' },
+      { text: 'Then he unrolls a scroll with terrible ceremony: a cargo manifest wearing a marker border.' },
+      { who: 'The Bosun', text: 'Hear ye. Tomorrow at noon we cross the Line, and Neptune finds one POLLYWOG aboard. You. Court on the hatch.' },
+    ],
+    effects: ['set:c3.met.bosun', 'journal:people.bosun', 'set:c3.wog', 'journal:words.pollywog'],
+    choices: [
+      { text: 'Submit to the court of Neptune', goto: 'c3.bosun.court' },
+      { text: 'Ask what happens to refusers', goto: 'c3.bosun.refuse' },
+    ],
+  },
   'c3.bosun.summons': {
     lines: [
       { text: 'The bosun unrolls a scroll with terrible ceremony: a cargo manifest wearing a marker border.' },

@@ -970,7 +970,8 @@ export const CALETA_NODES: NodeMap = {
   // ---------------- the tidepool and the mail ----------------
   'mar.tidepool': {
     lines: [
-      { text: 'You crouch at the wet sand. The last wave has left a shallow puddle, and in it a small museum: a puffer fish puffed forever, a four-armed sea star, a crab claw like a comma.' },
+      { text: 'You crouch at the wet sand. The last wave has left a shallow puddle, and a small museum in it.' },
+      { text: 'A puffer fish puffed forever, a four-armed sea star, a crab claw like a comma.' },
       { text: 'Somewhere up the mountain, a bridge magnate is owed something weird.' },
     ],
     choices: [

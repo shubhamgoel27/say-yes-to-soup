@@ -70,8 +70,6 @@ const KNOWN_WALK: string[] = [
   // crowd task (pass 3): these people used to be met by accident before their
   // own task opened. Each needs its task's scene ahead of the first-meeting
   // entry (or the meeting folded into it) in the chapter's npcs.ts.
-  '[crossing] "The bosun keeps grinning at the chart, which means": the first talk to bosun (c3.bosun.first) is not the one it promises (c3.bosun.summons)',
-  '[crossing] "The captain has a canvas sack marked MAIL, and an ": the first talk to riosC3 (c3.rios.first.late) is not the one it promises (c3.rios.mail.one)',
   '[oaxaca] "Chela’s chiles wait at Eugenia’s stall on the mark": the first talk to eugenia (c9.eugenia.first) is not the one it promises (c9.eugenia.chiles)',
   '[oaxaca] "Chocolate next: Tacho at the panadería grinds caca": the first talk to tacho (c9.pan.first) is not the one it promises (c9.pan.choco)',
 ];
