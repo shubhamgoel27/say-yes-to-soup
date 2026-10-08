@@ -694,9 +694,28 @@ Brief: ../wayfare-review/pass4/BRIEF.md
     a book, Aurelio's stone, patang flock counter, traveler "Up from the coast?".
 
 ## 2026-10-08: pass 6 (the last pass, 8 to 9). Brief: ../wayfare-review/pass6/BRIEF.md
-- [ ] B bodies/camera/touch: clean sidesteps (test every NPC from every side), props over heads fade, companions yield, textbox tap leak, talk camera above the textbox, click on walkers, facing highlight
-- [ ] C clarity/UI: dig mounds, portrait chip, sideways offer once, wide-screen HUD scale, first-frame overlays, journal as a book, title painting, N before the band, Space at the well
-- [ ] S staging: Neptune court + karaoke, Kerala + Delhi goodbyes, Shionoura morning under a fade, vista hour, Gong at his window, week-three beat
-- [ ] A art: Sicily arrival mole + water seams, east road, saguaros, Busan ground, Delhi carts + grade, bottom band, card hair
-- [ ] W words/tuning: Aurelio's stone, traveler greeting, patang counter + tuning, adobo window, mash audit
-- [ ] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live (SHA-matched deploy, cache-busted bundle)
+- [x] B bodies/camera/touch: clean sidesteps (test every NPC from every side), props over heads fade, companions yield, textbox tap leak, talk camera above the textbox, click on walkers, facing highlight
+- [x] C clarity/UI: dig mounds, portrait chip, sideways offer once, wide-screen HUD scale, first-frame overlays, journal as a book, title painting, N before the band, Space at the well
+- [x] S staging: Neptune court + karaoke, Kerala + Delhi goodbyes, Shionoura morning under a fade, vista hour, Gong at his window, week-three beat
+- [x] A art: Sicily arrival mole + water seams, east road, saguaros, Busan ground, Delhi carts + grade, bottom band, card hair
+- [x] W words/tuning: Aurelio's stone, traveler greeting, patang counter + tuning, adobo window, mash audit
+- [x] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live (SHA-matched deploy, cache-busted bundle)
+
+### Review (pass 6, shipped b67ca30, live bundle index-DCInzyKU verified)
+- B: talks settle side by side on clean ground (src/engine/stand.ts; bodies test simulates every talk from both
+  sides on every map); any prop over any face fades; companions and villagers yield; 2s textbox tap grace; talk
+  camera lifts both speakers above the words, past map edges; task person holds still for clicks.
+- C: dig mounds dig from beside/under/click; portrait chip two lines + tap cue; sideways offer once, pin in the
+  button column; HUD zooms on wide screens (1.35x at 1920); chip dodges faces; journal grouped by place with big
+  dish art; title painting clear of the stripe; N before the band answers; Space spam hush scales with cadence.
+- S: same-map dark as the passing of time (settle, costumes, cues); Neptune court + karaoke staged; Kerala and
+  Delhi goodbyes staged; Shionoura morning after a dark; vista keeps its hour; Gong reworded; two weeks of
+  watches; Teofilo, Isao, lamplighter stops and five homes moved clear of posts.
+- A: Sicily breakwater + water seams (subpixel snap, shore mask gutters); warm east road; no saguaros; Busan wet
+  concrete; five different Delhi rickshaws + cleaner grade; boundary wall as stone courses; card shows hair.
+- W: Aurelio at the well; c10.home for the traveler's greeting; patang pull rate, weather and flock counter;
+  adobo 2.5s; ofrenda beat; letter and langar slips.
+- Coordinator: B/C hush merge kept both; Fumi off the arrival cell (S's final layout); bodies known lists cut to
+  the three vendors behind their stalls.
+- Gate: tsc clean, npm test 400/400, thread-e2e 175 states, attend-e2e ALL GREEN, warmth all pass (each alone),
+  prod smoke desktop + Galaxy NO ERRORS.

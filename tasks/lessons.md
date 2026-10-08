@@ -285,3 +285,8 @@ you would not mind losing tonight.
   on "latest run completed" can catch the previous run before the new one registers. Verify the live bundle with
   a cache-busting query; the CDN holds index.html for 600s.
 - In this shell `grep` is a function that silently skips some files; use /usr/bin/grep for audits.
+
+## Late commits after a merge (2026-10-08)
+- An agent can keep committing after its report (S added aa4a5f4 after I merged its tip). Before the final gate,
+  re-check `git log HEAD..<branch>` for every agent branch, and never merge into a tree while e2e runs on its
+  dev server (hot reload changes the game under the test).
