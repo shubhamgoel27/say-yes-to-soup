@@ -182,7 +182,7 @@ export const CALETA_JOURNAL: JournalEntry[] = [
     id: 'customs.caserita',
     tab: 'customs',
     title: 'Casero, caserita',
-    sub: 'The mutual word: her regular customer, your regular stall. Both people say it of each other.',
+    sub: 'The mutual word: her regular customer, your regular stall. Casero or casera, the ending follows the person; both sides say it of each other.',
     nani: 'It is not loyalty points. It is a small marriage of errands.',
     you: 'You cannot buy your way in; you attend your way in. Show up, and keep showing up. Then the yapa simply happens.',
   },
@@ -297,12 +297,12 @@ export const CALETA_TASKS: TaskDef[] = [
     // Without this the chip fell back to the arrival line ("The road ends at
     // a fish stall...") right after Marisol made you her casero.
     when: { has: ['c2.casero'], not: ['met.rios', 'c2.complete'] },
-    text: 'Casero now, officially; the malecón has noticed. Out on the pier an old man mends line, and past him a woman with a clipboard watches the ship at anchor.',
+    text: 'A regular now, officially; the malecón has noticed. Out on the pier an old man mends line, and past him a woman with a clipboard watches the ship at anchor.',
     who: ['rios', 'simon', 'felix', 'nilda', 'rafa', 'wili'],
   },
   {
     when: { has: ['met.rios'], not: ['c2.complete'] },
-    text: 'Capitana Ríos takes only working hands the village knows: be somebody’s casero, learn what la mar carries, make Petro’s kitchen owe you one.',
+    text: 'Capitana Ríos takes only working hands the village knows: be somebody’s regular, learn what la mar carries, make Petro’s kitchen owe you one.',
     // The captain has nothing new to say until you are ready, and a task
     // whose only name has no news hides; this one fell through to the
     // arrival line the moment you met her. The people it names carry it.

@@ -38,6 +38,17 @@ function grantedAnywhere(): Set<string> {
   return out;
 }
 
+/**
+ * Gendered forms of address the game once used on the player (the player is
+ * never gendered). Matched only in the vocative: at the start of a line or
+ * sentence, or after a comma, and followed by punctuation, so describing
+ * someone else ("some picciriddu will row your oar") stays allowed.
+ */
+const GENDERED_ADDRESS = /(?:^|[,.!?]\s+)(casero|casera|caserito|caserita|bedda|beddu|picciriddu|picciridda|se\u00f1or|se\u00f1ora|se\u00f1orita)(?=[,.!?])/i;
+export function gendersPlayer(text: string): string | null {
+  return GENDERED_ADDRESS.exec(text)?.[1] ?? null;
+}
+
 export function lintChapter(ch: ChapterDef): { problems: string[]; warnings: string[] } {
   const problems: string[] = [];
   const warnings: string[] = [];
@@ -64,6 +75,8 @@ export function lintChapter(ch: ChapterDef): { problems: string[]; warnings: str
     for (const line of node.lines) {
       if (line.text.length > 150) bad(`${id}: line too long (${line.text.length})`);
       if (line.text.includes('—')) bad(`${id}: em dash in line`);
+      const g = line.who ? gendersPlayer(line.text) : null;
+      if (g) bad(`${id}: "${g}" addresses the player with a gendered word`);
     }
     for (const eff of node.effects ?? []) {
       if (eff.startsWith('journal:') && !pageIds.has(eff.slice(8)) && !JOURNAL_BY_ID.has(eff.slice(8)))
@@ -172,6 +185,7 @@ export function lintChapter(ch: ChapterDef): { problems: string[]; warnings: str
     const last = variants.at(-1);
     if (!last || last.when) bad(`letter ${id}: no unconditional fallback variant`);
     for (const v of variants) for (const p of v.body) if (p.includes('—')) bad(`letter ${id}: em dash`);
+    for (const v of variants) for (const p of v.body) if (gendersPlayer(p)) bad(`letter ${id}: "${gendersPlayer(p)}" genders the player`);
   }
 
   // ---------------- arrival / completion / tasks ----------------

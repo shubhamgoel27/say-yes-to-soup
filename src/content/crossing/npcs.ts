@@ -226,7 +226,7 @@ export const CROSSING_NODES: NodeMap = {
   // ---------------- Capitana Ríos, la mar's own ----------------
   'c3.rios.first.casero': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Aboard, then. On land you were somebody’s casero; at sea that makes you crew. Better than paperwork.' },
+      { who: 'Capitana Ríos', text: 'Aboard, then. On land you were somebody’s regular; at sea that makes you crew. Better than paperwork.' },
       { who: 'Capitana Ríos', text: 'Mang Ben runs the galley, so he runs the morale. Report to him. He outranks me.' },
     ],
     effects: ['set:c3.met.rios'],
@@ -1225,7 +1225,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
     from: 'Doña Petro, La Picantería',
     when: { has: ['c2.casero'] },
     body: [
-      'Casero. Marisol tells the whole malecón that her casero sailed with the capitana. She says it proudly, like weather she predicted.',
+      'Marisol tells the whole malecón that her regular sailed with the capitana. She says it proudly, like weather she predicted.',
       'Listen: a galley is only a picantería that moves. Same law applies. Feed them what the pots say, and never argue with the pot.',
       'The capitana taught me her cook’s word once: baon. Food packed for somebody’s watch, the love kept warm under the cloth. We always had the thing; now you have the word.',
       'The sudado was better the week you carried the lisa. That is not sentiment, it is seasoning. Pass this way again and test me.',

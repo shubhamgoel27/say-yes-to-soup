@@ -179,10 +179,10 @@ export const RETURN_NODES: NodeMap = {
     effects: ['set:c10.arrived', 'journal:words.elsewhere'],
   },
 
-  // ---------------- Marisol, casero forever ----------------
+  // ---------------- Marisol, your stall forever ----------------
   'c10.marisol.reunion': {
     lines: [
-      { who: 'Marisol', text: 'CASERO! Off the boat and straight to my stall, as is correct, pe.' },
+      { who: 'Marisol', text: 'Look who it is! My regular, off the boat and straight to my stall, as is correct, pe.' },
       { who: 'Marisol', text: 'Lisa today. Humble fish. Some things the world does not dare change.' },
       { text: 'She weighs nothing and drops a yapa on top anyway.' },
     ],

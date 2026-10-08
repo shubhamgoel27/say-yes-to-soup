@@ -516,7 +516,7 @@ export const SHIONOURA_NODES: NodeMap = {
     ],
     effects: ['set:met.daisuke', 'journal:people.daisuke'],
     choices: [
-      { text: '"At home my fish lady made me a casero. A regular."', goto: 'c4.dai.casero', when: { has: ['c2.casero'] } },
+      { text: '"At home my fish lady made me her regular."', goto: 'c4.dai.casero', when: { has: ['c2.casero'] } },
       { text: 'Ask why tai is the king fish', goto: 'c4.dai.why' },
     ],
   },
