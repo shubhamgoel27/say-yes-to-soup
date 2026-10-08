@@ -4838,6 +4838,7 @@ function update(dt: number) {
     const [ppx, ppy] = endFocus(rpx, rpy);
     camera.follow(ppx, ppy, map.w, map.h, 1 - endFrameK());
     fitCameraToCrop(ppx, ppy);
+    liftForWords(dt);
   }
 
   // Remember where we stand; persisted alongside the next save. Mutated in
@@ -5007,6 +5008,51 @@ let uiZoom = 1;
 
 function viewScale(): number {
   return Math.max(1, window.innerWidth / VIEW_W, window.innerHeight / VIEW_H) * uiZoom;
+}
+
+/**
+ * The words never cover the people saying them. The textbox lies across the
+ * bottom of the screen, and the camera stops at a map's edge, so a talk near
+ * the bottom of a map (Rosa's first, in front of her pot; the terraces'
+ * corner on a phone) happened under the box with only two hats showing.
+ * While words are on screen the frame lifts until both speakers stand clear
+ * above the box, past the map's edge if it must (what lies beyond is the
+ * frame's own dark margin), eased in and eased back out when the words close.
+ */
+let wordsLift = 0;
+let wordsTop = -1;
+let wordsTopAt = -Infinity;
+const WORDS_MARGIN = 6; // logical px of air between feet and the box
+function liftForWords(dt: number) {
+  let target = 0;
+  if (textbox.isOpen && mode === 'play' && !vistaOn) {
+    const now = performance.now();
+    if (now - wordsTopAt > 200) {
+      // Re-read now and then: the box grows when choices appear.
+      wordsTopAt = now;
+      const r = document.getElementById('textbox')?.getBoundingClientRect();
+      wordsTop = r && r.height > 0 ? r.top : -1;
+    }
+    if (wordsTop > 0) {
+      const people = [player, ...(talkingTo ? [talkingTo.actor] : [])];
+      let feet = -Infinity;
+      let head = Infinity;
+      for (const a of people) {
+        const [, ry] = a.renderPos();
+        feet = Math.max(feet, ry + TILE);
+        head = Math.min(head, ry - TILE);
+      }
+      const boxWorld = screenToWorld(0, wordsTop)[1];
+      const topWorld = screenToWorld(0, 0)[1];
+      // Lift enough to clear the box, never so far the hats leave the top.
+      target = Math.max(0, Math.min(feet + WORDS_MARGIN - boxWorld, head - topWorld - 4));
+    }
+  } else {
+    wordsTopAt = -Infinity;
+  }
+  wordsLift += (target - wordsLift) * (1 - Math.exp(-dt * 6));
+  if (Math.abs(wordsLift) < 0.05) wordsLift = 0;
+  camera.y += wordsLift;
 }
 
 function screenToWorld(sx: number, sy: number): [number, number] {
