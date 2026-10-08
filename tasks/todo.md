@@ -641,3 +641,12 @@ Brief: ../wayfare-review/pass4/BRIEF.md
 - e2e: attend-e2e failed on urojo because UrojoPanel kept lastAddT across runs (a replay froze every ladle until
   the new clock caught up; real player bug, fixed); kingyo was its cascade. warmth-e2e was stale (loom gained a
   fourth row). Both green now. Tablet portrait shows ~8 tiles (fixed 320x180 view; design).
+
+## 2026-10-07: critic round e (after passes 3+4, build 945dd11). Reports: ../wayfare-review/e/
+- Overall 7.8 (first hour) / 7.6 (back half + ending) / 7.6 (systems + devices); last round 7.5 / 7.5 / 7.0.
+- Writing 8.8 / 9.0 / 8.5 is the strength. Polish 6.8 / 7.0 / 7.3 is the floor.
+- All three: sprites still overlap in talks and crowds (player on Chasca, 4 NPCs on one Caleta tile, head over Sun-hee).
+- Proposed pass 5: overlap for good; touch traps (ghost tap skips name card, journal close, stick zone eats taps,
+  portrait zoom); stage the narrated climaxes (Tanabata dusk, Busan dawn, Sicily mole send-off); armed card
+  swallows travel; casero/bedda; first errand findable; west/east and years facts; missing dish paintings
+  (Rosa's soup, 7 Delhi dishes, to verify); audio on hidden tab; ending fade.
