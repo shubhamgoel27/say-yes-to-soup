@@ -378,6 +378,8 @@ const toasts = new Toasts($('toasts'));
 const errandEl = $('errand');
 const chipFold = new ChipFold(errandEl);
 const fadeEl = $('fade');
+/** Seconds into the held dark after the closing book, or null (see startCurtain). */
+let curtainT: number | null = null;
 const plateEl = $('plate');
 const textbox = new Textbox(
   {
@@ -745,6 +747,11 @@ function activityUnderway(): boolean {
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
+  // Nothing new is asked of anyone while the dark after the book is held.
+  if (curtainT !== null) {
+    errandEl.hidden = true;
+    return;
+  }
   // The chip moves on when the activity ENDS, not when it is offered: the
   // start flag retires the task that asked for it, and the chip used to jump
   // to the next errand while the watia's how-to card was still open.
@@ -1886,12 +1893,45 @@ function updateStaging(dt: number) {
     if (lampT > 0 && map.id === 'village') afterglow = true;
   }
   const lampOn = state.has(LAMP.flag) && !lampOver;
-  audio.setHearth(lampOn);
+  // The hush outlasts the book by the curtain's held dark.
+  audio.setHearth(lampOn || curtainT !== null);
   lampT = lampOn ? Math.min(1, lampT + dt / LAMP.seconds) : 0;
 
   noteTrail();
   updateProps();
   updateMeeting(dt);
+  updateCurtain(dt);
+}
+
+/**
+ * The curtain after the closing book. The book goes dark over itself (see
+ * album.ts), and then the dark is held: a few seconds of black with only the
+ * hum under it, nothing to read and no key that does anything, before the
+ * well comes back up, slowly, lamplit, with you still standing at it. Only then
+ * does the chip say there is someone at the gate. (`curtainT`, declared
+ * with the fade it drives, is the seconds since the book went, or null.)
+ */
+const CURTAIN_HOLD = 2.6;
+const CURTAIN_IN = 3.2;
+function startCurtain() {
+  curtainT = 0;
+  player.frozen = true;
+  fadeEl.style.opacity = '1';
+  errandEl.hidden = true;
+}
+function updateCurtain(dt: number) {
+  if (curtainT === null) return;
+  curtainT += dt;
+  const k = (curtainT - CURTAIN_HOLD) / CURTAIN_IN;
+  if (k < 1) {
+    const t = Math.max(0, k);
+    fadeEl.style.opacity = String(1 - t * t * (3 - 2 * t));
+    return;
+  }
+  fadeEl.style.opacity = '0';
+  curtainT = null;
+  player.frozen = false;
+  refreshTaskChip();
 }
 
 /** The night after the book: lamps, windows and the well's pool held, and the hour with them. */
@@ -2869,7 +2909,12 @@ function endDialogue() {
     state.clearFlag('album.open');
     player.frozen = true;
     audio.pageFlip();
-    albumUI.open(() => {
+    albumUI.open((curtain) => {
+      // The closing book went dark over the end of the journey: hold it.
+      if (curtain) {
+        startCurtain();
+        return;
+      }
       player.frozen = false;
       // The first viewing earns her closing words; reopenings close quietly.
       if (!state.has('c10.album.seen')) startNarration('c10.album.close');
@@ -3913,7 +3958,7 @@ function update(dt: number) {
   stage.setAmbient(endAmbient(ambientNow()));
   stage.setGrade(0.28 * endLight.gold + 0.12 * endLight.lamp, 0.45 * endLight.gold + 0.7 * endLight.lamp);
   renderer.setShadowBoost(1 + 0.9 * endLight.gold + 0.5 * endLight.lamp);
-  audio.setDucked(textbox.isOpen || celebrateT > 0);
+  audio.setDucked(textbox.isOpen || celebrateT > 0 || curtainT !== null);
   audio.setWorldAmbience(nightLevel(dayT), rainingOn(map.id), dayT);
 
   // Sitting pushes in slowly, like settling; dialogue leans in just a little.
@@ -4023,7 +4068,7 @@ function update(dt: number) {
   // The savor pause: the world keeps breathing, input rests.
   if (celebrateT > 0) {
     celebrateT -= dt;
-    if (celebrateT <= 0) audio.setDucked(textbox.isOpen);
+    if (celebrateT <= 0) audio.setDucked(textbox.isOpen || curtainT !== null);
   }
 
   if (pauseMenu.isOpen) {
@@ -4166,6 +4211,10 @@ function update(dt: number) {
     }
   } else if (sitting) {
     if (act || back || menuDir || journalKey || input.intent()) standUp();
+  } else if (curtainT !== null) {
+    // The held dark after the book: a stray key here once dropped the
+    // player straight back at the well. Nothing answers until it lifts.
+    input.intent();
   } else if (!warp) {
     if (pauseKey && celebrateT <= 0) {
       pauseMenu.open('menu');
