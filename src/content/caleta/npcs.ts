@@ -411,7 +411,7 @@ export const CALETA_NODES: NodeMap = {
     ],
     effects: ['set:met.simon', 'journal:people.simon'],
     choices: [
-      { text: '"The sea looks calm today."', goto: 'mar.simon.elmar' },
+      { text: '"El mar looks calm today."', goto: 'mar.simon.elmar' },
       { text: 'Say nothing. Watch the water with him.', goto: 'mar.simon.watch' },
     ],
   },

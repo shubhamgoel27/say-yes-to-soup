@@ -294,9 +294,19 @@ export const CALETA_TASKS: TaskDef[] = [
     who: 'marisol',
   },
   {
+    // Without this the chip fell back to the arrival line ("The road ends at
+    // a fish stall...") right after Marisol made you her casero.
+    when: { has: ['c2.casero'], not: ['met.rios', 'c2.complete'] },
+    text: 'Casero now, officially; the malecón has noticed. Out on the pier an old man mends line, and past him a woman with a clipboard watches the ship at anchor.',
+    who: ['rios', 'simon', 'felix', 'nilda', 'rafa', 'wili'],
+  },
+  {
     when: { has: ['met.rios'], not: ['c2.complete'] },
     text: 'Capitana Ríos takes only working hands the village knows: be somebody’s casero, learn what la mar carries, make Petro’s kitchen owe you one.',
-    who: 'rios',
+    // The captain has nothing new to say until you are ready, and a task
+    // whose only name has no news hides; this one fell through to the
+    // arrival line the moment you met her. The people it names carry it.
+    who: ['rios', 'marisol', 'simon', 'petro', 'felix'],
   },
   {
     when: { has: ['c2.complete'] },
