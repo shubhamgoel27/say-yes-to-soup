@@ -1348,7 +1348,9 @@ export class Renderer {
           const over = solid(px, py, 8, -17) && solid(px, py, 8, -12);
           const wide = solid(px, py, 1, -17) && solid(px, py, 15, -17);
           if (over && !wide) {
-            target = PROP_VEIL;
+            // Further than a veil: what is left of a post above a hat still
+            // reads as a feather in it.
+            target = PROP_VEIL * 0.5;
             break;
           }
         }
