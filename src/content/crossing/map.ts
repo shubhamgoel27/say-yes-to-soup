@@ -51,8 +51,27 @@ const BAYS: [number, number, number, number, string][] = [
   [22, 27, 15, 17, 'A'],
 ];
 
+/**
+ * The ship's side, one cell outboard of the deck: the stern's transom across
+ * the bottom, plating down both sides and along the bow's taper. Without it
+ * the deck was a grey slab laid on the sea, and a rod on the stern rail
+ * reflected in water that should have been a hull's height below it.
+ */
+function hullSideAt(x: number, y: number): string | null {
+  if (inHull(x, y)) return null;
+  if (y === 30 && x >= 13 && x <= 30) return 'Q';
+  // The bow's steps: the notch outboard of each one is a diagonal of plating,
+  // so the bow reads as one swept line rather than a staircase of teeth.
+  if (inHull(x + 1, y) && inHull(x, y + 1)) return 'U';
+  if (inHull(x - 1, y) && inHull(x, y + 1)) return 'I';
+  if (inHull(x + 1, y)) return 'W';
+  if (inHull(x - 1, y)) return 'E';
+  return null;
+}
+
 function groundAt(x: number, y: number): string {
-  return inHull(x, y) ? 'd' : 'S';
+  if (inHull(x, y)) return 'd';
+  return hullSideAt(x, y) ?? 'S';
 }
 
 function objectAt(x: number, y: number): string {
@@ -135,6 +154,11 @@ export const SHIP_MAP: MapData = {
   legend: {
     d: { t: 'deck' },
     S: { t: 'sea', solid: true },
+    Q: { t: 'hullstern', solid: true },
+    W: { t: 'hullport', solid: true },
+    E: { t: 'hullstbd', solid: true },
+    U: { t: 'hullbowport', solid: true },
+    I: { t: 'hullbowstbd', solid: true },
     ' ': { t: 'void' },
     '=': { t: 'railing', solid: true },
     J: { t: 'jackstaff', solid: true, tall: true },

@@ -52,7 +52,10 @@ const CAP_LIP = 14;
  * Ground kinds the boundary-feathering pass must leave alone: water and its
  * banks autotile themselves, and void and scree are the outside of the world.
  */
-const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea']);
+const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea', 'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
+
+/** Ground kinds painted over the live sea: a hull's side, part steel, part water. */
+const OVER_SEA = new Set(['hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
 
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
@@ -1956,6 +1959,13 @@ export class Tileset {
     if (kind === 'sea') {
       const f = this.seaFrames[Math.floor(time * 1.4) % 3];
       if (f) g.drawImage(f, sx, sy);
+      return;
+    }
+    if (OVER_SEA.has(kind)) {
+      // A ship's side: the live sea first, the plating painted over it.
+      const f = this.seaFrames[Math.floor(time * 1.4) % 3];
+      if (f) g.drawImage(f, sx, sy);
+      g.drawImage(this.variant(kind, cx, cy), sx, sy);
       return;
     }
     if (kind === 'water') {
