@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { STICK_DEAD, STICK_GRIP, quantizeStick } from '../src/ui/stick';
+import { STICK_DEAD, STICK_GRIP, STICK_TAP_MS, quantizeStick, stickTapped } from '../src/ui/stick';
 
 describe('the floating stick speaks crisp directions', () => {
   it('rests inside the dead zone', () => {
@@ -45,5 +45,23 @@ describe('the floating stick speaks crisp directions', () => {
       if (held && seen[seen.length - 1] !== held) seen.push(held);
     }
     assert.deepEqual(seen, ['right', 'down']);
+  });
+});
+
+/**
+ * The stick's corner is a fifth of a phone, and taps on Rosa or her pot in
+ * that corner did nothing. A touch that never steered is a tap and passes
+ * through to the world; anything that walked stays the stick's.
+ */
+describe('a tap in the stick corner reaches the world', () => {
+  it('a still, short touch is a tap', () => {
+    assert.equal(stickTapped(false, 0, 90), true);
+    assert.equal(stickTapped(false, STICK_DEAD - 1, STICK_TAP_MS - 1), true);
+  });
+
+  it('a touch that steered, drifted out, or rested long is not', () => {
+    assert.equal(stickTapped(true, 2, 90), false, 'it chose a direction');
+    assert.equal(stickTapped(false, STICK_DEAD, 90), false, 'it left the dead zone');
+    assert.equal(stickTapped(false, 0, STICK_TAP_MS), false, 'a resting thumb');
   });
 });

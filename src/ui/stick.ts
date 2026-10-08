@@ -21,6 +21,19 @@ export const STICK_THROW = 48;
  */
 export const STICK_GRIP = 1.25;
 
+/** A touch shorter than this that never left the dead zone is a tap. */
+export const STICK_TAP_MS = 450;
+
+/**
+ * Was this touch a tap rather than a steer? The stick's corner covers a
+ * fifth of a phone, and the camera often parks people and pots there; a tap
+ * on them must reach the world (tap to walk, tap to talk), not die in the
+ * stick. A steer is any touch that ever chose a direction.
+ */
+export function stickTapped(steered: boolean, maxTravel: number, ms: number): boolean {
+  return !steered && maxTravel < STICK_DEAD && ms < STICK_TAP_MS;
+}
+
 /**
  * One thumb vector in, at most one direction out. Pure so the hysteresis
  * can be pinned by tests: `held` is whatever direction is currently walking
@@ -118,11 +131,20 @@ export function makeStick(
   let ox = 0;
   let oy = 0;
   let held: Dir | null = null;
+  // This touch's own record, for telling a tap from a steer at the lift.
+  let downX = 0;
+  let downY = 0;
+  let downAt = 0;
+  let travel = 0;
+  let steered = false;
 
   const setHeld = (d: Dir | null) => {
     if (d === held) return;
     if (held) release(held);
-    if (d) hold(d);
+    if (d) {
+      hold(d);
+      steered = true;
+    }
     if (hintEl) {
       // Bank walking time across holds; the lesson is cumulative.
       const now = performance.now();
@@ -144,6 +166,11 @@ export function makeStick(
     e.preventDefault();
     wake();
     pointer = e.pointerId;
+    downX = e.clientX;
+    downY = e.clientY;
+    downAt = performance.now();
+    travel = 0;
+    steered = false;
     try {
       root.setPointerCapture(e.pointerId);
     } catch {
@@ -161,6 +188,7 @@ export function makeStick(
 
   root.addEventListener('pointermove', (e) => {
     if (e.pointerId !== pointer) return;
+    travel = Math.max(travel, Math.hypot(e.clientX - downX, e.clientY - downY));
     const dx = e.clientX - ox;
     const dy = e.clientY - oy;
     setHeld(quantizeStick(dx, dy, held));
@@ -173,9 +201,30 @@ export function makeStick(
   const lift = (e: PointerEvent) => {
     if (e.pointerId !== pointer) return;
     calm();
+    if (e.type === 'pointerup' && stickTapped(steered, travel, performance.now() - downAt)) {
+      passThrough(root, downX, downY);
+    }
   };
   root.addEventListener('pointerup', lift);
   root.addEventListener('pointercancel', lift);
 
   return { calm, root };
+}
+
+/**
+ * Hand a tap to whatever lies under the stick's corner, exactly as if the
+ * corner were not there: the same pointerdown and pointerup the world's own
+ * tap handlers listen for.
+ */
+function passThrough(root: HTMLElement, x: number, y: number): void {
+  const was = root.style.pointerEvents;
+  root.style.pointerEvents = 'none';
+  const under = document.elementFromPoint(x, y);
+  root.style.pointerEvents = was;
+  if (!under || root.contains(under)) return;
+  const init: PointerEventInit = {
+    clientX: x, clientY: y, button: 0, buttons: 1, pointerType: 'touch', isPrimary: true, bubbles: true, cancelable: true,
+  };
+  under.dispatchEvent(new PointerEvent('pointerdown', init));
+  under.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
 }
