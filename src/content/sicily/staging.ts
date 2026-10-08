@@ -44,9 +44,10 @@ export const STAGING: Staging = {
     { when: SEEING_OFF, min: 0.585, max: 0.62 },
   ],
   blocking: [
-    // Out in the piazza for the walk, round Concetta's chair and the fountain.
-    { id: 'donsaro', when: WALKING, map: 'sicily', at: [20, 8], dir: 'down' },
-    { id: 'alfio', when: WALKING, map: 'sicily', at: [22, 8], dir: 'left' },
+    // Out in the piazza for the walk, between Concetta's door and the chair
+    // she takes at golden hour, so they are round her wherever she is.
+    { id: 'donsaro', when: WALKING, map: 'sicily', at: [24, 13], dir: 'left' },
+    { id: 'alfio', when: WALKING, map: 'sicily', at: [16, 12], dir: 'right' },
     { id: 'turi', when: WALKING, map: 'sicily', at: [24, 10], dir: 'left' },
     { id: 'rosaria', when: WALKING, map: 'sicily', at: [19, 11], dir: 'up' },
     { id: 'nino', when: WALKING, map: 'sicily', at: [22, 12], dir: 'up' },
