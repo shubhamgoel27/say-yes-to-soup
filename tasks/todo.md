@@ -638,5 +638,6 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   chip clears at home; Allqu off the writer's cell; Bantu speaks from the langar row (NpcDef.visiting); closing book
   fits a sideways phone and its hint names the credits; east road's village end flares; cocina papel by the door.
 - Gate: tsc clean, npm test 311/311, thread-e2e 175 states, prod smoke desktop + Galaxy NO ERRORS.
-- Open: attend-e2e (urojo careful run, kingyo open) and warmth-e2e (weave) fail on main AND on 8e22e6c, so they
-  predate pass 4; agent F is finding the root cause. Tablet portrait shows ~8 tiles (fixed 320x180 view; design).
+- e2e: attend-e2e failed on urojo because UrojoPanel kept lastAddT across runs (a replay froze every ladle until
+  the new clock caught up; real player bug, fixed); kingyo was its cascade. warmth-e2e was stale (loom gained a
+  fourth row). Both green now. Tablet portrait shows ~8 tiles (fixed 320x180 view; design).
