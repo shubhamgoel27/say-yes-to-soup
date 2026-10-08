@@ -1217,7 +1217,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.ex.rock': {
     lines: [
-      { text: 'Harbor stone, barnacled below the waterline, warm above it.' },
+      { text: 'A stone the sea rounded long ago, warm on top. Nearer the water its cousins still wear barnacles.' },
     ],
   },
   'c4.ex.tree': {

@@ -1367,6 +1367,10 @@ export const DELHI_NODES: NodeMap = {
   'c11.ex.neemtub': {
     lines: [{ text: 'A neem in a bus-blue oil drum: the roof\'s only shade, the lane\'s only free toothbrushes.' }],
   },
+  // Down in the gali there are four of these, so none is the only shade.
+  'c11.ex.neemtub.lane': {
+    lines: [{ text: 'A neem in a bus-blue oil drum, watered with whatever is left in the kettle. The lane\'s only free toothbrushes.' }],
+  },
   'c11.ex.kitemast': {
     lines: [{ text: 'A cut kite tied to a bamboo mast at shoulder height. Not decoration. A receipt.' }],
   },
@@ -1571,7 +1575,7 @@ export const DELHI_EXAMINES: Record<string, ExamineArm[]> = {
   tanktrio: [{ node: 'c11.ex.tanktrio' }],
   dishantenna: [{ node: 'c11.ex.dishantenna' }],
   mumty: [{ node: 'c11.ex.mumty' }],
-  neemtub: [{ node: 'c11.ex.neemtub' }],
+  neemtub: [{ map: 'delhi', node: 'c11.ex.neemtub.lane' }, { node: 'c11.ex.neemtub' }],
   kitemast: [{ node: 'c11.ex.kitemast' }],
   wirespan: [{ node: 'c11.ex.wirebundle' }],
   clothspan: [{ node: 'c11.ex.dhobiline' }],
