@@ -86,8 +86,9 @@ export const STAGING: Staging = {
     // Fumi lights the lane first (her round), then comes down to the quay.
     { id: 'fumi', when: FESTIVAL, map: 'shionoura', at: [24, 24], dir: 'down' },
     // And sees the boat off from the end of the pier, bowing toward you.
-    // (At 22,30, the last plank, the map's edge put her under the words.)
-    { id: 'fumi', when: SAILING, map: 'shionoura', at: [22, 29], dir: 'up' },
+    // On the last plank, past the landing and clear of the traveler's mark;
+    // the talk camera lifts the frame so the words never cover her.
+    { id: 'fumi', when: SAILING, map: 'shionoura', at: [22, 30], dir: 'up' },
     // Isao waits at his boat, which is the morning one.
     { id: 'isao', when: SAILING, map: 'shionoura', at: [25, 26], dir: 'left' },
   ],
