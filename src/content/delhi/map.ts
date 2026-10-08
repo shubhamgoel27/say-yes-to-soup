@@ -129,7 +129,7 @@ const DECOR: Record<string, string> = {
   '13,14': 'O',
   '14,15': 'I',
   '16,14': 'g', // Kamla Chachi's tawa, the lane's courtroom
-  '18,14': 'L',
+  '19,15': 'L', // one step east of the tawa: at 18,14 its cloths hung across Kamla herself
   '20,14': 'f', // a lamp on a pole, wired with hope
   '21,14': 'N',
   '22,15': 'I',

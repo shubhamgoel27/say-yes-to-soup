@@ -35,8 +35,10 @@ export const DELHI_NPCS: NpcDef[] = [
     id: 'kamla',
     name: 'Kamla Chachi',
     map: 'delhi',
-    pos: [17, 15],
-    range: 1,
+    // At her own tawa (16,14), and still: her wander used to carry her
+    // under the cloth line, which hung across her for every word.
+    pos: [17, 14],
+    range: 0,
     look: {
       skin: '#8a5636',
       hair: '#3a2e22',
