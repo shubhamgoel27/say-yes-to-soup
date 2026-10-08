@@ -1,7 +1,7 @@
 import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { PAL } from '../engine/config';
-import { surface, rect, rr, oval, dot, vgrad, shade, mute, glowSpot, softShadow, Rng, type Surface } from '../art/pix';
+import { surface, rect, rr, oval, dot, vgrad, shade, glowSpot, softShadow, Rng, type Surface } from '../art/pix';
 import { Scene, mountScene, easeOutCubic, easeInCubic, easeOutBack, wobble } from './games/scene';
 import { RUN, coach, freshRun } from './games/run';
 import { keysOrTaps } from './responsive';
@@ -12,8 +12,8 @@ import { keysOrTaps } from './responsive';
  * tune. Forgiving on purpose: a miss just means she calls the row again.
  * Four rows, the last a pallay border, and the cloth takes you in.
  *
- * Painted as a real backstrap loom: warp under tension between wall peg and
- * strap, the band growing row by row in the Ch'aska Pampa colors, a shuttle
+ * Painted as a real backstrap loom, outdoors, from the weaver's seat: warp
+ * under tension between the yard post and the strap around your back, the band growing row by row in the Ch'aska Pampa colors, a shuttle
  * that flies the shed on every good call.
  */
 
@@ -49,8 +49,8 @@ const TOP_Y = 74;
 const BOT_Y = 284;
 const FELL0 = 240; // top of the starter band; new rows stack above it
 const ROW_H = 13;
-const TOP_L = 190;
-const TOP_R = 320;
+const TOP_L = 204;
+const TOP_R = 306;
 const BOT_L = 178;
 const BOT_R = 332;
 
@@ -141,60 +141,95 @@ function bg(): Surface {
   const g = s.g;
   const rng = new Rng(517);
 
-  // Adobe wall, warm plaster, mottled the way real plaster is.
-  vgrad(g, 0, 0, 640, 254, mute(shade(PAL.adobe, 0.42), 0.3), mute(shade(PAL.adobe, 0.22), 0.25));
-  for (let i = 0; i < 40; i++) {
-    g.globalAlpha = 0.05;
-    dot(g, rng.int(640), rng.int(250), 8 + rng.int(22), rng.chance(0.5) ? '#7d5836' : '#e8d3ae');
-  }
-  g.globalAlpha = 1;
-
-  // Packed-earth floor with a scatter of pebbles.
-  vgrad(g, 0, 252, 640, 88, '#7f6039', '#553f24');
-  rect(g, 0, 251, 640, 3, 'rgba(43,33,24,0.35)');
-  for (let i = 0; i < 26; i++) {
-    const y = 262 + rng.int(70);
-    g.globalAlpha = 0.35;
-    oval(g, rng.int(640), y, 2 + rng.next() * 2, 1.4, rng.chance(0.5) ? '#93744c' : '#4a3620');
-  }
-  g.globalAlpha = 1;
-
-  // Window on the left: the pampa's own sky and one snowy apu.
-  rr(g, 58, 38, 96, 96, 6, shade(PAL.adobeDark, -0.15));
-  rr(g, 64, 44, 84, 80, 4, '#bfe0ef');
-  vgrad(g, 64, 44, 84, 80, PAL.sky, '#e6ecd2');
-  glowSpot(g, 128, 58, 26, '#fff3cf', 0.9);
-  dot(g, 128, 58, 8, '#f9eed4');
-  g.fillStyle = '#8d93b8';
+  // Outdoors, as Carmen weaves: you sit on the ground looking down the warp
+  // to the post it is lashed to. A strip of pampa sky and one snowy apu over
+  // a low adobe wall, then the courtyard earth running toward you.
+  const HZ = 50;
+  vgrad(g, 0, 0, 640, HZ, '#a9d4ea', '#e3ecd8');
+  g.fillStyle = '#9aa3c4';
   g.beginPath();
-  g.moveTo(64, 124);
-  g.lineTo(96, 84);
-  g.lineTo(124, 124);
+  g.moveTo(-10, HZ);
+  g.lineTo(70, 14);
+  g.lineTo(118, 30);
+  g.lineTo(160, 8);
+  g.lineTo(236, HZ);
   g.closePath();
   g.fill();
-  g.fillStyle = '#eef0f4';
+  g.fillStyle = '#eef1f5';
   g.beginPath();
-  g.moveTo(90, 92);
-  g.lineTo(96, 84);
-  g.lineTo(103, 93);
-  g.lineTo(96, 96);
+  g.moveTo(146, 16);
+  g.lineTo(160, 8);
+  g.lineTo(176, 19);
+  g.lineTo(166, 22);
+  g.lineTo(158, 17);
+  g.lineTo(152, 21);
   g.closePath();
   g.fill();
-  rect(g, 64, 82, 84, 2.4, 'rgba(122,74,44,0.7)'); // crossbar
-  rr(g, 56, 132, 100, 7, 3, shade(PAL.adobeDark, -0.3)); // sill
+  g.fillStyle = '#b4bccf';
+  g.beginPath();
+  g.moveTo(380, HZ);
+  g.lineTo(470, 22);
+  g.lineTo(560, 34);
+  g.lineTo(650, 18);
+  g.lineTo(650, HZ);
+  g.closePath();
+  g.fill();
+  // The courtyard wall, mud brick under a lip of ichu thatch.
+  rect(g, 0, HZ - 14, 640, 18, shade(PAL.adobe, 0.12));
+  for (let x = 0; x < 640; x += 22) rect(g, x + (Math.floor(x / 22) % 2) * 11, HZ - 7, 1.2, 9, 'rgba(90,56,30,0.25)');
+  rect(g, 0, HZ - 8, 640, 1, 'rgba(90,56,30,0.25)');
+  rect(g, 0, HZ - 17, 640, 4, '#c9a85e');
+  for (let x = 0; x < 640; x += 5) rect(g, x, HZ - 15, 1.4, 3 + (x % 3), '#a8873f');
 
-  // A petate mat under the loom so the cloth end has somewhere soft to fall.
-  softShadow(g, 256, 314, 120, 24, 0.3);
-  rr(g, 168, 296, 176, 32, 10, '#a4784a');
-  g.strokeStyle = 'rgba(80,54,28,0.35)';
-  g.lineWidth = 1.2;
-  for (let i = 0; i < 6; i++) {
-    g.beginPath();
-    g.moveTo(174, 301 + i * 4.6);
-    g.lineTo(338, 301 + i * 4.6);
-    g.stroke();
+  // Courtyard earth, nearer means warmer and coarser.
+  vgrad(g, 0, HZ + 4, 640, 340 - HZ - 4, '#a88a5c', '#7a5a34');
+  rect(g, 0, HZ + 4, 640, 2, 'rgba(43,33,24,0.25)');
+  for (let i = 0; i < 70; i++) {
+    const y = HZ + 10 + rng.int(280);
+    const k = (y - HZ) / 290;
+    g.globalAlpha = 0.25 + k * 0.2;
+    oval(g, rng.int(640), y, 1.5 + k * 3, 0.8 + k * 1.6, rng.chance(0.5) ? '#c2a476' : '#5e4426');
   }
+  g.globalAlpha = 1;
+  // Ichu tufts along the wall foot and the near corners.
+  const tuft = (x: number, y: number, s: number) => {
+    g.strokeStyle = '#c4a35a';
+    g.lineWidth = 1.3;
+    for (let k = -3; k <= 3; k++) {
+      g.beginPath();
+      g.moveTo(x, y);
+      g.quadraticCurveTo(x + k * 2 * s, y - 8 * s, x + k * 4 * s, y - 14 * s);
+      g.stroke();
+    }
+  };
+  for (const [x, y, s] of [[40, 70, 0.7], [118, 66, 0.6], [400, 68, 0.6], [612, 72, 0.8], [26, 318, 1.3], [618, 312, 1.2]] as const) tuft(x, y, s);
 
+  // The post the far loom bar is lashed to, standing in the yard.
+  softShadow(g, 262, 92, 26, 7, 0.35);
+  rr(g, 248, 8, 14, 86, 4, '#6e4a2c');
+  rect(g, 251, 10, 3, 82, shade('#6e4a2c', 0.22));
+  rect(g, 258, 10, 2, 82, shade('#6e4a2c', -0.25));
+  for (let i = 0; i < 4; i++) rect(g, 247, 26 + i * 4, 16, 2, '#c9b490');
+
+  // On the left, the work waiting its turn: a lliklla spread on the ground,
+  // a drop spindle, and a cloud of carded wool.
+  softShadow(g, 82, 238, 70, 16, 0.25);
+  g.save();
+  g.translate(82, 226);
+  g.rotate(-0.08);
+  const ll = ['#c1512f', '#2f4f7a', '#d9a441', '#2f4f7a', '#c1512f', '#6b8e4e', '#c1512f'];
+  for (let i = 0; i < ll.length; i++) rect(g, -62, -24 + i * 7, 124, 7, ll[i]!);
+  for (let x = -54; x < 60; x += 18) diamond(g, x, -24 + 3.5 * 7, 3, PAL.cream);
+  g.restore();
+  for (let i = 0; i < 6; i++) dot(g, 58 + (i % 3) * 9, 214 + Math.floor(i / 3) * 7, 7, i % 2 ? '#eee3cc' : '#f6eedd');
+  g.strokeStyle = '#8a5f38';
+  g.lineWidth = 2.2;
+  g.beginPath();
+  g.moveTo(96, 196);
+  g.lineTo(128, 238);
+  g.stroke();
+  oval(g, 120, 228, 7, 4, '#a0703f');
+  oval(g, 110, 214, 6, 5, '#e2d2b2');
   // The yarn basket: a flat coil basket holding the four calls.
   softShadow(g, 523, 202, 116, 40, 0.28);
   for (let i = 0; i < 5; i++) {
@@ -219,10 +254,6 @@ function bg(): Surface {
     rr(g, b.x - 12, ty + 15, 24, 4, 2, 'rgba(43,33,24,0.18)');
     paintArrow(g, b.x, ty + 9, COLORS[i]!.dir);
   }
-
-  // The wall peg the loom bar is lashed to.
-  dot(g, 255, 30, 6, shade(PAL.stoneDark, -0.15));
-  dot(g, 254, 29, 3, shade(PAL.stone, 0.2));
 
   // A soft vignette so the scene sits into the page.
   const vig = g.createRadialGradient(320, 170, 150, 320, 170, 380);
@@ -653,7 +684,7 @@ export class WeavePanel {
     const fell = this.fellY();
     g.drawImage(bg().cv, 0, 0);
 
-    // Lash ropes up to the wall peg, then the backstrap curving off-page to the weaver.
+    // Lash ropes up to the yard post, then the backstrap around the weaver.
     g.strokeStyle = '#c9b490';
     g.lineWidth = 2.4;
     g.beginPath();
@@ -662,14 +693,7 @@ export class WeavePanel {
     g.moveTo(TOP_R - 2, TOP_Y - 2);
     g.lineTo(257, 32);
     g.stroke();
-    g.strokeStyle = '#7a4a2c';
-    g.lineWidth = 7;
-    g.beginPath();
-    g.moveTo(BOT_L + 4, BOT_Y + 4);
-    g.quadraticCurveTo(216, 322, 240, 340);
-    g.moveTo(BOT_R - 4, BOT_Y + 4);
-    g.quadraticCurveTo(294, 322, 270, 340);
-    g.stroke();
+    this.paintStrap(g);
 
     this.paintWarp(g, time, fell);
     this.paintCloth(g, fell);
@@ -690,6 +714,49 @@ export class WeavePanel {
     rect(g, BOT_L - 6, BOT_Y - 1, BOT_R - BOT_L + 12, 2.2, shade('#8a5f38', 0.3));
 
     this.paintBalls(g, time);
+  }
+
+  /**
+   * The strap itself: a woven band tied to both ends of the near bar and
+   * sweeping out past the frame's lower corners, round your back. It eases
+   * taut a hair each time the batten beats, which is the lean the text means.
+   */
+  private paintStrap(g: CanvasRenderingContext2D) {
+    const pull = this.batten / 30;
+    const sides: [number, number, number][] = [
+      [BOT_L - 8, -1, 40],
+      [BOT_R + 8, 1, 470],
+    ];
+    for (const [x0, dir, xOut] of sides) {
+      const y0 = BOT_Y + 3;
+      const cx = x0 + dir * (22 - pull * 5);
+      const cy = 336 - pull * 4;
+      // Tie cord from bar end to strap end.
+      g.strokeStyle = '#c9b490';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(x0 + dir * 6, y0);
+      g.lineTo(x0 + dir * 14, y0 + 10);
+      g.stroke();
+      // The band: dark wool edge, then a red centre stripe, then pale picks.
+      for (const [w, c] of [[20, '#5a3a22'], [15, '#8a5330'], [5, '#c1512f']] as const) {
+        g.strokeStyle = c;
+        g.lineWidth = w;
+        g.lineCap = 'butt';
+        g.beginPath();
+        g.moveTo(x0 + dir * 14, y0 + 10);
+        g.quadraticCurveTo(cx, cy, xOut, 352);
+        g.stroke();
+      }
+      g.setLineDash([2, 5]);
+      g.strokeStyle = '#efe2c6';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(x0 + dir * 14, y0 + 10);
+      g.quadraticCurveTo(cx, cy, xOut, 352);
+      g.stroke();
+      g.setLineDash([]);
+    }
   }
 
   private paintWarp(g: CanvasRenderingContext2D, time: number, fell: number) {
