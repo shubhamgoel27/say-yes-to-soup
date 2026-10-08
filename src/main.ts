@@ -51,6 +51,7 @@ import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
 import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/guide';
 import { cheapestPath } from './engine/path';
+import { planSettle } from './engine/stand';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -1909,6 +1910,28 @@ function updateStaging(dt: number) {
       // Two steps back along your own path; standing, she turns to you.
       const a = v.actor.occupies();
       const p = player.occupies();
+      // Ahead of you on your way (you turned back down the road): she steps
+      // off it, across your heading, and lets you pass; standing beside the
+      // lane she holds still. Following the trail from up there walked her
+      // back into the lane after every sidestep, a mirror across the road.
+      if (yielding.has(v.actor)) {
+        if (v.actor.isMoving) {
+          v.actor.update(dt, { intent: null, blocked: () => true });
+          continue;
+        }
+        yielding.delete(v.actor);
+      }
+      const ahead = aheadOfPlayer(a);
+      if (ahead) {
+        if (!v.actor.isMoving) {
+          const d = ahead === 'lane' ? yieldStep(v.actor, () => false) : null;
+          if (d) {
+            v.actor.stepTo(d, towardPlayer(stepFrom(a[0], a[1], d)));
+            yielding.add(v.actor);
+          } else v.actor.face(towardPlayer(a));
+        } else stageStep(s, a[0], a[1], dt);
+        continue;
+      }
       const tgt = trail.length >= 3 ? trail[trail.length - 3]! : null;
       const onYou = tgt && (manhattan(tgt, p) === 0 || (tgt[0] === player.x && tgt[1] === player.y));
       const near = manhattan(a, p) <= 2 && !player.isMoving;
@@ -2608,81 +2631,210 @@ function crowdsSomeone(x: number, y: number, self: Actor): boolean {
   return heldByOther(x, y - 1, self) || heldByOther(x, y + 1, self);
 }
 
-/** Somewhere a body may settle: open floor, nobody's cell, nobody's column
- * neighbour, not a doorway, and not under a tall prop's painted head. */
-function roomToStand(x: number, y: number, self: Actor): boolean {
+/** Can a body settle on (x, y) at all: open floor, not a doorway or an
+ * arrival cell, and nothing painted over the figure (see stand.ts). */
+function cleanStand(x: number, y: number): boolean {
   if (!map.inBounds(x, y) || map.solid(x, y) || map.triggerAt(x, y) || onDoorstep(x, y)) return false;
-  if (heldByOther(x, y, self) || crowdsSomeone(x, y, self)) return false;
-  return renderer.overhung(map)[y * map.w + x] !== 1;
+  return !renderer.coversBody(map, x, y);
 }
 
 /**
- * Two people about to talk one above the other: one of them takes a single
- * step to the side, so they speak side by side (diagonally, the way people
- * actually stand to talk) and neither face is drawn under the other's head.
- * The villager steps if they are free to; a seated, stationed or staged one
- * holds their place and the player steps instead. A villager posted to one
- * spot (range 0: a stall, a doorway) steps back to it after the talk.
+ * Scripted steps still to take, per actor, for a talk's settling: walked one
+ * at a time as each lands (see landHeldSteps), then a turn to face.
+ */
+const settleSteps = new Map<Actor, { steps: Dir[]; face: Dir }>();
+
+/** Is a settle still walking someone into place? The player waits for it. */
+function settling(): boolean {
+  return settleSteps.size > 0;
+}
+
+/**
+ * Two people about to talk one above the other draw as one pile, so they
+ * settle side by side on one row first, orthogonally adjacent and facing
+ * (stand.ts planSettle has the options and their order). Every cell anyone
+ * is walked onto is clean. The villager moves only when free to; a seated,
+ * stationed or staged one holds their place and the player goes round. A
+ * villager posted to one spot (range 0: a stall, a doorway) steps back to it
+ * after the talk. With nowhere clean to go they lean apart a little instead.
  */
 function settleForTalk(v: Villager) {
   if (v === dog) return;
-  const [px, py] = player.occupies();
-  const [nx, ny] = v.actor.occupies();
-  if (px !== nx || Math.abs(py - ny) !== 1) return;
   const npcMay =
     !v.actor.isMoving && !v.seated && v.actor.pose !== 'sit' && !stagedControls(v) && !stationControls(v);
-  const movers: [Actor, Actor][] = npcMay ? [[v.actor, player], [player, v.actor]] : [[player, v.actor]];
-  // Whoever stays put must not be left in a third body's column either (the
-  // player walked in between Nilda and Félix and talked up to her: Nilda
-  // stepping aside would have left the player standing on Félix's hat).
-  // So a move that leaves nobody stacked wins; failing that, any move that
-  // at least parts the two speakers.
-  const stays = (who: Actor, mover: Actor) => {
-    const [sx, sy] = who.occupies();
-    const third = (y: number) =>
-      spritesHere().some((o) => o.actor !== who && o.actor !== mover && o !== dog && bodyCells(o.actor).some(([cx, cy]) => cx === sx && cy === y));
-    return !third(sy - 1) && !third(sy + 1);
-  };
-  const options: { mover: Actor; partner: Actor; s: number; clean: boolean }[] = [];
-  for (const [mover, partner] of movers) {
-    if (mover.isMoving) continue;
-    const [mx, my] = mover.occupies();
-    for (const s of [1, -1]) {
-      if (roomToStand(mx + s, my, mover)) options.push({ mover, partner, s, clean: stays(partner, mover) });
-    }
-  }
-  const pick = options.find((o) => o.clean) ?? options[0];
-  if (pick) {
-    const { mover, partner, s } = pick;
-    const [mx, my] = mover.occupies();
-    const toward: Dir = s > 0 ? 'left' : 'right';
-    mover.stepTo(s > 0 ? 'right' : 'left', toward);
-    partner.face(OPPOSITE[toward]);
-    if (mover === v.actor && v.def.range === 0) {
-      v.postBack = { at: [mx, my], dir: v.def.sits ?? 'down' };
-    }
+  const plan = planSettle(
+    {
+      passable: (x, y) => map.inBounds(x, y) && !map.solid(x, y) && !map.triggerAt(x, y),
+      clean: cleanStand,
+      held: (x, y) =>
+        spritesHere().some(
+          (o) => o !== dog && o.actor !== player && o.actor !== v.actor && bodyCells(o.actor).some(([cx, cy]) => cx === x && cy === y),
+        ),
+    },
+    player.occupies(),
+    v.actor.occupies(),
+    npcMay && !player.isMoving,
+  );
+  if (plan.kind === 'none') return;
+  if (plan.kind === 'lean') {
+    const [, py] = player.occupies();
+    const [, ny] = v.actor.occupies();
+    const lower = py > ny ? player : v.actor;
+    const upper = lower === player ? v.actor : player;
+    lower.nudge = [-TALK_LEAN, 2];
+    upper.nudge = [TALK_LEAN, 0];
     return;
   }
-  // Nowhere to step (a one-plank pier, a doorway lane): they lean apart
-  // instead, a few pixels each way, so both faces stay clear for the talk.
-  const lower = py > ny ? player : v.actor;
-  const upper = lower === player ? v.actor : player;
-  lower.nudge = [-TALK_LEAN, 2];
-  upper.nudge = [TALK_LEAN, 0];
+  for (const m of plan.moves) {
+    const a = m.who === 'player' ? player : v.actor;
+    settleSteps.set(a, { steps: [...m.steps], face: m.who === 'player' ? plan.playerFace : plan.npcFace });
+    if (m.who === 'npc' && v.def.range === 0) {
+      const [hx, hy] = v.actor.occupies();
+      v.postBack = { at: [hx, hy], dir: v.def.sits ?? 'down' };
+    }
+  }
+  // Whoever is not walked anywhere turns to face as the other arrives.
+  if (!settleSteps.has(player)) player.face(plan.playerFace);
+  if (!settleSteps.has(v.actor)) v.actor.face(plan.npcFace);
+  landHeldSteps(0);
 }
 /** How far, in logical pixels, each of two cornered speakers leans apart. */
 const TALK_LEAN = 6;
 
 /**
  * Finish any step still in the air while the world is held for a
- * conversation: the side-step of settleForTalk, or anyone caught mid-stride
- * when the talk began (they used to hang between two cells for the whole
- * conversation). Nothing new starts; only landings.
+ * conversation (anyone caught mid-stride when the talk began used to hang
+ * between two cells for the whole of it), and walk a talk's settling steps,
+ * one as each lands. Nothing else starts.
  */
 function landHeldSteps(dt: number) {
   for (const s of spritesHere()) {
     if (s.actor.isMoving) s.actor.update(dt, { intent: null, blocked: () => true });
   }
+  for (const [a, plan] of settleSteps) {
+    if (a.isMoving) continue;
+    const next = plan.steps.shift();
+    if (!next) {
+      a.face(plan.face);
+      settleSteps.delete(a);
+      continue;
+    }
+    // The cell was clean when the plan was made; if a walker has since
+    // stepped into it, stop here rather than walk into them.
+    const [tx, ty] = stepFrom(...a.occupies(), next);
+    if (heldByOther(tx, ty, a) || map.solid(tx, ty)) {
+      // Into the place the other speaker is leaving: wait for them to land.
+      const partner = [...settleSteps.keys()].find((o) => o !== a);
+      if (partner && bodyCells(partner).some(([cx, cy]) => cx === tx && cy === ty)) {
+        plan.steps.unshift(next);
+        continue;
+      }
+      a.face(plan.face);
+      settleSteps.delete(a);
+      continue;
+    }
+    a.stepTo(next, plan.steps.length === 0 ? plan.face : undefined);
+  }
+}
+
+// ---------------------------------------------------------------- giving way
+//
+// People step off the player's path rather than stand in it: a companion
+// who has ended up ahead of you on a road, a villager parked on the red
+// thread, anyone you keep walking into. They step sideways to where you are
+// going, never along it, so nobody mirrors your sidestep across the road.
+
+/** Which way the player's feet are going this frame, or null at rest. */
+let walkHeading: Dir | null = null;
+/** The cell the player has been pushing into, and how many knocks running. */
+let pushCell: [number, number] | null = null;
+let pushKnocks = 0;
+let pushAt = 0;
+/** Bodies mid-way through a step out of the player's way. */
+const yielding = new Set<Actor>();
+
+/**
+ * Does (x, y) lie on the player's way for `v`: the next cells of a click
+ * walk that is not to them, the red thread laid past them (not to them),
+ * or the cell the player keeps walking into with the keys?
+ */
+function inPlayersWay(v: Villager, x: number, y: number): boolean {
+  if (autoGoal && autoGoal.npc !== v && autoPath.slice(0, 4).some(([ax, ay]) => ax === x && ay === y)) return true;
+  if (renderer.threadOut && threadLast && threadAim !== v && map.id === threadAimMap) {
+    const tiles = threadLast.tiles;
+    const [px, py] = player.occupies();
+    let from = tiles.findIndex(([tx, ty]) => tx === px && ty === py);
+    if (from < 0) from = 0;
+    for (let i = from + 1; i < Math.min(tiles.length - 1, from + 9); i++) {
+      if (tiles[i]![0] === x && tiles[i]![1] === y) return true;
+    }
+  }
+  return !!pushCell && pushCell[0] === x && pushCell[1] === y && pushKnocks >= 3 && performance.now() - pushAt < 500;
+}
+
+/** One sideways step out of the player's way, if they are in it and there is room. */
+function giveWay(v: Villager): boolean {
+  if (v === dog || v.seated || v.actor.pose === 'sit' || v.actor.isMoving || v === talkingTo) return false;
+  const [cx, cy] = v.actor.occupies();
+  if (!inPlayersWay(v, cx, cy)) return false;
+  const d = yieldStep(v.actor, (x, y) => inPlayersWay(v, x, y));
+  if (!d) return false;
+  // A posted villager comes back to their post once the way is clear.
+  if (v.def.range === 0 && !v.postBack) v.postBack = { at: [cx, cy], dir: v.def.sits ?? v.actor.dir };
+  v.actor.stepTo(d, towardPlayer(stepFrom(cx, cy, d)));
+  yielding.add(v.actor);
+  pushKnocks = 0;
+  return true;
+}
+
+/**
+ * The step that takes a body out of the player's way: off the way itself
+ * and out of the lane ahead, across the player's heading first and the
+ * side away from them first, onto open floor nobody holds or stands a row
+ * off from, not a doorway and not under a prop's paint.
+ */
+function yieldStep(a: Actor, onWay: (x: number, y: number) => boolean): Dir | null {
+  const [cx, cy] = a.occupies();
+  const [px, py] = player.occupies();
+  const heading = walkHeading ?? player.dir;
+  const across = (d: Dir) => ((heading === 'up' || heading === 'down') === (d === 'left' || d === 'right') ? 0 : 1);
+  const away = (d: Dir) => {
+    const [x, y] = stepFrom(cx, cy, d);
+    return Math.abs(x - px) + Math.abs(y - py);
+  };
+  const dirs: Dir[] = ['left', 'right', 'up', 'down'];
+  dirs.sort((p, q) => across(p) - across(q) || away(q) - away(p));
+  for (const d of dirs) {
+    const [x, y] = stepFrom(cx, cy, d);
+    if (onWay(x, y) || aheadOfPlayer([x, y]) === 'lane') continue;
+    if (heldByOther(x, y, a) || crowdsSomeone(x, y, a) || playerHolds(x, y)) continue;
+    if (!cleanStand(x, y)) continue;
+    return d;
+  }
+  return null;
+}
+
+/**
+ * Where a cell lies against the way the player is walking: 'lane' when it
+ * is straight ahead within three steps, 'beside' when it is a row off that
+ * lane, null when behind, far, or the player is standing still.
+ */
+function aheadOfPlayer([x, y]: [number, number]): 'lane' | 'beside' | null {
+  if (!walkHeading) return null;
+  const [px, py] = player.occupies();
+  const [hx, hy] = DIR_VEC[walkHeading];
+  const along = (x - px) * hx + (y - py) * hy;
+  const perp = Math.abs((x - px) * hy - (y - py) * hx);
+  if (along < 1 || along > 3) return null;
+  return perp === 0 ? 'lane' : perp === 1 ? 'beside' : null;
+}
+
+/** Which way someone on (x, y) turns to look at the player. */
+function towardPlayer([x, y]: [number, number]): Dir {
+  const [px, py] = player.occupies();
+  const dx = px - x;
+  const dy = py - y;
+  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
 }
 
 /**
@@ -2735,7 +2887,8 @@ function updateVillager(v: Villager, dt: number) {
   // A stationed villager is walked by the custom's own code, not the leash.
   if (stagedControls(v) || stationControls(v)) return;
 
-  // Stepped aside to talk from a post: back to it once the cell is clear.
+  // Stepped aside (to talk, or out of the player's way) from a post: back
+  // to it once the cell is clear, on their own feet.
   if (v.postBack) {
     const [hx, hy] = v.postBack.at;
     const [ax, ay] = v.actor.occupies();
@@ -2748,18 +2901,32 @@ function updateVillager(v: Villager, dt: number) {
       v.postBack = null;
       return;
     }
-    if (Math.abs(ax - hx) + Math.abs(ay - hy) !== 1) {
+    if (Math.abs(ax - hx) + Math.abs(ay - hy) > 4) {
       v.postBack = null; // moved on by something else (a door, the staging)
       return;
     }
-    // Not while that would stand them over (or under) somebody: the player
+    // Not while that would stand them over (or under) somebody (the player
     // is usually still right there, a row off, and stepping back would only
-    // rebuild the pile the side-step took apart.
-    if (!heldByOther(hx, hy, v.actor) && !crowdsSomeone(hx, hy, v.actor)) {
-      v.actor.stepTo(hx > ax ? 'right' : hx < ax ? 'left' : hy > ay ? 'down' : 'up', v.postBack.dir);
+    // rebuild the pile the settle took apart), nor back into the way.
+    if (heldByOther(hx, hy, v.actor) || crowdsSomeone(hx, hy, v.actor) || inPlayersWay(v, hx, hy)) return;
+    const path = pathBetween([ax, ay], hx, hy, blockedFor(v.actor));
+    const next = path?.[0];
+    if (next && !heldByOther(next[0], next[1], v.actor)) {
+      const d: Dir = next[0] > ax ? 'right' : next[0] < ax ? 'left' : next[1] > ay ? 'down' : 'up';
+      v.actor.stepTo(d, path!.length === 1 ? v.postBack.dir : undefined);
     }
     return;
   }
+
+  // In the player's way: step off it, sideways to where they are going.
+  if (yielding.has(v.actor)) {
+    if (v.actor.isMoving) {
+      v.actor.update(dt, { intent: null, blocked: () => true });
+      return;
+    }
+    yielding.delete(v.actor);
+  }
+  if (giveWay(v)) return;
 
   if (v.def.range === 0 || dev.freezeWander) return;
   const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
@@ -2807,7 +2974,12 @@ function updateVillager(v: Villager, dt: number) {
   // So does the person the red thread was just laid to, so its end still
   // finds them beside it (Mr. Gong drifted to the diagonal, by a crate).
   const threadHeld = v === threadAim && performance.now() - threadShownAt < THREAD_HOLD_MS;
-  if ((autoGoal?.npc === v || approachedByKeys(v) || threadHeld) && !outside) {
+  // And so does the person the open task is about, while the player is in
+  // sight of them: Rosa is ladling soup, not touring the square, and a click
+  // aimed at her used to land on the grass she had just left.
+  const [lx, ly] = player.occupies();
+  const taskHeld = v.def.id === taskLead() && Math.abs(ax - lx) <= 10 && Math.abs(ay - ly) <= 7;
+  if ((autoGoal?.npc === v || approachedByKeys(v) || threadHeld || taskHeld) && !outside) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
@@ -2911,6 +3083,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   const dest = maps[trig.to];
   if (!dest) return;
   map = dest;
+  settleSteps.clear();
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
   // The vigil is a night. Its page says "tonight the camposanto is lit", and
   // walking through the marigold arch at noon once opened it in full sun:
@@ -3158,6 +3331,25 @@ function spamHush(): boolean {
   return true;
 }
 
+/**
+ * Where the textbox stood when the last talk closed, and until when a tap
+ * there still counts as tapping the words rather than the world. Each tap
+ * swallowed there renews it, so a tapping rhythm never leaks into a walk;
+ * a deliberate tap after a quiet moment walks as always.
+ */
+const TEXTBOX_TAP_GRACE_MS = 2000;
+let textboxWas: DOMRect | null = null;
+let textboxWasUntil = 0;
+function onTextboxThatWas(x: number, y: number): boolean {
+  const r = textboxWas;
+  const now = performance.now();
+  if (!r || now >= textboxWasUntil) return false;
+  const pad = 16;
+  if (x < r.left - pad || x > r.right + pad || y < r.top - pad || y > r.bottom + pad) return false;
+  textboxWasUntil = now + TEXTBOX_TAP_GRACE_MS;
+  return true;
+}
+
 function endDialogue() {
   player.frozen = false;
   talkHushUntil = performance.now() + TALK_HUSH_MS;
@@ -3165,6 +3357,10 @@ function endDialogue() {
     spamHushUntil = performance.now() + spamHushMs();
     spamHushAim = player.facingCell().join(',');
   }
+  // Where the words were: taps keep landing there for a while after.
+  const tbr = document.getElementById('textbox')?.getBoundingClientRect();
+  if (tbr && tbr.height > 0) textboxWas = tbr;
+  textboxWasUntil = performance.now() + TEXTBOX_TAP_GRACE_MS;
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   howtoOfferedBy = speaker?.def.id ?? null;
@@ -3450,6 +3646,19 @@ function updateSitting(dt: number) {
     sitLineIdx++;
     if (line) toasts.show(line);
   }
+}
+
+/** The person the chip's task is about, re-read twice a second. */
+let taskLeadId: string | null = null;
+let taskLeadAt = -Infinity;
+function taskLead(): string | null {
+  const now = performance.now();
+  if (now - taskLeadAt > 500) {
+    taskLeadAt = now;
+    const t = journalUI.activeTaskDefs()[0];
+    taskLeadId = t && t.who !== undefined ? (threadWho(t, state)[0] ?? null) : null;
+  }
+  return taskLeadId;
 }
 
 /** How long the thread's person waits where it found them, in ms. */
@@ -4606,6 +4815,7 @@ function update(dt: number) {
       }
     }
   } else if (textbox.isOpen) {
+    walkHeading = null;
     landHeldSteps(dt);
     if (menuDir) {
       textbox.onDir(menuDir);
@@ -4651,6 +4861,9 @@ function update(dt: number) {
       summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
+    } else if (settling()) {
+      // A talk's settling steps still landing after its words closed.
+      landHeldSteps(dt);
     } else if (act && (afterTalkHush() || spamHush() || introTimer !== 0)) {
       // The press that closed the last line had company: swallowed. So is
       // a press in the breath between the letter and the first words: it
@@ -4669,6 +4882,7 @@ function update(dt: number) {
       if (manual && autoGoal) cancelAuto();
       const intent = manual ?? autoIntent();
       MW.lastIntent = intent ?? '-';
+      walkHeading = intent;
       // The camera leans a little into sustained walking, easing home at rest.
       const lead = intent
         ? { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }[intent]
@@ -4708,6 +4922,12 @@ function update(dt: number) {
           stuckKnocks = 0;
         }
         // A villager stepped into the planned path; route around them.
+        // Leaning on someone with the keys: after a few knocks, they make way.
+        const into = stepFrom(...player.occupies(), player.dir);
+        if (pushCell && pushCell[0] === into[0] && pushCell[1] === into[1] && performance.now() - pushAt < 500) pushKnocks++;
+        else pushKnocks = 1;
+        pushCell = into;
+        pushAt = performance.now();
         if (autoGoal) replanAuto();
         // The full caporal does not appreciate walls.
         if (state.has('carry.chicha')) {
@@ -4775,6 +4995,7 @@ function update(dt: number) {
     const [ppx, ppy] = endFocus(rpx, rpy);
     camera.follow(ppx, ppy, map.w, map.h, 1 - endFrameK());
     fitCameraToCrop(ppx, ppy);
+    liftForWords(dt);
   }
 
   // Remember where we stand; persisted alongside the next save. Mutated in
@@ -4946,6 +5167,51 @@ let uiZoom = 1;
 
 function viewScale(): number {
   return Math.max(1, window.innerWidth / VIEW_W, window.innerHeight / VIEW_H) * uiZoom;
+}
+
+/**
+ * The words never cover the people saying them. The textbox lies across the
+ * bottom of the screen, and the camera stops at a map's edge, so a talk near
+ * the bottom of a map (Rosa's first, in front of her pot; the terraces'
+ * corner on a phone) happened under the box with only two hats showing.
+ * While words are on screen the frame lifts until both speakers stand clear
+ * above the box, past the map's edge if it must (what lies beyond is the
+ * frame's own dark margin), eased in and eased back out when the words close.
+ */
+let wordsLift = 0;
+let wordsTop = -1;
+let wordsTopAt = -Infinity;
+const WORDS_MARGIN = 6; // logical px of air between feet and the box
+function liftForWords(dt: number) {
+  let target = 0;
+  if (textbox.isOpen && mode === 'play' && !vistaOn) {
+    const now = performance.now();
+    if (now - wordsTopAt > 200) {
+      // Re-read now and then: the box grows when choices appear.
+      wordsTopAt = now;
+      const r = document.getElementById('textbox')?.getBoundingClientRect();
+      wordsTop = r && r.height > 0 ? r.top : -1;
+    }
+    if (wordsTop > 0) {
+      const people = [player, ...(talkingTo ? [talkingTo.actor] : [])];
+      let feet = -Infinity;
+      let head = Infinity;
+      for (const a of people) {
+        const [, ry] = a.renderPos();
+        feet = Math.max(feet, ry + TILE);
+        head = Math.min(head, ry - TILE);
+      }
+      const boxWorld = screenToWorld(0, wordsTop)[1];
+      const topWorld = screenToWorld(0, 0)[1];
+      // Lift enough to clear the box, never so far the hats leave the top.
+      target = Math.max(0, Math.min(feet + WORDS_MARGIN - boxWorld, head - topWorld - 4));
+    }
+  } else {
+    wordsTopAt = -Infinity;
+  }
+  wordsLift += (target - wordsLift) * (1 - Math.exp(-dt * 6));
+  if (Math.abs(wordsLift) < 0.05) wordsLift = 0;
+  camera.y += wordsLift;
 }
 
 function screenToWorld(sx: number, sy: number): [number, number] {
@@ -5525,6 +5791,10 @@ glCanvas.addEventListener('pointerdown', (e) => {
   if (player.frozen) return;
   // An extra tap after the last line is not a walk order.
   if (afterTalkHush()) return;
+  // Nor is a tap where the textbox just was: tapping through the last lines
+  // at a reading pace, the next tap came 700ms on and walked the player
+  // eight tiles toward the bottom edge.
+  if (onTextboxThatWas(e.clientX, e.clientY)) return;
   const [wx, wy] = screenToWorld(e.clientX, e.clientY);
   const tx = Math.floor(wx / TILE);
   const ty = Math.floor(wy / TILE);
@@ -5615,6 +5885,9 @@ const tbRoot = $('textbox');
 tbRoot.addEventListener('pointerdown', (e) => {
   if (!textbox.isOpen || e.button !== 0) return;
   e.preventDefault();
+  // Remember where the words are while they are being tapped; see onTextboxThatWas.
+  const r = tbRoot.getBoundingClientRect();
+  if (r.height > 0) textboxWas = r;
   const row = (e.target as HTMLElement).closest('.tb-choice');
   if (row) {
     steerTo(choicesEl, '.tb-choice', row, (d) => textbox.onDir(d));
