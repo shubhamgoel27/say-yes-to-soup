@@ -22,6 +22,8 @@ export const DELHI_NPCS: NpcDef[] = [
       hat: '#e8dcc4',
       hatStyle: 'none',
     },
+    // Seated in the evening langar: no lane business from the pangat row.
+    visiting: { 'delhi-langar': 'c11.bantu.langar' },
     entry: [
       { when: { has: ['c11.complete'] }, node: 'c11.bantu.station' },
       { when: { not: ['c11.met.bantu'] }, node: 'c11.bantu.first' },
@@ -366,6 +368,12 @@ export const DELHI_NODES: NodeMap = {
       { text: 'In Bombay the chit opens a berth like a password. The ship swings west onto the old dhow road.' },
     ],
     effects: ['set:c11.complete', 'travel:zanzibar'],
+  },
+  'c11.bantu.langar': {
+    lines: [
+      { text: 'Bantu sits cross-legged in the row, plate held out for the dal.' },
+      { who: 'Bantu', text: 'Same dal for the teacher, the uncle and me. Best restaurant in Delhi, and nobody gets a bill.' },
+    ],
   },
   'c11.bantu.idle': {
     lines: [

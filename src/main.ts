@@ -2886,7 +2886,8 @@ function startNpcDialogue(v: Villager) {
     return;
   }
 
-  const entry = v.def.entry.find((e) => state.check(e.when));
+  const away = v.def.visiting?.[v.def.map];
+  const entry = away ? { node: away } : v.def.entry.find((e) => state.check(e.when));
   if (!entry) return;
   // Back to whoever offered a declined card: it may come back after this.
   forgiveDeclinesBy(v.def.id);

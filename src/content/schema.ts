@@ -45,6 +45,12 @@ export type NpcDef = {
   sprite?: 'llama' | 'llamaBrown' | 'dog';
   /** First matching entry wins. Last one should be unconditional. */
   entry: { when?: Cond; node: string }[];
+  /**
+   * What they say while away from home on a scheduled custom, by map: a lane
+   * walker seated in the langar at mealtime speaks from the row, not the lane.
+   * Live talk only; the thread and its walkers keep to `entry`.
+   */
+  visiting?: Record<string, string>;
 };
 
 /**
