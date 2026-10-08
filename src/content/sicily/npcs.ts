@@ -863,7 +863,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.ben.hello': {
     lines: [
       { text: 'At the fish stall, a man with a towel on one shoulder is congratulating a sardine. You know that towel.' },
-      { who: 'Mang Ben', text: 'Pare! The Yacana provisions down the coast, so I came where the fish sing. Turi and I are family already; he does not know it.' },
+      { who: 'Mang Ben', text: 'Anak! The Yacana provisions down the coast, so I came where the fish sing. Turi and I are family already; he does not know it.' },
     ],
     effects: ['set:c8.ben.met'],
     choices: [
@@ -875,7 +875,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.ben.adobo': {
     lines: [
       { text: 'He sets the sardine down and says nothing for a moment. His eyes shine. He blames onions; the stall has no onions.' },
-      { who: 'Mang Ben', text: 'Three oceans and you kept the order, pare. Now I have to hug you. Occupational.' },
+      { who: 'Mang Ben', text: 'Three oceans and you kept the order, anak. Now I have to hug you. Occupational.' },
     ],
   },
   'c8.ben.sour': {
@@ -885,20 +885,20 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.ben.fed': {
     lines: [
-      { who: 'Mang Ben', text: 'House rule one, pare: nobody stands in my doorway hungry. The rule travels.' },
+      { who: 'Mang Ben', text: 'House rule one, anak: nobody stands in my doorway hungry. The rule travels.' },
       { who: 'Mang Ben', text: 'And keep this: adobo goes garlic first, vinegar undisturbed. Sinigang, the sour soup, for any homesick face.' },
     ],
   },
   'c8.ben.anchovies': {
     lines: [
       { text: 'Ben holds a tin of Sicilian anchovies up to the light like contraband.' },
-      { who: 'Mang Ben', text: 'For research, pare. If the research ends up on the crew’s pizza night, that is between me and the tin.' },
+      { who: 'Mang Ben', text: 'For research, anak. If the research ends up on the crew’s pizza night, that is between me and the tin.' },
     ],
     effects: ['set:c8.ben.tin'],
   },
   'c8.ben.idle': {
     lines: [
-      { who: 'Mang Ben', text: 'The ship loads tomatoes tomorrow, and me with them. Find me before we sail, pare.' },
+      { who: 'Mang Ben', text: 'The ship loads tomatoes tomorrow, and me with them. Find me before we sail, anak.' },
     ],
   },
 
@@ -912,7 +912,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Eight photographs now, and you in front of each one, slightly more somebody.' },
+      { who: 'Chasca', text: 'Nine photographs now, and you in front of each one, slightly more somebody.' },
       { who: 'Chasca', text: 'The album ends where you end. No, that came out wrong. Where you arrive. Better.' },
     ],
   },

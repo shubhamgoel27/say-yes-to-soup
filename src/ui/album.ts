@@ -175,6 +175,8 @@ const CREDIT_CSS = `
   .cr-title { font-family: var(--display); font-size: clamp(30px, 5vw, 44px); color: #2f2418; margin: 0; letter-spacing: 0.01em; }
   .cr-sub { font-family: var(--hand); font-size: 22px; color: #8a6a3c; margin: 2px 0 0; }
   .cr-people { margin: auto 0; display: grid; gap: 9px; }
+  /* A full roll leaves no auto margin, so the note would sit flush under the last name. */
+  .cr-people + .end-note { padding-top: 14px; }
   .cr-stop { font-family: var(--display); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a6a3c; }
   .cr-stop .end-num { width: 22px; letter-spacing: 0; text-transform: none; }
   .cr-names { font-size: var(--fs-125, 13.5px); line-height: 1.45; color: #2f2418; margin: 1px 0 0 22px; text-wrap: pretty; }
@@ -184,6 +186,19 @@ const CREDIT_CSS = `
   .cr-print { margin: auto 0; display: grid; gap: 9px; }
   .cr-print p { margin: 0; font-size: var(--fs-115, 12.5px); line-height: 1.5; color: #57452f; }
   .cr-type { font-family: var(--display); font-size: 15px !important; color: #2f2418 !important; }
+  /* A phone on its side is about 390px tall, and the longest leaf (the second
+     roll of names) is taller than that. Centred in a grid, its foot, the dots
+     and the hint fell off the bottom with no way to reach them. Short screens
+     tighten the roll and let the cloth scroll, top first. */
+  @media (max-height: 520px) {
+    #album { display: flex; flex-direction: column; align-items: center; overflow-y: auto; padding: 8px 0; }
+    #album[hidden] { display: none; }
+    #album > .al-book { margin: auto 0; }
+    .end-book .al-title { margin-bottom: 4px; }
+    .end-leaf { padding: 16px 24px 14px; }
+    .cr-people { gap: 4px; }
+    .cr-names { line-height: 1.3; }
+  }
 `;
 
 export class AlbumUI {
@@ -477,6 +492,8 @@ export class AlbumUI {
       (_, i) => `<span class="al-dot${i === this.spread ? ' on' : ''}"></span>`,
     ).join('');
     const turnCls = turn === 'r' ? ' al-turn-r' : turn === 'l' ? ' al-turn-l' : ' al-settle';
+    // A turned page starts at its top on a short screen, where the cloth scrolls.
+    this.root.scrollTop = 0;
 
     if (this.mode === 'end') {
       const leaf = this.leaves[this.spread] ?? 'cover';
@@ -484,7 +501,7 @@ export class AlbumUI {
       const hint = this.onLastPage
         ? keysOrTaps('any key closes the book', 'tap to close the book')
         : leaf === 'trick'
-          ? keysOrTaps('any key for the people who walked with you', 'tap the middle for the people who walked with you')
+          ? keysOrTaps('any key for the credits', 'tap the middle for the credits')
           : keysOrTaps(
               '&#8592;&#8594; turn the page &nbsp;&middot;&nbsp; any key goes on',
               'tap an edge to turn the page &nbsp;&middot;&nbsp; tap the middle to go on',

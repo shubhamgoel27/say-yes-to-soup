@@ -265,7 +265,8 @@ export const OAXACA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { has: ['c9.vigil.done'], not: ['c9.bye'] }, node: 'c9.bye' },
-      { node: 'c9.chela.moleAgain' },
+      // At the colectivo corner there is no pot to offer, only the road.
+      { node: 'c9.chela.corner' },
     ],
   },
   {
@@ -730,6 +731,9 @@ export const OAXACA_NODES: NodeMap = {
     lines: [{ who: 'Abuela Chela', text: 'Bueno. Nothing to prove tonight. Only the circles, the smoke, and me at your elbow.' }],
     effects: ['set:replay.mode', 'set:c9.mole.start'],
   },
+  'c9.chela.corner': {
+    lines: [{ who: 'Abuela Chela', text: 'The tlayudas are for the road, mi vida, not for holding at a bus stop. The pot will still be here next year.' }],
+  },
   'c9.chela.idle': {
     lines: [{ who: 'Abuela Chela', text: 'Tortillas daily, memelas for whoever earns them, and one mole a year that eats the whole week.' }],
   },
@@ -1007,7 +1011,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Nine chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
+      { who: 'Chasca', text: 'Ten chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
     ],
   },
 
