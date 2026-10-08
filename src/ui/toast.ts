@@ -7,24 +7,32 @@
  * its whole life behind that fade: "a page fills", the one-time "press J"
  * hint, and the chapter-end lines were written and never once seen. Held,
  * nothing new starts, and a toast caught mid-show goes back to the front of
- * the line to be shown in full once the HUD returns.
+ * the line to be shown in full once the HUD returns: once, and only if it
+ * was cut early. A line already waiting or showing is never queued again.
  */
 const SHOW_MS = 2400;
 const FADE_MS = 450;
+/** Seen this long, a toast caught by the hush counts as read and is not re-shown. */
+const SEEN_MS = SHOW_MS * 0.6;
+
+type Queued = { text: string; requeued: boolean };
 
 export class Toasts {
-  private queue: string[] = [];
+  private queue: Queued[] = [];
   private busy = false;
   private held = false;
   /** Bumped by dismissAll so a fade already in flight cannot pump a stale line. */
   private gen = 0;
   /** The toast on screen and its pending dismiss timer, while showing. */
-  private current: { el: HTMLElement; text: string; timer: number } | null = null;
+  private current: { el: HTMLElement; item: Queued; timer: number; since: number } | null = null;
 
   constructor(private root: HTMLElement) {}
 
   show(text: string) {
-    this.queue.push(text);
+    // The same line already on screen or waiting says nothing new; a burst of
+    // flag changes once queued "the word Causa" four times over.
+    if (this.current?.item.text === text || this.queue.some((q) => q.text === text)) return;
+    this.queue.push({ text, requeued: false });
     this.pump();
   }
 
@@ -53,12 +61,15 @@ export class Toasts {
     if (held) {
       const cur = this.current;
       if (cur) {
-        // Caught mid-show: it goes back to the front, to be seen whole later.
+        // Caught mid-show: it goes back to the front, to be seen whole later,
+        // but only once, and only if the player has not already mostly read it.
+        // Fast play flickers the hush, and each flicker used to re-queue it.
         clearTimeout(cur.timer);
         cur.el.remove();
         this.current = null;
         this.busy = false;
-        this.queue.unshift(cur.text);
+        const seen = Date.now() - cur.since >= SEEN_MS;
+        if (!seen && !cur.item.requeued) this.queue.unshift({ text: cur.item.text, requeued: true });
       }
     } else {
       this.pump();
@@ -76,7 +87,7 @@ export class Toasts {
 
   /** Drop the queued lines a predicate picks (the one on screen stays). */
   drop(which: (text: string) => boolean) {
-    this.queue = this.queue.filter((t) => !which(t));
+    this.queue = this.queue.filter((q) => !which(q.text));
   }
 
   /** Drop everything queued and showing. A journal switch must not carry
@@ -117,10 +128,10 @@ export class Toasts {
 
   private pump() {
     if (this.busy || this.held) return;
-    const text = this.queue.shift();
-    if (!text) return;
+    const item = this.queue.shift();
+    if (!item) return;
     this.busy = true;
-    const el = this.makeEl(text);
+    const el = this.makeEl(item.text);
     const gen = this.gen;
     const timer = setTimeout(() => {
       if (this.current?.el !== el) return;
@@ -133,6 +144,6 @@ export class Toasts {
         this.pump();
       }, FADE_MS);
     }, SHOW_MS) as unknown as number;
-    this.current = { el, text, timer };
+    this.current = { el, item, timer, since: Date.now() };
   }
 }

@@ -72,7 +72,7 @@ const shown = (root: FakeRoot) => root.children.map((c) => c.textContent);
 describe('toasts: the hush holds the queue', () => {
   beforeEach(() => {
     mock.timers.reset();
-    mock.timers.enable({ apis: ['setTimeout'] });
+    mock.timers.enable({ apis: ['setTimeout', 'Date'] });
   });
 
   it('plays a series one at a time when nothing is quiet', () => {
@@ -159,5 +159,40 @@ describe('toasts: the hush holds the queue', () => {
     assert.equal(t.pending, 1);
     t.setHeld(false);
     assert.deepEqual(shown(root), ['✉ delivered']);
+  });
+
+  it('a toast the hush keeps cutting is re-shown once, not every time', () => {
+    const root = makeRoot();
+    const t = new Toasts(root as unknown as HTMLElement);
+    t.show('the word Causa');
+    mock.timers.tick(300);
+    t.setHeld(true); // a conversation starts
+    t.setHeld(false);
+    assert.deepEqual(shown(root), ['the word Causa'], 'cut early, it comes back once');
+    mock.timers.tick(300);
+    t.setHeld(true); // and another, in fast play
+    t.setHeld(false);
+    assert.deepEqual(shown(root), [], 'a second cut does not bring it back again');
+    assert.equal(t.pending, 0);
+  });
+
+  it('a toast mostly read before the hush is not shown again', () => {
+    const root = makeRoot();
+    const t = new Toasts(root as unknown as HTMLElement);
+    t.show('the word Causa');
+    mock.timers.tick(2000);
+    t.setHeld(true);
+    t.setHeld(false);
+    assert.deepEqual(shown(root), []);
+  });
+
+  it('the same line is never queued twice', () => {
+    const root = makeRoot();
+    const t = new Toasts(root as unknown as HTMLElement);
+    t.setHeld(true);
+    t.show('the word Causa');
+    t.show('the word Causa');
+    t.show('the word Causa');
+    assert.equal(t.pending, 1);
   });
 });
