@@ -390,7 +390,7 @@ export const NODES: NodeMap = {
   'aurelio.first.echo': {
     lines: [
       { who: 'Don Aurelio', text: 'Allillanmi! Ha. You said it like a sneeze.' },
-      { who: 'Don Aurelio', text: 'But you said it. Here, the stone is warm. There is room.' },
+      { who: 'Don Aurelio', text: 'But you said it. Here, the well is full and the soup is on. There is room.' },
     ],
     effects: ['set:met.aurelio', 'journal:words.allillanchu', 'journal:people.aurelio'],
   },
@@ -845,7 +845,7 @@ export const NODES: NodeMap = {
     lines: [{ who: 'Don Aurelio', text: 'Allillanchu. At last. I have watched you run errands past my well since you came up the valley.' }],
     choices: [
       { text: '"...Alli... llanchu?"', goto: 'aurelio.nani.echo' },
-      { text: 'Sit down on the warm stone', goto: 'aurelio.nani.sit' },
+      { text: 'Stand with him at the well', goto: 'aurelio.nani.sit' },
     ],
   },
   'aurelio.nani.echo': {
@@ -854,7 +854,7 @@ export const NODES: NodeMap = {
     next: 'aurelio.nani',
   },
   'aurelio.nani.sit': {
-    lines: [{ text: 'He shifts over without being asked. The stone is warm where he was.' }],
+    lines: [{ text: 'He moves his cane over without being asked. The well\'s lip is wet and cold, and there is room at it for two.' }],
     effects: ['set:met.aurelio', 'journal:people.aurelio'],
     next: 'aurelio.nani',
   },

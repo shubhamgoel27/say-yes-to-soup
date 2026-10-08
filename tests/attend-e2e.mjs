@@ -61,7 +61,7 @@ async function drive(flag, keys, step, limitMs = 90000) {
   }
 }
 
-const ONLY = process.env.ONLY ?? 'r1,r2';
+const ONLY = process.env.ONLY ?? 'r1,r2,r3';
 const want = (k) => ONLY.split(',').includes(k);
 
 const mashStep = async () => {
@@ -250,6 +250,77 @@ if (want('r2')) {
   const mashed = await drive(F, ['phase'], mashStep, 120000);
   check(Number.isFinite(mashed.ms), `sadya: Space alone gets the leaf served, Leela helping (${(mashed.ms / 1000).toFixed(1)}s)`);
   check(/served half/.test(mashed.last), 'sadya: and the ending says who served it');
+}
+
+// Patang (pass 6): Up held down the whole evening lost to care in half the
+// time. Now a kheench is a stroke, a cut does not clear the weather, and
+// tying on the next patang takes a moment, so the held hand is the slow one.
+if (want('r3')) {
+  const F = 'c11.kite.start';
+  await open(F, 7);
+  let lazyShot = false;
+  const lazy = await drive(F, ['phase', 'lost'], async (s) => {
+    if (s.phase === 'done' && !lazyShot) {
+      lazyShot = true;
+      await sleep(600);
+      await page.screenshot({ path: `${SHOTS}kite-held-done.png` });
+    }
+    if (s.phase === 'duel') await page.keyboard.press('ArrowUp');
+    else await page.keyboard.press('Space');
+  }, 150000);
+  await open(F, 7);
+  let honored = 0;
+  let lastUp = 0;
+  let flock = false;
+  let doneShot = false;
+  const careful = await drive(F, ['phase', 'wind', 'blessed'], async (s) => {
+    honored = s.blessed;
+    if (s.phase === 'done' && !doneShot) {
+      doneShot = true;
+      await sleep(600);
+      await page.screenshot({ path: `${SHOTS}kite-careful-done.png` });
+    }
+    if (s.phase !== 'duel') {
+      flock = false;
+      await page.keyboard.press('Space');
+      return sleep(250);
+    }
+    if (s.wind === 'birds') {
+      // Two presses into one flock: still one flock honored.
+      if (!flock) {
+        flock = true;
+        await page.keyboard.press('ArrowDown');
+        await page.keyboard.press('ArrowDown');
+      }
+      return;
+    }
+    flock = false;
+    if (s.wind === 'steady' && Date.now() - lastUp > 320) {
+      lastUp = Date.now();
+      await page.keyboard.press('ArrowUp');
+    }
+  }, 150000);
+  check(Number.isFinite(lazy.ms) && Number.isFinite(careful.ms), `patang: both flights finish (held Up ${(lazy.ms / 1000).toFixed(1)}s, careful ${(careful.ms / 1000).toFixed(1)}s)`);
+  check(lazy.ms >= careful.ms, 'patang: holding Up is no quicker than care');
+  check(/given to the sky/.test(lazy.last) && /No birds pulled, no patang lost/.test(careful.last), 'patang: Yusuf tells each flight the truth');
+  check(honored >= 2 && honored <= 6, `patang: flocks honored counts flocks (${honored}), not presses`);
+}
+
+// Ofrenda (pass 6): a mashed Space used to build the whole altar in a second.
+if (want('r3')) {
+  const F = 'c9.ofrenda.start';
+  await open(F, 10);
+  const mashed = await drive(F, ['phase'], mashStep);
+  await open(F, 10);
+  const careful = await drive(F, ['beat'], async (s) => {
+    if (s.beat?.left > 0) return;
+    await sleep(200);
+    await page.keyboard.press('Space');
+    await sleep(150);
+  });
+  check(Number.isFinite(mashed.ms) && Number.isFinite(careful.ms), `ofrenda: both altars finish (mash ${(mashed.ms / 1000).toFixed(1)}s, careful ${(careful.ms / 1000).toFixed(1)}s)`);
+  check(mashed.ms >= careful.ms, 'ofrenda: mashing is no quicker than a patient hand');
+  check(/Next year, slower/.test(mashed.last) && !/Next year, slower/.test(careful.last), 'ofrenda: Refugio notices the hurry');
 }
 
 check(errors.length === 0, `no page errors${errors.length ? ': ' + errors.join(' | ') : ''}`);

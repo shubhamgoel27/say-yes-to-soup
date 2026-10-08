@@ -397,7 +397,7 @@ export const OAXACA_NODES: NodeMap = {
   // ---------------- Doña Refugio, the tejatera ----------------
   'c9.refugio.first': {
     lines: [
-      { text: 'In the cool kitchen a woman lifts corn-and-cacao in a clay basin with her forearm until white foam rises.' },
+      { text: 'In the cool kitchen a woman turns to you with her forearm white to the elbow: tejate foam, beaten up by hand from corn and cacao.' },
       { who: 'Doña Refugio', text: 'Tejate. Sit. The foam does not wait for introductions.' },
       { who: 'Doña Refugio', text: 'You carry that book like something you have stopped noticing you hold. Come back when you have met my village.' },
     ],

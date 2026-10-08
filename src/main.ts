@@ -3193,6 +3193,10 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   map = dest;
   settleSteps.clear();
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
+  // Home is reached once your feet reach it, whoever you did or did not talk
+  // to there: the traveler at the gate asks the coming-up question only
+  // before this, and the going-down one after.
+  if (dest.id === 'village' && state.has('c10.arrived')) state.set('c10.home');
   // The vigil is a night. Its page says "tonight the camposanto is lit", and
   // walking through the marigold arch at noon once opened it in full sun:
   // the arch is where the evening comes down, whatever hour you left at.
