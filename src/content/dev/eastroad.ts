@@ -90,7 +90,10 @@ const { ground, objects } = paint();
 
 export const EAST_ROAD_MAP: MapData = {
   id: 'east-road',
-  name: 'The East Road',
+  // Shown on the place plate. The pass leaves the valley by its east gate
+  // and winds round and down to the Pacific; "west" in the story is the
+  // journey across the sea, so the plate names the road, not a compass point.
+  name: 'The Pass Road',
   spawn: [1, ROAD_Y],
   spawnFacing: 'right',
   legend: {

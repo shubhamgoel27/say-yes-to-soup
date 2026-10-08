@@ -327,7 +327,7 @@ export const TASKS: TaskDef[] = [
   },
   {
     when: { has: ['bundle.delivered'], not: ['challar.done'] },
-    text: 'People keep mentioning the chichería under the red flag. Step through the doorway of Rosa\'s house; someone inside has been holding a seat for forty years.',
+    text: 'People keep mentioning the chichería under the red flag. Step through the doorway of Rosa\'s house; someone inside has been holding a seat for fifty years.',
     who: 'teofilo',
   },
   {
@@ -361,7 +361,7 @@ export const TASKS: TaskDef[] = [
   },
   {
     when: { not: ['met.rosa'] },
-    text: 'Somebody near the red-flag house is already ladling soup, and has decided it is yours. Follow the steam.',
+    text: 'Somebody south of the well, by the house with the red flag, is already ladling soup and has decided it is yours. Follow the steam.',
     who: 'rosa',
   },
 ];
@@ -369,7 +369,7 @@ export const TASKS: TaskDef[] = [
 export const ERRANDS: ErrandDef[] = [
   { id: 'rosa-bundle', label: "Rosa's bundle, for Justina in the terraces" },
   { id: 'carmen-wichuna', label: "Carmen's wichuna, home from Justina's terraces" },
-  { id: 'nani-letter', label: "Nani's unsent letter, for the road west" },
+  { id: 'nani-letter', label: "Nani's unsent letter, to open at the gate" },
 ];
 
 export const ERRAND_BY_ID = new Map(ERRANDS.map((e) => [e.id, e]));

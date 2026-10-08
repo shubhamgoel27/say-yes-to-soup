@@ -286,13 +286,13 @@ export class TitleScreen {
       ? mail.body.map((p) => `<p>${p}</p>`).join('')
       : `
           <p>${dear}</p>
-          <p>I meant to finish this journal. The world kept being bigger than
-          the pages. So now the empty half is yours.</p>
+          <p>I meant to finish this journal. I started it in 1974, and the
+          world kept being bigger than the pages. So now the empty half is yours.</p>
           <p>Start where I started: <b>Ch&rsquo;aska Pampa</b>, the star plain.
           Say yes to soup. Ask about the bread. If someone corrects you, you
           are learning; thank them twice.</p>
           <p>Walk slowly. That is the whole trick.</p>`;
-    const sign = mail ? mail.from : 'Nani, 1974';
+    const sign = mail ? mail.from : 'Nani';
     this.letterEl.innerHTML = `
       <div class="letter-fold">
         <div class="letter-paper${mail?.typed ? ' typed' : ''}">

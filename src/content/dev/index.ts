@@ -77,7 +77,7 @@ export const CHAPTER: ChapterDef = {
       "The chomba mutters to itself in the corner, fermenting somebody's next Tuesday.",
       'A cuy crosses the floor unhurried, close along the wall.',
       'Someone pours; the first splash finds the packed earth. Nobody looks down. Everybody noticed.',
-      'The room laughs a beat before the joke lands. They have heard it for forty years. That is why.',
+      'The room laughs a beat before the joke lands. They have heard it for fifty years. That is why.',
     ],
     'east-road': [
       "Faustino's fire burns exactly as much as it should. The wind keeps trying to make it a debate.",
