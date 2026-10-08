@@ -1279,6 +1279,16 @@ export const NODES: NodeMap = {
       { text: 'A column cactus with no appointments. One pink flower, against all advice.' },
     ],
   },
+  'ex.tuna': {
+    lines: [
+      { text: 'Prickly pear, tuna on this coast: paddle on paddle, the fruit going red at the rims. Nobody picks it bare-handed twice.' },
+    ],
+  },
+  'ex.andenpirca': {
+    lines: [
+      { text: 'An old terrace wall, stone fitted to stone, holding up a shelf of nothing. Somebody farmed this slope once, one step at a time, all the way down.' },
+    ],
+  },
   'ex.shrub': {
     lines: [
       { text: 'A wind-bullied shrub that takes the climate as a challenge.' },
@@ -1764,6 +1774,8 @@ export const EXAMINES: Record<string, ExamineArm[]> = {
   ],
   ladera: [{ node: 'ex.ladera' }],
   cactus: [{ node: 'ex.cactus' }],
+  tuna: [{ node: 'ex.tuna' }],
+  andenpirca: [{ node: 'ex.andenpirca' }],
   shrub: [{ node: 'ex.shrub' }],
   // The overlook: the cliff carries the first sight of the sea, because the
   // sea itself is beyond facing range (the drop is in the way, as drops are).

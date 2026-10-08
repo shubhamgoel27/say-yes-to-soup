@@ -52,7 +52,10 @@ const CAP_LIP = 14;
  * Ground kinds the boundary-feathering pass must leave alone: water and its
  * banks autotile themselves, and void and scree are the outside of the world.
  */
-const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea']);
+const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea', 'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
+
+/** Ground kinds painted over the live sea: a hull's side, part steel, part water. */
+const OVER_SEA = new Set(['hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
 
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
@@ -895,24 +898,79 @@ export class Tileset {
 
     this.make('gate', 2, (g, _r, i) => gateway(g, i, false), 64, 176);
 
-    this.make('cactus', 3, (g, r) => {
-      const green = '#5f7d4a';
-      const x = 26 + r.int(12);
-      softShadow(g, x + 4, 90, 14, 4, 0.2);
-      // Main column.
-      rr(g, x, 24, 13, 68, 6.5, green);
-      vgrad(g, x, 24, 5, 68, 'rgba(230,255,210,0.22)', 'rgba(0,0,0,0)');
-      // Arm.
-      rr(g, x - 12, 40, 9, 22, 4.5, green);
-      rr(g, x - 12, 36, 20, 9, 4.5, green);
-      // Spines.
-      g.strokeStyle = 'rgba(30,45,25,0.4)';
-      g.lineWidth = 1.4;
-      for (let i = 0; i < 8; i++) {
-        const sy2 = 30 + r.int(56);
-        g.beginPath(); g.moveTo(x + 2 + r.int(9), sy2); g.lineTo(x + 2 + r.int(9), sy2 + 4); g.stroke();
+    // The western Andean slope's own cacti, not the Sonoran saguaro with its
+    // elbowed arms: a candelabra of ribbed Neoraimondia columns rising from
+    // one foot, a white-wooled Espostoa, and a low Haageocereus clump with
+    // gold spines. Grey-green, sun-bleached, ribs lit from the upper left.
+    const column = (g: CanvasRenderingContext2D, x: number, top: number, bot: number, w: number, c: string, r: Rng) => {
+      rr(g, x - w / 2, top, w, bot - top, w / 2, c);
+      // Ribs: alternate light and shade stripes down the column.
+      for (let k = 1; k < 4; k++) {
+        const rx = x - w / 2 + (w * k) / 4;
+        rect(g, rx - 0.6, top + w / 2, 1.2, bot - top - w / 2, k === 1 ? shade(c, 0.18) : shade(c, -0.2));
       }
-      if (r.chance(0.4)) dot(g, x + 6, 22, 3.4, '#e8a8bc');
+      vgrad(g, x - w / 2 + 1, top + 2, w * 0.3, bot - top - 4, 'rgba(240,255,215,0.22)', 'rgba(0,0,0,0)');
+      // Areoles: tiny pale spine cushions along the ribs.
+      for (let k = 0; k < (bot - top) / 7; k++) {
+        dot(g, x - w / 4 + (k % 2) * (w / 2), top + 5 + k * 7 + r.int(2), 0.9, 'rgba(250,240,210,0.75)');
+      }
+    };
+    this.make('cactus', 3, (g, r, i) => {
+      if (i === 0) {
+        // Neoraimondia: a dozen-armed candelabra from a short woody trunk.
+        const c = '#6e8a5e';
+        softShadow(g, 34, 90, 22, 5, 0.22);
+        rr(g, 27, 74, 12, 16, 4, '#7a6648');
+        const arms: [number, number, number][] = [[11, 38, 7], [25, 16, 8], [40, 8, 8], [54, 30, 7]];
+        for (const [x, top, w] of arms) {
+          // Each arm curves up out of the trunk before it goes straight.
+          g.strokeStyle = c;
+          g.lineWidth = w;
+          g.lineCap = 'round';
+          g.beginPath();
+          g.moveTo(33, 80);
+          g.quadraticCurveTo(x, 80, x, 64);
+          g.stroke();
+          column(g, x, top, 68, w, shade(c, (x - 34) * 0.004), r);
+        }
+        if (r.chance(0.6)) dot(g, 40, 8, 2.6, '#e8d8a8');
+      } else if (i === 1) {
+        // Espostoa: a column wrapped in white wool, the wool thickest on top.
+        const c = '#7f9a6c';
+        softShadow(g, 32, 90, 15, 4, 0.22);
+        column(g, 30, 18, 90, 14, c, r);
+        column(g, 44, 46, 90, 10, shade(c, -0.06), r);
+        g.globalAlpha = 0.55;
+        for (let k = 0; k < 40; k++) {
+          const onMain = k < 28;
+          const x = onMain ? 24 + r.int(13) : 40 + r.int(9);
+          const y = onMain ? 20 + r.int(66) : 48 + r.int(38);
+          dot(g, x, y, 1.4 + r.next() * 1.6, '#f4efe2');
+        }
+        g.globalAlpha = 0.9;
+        for (let k = 0; k < 7; k++) dot(g, 26 + r.int(9), 18 + r.int(8), 2.4 + r.next() * 1.4, '#f6f1e6');
+        g.globalAlpha = 1;
+      } else {
+        // Haageocereus: a low clump of short columns, gold-spined, at knee height.
+        const c = '#6c8458';
+        softShadow(g, 32, 90, 20, 5, 0.22);
+        for (const [x, top, w] of [[20, 56, 9], [30, 46, 10], [40, 52, 10], [48, 62, 8]] as [number, number, number][]) {
+          column(g, x, top, 90, w, shade(c, (x - 32) * 0.005), r);
+          g.strokeStyle = 'rgba(214,170,80,0.7)';
+          g.lineWidth = 0.9;
+          for (let k = 0; k < 5; k++) {
+            const sy = top + 4 + k * 6;
+            g.beginPath();
+            g.moveTo(x - w / 2, sy);
+            g.lineTo(x - w / 2 - 2.5, sy - 1.5);
+            g.moveTo(x + w / 2, sy + 2);
+            g.lineTo(x + w / 2 + 2.5, sy + 0.5);
+            g.stroke();
+          }
+        }
+      }
+      // The one pink flower the examine promises, against all advice.
+      if (i !== 0 && r.chance(0.5)) dot(g, 30, i === 1 ? 17 : 45, 3, '#e8a8bc');
     }, 64, 96);
 
     this.make('apacheta', 1, (g) => {
@@ -1940,6 +1998,13 @@ export class Tileset {
     if (kind === 'sea') {
       const f = this.seaFrames[Math.floor(time * 1.4) % 3];
       if (f) g.drawImage(f, sx, sy);
+      return;
+    }
+    if (OVER_SEA.has(kind)) {
+      // A ship's side: the live sea first, the plating painted over it.
+      const f = this.seaFrames[Math.floor(time * 1.4) % 3];
+      if (f) g.drawImage(f, sx, sy);
+      g.drawImage(this.variant(kind, cx, cy), sx, sy);
       return;
     }
     if (kind === 'water') {

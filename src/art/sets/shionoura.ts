@@ -1359,6 +1359,63 @@ export const ART: ChapterArt = {
       rr(g, 14, 37, 7, 10, 1, 'rgba(220,235,240,0.75)'); // one glass, waiting
     });
 
+    // ---------------------------------------------- the minshuku's own room
+    // A house, not a harbour indoors: the tokonoma with its scroll and one
+    // stem of summer, and the stepped tansu the futons live in by day.
+
+    make('tokonoma', 1, (g) => {
+      softShadow(g, 32, 90, 24, 5, 0.18);
+      // The alcove: a raised dais of polished wood under a recess.
+      rr(g, 6, 18, 52, 70, 2, shade(PLASTER, -0.1));
+      rect(g, 6, 18, 52, 6, WOOD);
+      rect(g, 6, 18, 4, 70, shade(WOOD, 0.08)); // the tokobashira post
+      rr(g, 6, 78, 52, 10, 2, WOODLIGHT);
+      vgrad(g, 6, 78, 52, 3, 'rgba(255,240,210,0.3)', 'rgba(0,0,0,0)');
+      // The hanging scroll: a wave and a moon, Tanabata's summer.
+      rect(g, 24, 26, 18, 44, '#ece4cf');
+      rect(g, 22, 25, 22, 2.4, '#5a4632');
+      rect(g, 22, 69, 22, 2.4, '#5a4632');
+      dot(g, 37, 34, 3.6, '#c9a35f');
+      g.strokeStyle = INDIGO;
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(26, 56);
+      g.quadraticCurveTo(30, 50, 33, 55);
+      g.quadraticCurveTo(36, 60, 40, 53);
+      g.stroke();
+      // One stem in a low vase, as the season asks.
+      oval(g, 48, 76, 5, 2.6, '#3a4656');
+      rr(g, 45, 68, 6, 8, 2, '#4a5868');
+      g.strokeStyle = '#4d7440';
+      g.lineWidth = 1.4;
+      g.beginPath();
+      g.moveTo(48, 68);
+      g.quadraticCurveTo(46, 58, 50, 50);
+      g.stroke();
+      dot(g, 50, 49, 2.6, '#e8a8bc');
+    }, 64, 96);
+
+    make('tansu', 1, (g) => {
+      softShadow(g, 32, 90, 26, 5, 0.2);
+      // A step tansu: drawers climbing like a staircase, dark iron pulls.
+      const c = '#7a5232';
+      rr(g, 6, 52, 52, 36, 2, c);
+      rr(g, 6, 34, 34, 20, 2, shade(c, 0.04));
+      rr(g, 6, 18, 18, 18, 2, shade(c, 0.08));
+      g.strokeStyle = 'rgba(40,24,12,0.5)';
+      g.lineWidth = 1.2;
+      for (const [x, y, w] of [[6, 64, 52], [6, 76, 52], [6, 44, 34], [6, 27, 18]] as const) {
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.stroke();
+      }
+      for (const [x, y] of [[20, 58], [44, 58], [20, 70], [44, 70], [20, 82], [44, 82], [23, 40], [15, 26]] as const) {
+        rect(g, x - 3, y - 1, 6, 2.4, '#2e2a26');
+      }
+      vgrad(g, 6, 18, 4, 70, 'rgba(255,236,200,0.18)', 'rgba(0,0,0,0)');
+      // A folded yukata waiting on the bottom step.
+      rr(g, 42, 46, 14, 6, 2, '#e6ecf2');
+      rect(g, 42, 48, 14, 1.4, INDIGO);
+    }, 64, 96);
+
     make('machiya', 4, (g, r) => paintMachiya(g, r, false), 352, 256);
     make('ferryoffice', 1, (g, r) => paintMachiya(g, r, true), 352, 256);
   },
@@ -1368,6 +1425,7 @@ export const ART: ChapterArt = {
     // (zabuton is floor decor, not a tall prop; it lives in noInk below)
     'chochin', 'postbox', 'yatai', 'keitruck', 'ebisudo',
     'jizo', 'ema', 'jihanki', 'himono', 'monohoshi', 'gyokyo', 'furin',
+    'tokonoma', 'tansu',
   ],
   buildings: ['machiya', 'ferryoffice'],
   windows: {

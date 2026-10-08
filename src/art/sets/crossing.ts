@@ -20,6 +20,113 @@ const NAVY = '#2c3e57';
 function paint(make: MakeTile) {
   // ------------------------------------------------------------ grounds
 
+  // ------------------------------------------------------------ the hull
+  // The ship's own side, so the deck is a ship and not a slab on the water:
+  // black-navy plating under the rail, a red boot-top at the waterline, and
+  // the white the sea makes where it meets steel. The stern shows its whole
+  // face to the camera; the sides show the flare of plating below the rail.
+  const HULL = '#26303d';
+  const BOOT = '#a3402f';
+  const foamLine = (g: CanvasRenderingContext2D, r: { next(): number }, vertical: boolean, at: number) => {
+    // A wavering white seam with a few loose flecks beyond it. Its phase is
+    // fixed per position so two neighbouring cells agree where it runs.
+    g.fillStyle = 'rgba(240,246,246,0.85)';
+    for (let k = 0; k < S; k += 4) {
+      const w = 3 + Math.sin(k * 0.4) * 1.4;
+      if (vertical) g.fillRect(at - w / 2, k, w, 4);
+      else g.fillRect(k, at - w / 2, 4, w);
+    }
+    for (let k = 0; k < 5; k++) {
+      const u = r.next() * S;
+      const v = at + (r.next() - 0.2) * 8;
+      dot(g, vertical ? v : u, vertical ? u : v, 1.1 + r.next(), 'rgba(240,246,246,0.6)');
+    }
+  };
+  /** The sea part of a hull cell is left clear: the tileset lays the live sea under it. */
+
+  // The stern: the transom seen square on, weld seams, the boot-top, the wake.
+  make('hullstern', 3, (g, r) => {
+    vgrad(g, 0, 0, S, 46, shade(HULL, 0.1), shade(HULL, -0.12));
+    rect(g, 0, 0, S, 3, '#e9e7dd'); // the rubbing strake under the rail
+    rect(g, 0, 3, S, 2, 'rgba(0,0,0,0.3)');
+    rect(g, 0, 46, S, 8, BOOT);
+    rect(g, 0, 46, S, 1.4, shade(BOOT, 0.2));
+    for (const x of [16, 48]) rect(g, x, 6, 1.2, 40, 'rgba(255,255,255,0.06)');
+    if (r.next() < 0.4) oval(g, 12 + r.next() * 40, 30, 5, 3, 'rgba(138,84,48,0.35)'); // a rust weep
+    vgrad(g, 0, 54, S, 10, 'rgba(30,50,60,0.4)', 'rgba(30,50,60,0)');
+    foamLine(g, r, false, 55);
+  });
+
+  // The port side (deck to the east): plating darkest at the waterline.
+  make('hullport', 2, (g, r) => {
+    const grad = g.createLinearGradient(14, 0, S, 0);
+    grad.addColorStop(0, shade(HULL, -0.16));
+    grad.addColorStop(1, shade(HULL, 0.12));
+    g.fillStyle = grad;
+    g.fillRect(14, 0, S - 14, S);
+    rect(g, S - 4, 0, 4, S, '#e9e7dd');
+    rect(g, 14, 0, 7, S, BOOT);
+    rect(g, 0, 0, 14, S, 'rgba(30,50,60,0.22)'); // the hull's shade on the water
+    foamLine(g, r, true, 13);
+  });
+
+  // The bow's flare where the deck steps in: plating fills the notch on a
+  // diagonal, foam running down the cut, mirrored for the starboard bow.
+  const bowNotch = (g: CanvasRenderingContext2D, r: { next(): number }, port: boolean) => {
+    g.save();
+    if (!port) {
+      g.translate(S, 0);
+      g.scale(-1, 1);
+    }
+    g.fillStyle = shade(HULL, -0.04);
+    g.beginPath();
+    g.moveTo(S, 0);
+    g.lineTo(S, S);
+    g.lineTo(0, S);
+    g.closePath();
+    g.fill();
+    // Boot-top and rubbing strake along the same diagonal, inset.
+    g.strokeStyle = BOOT;
+    g.lineWidth = 7;
+    g.beginPath();
+    g.moveTo(S + 3, -3 + 14);
+    g.lineTo(14 - 3, S + 3);
+    g.stroke();
+    g.strokeStyle = 'rgba(240,246,246,0.85)';
+    g.lineWidth = 3.4;
+    g.lineCap = 'round';
+    g.beginPath();
+    for (let k = 0; k <= 16; k++) {
+      const t = k / 16;
+      const x = S - t * S;
+      const y = t * S;
+      const w = Math.sin(k * 1.3) * 1.4;
+      if (k === 0) g.moveTo(x + 4 + w, y - 4 + w);
+      else g.lineTo(x + 4 + w, y - 4 + w);
+    }
+    g.stroke();
+    for (let k = 0; k < 4; k++) {
+      const t = r.next();
+      dot(g, S - t * S - 2, t * S - 8, 1.2, 'rgba(240,246,246,0.6)');
+    }
+    g.restore();
+  };
+  make('hullbowport', 1, (g, r) => bowNotch(g, r, true));
+  make('hullbowstbd', 1, (g, r) => bowNotch(g, r, false));
+
+  // The starboard side (deck to the west): the port side, mirrored.
+  make('hullstbd', 2, (g, r) => {
+    const grad = g.createLinearGradient(0, 0, S - 14, 0);
+    grad.addColorStop(0, shade(HULL, 0.12));
+    grad.addColorStop(1, shade(HULL, -0.16));
+    g.fillStyle = grad;
+    g.fillRect(0, 0, S - 14, S);
+    rect(g, 0, 0, 4, S, '#e9e7dd');
+    rect(g, S - 21, 0, 7, S, BOOT);
+    rect(g, S - 14, 0, 14, S, 'rgba(30,50,60,0.22)');
+    foamLine(g, r, true, S - 13);
+  });
+
   make('deck', 5, (g, r) => {
     rect(g, 0, 0, S, S, DECK);
     // Nonskid grit, sparse.

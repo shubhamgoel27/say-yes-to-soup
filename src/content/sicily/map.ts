@@ -97,9 +97,14 @@ const LANES: [number, number, number, number, number][] = [
 /** The lungomare: two rows wide the whole way, but never on one line. */
 const lungoY = (x: number) => 19.6 + 0.55 * Math.sin((x + 3) / 6.4);
 
+/** The mole's south face, seen across the water below its south lip. */
+const underMole = (x: number, y: number) => onMole(x, y - 1) && !onMole(x, y) && isSea(x, y);
+
 function groundAt(x: number, y: number): string {
+  if (underMole(x, y)) return 'O';
   if (isSea(x, y)) return 'S';
-  if (onMole(x, y)) return 'b';
+  // The mole: dressed blocks, a coping on each lip, bollards on the north one.
+  if (onMole(x, y)) return !onMole(x, y - 1) ? 'W' : !onMole(x, y + 1) ? 'E' : 'B';
   // The tongue of lava that came down ahead of the town and never left: it
   // shoulders up through the lungomare, and the paving simply stops at it.
   if (inEll(x, y, 19, 21.4, 3.0, 2.8)) return 'h';
@@ -366,6 +371,10 @@ export const SICILY_MAP: MapData = {
   triggers: [{ at: [29, 13], type: 'door', to: 'circolo', spawn: [6, 8], facing: 'up' }],
   legend: {
     b: { t: 'basalto' },
+    B: { t: 'molo' },
+    W: { t: 'molonord' },
+    E: { t: 'molosud' },
+    O: { t: 'moloface', solid: true },
     h: { t: 'lavashore' },
     d: { t: 'dirt' },
     g: { t: 'grass' },

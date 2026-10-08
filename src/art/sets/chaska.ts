@@ -42,9 +42,14 @@ function pircaStones(g: CanvasRenderingContext2D, r: Rng) {
 }
 
 export const ART: ChapterArt = {
-  grounded: ['ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
-  noInk: ['chuno', 'grano', 'gallina', 'lagarto'],
+  grounded: ['tuna', 'ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
+  noInk: ['chuno', 'grano', 'gallina', 'lagarto', 'andenpirca', 'rugPaja'],
   pathy: ['plazaWorn'],
+  // The chichería is a smoked brewing room with straw on the floor; Carmen's
+  // house keeps the lime-washed shell and the frazadas she wove herself.
+  skins: {
+    chicheria: { wallInt: 'wallChicha', rug: 'rugPaja', shelf: 'shelfChicha' },
+  },
   // The east gateway is one drawing across two cells: west half, east half,
   // shut or swung open.
   pins: {
@@ -54,6 +59,9 @@ export const ART: ChapterArt = {
       { kind: 'gateOpen', at: [41, 16], v: 0 },
       { kind: 'gateOpen', at: [42, 16], v: 1 },
     ],
+    // The lone cactus at the lip, the one the sea is seen past, is the tall
+    // candelabra, never the knee-high clump.
+    'la-bajada': [{ kind: 'cactus', at: [9, 18], v: 0 }],
   },
 
   paint(make) {
@@ -61,14 +69,16 @@ export const ART: ChapterArt = {
 
     // The ladera: the raw slope La Bajada's switchbacks are cut into. Loose
     // dry rubble on a face too steep to stand on, so the road is the road.
-    make('ladera', 5, (g, r) => {
-      // Cool grey rubble, so the warm road across it reads as a road.
-      rect(g, 0, 0, S, S, mute(shade(PAL.stone, -0.02), 0.06));
+    // Sun-baked and warm, the pale tan-rose of the western slope going down to
+    // the desert coast, a shade lighter than the road so the road still reads.
+    const LADERA = '#b49c7e';
+    const laderaFace = (g: CanvasRenderingContext2D, r: Rng) => {
+      rect(g, 0, 0, S, S, LADERA);
       // Short downhill streaks where the last rain sorted the stones.
       for (let i = 0; i < 3; i++) {
         const gx = 6 + r.int(S - 12);
         const gy = r.int(S - 16);
-        g.strokeStyle = i % 2 ? 'rgba(255,246,225,0.10)' : 'rgba(48,40,32,0.14)';
+        g.strokeStyle = i % 2 ? 'rgba(255,240,215,0.14)' : 'rgba(92,60,38,0.14)';
         g.lineWidth = 2.5 + r.int(3);
         g.lineCap = 'round';
         g.beginPath();
@@ -76,16 +86,71 @@ export const ART: ChapterArt = {
         g.quadraticCurveTo(gx + 3 - r.int(6), gy + 9, gx + 5 - r.int(10), gy + 16);
         g.stroke();
       }
-      // Rubble caught on the way down, each stone lit from above.
+      // Rubble caught on the way down, rust and bone, each stone lit from above.
       for (let i = 0; i < 9; i++) {
         const sx = r.int(S);
         const sy = r.int(S);
-        const c = shade(PAL.stoneDark, 0.06 + (r.next() - 0.5) * 0.3);
+        const c = shade(r.chance(0.5) ? '#8f6a50' : '#9c8c78', (r.next() - 0.5) * 0.3);
         blob(g, sx, sy, 2.5 + r.int(4), c, r, 0.24);
-        dot(g, sx - 1, sy - 2, 1.3, shade(c, 0.22));
+        dot(g, sx - 1, sy - 2, 1.3, shade(c, 0.24));
       }
-      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 8, 3.5, 'rgba(48,40,32,0.10)');
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 8, 3.5, 'rgba(92,60,38,0.10)');
+    };
+    make('ladera', 5, (g, r) => laderaFace(g, r));
+
+    // An old andén: a dry-stone terrace riser across the slope, the shelf
+    // above it lit, a band of shade below. Rows of them step the hillside
+    // down toward the sea, so the map reads as a descent and not a field.
+    make('andenpirca', 3, (g, r) => {
+      // The shelf's lip, catching the sun.
+      rect(g, 0, 18, S, 5, 'rgba(255,240,214,0.3)');
+      // The face: three courses of fitted stones, darker toward the foot.
+      vgrad(g, 0, 22, S, 32, '#958069', '#6a5442');
+      const courses: [number, string, number][] = [[28, '#a8927a', 5.5], [38, '#97806a', 6], [48, '#85705b', 6.5]];
+      for (const [cy, c, rad] of courses) {
+        for (let x = -6 + r.int(8); x < S + 6; x += rad * 2 + r.int(4)) {
+          blob(g, x + rad, cy, rad, shade(c, (r.next() - 0.5) * 0.18), r, 0.12);
+          dot(g, x + rad - 1.5, cy - rad * 0.5, 1.2, 'rgba(255,240,214,0.35)');
+        }
+      }
+      // Cast shade where the next shelf down begins.
+      vgrad(g, 0, 54, S, 10, 'rgba(60,38,24,0.34)', 'rgba(60,38,24,0)');
     });
+
+    // Tuna: prickly pear, paddle on paddle, the fruit reddening at the rims.
+    make('tuna', 2, (g, r, i) => {
+      const c = '#6f8f55';
+      softShadow(g, 32, 90, 20, 5, 0.22);
+      const pads: [number, number, number, number, number][] = i === 0
+        ? [[32, 76, 11, 15, 0], [22, 58, 9, 12, -0.4], [42, 56, 9, 13, 0.35], [30, 40, 8, 11, -0.1], [48, 38, 7, 10, 0.5]]
+        : [[28, 78, 12, 14, 0.1], [40, 62, 9, 12, 0.4], [20, 62, 8, 11, -0.5], [44, 44, 8, 10, 0.2]];
+      for (const [k, [x, y, rx, ry, rot]] of pads.entries()) {
+        const pc = shade(c, (k % 2 ? -0.06 : 0.04));
+        g.save();
+        g.translate(x, y);
+        g.rotate(rot);
+        g.fillStyle = shade(pc, -0.16);
+        g.beginPath();
+        g.ellipse(0.8, 1, rx, ry, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = pc;
+        g.beginPath();
+        g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(235,255,210,0.18)';
+        g.beginPath();
+        g.ellipse(-rx * 0.35, -ry * 0.3, rx * 0.4, ry * 0.5, 0, 0, Math.PI * 2);
+        g.fill();
+        for (let a = 0; a < 6; a++) dot(g, -rx * 0.5 + r.next() * rx, -ry * 0.6 + r.next() * ry * 1.2, 0.9, 'rgba(250,236,200,0.8)');
+        g.restore();
+      }
+      // Fruit on the top rims.
+      const fruit = i === 0 ? [[27, 30], [33, 29], [52, 29]] : [[40, 35], [47, 35]];
+      for (const [x, y] of fruit) {
+        oval(g, x!, y!, 3.2, 4, '#b8443a');
+        dot(g, x! - 1, y! - 1.5, 1, '#e8907a');
+      }
+    }, 64, 96);
 
     // ------------------------------------------------------- village flats
 
@@ -1119,6 +1184,109 @@ export const ART: ChapterArt = {
       rr(g, 6, 46, 18, 8, 2, shade(pal[2] ?? '#e8e0cc', -0.06));
       rr(g, 7, 43, 16, 5, 2, shade(pal[0] ?? '#a8232b', 0.06));
       void r;
+    });
+
+    // ------------------------------------------------- the chichería's room
+    // Carmen's house keeps the shell's lime wash and her own frazadas; the
+    // chichería is a brewing room, and a brewing room is smoked.
+
+    // Adobe smoked dark by forty years of chomba fires: soot thick under the
+    // beams, the lime wash only a memory at knee height, a feast-day poster
+    // and the red rag of a past flag tacked up as a souvenir.
+    make('wallChicha', 10, (g, r, i) => {
+      const base = '#8f6c48';
+      vgrad(g, 0, 0, S, S, shade(base, -0.22), shade(base, 0.02));
+      vgrad(g, 0, 0, S, 30, 'rgba(30,20,12,0.5)', 'rgba(30,20,12,0)');
+      // What is left of the wash, low, scuffed by benches.
+      vgrad(g, 0, 44, S, 20, 'rgba(232,220,196,0.06)', 'rgba(232,220,196,0.3)');
+      rect(g, 0, 44, S, 1.4, 'rgba(40,26,14,0.25)');
+      for (let k = 0; k < 4; k++) {
+        oval(g, r.int(S), 30 + r.int(30), 5 + r.int(6), 2.4, `rgba(40,26,14,${0.06 + r.next() * 0.06})`);
+      }
+      const deco = i < 4 ? i : -1;
+      if (deco === 0) {
+        // A faded feast-day poster, the band's name long gone to smoke.
+        rr(g, 18, 10, 28, 30, 1, '#d9c9a0');
+        rect(g, 21, 13, 22, 8, '#b5432f');
+        rect(g, 21, 24, 22, 2, 'rgba(60,40,24,0.5)');
+        rect(g, 21, 29, 16, 2, 'rgba(60,40,24,0.5)');
+        rect(g, 21, 34, 19, 2, 'rgba(60,40,24,0.5)');
+      } else if (deco === 1) {
+        // An old red flag, retired from the pole and kept inside.
+        g.strokeStyle = '#6e5138';
+        g.lineWidth = 2;
+        g.beginPath(); g.moveTo(22, 12); g.lineTo(44, 12); g.stroke();
+        g.fillStyle = '#a8432f';
+        g.beginPath();
+        g.moveTo(24, 13);
+        g.lineTo(42, 13);
+        g.quadraticCurveTo(40, 26, 43, 36);
+        g.lineTo(25, 33);
+        g.quadraticCurveTo(27, 24, 24, 13);
+        g.closePath();
+        g.fill();
+      } else if (deco === 2) {
+        // A gourd ladle and a dipper on nails.
+        dot(g, 26, 14, 1.4, '#c9c4bb');
+        oval(g, 26, 28, 7, 8, '#b08a52');
+        oval(g, 26, 27, 5, 5.5, '#6e4a2c');
+        rect(g, 25, 14, 2, 8, '#8a6238');
+        dot(g, 42, 14, 1.4, '#c9c4bb');
+        rr(g, 39, 16, 6, 18, 3, '#7a4e2e');
+      }
+    });
+
+    // Ichu straw strewn on the earth floor against the spills, as every
+    // chichería does it: loose, golden, kicked into drifts by the benches.
+    make('rugPaja', 3, (g, r) => {
+      g.lineCap = 'round';
+      for (let k = 0; k < 46; k++) {
+        const x = r.next() * S;
+        const y = r.next() * S;
+        const a = (r.next() - 0.5) * 1.4;
+        const len = 5 + r.next() * 7;
+        g.strokeStyle = k % 3 ? 'rgba(214,180,96,0.85)' : 'rgba(176,140,70,0.85)';
+        g.lineWidth = 1.2 + r.next() * 0.6;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+        g.stroke();
+      }
+    });
+
+    // The chichería's shelf: keros and the big caporal glasses, a row of
+    // them waiting upside down, one full and frothing because it always is.
+    make('shelfChicha', 3, (g, r) => {
+      const base = '#5a3f2a';
+      vgrad(g, 0, 0, S, S, shade(base, 0.02), shade(base, -0.12));
+      vgrad(g, 0, 0, S, 12, 'rgba(20,12,6,0.45)', 'rgba(0,0,0,0)');
+      rr(g, 4, 24, S - 8, 5, 2, '#7a5636');
+      rr(g, 4, 48, S - 8, 5, 2, '#7a5636');
+      // Top: three wooden keros, flared, with a painted band.
+      for (let k = 0; k < 3; k++) {
+        const x = 12 + k * 19 + r.int(3);
+        g.fillStyle = '#8a5a34';
+        g.beginPath();
+        g.moveTo(x - 6, 10);
+        g.lineTo(x + 6, 10);
+        g.lineTo(x + 4, 24);
+        g.lineTo(x - 4, 24);
+        g.closePath();
+        g.fill();
+        rect(g, x - 5.4, 14, 10.8, 2.4, k % 2 ? '#c8a55b' : '#c1512f');
+        oval(g, x, 10, 6, 1.8, '#3e2816');
+      }
+      // Below: tall glasses upside down, and the one full of chicha.
+      for (let k = 0; k < 4; k++) {
+        const x = 10 + k * 14;
+        const full = k === 1 + r.int(2);
+        rr(g, x - 4.5, 31, 9, 17, 2, 'rgba(225,235,235,0.5)');
+        if (full) {
+          rr(g, x - 3.6, 35, 7.2, 12.5, 1.5, '#d9a441');
+          oval(g, x, 35, 3.8, 1.8, '#f2e6c8');
+        }
+        rect(g, x - 3, 33, 1.4, 12, 'rgba(255,255,255,0.4)');
+      }
     });
   },
 };
