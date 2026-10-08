@@ -861,7 +861,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.rios.yes': {
     lines: [
-      { who: 'Capitana Ríos', text: 'So. Petro says your hands are clean, Marisol calls you casero, and a wave gave you back to Félix.' },
+      { who: 'Capitana Ríos', text: 'So. Petro says your hands are clean, Marisol calls you casero, and a wave gave you back to Félix. Still want across?' },
     ],
     choices: [
       { text: '"Yes. When do we sail?"', goto: 'mar.rios.accept' },
@@ -937,7 +937,7 @@ export const CALETA_NODES: NodeMap = {
   'mar.faustino.news': {
     lines: [
       { who: 'Faustino', text: 'News from up top. Rosa invented a soup she says is for winter. It is for missing you.' },
-      { who: 'Faustino', text: 'And the dog sleeps by the well now, facing the west road. Nobody has the heart to tell him.' },
+      { who: 'Faustino', text: 'And the dog sleeps by the well now, facing the pass road. Nobody has the heart to tell him.' },
     ],
     effects: ['set:c2.faus.news'],
     next: 'mar.faustino.quiz',
@@ -970,7 +970,7 @@ export const CALETA_NODES: NodeMap = {
   // ---------------- the tidepool and the mail ----------------
   'mar.tidepool': {
     lines: [
-      { text: 'A tidepool: a puffer fish puffed forever, a four-armed sea star, a crab claw like a comma.' },
+      { text: 'You crouch at the wet sand. The last wave has left a shallow puddle, and in it a small museum: a puffer fish puffed forever, a four-armed sea star, a crab claw like a comma.' },
       { text: 'Somewhere up the mountain, a bridge magnate is owed something weird.' },
     ],
     choices: [

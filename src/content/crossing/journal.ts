@@ -250,7 +250,7 @@ export const CROSSING_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c3.arrived'], not: ['c3.complete'] },
-    text: 'Somewhere under the house, garlic is frying; the galley is the ship’s front door. After that, walk the rail all the way round. Two dozen people live on this deck, and every one of them has a watch to keep.',
+    text: 'Somewhere under the deckhouse, garlic is frying; the galley is the ship’s front door. After that, walk the rail all the way round. Two dozen people live on this deck, and every one of them has a watch to keep.',
     who: ['mangben', 'joseph', 'hanaC3', 'olena', 'bosun', 'riosC3'],
   },
 ];
