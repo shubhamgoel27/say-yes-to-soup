@@ -4,6 +4,7 @@ import { KERALA_EVENTS, KERALA_EXAMINES, KERALA_NODES, KERALA_NPCS } from './npc
 import { KERALA_JOURNAL, KERALA_TASKS } from './journal';
 import { KERALA_MAP, MARIAMMA_VEEDU_MAP } from './map';
 import { RECALL } from './recall';
+import { BOAT_DRESSING } from './staging';
 import { ChayaPanel, RowPanel, SadyaPanel } from '../../ui/games/kerala';
 import { handWords } from '../../ui/games/scene';
 
@@ -161,6 +162,8 @@ export const CHAPTER: ChapterDef = {
   },
   arrival: { map: 'kerala', node: 'c6.arrive', flag: 'c6.arrived' },
   dressings: [
+    // The Kochi boat waits off the jetty for the goodbye (./staging.ts).
+    BOAT_DRESSING,
     {
       // Joseph's umbrella takes its post by the door, a guest of honor
       // standing with the household three, waiting for the rains' return.

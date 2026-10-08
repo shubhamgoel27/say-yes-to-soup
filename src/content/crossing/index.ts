@@ -4,6 +4,7 @@ import { CROSSING_EVENTS, CROSSING_EXAMINES, CROSSING_LETTERS, CROSSING_NODES, C
 import { CROSSING_JOURNAL, CROSSING_TASKS } from './journal';
 import { GALLEY_MAP, SHIP_MAP } from './map';
 import { RECALL } from './recall';
+import { COURT_DRESSING, STAGING } from './staging';
 import { GalleyPanel, StarPanel } from '../../ui/games/crossing';
 import { handWords } from '../../ui/games/scene';
 
@@ -14,7 +15,8 @@ export const CHAPTER: ChapterDef = {
   npcs: CROSSING_NPCS,
   nodes: CROSSING_NODES,
   examines: CROSSING_EXAMINES,
-  events: CROSSING_EVENTS,
+  // The scenes a dark brings in (the court at noon, the karaoke night).
+  events: [...CROSSING_EVENTS, ...(STAGING.cues ?? [])],
   journal: CROSSING_JOURNAL,
   tasks: CROSSING_TASKS,
   errands: [{ id: 'ben-baon', label: "Joseph's night lunch, warm under its cloth" }],
@@ -84,6 +86,7 @@ export const CHAPTER: ChapterDef = {
     ],
   },
   arrival: { map: 'ship', node: 'c3.arrive', flag: 'c3.arrived' },
+  dressings: [COURT_DRESSING],
   completion: {
     flag: 'c3.complete',
     toasts: ['✦ a plate kept warm at the bow', 'Shionoura rises with the sun'],

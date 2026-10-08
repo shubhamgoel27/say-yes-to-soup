@@ -482,6 +482,35 @@ export function drawProp(
       rr(g, jx - 5, jy - 8, 2.4, 13, 1.2, 'rgba(255,255,255,0.45)'); // the glint
       break;
     }
+    case 'trident': {
+      // King Neptune's, at the line crossing: three boat hooks taped to a pole.
+      const top = 9;
+      line(g, [hx, hy + 22, hx, top], '#8a6a48', 2.8);
+      for (const ty of [hy - 6, hy - 22]) rr(g, hx - 2.4, ty, 4.8, 3.4, 1, '#efe9dc');
+      line(g, [hx - 7, top, hx + 7, top], '#9aa0a3', 2.2);
+      for (const px of [hx - 7, hx, hx + 7]) line(g, [px, top, px, top - 8], '#9aa0a3', 2);
+      break;
+    }
+    case 'umbrella': {
+      // A folding umbrella small as a mango, open and held up to wave.
+      const ux = hx + (dir === 'left' ? -4 : 2);
+      const uy = hy - 30;
+      line(g, [hx, hy + 2, ux, uy], '#3a2e24', 1.8);
+      g.fillStyle = '#c1512f';
+      g.beginPath();
+      g.arc(ux, uy, 13, Math.PI, 0);
+      g.closePath();
+      g.fill();
+      g.fillStyle = '#e8b04a';
+      g.beginPath();
+      g.moveTo(ux, uy - 13);
+      g.lineTo(ux - 5, uy);
+      g.lineTo(ux + 5, uy);
+      g.closePath();
+      g.fill();
+      dot(g, ux, uy - 13.5, 1.6, '#3a2e24');
+      break;
+    }
     case 'camera':
       if (dir === 'up') break;
       line(g, [cx - 9, bodyTop, cx, bodyTop + 16, cx + 9, bodyTop], '#241a12', 1.4);

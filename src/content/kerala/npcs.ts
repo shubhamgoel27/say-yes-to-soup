@@ -943,7 +943,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.depart': {
     lines: [
-      { text: 'Mariamma packs food for four days and advice for forty. The little umbrella waves from her door until the boat turns.' },
+      { text: 'Mariamma has come down to the jetty with food for four days and advice for forty. The little umbrella waves from the bank until the boat turns.' },
       { text: 'Then the northbound train: three days of paddy, hills, wheat, haze.' },
       { text: 'Somewhere ahead, a walled city is waiting out the heat for the same rain you left.' },
     ],
