@@ -1046,6 +1046,9 @@ export const SICILY_NODES: NodeMap = {
   'c8.ex.basalto': {
     lines: [{ text: 'Paving cut from old lava, black and faintly glassy. The town walks every evening on the mountain’s cooled temper.' }],
   },
+  'c8.ex.molo': {
+    lines: [{ text: 'The mole: lava blocks laid end to end into the sea, the lips worn pale, iron bollards waiting for ropes. Every boat in town has leaned on it.' }],
+  },
   'c8.ex.lavashore': {
     lines: [{ text: 'A beach with no sand, only black rock rounded by patient water. It holds the day’s heat past midnight.' }],
   },
@@ -1282,6 +1285,10 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   floorEarth: [{ map: 'circolo', node: 'c8.ex.floorgraniglia' }],
   casedda: [{ node: 'c8.ex.casedda' }],
   basalto: [{ node: 'c8.ex.basalto' }],
+  molo: [{ node: 'c8.ex.molo' }],
+  molonord: [{ node: 'c8.ex.molo' }],
+  molosud: [{ node: 'c8.ex.molo' }],
+  moloface: [{ node: 'c8.ex.sea' }],
   lavashore: [{ node: 'c8.ex.lavashore' }],
   lavarock: [{ node: 'c8.ex.lavarock' }],
   faraglione: [{ node: 'c8.ex.faraglione' }],

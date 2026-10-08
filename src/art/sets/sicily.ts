@@ -1,6 +1,6 @@
 import type { ChapterArt } from './index';
 import { floorPour, grit } from './floor';
-import { blob, dot, glowSpot, oval, rect, rr, shade, softShadow, vgrad } from '../pix';
+import { blob, dot, glowSpot, oval, rect, rr, shade, softShadow, vgrad, type Rng } from '../pix';
 import { PAL } from '../../engine/config';
 
 /**
@@ -48,9 +48,89 @@ export const ART: ChapterArt = {
   skins: {
     circolo: { wallInt: 'wallCalce', floorEarth: 'floorGraniglia', rug: 'rugPezzara' },
   },
+  /**
+   * The mole's bollards stand in a line at an even pitch, the way a mole is
+   * built, not wherever a cell hash lands: variant 0 of each lip carries one.
+   */
+  pins: {
+    sicily: [
+      ...[33, 34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'molonord', at: [x, 19] as [number, number], v: x === 35 || x === 38 ? 0 : 1 })),
+      ...[40, 41, 42].map((x) => ({ kind: 'molonord', at: [x, 18] as [number, number], v: x === 42 ? 0 : 1 })),
+      ...[33, 34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'molosud', at: [x, 20] as [number, number], v: x === 35 || x === 39 ? 0 : 1 })),
+      ...[40, 41, 42].map((x) => ({ kind: 'molosud', at: [x, 21] as [number, number], v: 1 })),
+    ],
+  },
 
   paint(make) {
     // ------------------------------------------------------------ grounds
+
+    // ------------------------------------------------------------ the mole
+    // A breakwater, not a pavement pasted on the sea: long dressed blocks of
+    // lava stone laid along its length, a pale worn coping on both lips, cast
+    // bitte (bollards) along the north lip where the boats tie up, and on the
+    // south side the stone face going down into the water with the sea's
+    // white at its foot. The lungomare's paving stays the lungomare's.
+    const MOLO = '#77727c';
+    const moloCourses = (g: CanvasRenderingContext2D, r: Rng) => {
+      rect(g, 0, 0, S, S, shade(MOLO, -0.25)); // the joints, dark with grit
+      // Two courses per cell, blocks running along the mole, joints staggered
+      // on a period that divides 64 so a run of cells is one wall of stone.
+      for (const [y, off] of [[0, 0], [32, 16]] as const) {
+        for (let x = -off; x < S; x += 32) {
+          rr(g, x + 1.5, y + 1.5, 29, 29, 3, shade(MOLO, (r.next() - 0.5) * 0.12));
+          rect(g, x + 3, y + 3, 26, 2, 'rgba(255,248,240,0.08)'); // each block's sunlit lip
+          oval(g, x + 9 + r.int(12), y + 8 + r.int(14), 5, 2, 'rgba(255,248,240,0.05)');
+        }
+      }
+      g.fillStyle = 'rgba(18,14,22,0.3)';
+      g.fillRect(0, 31, S, 2);
+      // Salt, and the dark spots of last night's spray.
+      for (let k = 0; k < 6; k++) dot(g, r.int(S), r.int(S), 1 + r.next(), r.chance(0.5) ? 'rgba(240,240,236,0.25)' : 'rgba(30,26,34,0.18)');
+    };
+    const coping = (g: CanvasRenderingContext2D, top: boolean) => {
+      const y = top ? 0 : S - 11;
+      rect(g, 0, y, S, 11, '#a39e9a');
+      rect(g, 0, top ? y + 9 : y, S, 2, 'rgba(18,14,22,0.35)');
+      rect(g, 0, top ? y : y + 9, S, 2, 'rgba(255,250,240,0.3)');
+      for (let x = 0; x < S; x += 16) rect(g, x, y, 1.4, 11, 'rgba(18,14,22,0.25)');
+    };
+    const bitta = (g: CanvasRenderingContext2D, x: number, y: number) => {
+      softShadow(g, x + 2, y + 8, 13, 4, 0.4);
+      rr(g, x - 7, y - 9, 14, 16, 5, '#2e2b2c');
+      oval(g, x, y - 9, 10, 4.4, '#423d3f');
+      oval(g, x - 3, y - 10, 4, 1.8, 'rgba(255,255,255,0.28)');
+      rect(g, x - 7, y - 2, 14, 2, 'rgba(255,255,255,0.08)');
+      dot(g, x + 4.5, y + 1, 1.6, '#7a4a30'); // rust where the rope bites
+    };
+    make('molo', 3, (g, r) => moloCourses(g, r));
+    // North lip: coping, and on variant 0 a bollard on it.
+    make('molonord', 2, (g, r, i) => {
+      moloCourses(g, r);
+      coping(g, true);
+      if (i === 0) bitta(g, 32, 14);
+    });
+    make('molosud', 2, (g, r, i) => {
+      moloCourses(g, r);
+      coping(g, false);
+      if (i === 0) bitta(g, 32, S - 8);
+    });
+    // The south face, seen across the water: courses going down, the wet
+    // dark band at the tide line, foam at the foot. The sea under it is live.
+    make('moloface', 2, (g, r) => {
+      vgrad(g, 0, 0, S, 30, '#5f5a63', '#46424a');
+      for (const [y, off] of [[0, 8], [15, 24]] as const) {
+        for (let x = -off; x < S; x += 32) rr(g, x + 1, y + 1, 30, 13, 2, shade('#58535c', (r.next() - 0.5) * 0.12));
+      }
+      vgrad(g, 0, 22, S, 10, 'rgba(30,40,40,0.0)', 'rgba(30,44,40,0.55)'); // the wet line
+      rect(g, 0, 28, S, 3, 'rgba(70,90,60,0.5)'); // weed at the tide line
+      g.fillStyle = 'rgba(240,246,246,0.85)';
+      for (let x = 0; x < S; x += 4) {
+        const w = 3 + Math.sin(x * 0.4) * 1.4;
+        g.fillRect(x, 31 - w / 2, 4, w);
+      }
+      for (let k = 0; k < 5; k++) dot(g, r.int(S), 34 + r.int(6), 1 + r.next(), 'rgba(240,246,246,0.55)');
+      vgrad(g, 0, 33, S, 12, 'rgba(20,30,40,0.25)', 'rgba(20,30,40,0)');
+    });
 
     make('basalto', 9, (g, r, i) => {
       // Sun-worn lava paving: unmistakably grey, but noon-bright, not night.
