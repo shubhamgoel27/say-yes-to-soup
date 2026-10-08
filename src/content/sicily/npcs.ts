@@ -863,7 +863,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.ben.hello': {
     lines: [
       { text: 'At the fish stall, a man with a towel on one shoulder is congratulating a sardine. You know that towel.' },
-      { who: 'Mang Ben', text: 'Pare! The Yacana provisions down the coast, so I came where the fish sing. Turi and I are family already; he does not know it.' },
+      { who: 'Mang Ben', text: 'Anak! The Yacana provisions down the coast, so I came where the fish sing. Turi and I are family already; he does not know it.' },
     ],
     effects: ['set:c8.ben.met'],
     choices: [
