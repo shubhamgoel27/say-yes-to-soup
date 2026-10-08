@@ -26,8 +26,56 @@ let activeType = 'mouse';
 const record = (e: PointerEvent) => {
   activeType = e.pointerType || 'mouse';
 };
-window.addEventListener('pointerdown', record, true);
-window.addEventListener('pointermove', record, true);
+
+/** Just enough of a DOM node for the ghost test (and for tests to fake). */
+export type NodeLike = { isConnected: boolean; contains(other: NodeLike | null): boolean };
+
+/**
+ * The ghost click. A touch tap acts on pointerdown or pointerup, and the
+ * browser still synthesizes a click afterwards, hit-tested against whatever
+ * is under the finger by then. When the tap itself opened a new card, that
+ * click lands on the card: "Begin the journey" acted at pointerup, the name
+ * card opened under the finger, and the same tap's click pressed its
+ * "write it down", naming the player "traveler" unseen. A real tap's click
+ * lands on the element its finger came down on (or inside it, or around
+ * it); anything else is the ghost of a tap that already did its work.
+ */
+export function isGhostClick(down: NodeLike | null, click: NodeLike | null): boolean {
+  if (!down || !click) return false;
+  if (!down.isConnected) return true;
+  return !(down === click || down.contains(click) || click.contains(down));
+}
+
+/** The finger's last touchdown, while its click may still be on the way. */
+let touchDown: { target: NodeLike; at: number } | null = null;
+/** A click this long after the touchdown is not that tap's click. */
+const GHOST_MS = 1200;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointerdown', record, true);
+  window.addEventListener('pointermove', record, true);
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      touchDown = e.pointerType === 'touch' && e.target ? { target: e.target as unknown as NodeLike, at: performance.now() } : null;
+    },
+    true,
+  );
+  // Capture on window: the ghost dies before any card can hear it.
+  window.addEventListener(
+    'click',
+    (e) => {
+      const down = touchDown;
+      touchDown = null;
+      if (!down || performance.now() - down.at > GHOST_MS) return;
+      if (isGhostClick(down.target, e.target as unknown as NodeLike)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+      }
+    },
+    true,
+  );
+}
 
 /** True while the most recent pointer activity came from a finger. */
 export function touchActive(): boolean {

@@ -5,9 +5,9 @@
  * with a mouse can never match and a phone in a desktop-mode browser still
  * does.
  *
- * The game is landscape-native (a 320x180 view). On a phone held upright it
- * shows a quarter of the world, so phones are steered sideways, firmly but
- * kindly:
+ * The game is landscape-native (a 320x180 frame). Held upright the frame
+ * turns (180x320, config.viewFor), which plays, but the road reads best
+ * wide, so phones are still steered sideways, firmly but kindly:
  *
  * - Where the browser can lock orientation (Android, mostly): on the first
  *   natural tap while upright, a journal card offers to lay the journal
@@ -216,7 +216,13 @@ function ensureHold(): HTMLElement {
   line.className = 'sw-line';
   line.textContent = 'Nani drew her pages wide; the road needs the room.';
 
-  card.append(buildGlyph(), title, line);
+  // A phone that will not turn is almost always a phone with its rotation
+  // lock on, and the card has no way to know; say how to lift it.
+  const lock = document.createElement('div');
+  lock.className = 'sw-lock';
+  lock.textContent = 'Not turning? The rotation lock may be on: open Control Center and tap the lock.';
+
+  card.append(buildGlyph(), title, line, lock);
   veil.appendChild(card);
   document.body.appendChild(veil);
   holdEl = veil;

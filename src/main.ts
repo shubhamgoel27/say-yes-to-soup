@@ -2,6 +2,7 @@ import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
 import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
+import { ArmedCards, type Spot } from './engine/armed';
 import { DevBridge } from './engine/devbridge';
 import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { DIR_VEC, Input, type Dir } from './engine/input';
@@ -73,6 +74,8 @@ console.info('[soup] boot: world composer');
 const renderer = new Renderer(worldCanvas);
 console.info('[soup] boot: gpu stage');
 const stage = PixiStage.create(worldCanvas, $('frame'));
+// The frame turns with the screen (an upright phone gets an upright frame).
+stage.onViewChange(() => renderer.resizeView());
 console.info('[soup] boot: stage ready');
 const debugEl = $('debug') as HTMLPreElement;
 const input = new Input();
@@ -423,6 +426,7 @@ const title = new TitleScreen(
     title.hideTitle();
     openFlyleaf(freshSlate);
   },
+  () => continueJourney(),
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -449,6 +453,15 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     state.set('replay.mode');
     state.set(flag);
     showHowto(g);
+  },
+  onJournal: () => {
+    journalUI.open();
+    audio.pageFlip();
+  },
+  saveNow: () => {
+    if (mode !== 'play') return false;
+    state.save();
+    return !state.persistenceLost;
   },
 });
 
@@ -511,47 +524,32 @@ const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
 const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
 
 /**
- * "Not yet" sticks. A declined card used to re-open after every later
- * conversation or examine, eighteen tiles away and on other maps, because
- * the start flag (rightly) stays raised. Now the decline remembers where it
- * happened and who offered; the card comes back only when the player talks
- * to that person again, or presses Space in open air near that spot.
- * Session-scoped: a reload offers each waiting card once more, which is fair.
+ * Armed cards (src/engine/armed.ts): "Not yet" and "Step away" set a card
+ * aside where it was declined, and a journey taken in conversation always
+ * runs, leaving any armed card behind. Session-scoped: a reload offers each
+ * waiting card once more, which is fair.
  */
-const declinedGames = new Map<string, { map: string; at: [number, number]; npc: string | null }>();
+const armed = new ArmedCards(games.map((g) => g.def.flag));
 /** Who spoke last before a card opened: the one who offered it. */
 let howtoOfferedBy: string | null = null;
-/** How close counts as "back at the station" for the open-air re-offer. */
-const DECLINE_NEAR = 2;
+const gameByFlag = (flag: string | null) => (flag ? games.find((g) => g.def.flag === flag) ?? null : null);
+const panelOpen = (flag: string) => gameByFlag(flag)?.panel.isOpen ?? false;
+const hereSpot = (npc: string | null): Spot => ({ map: map.id, at: [player.x, player.y], npc });
 
 /** A game whose start flag is raised but whose panel is not yet on screen,
- * and which the player has not set aside with "Not yet". */
+ * and which the player has not set aside. */
 function pendingGame(): GameEntry | null {
-  return (
-    games.find((g) => state.has(g.def.flag) && !g.panel.isOpen && !declinedGames.has(g.def.flag)) ??
-    null
-  );
+  return gameByFlag(armed.pending((f) => state.has(f), panelOpen));
 }
 
-/** Open air near where a card was declined: that card, forgiven. */
+/** Open air near where a card was set aside: that card, forgiven. */
 function declinedNearHere(): GameEntry | null {
-  for (const [flag, d] of declinedGames) {
-    if (d.map !== map.id) continue;
-    if (Math.abs(player.x - d.at[0]) + Math.abs(player.y - d.at[1]) > DECLINE_NEAR) continue;
-    const g = games.find((x) => x.def.flag === flag);
-    if (!g || !state.has(flag)) {
-      declinedGames.delete(flag);
-      continue;
-    }
-    declinedGames.delete(flag);
-    return g;
-  }
-  return null;
+  return gameByFlag(armed.nearHere(map.id, player.x, player.y, (f) => state.has(f)));
 }
 
 /** Talking to whoever offered a declined card lets it come back after. */
 function forgiveDeclinesBy(npc: string) {
-  for (const [flag, d] of declinedGames) if (d.npc === npc) declinedGames.delete(flag);
+  armed.forgiveBy(npc);
 }
 
 /** Open a panel and route its completion: story narration, or replay joy. */
@@ -679,7 +677,7 @@ function closeHowto(pick: string | null) {
   } else {
     player.frozen = false; // the story's start flag stays; the offer keeps
     // ...but it waits where it was made, instead of following the player.
-    declinedGames.set(g.def.flag, { map: map.id, at: [player.x, player.y], npc: howtoOfferedBy });
+    armed.setAside(g.def.flag, hereSpot(howtoOfferedBy));
   }
 }
 
@@ -724,9 +722,13 @@ function stripActivate() {
       // next first-time completion skip its own narration.
       state.clearFlag('replay.mode');
       state.clearFlag(g.def.flag);
+    } else {
+      // Unfinished is allowed. The start flag stays set, and the card waits
+      // here, exactly as "Not yet" does: back at this spot, or after its own
+      // villager speaks again. (It used to pop after the next conversation
+      // with anyone, and a journey taken in that conversation was lost.)
+      armed.setAside(g.def.flag, hereSpot(howtoOfferedBy));
     }
-    // Otherwise unfinished is allowed. The start flag stays set, so the
-    // how-to card re-offers whenever the player is ready again.
   }
   // "Keep at it": the panel is still there, exactly as it was.
 }
@@ -827,7 +829,9 @@ window.addEventListener('pagehide', () => {
   if (mode === 'play') state.save();
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && mode === 'play') state.save();
+  const hidden = document.visibilityState === 'hidden';
+  audio.setHidden(hidden);
+  if (hidden && mode === 'play') state.save();
 });
 setInterval(() => {
   if (mode === 'play') state.save();
@@ -2746,6 +2750,14 @@ function takeTravel(): boolean {
     console.warn(`travel to unknown map: ${d.map}`);
     return false;
   }
+  // Every card still armed stays behind where it was armed: none follows the
+  // player into the next village. A replay offer simply ends.
+  for (const f of armed.leaveBehind((x) => state.has(x), panelOpen, hereSpot(null))) {
+    if (state.has('replay.mode')) {
+      state.clearFlag('replay.mode');
+      state.clearFlag(f);
+    }
+  }
   const spawn: [number, number] = d.x >= 0 && d.y >= 0 ? [d.x, d.y] : dest.spawn;
   const facing = (d.dir || dest.spawnFacing) as Dir;
   startWarp({ at: [player.x, player.y], type: 'door', to: d.map, spawn, facing });
@@ -2822,6 +2834,9 @@ function endDialogue() {
     startNarration('dig.finish');
     return;
   }
+  // A journey taken in conversation runs first, always: an armed card can
+  // wait, but "the faraglioni slide past" cannot be taken back.
+  if (takeTravel()) return;
   {
     // A conversation raised a game's start flag: the how-to card goes first,
     // so the hands know what they are about to do (and may decline, kindly).
@@ -2833,7 +2848,6 @@ function endDialogue() {
       return;
     }
   }
-  if (takeTravel()) return;
   if (state.has('photo.flash')) {
     state.clearFlag('photo.flash');
     flashT = calmFlash() ? 0.25 : 0.5;
@@ -3579,7 +3593,7 @@ function reloadJourney() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
-  declinedGames.clear();
+  armed.clear();
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
   window.clearTimeout(introTimer);
@@ -3625,7 +3639,19 @@ function playWelcome() {
   welcomeTimer = 0;
   if (!pendingWelcome) return;
   pendingWelcome = false;
-  showPlate(map.name);
+  showPlate(map.name, WELCOME_PLATE_MS);
+  // The tips wait for the plate to go. All three at once (the plate, the
+  // new thread's chip and the walking tip) stacked over the first face on
+  // screen, Don Aurelio's at the well on an upright tablet; one at a time
+  // each is read and none covers the plaza for long.
+  welcomeTimer = window.setTimeout(playWelcomeTips, WELCOME_PLATE_MS + 300);
+}
+
+/** How long the first place plate holds before the welcome tips come in. */
+const WELCOME_PLATE_MS = 3200;
+
+function playWelcomeTips() {
+  welcomeTimer = 0;
   toasts.show(keysOrTaps(
     'walk with the arrow keys or WASD, or click where you want to go',
     'slide a thumb in the lower left to walk, or tap where you want to go',
@@ -3670,7 +3696,15 @@ function titleActivate() {
             freshSlate();
           },
     );
-  } else if (!state.has('intro.done')) {
+  } else {
+    continueJourney();
+  }
+}
+
+/** Continue, from the cover or straight off the shelf. */
+function continueJourney() {
+  title.hideTitle();
+  if (!state.has('intro.done')) {
     // The flyleaf saves the moment it is finished, so a tab closed during
     // Nani's letter or the three wake lines left a save with no intro in it;
     // Continue then stood the traveler at the well in silence and her letter
@@ -3685,7 +3719,7 @@ function titleActivate() {
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
   state.reset();
-  declinedGames.clear();
+  armed.clear();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();
@@ -4426,9 +4460,10 @@ function worldToScreen(wx: number, wy: number): [number, number] {
 }
 
 /**
- * Cover-fit crops the long axis: a portrait phone shows only the middle ~83
- * of the 320 logical px the camera frames. The engine camera clamps to the
- * full 320x180 view, so within a few tiles of a map edge the player could
+ * Cover-fit crops the long axis: a very tall or very wide window shows only
+ * the middle of the frame the camera frames (the frame itself turns upright
+ * on upright screens, config.viewFor, so the crop stays modest). The engine
+ * camera clamps to the full frame, so within a few tiles of a map edge the player could
  * stand entirely outside the visible slice. After each follow, re-center the
  * followed point inside what is actually on screen, letting the camera run
  * into the cropped margin, which is off-screen by definition. On 16:9
@@ -5179,6 +5214,11 @@ pauseRoot.addEventListener('mouseover', (e) => {
 
 const journalRoot = $('journal');
 function journalTap(t: HTMLElement, viaTouch: boolean) {
+  if (t.closest('.j-close')) {
+    journalUI.close();
+    audio.pageFlip();
+    return;
+  }
   const tab = t.closest('.j-tab');
   if (tab) {
     if (steerTo(journalRoot, '.j-tab', tab, (d) => journalUI.onDir(d), 'h')) audio.select();

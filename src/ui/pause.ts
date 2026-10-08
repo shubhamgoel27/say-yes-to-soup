@@ -113,6 +113,10 @@ type Hooks = {
   /** A won game chosen from the shelf: the engine reopens it the way a
    * villager's own replay offer would, replay.mode and all. */
   onReplay?: (flag: string) => void;
+  /** "The journal" chosen: the menu closes and the engine opens the book. */
+  onJournal?: () => void;
+  /** Save the journey now; false when the browser would not keep it. */
+  saveNow?: () => boolean;
 };
 
 /** The controls card, in the words of whatever is holding the game. */
@@ -146,6 +150,8 @@ export class PauseMenu {
    * the closing book): backing out closes, rather than landing on "A rest",
    * a menu the player never passed through. */
   private direct = false;
+  /** What the pause card says about the save: written, refused, or nothing (the title). */
+  private saved: 'ok' | 'lost' | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -165,6 +171,9 @@ export class PauseMenu {
     this.direct = screen !== 'menu';
     this.cursor = 0;
     this.root.hidden = false;
+    // A rest is a safe place to stop: the journey is written down the moment
+    // the menu opens, and the card says so in one quiet line.
+    this.saved = !fromTitle && this.hooks.saveNow ? (this.hooks.saveNow() ? 'ok' : 'lost') : null;
     // The entrance animation belongs to opening, not to every re-render:
     // render() rebuilds the card on each cursor move, and replaying the
     // book-open there made the whole panel flicker on every arrow press.
@@ -206,6 +215,11 @@ export class PauseMenu {
   private menuItems() {
     const items: { label: string; act: () => void }[] = [
       { label: this.fromTitle ? 'Back' : 'Keep walking', act: () => this.close() },
+      // The journal from the rest: on glass the menu button is easier to
+      // find than the pencil, and on a desk J is not on the card at all.
+      ...(!this.fromTitle && this.hooks.onJournal
+        ? [{ label: 'The journal', act: () => { this.close(); this.hooks.onJournal?.(); } }]
+        : []),
       { label: 'Settings', act: () => this.goto('settings') },
       { label: 'How to play', act: () => this.goto('help') },
       // Once the journal is full this stops being a licence card, and the menu
@@ -225,7 +239,8 @@ export class PauseMenu {
     // The games shelf earns its row with the first game won, and only while
     // actually playing: opened from the title there is no world to return to.
     if (!this.fromTitle && flags && wonGames(flags).length > 0) {
-      items.splice(3, 0, { label: 'Play a game again', act: () => this.goto('games') });
+      // Just before the credits row, wherever the journal row put it.
+      items.splice(items.length - 1, 0, { label: 'Play a game again', act: () => this.goto('games') });
     }
     if (!this.fromTitle) {
       items.push({ label: 'Rest here (back to title)', act: () => { this.close(); this.hooks.onToTitle(); } });
@@ -389,7 +404,13 @@ export class PauseMenu {
     if (this.screen === 'menu') {
       body = `<div class="p-menu">${this.menuItems()
         .map((it, i) => `<div class="p-opt${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`)
-        .join('')}</div>`;
+        .join('')}</div>${
+        this.saved === 'ok'
+          ? '<div class="p-saved">the journal is saved; you can put it down here</div>'
+          : this.saved === 'lost'
+            ? '<div class="p-saved lost">this browser is not keeping the journal right now</div>'
+            : ''
+      }`;
     } else if (this.screen === 'games') {
       // The games shelf: every won game with the village that taught it.
       // The .p-menu wrapper matters: rows keep the menu's hover-and-click
