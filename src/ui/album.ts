@@ -512,7 +512,7 @@ export class AlbumUI {
         return `
           <div class="end-kicker">thank you</div>
           <div class="cr-thanks">
-            <p><span class="cr-name">Angli</span>, for the idea underneath everything here: that language and food are how strangers become people to each other.</p>
+            <p><span class="cr-name">Angli</span>, whose everyday habit of bringing different cultures to one table sparked this game.</p>
             <p><span class="cr-name">Nishant</span>, who helped shape the game, its villages, and the traveler&rsquo;s long arc home.</p>
             <p>Made with love, and with soup.</p>
           </div>

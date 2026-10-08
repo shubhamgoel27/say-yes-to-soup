@@ -469,8 +469,8 @@ export class PauseMenu {
                Nobody hurried you and you did not hurry. That was the whole assignment.</p>`
             : ''
         }
-        <p class="p-c-thanks">Special thanks. To Angli, for the idea underneath everything here:
-        that language and food are how strangers become people to each other.
+        <p class="p-c-thanks">Special thanks. To Angli, whose everyday habit of bringing
+        different cultures to one table sparked this game.
         And to Nishant, who helped shape the game, its villages, and the
         traveler&rsquo;s long arc home.</p>
         <p class="p-c-sec">Every village in this game is fictional; the texture is researched,
