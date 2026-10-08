@@ -55,7 +55,8 @@ import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
-import { BLOCKING, ESCORTS, HOURS, JUG, LAMP, MEETING } from './content/return/staging';
+import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
+import { BLOCKING, HOURS, LAMPS_LIT } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -144,6 +145,8 @@ function moodFor(id: string): string {
   // rain is drawn on top of whatever is lit, so pigeon hour still happens in
   // a storm: the kite tournament flies in exactly that weather.
   if (meta.moodDusk && nightLevel(dayT) > 0.3) return meta.moodDusk;
+  // First light, before the day curve has gone neutral.
+  if (meta.moodDawn && (dayT < 0.05 || dayT > 0.985)) return meta.moodDawn;
   // Delhi waits out the heat until sawan breaks, then the whole city exhales.
   if ((id === 'delhi' || id === 'delhi-rooftop') && state.has('c11.rain')) return 'sawanrain';
   return meta.mood;
@@ -1183,14 +1186,16 @@ function updateRhythm(dt: number) {
     // neither the fade nor the bench-snap may reach across the map at them.
     if (stationControls(v)) continue;
     const engaged = v === talkingTo || autoGoal?.npc === v;
-    const gone = !v.keeper && !engaged && !erranded.has(v) && nk > fadeAt(v);
+    // Nobody a scene has placed goes home for the night in the middle of it.
+    const gone = !v.keeper && !engaged && !erranded.has(v) && !stagedControls(v) && nk > fadeAt(v);
     const target = gone ? 0 : 1;
     if (v.fade !== target) {
       v.fade = target > v.fade ? Math.min(target, v.fade + dt * FADE_SPEED) : Math.max(target, v.fade - dt * FADE_SPEED);
       applyFade(v);
     }
     const duskish = nk >= sitAt(v) && nk < fadeAt(v);
-    if (v.def.map !== map.id && !v.actor.frozen) {
+    // A scene that has placed someone keeps them there, bench or no bench.
+    if (v.def.map !== map.id && !v.actor.frozen && !stagedControls(v)) {
       // Unobserved villagers teleport through their evening.
       if (v.seat && duskish && !v.seated) {
         v.actor.placeAt(v.seat.at[0], v.seat.at[1], v.seat.dir);
@@ -1305,6 +1310,12 @@ for (const st of stationsRt) {
 /** Wake factor for a tended lamp cell, or null when nothing tends it. */
 function stationLampWake(mapId: string, x: number, y: number): number | null {
   return stationLampEase.get(`${mapId}:${x},${y}`)?.k ?? null;
+}
+
+/** Where a station's actor lives when off duty, or null for anyone else. */
+function stationHomeOf(v: Villager): { map: string; pos: [number, number] } | null {
+  for (const st of stationsRt) for (const b of st.berths) if (b.v === v) return b.home;
+  return null;
 }
 
 /** Whether a station currently owns this villager's whereabouts. */
@@ -1495,7 +1506,7 @@ function updateRoundStation(st: StationRt, nk: number, dt: number) {
     for (const c of cells) setStationLamp(st, c, false);
     if (b && b.v.def.map === st.def.map && map.id !== st.def.map) stationHome(b);
   }
-  const free = b && !b.v.actor.frozen && b.v !== talkingTo && state.check(b.v.def.when);
+  const free = b && !b.v.actor.frozen && b.v !== talkingTo && state.check(b.v.def.when) && !stagedControls(b.v);
   if (map.id !== st.def.map) {
     // Unwatched, the round keeps village time: progress follows the dusk.
     if (nk >= w0) {
@@ -1571,11 +1582,33 @@ function updateRoundStation(st: StationRt, nk: number, dt: number) {
   }
 }
 
+/** Seconds until a scene that says the lamps are lit lights its next one. */
+let lampsLitWait = 0;
 function updateStations(dt: number) {
   const nk = nightLevel(dayT);
   for (const st of stationsRt) {
     if (st.def.mode === 'gather') updateGatherStation(st, nk, dt);
     else updateRoundStation(st, nk, dt);
+  }
+  // A scene whose words light the lamps (the matsuri's "the chochin come
+  // on"): whatever the round has reached, the rest take now, one after
+  // another, each with its wick-flare where it is watched.
+  lampsLitWait = Math.max(0, lampsLitWait - dt);
+  for (const hold of LAMPS_LIT) {
+    if (!state.check(hold.when)) continue;
+    for (const st of stationsRt) {
+      if (st.def.mode !== 'round' || st.def.map !== hold.map) continue;
+      const dark = st.def.cells.find((c) => c.lamp && !stationLampEase.get(`${st.def.map}:${c.lamp[0]},${c.lamp[1]}`)?.lit);
+      if (dark) {
+        if (lampsLitWait > 0) continue;
+        const watched = map.id === st.def.map;
+        setStationLamp(st, dark, true, !watched);
+        lampsLitWait = watched ? 0.35 : 0;
+      } else {
+        st.round.idx = st.def.cells.length;
+        st.round.done = true;
+      }
+    }
   }
   // Tended lamps ease up to their evening glow: a wick taking, not a switch.
   for (const e of stationLampEase.values()) {
@@ -1711,7 +1744,11 @@ function updateStaging(dt: number) {
   if (hold && (dayT < hold.min || dayT > hold.max)) {
     const past = (dayT - hold.max + 1) % 1;
     if (past < 0.02) dayT = hold.max;
-    else if (hold.snap) dayT = hold.min;
+    else if (hold.snap) {
+      // Only where nobody watches the light jump: not under words still on
+      // screen, not while a door closes; in its dark, or at a reload.
+      if (!textbox.isOpen && !pendingTravel && warp?.phase !== 'out') dayT = hold.min;
+    }
     else {
       const dist = (hold.min - dayT + 1) % 1;
       const step = Math.max(0.025, dist * 0.7) * dt;
@@ -1720,21 +1757,27 @@ function updateStaging(dt: number) {
   }
 
   // Who the evening has a place for: an escort beats a blocking.
-  const want = new Map<Villager, { at?: [number, number]; map?: string; dir?: Dir; escort?: boolean }>();
+  const want = new Map<
+    Villager,
+    { at?: [number, number]; map?: string; dir?: Dir; escort?: boolean; sit?: boolean; busy?: boolean }
+  >();
   for (const e of ESCORTS) {
     const v = byNpc(e.id);
     if (v && state.check(e.when)) want.set(v, { escort: true });
   }
   for (const b of BLOCKING) {
     const v = byNpc(b.id);
-    if (v && !want.has(v) && state.check(b.when)) want.set(v, { at: b.at, map: b.map, dir: b.dir });
+    if (v && !want.has(v) && state.check(b.when)) want.set(v, { at: b.at, map: b.map, dir: b.dir, sit: b.sit, busy: b.sit || b.busy });
   }
   for (const [v, w] of want) {
     let s = staged.get(v);
     if (!s) {
+      // A lamplighter caught mid-round is staged from where she lives, not
+      // from the lamp she was standing under.
+      const home = stationHomeOf(v) ?? { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]] as [number, number] };
       s = {
         v,
-        home: { map: v.def.map, pos: [v.def.pos[0], v.def.pos[1]], range: v.def.range },
+        home: { map: home.map, pos: [home.pos[0], home.pos[1]], range: v.def.range },
         path: [],
         escort: false,
         arrived: false,
@@ -1774,31 +1817,50 @@ function updateStaging(dt: number) {
       continue;
     }
     const [tx, ty] = w.at!;
+    const [ox, oy] = v.def.pos;
     v.def.pos = [tx, ty];
+    // A new place (the next scene's blocking) gets up from the old one.
+    if ((ox !== tx || oy !== ty) && v.actor.pose === 'sit') {
+      v.actor.pose = 'none';
+      v.seated = false;
+    }
+    const settle = () => {
+      if (!w.sit) return;
+      v.actor.pose = 'sit';
+      v.seated = true;
+    };
     if (v.def.map !== w.map) {
       if (map.id === v.def.map) continue; // never vanish in front of the player
       v.def.map = w.map!;
       v.actor.placeAt(tx, ty, w.dir!);
+      settle();
       s.path = [];
     } else if (map.id === w.map) {
       // Arrived, they keep their place; while the talk is on, every face
-      // around the jug turns to the one person who was there.
+      // around the jug turns to the one person who was there. Someone sat
+      // at their work keeps facing it.
       s.arrived = stageStep(s, tx, ty, dt);
       if (s.arrived) {
         const [px, py] = player.occupies();
         const dx = px - tx;
         const dy = py - ty;
         const toward: Dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
-        v.actor.face(textbox.isOpen ? toward : w.dir!);
+        v.actor.face(textbox.isOpen && !w.busy ? toward : w.dir!);
+        settle();
       }
     } else {
       v.actor.placeAt(tx, ty, w.dir!);
+      settle();
     }
   }
   // The evening let go of them: home on their own feet when watched. The
   // crowd never leaves mid-talk; Carmen leaves as the pen comes out.
   for (const [v, s] of staged) {
     if (want.has(v) || (textbox.isOpen && !s.escort) || v === talkingTo) continue;
+    if (v.actor.pose === 'sit' && !v.def.sits) {
+      v.actor.pose = 'none';
+      v.seated = false;
+    }
     const release = () => {
       v.def.map = s.home.map;
       v.def.pos = s.home.pos;
@@ -3064,7 +3126,9 @@ function tryInteract(): boolean {
     startSitting();
     return true;
   }
-  const arm = EXAMINES[kind]?.find((a) => (!a.map || a.map === map.id) && state.check(a.when));
+  const arm = EXAMINES[kind]?.find(
+    (a) => (!a.map || a.map === map.id) && state.check(a.when) && (!a.dark || nightLevel(dayT) > 0.3),
+  );
   if (arm) {
     startNarration(arm.node);
     return true;

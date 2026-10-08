@@ -5,6 +5,7 @@ import { SHIONOURA_JOURNAL, SHIONOURA_TASKS } from './journal';
 import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
 import { SHIONOURA_STATION_EVENTS, SHIONOURA_STATION_JOURNAL, SHIONOURA_STATION_NODES } from './stations';
 import { RECALL } from './recall';
+import { FESTIVAL_DRESSING } from './staging';
 import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
 import { handWords } from '../../ui/games/scene';
 
@@ -102,15 +103,16 @@ export const CHAPTER: ChapterDef = {
       vig: 0.22,
       ambient: 0xf2f4e8,
     },
-    // Festival night, if the integrator swaps it in after dusk: lantern paper
-    // orange low, deep indigo above, clouds stood down for the star river.
+    // Shionoura after dusk, festival night included: indigo above, the quay
+    // low in the frame lantern-paper orange ("the quay turns paper-orange"),
+    // clouds stood down for the star river.
     tanabataNight: {
-      top: 'rgba(28,36,84,0.30)',
-      mid: 'rgba(46,44,92,0.16)',
-      bottom: 'rgba(120,70,60,0.14)',
-      vig: 0.4,
-      glow: 'rgba(255,176,96,0.10)',
-      ambient: 0x9296c2,
+      top: 'rgba(28,36,84,0.26)',
+      mid: 'rgba(70,48,84,0.12)',
+      bottom: 'rgba(196,110,58,0.2)',
+      vig: 0.36,
+      glow: 'rgba(255,176,96,0.16)',
+      ambient: 0xa898b4,
       noClouds: true,
     },
   },
@@ -137,6 +139,8 @@ export const CHAPTER: ChapterDef = {
   // Once your tanzaku hangs, every plain bamboo in town fills with wishes:
   // the festival arrives because you joined it.
   dressings: [
+    // The seventh night strings its own lanterns along the quay.
+    FESTIVAL_DRESSING,
     {
       map: 'shionoura',
       when: { has: ['wish.written'] },

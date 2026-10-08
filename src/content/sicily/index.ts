@@ -4,6 +4,7 @@ import { SICILY_EVENTS, SICILY_EXAMINES, SICILY_NODES, SICILY_NPCS } from './npc
 import { SICILY_JOURNAL, SICILY_TASKS } from './journal';
 import { CIRCOLO_MAP, SICILY_MAP } from './map';
 import { RECALL } from './recall';
+import { SHIP_DRESSING } from './staging';
 import { CannoloPanel, PisciPanel, ScopaPanel } from '../../ui/games/sicily';
 import { handWords } from '../../ui/games/scene';
 
@@ -133,6 +134,8 @@ export const CHAPTER: ChapterDef = {
   sitKinds: ['stool'],
   arrival: { map: 'sicily', node: 'c8.arrive', flag: 'c8.arrived' },
   dressings: [
+    // The ship to Veracruz comes alongside once the town is ready to see you off.
+    SHIP_DRESSING,
     {
       // After the pastry-bag lesson the fryer's work rests in the shade: one
       // more little table by the bar, fresh shells cooling on it, empty on

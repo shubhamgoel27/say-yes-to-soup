@@ -559,7 +559,7 @@ export const SHIONOURA_NODES: NodeMap = {
   },
   'c4.dai.udon': {
     lines: [
-      { text: 'Noon. Daisuke sets down two bowls of udon and inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
+      { text: 'Daisuke sets down two bowls of udon and inhales his in loud joyful yards. You eat the way you were raised: quietly.' },
       { who: 'Daisuke', text: 'Is it bad? You eat like a funeral. Tell me straight, I can take it.' },
     ],
     choices: [
@@ -842,7 +842,9 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'The tairyō-bata crack once in the morning wind. Okaeri, the town said when you came; itterasshai, it says now: go, and come back.' },
       { text: 'Fumi stands at the end of the pier and bows. When the boat rounds the lighthouse, she is still bowing.' },
     ],
-    effects: ['travel:busan'],
+    // c4.sailing runs the festival night past to Isao's morning boat and
+    // walks Fumi out to the pier (./staging.ts) while these lines are read.
+    effects: ['set:c4.sailing', 'travel:busan'],
   },
   'c4.isao.wait': {
     lines: [
@@ -1141,6 +1143,12 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Rain on the seventh night means no bridge, so the town watches the sky like fishermen.' },
     ],
     effects: ['set:c4.seen.amanogawa', 'journal:customs.tanabata'],
+  },
+  // The same water while the sun is up: the river is there, only not yet.
+  'c4.ex.amanogawa.day': {
+    lines: [
+      { text: 'Flat bright water, and a sky with nothing written on it yet. Genji said to ask after dark.' },
+    ],
   },
   'c4.ex.sea': {
     lines: [
@@ -1550,7 +1558,9 @@ export const SHIONOURA_EXAMINES: Record<string, ExamineArm[]> = {
     { node: 'c4.ex.ofuro' },
   ],
   sea: [
-    { map: 'shionoura', when: { has: ['c4.tanzaku'], not: ['c4.seen.amanogawa'] }, node: 'c4.ex.amanogawa' },
+    // Genji said "after dark", and the river is only told under a sky that has it.
+    { map: 'shionoura', when: { has: ['c4.tanzaku'], not: ['c4.seen.amanogawa'] }, node: 'c4.ex.amanogawa', dark: true },
+    { map: 'shionoura', when: { has: ['c4.tanzaku'], not: ['c4.seen.amanogawa'] }, node: 'c4.ex.amanogawa.day' },
     { map: 'shionoura', node: 'c4.ex.sea' },
   ],
   sand: [{ map: 'shionoura', node: 'c4.ex.sand' }],

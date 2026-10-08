@@ -562,6 +562,8 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'Later; the stars will keep', goto: 'c3.hana.starlater' },
     ],
   },
+  // c3.stars.start also runs the clock down into the night while this is
+  // read, and holds it until the stars are named (./staging.ts).
   'c3.hana.starstart': {
     lines: [
       { text: 'Night folds over the ship. The working lights die forward, and the sky comes down to the rail to meet you.' },
@@ -696,13 +698,19 @@ export const CROSSING_NODES: NodeMap = {
       { who: 'The Bosun', text: 'Nothing, wog. They watch from the rail with dry hair, and regret it at every karaoke night after.' },
     ],
   },
+  // The deck gathers for this from the summons on (./staging.ts), and the
+  // shellback is only raised on the last line, so the court is not
+  // dismissed while the bucket is still in the air.
   'c3.bosun.court': {
     lines: [
       { text: 'Noon, on the Line. Neptune holds court on the hatch: the bosun in a mop wig and a bedsheet, trident of taped boat hooks.' },
       { who: 'The Bosun', text: 'The charge: entering my kingdom unshelled and unsalted. How plead you? Wrong. All wogs plead wrong.' },
       { text: 'Flour on your head, one bucket of warm sea over you, and the whole deck cheering.' },
-      { who: 'The Bosun', text: 'Rise, shellback, child of Neptune.' },
     ],
+    next: 'c3.bosun.rise',
+  },
+  'c3.bosun.rise': {
+    lines: [{ who: 'The Bosun', text: 'Rise, shellback, child of Neptune.' }],
     effects: ['set:c3.shellback', 'journal:customs.linecrossing'],
   },
   'c3.bosun.after': {
