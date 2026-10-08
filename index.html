@@ -273,6 +273,10 @@
         transition: opacity 1.1s ease, transform 1.1s ease, letter-spacing 0.3s ease-out 0.25s;
       }
 
+      /* Over the face of someone near the player, an overlay goes faint
+       * (faceClearHud in main.ts) and comes back once the face moves on. */
+      #errand.over-face, #plate.show.over-face, #toasts.over-face { opacity: 0.16; }
+
       /* ---- toasts: "a page filled" whispers ---- */
       /* Overlays that carry the story mute the ambient HUD around them. */
       body.quiet-hud #toasts, body.quiet-hud #errand, body.quiet-hud #plate {
@@ -2899,18 +2903,36 @@
       }
 
       /* ---- the HUD in the hand ----
-       * Glass keeps the chip to one line once it has been read: a new thread
-       * reads in full for a few seconds (the `fresh` class, see ChipFold in
-       * responsive.ts), then folds so the world keeps the room. The quiet
-       * reminder line stays on its own line under it. */
+       * Glass keeps the chip short once it has been read: a new thread reads
+       * in full for a few seconds (the `fresh` class, see ChipFold in
+       * responsive.ts), then folds so the world keeps the room. It folds to
+       * two lines, not one: one line cut every clue before its place ("by
+       * the house with the red fla..."). A small fold mark says a tap opens
+       * it again (the chip takes taps on glass; main.ts). */
       @media (pointer: coarse) and (max-height: 500px), (pointer: coarse) and (max-width: 700px) {
+        #errand { pointer-events: auto; cursor: pointer; }
+        body.quiet-hud #errand { pointer-events: none; }
+        /* The bottom padding becomes a transparent border: a clamped box
+         * clips at its padding edge, so real padding let the top of the
+         * third line peek out under the second. */
         #errand:not(.fresh) {
-          display: block;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          -webkit-line-clamp: 2;
+          padding-right: 26px;
+          padding-bottom: 0;
+          border-bottom: 6px solid transparent;
+          box-shadow: 0 1px 0 rgba(200, 165, 91, 0.4);
         }
-        #errand:not(.fresh) .errand-nudge { overflow: hidden; text-overflow: ellipsis; }
+        #errand.nudged:not(.fresh) { -webkit-line-clamp: 3; }
+        #errand:not(.fresh)::after {
+          content: '\25BE';
+          position: absolute;
+          right: 9px;
+          bottom: 5px;
+          font-style: normal;
+          font-size: 0.9em;
+          color: rgba(217, 164, 65, 0.85);
+        }
+        #errand:not(.fresh) .errand-nudge { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       }
       /* Lying down, a phone has one short top edge and the pad's button
        * column down the right (226px tall at most, plus the sideways pin
@@ -3156,39 +3178,27 @@
           cursor: pointer;
         }
 
-        /* The corner pin: a paper scrap that remembers the offer quietly. */
-        /* It stands just above the pad's side column, whose tallest stack
-         * (thread, journal, pause, action) tops out at 266px upright and
-         * 226px lying down, so the two never touch. */
+        /* The pin lives in the pad's side column, on top of it, a round
+         * button like its neighbours: as a paper scrap floating above the
+         * column it sat mid-right of the playfield, and a tap meant to walk
+         * east threw the game fullscreen. The column's own quiet (vp-quiet)
+         * hides it under paper overlays. */
         #sidewayspin {
-          position: fixed;
-          right: calc(12px + env(safe-area-inset-right, 0px));
-          bottom: calc(280px + env(safe-area-inset-bottom, 0px));
-          min-width: 44px;
-          height: 44px;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           gap: 2px;
-          padding: 0 5px;
+          /* A pill, not a coin: the word says what it does. */
+          width: auto;
+          min-width: 48px;
+          padding: 0 8px;
+          border-radius: 24px;
+          color: rgba(242, 230, 208, 0.9);
           font-family: 'Literata', Georgia, serif;
-          color: var(--ink);
-          background: rgba(244, 234, 214, 0.95);
-          border: 1px solid var(--ink);
-          border-left: 3px solid var(--terracotta);
-          border-radius: 2px;
-          box-shadow: 2px 2px 0 rgba(43, 33, 24, 0.45);
           cursor: pointer;
-          z-index: 60;
         }
-        @media (max-height: 500px) {
-          #sidewayspin { right: calc(10px + env(safe-area-inset-right, 0px)); bottom: calc(238px + env(safe-area-inset-bottom, 0px)); }
-        }
-        /* A paper card in play (dialogue, a how-to card, the journal) owns
-         * the top-right corner too; the pin waits for the world. The cover
-         * keeps it: a fresh landscape boot needs the road to the spread. */
-        body:has(#vpad.vp-quiet):not(:has(#title:not([hidden]))) #sidewayspin { visibility: hidden; }
+        #sidewayspin .sw-phone-small { border-color: rgba(242, 230, 208, 0.9); }
         .sw-pin-word { font-size: 9.5px; line-height: 1; letter-spacing: 0.02em; white-space: nowrap; }
         .sw-phone-small {
           width: 12px;
@@ -3196,6 +3206,34 @@
           border-width: 1.5px;
           border-radius: 3px;
           animation: none;
+        }
+      }
+
+      /* A chip over the face of someone near the player steps down to the
+       * foot of the frame (faceClearHud in main.ts). Last in the sheet, and
+       * scoped by #hud, so it outranks every corner rule above, including
+       * the landscape phone's plate shove. */
+      #hud #errand.face-moved {
+        top: auto;
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        max-width: min(60vw, 560px);
+      }
+      @media (max-width: 700px) {
+        #hud #errand.face-moved {
+          bottom: calc(250px + env(safe-area-inset-bottom));
+          left: calc(10px + env(safe-area-inset-left));
+          right: calc(10px + env(safe-area-inset-right));
+          transform: none;
+          max-width: none;
+        }
+      }
+      @media (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+        #hud #errand.face-moved {
+          bottom: calc(10px + env(safe-area-inset-bottom));
+          max-width: min(52vw, 480px);
         }
       }
     </style>
