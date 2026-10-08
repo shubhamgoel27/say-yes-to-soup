@@ -2441,19 +2441,36 @@ function settleForTalk(v: Villager) {
   const npcMay =
     !v.actor.isMoving && !v.seated && v.actor.pose !== 'sit' && !stagedControls(v) && !stationControls(v);
   const movers: [Actor, Actor][] = npcMay ? [[v.actor, player], [player, v.actor]] : [[player, v.actor]];
+  // Whoever stays put must not be left in a third body's column either (the
+  // player walked in between Nilda and Félix and talked up to her: Nilda
+  // stepping aside would have left the player standing on Félix's hat).
+  // So a move that leaves nobody stacked wins; failing that, any move that
+  // at least parts the two speakers.
+  const stays = (who: Actor, mover: Actor) => {
+    const [sx, sy] = who.occupies();
+    const third = (y: number) =>
+      spritesHere().some((o) => o.actor !== who && o.actor !== mover && o !== dog && bodyCells(o.actor).some(([cx, cy]) => cx === sx && cy === y));
+    return !third(sy - 1) && !third(sy + 1);
+  };
+  const options: { mover: Actor; partner: Actor; s: number; clean: boolean }[] = [];
   for (const [mover, partner] of movers) {
     if (mover.isMoving) continue;
     const [mx, my] = mover.occupies();
     for (const s of [1, -1]) {
-      if (!roomToStand(mx + s, my, mover)) continue;
-      const toward: Dir = s > 0 ? 'left' : 'right';
-      mover.stepTo(s > 0 ? 'right' : 'left', toward);
-      partner.face(OPPOSITE[toward]);
-      if (mover === v.actor && v.def.range === 0) {
-        v.postBack = { at: [mx, my], dir: v.def.sits ?? 'down' };
-      }
-      return;
+      if (roomToStand(mx + s, my, mover)) options.push({ mover, partner, s, clean: stays(partner, mover) });
     }
+  }
+  const pick = options.find((o) => o.clean) ?? options[0];
+  if (pick) {
+    const { mover, partner, s } = pick;
+    const [mx, my] = mover.occupies();
+    const toward: Dir = s > 0 ? 'left' : 'right';
+    mover.stepTo(s > 0 ? 'right' : 'left', toward);
+    partner.face(OPPOSITE[toward]);
+    if (mover === v.actor && v.def.range === 0) {
+      v.postBack = { at: [mx, my], dir: v.def.sits ?? 'down' };
+    }
+    return;
   }
   // Nowhere to step (a one-plank pier, a doorway lane): they lean apart
   // instead, a few pixels each way, so both faces stay clear for the talk.
@@ -2596,7 +2613,10 @@ function updateVillager(v: Villager, dt: number) {
   if (nk > 0.6 && !outside) return;
   // Someone the player has clicked on and is walking toward finishes the
   // step they are on and waits there, the way a person does when hailed.
-  if ((autoGoal?.npc === v || approachedByKeys(v)) && !outside) {
+  // So does the person the red thread was just laid to, so its end still
+  // finds them beside it (Mr. Gong drifted to the diagonal, by a crate).
+  const threadHeld = v === threadAim && performance.now() - threadShownAt < THREAD_HOLD_MS;
+  if ((autoGoal?.npc === v || approachedByKeys(v) || threadHeld) && !outside) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
@@ -3193,6 +3213,8 @@ function updateSitting(dt: number) {
   }
 }
 
+/** How long the thread's person waits where it found them, in ms. */
+const THREAD_HOLD_MS = 30000;
 /** The person the red thread last pointed at, and the map it was laid on. */
 let threadAim: Villager | null = null;
 let threadAimMap = '';
