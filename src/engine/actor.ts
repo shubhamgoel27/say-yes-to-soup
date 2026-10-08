@@ -61,6 +61,8 @@ export class Actor {
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
   frozen = false;
+  /** Where a scripted step (stepTo) leaves the actor looking once it lands. */
+  private faceOnLand: Dir | null = null;
   /** Transient body pose: 'sit' folds the legs and settles the figure. */
   pose: 'none' | 'sit' = 'none';
   /**
@@ -132,6 +134,10 @@ export class Actor {
       this.y = this.ny;
       this.moving = false;
       this.steps++;
+      if (this.faceOnLand) {
+        this.dir = this.faceOnLand;
+        this.faceOnLand = null;
+      }
       // The trigger for this cell fires before we consider stepping off it.
       const arrival: ActorEvent = { kind: 'arrived', x: this.x, y: this.y };
       this.tryStart(dt, ctx);
@@ -189,6 +195,7 @@ export class Actor {
     this.nx = x;
     this.ny = y;
     if (dir) this.dir = dir;
+    this.faceOnLand = null;
     this.moving = false;
     this.t = 0;
     this.turn = 0;
@@ -198,6 +205,26 @@ export class Actor {
 
   face(dir: Dir) {
     if (!this.moving) this.dir = dir;
+    else this.faceOnLand = dir;
+  }
+
+  /**
+   * One scripted step to the neighbouring cell, frozen or not: a speaker
+   * stepping aside so two people can talk side by side. The caller has
+   * already decided the cell is free. Turns to `thenFace` on landing.
+   * Returns false when a step is already in flight.
+   */
+  stepTo(dir: Dir, thenFace?: Dir): boolean {
+    if (this.moving) return false;
+    const [tx, ty] = stepFrom(this.x, this.y, dir);
+    this.dir = dir;
+    this.nx = tx;
+    this.ny = ty;
+    this.moving = true;
+    this.t = 0;
+    this.bump = 0;
+    this.faceOnLand = thenFace ?? null;
+    return true;
   }
 
   /** Dev-only window into the gates, for the motion witness. */

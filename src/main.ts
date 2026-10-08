@@ -939,6 +939,8 @@ type Villager = Sprite & {
   /** Keepers never fade at night: story-gated folk, companions, two anchors per map. */
   keeper: boolean;
   seated: boolean;
+  /** A posted villager who stepped aside to talk walks back here after. */
+  postBack: { at: [number, number]; dir: Dir } | null;
   /** 1 fully present, 0 gone for the night. Eased at FADE_SPEED per second. */
   fade: number;
   /** Per-villager timing jitter so nobody moves in lockstep. Timing only. */
@@ -969,6 +971,7 @@ const villagers: Villager[] = NPCS.map((def) => {
     glow: null,
     keeper: true,
     seated: !!def.sits,
+    postBack: null,
     fade: 1,
     jitter: Math.random(),
     baseSheet: sheet,
@@ -2387,6 +2390,75 @@ function nearestFree(x: number, y: number, avoid: (x: number, y: number) => bool
   return null;
 }
 
+// ---------------------------------------------------------------- personal space
+//
+// A body is two tiles tall: it stands on its cell and its head fills the cell
+// above. Two people one directly above the other therefore draw as one pile,
+// the lower one's head over the upper one's chest, even on separate cells
+// (Aurelio at the well, Sun-hee at her stall, the fishers at the Caleta
+// stalls). So the rule is wider than "one body per cell": a body's footprint
+// is its cell and the cell above, and footprints may not meet. Wanderers keep
+// it on their own feet (they never step in directly above or below anybody);
+// a conversation keeps it by settling the two speakers side by side
+// (settleForTalk). The dog is knee-high and exempt, as everywhere.
+
+/** Would a body standing on (x, y) stand directly above or below another? */
+function crowdsSomeone(x: number, y: number, self: Actor): boolean {
+  return heldByOther(x, y - 1, self) || heldByOther(x, y + 1, self);
+}
+
+/** Somewhere a body may settle: open floor, nobody's cell, nobody's column
+ * neighbour, not a doorway, and not under a tall prop's painted head. */
+function roomToStand(x: number, y: number, self: Actor): boolean {
+  if (!map.inBounds(x, y) || map.solid(x, y) || map.triggerAt(x, y) || onDoorstep(x, y)) return false;
+  if (heldByOther(x, y, self) || crowdsSomeone(x, y, self)) return false;
+  return renderer.overhung(map)[y * map.w + x] !== 1;
+}
+
+/**
+ * Two people about to talk one above the other: one of them takes a single
+ * step to the side, so they speak side by side (diagonally, the way people
+ * actually stand to talk) and neither face is drawn under the other's head.
+ * The villager steps if they are free to; a seated, stationed or staged one
+ * holds their place and the player steps instead. A villager posted to one
+ * spot (range 0: a stall, a doorway) steps back to it after the talk.
+ */
+function settleForTalk(v: Villager) {
+  if (v === dog) return;
+  const [px, py] = player.occupies();
+  const [nx, ny] = v.actor.occupies();
+  if (px !== nx || Math.abs(py - ny) !== 1) return;
+  const npcMay =
+    !v.actor.isMoving && !v.seated && v.actor.pose !== 'sit' && !stagedControls(v) && !stationControls(v);
+  const movers: [Actor, Actor][] = npcMay ? [[v.actor, player], [player, v.actor]] : [[player, v.actor]];
+  for (const [mover, partner] of movers) {
+    if (mover.isMoving) continue;
+    const [mx, my] = mover.occupies();
+    for (const s of [1, -1]) {
+      if (!roomToStand(mx + s, my, mover)) continue;
+      const toward: Dir = s > 0 ? 'left' : 'right';
+      mover.stepTo(s > 0 ? 'right' : 'left', toward);
+      partner.face(OPPOSITE[toward]);
+      if (mover === v.actor && v.def.range === 0) {
+        v.postBack = { at: [mx, my], dir: v.def.sits ?? 'down' };
+      }
+      return;
+    }
+  }
+}
+
+/**
+ * Finish any step still in the air while the world is held for a
+ * conversation: the side-step of settleForTalk, or anyone caught mid-stride
+ * when the talk began (they used to hang between two cells for the whole
+ * conversation). Nothing new starts; only landings.
+ */
+function landHeldSteps(dt: number) {
+  for (const s of spritesHere()) {
+    if (s.actor.isMoving) s.actor.update(dt, { intent: null, blocked: () => true });
+  }
+}
+
 /**
  * Is the player walking up to this villager with the keys? Within three
  * steps, facing them, and on their row or column give or take one: the way
@@ -2436,6 +2508,32 @@ function updateVillager(v: Villager, dt: number) {
 
   // A stationed villager is walked by the custom's own code, not the leash.
   if (stagedControls(v) || stationControls(v)) return;
+
+  // Stepped aside to talk from a post: back to it once the cell is clear.
+  if (v.postBack) {
+    const [hx, hy] = v.postBack.at;
+    const [ax, ay] = v.actor.occupies();
+    if (v.actor.isMoving) {
+      v.actor.update(dt, { intent: null, blocked: () => true });
+      return;
+    }
+    if (ax === hx && ay === hy) {
+      v.actor.face(v.postBack.dir);
+      v.postBack = null;
+      return;
+    }
+    if (Math.abs(ax - hx) + Math.abs(ay - hy) !== 1) {
+      v.postBack = null; // moved on by something else (a door, the staging)
+      return;
+    }
+    // Not while that would stand them over (or under) somebody: the player
+    // is usually still right there, a row off, and stepping back would only
+    // rebuild the pile the side-step took apart.
+    if (!heldByOther(hx, hy, v.actor) && !crowdsSomeone(hx, hy, v.actor)) {
+      v.actor.stepTo(hx > ax ? 'right' : hx < ax ? 'left' : hy > ay ? 'down' : 'up', v.postBack.dir);
+    }
+    return;
+  }
 
   if (v.def.range === 0 || dev.freezeWander) return;
   const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
@@ -2499,7 +2597,21 @@ function updateVillager(v: Villager, dt: number) {
   // canopy): from up here that cell paints the prop over the face.
   const over = renderer.overhung(map);
   const leash = (x: number, y: number) =>
-    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y) || over[y * map.w + x] === 1;
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y) || over[y * map.w + x] === 1 ||
+    crowdsSomeone(x, y, v.actor);
+  // Standing in somebody's column, a row off (the player stopped just above
+  // or below, or two ambles met): the free one makes room, sideways first.
+  const [cx, cy] = v.actor.occupies();
+  if (!outside && !v.actor.isMoving && crowdsSomeone(cx, cy, v.actor)) {
+    const room = (['left', 'right', 'up', 'down'] as Dir[]).find((d) => {
+      const [sx, sy] = stepFrom(cx, cy, d);
+      return !blocked(sx, sy) && !leash(sx, sy);
+    });
+    if (room) {
+      v.want = room;
+      v.think = 0.35; // one step, then village time again
+    }
+  }
   v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
@@ -2762,8 +2874,27 @@ const calmFlash = () =>
   document.body.classList.contains('reduce-motion') ||
   (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
 
+/**
+ * The hush after a conversation closes. Players hammer Space (or tap) through
+ * the last lines, and the press after the last one used to land in the open
+ * world: re-reading the well you were facing, over and over, or on a phone
+ * walking you off toward wherever the extra tap fell. For a moment after the
+ * words close, presses and world taps are swallowed, and each swallowed one
+ * renews the moment, so a burst never leaks through; a deliberate press after
+ * a breath still acts.
+ */
+const TALK_HUSH_MS = 550;
+let talkHushUntil = 0;
+function afterTalkHush(): boolean {
+  const now = performance.now();
+  if (now >= talkHushUntil) return false;
+  talkHushUntil = now + TALK_HUSH_MS;
+  return true;
+}
+
 function endDialogue() {
   player.frozen = false;
+  talkHushUntil = performance.now() + TALK_HUSH_MS;
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   howtoOfferedBy = speaker?.def.id ?? null;
@@ -2891,11 +3022,13 @@ function startNpcDialogue(v: Villager) {
   if (!entry) return;
   // Back to whoever offered a declined card: it may come back after this.
   forgiveDeclinesBy(v.def.id);
-  const [ox, oy] = v.actor.occupies();
-  v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
+  // Caught mid-stride, they finish the step (landHeldSteps) and turn on
+  // landing; snapping them onto the far cell was a one-tile pop.
+  v.actor.face(OPPOSITE[player.dir]);
   v.actor.frozen = true;
   player.frozen = true;
   talkingTo = v;
+  settleForTalk(v);
   renderer.emote(v.actor, '!');
   if (!v.def.sprite) renderer.wave(v.actor);
   if (v.def.sprite === 'dog') audio.bark();
@@ -3823,6 +3956,8 @@ function motionWitness() {
   }
 }
 
+/** Reused every frame; see renderer.setKept. */
+const keptBodies: Actor[] = [];
 function update(dt: number) {
   renderer.tick(dt);
   textbox.tick(dt);
@@ -3880,6 +4015,11 @@ function update(dt: number) {
 
   // Whoever is mid-sentence leans into it.
   renderer.setSpeaker(textbox.isTyping && talkingTo ? talkingTo.actor : null);
+  // The player, and whoever they are talking to, are never lost behind a prop.
+  keptBodies.length = 0;
+  if (mode === 'play') keptBodies.push(player);
+  if (talkingTo) keptBodies.push(talkingTo.actor);
+  renderer.setKept(keptBodies);
 
   // The curiosity dot: does the cell you face have anything to say?
   if (mode === 'play' && !textbox.isOpen && !journalUI.isOpen && !sitting && !warp && !anyGameOpen() && !albumUI.isOpen) {
@@ -4086,6 +4226,7 @@ function update(dt: number) {
       }
     }
   } else if (textbox.isOpen) {
+    landHeldSteps(dt);
     if (menuDir) {
       textbox.onDir(menuDir);
       audio.select();
@@ -4118,6 +4259,8 @@ function update(dt: number) {
       summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
+    } else if (act && afterTalkHush()) {
+      // The press that closed the last line had company: swallowed.
     } else if (act) {
       if (!tryInteract()) {
         // Open air, and a game still waiting on its start flag: the how-to
@@ -4974,6 +5117,8 @@ glCanvas.addEventListener('pointerdown', (e) => {
     return;
   }
   if (player.frozen) return;
+  // An extra tap after the last line is not a walk order.
+  if (afterTalkHush()) return;
   const [wx, wy] = screenToWorld(e.clientX, e.clientY);
   const tx = Math.floor(wx / TILE);
   const ty = Math.floor(wy / TILE);
