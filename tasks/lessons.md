@@ -265,3 +265,14 @@ Write/Edit calls and heredocs out of the subagents' transcripts, which worked on
 transcripts are kept under ~/.claude. Rule: anything that took real work to build (pipelines,
 renderers, recovered assets) lives in the repo or a worktree and is committed; /tmp is for things
 you would not mind losing tonight.
+
+## Find-and-fix agents stop early; send them back with a concrete list (2026-10-07)
+- First rounds came back after 13-16 minutes with 1-3 fixes and "skipped the parts a player sees most" (A warped
+  past the east road and Caleta). The second round, with an explicit list (play every errand as a player, talk to
+  every NPC, scan spawns vs tall-prop footprints, press N at each step), found 5-10x more.
+- Rule: the brief must list the concrete play-throughs, not just the slice. Route cross-owner findings to the
+  owner immediately via SendMessage. Merge early (trial merge after round one) to catch conflicts.
+- e2e scripts share localStorage per origin: never run them in parallel against one dev server. Before calling an
+  e2e failure a regression, run the same script against main.
+- A field that changes which dialogue arm fires must not live inside `entry`: the thread guide and the content
+  walkers simulate `entry` directly. Live-only overrides go in a separate field (NpcDef.visiting).

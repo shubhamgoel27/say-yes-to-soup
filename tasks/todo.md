@@ -613,3 +613,30 @@ walker keeps S's no-shared-tile rule). 299 tests; prod build boots clean on desk
 Open: four "first talk is an introduction, not the task's scene" cases listed in tests/thread.test.ts
 KNOWN_WALK (bosun, Rios mail, Eugenia, Tacho); post offices that mention clerks but are signposts;
 trailer predates pass 3 (well ring, cairn, underline).
+
+## 2026-10-07: pass 4 (pristine sweep, about an hour, five parallel find-and-fix agents)
+Brief: ../wayfare-review/pass4/BRIEF.md
+- [x] A first hour (Ch'aska, east road, Caleta, the ship)
+- [x] B middle (Shionoura, Busan, Kerala, Delhi)
+- [x] C late + ending (Zanzibar, Sicily, Oaxaca, the Return, credits, night after)
+- [x] D systems, phones, UI (saves, input, settings, all viewports)
+- [x] E renderer and art craft (seams, z-order, light, actors, camera)
+- [x] merge onto pass4, tsc + npm test + prod smoke desktop and phone
+- [x] ship, verify live bundle
+
+### Review (pass 4, shipped f88a4b7, live bundle verified: "nobody gets a bill", "nanis-journal")
+- 55 commits from five find-and-fix agents (two to three rounds each) plus coordinator fixes.
+- Engine/art: ground chunk seams gone; side walls run unbroken in every room; east-road stone ridge reads as stones;
+  night sea deep slate not royal blue; daylight bloom no longer makes white aprons glow; Caleta casas get full roofs.
+- Systems: Continue resumes Nani's letter; iPhone landscape card/letter fit; Fullscreen hidden where impossible;
+  export file is nanis-journal; audio wakes after iOS backgrounding; plate never under the task chip; letters sit on
+  their rules; task chip scoped to the current chapter (tests/chip.test.ts); title cursor remembered; toasts re-show
+  at most once and never duplicate; thread prefers roads over bare ground.
+- Content: every speaker shows their own portrait (tests/portrait.test.ts); NPCs out of crane legs, tree crowns,
+  lamp heads (wander never enters a tall prop's art); Mang Ben says anak everywhere; ship/coast/Delhi/Sicily/Oaxaca
+  lines match what is drawn; bosun and Rios KNOWN_WALK faults fixed; Chasca's photo counts; Chela's goodbye; Return
+  chip clears at home; Allqu off the writer's cell; Bantu speaks from the langar row (NpcDef.visiting); closing book
+  fits a sideways phone and its hint names the credits; east road's village end flares; cocina papel by the door.
+- Gate: tsc clean, npm test 311/311, thread-e2e 175 states, prod smoke desktop + Galaxy NO ERRORS.
+- Open: attend-e2e (urojo careful run, kingyo open) and warmth-e2e (weave) fail on main AND on 8e22e6c, so they
+  predate pass 4; agent F is finding the root cause. Tablet portrait shows ~8 tiles (fixed 320x180 view; design).
