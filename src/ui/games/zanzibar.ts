@@ -1260,6 +1260,9 @@ export class UrojoPanel {
     this.slipLog = [];
     this.answered = 0;
     this.oneNote = 0;
+    // The scene clock restarts at zero below; a ladle time left over from the
+    // last run would sit in its future and hold every add until it caught up.
+    this.lastAddT = -9;
     this.startRound();
     this.hint = this.hard
       ? 'Zuberi hands you the ladle and does not quite let go. "The evening rush, mgeni. They call the bowl; you build it in the order they say it, ' +
