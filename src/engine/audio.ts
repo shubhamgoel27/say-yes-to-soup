@@ -352,6 +352,32 @@ export class AudioBus {
   /** Instrument odometer, read by the dev audition harness. Cheap to keep. */
   readonly stats = { phrases: 0, drums: 0, bells: 0, pads: 0, plucks: 0, droneOn: false };
 
+  /** True while the context sleeps because the tab is hidden (not muted). */
+  private parkedHidden = false;
+
+  /**
+   * A hidden tab goes quiet. The wind loop and Delhi's harmonium drone are
+   * oscillators, and they kept sounding from a background tab while the
+   * game itself had stopped. Suspending the context freezes its clock too,
+   * so every scheduled phrase picks up exactly where it was on return.
+   */
+  setHidden(hidden: boolean) {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    if (hidden) {
+      if (ctx.state === 'running') {
+        this.parkedHidden = true;
+        void ctx.suspend();
+      }
+      return;
+    }
+    if (!this.parkedHidden) return;
+    this.parkedHidden = false;
+    // A browser that wants a fresh gesture first (iOS) refuses quietly here,
+    // and the next tap's ensure() wakes it instead.
+    void ctx.resume().catch(() => {});
+  }
+
   /** Create the context. Must be called from a user gesture the first time. */
   ensure() {
     if (this.ctx) {

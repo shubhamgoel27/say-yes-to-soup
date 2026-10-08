@@ -829,7 +829,9 @@ window.addEventListener('pagehide', () => {
   if (mode === 'play') state.save();
 });
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && mode === 'play') state.save();
+  const hidden = document.visibilityState === 'hidden';
+  audio.setHidden(hidden);
+  if (hidden && mode === 'play') state.save();
 });
 setInterval(() => {
   if (mode === 'play') state.save();
