@@ -36,6 +36,10 @@ export function lendCreditsBook(open: () => void) {
 
 const journeyDone = () => flags?.has('story.end') ?? false;
 
+/** Whether this browser lets a page go fullscreen at all (iPhone Safari does not). */
+const canFullscreen = () =>
+  typeof document.documentElement.requestFullscreen === 'function' && document.fullscreenEnabled !== false;
+
 // ------------------------------------------------------------ the games shelf
 //
 // Every hands-on thing the journey taught, offered again from the pause menu
@@ -321,18 +325,24 @@ export class PauseMenu {
             },
           ]
         : []),
-      {
-        label: 'Fullscreen',
-        value: () => (document.fullscreenElement ? 'on' : 'off'),
-        adjust: () => {
-          if (document.fullscreenElement) void document.exitFullscreen();
-          // On a phone the room and the landscape lock travel together;
-          // elsewhere fullscreen alone is the whole ask.
-          else if (isPhone()) void goSideways();
-          else void document.documentElement.requestFullscreen?.();
-          setTimeout(() => this.render(), 150);
-        },
-      },
+      // An iPhone has no fullscreen for pages at all; there the row only ever
+      // said "off" and did nothing when tapped, so it is left out.
+      ...(canFullscreen()
+        ? [
+            {
+              label: 'Fullscreen',
+              value: () => (document.fullscreenElement ? 'on' : 'off'),
+              adjust: () => {
+                if (document.fullscreenElement) void document.exitFullscreen();
+                // On a phone the room and the landscape lock travel together;
+                // elsewhere fullscreen alone is the whole ask.
+                else if (isPhone()) void goSideways();
+                else void document.documentElement.requestFullscreen?.();
+                setTimeout(() => this.render(), 150);
+              },
+            },
+          ]
+        : []),
     ];
   }
 

@@ -105,7 +105,7 @@ export class JournalUI {
    * guide owns the rule (live chapter, conditions met, and somebody named
    * still has news), so the chip and the thread can never disagree. */
   activeTaskDefs(): WorldTask[] {
-    return openTasks(this.tasks, this.state);
+    return openTasks(this.tasks, this.state, this.state.place?.map);
   }
 
   /** Every open thread, in priority order. */

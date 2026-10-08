@@ -154,7 +154,9 @@ function downloadPack(name: string | null, text: string): string {
   const url = URL.createObjectURL(new Blob([text], { type: 'application/octet-stream' }));
   const a = document.createElement('a');
   a.href = url;
-  const file = `zoila-journal-${slug}.soup`;
+  // Not her name: Carmen says "Zoila" out loud in chapter one, and a file
+  // in the downloads folder must not say it first.
+  const file = `nanis-journal-${slug}.soup`;
   a.download = file;
   document.body.appendChild(a);
   a.click();
@@ -183,6 +185,8 @@ function journeyEnded(row: number): boolean {
 
 export class TitleScreen {
   private cursor = 0;
+  /** The cover row a side trip left from, restored when the cover returns. */
+  private returnTo: string | null = null;
   private options: { id: TitleChoice; label: string }[] = [];
   private hasSave = false;
   /** With the old code in the save, the woven band shimmers once on load. */
@@ -258,7 +262,8 @@ export class TitleScreen {
           { id: 'settings', label: 'Settings' },
           { id: 'credits', label: 'Credits' },
         ];
-    this.cursor = 0;
+    this.cursor = Math.max(0, this.options.findIndex((o) => o.id === this.returnTo));
+    this.returnTo = null;
     this.titleEl.hidden = false;
     this.render();
   }
@@ -334,6 +339,9 @@ export class TitleScreen {
       });
       return 'none';
     }
+    // A side trip off the cover (Journals, Settings, Credits) comes back to
+    // the row it left from; anything else starts the cover at the top.
+    this.returnTo = id === 'journals' || id === 'settings' || id === 'credits' ? id : null;
     return id;
   }
 
@@ -444,6 +452,8 @@ export class TitleScreen {
     if (verb === 'open') {
       setActiveSlot(row);
       this.onShelfChange?.();
+      // A journal just put on the table: the cover offers it at the top.
+      this.returnTo = null;
       this.showTitle(slotOccupied(row));
       return 'confirm';
     }

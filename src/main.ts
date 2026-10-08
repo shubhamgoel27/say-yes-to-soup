@@ -80,9 +80,11 @@ input.attach();
 const dev = new DevBridge();
 const audio = new AudioBus();
 
-// Browsers require a user gesture before audio; catch the first one.
-window.addEventListener('keydown', () => audio.ensure(), { once: true });
-window.addEventListener('pointerdown', () => audio.ensure(), { once: true });
+// Browsers require a user gesture before audio. Every gesture, not only the
+// first: iOS parks the context ("interrupted") when the tab goes to the
+// background, and only a later gesture may wake it. Cheap when running.
+window.addEventListener('keydown', () => audio.ensure());
+window.addEventListener('pointerdown', () => audio.ensure());
 
 const state = new GameState();
 state.load();
@@ -860,6 +862,26 @@ let plateTimers: number[] = [];
 let plateHeld = false;
 let plateWaiting: { text: string; holdMs: number } | null = null;
 let plateLive: { text: string; holdMs: number } | null = null;
+/** A phone lying down moves the chip out of the plate's way in CSS. */
+const PLATE_PUSHES_CHIP = matchMedia('(pointer: coarse) and (max-height: 500px) and (orientation: landscape)');
+/**
+ * The plate is centered and as wide as its name; the chip is in the corner
+ * and as tall as its thread. A long name over a three-line chip ran under it
+ * ("THE RIVIERA OF THE CYCLOPS" lost its T at 1280x800), so when the two
+ * would touch, the plate steps down below the chip for this showing.
+ */
+function clearPlateOfChip() {
+  plateEl.style.top = '';
+  if (PLATE_PUSHES_CHIP.matches || errandEl.hidden) return;
+  const p = plateEl.getBoundingClientRect();
+  const e = errandEl.getBoundingClientRect();
+  if (e.width === 0) return;
+  const GAP = 10;
+  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top < e.bottom + GAP && p.bottom > e.top - GAP) {
+    plateEl.style.top = `${Math.round(e.bottom + GAP)}px`;
+  }
+}
+
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
   plateTimers = [];
@@ -872,7 +894,10 @@ function showPlate(text: string, holdMs = 4200) {
   plateEl.textContent = text;
   plateLive = { text, holdMs };
   plateTimers = [
-    window.setTimeout(() => plateEl.classList.add('show'), 350),
+    window.setTimeout(() => {
+      clearPlateOfChip();
+      plateEl.classList.add('show');
+    }, 350),
     window.setTimeout(() => {
       plateEl.classList.remove('show');
       plateLive = null;
@@ -2588,6 +2613,9 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   camera.follow(px, py, map.w, map.h);
   state.place = { map: map.id, x: player.x, y: player.y, dir: player.dir };
   state.save();
+  // New ground can retire a whole chapter's threads (openTasks scopes by
+  // map), and nothing else would tell the chip until the next flag.
+  refreshTaskChip();
   showPlate(map.name, 2600);
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
@@ -3590,7 +3618,9 @@ function playWelcome() {
     'walk with the arrow keys or WASD, or click where you want to go',
     'slide a thumb in the lower left to walk, or tap where you want to go',
   ));
-  toasts.show(keysOrTaps('Space talks to people and touches things', '\u2726 talks to people and touches things'));
+  // Not led by the bare glyph: a toast opening on \u2726 is dressed as a journal
+  // moment (ink dot, page curl), and the glyph's fallback font ate the space.
+  toasts.show(keysOrTaps('Space talks to people and touches things', 'tap \u2726 to talk to people and touch things'));
 }
 
 /** Confirm the title menu's current option; shared by Space and click. */
@@ -3628,6 +3658,13 @@ function titleActivate() {
             freshSlate();
           },
     );
+  } else if (!state.has('intro.done')) {
+    // The flyleaf saves the moment it is finished, so a tab closed during
+    // Nani's letter or the three wake lines left a save with no intro in it;
+    // Continue then stood the traveler at the well in silence and her letter
+    // and the game's first words never came back. Pick up at the letter.
+    mode = 'letter';
+    title.showLetter(undefined, state.playerName);
   } else {
     beginPlay(false);
   }

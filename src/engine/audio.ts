@@ -355,7 +355,11 @@ export class AudioBus {
   /** Create the context. Must be called from a user gesture the first time. */
   ensure() {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') void this.ctx.resume();
+      // 'interrupted' is iOS Safari's word for a context it parked while the
+      // tab was hidden or a call came in; it wakes the same way. (Not in the
+      // DOM typings, hence the string compare.)
+      const st = this.ctx.state as string;
+      if (st === 'suspended' || st === 'interrupted') void this.ctx.resume();
       return;
     }
     try {
