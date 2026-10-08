@@ -74,3 +74,14 @@ describe('the ending: the chip on the way home', () => {
     assert.match(TASKS.find((t) => dusk.check(t.when))?.text ?? '', /Dusk at the well/);
   });
 });
+
+describe('the ending: the last page has the stone to itself', () => {
+  it('stages nobody (the dog included) on the setts in front of the well', () => {
+    const lamp = new GameState();
+    lamp.apply(['set:c10.apacheta.done', 'set:c10.lamp']);
+    const front = '21,16'; // where the player stands to write; the well is at 21,15
+    const here = BLOCKING.filter((b) => b.map === 'village' && lamp.check(b.when));
+    assert.ok(here.some((b) => b.id === 'allqu'), 'the dog has a place for the evening');
+    for (const b of here) assert.notEqual(`${b.at[0]},${b.at[1]}`, front, `${b.id} is staged where the page is written`);
+  });
+});
