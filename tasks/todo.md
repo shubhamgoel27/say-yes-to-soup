@@ -678,3 +678,17 @@ Brief: ../wayfare-review/pass4/BRIEF.md
 - Gate: tsc clean, npm test 364/364, thread-e2e 175 states, attend-e2e ALL GREEN, warmth-e2e all pass, prod smoke
   desktop + Galaxy NO ERRORS.
 - Known small: in Galaxy landscape the task chip can sit over an NPC's head near the top edge.
+
+## 2026-10-08: final critic round f (build 190120b). Reports: ../wayfare-review/f/
+- Overall 8.0 (first hour) / 8.4 (back half + ending) / 8.0 (systems + devices); round e was 7.8 / 7.6 / 7.6.
+- Writing 8.9 / 9.1 / 9.0. Polish 7.3 / 7.8 / 7.5 is still the floor.
+- Credits now thank Angli for "the everyday habit of bringing different cultures to one table" (190120b).
+- Gap to 9 (candidate pass 6):
+  - bodies: sidestep can land in a prop/wall/person; tall props (lamps) drawn over heads; companions mirror
+    the player's sidestep and block the thread path; extra taps on the textbox after the last line walk you off.
+  - camera: talks at a map's bottom edge happen under the textbox; lift the view during talks.
+  - clarity: dig mounds (click walks onto the mound; Space then reads flavour), portrait chip truncates the verb.
+  - staging: ship Neptune court + karaoke, Kerala and Delhi goodbyes, Shionoura dusk-to-morning cut under a fade.
+  - art: Sicily mole and water seams, east road dim, a stray saguaro, Gong behind his window.
+  - small: "week three" time beat, adobo burn window, sideways offer only once, HUD scale above 1600px, journal as
+    a book, Aurelio's stone, patang flock counter, traveler "Up from the coast?".
