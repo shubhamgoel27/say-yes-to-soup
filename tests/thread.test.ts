@@ -274,12 +274,14 @@ class Walker {
   }
 
   enter(mapId: string) {
+    const same = this.place === mapId;
     this.place = mapId;
     const arrival = ARRIVALS.some((a) => a.map === mapId && !this.state.has(a.flag) && this.state.check(a.when));
     this.settle();
-    // A scene waiting beyond the door's dark plays as the light comes up
-    // (content/staging.ts cues), unless a first footfall had the floor.
-    const cue = arrival ? undefined : CUES.find((c) => c.map === mapId && this.state.check(c.when));
+    // A scene waiting beyond a dark that was time passing in place plays as
+    // the light comes up (content/staging.ts cues), unless a first footfall
+    // had the floor.
+    const cue = arrival || !same ? undefined : CUES.find((c) => c.map === mapId && this.state.check(c.when));
     if (cue) {
       this.walk(cue.node);
       this.settle();

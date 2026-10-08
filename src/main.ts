@@ -2927,12 +2927,16 @@ function startWarp(trig: TriggerDef & { type: 'door' }) {
   }
 }
 
+/** The last door led back onto the map it left: a dark that was time passing. */
+let timePassed = false;
+
 /** The map swap at the dark middle of any transition. */
 function arriveAt(trig: TriggerDef & { type: 'door' }) {
   const dest = maps[trig.to];
   if (!dest) return;
   // A door onto the map you are already on is time passing, not a new place.
   const samePlace = dest === map;
+  timePassed = samePlace;
   map = dest;
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
   // The vigil is a night. Its page says "tonight the camposanto is lit", and
@@ -3036,7 +3040,9 @@ function endWarp() {
     return;
   }
   // Or the scene a dark was let fall for: it plays as the light comes up.
-  const cue = CUES.find((c) => c.map === map.id && state.check(c.when));
+  // Only after time passing in place; a door from somewhere else could land
+  // you across the map from where the scene is standing.
+  const cue = timePassed ? CUES.find((c) => c.map === map.id && state.check(c.when)) : undefined;
   if (cue && !textbox.isOpen) startNarration(cue.node);
 }
 
