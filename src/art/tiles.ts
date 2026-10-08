@@ -1402,6 +1402,30 @@ export class Tileset {
       const wallTop = 96;
       const wallBot = 252;
 
+      // The azotea: the flat roof itself, seen from above, edge to edge. It
+      // used to be left empty but for the rebar and the washing, so the
+      // roof cap took its width and colour off the laundry line and the
+      // footprint corners either side showed bare ground in the shadow.
+      const screed = shade('#bcb29f', (r.next() - 0.5) * 0.05);
+      vgrad(g, 10, 0, W - 20, wallTop - 10, shade(screed, 0.05), shade(screed, -0.06));
+      for (let i = 0; i < 4; i++) {
+        g.save();
+        g.translate(30 + r.int(W - 60), 10 + r.int(wallTop - 40));
+        g.scale(1, 0.45);
+        glowSpot(g, 0, 0, 30 + r.int(24), shade(screed, (r.next() - 0.5) * 0.1), 0.16);
+        g.restore();
+      }
+      g.strokeStyle = 'rgba(90,80,64,0.18)';
+      g.lineWidth = 1.4;
+      for (let i = 0; i < 2; i++) {
+        const cx0 = 40 + r.int(W - 80);
+        g.beginPath();
+        g.moveTo(cx0, 6 + r.int(10));
+        g.lineTo(cx0 + 10 - r.int(20), 30 + r.int(20));
+        g.lineTo(cx0 + 14 - r.int(28), wallTop - 24);
+        g.stroke();
+      }
+
       // Parapet and the flat roofline first, wall in front.
       vgrad(g, 16, wallTop, W - 32, wallBot - wallTop, shade(paint, 0.08), shade(paint, -0.08));
       // Salt-fade: pale vertical streaks washing down from the roofline.
