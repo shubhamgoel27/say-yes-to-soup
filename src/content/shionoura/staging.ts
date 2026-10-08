@@ -30,7 +30,7 @@ const EVENING: Cond = { has: READY, not: ['c4.complete'] };
 const SAILING: Cond = { has: ['c4.sailing'], not: ['c5.arrived'] };
 
 /** Where the morning sets you down: the root of the pier, Fumi at its end. */
-export const PIER_LANDING: [number, number] = [21, 27];
+export const PIER_LANDING: [number, number] = [21, 26];
 
 /** The festival itself, from Hana's first line until Isao's boat. */
 const FESTIVAL: Cond = { has: ['c4.complete'], not: ['c4.sailing'] };
@@ -86,9 +86,9 @@ export const STAGING: Staging = {
     // Fumi lights the lane first (her round), then comes down to the quay.
     { id: 'fumi', when: FESTIVAL, map: 'shionoura', at: [24, 24], dir: 'down' },
     // And sees the boat off from the end of the pier, bowing toward you.
-    // On the last plank, past the landing and clear of the traveler's mark;
-    // the talk camera lifts the frame so the words never cover her.
-    { id: 'fumi', when: SAILING, map: 'shionoura', at: [22, 30], dir: 'up' },
+    // (At 22,30, the last plank, the map's edge put her under the words,
+    // and 22,29 is where the launch puts arrivals down.)
+    { id: 'fumi', when: SAILING, map: 'shionoura', at: [22, 28], dir: 'up' },
     // Isao waits at his boat, which is the morning one.
     { id: 'isao', when: SAILING, map: 'shionoura', at: [25, 26], dir: 'left' },
   ],

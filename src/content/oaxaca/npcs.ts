@@ -95,7 +95,8 @@ export const OAXACA_NPCS: NpcDef[] = [
     id: 'eugenia',
     name: 'Doña Eugenia',
     map: 'oaxaca',
-    pos: [13, 13],
+    // A row clear of the stall, whose post rose out of her head.
+    pos: [13, 14],
     range: 1,
     look: {
       skin: '#c98f5e',
