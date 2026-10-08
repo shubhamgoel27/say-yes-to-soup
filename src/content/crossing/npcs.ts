@@ -916,6 +916,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.ex.tarp2': {
     lines: [
+      { text: 'The green tarp, lashed with the bosun’s best, still hiding something bulky.' },
       { text: 'A shellback outranks a secret, so you ask again. She is not ready to meet people, the bosun says.' },
     ],
   },
