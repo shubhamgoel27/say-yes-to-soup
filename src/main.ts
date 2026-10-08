@@ -1014,6 +1014,10 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
 // Seats, lamps, and keepers, found once at boot.
 {
   const claimed = new Set<string>();
+  // Bodies that stand in one place for good, as "map:x,y".
+  const posted = new Set<string>(
+    villagers.filter((v) => v.def.range === 0 && v !== dog).map((v) => `${v.def.map}:${v.def.pos[0]},${v.def.pos[1]}`),
+  );
   const PERCHES: [number, number, Dir][] = [
     [0, 1, 'up'],
     [-1, 0, 'right'],
@@ -1069,6 +1073,10 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
         const py = sy + dy;
         const k = `${mid}:${px},${py}`;
         if (!tm.inBounds(px, py) || tm.solid(px, py) || claimed.has(k)) continue;
+        // Personal space: a perch directly above or below another sitter or
+        // anyone posted for good would seat two bodies in one pile.
+        const near = (y: number) => claimed.has(`${mid}:${px},${y}`) || posted.has(`${mid}:${px},${y}`);
+        if (posted.has(k) || near(py - 1) || near(py + 1)) continue;
         claimed.add(k);
         best.seat = { at: [px, py], dir };
         break;
@@ -1633,15 +1641,17 @@ function noteTrail() {
 const manhattan = (a: [number, number], b: [number, number]) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
 
 /** Where a companion arriving through a door stands: two steps off, behind if the ground allows. */
-function trailSpot(): [number, number] | null {
+function trailSpot(self: Actor): [number, number] | null {
   const p = player.occupies();
   const [bx, by] = stepFrom(...stepFrom(p[0], p[1], OPPOSITE[player.dir]), OPPOSITE[player.dir]);
   const open = (x: number, y: number) => map.inBounds(x, y) && !map.solid(x, y) && !onDoorstep(x, y);
+  // Where she lands, nobody already stands, nor directly above or below.
+  const free = (x: number, y: number) => open(x, y) && !heldByOther(x, y, self) && !crowdsSomeone(x, y, self);
   const cells: [number, number][] = [];
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
       const c: [number, number] = [p[0] + dx, p[1] + dy];
-      if (manhattan(c, p) !== 2 || !open(c[0], c[1])) continue;
+      if (manhattan(c, p) !== 2 || !free(c[0], c[1])) continue;
       // A tile between must be open too, or she is on the far side of a wall.
       const mids: [number, number][] = [[p[0] + Math.sign(dx), p[1]], [p[0], p[1] + Math.sign(dy)]];
       if (!mids.some(([mx, my]) => (mx !== p[0] || my !== p[1]) && open(mx, my))) continue;
@@ -1751,7 +1761,7 @@ function updateStaging(dt: number) {
     if (w.escort) {
       if (v.def.map !== map.id) {
         // Through the door a moment behind you, as companions are.
-        const spot = trailSpot();
+        const spot = trailSpot(v.actor);
         if (!spot || warp) continue;
         v.def.map = map.id;
         v.actor.placeAt(spot[0], spot[1], player.dir);
