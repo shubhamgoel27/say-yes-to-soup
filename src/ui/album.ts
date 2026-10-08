@@ -424,7 +424,7 @@ export class AlbumUI {
         return `
           <div class="end-kicker">the last page</div>
           <div class="end-ruled"><p class="end-written">${this.lastLineHtml()}</p></div>
-          <p class="end-note">Written at the well, in your own hand. The page was never blank. It was waiting.</p>`;
+          <p class="end-note">Written at the well, in your own hand, while the kitchen windows went gold.</p>`;
       case 'home':
         return `
           <div class="end-kicker">the stop she never got to write a note for</div>

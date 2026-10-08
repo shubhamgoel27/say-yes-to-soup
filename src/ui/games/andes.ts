@@ -69,6 +69,23 @@ const FALL_DELAY = [0.3, 0.36, 0.16, 0.22, 0.04];
 
 /** The fallen heap, left to right, for the story's dig: slot indexes by x. */
 const DIG_ORDER = [0, 2, 4, 3, 1];
+
+/**
+ * Where the k-th dig spot (left to right) sits on the heap. Not the clods'
+ * own fallen centres: a footing and the shoulder above it land 8px apart,
+ * so the ring on one sat on the other's steam and digging there said "only
+ * earth". Five spots spread evenly across the mound, the crown highest,
+ * each wide of its neighbour's ring.
+ */
+function digPx(k: number): { x: number; y: number } {
+  const off = Math.abs(k - 2);
+  return { x: 240 + k * 30, y: off === 0 ? 282 : off === 1 ? 289 : 296 };
+}
+const digPxOf = (spot: number) => digPx(Math.max(0, DIG_ORDER.indexOf(spot)));
+/** Seconds a fresh phase ignores Space, so presses meant for the last one land nowhere. */
+const PHASE_GRACE = 0.5;
+/** The story's wait between the dome coming down and the stick being handed over. */
+const DIG_WAIT = 1.0;
 /** Papas buried under the heap; the story dig finds them by their steam. */
 const DIG_PAPAS = 3;
 
@@ -452,6 +469,8 @@ export class WatiaPanel {
   private emberAcc = 0;
   private shimmerAcc = 0;
   private steamAcc = 0;
+  /** Story: Space is ignored until the pulse clock passes this. */
+  private graceUntil = 0;
 
   constructor(
     private root: HTMLElement,
@@ -501,6 +520,7 @@ export class WatiaPanel {
     this.papaPop = 0;
     this.doneT = 0;
     this.emberAcc = this.shimmerAcc = this.steamAcc = 0;
+    this.graceUntil = 0;
   }
 
   tick(dt: number) {
@@ -563,6 +583,10 @@ export class WatiaPanel {
   }
 
   onAction() {
+    // The story's phase changes swallow a mashing hand's leftover presses:
+    // a flurry that finished the fire must not also drop the dome, take the
+    // stick and dig a blind hole before the player has read a word.
+    if (!this.hard && this.pulse < this.graceUntil) return;
     if (this.phase === 'stack') {
       if (this.placed[this.cursor]) {
         this.audio.bump();
@@ -644,6 +668,7 @@ export class WatiaPanel {
       this.animFeed();
       if (this.glow >= 1) {
         this.phase = 'collapse';
+        this.graceUntil = this.pulse + PHASE_GRACE;
         this.scene.flash('#ffb45e', 0.25);
         this.hint =
           this.best > 1.2
@@ -659,6 +684,7 @@ export class WatiaPanel {
     } else if (this.phase === 'collapse') {
       this.fallen = true;
       this.phase = 'done';
+      this.graceUntil = this.pulse + DIG_WAIT;
       this.audio.weaveDone();
       this.animCollapse();
       const wait = ' Justina makes you wait the length of a long song, then hands you a stick. Space, and dig.';
@@ -676,10 +702,11 @@ export class WatiaPanel {
       this.buried.clear();
       const spots = [...DIG_ORDER].sort(() => Math.random() - 0.5);
       for (const i of spots.slice(0, DIG_PAPAS)) this.buried.add(i);
-      this.hint = 'The heap breathes. Dig where the steam leaks out; the cold earth is only earth.';
+      this.graceUntil = this.pulse + PHASE_GRACE;
+      this.hint = 'The heap breathes. Three wisps of steam leak out of it: move the ring onto one and dig. Where nothing steams, it is only earth.';
     } else if (this.phase === 'dig') {
       const spot = DIG_ORDER[this.digCur] ?? 0;
-      const f = fallenPx(spot);
+      const f = digPx(this.digCur);
       if (this.buried.has(spot)) {
         this.buried.delete(spot);
         this.found++;
@@ -701,7 +728,7 @@ export class WatiaPanel {
       } else {
         this.audio.bump();
         this.scene.burst(f.x, f.y + 4, { n: calm() ? 2 : 5, kind: 'puff', color: 'rgba(140,105,70,0.5)', speed: 40, grav: -10, life: 0.5, size: 4 });
-        this.hint = 'Only earth, still warm. Follow the steam.';
+        this.hint = 'Only earth here, still warm, and no steam. Move the ring onto a wisp.';
       }
     } else if (this.phase === 'done' || this.phase === 'lost') {
       this.live = false;
@@ -816,8 +843,9 @@ export class WatiaPanel {
       while (this.steamAcc > 1) {
         this.steamAcc -= 1;
         for (const i of this.buried) {
-          const f = fallenPx(i);
-          if (Math.random() < 0.6) this.scene.waft(f.x + (Math.random() - 0.5) * 10, f.y - 4, 'rgba(255,252,244,0.5)', 7);
+          const f = digPxOf(i);
+          // Narrow and bright, so each wisp reads as its own spot.
+          if (Math.random() < 0.8) this.scene.waft(f.x + (Math.random() - 0.5) * 4, f.y - 2, 'rgba(255,253,248,0.8)', 8);
         }
       }
     } else if (this.phase === 'done') {
@@ -877,11 +905,11 @@ export class WatiaPanel {
 
   /** The dig cursor: a stick's ring on the heap, wherever the hand is. */
   private paintDig(g: CanvasRenderingContext2D, time: number) {
-    const f = fallenPx(DIG_ORDER[this.digCur] ?? 0);
+    const f = digPx(this.digCur);
     g.strokeStyle = '#f4d06f';
     g.lineWidth = 2.4;
     g.beginPath();
-    g.ellipse(f.x, f.y + 2, 22 + Math.sin(time * 5) * 1.5, 11 + Math.sin(time * 5), 0, 0, Math.PI * 2);
+    g.ellipse(f.x, f.y + 2, 13 + Math.sin(time * 5) * 1.2, 7 + Math.sin(time * 5) * 0.6, 0, 0, Math.PI * 2);
     g.stroke();
   }
 

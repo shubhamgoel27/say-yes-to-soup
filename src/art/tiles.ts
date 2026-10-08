@@ -823,24 +823,63 @@ export class Tileset {
       oval(g, W / 2, 84, 24, 7, shade(PAL.stoneDark, -0.05));
     }, 64, 96);
 
+    // The chichería's flag: a long cane pole raised by the door with a red
+    // cloth tied at the top, the way the Andes says "fresh chicha here".
+    // Tall on purpose: the cloth flies above the eaves and above anyone
+    // standing by the door, so the first errand's landmark is seen from the
+    // plaza and never reads as a feather in Rosa's hat.
     this.make('chichaflag', 1, (g) => {
-      softShadow(g, 30, 88, 12, 4, 0.18);
-      rr(g, 28, 16, 4, 76, 2, PAL.earthDark);
-      // The red cloth, waving softly.
-      g.beginPath();
-      g.moveTo(32, 16);
-      g.quadraticCurveTo(58, 20, 56, 34);
-      g.quadraticCurveTo(44, 30, 32, 36);
-      g.closePath();
-      g.fillStyle = PAL.terracotta;
-      g.fill();
-      g.beginPath();
-      g.moveTo(32, 22);
-      g.quadraticCurveTo(48, 26, 50, 32);
-      g.strokeStyle = shade(PAL.terracotta, -0.2);
+      softShadow(g, 62, 328, 13, 4, 0.2);
+      // The cane: a slight lean, with its nodes.
+      const bx = 60;
+      const by = 330;
+      const tx = 70;
+      const ty = 26;
+      g.lineCap = 'round';
+      g.strokeStyle = '#8a6a3e';
+      g.lineWidth = 5;
+      g.beginPath(); g.moveTo(bx, by); g.lineTo(tx, ty); g.stroke();
+      g.strokeStyle = 'rgba(255,240,205,0.35)';
+      g.lineWidth = 1.6;
+      g.beginPath(); g.moveTo(bx - 1.5, by); g.lineTo(tx - 1.5, ty); g.stroke();
+      g.strokeStyle = shade('#8a6a3e', -0.3);
       g.lineWidth = 2;
+      for (let k = 1; k < 8; k++) {
+        const f = k / 8;
+        const nx = bx + (tx - bx) * f;
+        const ny = by + (ty - by) * f;
+        g.beginPath(); g.moveTo(nx - 3.5, ny); g.lineTo(nx + 3.5, ny - 0.4); g.stroke();
+      }
+      // A few stones wedged round the foot.
+      for (const [sx, sy] of [[52, 328], [68, 329], [60, 332]] as const) {
+        oval(g, sx, sy, 5, 3.2, shade(PAL.stone, -0.08));
+      }
+      // The red cloth, big and bellying in the wind.
+      const red = PAL.terracotta;
+      g.beginPath();
+      g.moveTo(tx, ty + 2);
+      g.bezierCurveTo(tx + 18, ty - 6, tx + 34, ty + 10, tx + 52, ty + 2);
+      g.bezierCurveTo(tx + 48, ty + 16, tx + 54, ty + 28, tx + 50, ty + 40);
+      g.bezierCurveTo(tx + 34, ty + 46, tx + 18, ty + 32, tx + 1, ty + 44);
+      g.closePath();
+      g.fillStyle = red;
+      g.fill();
+      // Its folds: a lit crest and a shaded trough.
+      g.strokeStyle = shade(red, -0.25);
+      g.lineWidth = 2.4;
+      g.beginPath();
+      g.moveTo(tx + 6, ty + 16);
+      g.bezierCurveTo(tx + 20, ty + 10, tx + 32, ty + 24, tx + 46, ty + 18);
       g.stroke();
-    }, 64, 96);
+      g.strokeStyle = 'rgba(255,214,180,0.4)';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(tx + 6, ty + 6);
+      g.bezierCurveTo(tx + 18, ty + 1, tx + 30, ty + 12, tx + 44, ty + 6);
+      g.stroke();
+      // The knot that ties it on.
+      dot(g, tx + 1, ty + 4, 3.2, shade(red, -0.3));
+    }, 128, 336);
 
     this.make('doorShut', 2, (g) => {
       // Drawn over the house doorway when latched.

@@ -2,7 +2,7 @@ import type { EventNode, ExamineArm, NodeMap, NpcDef } from '../schema';
 
 /**
  * The town's people. Italian for strangers and officialdom, Sicilian for
- * feeling: amuni, bedda, talia, picciriddu. Rules unchanged since the Andes:
+ * feeling: amuni, gioia, talia, picciriddu (said of others; the player is gioia, which takes no gendered ending). Rules unchanged since the Andes:
  * nobody lectures, people disagree, the wrong branch is the warmer scene,
  * two short sentences. No mafia, no mainland bleed, dialect is never a joke.
  */
@@ -288,14 +288,14 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { who: 'Nonna Concetta', text: 'Talìa, a new face. Thin, too. Hold this.' },
       { text: 'She puts a heel of bread in your hand, still warm, as if you had asked. You had not.' },
-      { who: 'Nonna Concetta', text: 'Eat, bedda. Nobody stands in my sun with empty hands.' },
+      { who: 'Nonna Concetta', text: 'Eat, gioia. Nobody stands in my sun with empty hands.' },
     ],
     effects: ['set:met.concetta', 'journal:people.concetta', 'journal:words.bedda'],
   },
   'c8.concetta.fish': {
     lines: [
       { who: 'Nonna Concetta', text: 'My swordfish! Turi kept the belly cut for me, the thief, the angel.' },
-      { who: 'Nonna Concetta', text: 'Sunday you eat at my table. This is not an invitation, bedda, it is a schedule.' },
+      { who: 'Nonna Concetta', text: 'Sunday you eat at my table. This is not an invitation, gioia, it is a schedule.' },
     ],
     effects: [
       'errand.done',
@@ -320,7 +320,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.pranzo.primo': {
     lines: [
       { text: 'The antipasti vanish in one lap. Then the Norma lands, eggplant under snow, and the talk drops by half.' },
-      { who: 'Nonna Concetta', text: 'Pasta alla Norma, bedda. Eat it while it is a masterpiece.' },
+      { who: 'Nonna Concetta', text: 'Pasta alla Norma, gioia. Eat it while it is a masterpiece.' },
     ],
     effects: ['journal:dishes.norma'],
     choices: [
@@ -349,7 +349,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.pranzo.refuse': {
     lines: [
-      { who: 'Nonna Concetta', text: 'No? NO? Bedda, look at your arms. A gull could carry you off.' },
+      { who: 'Nonna Concetta', text: 'No? NO? Gioia, look at your arms. A gull could carry you off.' },
       { text: 'Diplomacy fails in four languages. The second helping lands.' },
     ],
     choices: [
@@ -368,7 +368,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.pranzo.end': {
     lines: [
       { text: 'Fruit, coffee, a sweet. The pranzo does not end; it widens.' },
-      { who: 'Nonna Concetta', text: 'Sunday is a roll call, picciriddu. Everyone answers, even the dead, even the ones in Torino.' },
+      { who: 'Nonna Concetta', text: 'Sunday is a roll call, gioia. Everyone answers: the picciriddi, the old men of the circolo, even the dead, even the ones in Torino.' },
       { text: 'Later, Nani’s entry on this page stops mid-sentence. The rest is just paper.' },
     ],
     effects: ['set:c8.pranzo', 'journal:customs.pranzo', 'journal:words.picciriddu'],
@@ -376,7 +376,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.concetta.walk': {
     lines: [
       { who: 'Nonna Concetta', text: 'Enough. The work is done, so nothing else may happen today.' },
-      { who: 'Nonna Concetta', text: 'Amunì, bedda. We walk.' },
+      { who: 'Nonna Concetta', text: 'Amunì, gioia. We walk.' },
     ],
     effects: ['journal:words.amuni'],
     choices: [
@@ -387,7 +387,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.walk.nowhere': {
     lines: [
-      { who: 'Nonna Concetta', text: 'To? Nowhere, bedda. You walk slow, greet everyone, and arrive back where you started, richer.' },
+      { who: 'Nonna Concetta', text: 'To? Nowhere, gioia. You walk slow, greet everyone, and arrive back where you started, richer.' },
     ],
     choices: [
       { text: 'Walk with her', goto: 'c8.walk.go' },
@@ -416,7 +416,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.walk.polepole': {
     lines: [
       { who: 'Nonna Concetta', text: 'Pole pole. Ha! A whole coast on the far side of the world, walking correctly.' },
-      { who: 'Nonna Concetta', text: 'Everywhere worth living, bedda, somebody invented this exact walk.' },
+      { who: 'Nonna Concetta', text: 'Everywhere worth living, gioia, somebody invented this exact walk.' },
     ],
     next: 'c8.walk.end',
   },
@@ -439,7 +439,7 @@ export const SICILY_NODES: NodeMap = {
     ],
   },
   'c8.concetta.idle': {
-    lines: [{ who: 'Nonna Concetta', text: 'Stand in the shade at least, bedda. The sun here does not joke after ten.' }],
+    lines: [{ who: 'Nonna Concetta', text: 'Stand in the shade at least, gioia. The sun here does not joke after ten.' }],
   },
 
   // ---------------- Turi, the fish vendor ----------------
@@ -649,7 +649,7 @@ export const SICILY_NODES: NodeMap = {
     lines: [
       { text: 'The cards stop. The one with the anchor tattoo looks at you, then at the empty chair.' },
       { who: 'The Elders', text: 'Concetta fed you Sunday. And a chair empty too long becomes a superstition.' },
-      { who: 'The Elders', text: 'Sit, picciriddu. We play for nothing, and for everything.' },
+      { who: 'The Elders', text: 'Sit, sit. We play for nothing, and for everything.' },
     ],
     choices: [
       { text: 'Take the empty chair', goto: 'c8.elders.deal' },
@@ -664,7 +664,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.elders.deal': {
     lines: [
       { text: 'The chair receives you like it remembers how.' },
-      { who: 'The Elders', text: 'What you watched standing up, now do sitting down. Amunì, picciriddu, cut the deck.' },
+      { who: 'The Elders', text: 'What you watched standing up, now do sitting down. Amunì, cut the deck.' },
     ],
     effects: ['set:c8.scopa.start'],
   },
@@ -686,7 +686,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.elders.again': {
     lines: [
-      { who: 'The Elders', text: 'We promised you a hundred losses, picciriddu. So far, almost none.' },
+      { who: 'The Elders', text: 'We promised you a hundred losses. So far, almost none.' },
     ],
     choices: [
       { text: 'Take the chair again', when: { has: ['c8.scopa.won'] }, goto: 'c8.elders.scopaReplay' },
@@ -968,7 +968,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.depart': {
     lines: [
       { text: 'Half the town has come down the mole to see you off properly. Nobody agrees on properly.' },
-      { who: 'Nonna Concetta', text: 'A goodbye is eaten, bedda. Two arancine, still warm. Do not argue with the paper.' },
+      { who: 'Nonna Concetta', text: 'A goodbye is eaten, gioia. Two arancine, still warm. Do not argue with the paper.' },
       { who: 'Alfio', text: 'ArancinE? Nonna. In front of the ship?' },
     ],
     choices: [
@@ -1123,7 +1123,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.egg.concetta': {
     lines: [
       { text: 'Concetta passes without a word, pinches one basil leaf from the Moor\'s crown, and crushes it under your nose.' },
-      { who: 'Nonna Concetta', text: 'Mm. You water, it grows, you belong. Now stand in the shade, bedda.' },
+      { who: 'Nonna Concetta', text: 'Mm. You water, it grows, you belong. Now stand in the shade, gioia.' },
     ],
     effects: ['set:egg.c8.basil.nod'],
   },

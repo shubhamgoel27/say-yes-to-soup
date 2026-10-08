@@ -48,13 +48,16 @@ function objectAt(x: number, y: number): string {
   if (y === ROAD_Y + 3 && x >= 18 && x <= 24 && x !== 21) return 'q';
   if ((x === 18 || x === 24) && y === ROAD_Y + 4) return 'q';
   if ((x === 20 && y === ROAD_Y + 2) || (x === 23 && y === ROAD_Y + 2)) return 'r';
-  // The arriero's camp: the fire and the tent close together, the fodder and
-  // the rail set back, and nothing on a line with anything else.
-  if (x === 37 && y === ROAD_Y + 3) return 'E'; // tent
-  if (x === 39 && y === ROAD_Y + 2) return 'k'; // campfire
-  if (x === 40 && y === ROAD_Y + 3) return 's'; // stool
-  if (x === 38 && y === ROAD_Y + 2) return 'e'; // his q'epi, dropped where he sat
-  if (x === 35 && y === ROAD_Y + 2) return 'v'; // the fodder rick
+  // The arriero's camp: the fire and the tent close together, the fodder
+  // set back, and nothing on a line with anything else. It sits in the lee
+  // of the tambo wall, west of the pass, beside Faustino himself: he stands
+  // here so the llama in the gap can never wall him off, and his first
+  // words invite you in to a fire that has to be within reach of them.
+  if (x === 28 && y === ROAD_Y + 3) return 'E'; // tent
+  if (x === 26 && y === ROAD_Y + 2) return 'k'; // campfire
+  if (x === 27 && y === ROAD_Y + 2) return 's'; // stool
+  if (x === 25 && y === ROAD_Y + 4) return 'e'; // his q'epi, dropped where he sat
+  if (x === 27 && y === ROAD_Y + 4) return 'v'; // the fodder rick
   if (x === 34 && y === ROAD_Y - 2) return 'h'; // the hitching rail, swept
   if (x === 49 && y === ROAD_Y - 2) return 'P'; // the signboard east, on the wide road's shoulder
   // Boulders in twos and threes where the ridge has shed them.
@@ -90,7 +93,10 @@ const { ground, objects } = paint();
 
 export const EAST_ROAD_MAP: MapData = {
   id: 'east-road',
-  name: 'The East Road',
+  // Shown on the place plate. The pass leaves the valley by its east gate
+  // and winds round and down to the Pacific; "west" in the story is the
+  // journey across the sea, so the plate names the road, not a compass point.
+  name: 'The Pass Road',
   spawn: [1, ROAD_Y],
   spawnFacing: 'right',
   legend: {

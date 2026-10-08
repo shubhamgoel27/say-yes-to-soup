@@ -47,7 +47,7 @@ export const CHAPTER: ChapterDef = {
       from: 'Marisol, the stall on the malecón',
       when: { has: ['c2.casero'] },
       body: [
-        'Casero! The stall misses you. The bonito came in the week you left, of course. La mar has a sense of humor, pe.',
+        'Hola from the stall, which misses you. The bonito came in the week you left, of course. La mar has a sense of humor, pe.',
         'If Japan has a fish person, give them my respects and study their scale. A fishmonger can be judged entirely by the state of her scale.',
         'Your yapa is waiting on account. It does not expire. That is the whole point of it, pe.',
       ],

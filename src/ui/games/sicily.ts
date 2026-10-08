@@ -720,7 +720,7 @@ export class ScopaPanel {
       });
       if (saver) {
         this.missedSette++;
-        this.lesson = `The settebello was lying there in the sun and your ${saver.v} was in your hand. She is a whole point, bedda. Her first, always.`;
+        this.lesson = `The settebello was lying there in the sun and your ${saver.v} was in your hand. She is a whole point, gioia. Her first, always.`;
         return;
       }
     }
@@ -731,8 +731,8 @@ export class ScopaPanel {
       const got = this.wouldTake(alt) ?? [];
       this.lesson =
         got.length === 1
-          ? `You held the ${alt.v} and its twin was lying right there on the wood, in the sun, waiting. Talìa before you play, picciriddu.`
-          : `You held the ${alt.v}, and the wood was showing ${got.map((c) => c.v).join(' and ')}. Arithmetic, picciriddu. Arithmetic is also fishing.`;
+          ? `You held the ${alt.v} and its twin was lying right there on the wood, in the sun, waiting. Talìa before you play.`
+          : `You held the ${alt.v}, and the wood was showing ${got.map((c) => c.v).join(' and ')}. Arithmetic. Arithmetic is also fishing.`;
     }
   }
 
@@ -2327,7 +2327,7 @@ export class CannoloPanel {
     }
     this.coachTendency(true);
     this.hint =
-      '"Basta, bedda." Alfio lifts the bag out of your hands the way you lift a sleeping cat. ' +
+      '"Basta, gioia." Alfio lifts the bag out of your hands the way you lift a sleeping cat. ' +
       '"Three shells for the seagulls is a festival of its own. Tomorrow the gold will still be there." Space, and the queue gets his cannoli tonight.';
   }
 

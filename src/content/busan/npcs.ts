@@ -1189,7 +1189,7 @@ export const BUSAN_LETTERS: LetterDef[] = [
     from: 'Marisol, the stall on the malecón',
     when: { has: ['c2.casero'] },
     body: [
-      'Casero. The harbor office swears this will find you in Korea, which I only half believe, so I keep it short in case the ocean reads it.',
+      'To my regular. The harbor office swears this will find you in Korea, which I only half believe, so I keep it short in case the ocean reads it.',
       'The bonito came back the week you left. Typical. Your fish waits for no one, but your stall remembers you.',
       'They tell me the markets there are run by the aunties. Of course they are, pe. Learn their word for the yapa and bring it home to me.',
     ],

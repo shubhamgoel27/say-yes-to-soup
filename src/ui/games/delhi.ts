@@ -2374,7 +2374,7 @@ export class PatangPanel {
       if (this.rivalIdx >= this.rivals.length) {
         this.phase = 'done';
         this.audio.weaveDone();
-        this.hint = 'The patang comes down hand over hand, polite as a guest. Press Space.';
+        this.hint = `The patang comes down hand over hand, polite as a guest. ${this.verdict()} Press Space.`;
         s?.flash('#ffe9c0', 0.3);
       } else {
         this.phase = 'duel';
@@ -2391,7 +2391,7 @@ export class PatangPanel {
     if (this.phase === 'storm') {
       this.phase = 'done';
       this.audio.weaveDone();
-      this.hint = 'The sky opens properly. Nobody leaves the roofs; the kites come down and the kulhads come out. Press Space.';
+      this.hint = `The sky opens properly. Nobody leaves the roofs; the kites come down and the kulhads come out. ${this.verdict()} Press Space.`;
       if (s) {
         s.flash('#fff3d8', 0.35);
         if (!calmMotion()) s.thump(3, 0.03);
@@ -2411,6 +2411,22 @@ export class PatangPanel {
     const done = this.onDone;
     this.onDone = null;
     done?.();
+  }
+
+  /**
+   * Yusuf's word on how the evening was flown, from the run's own ledger:
+   * patangs given to the sky, flocks pulled through. A careless flight that
+   * still won is not told it was clean.
+   */
+  private verdict(): string {
+    const pulled = this.faults.pigeon;
+    if (this.lost === 0 && pulled === 0) return 'Yusuf: "No birds pulled, no patang lost. Acceptable."';
+    const n = ['one', 'two', 'three', 'four', 'five'][this.lost - 1] ?? String(this.lost);
+    const kites = this.lost === 0 ? '' : `${n} patang${this.lost === 1 ? '' : 's'} given to the sky`;
+    // A held pull through a passing flock counts every moment; say it once.
+    const birds = pulled === 0 ? '' : 'a line pulled through the birds';
+    const ledger = [kites, birds].filter(Boolean).join(' and ');
+    return `Yusuf counts on his fingers: "Won, with ${ledger}. The roof will remember both halves of that."`;
   }
 
   /**

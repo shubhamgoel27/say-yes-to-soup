@@ -418,8 +418,10 @@ export const NODES: NodeMap = {
   // ---------------- Rosa ----------------
   'rosa.first': {
     lines: [
-      { who: 'Rosa', text: 'You walked up from the valley? Sit, sit, {name}. The soup is hot and you look like wind.' },
-      { text: 'A bowl lands in front of you before you can answer. Steam. Potatoes. Something green and sharp.' },
+      { who: 'Rosa', text: 'You walked up from the valley? Sit, sit. And they call you?' },
+      { text: 'You tell her your name. She says it once to the pot, as if filing it with the onions.' },
+      { who: 'Rosa', text: 'Sit, sit, {name}. The soup is hot and you look like wind.' },
+      { text: 'A bowl lands in front of you before you can say anything else. Steam. Potatoes. Something green and sharp.' },
     ],
     effects: ['journal:dishes.rosasoup'],
     choices: [
@@ -615,7 +617,7 @@ export const NODES: NodeMap = {
   'teofilo.first': {
     lines: [
       { who: 'Don Teófilo', text: 'Ah! The bundle-carrier. Rosa told the whole room before you reached the door.' },
-      { text: 'He pats the stool beside his, the seat he has kept for forty years, and slides you a glass of cloudy chicha.' },
+      { text: 'He pats the stool beside his, the one he has kept free for fifty years, and slides you a glass of cloudy chicha.' },
     ],
     choices: [
       { text: 'Drink up', goto: 'teofilo.drink' },
@@ -647,7 +649,7 @@ export const NODES: NodeMap = {
   },
   'teofilo.idle': {
     lines: [
-      { who: 'Don Teófilo', text: 'When the flag is up, this seat is mine. The only appointment I have kept for forty years.' },
+      { who: 'Don Teófilo', text: 'When the flag is up, this stool is mine and that one is kept. Fifty years, and I have never missed the appointment.' },
     ],
   },
 
@@ -746,7 +748,7 @@ export const NODES: NodeMap = {
   },
   'carmen.zoila2': {
     lines: [
-      { who: 'Doña Carmen', text: 'We were warping this loom together. I slept. By morning her half was tied off and she was gone down the west road.' },
+      { who: 'Doña Carmen', text: 'We were warping this loom together. I slept. By morning her half was tied off and she was gone down the pass road, toward the sea.' },
       { who: 'Doña Carmen', text: 'A note on the post. I am still not calling that a goodbye.' },
     ],
     choices: [
@@ -858,7 +860,7 @@ export const NODES: NodeMap = {
   },
   'aurelio.nani': {
     lines: [
-      { who: 'Don Aurelio', text: 'I have been deciding something all morning, and it is decided.' },
+      { who: 'Don Aurelio', text: 'I have been deciding something all day, and it is decided.' },
       { who: 'Don Aurelio', text: 'I watched Zoila sew that red thread on your journal. Right here, 1974.' },
     ],
     next: 'aurelio.nani2',
@@ -866,7 +868,7 @@ export const NODES: NodeMap = {
   'aurelio.nani2': {
     lines: [
       { text: 'From inside his poncho, a letter, soft with fifty years of carrying.' },
-      { who: 'Don Aurelio', text: 'She left it for the road west and never came back for it. Ayni does not expire.' },
+      { who: 'Don Aurelio', text: 'She left it for the road down to the sea, and the sea west of that, and never came back for it. Ayni does not expire.' },
       { who: 'Don Aurelio', text: 'Take it to the gate. The road will tell you the rest.' },
     ],
     effects: ['set:nani.letter', 'errand:nani-letter', 'set:errand.nani-letter'],
@@ -1095,6 +1097,7 @@ export const NODES: NodeMap = {
     lines: [
       { who: 'Chasca', text: 'Stop! Perfect. The light, the ridge, the wind in your poncho. Do not move.' },
       { who: 'Chasca', text: 'Chasca. I photograph the roads. Somebody should keep the evidence.' },
+      { text: 'You give her your name in return. She repeats it once, the way she would check a focus.' },
     ],
     effects: ['set:met.chasca', 'journal:people.chasca'],
     next: 'chasca.offer',
@@ -1343,7 +1346,7 @@ export const NODES: NodeMap = {
   },
   'gate.after': {
     lines: [
-      { text: 'The gate stands easy on its hinges now. The road west hums to itself.' },
+      { text: 'The gate stands easy on its hinges now. The pass road hums to itself, all the way down to the sea.' },
     ],
   },
 

@@ -18,17 +18,19 @@ export const SICILY_JOURNAL: JournalEntry[] = [
   {
     id: 'words.bedda',
     tab: 'words',
-    title: 'Bedda',
-    sub: 'Beautiful. Also: you, whoever you are, if a grandmother is talking to you.',
+    // The id predates the word: Concetta calls the player gioia, which takes
+    // no gendered ending. Kept as words.bedda so existing saves keep the page.
+    title: 'Gioia',
+    sub: 'Joy. What a Sicilian grandmother calls whoever she is feeding. No ending to agree with you; it fits anyone.',
     nani: 'A woman I had known for one minute called me bedda and handed me bread. I have been paid in worse currencies.',
-    you: 'It means beautiful and is applied to everyone the speaker intends to feed. Which is everyone.',
+    you: 'Nani got bedda, beautiful, the word for a woman. I get gioia, which fits anyone, and Concetta applies it to everyone she intends to feed. Which is everyone.',
   },
   {
     id: 'words.picciriddu',
     tab: 'words',
     title: 'Picciriddu',
-    sub: 'Little one. Age limit: none, as long as the speaker is older than you.',
-    you: 'The elders are picciriddi to Concetta. I am one to the elders. The word passes down the table like a plate.',
+    sub: 'Little one; picciridda for a girl, picciriddi for the whole table. Age limit: none, as long as the speaker is older than you.',
+    you: 'The circolo elders are picciriddi to Concetta, and they let her. The word passes down the table like a plate.',
   },
   {
     id: 'words.talia',

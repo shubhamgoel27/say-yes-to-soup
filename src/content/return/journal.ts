@@ -73,7 +73,9 @@ export const RETURN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c10.marisol.seen'], not: ['c10.rosa.seen'] },
-    text: "The road up is the same road down, older now: La Bajada, the pass, the gate. Ch'aska Pampa is at the top, and the flag will be up.",
+    // Shown from the pier to Rosa's door, so it must read true on the climb
+    // and in the plaza alike: it names the place, not the direction.
+    text: "Rosa's flag will be up at the chichería, at the top of the same road you came down: La Bajada, the pass, the gate. Go and let her feed you.",
     who: 'rosa',
   },
   {

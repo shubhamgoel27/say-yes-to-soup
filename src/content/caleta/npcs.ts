@@ -357,7 +357,7 @@ export const CALETA_NODES: NodeMap = {
   // no word said, and the journal page fills from the weight of it.
   'mar.marisol.yapa': {
     lines: [
-      { who: 'Marisol', text: 'Two visits and Petro’s word behind you. Casero, officially.' },
+      { who: 'Marisol', text: 'Two visits and Petro’s word behind you. My regular now, officially: casero or casera, whichever you are.' },
       { text: 'She weighs the lisa, then drops one small fish more on top without looking. Not a word.' },
     ],
     effects: ['set:c2.casero', 'journal:words.yapa', 'journal:customs.caserita'],
@@ -380,7 +380,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.marisol.thanks': {
     lines: [
-      { who: 'Marisol', text: 'De nada, casero. Tomorrow, maybe bonito. La mar decides; we adjust.' },
+      { who: 'Marisol', text: 'De nada, joven. Tomorrow, maybe bonito. La mar decides; we adjust.' },
     ],
   },
   // The errand runs one way, stall to pots: Petro never has to send you.
@@ -805,14 +805,14 @@ export const CALETA_NODES: NodeMap = {
   // ---------------- Don Wili, emolientero ----------------
   'mar.wili.first': {
     lines: [
-      { who: 'Don Wili', text: 'Emoliente, casero. Barley, flax, herbs, lime. Hot glass for a grey morning.' },
+      { who: 'Don Wili', text: 'Emoliente, joven. Barley, flax, herbs, lime. Hot glass for a grey morning.' },
       { text: 'Thick, faintly sweet, like a field decided to be tea. The warmth reaches your fingertips.' },
     ],
     effects: ['set:met.wili', 'journal:people.wili', 'journal:dishes.emoliente'],
   },
   'mar.wili.chicharron': {
     lines: [
-      { who: 'Don Wili', text: 'Casero at the stall now? Then Sunday, chicharrón de pescado: fried gold, eaten standing, my emoliente after.' },
+      { who: 'Don Wili', text: 'A regular at Marisol’s stall now? Then Sunday, chicharrón de pescado: fried gold, eaten standing, my emoliente after.' },
     ],
     effects: ['set:c2.wili2', 'journal:dishes.chicharron'],
   },
@@ -856,12 +856,12 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.rios.not': {
     lines: [
-      { who: 'Capitana Ríos', text: 'Still a stranger here, still a stranger to me. Be someone’s casero. Learn what la mar carries.' },
+      { who: 'Capitana Ríos', text: 'Still a stranger here, still a stranger to me. Be somebody’s regular. Learn what la mar carries.' },
     ],
   },
   'mar.rios.yes': {
     lines: [
-      { who: 'Capitana Ríos', text: 'So. Petro says your hands are clean, Marisol calls you casero, and a wave gave you back to Félix. Still want across?' },
+      { who: 'Capitana Ríos', text: 'So. Petro says your hands are clean, Marisol calls you her regular, and a wave gave you back to Félix. Still want across?' },
     ],
     choices: [
       { text: '"Yes. When do we sail?"', goto: 'mar.rios.accept' },

@@ -666,7 +666,7 @@ export const DELHI_NODES: NodeMap = {
   'c11.kite.flown': {
     lines: [
       { text: 'The patang climbs like it remembered something urgent. A rival line parts somewhere over the domes: WOH KATA!' },
-      { who: 'Ustad Yusuf Miyan', text: 'No birds pulled, no temper lost. Acceptable. The wind will want you again.' },
+      { who: 'Ustad Yusuf Miyan', text: 'The roof keeps the score and I keep the tea. The wind will want you again.' },
     ],
     effects: ['clear:c11.kite.start', 'set:c11.kite.done', 'journal:customs.patang', 'journal:words.wohkata'],
   },

@@ -3311,23 +3311,30 @@ export class Renderer {
     if (!pots.length) return;
     const ctx = this.ctx;
     const clock = this.reduceMotion ? 0 : this.time;
-    // Indoors the steam meets the deckhead; outdoors it has the whole sky.
-    const rise = this.mood === 'interior' ? 80 : 150;
+    // Indoors the steam meets the deckhead; outdoors it has the whole sky,
+    // and a tall column: "follow the steam" has to be seen from the plaza,
+    // over a roof, by a player who has never been told where the pot is.
+    const indoor = this.mood === 'interior';
+    const rise = indoor ? 80 : 330;
+    const n = indoor ? 5 : 9;
     for (let i = 0; i < pots.length; i++) {
       const [lx, ly] = pots[i]!;
       const bx = (lx - cam.x) * A;
       const by = (ly - cam.y) * A;
-      if (bx < -80 || bx > W + 80 || by < -40 || by > H + 200) continue;
-      for (let p = 0; p < 5; p++) {
-        const t = (clock * 0.22 + p / 5 + i * 0.29) % 1;
-        const x = bx + Math.sin(t * 4.6 + i * 1.7 + p * 2.1) * (3 + t * 14);
+      if (bx < -80 || bx > W + 80 || by < -40 || by > H + rise + 60) continue;
+      for (let p = 0; p < n; p++) {
+        const t = (clock * (indoor ? 0.22 : 0.16) + p / n + i * 0.29) % 1;
+        const x = bx + Math.sin(t * 4.6 + i * 1.7 + p * 2.1) * (3 + t * (indoor ? 14 : 22));
         const y = by - t * rise;
-        const r = 9 + t * 24;
-        const a = (t < 0.1 ? t / 0.1 : 1 - (t - 0.1) / 0.9) * 0.9;
+        const r = indoor ? 9 + t * 24 : 10 + t * 34;
+        const a = (t < 0.1 ? t / 0.1 : Math.pow(1 - (t - 0.1) / 0.9, 0.75)) * 0.9;
         const puff = this.smokePuffs[(i + p) % this.smokePuffs.length];
         if (!puff || a < 0.01) continue;
         ctx.globalAlpha = a;
         ctx.drawImage(puff, x - r, y - r, r * 2, r * 2);
+        // Outdoors on pale earth one pass of white is too thin to find: a
+        // second, smaller pass thickens the column's heart.
+        if (!indoor) ctx.drawImage(puff, x - r * 0.7, y - r * 0.7, r * 1.4, r * 1.4);
       }
     }
     ctx.globalAlpha = 1;
