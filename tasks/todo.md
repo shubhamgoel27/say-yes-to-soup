@@ -650,3 +650,11 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   portrait zoom); stage the narrated climaxes (Tanabata dusk, Busan dawn, Sicily mole send-off); armed card
   swallows travel; casero/bedda; first errand findable; west/east and years facts; missing dish paintings
   (Rosa's soup, 7 Delhi dishes, to verify); audio on hidden tab; ending fade.
+
+## 2026-10-07: pass 5 (fix everything from critic round e). Brief: ../wayfare-review/pass5/BRIEF.md
+- [ ] O bodies: no overlap anywhere, clipping, click-to-talk catches walkers, thread end vs objects
+- [ ] P phones/UI: ghost tap, journal close, stick zone, portrait view size, Continue line, hidden-tab audio, shelf, pause, armed card vs travel
+- [ ] S staging: Tanabata dusk, Busan dawn, Sicily mole send-off, poses, ending fade, narrated-scene audit
+- [ ] W words: neutral address (casero/bedda), west/east + years + names, first errand, watia step, stale hints, nits, minigame outcome text
+- [ ] A art: dish paintings, backstrap loom, La Bajada, distinct interiors, ship hull, Sicily mole
+- [ ] merge, gate (tsc, npm test, 3 e2e one at a time, prod smoke desk + phone), ship, verify live
