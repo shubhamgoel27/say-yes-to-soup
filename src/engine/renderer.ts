@@ -6,6 +6,7 @@ import type { Camera } from './camera';
 import { PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
 import { cellHash, outlineSheet, surface, type Surface } from '../art/pix';
+import { bodyCovered } from './stand';
 
 /**
  * The world composer, smooth-art era. Renders the scene at 4x logical
@@ -111,6 +112,8 @@ const PROP_VEIL = 0.4;
  */
 const VEIL_SAMPLES: [number, number][] = [];
 for (const fy of [-11, -4, 3, 10]) for (const fx of [5, 8, 11]) VEIL_SAMPLES.push([fx, fy]);
+/** The first rows of VEIL_SAMPLES: the head and face. */
+const HEAD_SAMPLES = 6;
 
 /** Walls drawn as their top where they run north-south, not as a stack of faces. */
 const RUN_WALLS = new Set(['wallInt', 'wallStone', 'wallShoji', 'wallSteel']);
@@ -1311,7 +1314,7 @@ export class Renderer {
    * points down the body's middle, so the empty corners of a tree's canvas
    * never count, only leaves and posts actually in front of a face or chest.
    */
-  private propVeil(kind: string, cx: number, cy: number, positions: [number, number][]): number {
+  private propVeil(kind: string, cx: number, cy: number, positions: [number, number, boolean][]): number {
     const key = `${cx},${cy}`;
     let target = 1;
     const img = this.tiles.tallImage(kind, cx, cy);
@@ -1319,16 +1322,35 @@ export class Renderer {
       // The art's origin in world units (logical pixels).
       const ox = cx * TILE - img.ox / A;
       const oy = cy * TILE - img.oy / A;
-      for (const [px, py] of positions) {
-        // Drawn later than the body only when the prop stands nearer the eye.
-        if (cy + 0.5 <= py / TILE) continue;
-        let hits = 0;
-        for (const [fx, fy] of VEIL_SAMPLES) {
-          if (this.solidPixel(img.cvs, (px + fx - ox) * A, (py + fy - oy) * A)) hits++;
-        }
-        if (hits >= 2) {
-          target = PROP_VEIL;
-          break;
+      const ow = img.cvs.width / A;
+      const solid = (px: number, py: number, fx: number, fy: number) =>
+        this.solidPixel(img.cvs, (px + fx - ox) * A, (py + fy - oy) * A);
+      for (const [px, py, kept] of positions) {
+        // Nowhere near this prop's art: the common case, cheaply.
+        if (px + TILE < ox || px > ox + ow || py - TILE > cy * TILE + TILE || py + TILE < oy) continue;
+        if (cy + 0.5 > py / TILE) {
+          // Drawn after the body, nearer the eye. The player and whoever they
+          // talk to are kept whole; anyone else keeps at least their face.
+          let hits = 0;
+          const n = kept ? VEIL_SAMPLES.length : HEAD_SAMPLES;
+          for (let i = 0; i < n; i++) {
+            const [fx, fy] = VEIL_SAMPLES[i]!;
+            if (solid(px, py, fx, fy)) hits++;
+          }
+          if (hits >= 2) {
+            target = PROP_VEIL;
+            break;
+          }
+        } else if (Math.round(py / TILE) - 1 === cy && Math.abs(px - cx * TILE) < TILE / 2) {
+          // Standing just in front of it: a lamp post or a pole rising from
+          // behind the head reads as growing out of the hat. Narrow over the
+          // head (a post, not a stall's roof or a wall behind them), it thins.
+          const over = solid(px, py, 8, -17) && solid(px, py, 8, -12);
+          const wide = solid(px, py, 1, -17) && solid(px, py, 15, -17);
+          if (over && !wide) {
+            target = PROP_VEIL;
+            break;
+          }
         }
       }
     }
@@ -1340,6 +1362,19 @@ export class Renderer {
     }
     this.veils.set(key, next);
     return next;
+  }
+
+  /**
+   * Is this prop one cell of a block of the same kind (a container bay, a
+   * hedge, a row of stalls)? Thinning one cell of a block leaves a pale
+   * hole in it, a square of deck showing through a stack of containers,
+   * so blocks are never veiled; what stands behind one is simply behind it.
+   */
+  private blockRun(map: TileMap, kind: string, cx: number, cy: number): boolean {
+    return (
+      map.object(cx - 1, cy)?.t === kind || map.object(cx + 1, cy)?.t === kind ||
+      map.object(cx, cy - 1)?.t === kind || map.object(cx, cy + 1)?.t === kind
+    );
   }
 
   /** World tile that would respond to the action button, or null. */
@@ -1489,6 +1524,34 @@ export class Renderer {
     return out;
   }
   private overhangCache = new Map<string, Uint8Array>();
+
+  /**
+   * Would a body standing on (x, y) be drawn under a prop's painted pixels,
+   * or with its head inside a wall or a prop (see stand.ts bodyCovered)?
+   * Read off the art itself, once per cell per map.
+   */
+  coversBody(map: TileMap, x: number, y: number): boolean {
+    let memo = this.coverCache.get(map.id);
+    if (!memo) {
+      memo = new Uint8Array(map.w * map.h);
+      this.coverCache.set(map.id, memo);
+    }
+    const i = y * map.w + x;
+    if (!map.inBounds(x, y)) return true;
+    if (memo[i]) return memo[i] === 2;
+    const art = (kind: string, cx: number, cy: number) => {
+      const img = this.tiles.tallImage(kind, cx, cy);
+      return img ? { w: img.cvs.width, h: img.cvs.height, ox: img.ox, oy: img.oy } : null;
+    };
+    const pixel = (kind: string, cx: number, cy: number, ax: number, ay: number) => {
+      const img = this.tiles.tallImage(kind, cx, cy);
+      return !!img && this.solidPixel(img.cvs, ax, ay);
+    };
+    const hit = bodyCovered(map, x, y, art, (k) => this.tiles.isBuilding(k), pixel);
+    memo[i] = hit ? 2 : 1;
+    return hit;
+  }
+  private coverCache = new Map<string, Uint8Array>();
 
   /** True while the thread is still out of the band. */
   get threadOut(): boolean {
@@ -1893,15 +1956,17 @@ export class Renderer {
         });
       }
     }
-    // Where the kept bodies stand this frame, for the props' veils.
-    const keptAt: [number, number][] = [];
+    // Where the people stand this frame, for the props' veils. A creature
+    // knee-high (the dog, a mound) never needs one.
+    const bodyAt: [number, number, boolean][] = [];
     sprites.forEach((s, i) => {
-      if (this.kept.includes(s.actor)) keptAt.push([this.spriteXY[i * 2]!, this.spriteXY[i * 2 + 1]!]);
+      if (s.rig === 'animal') return;
+      bodyAt.push([this.spriteXY[i * 2]!, this.spriteXY[i * 2 + 1]!, this.kept.includes(s.actor)]);
     });
     for (const t of tall) {
       const veil =
-        keptAt.length && !this.tiles.isBuilding(t.kind) && !RUN_WALLS.has(t.kind)
-          ? this.propVeil(t.kind, t.cx, t.cy, keptAt)
+        bodyAt.length && !this.tiles.isBuilding(t.kind) && !RUN_WALLS.has(t.kind) && !this.blockRun(map, t.kind, t.cx, t.cy)
+          ? this.propVeil(t.kind, t.cx, t.cy, bodyAt)
           : 1;
       layers.push({
         sort: t.cy + 0.5,

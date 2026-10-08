@@ -51,6 +51,7 @@ import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
 import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/guide';
 import { cheapestPath } from './engine/path';
+import { planSettle } from './engine/stand';
 import { ROUTE } from './content/route';
 import type { NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -2527,80 +2528,109 @@ function crowdsSomeone(x: number, y: number, self: Actor): boolean {
   return heldByOther(x, y - 1, self) || heldByOther(x, y + 1, self);
 }
 
-/** Somewhere a body may settle: open floor, nobody's cell, nobody's column
- * neighbour, not a doorway, and not under a tall prop's painted head. */
-function roomToStand(x: number, y: number, self: Actor): boolean {
+/** Can a body settle on (x, y) at all: open floor, not a doorway or an
+ * arrival cell, and nothing painted over the figure (see stand.ts). */
+function cleanStand(x: number, y: number): boolean {
   if (!map.inBounds(x, y) || map.solid(x, y) || map.triggerAt(x, y) || onDoorstep(x, y)) return false;
-  if (heldByOther(x, y, self) || crowdsSomeone(x, y, self)) return false;
-  return renderer.overhung(map)[y * map.w + x] !== 1;
+  return !renderer.coversBody(map, x, y);
 }
 
 /**
- * Two people about to talk one above the other: one of them takes a single
- * step to the side, so they speak side by side (diagonally, the way people
- * actually stand to talk) and neither face is drawn under the other's head.
- * The villager steps if they are free to; a seated, stationed or staged one
- * holds their place and the player steps instead. A villager posted to one
- * spot (range 0: a stall, a doorway) steps back to it after the talk.
+ * Scripted steps still to take, per actor, for a talk's settling: walked one
+ * at a time as each lands (see landHeldSteps), then a turn to face.
+ */
+const settleSteps = new Map<Actor, { steps: Dir[]; face: Dir }>();
+
+/** Is a settle still walking someone into place? The player waits for it. */
+function settling(): boolean {
+  return settleSteps.size > 0;
+}
+
+/**
+ * Two people about to talk one above the other draw as one pile, so they
+ * settle side by side on one row first, orthogonally adjacent and facing
+ * (stand.ts planSettle has the options and their order). Every cell anyone
+ * is walked onto is clean. The villager moves only when free to; a seated,
+ * stationed or staged one holds their place and the player goes round. A
+ * villager posted to one spot (range 0: a stall, a doorway) steps back to it
+ * after the talk. With nowhere clean to go they lean apart a little instead.
  */
 function settleForTalk(v: Villager) {
   if (v === dog) return;
-  const [px, py] = player.occupies();
-  const [nx, ny] = v.actor.occupies();
-  if (px !== nx || Math.abs(py - ny) !== 1) return;
   const npcMay =
     !v.actor.isMoving && !v.seated && v.actor.pose !== 'sit' && !stagedControls(v) && !stationControls(v);
-  const movers: [Actor, Actor][] = npcMay ? [[v.actor, player], [player, v.actor]] : [[player, v.actor]];
-  // Whoever stays put must not be left in a third body's column either (the
-  // player walked in between Nilda and Félix and talked up to her: Nilda
-  // stepping aside would have left the player standing on Félix's hat).
-  // So a move that leaves nobody stacked wins; failing that, any move that
-  // at least parts the two speakers.
-  const stays = (who: Actor, mover: Actor) => {
-    const [sx, sy] = who.occupies();
-    const third = (y: number) =>
-      spritesHere().some((o) => o.actor !== who && o.actor !== mover && o !== dog && bodyCells(o.actor).some(([cx, cy]) => cx === sx && cy === y));
-    return !third(sy - 1) && !third(sy + 1);
-  };
-  const options: { mover: Actor; partner: Actor; s: number; clean: boolean }[] = [];
-  for (const [mover, partner] of movers) {
-    if (mover.isMoving) continue;
-    const [mx, my] = mover.occupies();
-    for (const s of [1, -1]) {
-      if (roomToStand(mx + s, my, mover)) options.push({ mover, partner, s, clean: stays(partner, mover) });
-    }
-  }
-  const pick = options.find((o) => o.clean) ?? options[0];
-  if (pick) {
-    const { mover, partner, s } = pick;
-    const [mx, my] = mover.occupies();
-    const toward: Dir = s > 0 ? 'left' : 'right';
-    mover.stepTo(s > 0 ? 'right' : 'left', toward);
-    partner.face(OPPOSITE[toward]);
-    if (mover === v.actor && v.def.range === 0) {
-      v.postBack = { at: [mx, my], dir: v.def.sits ?? 'down' };
-    }
+  const plan = planSettle(
+    {
+      passable: (x, y) => map.inBounds(x, y) && !map.solid(x, y) && !map.triggerAt(x, y),
+      clean: cleanStand,
+      held: (x, y) =>
+        spritesHere().some(
+          (o) => o !== dog && o.actor !== player && o.actor !== v.actor && bodyCells(o.actor).some(([cx, cy]) => cx === x && cy === y),
+        ),
+    },
+    player.occupies(),
+    v.actor.occupies(),
+    npcMay && !player.isMoving,
+  );
+  if (plan.kind === 'none') return;
+  if (plan.kind === 'lean') {
+    const [, py] = player.occupies();
+    const [, ny] = v.actor.occupies();
+    const lower = py > ny ? player : v.actor;
+    const upper = lower === player ? v.actor : player;
+    lower.nudge = [-TALK_LEAN, 2];
+    upper.nudge = [TALK_LEAN, 0];
     return;
   }
-  // Nowhere to step (a one-plank pier, a doorway lane): they lean apart
-  // instead, a few pixels each way, so both faces stay clear for the talk.
-  const lower = py > ny ? player : v.actor;
-  const upper = lower === player ? v.actor : player;
-  lower.nudge = [-TALK_LEAN, 2];
-  upper.nudge = [TALK_LEAN, 0];
+  for (const m of plan.moves) {
+    const a = m.who === 'player' ? player : v.actor;
+    settleSteps.set(a, { steps: [...m.steps], face: m.who === 'player' ? plan.playerFace : plan.npcFace });
+    if (m.who === 'npc' && v.def.range === 0) {
+      const [hx, hy] = v.actor.occupies();
+      v.postBack = { at: [hx, hy], dir: v.def.sits ?? 'down' };
+    }
+  }
+  // Whoever is not walked anywhere turns to face as the other arrives.
+  if (!settleSteps.has(player)) player.face(plan.playerFace);
+  if (!settleSteps.has(v.actor)) v.actor.face(plan.npcFace);
+  landHeldSteps(0);
 }
 /** How far, in logical pixels, each of two cornered speakers leans apart. */
 const TALK_LEAN = 6;
 
 /**
  * Finish any step still in the air while the world is held for a
- * conversation: the side-step of settleForTalk, or anyone caught mid-stride
- * when the talk began (they used to hang between two cells for the whole
- * conversation). Nothing new starts; only landings.
+ * conversation (anyone caught mid-stride when the talk began used to hang
+ * between two cells for the whole of it), and walk a talk's settling steps,
+ * one as each lands. Nothing else starts.
  */
 function landHeldSteps(dt: number) {
   for (const s of spritesHere()) {
     if (s.actor.isMoving) s.actor.update(dt, { intent: null, blocked: () => true });
+  }
+  for (const [a, plan] of settleSteps) {
+    if (a.isMoving) continue;
+    const next = plan.steps.shift();
+    if (!next) {
+      a.face(plan.face);
+      settleSteps.delete(a);
+      continue;
+    }
+    // The cell was clean when the plan was made; if a walker has since
+    // stepped into it, stop here rather than walk into them.
+    const [tx, ty] = stepFrom(...a.occupies(), next);
+    if (heldByOther(tx, ty, a) || map.solid(tx, ty)) {
+      // Into the place the other speaker is leaving: wait for them to land.
+      const partner = [...settleSteps.keys()].find((o) => o !== a);
+      if (partner && bodyCells(partner).some(([cx, cy]) => cx === tx && cy === ty)) {
+        plan.steps.unshift(next);
+        continue;
+      }
+      a.face(plan.face);
+      settleSteps.delete(a);
+      continue;
+    }
+    a.stepTo(next, plan.steps.length === 0 ? plan.face : undefined);
   }
 }
 
@@ -2830,6 +2860,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   const dest = maps[trig.to];
   if (!dest) return;
   map = dest;
+  settleSteps.clear();
   player.placeAt(trig.spawn[0], trig.spawn[1], trig.facing ?? 'down');
   // The vigil is a night. Its page says "tonight the camposanto is lit", and
   // walking through the marigold arch at noon once opened it in full sun:
@@ -4496,6 +4527,9 @@ function update(dt: number) {
       summonThread();
     } else if (celebrateT > 0) {
       // The moment is still landing; let it.
+    } else if (settling()) {
+      // A talk's settling steps still landing after its words closed.
+      landHeldSteps(dt);
     } else if (act && afterTalkHush()) {
       // The press that closed the last line had company: swallowed.
     } else if (act) {
