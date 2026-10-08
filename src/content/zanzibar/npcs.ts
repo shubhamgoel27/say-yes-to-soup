@@ -14,7 +14,11 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     map: 'zanzibar',
     // At dawn the bench is empty: the goodbye is what he leaves on it.
     when: { not: ['c7.dawn'] },
-    pos: [15, 11],
+    // Sat on his own baraza, the end beside the ginger cat (map.ts 15,10):
+    // "An old man sits on a stone bench built into his house front" is
+    // the first thing anyone says about him, so it is what you see.
+    pos: [15, 10],
+    sits: 'down',
     range: 0,
     look: {
       skin: '#6b4a32',
