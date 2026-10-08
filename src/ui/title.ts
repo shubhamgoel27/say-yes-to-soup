@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import { makeCoverArt } from '../art/cover';
 import { CHAR_H, CHAR_W, DIR_ROW, PLAYER_LOOK, makeSheet } from '../art/character';
 import { ART } from '../engine/config';
-import type { PlayerLook, SaveData } from '../engine/state';
+import type { PlayerLook } from '../engine/state';
 import {
   SLOT_COUNT,
   activeSlot,
@@ -18,6 +18,7 @@ import {
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
+import { shelfLines, shelfOneLine } from './shelfline';
 import { isCoarseTouch } from './responsive';
 
 /**
@@ -92,37 +93,9 @@ function savedFlag(flag: string): boolean {
   }
 }
 
-/**
- * A journal's flyleaf, summed up for the shelf: who signed it, where the
- * journey paused, how many pages are filled. Null means a blank journal.
- */
-function flyleafLine(data: SaveData | null): string | null {
-  if (!data) return null;
-  const name = data.name && data.name.trim() ? data.name : 'unsigned';
-  const mapId = typeof data.place?.map === 'string' ? data.place.map : '';
-  const where = REGION_MAPS[mapId]?.name ?? REGION_MAPS['village']?.name ?? 'the star plain';
-  const n = Array.isArray(data.journal) ? data.journal.length : 0;
-  return `${name} &middot; ${where} &middot; ${n} page${n === 1 ? '' : 's'}`;
-}
-
-/**
- * When a journal was last written in, as the shelf says it: today,
- * yesterday, or a short date (with the year once it is not this one).
- * Saves from before the date was kept simply have no line.
- */
-function walkedLine(ms: unknown): string | null {
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) return null;
-  const d = new Date(ms);
-  const now = new Date();
-  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const ago = Math.round((day(now) - day(d)) / 86400000);
-  if (ago <= 0) return 'last walked today';
-  if (ago === 1) return 'last walked yesterday';
-  const opts: Intl.DateTimeFormatOptions =
-    d.getFullYear() === now.getFullYear()
-      ? { day: 'numeric', month: 'short' }
-      : { day: 'numeric', month: 'short', year: 'numeric' };
-  return `last walked ${d.toLocaleDateString(undefined, opts)}`;
+/** A hint line spaced by phrase (CSS gaps, no dots), so a wrap never leaves a dot dangling. */
+function hintPhrases(ps: string[]): string {
+  return ps.map((p) => `<span class="t-nw">${p}</span>`).join('');
 }
 
 /**
@@ -224,6 +197,9 @@ export class TitleScreen {
     private onSecondReading?: (row: number) => void,
     /** Called when Begin again is confirmed over the last full journal. */
     private onEraseAndBegin?: () => void,
+    /** Called when a written journal is opened from the shelf: the engine
+     * walks straight into it, exactly as Continue would. */
+    private onOpenJournal?: () => void,
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
@@ -331,7 +307,7 @@ export class TitleScreen {
     if (this.confirm) return 'none';
     const id = this.options[this.cursor]?.id ?? 'new';
     if (id === 'new' && this.hasSave && firstBlankSlot() === null) {
-      const line = flyleafLine(peekSlot(activeSlot())) ?? 'this journal';
+      const line = shelfOneLine(peekSlot(activeSlot())) ?? 'this journal';
       this.openConfirm({
         kicker: 'every journal on the shelf is written in',
         body: `To begin again here, the journal on the table is erased:<span class="cf-line">${line}</span>Its pages cannot be brought back. To keep it, erase a different journal from the Journals shelf instead.`,
@@ -457,6 +433,10 @@ export class TitleScreen {
       // A journal just put on the table: the cover offers it at the top.
       this.returnTo = null;
       this.showTitle(slotOccupied(row));
+      // Opening a written journal is reading it: straight into the journey,
+      // not back to the cover for a second Continue. A blank one goes back
+      // to the cover, where Begin is waiting.
+      if (slotOccupied(row)) this.onOpenJournal?.();
       return 'confirm';
     }
     if (verb === 'pack') {
@@ -482,7 +462,7 @@ export class TitleScreen {
       this.shelfNote = null;
       this.openConfirm({
         kicker: 'a second reading',
-        body: `This journal starts again from its first page:<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>The words you learned come with you. Every other page goes blank.`,
+        body: `This journal starts again from its first page:<span class="cf-line">${shelfOneLine(peekSlot(row)) ?? ''}</span>The words you learned come with you. Every other page goes blank.`,
         keep: 'Not now',
         act: 'Begin the second reading',
         onAct: () => this.onSecondReading?.(row),
@@ -493,7 +473,7 @@ export class TitleScreen {
     this.shelfNote = null; // a stale note under a question reads wrong
     this.openConfirm({
       kicker: 'erase this journal?',
-      body: `<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>Every page in it will be erased. It cannot be brought back.`,
+      body: `<span class="cf-line">${shelfOneLine(peekSlot(row)) ?? ''}</span>Every page in it will be erased. It cannot be brought back.`,
       keep: 'Keep it',
       act: 'Erase it',
       onAct: () => {
@@ -541,7 +521,7 @@ export class TitleScreen {
       this.renderShelf();
       this.openConfirm({
         kicker: 'a journal already rests here',
-        body: `<span class="cf-line">${flyleafLine(peekSlot(row)) ?? ''}</span>Shelving the unpacked journal here erases this one. It cannot be brought back.`,
+        body: `<span class="cf-line">${shelfOneLine(peekSlot(row)) ?? ''}</span>Shelving the unpacked journal here erases this one. It cannot be brought back.`,
         keep: 'Keep this one',
         act: 'Shelve the new one over it',
         onAct: () => this.commitImport(row, raw),
@@ -622,10 +602,10 @@ export class TitleScreen {
   private renderShelf() {
     const open = activeSlot();
     const rows = Array.from({ length: SLOT_COUNT }, (_, i) => {
-      const data = peekSlot(i);
-      const line = flyleafLine(data);
-      const when = walkedLine(data?.walked);
+      const lines = shelfLines(peekSlot(i));
       const sel = i === this.shelfRow;
+      // Whole phrases: a row wraps between them, never inside one.
+      const phrases = (ps: string[]) => ps.map((p) => `<span class="t-nw">${p}</span>`).join(' &middot; ');
       const verbs = sel
         ? this.shelfVerbs(i)
             .map((v, j) => {
@@ -635,11 +615,12 @@ export class TitleScreen {
             .join('<span class="sh-dot">&middot;</span>')
         : '';
       return `
-        <div class="sh-row${sel ? ' sel' : ''}${line ? '' : ' blank'}" data-row="${i}">
+        <div class="sh-row${sel ? ' sel' : ''}${lines ? '' : ' blank'}" data-row="${i}">
           <span class="sh-band"></span>
           <div class="sh-body">
-            <div class="sh-fly">${sel ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${line ?? 'a blank journal'}${i === open ? '<span class="sh-mark">open on the table</span>' : ''}</div>
-            ${when ? `<div class="sh-when">${when}</div>` : ''}
+            <div class="sh-fly">${sel ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}<span class="t-nw">${lines?.who ?? 'a blank journal'}</span>${i === open ? ' <span class="sh-mark t-nw">open on the table</span>' : ''}</div>
+            ${lines ? `<div class="sh-where">${phrases(lines.where.split(' &middot; '))}</div>` : ''}
+            ${lines ? `<div class="sh-when">${phrases(lines.tally)}</div>` : ''}
             ${sel ? `<div class="sh-verbs">${verbs}</div>` : ''}
           </div>
         </div>`;
@@ -653,8 +634,8 @@ export class TitleScreen {
           <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
           <div class="sh-hint">${
             COARSE
-              ? 'tap a journal to open it &nbsp;&middot;&nbsp; tap a word beneath it to act'
-              : '&#8593;&#8595; choose a journal &nbsp;&middot;&nbsp; &#8592;&#8594; choose what to do &nbsp;&middot;&nbsp; Space does it &nbsp;&middot;&nbsp; Esc back'
+              ? hintPhrases(['tap a journal to open it', 'tap a word beneath it to act'])
+              : hintPhrases(['&#8593;&#8595; choose a journal', '&#8592;&#8594; choose what to do', 'Space does it', 'Esc back'])
           }</div>
         </div>
       </div>`;

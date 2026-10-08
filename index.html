@@ -1228,7 +1228,14 @@
         transform: rotate(-0.6deg);
       }
       .sh-note.empty { visibility: hidden; }
-      .sh-hint { margin-top: 4px; text-align: center; font-size: var(--fs-11); color: #a58e68; }
+      /* Phrases spaced, not dotted: a wrapped line never starts or ends on a dot. */
+      .sh-hint { margin-top: 4px; display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; font-size: var(--fs-11); color: #a58e68; }
+      .sh-where {
+        font-family: 'Literata', Georgia, serif;
+        font-size: var(--fs-125);
+        color: #c4ac83;
+        margin-top: 2px;
+      }
       .sh-when {
         font-family: 'Literata', Georgia, serif;
         font-size: var(--fs-11);

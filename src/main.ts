@@ -425,6 +425,7 @@ const title = new TitleScreen(
     title.hideTitle();
     openFlyleaf(freshSlate);
   },
+  () => continueJourney(),
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -3674,7 +3675,15 @@ function titleActivate() {
             freshSlate();
           },
     );
-  } else if (!state.has('intro.done')) {
+  } else {
+    continueJourney();
+  }
+}
+
+/** Continue, from the cover or straight off the shelf. */
+function continueJourney() {
+  title.hideTitle();
+  if (!state.has('intro.done')) {
     // The flyleaf saves the moment it is finished, so a tab closed during
     // Nani's letter or the three wake lines left a save with no intro in it;
     // Continue then stood the traveler at the well in silence and her letter
