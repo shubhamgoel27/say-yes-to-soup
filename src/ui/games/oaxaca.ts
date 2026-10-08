@@ -1171,6 +1171,13 @@ const OFRENDA_LEGEND = [
   { keys: ['space'], does: 'set the thing down there' },
 ] as const;
 
+/** Seconds between placements: the flight to the shelf plus a breath for its line. */
+const OFRENDA_BEAT = 0.9;
+/** Seconds of hurried presses before Refugio lets the next item through. */
+const OFRENDA_MERCY = 2.5;
+/** Presses inside the beat that make her last word a gentle one. */
+const OFRENDA_HURRIED = 5;
+
 export class OfrendaPanel {
   private items: OfrendaItem[] = [];
   private placed: string[][] = [[], [], []];
@@ -1187,6 +1194,16 @@ export class OfrendaPanel {
   private lit = 0;
   private straightT = -1;
   private velaLit = false;
+  /**
+   * The beat after each placement: the item flies to its shelf and Refugio
+   * or Elías says its line. A mashed Space used to set the whole altar in
+   * one second and skip every one of them. A press inside the beat is
+   * Refugio's hand on your wrist and starts it over; after OFRENDA_MERCY
+   * seconds of that she lets the next thing go, so nobody is locked out.
+   */
+  private beat = new Hold();
+  /** Presses Refugio had to slow this run, for her last word. */
+  private hurried = 0;
 
   constructor(
     private root: HTMLElement,
@@ -1212,6 +1229,8 @@ export class OfrendaPanel {
     this.lit = 0;
     this.straightT = -1;
     this.velaLit = false;
+    this.beat.reset();
+    this.hurried = 0;
     this.hint = 'Three levels. Up and down to choose one, Space to set the item there. There is no wrong shelf.';
     this.scene ??= new Scene();
     this.scene.restart();
@@ -1228,6 +1247,16 @@ export class OfrendaPanel {
   }
 
   onAction() {
+    // The last candle is lit before the panel can close, and every item
+    // lands before the next one is handed over.
+    if (this.done && this.straightT < 1) return;
+    if (this.beat.on && this.beat.heldFor < OFRENDA_MERCY) {
+      this.beat.start(OFRENDA_BEAT);
+      this.hurried++;
+      if (this.beat.streak === 1) this.hint = 'Refugio rests two fingers on your wrist. "Despacio. Let it land first; it came a long way."';
+      return;
+    }
+    this.beat.release();
     if (this.done) {
       this.root.hidden = true;
       const done = this.onDone;
@@ -1241,12 +1270,15 @@ export class OfrendaPanel {
     this.audio.weaveNote(this.idx % 7);
     this.place(item.id, this.level);
     this.echo = item.echo;
+    this.beat.start(OFRENDA_BEAT);
     this.idx++;
     if (this.idx >= this.items.length) {
       this.done = true;
       this.audio.weaveDone();
       this.straightT = 0;
-      this.hint = 'Refugio lights the last candle: so nobody trips on the dark, she says. Press Space.';
+      this.hint = this.hurried >= OFRENDA_HURRIED
+        ? 'Refugio lights the last candle: so nobody trips on the dark, she says. Then, gently: "Next year, slower. The dead are in no hurry, and neither is the altar." Press Space.'
+        : 'Refugio lights the last candle: so nobody trips on the dark, she says. Press Space.';
     } else {
       this.hint = 'The village watches, and nobody corrects a single placement. Next: choose a level, Space to set.';
     }
@@ -1276,6 +1308,7 @@ export class OfrendaPanel {
   tick(dt: number) {
     if (!this.isOpen || !this.scene) return;
     const sc = this.scene;
+    this.beat.tick(dt);
 
     for (const rec of this.recs) {
       if (rec.t < 1) {

@@ -115,6 +115,14 @@ const SIMMER_CALM = 15;
 /** Below this the sauce is still sharp; past the edge it is a near thing. */
 const SIMMER_READY = 0.6;
 const SIMMER_EDGE = 0.86;
+/**
+ * Story only: seconds from Ben's "now now now" to a burnt pot. At the full
+ * simmer rate the last stretch lasted about a second and a half, less than
+ * it takes to read his line, so a player who heard the call still lost the
+ * pot. The hard telling keeps its own short edge.
+ */
+const BURN_GRACE = 2.5;
+const BURN_GRACE_CALM = 3.2;
 
 /**
  * The hard telling: Ben steps back from his own stove. He calls each thing
@@ -697,8 +705,11 @@ export class GalleyPanel {
     if (lidUp) this.peeked += simDt;
     if (this.simmer >= 0 && !this.done && !this.burnt && !lidUp) {
       const was = this.simmer;
-      const dur = this.hard ? (calm() ? HARD_SIMMER_CALM : HARD_SIMMER_DUR) : calm() ? SIMMER_CALM : SIMMER_DUR;
-      this.simmer = Math.min(1, this.simmer + simDt / dur);
+      let rate = 1 / (this.hard ? (calm() ? HARD_SIMMER_CALM : HARD_SIMMER_DUR) : calm() ? SIMMER_CALM : SIMMER_DUR);
+      // Past the edge the story pot slows to Ben's warning: the call gets
+      // time to be read and answered before the sugar catches.
+      if (!this.hard && was >= this.edge) rate = (1 - this.edge) / (calm() ? BURN_GRACE_CALM : BURN_GRACE);
+      this.simmer = Math.min(1, this.simmer + simDt * rate);
       if (was < this.ready && this.simmer >= this.ready) {
         this.audio.chime();
         this.hint = this.hard

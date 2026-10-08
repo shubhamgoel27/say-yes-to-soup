@@ -388,9 +388,11 @@ export const STORY_BOTS: Record<string, () => Bot> = {
     };
   },
   'c9.ofrenda.start': () => {
+    // A patient hand watches each thing land (and its line be said) before
+    // reaching for the next; the panel now slows anyone who does not.
     let last = -1;
     return (p, t) => {
-      if (t - last < 0.4) return;
+      if (t - last < 0.4 || p.beat?.on) return;
       last = t;
       p.onAction();
     };

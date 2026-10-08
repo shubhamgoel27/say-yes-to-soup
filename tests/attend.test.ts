@@ -322,3 +322,90 @@ describe('the last word tells the truth about the run', () => {
     }
   });
 });
+
+describe('pass 6: the kite roof, the galley edge and the altar keep time with care', () => {
+  /** Up held down through every duel (key repeat at 60 a second), Space for the rest. */
+  const holdUp = (): Bot => {
+    let f = 0;
+    return (p) => {
+      f++;
+      if (p.phase === 'duel') p.onDir('up');
+      else if (f % 6 === 0) p.onAction();
+    };
+  };
+
+  it('the kite: a held Up is never quicker than a careful flight', () => {
+    let lazy = 0;
+    let care = 0;
+    for (const seed of [1, 2, 3]) {
+      const l = storyRun('c11.kite.start', holdUp(), seed, 300);
+      const c = storyRun('c11.kite.start', BOTS['c11.kite.start']!(), seed, 300);
+      assert.ok(l.done && c.done, `seed ${seed}: a run never finished`);
+      assert.ok(l.panel.lost > 0, `seed ${seed}: the held Up no longer loses a kite`);
+      lazy += l.seconds;
+      care += c.seconds;
+    }
+    assert.ok(lazy >= care, `holding Up (${lazy.toFixed(1)}s over 3 runs) beat care (${care.toFixed(1)}s)`);
+  });
+
+  it('the kite: "flocks honored" counts flocks, not presses', () => {
+    const careful = BOTS['c11.kite.start']!();
+    let flocks = 0;
+    let wasBirds = false;
+    const r = storyRun('c11.kite.start', (p, t) => {
+      const birds = p.phase === 'duel' && p.wind === 'birds';
+      if (birds && !wasBirds) flocks++;
+      wasBirds = birds;
+      if (birds) {
+        // Four presses of Down into one crossing: one courtesy, not four.
+        for (let i = 0; i < 4; i++) p.onDir('down');
+        return;
+      }
+      careful(p, t);
+    });
+    assert.ok(r.done, 'the flight never finished');
+    assert.ok(flocks >= 2, 'the story sky sent fewer than two flocks');
+    assert.equal(r.panel.blessed, flocks, `honored ${r.panel.blessed} for ${flocks} flocks`);
+  });
+
+  it('the kite: a hand that never looks is never locked out (Yusuf takes the dor with you)', () => {
+    for (const seed of [1, 2]) {
+      let f = 0;
+      const rand: Bot = (p) => {
+        if (f++ % 6) return;
+        if (p.phase === 'duel') p.onDir(Math.random() < 0.5 ? 'up' : 'down');
+        else p.onAction();
+      };
+      const r = storyRun('c11.kite.start', rand, seed, 300);
+      assert.ok(r.done, `seed ${seed}: a random hand was locked out of the roof`);
+    }
+  });
+
+  it('adobo: Ben\'s "now now now" leaves about two and a half seconds before the pot burns', () => {
+    const careful = BOTS['c3.cook.start']!();
+    let edgeAt = -1;
+    let burntAt = -1;
+    storyRun(
+      'c3.cook.start',
+      (p, t) => {
+        if (p.simmer < 0) return careful(p, t);
+        if (edgeAt < 0 && p.simmer >= p.edge) edgeAt = t;
+        if (burntAt < 0 && p.burnt) burntAt = t;
+      },
+      1,
+      40,
+    );
+    assert.ok(edgeAt > 0 && burntAt > edgeAt, 'the pot never reached the edge and burnt');
+    const grace = burntAt - edgeAt;
+    assert.ok(grace >= 2.3 && grace <= 2.8, `edge to burnt took ${grace.toFixed(2)}s`);
+  });
+
+  it('the ofrenda: a mashed Space is slower than a patient hand and is told so', () => {
+    const care = storyRun('c9.ofrenda.start', STORY_BOTS['c9.ofrenda.start']!());
+    const lazy = storyRun('c9.ofrenda.start', mash());
+    assert.ok(care.done && lazy.done, 'an altar was never finished');
+    assert.ok(lazy.seconds >= care.seconds, `mashing (${lazy.seconds.toFixed(1)}s) beat care (${care.seconds.toFixed(1)}s)`);
+    assert.match(lazy.said, /Next year, slower/);
+    assert.doesNotMatch(care.said, /Next year, slower/);
+  });
+});

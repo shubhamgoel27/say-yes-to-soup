@@ -1543,6 +1543,17 @@ const TOURNAMENT_RIVALS: Rival[] = [
   },
 ];
 
+/** Seconds the dor takes to come taut after a stroke bites (see tautT). */
+const PULL_STROKE = 0.29;
+/** Seconds Yusuf takes to tie the next patang on after a cut. */
+const RETIE = 3.5;
+/**
+ * Story only: after this many patangs lost to one rival, Yusuf keeps his
+ * hand over yours on the dor and a wrong press costs nothing. Losing kites
+ * is allowed and slow; being locked out of the evening never is.
+ */
+const GUIDE_AFTER = 3;
+
 /** Yusuf's hard-telling spool: three patangs for the evening, not one more. */
 const HARD_DOR_LIMIT = 3;
 
@@ -1874,7 +1885,29 @@ export class PatangPanel {
   private rivalIdx = 0;
   private cuts = 0;
   private altitude = 0.3;
-  private blessed = 0; // pigeon crossings honored
+  private blessed = 0; // flocks honored: one per crossing, however many presses
+  /** This crossing's flock has already been given the sky. */
+  private flockHonored = false;
+  /**
+   * A kheench is a stroke, not a twitch: after the dor bites, the line needs
+   * this long to come taut again before the next pull can saw. A held or
+   * mashed Up used to saw five times in a sixth of a second, so a lazy hand
+   * beat every rival between two weathers and won in half the careful time.
+   */
+  private tautT = 0;
+  /**
+   * A cut does not change the weather. From the cut until the new patang is
+   * up, the sky keeps its own clock (quietly: no cue talks over the cut),
+   * and the new patang meets whatever is blowing then. A cut used to reset
+   * the sky to two seconds of steady air, so a hand that held Up into every
+   * gust traded a kite for skipping the weather and won in half the
+   * careful time.
+   */
+  private skyRuns = false;
+  /** Seconds until Yusuf has the next patang tied on and Space relaunches. */
+  private retieT = 0;
+  /** Patangs lost to the current rival; see GUIDE_AFTER. */
+  private lostHere = 0;
   /** Story cues already sent against the current rival, by pull count. */
   private cued = new Set<number>();
   /** How far the rival's line has sawed through YOURS. Three and it goes. */
@@ -1961,6 +1994,11 @@ export class PatangPanel {
     this.cuts = 0;
     this.altitude = 0.3;
     this.blessed = 0;
+    this.flockHonored = false;
+    this.tautT = 0;
+    this.skyRuns = false;
+    this.retieT = 0;
+    this.lostHere = 0;
     this.cued.clear();
     this.selfFray = 0;
     this.lost = 0;
@@ -2000,17 +2038,27 @@ export class PatangPanel {
     // Weather only blows while there is a duel to blow on. Launch, the cut,
     // the pause between rivals, the storm's first drops and the walk down
     // all wait on Space, and a wind cue there would only talk over it.
-    if (this.phase === 'duel') {
+    if (this.phase === 'cut' && this.retieT > 0) {
+      this.retieT -= dt;
+      if (this.retieT <= 0) {
+        this.hint += ' Press Space and take it up again.';
+        this.render();
+      }
+    }
+    if (this.skyRuns && this.phase !== 'duel') {
+      // Between a cut and the relaunch the weather keeps time, silently.
       this.windT += dt;
       if (this.windT >= this.windDur) {
-        // Weather schedule: mostly steady, gusts often, pigeons on their own
-        // clock. The hard telling crowds the sky (more birds, meaner gusts)
-        // and shortens every window, so no answer gets to be leisurely.
-        const roll = Math.random();
-        const stormRow = this.tournament && this.rivalIdx === 2;
-        const gustChance = this.hard ? (stormRow ? 0.58 : 0.42) : stormRow ? 0.5 : 0.32;
-        const birdChance = this.hard ? (this.tournament ? 0.34 : 0.3) : this.tournament ? 0.22 : 0.16;
-        this.blow(roll < birdChance ? 'birds' : roll < birdChance + gustChance ? 'gust' : 'steady');
+        const said = this.hint;
+        this.blow(this.roll());
+        this.hint = said;
+      }
+    }
+    if (this.phase === 'duel') {
+      this.tautT = Math.max(0, this.tautT - dt);
+      this.windT += dt;
+      if (this.windT >= this.windDur) {
+        this.blow(this.roll());
       }
       // The hard telling's rival does not wait out a taut line. Let steady
       // air idle and his saw takes a pass across YOUR dor; your own pull is
@@ -2032,12 +2080,26 @@ export class PatangPanel {
     this.setHint?.(this.caption());
   }
 
+  /**
+   * Weather schedule: mostly steady, gusts often, pigeons on their own
+   * clock. The hard telling crowds the sky (more birds, meaner gusts) and
+   * shortens every window, so no answer gets to be leisurely.
+   */
+  private roll(): Wind {
+    const roll = Math.random();
+    const stormRow = this.tournament && this.rivalIdx === 2;
+    const gustChance = this.hard ? (stormRow ? 0.58 : 0.42) : stormRow ? 0.5 : 0.32;
+    const birdChance = this.hard ? (this.tournament ? 0.34 : 0.3) : this.tournament ? 0.22 : 0.16;
+    return roll < birdChance ? 'birds' : roll < birdChance + gustChance ? 'gust' : 'steady';
+  }
+
   /** The wind turns. One place for every change of weather, scheduled or cued. */
   private blow(w: Wind) {
     const stormRow = this.tournament && this.rivalIdx === 2;
     this.windT = 0;
     this.wind = w;
     if (w === 'birds') {
+      this.flockHonored = false;
       this.windDur = this.hard ? 2 : 2.4;
       this.hint = 'PIGEONS. A flock crosses your line, wings everywhere. Dheel, Down, give the sky back. Yusuf is watching.';
     } else if (w === 'gust') {
@@ -2109,8 +2171,26 @@ export class PatangPanel {
     const rival = this.rivals[this.rivalIdx];
     if (!rival) return;
     const s = this.scene;
+    if (!this.hard && this.lostHere >= GUIDE_AFTER) {
+      // Yusuf's hand is over yours now: a wrong press is caught before it
+      // reaches the dor. Still counted, so his last word stays honest.
+      const fault: KFault | null =
+        dir === 'up' ? (this.wind === 'gust' ? 'gust' : this.wind === 'birds' ? 'pigeon' : null) : dir === 'down' && this.wind === 'steady' ? 'slack' : null;
+      if (fault) {
+        this.faults[fault]++;
+        this.hint = this.wind === 'steady'
+          ? 'Yusuf\'s hand stays over yours on the dor. "Kheench, beta. One stroke at a time, while it is taut."'
+          : 'Yusuf\'s hand stays over yours and lets the dor run. "Dheel, beta. Let the sky have this one."';
+        this.render();
+        return;
+      }
+    }
     if (dir === 'up') {
       if (this.wind === 'steady') {
+        // Still coming taut from the last stroke: the pull draws nothing,
+        // and costs nothing. Only the rhythm saws.
+        if (this.tautT > 0) return;
+        this.tautT = PULL_STROKE;
         this.progress += 1;
         this.altitude = Math.min(1, this.altitude + 0.08);
         // Your pull is also your answer to his saw: his patience restarts.
@@ -2170,6 +2250,10 @@ export class PatangPanel {
           this.kvx += 42;
         }
       } else if (this.wind === 'birds') {
+        // One flock, one honor: holding Down through a crossing is the
+        // same courtesy as tapping it once, and the count says so.
+        if (this.flockHonored) return;
+        this.flockHonored = true;
         this.audio.chime();
         this.blessed++;
         this.hint = 'You give ground; the flock pours past your slack line, close enough to hear. Yusuf says nothing, loudly, with approval.';
@@ -2222,10 +2306,12 @@ export class PatangPanel {
   private getCut(line: string) {
     const s = this.scene;
     this.lost++;
+    this.lostHere++;
     this.selfFray = 0;
     this.progress = 0;
     this.phase = 'cut';
-    this.wind = 'steady';
+    // The weather that took the kite keeps blowing; see skyRuns.
+    this.skyRuns = true;
     this.fraySelfT = 0;
     this.audio.bump();
     const cry = CUT_LINES[(this.lost - 1) % CUT_LINES.length];
@@ -2239,7 +2325,10 @@ export class PatangPanel {
         'instead of a new dor. "Three to the sky is a fed sky, beta. It flew our paper better than we did tonight. ' +
         'Chai now; the roofs will keep." Press Space.';
     } else {
-      this.hint = `${line} ${cry} ${ustad} Press Space and take it up again.`;
+      // The next patang takes a moment to tie on; Space waits for it, and
+      // the tick adds "Press Space" once it is ready.
+      this.retieT = RETIE;
+      this.hint = `${line} ${cry} ${ustad}`;
     }
     if (!s) return;
     s.flash('#e2d8e8', 0.28);
@@ -2271,10 +2360,8 @@ export class PatangPanel {
    * earned, so a lost dor costs a round and never the night.
    */
   private relaunch() {
+    // The weather is left alone: the sky has kept its own clock since the cut.
     this.phase = 'launch';
-    this.wind = 'steady';
-    this.windT = 0;
-    this.windDur = 2;
     this.selfFray = 0;
     this.progress = 0;
     this.altitude = 0.3;
@@ -2325,6 +2412,8 @@ export class PatangPanel {
     this.cuts++;
     this.audio.weaveNote(this.cuts + 2);
     this.rivalIdx++;
+    this.lostHere = 0;
+    this.tautT = 0; // a new rival is a fresh line
     this.cued.clear();
     this.progress = 0;
     // A won round is also a fresh spool: whatever he sawed, you wind past it.
@@ -2343,6 +2432,7 @@ export class PatangPanel {
   onAction() {
     const s = this.scene;
     if (this.phase === 'cut') {
+      if (!this.spent && this.retieT > 0) return; // Yusuf is still tying it on
       if (this.spent) {
         // The charkhi is bare; the evening belongs to the chai now. Close
         // the panel on Yusuf's terms, coach line filed for the next climb.
@@ -2356,12 +2446,25 @@ export class PatangPanel {
     if (this.phase === 'launch') {
       this.phase = 'duel';
       this.audio.chime();
-      this.windT = 0;
-      this.windDur = 2;
-      this.wind = 'steady';
       this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
       // The current rival, not the first: after a cut you meet him again.
-      this.hint = `${this.rivals[this.rivalIdx]?.name ?? 'A rival'} crosses your line. Up is kheench, Down is dheel. The sharper line wins.`;
+      const meet = `${this.rivals[this.rivalIdx]?.name ?? 'A rival'} crosses your line. Up is kheench, Down is dheel. The sharper line wins.`;
+      this.hint = meet;
+      if (this.skyRuns) {
+        // After a cut the new patang meets the sky as it is now: whatever
+        // is blowing keeps its clock, and is named as the duel resumes.
+        this.skyRuns = false;
+        if (this.wind !== 'steady') {
+          const left = this.windDur - this.windT;
+          this.blow(this.wind);
+          this.windDur = Math.max(0.4, left);
+          this.hint = `${meet} ${this.hint}`;
+        }
+      } else {
+        this.windT = 0;
+        this.windDur = 2;
+        this.wind = 'steady';
+      }
       if (s) {
         this.kvy = -330;
         this.kvx = -40;
