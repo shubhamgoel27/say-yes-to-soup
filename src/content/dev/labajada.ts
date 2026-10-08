@@ -29,6 +29,9 @@ function onRoad(x: number, y: number): boolean {
   return false;
 }
 
+/** Rows where an old terrace riser crosses the slope, between the road's legs. */
+const TERRACE_ROWS = [2, 7, 13];
+
 /** The mirador: the one shelf off the road, where the sea is first seen. */
 const onOverlook = (x: number, y: number): boolean => x >= 10 && x <= 13 && y >= 17 && y <= 18;
 
@@ -59,24 +62,32 @@ function objectAt(x: number, y: number): string {
   // silhouette instead of an even sprinkle. The lone one at the lip is the
   // thing the sea gets seen past, and it is taller than everything near it.
   for (const [cx, cy] of [
-    [8, 6], [9, 7], [7, 8],
-    [26, 8], [27, 9],
+    [8, 6], [9, 8], [7, 8],
     [14, 14], [15, 15], [13, 16],
     [9, 18],
-    [24, 13],
+    [24, 12],
   ] as [number, number][]) {
     if (x === cx && y === cy && groundAt(x, y) === 'L') return 'C';
   }
+  // Prickly pear, the tuna every coastal kitchen picks, keeps the lower bends.
+  for (const [tx, ty] of [[26, 8], [27, 9], [17, 12], [3, 14]] as [number, number][]) {
+    if (x === tx && y === ty && groundAt(x, y) === 'L') return 'n';
+  }
   // Boulders shed off the ladera, always in pairs, never on a line.
-  for (const [bx, by] of [[11, 8], [12, 9], [21, 12], [22, 13], [8, 15], [26, 18]] as [number, number][]) {
+  for (const [bx, by] of [[11, 8], [12, 9], [21, 12], [22, 14], [8, 15], [26, 18]] as [number, number][]) {
     if (x === bx && y === by && groundAt(x, y) === 'L') return 'r';
   }
+  // Old andenes step the slope down between the switchbacks: a stone riser
+  // across the face every few rows, broken here and there where a wall
+  // slumped, so the hillside reads as falling away toward the sea.
+  if (TERRACE_ROWS.includes(y) && g === 'L' && cellHash(x, y, 53) > 0.1) return 'T';
   // Nothing else stands on the road, the pull-off or the cliff: the shelf
   // keeps its room for a tripod and two people looking at the same thing.
   if (g !== 'L') return ' ';
   const h = cellHash(x, y, 47);
   // Drier life as the map descends.
   if (y > 12) {
+    if (h < 0.02) return 'n';
     if (h < 0.05) return 'C';
     if (h < 0.1) return 'b';
     if (h > 0.995) return 'r';
@@ -121,6 +132,8 @@ export const LA_BAJADA_MAP: MapData = {
     S: { t: 'sea', solid: true },
     o: { t: 'wallStone', solid: true, tall: true },
     C: { t: 'cactus', solid: true, tall: true },
+    n: { t: 'tuna', solid: true, tall: true },
+    T: { t: 'andenpirca', solid: true },
     b: { t: 'shrub', solid: true },
     i: { t: 'tuft' },
     f: { t: 'flower' },

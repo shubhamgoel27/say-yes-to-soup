@@ -42,8 +42,8 @@ function pircaStones(g: CanvasRenderingContext2D, r: Rng) {
 }
 
 export const ART: ChapterArt = {
-  grounded: ['ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
-  noInk: ['chuno', 'grano', 'gallina', 'lagarto'],
+  grounded: ['tuna', 'ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
+  noInk: ['chuno', 'grano', 'gallina', 'lagarto', 'andenpirca'],
   pathy: ['plazaWorn'],
   // The east gateway is one drawing across two cells: west half, east half,
   // shut or swung open.
@@ -54,6 +54,9 @@ export const ART: ChapterArt = {
       { kind: 'gateOpen', at: [41, 16], v: 0 },
       { kind: 'gateOpen', at: [42, 16], v: 1 },
     ],
+    // The lone cactus at the lip, the one the sea is seen past, is the tall
+    // candelabra, never the knee-high clump.
+    'la-bajada': [{ kind: 'cactus', at: [9, 18], v: 0 }],
   },
 
   paint(make) {
@@ -61,14 +64,16 @@ export const ART: ChapterArt = {
 
     // The ladera: the raw slope La Bajada's switchbacks are cut into. Loose
     // dry rubble on a face too steep to stand on, so the road is the road.
-    make('ladera', 5, (g, r) => {
-      // Cool grey rubble, so the warm road across it reads as a road.
-      rect(g, 0, 0, S, S, mute(shade(PAL.stone, -0.02), 0.06));
+    // Sun-baked and warm, the pale tan-rose of the western slope going down to
+    // the desert coast, a shade lighter than the road so the road still reads.
+    const LADERA = '#b49c7e';
+    const laderaFace = (g: CanvasRenderingContext2D, r: Rng) => {
+      rect(g, 0, 0, S, S, LADERA);
       // Short downhill streaks where the last rain sorted the stones.
       for (let i = 0; i < 3; i++) {
         const gx = 6 + r.int(S - 12);
         const gy = r.int(S - 16);
-        g.strokeStyle = i % 2 ? 'rgba(255,246,225,0.10)' : 'rgba(48,40,32,0.14)';
+        g.strokeStyle = i % 2 ? 'rgba(255,240,215,0.14)' : 'rgba(92,60,38,0.14)';
         g.lineWidth = 2.5 + r.int(3);
         g.lineCap = 'round';
         g.beginPath();
@@ -76,16 +81,71 @@ export const ART: ChapterArt = {
         g.quadraticCurveTo(gx + 3 - r.int(6), gy + 9, gx + 5 - r.int(10), gy + 16);
         g.stroke();
       }
-      // Rubble caught on the way down, each stone lit from above.
+      // Rubble caught on the way down, rust and bone, each stone lit from above.
       for (let i = 0; i < 9; i++) {
         const sx = r.int(S);
         const sy = r.int(S);
-        const c = shade(PAL.stoneDark, 0.06 + (r.next() - 0.5) * 0.3);
+        const c = shade(r.chance(0.5) ? '#8f6a50' : '#9c8c78', (r.next() - 0.5) * 0.3);
         blob(g, sx, sy, 2.5 + r.int(4), c, r, 0.24);
-        dot(g, sx - 1, sy - 2, 1.3, shade(c, 0.22));
+        dot(g, sx - 1, sy - 2, 1.3, shade(c, 0.24));
       }
-      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 8, 3.5, 'rgba(48,40,32,0.10)');
+      if (r.chance(0.5)) oval(g, r.int(S), r.int(S), 8, 3.5, 'rgba(92,60,38,0.10)');
+    };
+    make('ladera', 5, (g, r) => laderaFace(g, r));
+
+    // An old andén: a dry-stone terrace riser across the slope, the shelf
+    // above it lit, a band of shade below. Rows of them step the hillside
+    // down toward the sea, so the map reads as a descent and not a field.
+    make('andenpirca', 3, (g, r) => {
+      // The shelf's lip, catching the sun.
+      rect(g, 0, 18, S, 5, 'rgba(255,240,214,0.3)');
+      // The face: three courses of fitted stones, darker toward the foot.
+      vgrad(g, 0, 22, S, 32, '#958069', '#6a5442');
+      const courses: [number, string, number][] = [[28, '#a8927a', 5.5], [38, '#97806a', 6], [48, '#85705b', 6.5]];
+      for (const [cy, c, rad] of courses) {
+        for (let x = -6 + r.int(8); x < S + 6; x += rad * 2 + r.int(4)) {
+          blob(g, x + rad, cy, rad, shade(c, (r.next() - 0.5) * 0.18), r, 0.12);
+          dot(g, x + rad - 1.5, cy - rad * 0.5, 1.2, 'rgba(255,240,214,0.35)');
+        }
+      }
+      // Cast shade where the next shelf down begins.
+      vgrad(g, 0, 54, S, 10, 'rgba(60,38,24,0.34)', 'rgba(60,38,24,0)');
     });
+
+    // Tuna: prickly pear, paddle on paddle, the fruit reddening at the rims.
+    make('tuna', 2, (g, r, i) => {
+      const c = '#6f8f55';
+      softShadow(g, 32, 90, 20, 5, 0.22);
+      const pads: [number, number, number, number, number][] = i === 0
+        ? [[32, 76, 11, 15, 0], [22, 58, 9, 12, -0.4], [42, 56, 9, 13, 0.35], [30, 40, 8, 11, -0.1], [48, 38, 7, 10, 0.5]]
+        : [[28, 78, 12, 14, 0.1], [40, 62, 9, 12, 0.4], [20, 62, 8, 11, -0.5], [44, 44, 8, 10, 0.2]];
+      for (const [k, [x, y, rx, ry, rot]] of pads.entries()) {
+        const pc = shade(c, (k % 2 ? -0.06 : 0.04));
+        g.save();
+        g.translate(x, y);
+        g.rotate(rot);
+        g.fillStyle = shade(pc, -0.16);
+        g.beginPath();
+        g.ellipse(0.8, 1, rx, ry, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = pc;
+        g.beginPath();
+        g.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(235,255,210,0.18)';
+        g.beginPath();
+        g.ellipse(-rx * 0.35, -ry * 0.3, rx * 0.4, ry * 0.5, 0, 0, Math.PI * 2);
+        g.fill();
+        for (let a = 0; a < 6; a++) dot(g, -rx * 0.5 + r.next() * rx, -ry * 0.6 + r.next() * ry * 1.2, 0.9, 'rgba(250,236,200,0.8)');
+        g.restore();
+      }
+      // Fruit on the top rims.
+      const fruit = i === 0 ? [[27, 30], [33, 29], [52, 29]] : [[40, 35], [47, 35]];
+      for (const [x, y] of fruit) {
+        oval(g, x!, y!, 3.2, 4, '#b8443a');
+        dot(g, x! - 1, y! - 1.5, 1, '#e8907a');
+      }
+    }, 64, 96);
 
     // ------------------------------------------------------- village flats
 
