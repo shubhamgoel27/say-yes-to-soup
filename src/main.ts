@@ -2,6 +2,7 @@ import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
 import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
+import { ArmedCards, type Spot } from './engine/armed';
 import { DevBridge } from './engine/devbridge';
 import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
 import { DIR_VEC, Input, type Dir } from './engine/input';
@@ -523,47 +524,32 @@ const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
 const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
 
 /**
- * "Not yet" sticks. A declined card used to re-open after every later
- * conversation or examine, eighteen tiles away and on other maps, because
- * the start flag (rightly) stays raised. Now the decline remembers where it
- * happened and who offered; the card comes back only when the player talks
- * to that person again, or presses Space in open air near that spot.
- * Session-scoped: a reload offers each waiting card once more, which is fair.
+ * Armed cards (src/engine/armed.ts): "Not yet" and "Step away" set a card
+ * aside where it was declined, and a journey taken in conversation always
+ * runs, leaving any armed card behind. Session-scoped: a reload offers each
+ * waiting card once more, which is fair.
  */
-const declinedGames = new Map<string, { map: string; at: [number, number]; npc: string | null }>();
+const armed = new ArmedCards(games.map((g) => g.def.flag));
 /** Who spoke last before a card opened: the one who offered it. */
 let howtoOfferedBy: string | null = null;
-/** How close counts as "back at the station" for the open-air re-offer. */
-const DECLINE_NEAR = 2;
+const gameByFlag = (flag: string | null) => (flag ? games.find((g) => g.def.flag === flag) ?? null : null);
+const panelOpen = (flag: string) => gameByFlag(flag)?.panel.isOpen ?? false;
+const hereSpot = (npc: string | null): Spot => ({ map: map.id, at: [player.x, player.y], npc });
 
 /** A game whose start flag is raised but whose panel is not yet on screen,
- * and which the player has not set aside with "Not yet". */
+ * and which the player has not set aside. */
 function pendingGame(): GameEntry | null {
-  return (
-    games.find((g) => state.has(g.def.flag) && !g.panel.isOpen && !declinedGames.has(g.def.flag)) ??
-    null
-  );
+  return gameByFlag(armed.pending((f) => state.has(f), panelOpen));
 }
 
-/** Open air near where a card was declined: that card, forgiven. */
+/** Open air near where a card was set aside: that card, forgiven. */
 function declinedNearHere(): GameEntry | null {
-  for (const [flag, d] of declinedGames) {
-    if (d.map !== map.id) continue;
-    if (Math.abs(player.x - d.at[0]) + Math.abs(player.y - d.at[1]) > DECLINE_NEAR) continue;
-    const g = games.find((x) => x.def.flag === flag);
-    if (!g || !state.has(flag)) {
-      declinedGames.delete(flag);
-      continue;
-    }
-    declinedGames.delete(flag);
-    return g;
-  }
-  return null;
+  return gameByFlag(armed.nearHere(map.id, player.x, player.y, (f) => state.has(f)));
 }
 
 /** Talking to whoever offered a declined card lets it come back after. */
 function forgiveDeclinesBy(npc: string) {
-  for (const [flag, d] of declinedGames) if (d.npc === npc) declinedGames.delete(flag);
+  armed.forgiveBy(npc);
 }
 
 /** Open a panel and route its completion: story narration, or replay joy. */
@@ -691,7 +677,7 @@ function closeHowto(pick: string | null) {
   } else {
     player.frozen = false; // the story's start flag stays; the offer keeps
     // ...but it waits where it was made, instead of following the player.
-    declinedGames.set(g.def.flag, { map: map.id, at: [player.x, player.y], npc: howtoOfferedBy });
+    armed.setAside(g.def.flag, hereSpot(howtoOfferedBy));
   }
 }
 
@@ -736,9 +722,13 @@ function stripActivate() {
       // next first-time completion skip its own narration.
       state.clearFlag('replay.mode');
       state.clearFlag(g.def.flag);
+    } else {
+      // Unfinished is allowed. The start flag stays set, and the card waits
+      // here, exactly as "Not yet" does: back at this spot, or after its own
+      // villager speaks again. (It used to pop after the next conversation
+      // with anyone, and a journey taken in that conversation was lost.)
+      armed.setAside(g.def.flag, hereSpot(howtoOfferedBy));
     }
-    // Otherwise unfinished is allowed. The start flag stays set, so the
-    // how-to card re-offers whenever the player is ready again.
   }
   // "Keep at it": the panel is still there, exactly as it was.
 }
@@ -2760,6 +2750,14 @@ function takeTravel(): boolean {
     console.warn(`travel to unknown map: ${d.map}`);
     return false;
   }
+  // Every card still armed stays behind where it was armed: none follows the
+  // player into the next village. A replay offer simply ends.
+  for (const f of armed.leaveBehind((x) => state.has(x), panelOpen, hereSpot(null))) {
+    if (state.has('replay.mode')) {
+      state.clearFlag('replay.mode');
+      state.clearFlag(f);
+    }
+  }
   const spawn: [number, number] = d.x >= 0 && d.y >= 0 ? [d.x, d.y] : dest.spawn;
   const facing = (d.dir || dest.spawnFacing) as Dir;
   startWarp({ at: [player.x, player.y], type: 'door', to: d.map, spawn, facing });
@@ -2836,6 +2834,9 @@ function endDialogue() {
     startNarration('dig.finish');
     return;
   }
+  // A journey taken in conversation runs first, always: an armed card can
+  // wait, but "the faraglioni slide past" cannot be taken back.
+  if (takeTravel()) return;
   {
     // A conversation raised a game's start flag: the how-to card goes first,
     // so the hands know what they are about to do (and may decline, kindly).
@@ -2847,7 +2848,6 @@ function endDialogue() {
       return;
     }
   }
-  if (takeTravel()) return;
   if (state.has('photo.flash')) {
     state.clearFlag('photo.flash');
     flashT = calmFlash() ? 0.25 : 0.5;
@@ -3593,7 +3593,7 @@ function reloadJourney() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
-  declinedGames.clear();
+  armed.clear();
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = 0;
   window.clearTimeout(introTimer);
@@ -3719,7 +3719,7 @@ function continueJourney() {
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
   state.reset();
-  declinedGames.clear();
+  armed.clear();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();
