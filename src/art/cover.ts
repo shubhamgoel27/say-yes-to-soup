@@ -201,16 +201,16 @@ export function makeCoverArt(): HTMLCanvasElement {
     g.quadraticCurveTo(252 + Math.cos(a) * 9, 104 + Math.sin(a) * 4 - 4, 252 + Math.cos(a) * 14, 106 + Math.sin(a) * 6);
     g.stroke();
   }
-  // Cactus near the road.
+  // Cactus near the road: a sheaf of Andean columns from the ground, not a
+  // saguaro with its arms up.
   g.strokeStyle = '#4d7440';
-  g.lineWidth = 3.4;
+  g.lineWidth = 3;
+  g.lineCap = 'round';
   g.beginPath();
-  g.moveTo(232, 172);
-  g.lineTo(232, 158);
-  g.moveTo(232, 164);
-  g.lineTo(227, 160);
-  g.moveTo(232, 166);
-  g.lineTo(237, 161);
+  for (const [x, top] of [[228, 162], [232, 157], [236, 161]] as const) {
+    g.moveTo(x, 172);
+    g.lineTo(x, top);
+  }
   g.stroke();
 
   // The walker, small on the road, bindle over one shoulder. That is you.
