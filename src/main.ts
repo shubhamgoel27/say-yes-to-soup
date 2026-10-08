@@ -3639,7 +3639,19 @@ function playWelcome() {
   welcomeTimer = 0;
   if (!pendingWelcome) return;
   pendingWelcome = false;
-  showPlate(map.name);
+  showPlate(map.name, WELCOME_PLATE_MS);
+  // The tips wait for the plate to go. All three at once (the plate, the
+  // new thread's chip and the walking tip) stacked over the first face on
+  // screen, Don Aurelio's at the well on an upright tablet; one at a time
+  // each is read and none covers the plaza for long.
+  welcomeTimer = window.setTimeout(playWelcomeTips, WELCOME_PLATE_MS + 300);
+}
+
+/** How long the first place plate holds before the welcome tips come in. */
+const WELCOME_PLATE_MS = 3200;
+
+function playWelcomeTips() {
+  welcomeTimer = 0;
   toasts.show(keysOrTaps(
     'walk with the arrow keys or WASD, or click where you want to go',
     'slide a thumb in the lower left to walk, or tap where you want to go',
