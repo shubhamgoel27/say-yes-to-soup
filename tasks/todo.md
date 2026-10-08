@@ -652,9 +652,29 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   (Rosa's soup, 7 Delhi dishes, to verify); audio on hidden tab; ending fade.
 
 ## 2026-10-07: pass 5 (fix everything from critic round e). Brief: ../wayfare-review/pass5/BRIEF.md
-- [ ] O bodies: no overlap anywhere, clipping, click-to-talk catches walkers, thread end vs objects
-- [ ] P phones/UI: ghost tap, journal close, stick zone, portrait view size, Continue line, hidden-tab audio, shelf, pause, armed card vs travel
-- [ ] S staging: Tanabata dusk, Busan dawn, Sicily mole send-off, poses, ending fade, narrated-scene audit
-- [ ] W words: neutral address (casero/bedda), west/east + years + names, first errand, watia step, stale hints, nits, minigame outcome text
-- [ ] A art: dish paintings, backstrap loom, La Bajada, distinct interiors, ship hull, Sicily mole
-- [ ] merge, gate (tsc, npm test, 3 e2e one at a time, prod smoke desk + phone), ship, verify live
+- [x] O bodies: no overlap anywhere, clipping, click-to-talk catches walkers, thread end vs objects
+- [x] P phones/UI: ghost tap, journal close, stick zone, portrait view size, Continue line, hidden-tab audio, shelf, pause, armed card vs travel
+- [x] S staging: Tanabata dusk, Busan dawn, Sicily mole send-off, poses, ending fade, narrated-scene audit
+- [x] W words: neutral address (casero/bedda), west/east + years + names, first errand, watia step, stale hints, nits, minigame outcome text
+- [x] A art: dish paintings, backstrap loom, La Bajada, distinct interiors, ship hull, Sicily mole
+- [x] merge, gate (tsc, npm test, 3 e2e one at a time, prod smoke desk + phone), ship, verify live
+
+### Review (pass 5, shipped b6c7cbd, live bundle index-CwBYynyT verified: "whichever you are", "Pass Road", "gioia")
+- O: a body owns its cell and the one above; vertical talks become side by side (sidestep, else lean); wanderers
+  and seats never stack; tall props fade over the player or a talk target; indoor back walls a tile higher;
+  click on a figure's head catches walkers; 550ms hush after a talk; Space prefers the thread's target. tests/bodies.
+- P: ghost-click guard; portrait journal close + tab fade; stick-corner taps pass through; portrait view 180x320
+  (~9 tiles on phones, 11 on upright iPad) with GPU rebuild on rotate; title Continue fits; audio suspends hidden;
+  shelf straight to play with full rows; pause Journal + saved; tips wait for the plate; glyph spacing; armed
+  cards never swallow travel (src/engine/armed.ts).
+- S: Tanabata at dusk with lanterns lit in turn and the village gathered; Busan dawn auction; Sicily send-off on
+  the mole with a painted ship; Rashid and Carmen seated; ending fade + held quiet; narrated-scene audit. tests/staging.
+- W: neutral address (casero or casera / regular / joven / gioia) + lint; east gate onto The Pass Road, west =
+  the sea; years agree; Rosa asks the name; red flag on a tall pole, five-tile steam; watia dig spots spread;
+  stale hints; nits; honest kite and goldfish outcomes.
+- A: 8 missing dish paintings painted + test; outdoor backstrap loom; La Bajada terraces + Peruvian cacti;
+  distinct interiors; ship hull; Sicily mole of stone with bollards.
+- Coordinator: ship anchor moved one row south to lie against A's new mole face.
+- Gate: tsc clean, npm test 364/364, thread-e2e 175 states, attend-e2e ALL GREEN, warmth-e2e all pass, prod smoke
+  desktop + Galaxy NO ERRORS.
+- Known small: in Galaxy landscape the task chip can sit over an NPC's head near the top edge.

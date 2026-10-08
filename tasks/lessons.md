@@ -276,3 +276,12 @@ you would not mind losing tonight.
   e2e failure a regression, run the same script against main.
 - A field that changes which dialogue arm fires must not live inside `entry`: the thread guide and the content
   walkers simulate `entry` directly. Live-only overrides go in a separate field (NpcDef.visiting).
+
+## e2e timing and deploy checks (2026-10-08)
+- attend-e2e is timing sensitive: under load (several browsers + dev servers at once) every branch "failed" the
+  mash runs. Run the e2e suites alone on a quiet machine before bisecting; a failure that appears on every branch,
+  including text-only ones, is load, not code.
+- When waiting for a deploy, match the run to the pushed commit's SHA (gh run list --json headSha). A wait loop
+  on "latest run completed" can catch the previous run before the new one registers. Verify the live bundle with
+  a cache-busting query; the CDN holds index.html for 600s.
+- In this shell `grep` is a function that silently skips some files; use /usr/bin/grep for audits.
