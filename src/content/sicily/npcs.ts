@@ -1292,6 +1292,7 @@ export const SICILY_EXAMINES: Record<string, ExamineArm[]> = {
   molonord: [{ node: 'c8.ex.molo' }],
   molosud: [{ node: 'c8.ex.molo' }],
   moloface: [{ node: 'c8.ex.sea' }],
+  scogliera: [{ node: 'c8.ex.sea' }],
   lavashore: [{ node: 'c8.ex.lavashore' }],
   lavarock: [{ node: 'c8.ex.lavarock' }],
   faraglione: [{ node: 'c8.ex.faraglione' }],

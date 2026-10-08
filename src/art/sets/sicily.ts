@@ -51,14 +51,26 @@ export const ART: ChapterArt = {
   },
   /**
    * The mole's bollards stand in a line at an even pitch, the way a mole is
-   * built, not wherever a cell hash lands: variant 0 of each lip carries one.
+   * built, not wherever a cell hash lands: variant 0 of the quay lip carries
+   * one. The north lip is the parapet now, and the armour stone outside it
+   * piles against whichever side the mole is on, so every cell of it is
+   * pinned to the variant that leans the right way (see SCOGLIERA below).
    */
   pins: {
     sicily: [
-      ...[33, 34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'molonord', at: [x, 19] as [number, number], v: x === 35 || x === 38 ? 0 : 1 })),
-      ...[40, 41, 42].map((x) => ({ kind: 'molonord', at: [x, 18] as [number, number], v: x === 42 ? 0 : 1 })),
-      ...[33, 34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'molosud', at: [x, 20] as [number, number], v: x === 35 || x === 39 ? 0 : 1 })),
-      ...[40, 41, 42].map((x) => ({ kind: 'molosud', at: [x, 21] as [number, number], v: 1 })),
+      ...[33, 34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'molosud', at: [x, 20] as [number, number], v: x === 35 || x === 38 ? 0 : 1 })),
+      ...[40, 41, 42].map((x) => ({ kind: 'molosud', at: [x, 21] as [number, number], v: x === 41 ? 0 : 1 })),
+      // The quay face: a tyre fender hung under every bollard.
+      ...[34, 35, 36, 37, 38, 39].map((x) => ({ kind: 'moloface', at: [x, 21] as [number, number], v: x === 35 || x === 38 ? 0 : 1 })),
+      ...[40, 41, 42].map((x) => ({ kind: 'moloface', at: [x, 22] as [number, number], v: x === 41 ? 0 : 1 })),
+      { kind: 'scogliera', at: [34, 18], v: 8 },
+      ...[35, 36, 37, 38].map((x, i) => ({ kind: 'scogliera', at: [x, 18] as [number, number], v: i % 2 })),
+      ...[40, 41, 42].map((x, i) => ({ kind: 'scogliera', at: [x, 17] as [number, number], v: i % 2 })),
+      ...[18, 19, 20, 21].map((y, i) => ({ kind: 'scogliera', at: [43, y] as [number, number], v: 2 + (i % 2) })),
+      { kind: 'scogliera', at: [39, 18], v: 4 },
+      { kind: 'scogliera', at: [39, 17], v: 5 },
+      { kind: 'scogliera', at: [43, 17], v: 6 },
+      { kind: 'scogliera', at: [43, 22], v: 7 },
     ],
   },
 
@@ -66,34 +78,60 @@ export const ART: ChapterArt = {
     // ------------------------------------------------------------ grounds
 
     // ------------------------------------------------------------ the mole
-    // A breakwater, not a pavement pasted on the sea: long dressed blocks of
-    // lava stone laid along its length, a pale worn coping on both lips, cast
-    // bitte (bollards) along the north lip where the boats tie up, and on the
-    // south side the stone face going down into the water with the sea's
-    // white at its foot. The lungomare's paving stays the lungomare's.
-    const MOLO = '#77727c';
+    // A breakwater, not a pavement pasted on the sea. Seen from the town it
+    // is three things: the armour stone the open sea breaks on, heaped
+    // along the north side and round the head; the parapet wall on top of
+    // it, the muro paraonde, standing a course above the walk with its face
+    // to you; and on the south side, out of the weather, the quay wall where
+    // the boats and the ship come alongside, bollards and old tyres on it.
+    // The walk between is long dressed lava blocks, laid lengthwise, worn
+    // pale down the middle where the town has walked out to the lamp.
+    const MOLO = '#7a7480';
     const moloCourses = (g: CanvasRenderingContext2D, r: Rng) => {
-      rect(g, 0, 0, S, S, shade(MOLO, -0.25)); // the joints, dark with grit
-      // Two courses per cell, blocks running along the mole, joints staggered
-      // on a period that divides 64 so a run of cells is one wall of stone.
-      for (const [y, off] of [[0, 0], [32, 16]] as const) {
-        for (let x = -off; x < S; x += 32) {
-          rr(g, x + 1.5, y + 1.5, 29, 29, 3, shade(MOLO, (r.next() - 0.5) * 0.12));
-          rect(g, x + 3, y + 3, 26, 2, 'rgba(255,248,240,0.08)'); // each block's sunlit lip
-          oval(g, x + 9 + r.int(12), y + 8 + r.int(14), 5, 2, 'rgba(255,248,240,0.05)');
+      rect(g, 0, 0, S, S, shade(MOLO, -0.3)); // the joints, dark with grit
+      // Two courses per cell of blocks that are not all one length, joints
+      // staggered so a run of cells reads as one laid wall, not a grid.
+      for (const [y, h] of [[0, 31], [31, 33]] as const) {
+        let x = -r.int(20);
+        while (x < S) {
+          const w = 22 + r.int(22);
+          rr(g, x + 1.2, y + 1.2, w - 2.4, h - 2.4, 4, shade(MOLO, (r.next() - 0.5) * 0.16));
+          rect(g, x + 3, y + 2.5, w - 6, 2, 'rgba(255,248,240,0.10)'); // each block's sunlit lip
+          if (r.chance(0.5)) oval(g, x + 6 + r.int(Math.max(1, w - 12)), y + 8 + r.int(16), 5, 2, 'rgba(255,248,240,0.06)');
+          x += w;
         }
       }
-      g.fillStyle = 'rgba(18,14,22,0.3)';
-      g.fillRect(0, 31, S, 2);
+      // Worn pale down the middle, where a century of feet has polished it.
+      vgrad(g, 0, 14, S, 18, 'rgba(232,222,206,0)', 'rgba(232,222,206,0.10)');
+      vgrad(g, 0, 32, S, 18, 'rgba(232,222,206,0.10)', 'rgba(232,222,206,0)');
       // Salt, and the dark spots of last night's spray.
       for (let k = 0; k < 6; k++) dot(g, r.int(S), r.int(S), 1 + r.next(), r.chance(0.5) ? 'rgba(240,240,236,0.25)' : 'rgba(30,26,34,0.18)');
     };
-    const coping = (g: CanvasRenderingContext2D, top: boolean) => {
-      const y = top ? 0 : S - 11;
-      rect(g, 0, y, S, 11, '#a39e9a');
-      rect(g, 0, top ? y + 9 : y, S, 2, 'rgba(18,14,22,0.35)');
-      rect(g, 0, top ? y : y + 9, S, 2, 'rgba(255,250,240,0.3)');
+    const quayCoping = (g: CanvasRenderingContext2D) => {
+      const y = S - 11;
+      rect(g, 0, y, S, 11, '#a8a29d');
+      rect(g, 0, y, S, 2, 'rgba(18,14,22,0.35)');
+      rect(g, 0, y + 9, S, 2, 'rgba(255,250,240,0.3)');
       for (let x = 0; x < S; x += 16) rect(g, x, y, 1.4, 11, 'rgba(18,14,22,0.25)');
+    };
+    // The parapet on the north lip: its cap, then its face toward the town,
+    // then its shadow lying across the walk. It is drawn into the walk's own
+    // cell, so nobody walking along it is ever behind a wall.
+    const parapet = (g: CanvasRenderingContext2D, r: Rng) => {
+      rect(g, 0, 0, S, 7, '#b4aea6'); // the cap, pale and salt-bleached
+      rect(g, 0, 0, S, 1.6, 'rgba(255,252,244,0.45)');
+      for (let x = r.int(10); x < S; x += 18 + r.int(10)) rect(g, x, 0, 1.2, 7, 'rgba(18,14,22,0.22)');
+      vgrad(g, 0, 7, S, 17, '#5d5862', '#4c4751'); // the face, out of the sun
+      for (const [y, off] of [[7, 0], [15, 11]] as const) {
+        for (let x = -off; x < S; x += 22) rect(g, x, y, 1.3, 8, 'rgba(18,14,22,0.3)');
+        rect(g, 0, y + 7.4, S, 1, 'rgba(18,14,22,0.28)');
+      }
+      // Rust weeping from the iron in it.
+      for (let k = 0; k < 2; k++) {
+        const x = 6 + r.int(52);
+        vgrad(g, x, 9, 2.4, 12, 'rgba(140,80,46,0.45)', 'rgba(140,80,46,0)');
+      }
+      vgrad(g, 0, 24, S, 10, 'rgba(24,18,30,0.34)', 'rgba(24,18,30,0)'); // its shadow on the walk
     };
     const bitta = (g: CanvasRenderingContext2D, x: number, y: number) => {
       softShadow(g, x + 2, y + 8, 13, 4, 0.4);
@@ -104,26 +142,47 @@ export const ART: ChapterArt = {
       dot(g, x + 4.5, y + 1, 1.6, '#7a4a30'); // rust where the rope bites
     };
     make('molo', 3, (g, r) => moloCourses(g, r));
-    // North lip: coping, and on variant 0 a bollard on it.
-    make('molonord', 2, (g, r, i) => {
+    make('molonord', 2, (g, r) => {
       moloCourses(g, r);
-      coping(g, true);
-      if (i === 0) bitta(g, 32, 14);
+      parapet(g, r);
     });
+    // The quay lip, and on variant 0 a bollard on it.
     make('molosud', 2, (g, r, i) => {
       moloCourses(g, r);
-      coping(g, false);
+      quayCoping(g);
       if (i === 0) bitta(g, 32, S - 8);
     });
-    // The south face, seen across the water: courses going down, the wet
-    // dark band at the tide line, foam at the foot. The sea under it is live.
-    make('moloface', 2, (g, r) => {
-      vgrad(g, 0, 0, S, 30, '#5f5a63', '#46424a');
+    // The quay face, seen across the water: courses going down, the wet dark
+    // band at the tide line, weed, foam at the foot, and under each bollard a
+    // tyre hung on a chain for the boats to lean on. The sea under it is live.
+    make('moloface', 2, (g, r, i) => {
+      vgrad(g, 0, 0, S, 30, '#625d66', '#47434b');
       for (const [y, off] of [[0, 8], [15, 24]] as const) {
-        for (let x = -off; x < S; x += 32) rr(g, x + 1, y + 1, 30, 13, 2, shade('#58535c', (r.next() - 0.5) * 0.12));
+        for (let x = -off; x < S; x += 32) rr(g, x + 1, y + 1, 30, 13, 2, shade('#5a555e', (r.next() - 0.5) * 0.12));
       }
-      vgrad(g, 0, 22, S, 10, 'rgba(30,40,40,0.0)', 'rgba(30,44,40,0.55)'); // the wet line
-      rect(g, 0, 28, S, 3, 'rgba(70,90,60,0.5)'); // weed at the tide line
+      vgrad(g, 0, 20, S, 12, 'rgba(30,40,40,0.0)', 'rgba(30,44,40,0.6)'); // the wet line
+      rect(g, 0, 28, S, 3, 'rgba(70,90,60,0.55)'); // weed at the tide line
+      if (i === 0) {
+        g.strokeStyle = '#3a3533';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.moveTo(32, 0);
+        g.lineTo(32, 6);
+        g.stroke();
+        g.fillStyle = '#26232a';
+        g.beginPath();
+        g.ellipse(32, 15, 10, 9, 0, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = '#4a4550';
+        g.beginPath();
+        g.ellipse(32, 15, 4.5, 4, 0, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(255,255,255,0.14)';
+        g.lineWidth = 1.4;
+        g.beginPath();
+        g.arc(32, 15, 8, Math.PI * 1.1, Math.PI * 1.6);
+        g.stroke();
+      }
       g.fillStyle = 'rgba(240,246,246,0.85)';
       for (let x = 0; x < S; x += 4) {
         const w = 3 + Math.sin(x * 0.4) * 1.4;
@@ -131,6 +190,132 @@ export const ART: ChapterArt = {
       }
       for (let k = 0; k < 5; k++) dot(g, r.int(S), 34 + r.int(6), 1 + r.next(), 'rgba(240,246,246,0.55)');
       vgrad(g, 0, 33, S, 12, 'rgba(20,30,40,0.25)', 'rgba(20,30,40,0)');
+    });
+
+    // The scogliera: lava blocks tipped off a barge a lifetime ago, heaped
+    // against the mole and thinning out into the water, white where the sea
+    // works between them. Each variant leans toward where the mole is, as a
+    // distance in cell units from any point in the cell to the mole's side:
+    // 0-1 the mole below, 2-3 to the left, 4 below and right (the inside
+    // corner where the arm meets the head), then the outside corners, then
+    // the root against the shore.
+    const SCOGLIERA: ((u: number, v: number) => number)[] = [
+      (_u, v) => 1 - v,
+      (_u, v) => 1 - v,
+      (u) => u,
+      (u) => u,
+      (u, v) => Math.min(1 - u, 1 - v),
+      (u, v) => Math.hypot(1 - u, 1 - v) * 1.1,
+      (u, v) => Math.hypot(u, 1 - v) * 1.1,
+      (u, v) => Math.hypot(u, v) * 1.1,
+      // The root, where the heap meets the lava shore on its left as well.
+      (u, v) => Math.min(u * 1.8, 1 - v),
+    ];
+    const LAVA = '#4a4550';
+    make('scogliera', SCOGLIERA.length, (g, r, i) => {
+      const far = SCOGLIERA[i]!;
+      // Under the water by the wall, more stone: a darker shoal.
+      for (let y = 0; y < S; y += 4) {
+        for (let x = 0; x < S; x += 4) {
+          const d = far((x + 2) / S, (y + 2) / S);
+          if (d < 0.6) {
+            g.fillStyle = `rgba(36,44,56,${(0.28 * (1 - d / 0.6)).toFixed(3)})`;
+            g.fillRect(x, y, 4, 4);
+          }
+        }
+      }
+      // Pick the blocks: big by the wall, smaller and fewer going out.
+      type Block = { x: number; y: number; rad: number; d: number };
+      const blocks: Block[] = [];
+      // Along a straight run the stones are laid in courses, so a row of
+      // cells meets as one heap with no gap at the seams: a big course
+      // against the wall, a smaller one on it, a few strays out in the wash.
+      if (i < 4) {
+        const put = (along: number, depth: number, rad: number) => {
+          const al = along + (r.next() - 0.5) * 5;
+          const de = depth + (r.next() - 0.5) * 4;
+          const x = i < 2 ? al : de;
+          const y = i < 2 ? S - de : al;
+          blocks.push({ x, y, rad: rad * (0.85 + r.next() * 0.3), d: de / S });
+        };
+        const o = r.int(6);
+        for (const al of [14 + o, 46 + o]) put(al, 12, 19);
+        put(26 + r.int(12), 34, 14);
+        if (r.chance(0.6)) put(52 - r.int(6), 38, 10);
+        if (r.chance(0.7)) put(8 + r.int(48), 52, 6.5);
+      }
+      for (let k = 0; k < 80 && i >= 4 && blocks.length < 7; k++) {
+        const u = r.next();
+        const v = r.next();
+        const d = far(u, v);
+        if (d > 0.8 || r.next() < d * 0.5) continue;
+        const rad = 18 - d * 10 + r.next() * 4;
+        let x = u * S;
+        let y = v * S;
+        // Keep inside the cell except on the mole's own side, where a block
+        // simply goes on under the lip.
+        const tuckX = far(Math.min(1, (x + rad) / S), v) < 0.12 || far(Math.max(0, (x - rad) / S), v) < 0.12;
+        const tuckY = far(u, Math.min(1, (y + rad) / S)) < 0.12 || far(u, Math.max(0, (y - rad) / S)) < 0.12;
+        if (!tuckX) x = Math.max(rad + 1, Math.min(S - rad - 1, x));
+        if (!tuckY) y = Math.max(rad + 1, Math.min(S - rad - 1, y));
+        if (blocks.some((b) => Math.hypot(b.x - x, b.y - y) < (b.rad + rad) * 0.55)) continue;
+        blocks.push({ x, y, rad, d });
+      }
+      blocks.sort((a, b) => a.y - b.y);
+      // The sea's white round the outer stones, before the stones go on it.
+      for (const b of blocks) {
+        if (b.d < 0.25) continue;
+        oval(g, b.x + 1, b.y + b.rad * 0.55, b.rad * 1.25, b.rad * 0.45, 'rgba(238,246,248,0.55)');
+      }
+      for (const b of blocks) {
+        const pts: [number, number][] = [];
+        const n = 5 + r.int(2);
+        const rot = r.next() * Math.PI;
+        for (let k = 0; k < n; k++) {
+          const a = rot + ((k + (r.next() - 0.5) * 0.5) / n) * Math.PI * 2;
+          const rr2 = b.rad * (0.72 + r.next() * 0.4);
+          pts.push([b.x + Math.cos(a) * rr2, b.y + Math.sin(a) * rr2 * 0.8]);
+        }
+        const path = () => {
+          g.beginPath();
+          pts.forEach(([px, py], k) => (k ? g.lineTo(px, py) : g.moveTo(px, py)));
+          g.closePath();
+        };
+        // Its shadow on the stones and water behind it, then the block.
+        g.save();
+        g.translate(2.5, 3);
+        path();
+        g.fillStyle = 'rgba(16,14,22,0.35)';
+        g.fill();
+        g.restore();
+        const c = shade(LAVA, (r.next() - 0.5) * 0.18 + (0.5 - b.d) * 0.06);
+        path();
+        g.fillStyle = c;
+        g.fill();
+        // The sunlit top facet, then wet and dark where the swell reaches.
+        g.save();
+        path();
+        g.clip();
+        g.fillStyle = shade(c, 0.38);
+        g.beginPath();
+        g.ellipse(b.x + b.rad * 0.12, b.y - b.rad * 0.3, b.rad * 0.82, b.rad * 0.5, -0.2, 0, Math.PI * 2);
+        g.fill();
+        g.fillStyle = 'rgba(255,250,240,0.12)';
+        g.beginPath();
+        g.ellipse(b.x + b.rad * 0.2, b.y - b.rad * 0.45, b.rad * 0.4, b.rad * 0.2, -0.2, 0, Math.PI * 2);
+        g.fill();
+        vgrad(g, b.x - b.rad, b.y + b.rad * 0.2, b.rad * 2, b.rad * 0.7, 'rgba(14,20,28,0)', 'rgba(14,20,28,0.4)');
+        g.restore();
+        g.strokeStyle = 'rgba(20,16,24,0.55)';
+        g.lineWidth = 1.4;
+        path();
+        g.stroke();
+      }
+      // Spray caught on the outermost stones.
+      for (const b of blocks) {
+        if (b.d < 0.4 || !r.chance(0.6)) continue;
+        dot(g, b.x - b.rad * 0.4 + r.next() * b.rad * 0.8, b.y - b.rad * 0.5, 1.4, 'rgba(250,252,252,0.8)');
+      }
     });
 
     make('basalto', 9, (g, r, i) => {

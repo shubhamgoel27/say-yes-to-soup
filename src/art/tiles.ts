@@ -52,10 +52,10 @@ const CAP_LIP = 14;
  * Ground kinds the boundary-feathering pass must leave alone: water and its
  * banks autotile themselves, and void and scree are the outside of the world.
  */
-const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea', 'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
+const NO_SPILL = new Set(['void', 'scree', 'bridge', 'water', 'sea', 'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface', 'scogliera']);
 
 /** Ground kinds painted over the live sea: a hull's side, part steel, part water. */
-const OVER_SEA = new Set(['hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface']);
+export const OVER_SEA = new Set(['hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface', 'scogliera']);
 
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
@@ -899,9 +899,9 @@ export class Tileset {
     this.make('gate', 2, (g, _r, i) => gateway(g, i, false), 64, 176);
 
     // The western Andean slope's own cacti, not the Sonoran saguaro with its
-    // elbowed arms: a candelabra of ribbed Neoraimondia columns rising from
-    // one foot, a white-wooled Espostoa, and a low Haageocereus clump with
-    // gold spines. Grey-green, sun-bleached, ribs lit from the upper left.
+    // elbowed arms: a sheaf of ribbed Neoraimondia columns rising straight
+    // from the ground, a white-wooled Espostoa, and a low Haageocereus clump
+    // with gold spines. Grey-green, sun-bleached, ribs lit from the upper left.
     const column = (g: CanvasRenderingContext2D, x: number, top: number, bot: number, w: number, c: string, r: Rng) => {
       rr(g, x - w / 2, top, w, bot - top, w / 2, c);
       // Ribs: alternate light and shade stripes down the column.
@@ -917,23 +917,24 @@ export class Tileset {
     };
     this.make('cactus', 3, (g, r, i) => {
       if (i === 0) {
-        // Neoraimondia: a dozen-armed candelabra from a short woody trunk.
+        // Neoraimondia: a sheaf of straight ribbed columns, every one of them
+        // rising from the ground itself, organ pipes, never a trunk with arms.
+        // The old version bent its arms up out of one trunk and every critic
+        // saw an Arizona saguaro standing in Peru.
         const c = '#6e8a5e';
-        softShadow(g, 34, 90, 22, 5, 0.22);
-        rr(g, 27, 74, 12, 16, 4, '#7a6648');
-        const arms: [number, number, number][] = [[11, 38, 7], [25, 16, 8], [40, 8, 8], [54, 30, 7]];
-        for (const [x, top, w] of arms) {
-          // Each arm curves up out of the trunk before it goes straight.
-          g.strokeStyle = c;
-          g.lineWidth = w;
-          g.lineCap = 'round';
-          g.beginPath();
-          g.moveTo(33, 80);
-          g.quadraticCurveTo(x, 80, x, 64);
-          g.stroke();
-          column(g, x, top, 68, w, shade(c, (x - 34) * 0.004), r);
+        softShadow(g, 33, 90, 24, 5, 0.22);
+        const pipes: [number, number, number][] = [
+          [24, 14, 9], [35, 4, 10], [45, 18, 9], // the back rank, tallest
+          [16, 36, 8], [53, 40, 8], // the outer ones, younger
+          [29, 30, 9], [41, 38, 9], // and the front rank, overlapping
+        ];
+        for (const [x, top, w] of pipes) {
+          column(g, x, top, 90, w, shade(c, (x - 34) * 0.004 + (top - 20) * 0.002), r);
+          // The felted brown short-shoots Neoraimondia flowers from, near the tip.
+          dot(g, x - w / 4, top + 7, 1.5, '#8a6a4a');
+          dot(g, x + w / 4, top + 13, 1.5, '#8a6a4a');
         }
-        if (r.chance(0.6)) dot(g, 40, 8, 2.6, '#e8d8a8');
+        if (r.chance(0.6)) dot(g, 35, 5, 2.6, '#e8d8a8');
       } else if (i === 1) {
         // Espostoa: a column wrapped in white wool, the wool thickest on top.
         const c = '#7f9a6c';
@@ -1983,6 +1984,11 @@ export class Tileset {
     return this.missing;
   }
 
+  /** An OVER_SEA kind's own art alone, for a bake that lays the live sea under it. */
+  drawOverSea(g: CanvasRenderingContext2D, kind: string, sx: number, sy: number, cx: number, cy: number) {
+    g.drawImage(this.variant(kind, cx, cy), sx, sy);
+  }
+
   /** All coordinates below are high-res screen pixels (logical * ART). */
 
   drawGround(
@@ -2118,7 +2124,7 @@ export class Tileset {
    */
   groundImage(kind: string, variant: number): HTMLCanvasElement | null {
     if (NO_SPILL.has(kind) || WATERY.has(kind)) return null;
-    const list = this.v.get(kind === 'path' ? 'pathCore' : this.art(kind));
+    const list = this.v.get(this.art(kind === 'path' ? 'pathCore' : kind));
     if (!list || list.length === 0) return null;
     const cvs = list[variant % list.length];
     if (!cvs || cvs.width !== S || cvs.height !== S) return null;
