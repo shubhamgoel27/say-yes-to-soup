@@ -57,7 +57,10 @@ export const RETURN_JOURNAL: JournalEntry[] = [
  */
 export const RETURN_TASKS: TaskDef[] = [
   {
-    when: { has: ['c10.arrived'], not: ['c10.marisol.seen'] },
+    // "First" only while the pier is still underfoot: walk past her stall
+    // and the chip must not keep sending you downhill once you are home,
+    // least of all through the evening at the well.
+    when: { has: ['c10.arrived'], not: ['c10.marisol.seen', 'c10.rosa.seen', 'c10.well.called'] },
     text: 'La Caleta first: the stall on the malecón. A caserita has been keeping your side of the friendship warm; go collect it.',
     who: 'marisol',
   },

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { BLOCKING, JUG, MEETING } from '../src/content/return/staging';
-import { NPCS, REGION_MAPS } from '../src/content/world';
+import { NPCS, REGION_MAPS, TASKS } from '../src/content/world';
+import { GameState } from '../src/engine/state';
 import type { MapData } from '../src/engine/grid';
 
 /**
@@ -58,5 +59,18 @@ describe('the ending: the ring at the well', () => {
     const xs = ring.map((b) => b.at[0]);
     const ys = ring.map((b) => b.at[1]);
     assert.ok(jx > Math.min(...xs) && jx < Math.max(...xs) && jy > Math.min(...ys) && jy <= MEETING.spot[1], 'inside the ring');
+  });
+});
+
+describe('the ending: the chip on the way home', () => {
+  it('stops sending you back to the pier once you are home, and names the well at dusk', () => {
+    // A player who walks past the malecón stall without stopping still gets
+    // home, and the village's evening must not be headed "La Caleta first".
+    const home = new GameState();
+    home.apply(['set:c9.complete', 'set:c10.arrived', 'set:c10.rosa.seen']);
+    assert.ok(!/La Caleta first/.test(TASKS.find((t) => home.check(t.when))?.text ?? ''), 'home, still told to go to the pier');
+    const dusk = new GameState();
+    dusk.apply(['set:c9.complete', 'set:c10.arrived', 'set:c10.well.called']);
+    assert.match(TASKS.find((t) => dusk.check(t.when))?.text ?? '', /Dusk at the well/);
   });
 });
