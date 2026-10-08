@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { describe, it } from 'node:test';
 
 import { JOURNAL } from '../src/content/world';
-import { CHIP_FRESH_MS, ChipFold } from '../src/ui/responsive';
+import { CHIP_FRESH_MS, ChipFold, uiScaleFor } from '../src/ui/responsive';
 
 /**
  * The pocket edition's promises that a screenshot cannot keep by itself:
@@ -102,5 +102,24 @@ describe('the README counts the real journal', () => {
     const m = readme.match(/all (\d+) journal pages/);
     assert.ok(m, 'README no longer states the page count');
     assert.equal(Number(m[1]), JOURNAL.length);
+  });
+});
+
+/**
+ * At 1920x1080 the chip read at 12px and the kite panel filled 740 of 1920
+ * pixels: the HUD grows with a wide frame, and never changes at or below the
+ * 1280x800 frame it was drawn for, nor on any phone or tablet.
+ */
+describe('the HUD grows on wide screens and only there', () => {
+  it('is untouched at 1280x800 and below', () => {
+    for (const [w, h] of [[1280, 800], [1024, 768], [932, 430], [412, 915], [1194, 834], [1440, 760]]) {
+      assert.equal(uiScaleFor(w, h), 1, `${w}x${h}`);
+    }
+  });
+  it('follows the smaller stretch above it, capped', () => {
+    assert.equal(uiScaleFor(1920, 1080), 1.35);
+    assert.equal(uiScaleFor(2560, 1440), 1.7);
+    assert.equal(uiScaleFor(3840, 2160), 1.7);
+    assert.ok(uiScaleFor(1600, 1000) > 1 && uiScaleFor(1600, 1000) < 1.35);
   });
 });

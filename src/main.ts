@@ -23,7 +23,7 @@ import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
-import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, watchScrollCue } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -379,6 +379,7 @@ renderer.setFires((fireCells[map.id] ?? []).map(([fx, fy]) => [fx, fy]));
 
 const toasts = new Toasts($('toasts'));
 const errandEl = $('errand');
+trackUiScale();
 const chipFold = new ChipFold(errandEl);
 // On glass the folded chip opens again under a tap (the fold mark says so),
 // and the tap stays on the chip instead of walking you toward it.

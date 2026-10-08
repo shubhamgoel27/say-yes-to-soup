@@ -3236,6 +3236,13 @@
           max-width: min(52vw, 480px);
         }
       }
+
+      /* Wide screens: the HUD, the dialogue box and the mini-game panels
+       * grow with the frame. At 1920 the chip read at 12px and the kite
+       * panel took 740 of 1920 pixels; --ui-k (set by trackUiScale in
+       * responsive.ts) is 1 up to 1280x800 and follows the smaller of the
+       * two stretches above it, capped, so a 1280 window is unchanged. */
+      #plate, #toasts, #errand, #textbox, .mg-overlay, #weave, .ht-veil, .ht-strip { zoom: var(--ui-k, 1); }
     </style>
   </head>
   <body>

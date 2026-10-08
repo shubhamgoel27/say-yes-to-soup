@@ -38,6 +38,24 @@ export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch())
   return coarse ? taps : keys;
 }
 
+/**
+ * How much the HUD grows on a wide screen: 1 up to the 1280x800 frame the
+ * HUD was drawn for, then the smaller of the two stretches, capped at 1.7.
+ * A phone or tablet never exceeds 1.
+ */
+export function uiScaleFor(w: number, h: number): number {
+  const k = Math.min(w / 1280, h / 800);
+  return Math.round(Math.min(1.7, Math.max(1, k)) * 100) / 100;
+}
+
+/** Keep --ui-k on the root in step with the window (see index.html). */
+export function trackUiScale(): void {
+  const apply = () =>
+    document.documentElement.style.setProperty('--ui-k', String(uiScaleFor(window.innerWidth, window.innerHeight)));
+  apply();
+  window.addEventListener('resize', apply);
+}
+
 /** How long a new thread reads in full on a phone before the chip folds. */
 export const CHIP_FRESH_MS = 8000;
 
