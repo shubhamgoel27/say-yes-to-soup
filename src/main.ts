@@ -3152,9 +3152,20 @@ function yarnPath(
   // A rug or a crate lid underfoot costs a step too: bare floor reads as a
   // way to walk, yarn over a prop reads as pointing at the prop.
   return cheapestPath(map.w, map.h, from, goals, blocked, (x, y) =>
-    over[y * w + x] ? YARN_OVERHANG_COST : dressedCell(x, y) ? 1 : 0,
+    (over[y * w + x] ? YARN_OVERHANG_COST : dressedCell(x, y) ? 1 : 0) +
+    (YARN_OFFROAD.has(map.ground(x, y).t) ? YARN_OFFROAD_COST : 0),
   );
 }
+
+/**
+ * Open ground with a drawn road somewhere near it. The yarn walked east
+ * across bare sand on arrival in La Caleta while the painted road ran down
+ * beside it; a person shown the way follows the road when the road is not
+ * much longer. A third of a step per bare cell buys that: a road detour of
+ * up to a third longer wins, and a map with no road at all is unchanged.
+ */
+const YARN_OFFROAD = new Set(['sand', 'sandWet', 'grass', 'dirt', 'puna', 'ladera', 'lavashore']);
+const YARN_OFFROAD_COST = 0.34;
 
 /** A walkable cell with something on it (a tuft, a hose, pigeons): not bare floor. */
 function dressedCell(x: number, y: number): boolean {
