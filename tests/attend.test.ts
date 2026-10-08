@@ -84,7 +84,10 @@ const CASES: Case[] = [
   { flag: 'c3.cook.start', careful: BOTS['c3.cook.start']!, masher: () => mash(), before: 9 },
   { flag: 'c5.hotteok.start', careful: BOTS['c5.hotteok.start']!, masher: () => mash(), before: 8.1 },
   { flag: 'c8.cook.start', careful: BOTS['c8.cook.start']!, masher: () => mash(), before: 10, slower: 2 },
-  { flag: 'watia.start', careful: BOTS['watia.start']!, masher: () => both(BOTS['watia.start']!(), mash(3)), before: 9.4, slower: 1.5 },
+  // Pass 5: the story's phase changes now hold Space for a beat (and the dig
+  // waits a second for Justina's stick), so leftover presses cannot dig a
+  // blind hole. That beat is the extra second here, on purpose.
+  { flag: 'watia.start', careful: BOTS['watia.start']!, masher: () => both(BOTS['watia.start']!(), mash(3)), before: 10.4, slower: 1.5 },
   { flag: 'c7.cook.start', careful: urojoStory, masher: () => mash(), before: 19.1, slower: 1.5 },
   { flag: 'c4.kingyo.start', careful: BOTS['c4.kingyo.start']!, masher: () => mash(), before: 5, slower: 1 },
   { flag: 'c6.sadya.start', careful: BOTS['c6.sadya.start']!, masher: () => mash(), before: 4.9, slower: 2 },
@@ -255,5 +258,37 @@ describe('gold is for the hand that waits', () => {
     assert.equal(r.panel.golden, 0, 'mashing still earned gold');
     const careful = storyRun('c5.hotteok.start', BOTS['c5.hotteok.start']!(), 1);
     assert.ok(careful.panel.golden >= 4, 'a careful batch should be mostly gold');
+  });
+});
+
+describe('the watia dig answers the steam, not the leftover presses', () => {
+  it("a press in the dig's first beat digs nothing; every steaming spot gives a papa", () => {
+    for (const seed of [1, 2, 3, 4, 5]) {
+      let digT = -1;
+      let earlyFound = -1;
+      const hints: string[] = [];
+      const careful = BOTS['watia.start']!();
+      const r = storyRun(
+        'watia.start',
+        (p, t) => {
+          if (p.phase !== 'dig') return careful(p, t);
+          if (digT < 0) {
+            digT = t;
+            p.onAction(); // presses carried over from bringing the dome down
+            p.onAction();
+            earlyFound = p.found;
+            return;
+          }
+          if (t - digT < 1) return;
+          hints.push(String(p.hint));
+          careful(p, t);
+        },
+        seed,
+        120,
+      );
+      assert.ok(r.done, `seed ${seed}: the story watia never finished`);
+      assert.equal(earlyFound, 0, `seed ${seed}: presses left over from the collapse dug a hole`);
+      assert.ok(!hints.some((h) => /^Only earth/.test(h)), `seed ${seed}: a dig on the steam said only earth`);
+    }
   });
 });
