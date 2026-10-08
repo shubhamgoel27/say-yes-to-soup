@@ -220,7 +220,7 @@ function ensureHold(): HTMLElement {
   // lock on, and the card has no way to know; say how to lift it.
   const lock = document.createElement('div');
   lock.className = 'sw-lock';
-  lock.textContent = 'Not turning? The rotation lock is on. Open Control Center and tap the lock.';
+  lock.textContent = 'Not turning? The rotation lock may be on: open Control Center and tap the lock.';
 
   card.append(buildGlyph(), title, line, lock);
   veil.appendChild(card);
