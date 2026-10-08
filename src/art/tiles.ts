@@ -593,6 +593,31 @@ export class Tileset {
       if (r.chance(0.4)) dot(g, r.int(S), 10 + r.int(24), 2.4, PAL.greenDark);
     });
 
+    // The same ridge seen along its length, for a wall running north-south:
+    // the face above is a south face with a dark footing, and stacked down a
+    // column it read as a pile of slabs. Boulders all the way down instead,
+    // and no band at either edge, so one cell runs into the next.
+    this.make('wallStoneRun', 5, (g, r) => {
+      rect(g, 0, 0, S, S, shade(PAL.stone, 0.02));
+      for (let i = 0; i < 4; i++) {
+        oval(g, r.int(S), r.int(S), 10 + r.int(8), 6, `rgba(70,64,56,${0.08 + r.next() * 0.06})`);
+      }
+      for (let row = 0; row < 3; row++) {
+        let x = 2 + r.int(8) - (row % 2) * 6;
+        while (x < S - 4) {
+          const w = 13 + r.int(9);
+          const tone = shade(PAL.stone, (r.next() - 0.35) * 0.24);
+          const by = 11 + row * 21 + r.int(4) - 2;
+          // Each stone sits in its own shadow, so the joints read.
+          blob(g, x + w / 2, by + 1.6, w / 2, shade(PAL.stoneDark, -0.08), r, 0.12);
+          blob(g, x + w / 2, by, w / 2 - 1, tone, r, 0.15);
+          oval(g, x + w / 2 - 2, by - 3, w / 5, 2, 'rgba(255,250,236,0.12)');
+          x += w + 3;
+        }
+      }
+      if (r.chance(0.4)) dot(g, 8 + r.int(S - 16), 6 + r.int(S - 12), 2.4, PAL.greenDark);
+    });
+
     this.make('tree', 3, (g, r) => {
       // 128x144: a full smooth tree: blob canopy in three tones over a
       // gently curved trunk.
@@ -2012,6 +2037,85 @@ export class Tileset {
   castsSun(kind: string): boolean {
     return GROUNDED_TALL.has(ART_ALIAS[kind] ?? kind) || GROUNDED_TALL.has(kind);
   }
+
+  /**
+   * An interior wall seen along its length: the side walls of a room. Every
+   * wall skin is painted as a south face (lime above, a base course or soot
+   * band at the edges), so a column of them stacked into a run of separate
+   * blocks with floor-coloured gaps between, and a window or a calendar hung
+   * on each. Down a run the eye sees the wall's top instead: one continuous
+   * band in the face's own plaster, inked along the sides it shows, a little
+   * darker where it drops to the floor. The colour is read off the skin, so
+   * every chapter's room keeps its own wall.
+   */
+  drawWallRun(
+    g: CanvasRenderingContext2D,
+    kind: string,
+    sx: number,
+    sy: number,
+    cx: number,
+    cy: number,
+    edges: { left: boolean; right: boolean; top: boolean },
+  ) {
+    const name = this.art(kind);
+    const own = this.v.get(`${name}Run`);
+    if (own && own.length) {
+      // A wall with a run of its own painted (a stone ridge's boulders).
+      g.drawImage(own[Math.floor(cellHash(cx, cy, 5) * own.length)]!, sx, sy);
+    } else {
+      this.fillRun(g, name, sx, sy);
+    }
+    this.runEdges(g, sx, sy, edges);
+  }
+
+  /** The plain run: the skin's own plaster, read off its face. */
+  private fillRun(g: CanvasRenderingContext2D, name: string, sx: number, sy: number) {
+    let fill = this.runFill.get(name);
+    if (!fill) {
+      fill = '#ac8a5e';
+      // The last variant: every skin hangs its decorations on the first few.
+      const list = this.v.get(name);
+      const src = list?.[list.length - 1];
+      const sg = src?.getContext('2d');
+      if (src && sg) {
+        // Mid-height of the face: under the soot band, above the base course.
+        const row = sg.getImageData(0, Math.round(src.height * 0.38), src.width, 1).data;
+        let r = 0, gr = 0, b = 0, n = 0;
+        for (let i = 0; i < row.length; i += 4) {
+          if (row[i + 3]! < 200) continue;
+          r += row[i]!; gr += row[i + 1]!; b += row[i + 2]!; n++;
+        }
+        if (n) fill = `rgb(${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)})`;
+      }
+      this.runFill.set(name, fill);
+    }
+    g.fillStyle = fill;
+    g.fillRect(sx, sy, S, S);
+  }
+
+  private runEdges(g: CanvasRenderingContext2D, sx: number, sy: number, edges: { left: boolean; right: boolean; top: boolean }) {
+    // The drop to the floor on each open side, then the ink along it.
+    const dropW = 12;
+    if (edges.left) {
+      const gr = g.createLinearGradient(sx, 0, sx + dropW, 0);
+      gr.addColorStop(0, 'rgba(40,26,14,0.22)');
+      gr.addColorStop(1, 'rgba(40,26,14,0)');
+      g.fillStyle = gr;
+      g.fillRect(sx, sy, dropW, S);
+    }
+    if (edges.right) {
+      const gr = g.createLinearGradient(sx + S - dropW, 0, sx + S, 0);
+      gr.addColorStop(0, 'rgba(40,26,14,0)');
+      gr.addColorStop(1, 'rgba(40,26,14,0.22)');
+      g.fillStyle = gr;
+      g.fillRect(sx + S - dropW, sy, dropW, S);
+    }
+    g.fillStyle = 'rgba(38,26,16,0.5)';
+    if (edges.left) g.fillRect(sx, sy, 2, S);
+    if (edges.right) g.fillRect(sx + S - 2, sy, 2, S);
+    if (edges.top) g.fillRect(sx, sy, S, 2);
+  }
+  private runFill = new Map<string, string>();
 
   /** Whether a kind is a full building sprite (for the renderer's big shadow). */
   isBuilding(kind: string): boolean {

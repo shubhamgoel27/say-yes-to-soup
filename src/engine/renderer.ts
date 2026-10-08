@@ -100,6 +100,8 @@ function taperings(src: HTMLCanvasElement): HTMLCanvasElement[] {
  * haystacks side by side are still props, and a prop lies on its own cast
  * shadow rather than on a tile-wide wall strip.
  */
+/** Walls drawn as their top where they run north-south, not as a stack of faces. */
+const RUN_WALLS = new Set(['wallInt', 'wallStone', 'wallShoji', 'wallSteel']);
 const WALL_KIND = /wall|mural|fence|pirca|gate|portales|parapet|hedge/i;
 
 /** The seam wobble repeats every this many tiles; masks are cached per phase. */
@@ -1776,7 +1778,19 @@ export class Renderer {
           if (!this.tiles.isBuilding(t.kind) && watery(kindAt(t.cx, t.cy + 1))) {
             this.reflectTall(t.kind, tx, ty, t.cx, t.cy, cam);
           }
-          this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
+          if (RUN_WALLS.has(t.kind) && map.object(t.cx, t.cy + 1)?.t === t.kind) {
+            // A wall seen along its length: a room's side wall, a stone
+            // ridge running north-south (see drawWallRun).
+            const open = (dx: number, dy: number) =>
+              map.inBounds(t.cx + dx, t.cy + dy) && map.object(t.cx + dx, t.cy + dy)?.t !== t.kind;
+            this.tiles.drawWallRun(ctx, t.kind, tx, ty, t.cx, t.cy, {
+              left: open(-1, 0),
+              right: open(1, 0),
+              top: open(0, -1),
+            });
+          } else {
+            this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
+          }
         },
       });
     }
@@ -1852,6 +1866,22 @@ export class Renderer {
         this.tiles.drawGround(ctx, kinds[j]!, sx, sy, wx, wy, conn, this.time);
       }
     };
+    // The night ambient is a blue multiply, and over teal water it came out
+    // a bright royal blue, livelier than the land around it. Water alone
+    // takes a little ink as night comes, so the sea goes dark before it
+    // goes blue. Whole-pixel rects: neighbours meet exactly, never overlap.
+    const ink = this.nightK * 0.36;
+    const dim = (list: number[]) => {
+      if (ink < 0.01 || list.length === 0) return;
+      ctx.fillStyle = `rgba(58,56,46,${ink.toFixed(3)})`;
+      for (let i = 0; i < list.length; i += 2) {
+        const x0 = Math.floor((list[i]! * TILE - cam.x) * A);
+        const y0 = Math.floor((list[i + 1]! * TILE - cam.y) * A);
+        const x1 = Math.floor(((list[i]! + 1) * TILE - cam.x) * A);
+        const y1 = Math.floor(((list[i + 1]! + 1) * TILE - cam.y) * A);
+        ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      }
+    };
     const breathe = Math.sin(this.time * 1.4);
     for (let gy = gy0; gy <= gy1; gy++) {
       for (let gx = gx0; gx <= gx1; gx++) {
@@ -1859,7 +1889,17 @@ export class Renderer {
         const ox = (gx * GCHUNK * TILE - cam.x) * A;
         const oy = (gy * GCHUNK * TILE - cam.y) * A;
         live(e.water, e.waterKind);
+        dim(e.water);
         ctx.drawImage(e.cv, ox, oy);
+        // The sub-pixel camera puts every chunk edge mid-pixel, and two
+        // antialiased half-covered edges never add up to an opaque pixel:
+        // a faint line of background showed every eight tiles. So each chunk
+        // also lays its own last two columns and rows one pixel outward,
+        // which fully covers the shared pixel before the neighbour's soft
+        // edge lands on it. The neighbour is drawn later and covers the rest.
+        ctx.drawImage(e.cv, GW - 2, 0, 2, GW, ox + GW - 1, oy, 2, GW);
+        ctx.drawImage(e.cv, 0, GW - 2, GW, 2, ox, oy + GW - 1, GW, 2);
+        ctx.drawImage(e.cv, GW - 2, GW - 2, 2, 2, ox + GW - 1, oy + GW - 1, 2, 2);
         live(e.over, e.overKind);
         if (e.foam.length) {
           // The wash comes up the sand and slides back.
@@ -3648,6 +3688,8 @@ const NEVER = () => false;
 /** Baked ground chunks: 8x8 tiles each; ~20 cover the view plus margins. */
 const GCHUNK = 8;
 const GCHUNK_CAP = 30;
+/** One baked chunk's side in canvas pixels. */
+const GW = GCHUNK * S;
 type GroundChunk = {
   cv: HTMLCanvasElement;
   g: CanvasRenderingContext2D;
