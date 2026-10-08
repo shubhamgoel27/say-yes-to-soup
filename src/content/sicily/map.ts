@@ -250,8 +250,10 @@ const PROPS = new Map<string, string>([
   ['6,22', 'P'], // a tomato frame, moved down out of the wind
   ['7,21', 'c'],
   // ---- the mole: its head, its lamp, its cargo ----
-  ['41,18', 'L'],
-  ['40,18', 'N'],
+  // The lamp on the corner, the net beside it: with the lamp at 41,18 its
+  // head stood on the hat of whoever signed at Patanè's table below it.
+  ['40,18', 'L'],
+  ['41,18', 'N'],
   ['41,21', 'N'],
   ['42,21', 'k'],
   ['33,21', 'k'], // the cooperative's lemons, waiting for Patanè's ship
