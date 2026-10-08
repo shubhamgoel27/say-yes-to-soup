@@ -3360,8 +3360,50 @@ function threadPersonBeside(): Villager | null {
   return Math.abs(px - ox) + Math.abs(py - oy) === 1 ? v : null;
 }
 
+/** An undug mound at (x, y), while Justina's invitation stands. */
+function moundAt(x: number, y: number) {
+  if (map.id !== 'village' || !state.has('dig.invite') || state.has('dig.done')) return undefined;
+  return DIG_SPOTS.find((s) => s.at[0] === x && s.at[1] === y && !state.has(s.flag));
+}
+
+/**
+ * Dig the mound you face, or (`near`) the one underfoot or at your side.
+ * Mounds are soft ground you can walk over, so a player often ends up on one
+ * or beside one facing the terrace wall; Space read the terraces and
+ * Justina's lines while the mound sat at their feet, and one tester spent
+ * ten minutes learning to stand exactly beside and facing it. Near a mound,
+ * Space digs it.
+ */
+function tryDig(near: boolean): boolean {
+  const cell = near ? nearMound() : player.facingCell();
+  const spot = cell && moundAt(cell[0], cell[1]);
+  if (!cell || !spot) return false;
+  const [px, py] = player.occupies();
+  // Turn to a mound at your side; one underfoot is dug where you stand.
+  if (cell[0] !== px || cell[1] !== py) {
+    player.face(cell[0] > px ? 'right' : cell[0] < px ? 'left' : cell[1] > py ? 'down' : 'up');
+  }
+  audio.dig();
+  startNarration(spot.node);
+  return true;
+}
+
+/** The mound Space would dig: the one faced, else underfoot, else beside. */
+function nearMound(): [number, number] | null {
+  const [fx, fy] = player.facingCell();
+  if (moundAt(fx, fy)) return [fx, fy];
+  const [px, py] = player.occupies();
+  for (const [dx, dy] of [[0, 0], [0, 1], [1, 0], [-1, 0], [0, -1]] as const) {
+    if (moundAt(px + dx, py + dy)) return [px + dx, py + dy];
+  }
+  return null;
+}
+
 /** `aimFirst`: Space and the button; a click names its own target. */
 function tryInteract(aimFirst = true): boolean {
+  // The dig is the errand in hand: a mound you face, stand on or stand
+  // beside answers Space before anything else does.
+  if (tryDig(aimFirst)) return true;
   const [fx, fy] = player.facingCell();
   const v = villagersHere().find((n) => {
     const [ox, oy] = n.actor.occupies();
@@ -3379,15 +3421,6 @@ function tryInteract(aimFirst = true): boolean {
     player.face(ox > player.x ? 'right' : ox < player.x ? 'left' : oy > player.y ? 'down' : 'up');
     startNpcDialogue(aim);
     return true;
-  }
-  // The dig mounds, while Justina's invitation stands.
-  if (map.id === 'village' && state.has('dig.invite') && !state.has('dig.done')) {
-    const spot = DIG_SPOTS.find((s) => s.at[0] === fx && s.at[1] === fy && !state.has(s.flag));
-    if (spot) {
-      audio.dig();
-      startNarration(spot.node);
-      return true;
-    }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
   if (sitKindsOn(map.id).has(kind)) {
@@ -4267,13 +4300,7 @@ function update(dt: number) {
     const groundCue =
       groundKind !== undefined &&
       (EXAMINES[groundKind]?.some((a) => a.cue && (!a.map || a.map === map.id) && state.check(a.when)) ?? false);
-    const digThere =
-      map.id === 'village' &&
-      state.has('dig.invite') &&
-      !state.has('dig.done') &&
-      DIG_SPOTS.some((sp) => sp.at[0] === fx && sp.at[1] === fy && !state.has(sp.flag));
     const examThere =
-      digThere ||
       groundCue ||
       (objKind !== undefined &&
         objKind !== 'blocked' &&
@@ -4281,7 +4308,9 @@ function update(dt: number) {
           (EXAMINES[objKind]?.some((a) => (!a.map || a.map === map.id) && state.check(a.when)) ?? false)));
     // Space goes to the thread's person before a prop (tryInteract): so does the dot.
     const aim = npcThere ? null : threadPersonBeside();
-    renderer.setHint(aim ? aim.actor.occupies() : npcThere || examThere ? [fx, fy] : null);
+    // A mound near your feet is what Space digs (tryDig), so the dot sits on it.
+    const mound = nearMound();
+    renderer.setHint(mound ?? (aim ? aim.actor.occupies() : npcThere || examThere ? [fx, fy] : null));
   } else {
     renderer.setHint(null);
   }
@@ -4687,7 +4716,9 @@ function render() {
   const cam = shownCam();
   const sprites = vistaOn
     ? villagers.filter((v) => v.def.map === vm.id && v.fade > 0.02 && state.check(v.def.when))
-    : [...spritesHere(), ...moundsHere()];
+    : // Mounds first: the sort is stable, so a body standing on one draws
+      // over the soil instead of wearing it on its feet.
+      [...moundsHere(), ...spritesHere()];
   renderer.drawWorld(vm, cam, sprites);
 
   // Every fire and lamp on this map becomes a flickering point light.
@@ -5123,14 +5154,7 @@ function interactableAt(x: number, y: number): boolean {
   ) {
     return true;
   }
-  if (
-    map.id === 'village' &&
-    state.has('dig.invite') &&
-    !state.has('dig.done') &&
-    DIG_SPOTS.some((s) => s.at[0] === x && s.at[1] === y && !state.has(s.flag))
-  ) {
-    return true;
-  }
+  if (moundAt(x, y)) return true;
   // Only THINGS invite the pointer (props, seats, mounds, people), matching
   // the curiosity dot: bare ground still answers the button, but a click on
   // it should simply walk there.
@@ -5199,7 +5223,11 @@ function requestMove(tx: number, ty: number, hit?: Villager) {
   const [ox, oy] = player.occupies();
   const d = Math.abs(ox - tx) + Math.abs(oy - ty);
   if (npc || interactableAt(tx, ty)) {
-    if (d === 0) return;
+    // Standing on the very mound you clicked: dig it where you stand.
+    if (d === 0) {
+      if (!npc && !player.isMoving) tryDig(true);
+      return;
+    }
     if (d === 1 && !player.isMoving && !npc?.actor.isMoving) {
       faceAndInteract(tx, ty);
       return;

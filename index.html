@@ -911,7 +911,14 @@
 
       /* The title screen IS the journal: her cloth cover, your hand hovering. */
       .t-card { text-align: center; color: #e8dcc4; padding: 0 24px; }
+      /* The band and the painting share one measure: the painting is inset
+       * symmetrically so its right edge always stops short of the band,
+       * whatever padding a layout gives the cover (--pad-r tracks it). */
       .t-cover {
+        --band-r: 18px;
+        --band-w: 14px;
+        --pad-r: 34px;
+        --art-inset: max(0px, calc(var(--band-r) + var(--band-w) + 8px - var(--pad-r)));
         position: relative;
         width: min(88vw, 430px);
         padding: 40px 34px 30px;
@@ -948,8 +955,8 @@
       .t-band {
         position: absolute;
         top: 14px; bottom: 14px;
-        right: 52px;
-        width: 14px;
+        right: var(--band-r);
+        width: var(--band-w);
         background: repeating-linear-gradient(
           180deg,
           #c1512f 0 12px, #d9a441 12px 24px, #3f7fb0 24px 36px, #6b8e4e 36px 48px
@@ -979,7 +986,7 @@
       /* The cover painting: the whole journey in one gouache. */
       .t-art {
         position: relative;
-        margin: 14px 0 10px;
+        margin: 14px var(--art-inset) 10px;
       }
       .t-art canvas {
         display: block;
@@ -2517,10 +2524,10 @@
         }
         #title[hidden] { display: none; }
         .t-card { margin: auto; }
-        .t-cover { padding: 26px 30px 18px; }
+        .t-cover { padding: 26px 30px 18px; --pad-r: 30px; }
         .t-kicker { font-size: 19px; margin-bottom: 2px; }
         .t-name { font-size: clamp(28px, 5.4vh, 42px); }
-        .t-art { margin: 10px 0 8px; }
+        .t-art { margin: 10px var(--art-inset) 8px; }
         .t-art canvas { max-height: 24vh; width: auto; max-width: 100%; margin: 0 auto; }
         .t-sub { margin-bottom: 10px; }
         .t-opt { font-size: 22px; }
@@ -2672,11 +2679,8 @@
 
         /* ---- the cover, the shelf, the letter, the flyleaf ---- */
         .t-card { padding: 0 12px; }
-        .t-cover { width: min(100%, 430px); box-sizing: border-box; padding: 26px 20px 20px; }
-        /* On the narrow cover the band slides toward the fore-edge so it
-         * stops shading the subtitle's last letters. */
-        .t-band { right: 18px; width: 12px; }
-        /* And the subtitle stops short of the band instead of running under it. */
+        .t-cover { width: min(100%, 430px); box-sizing: border-box; padding: 26px 20px 20px; --pad-r: 20px; --band-w: 12px; }
+        /* The subtitle stops short of the band instead of running under it. */
         .t-sub { max-width: min(300px, calc(100% - 56px)); margin-bottom: 14px; }
         .t-controls { flex-wrap: wrap; gap: 8px 18px; margin-top: 16px; padding: 0 6px; }
         .sh-card { width: min(100%, 430px); box-sizing: border-box; padding: 20px 14px 14px; }
@@ -2851,7 +2855,7 @@
         }
         .t-sub { grid-area: sub; margin: 4px 0 8px; max-width: none; align-self: end; }
         .t-menu { grid-area: menu; align-self: center; margin-bottom: 0; }
-        .t-band { right: 16px; width: 12px; }
+        .t-cover { --band-r: 16px; --band-w: 12px; --art-inset: 0px; }
         .t-controls { margin-top: 10px; flex-wrap: wrap; gap: 6px 18px; }
 
         .p-card:has(.p-settings) {
