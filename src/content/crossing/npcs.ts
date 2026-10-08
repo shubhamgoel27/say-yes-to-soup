@@ -505,7 +505,8 @@ export const CROSSING_NODES: NodeMap = {
   // one dark, so that Ben's "Week three" is the next thing anybody says.
   'c3.weeks': {
     lines: [
-      { text: 'You carry the warm plate back down to Ben. After that the days go by in watches: chipping, painting, sleeping, the sea the same size every morning and the salad a little smaller.' },
+      { text: 'You carry the warm plate back down to Ben. After that the days go by in watches.' },
+      { text: 'Chipping, painting, sleeping; the sea the same size every morning, the salad a little smaller.' },
       { text: 'Two weeks of it. Then one afternoon Ben leans out of the galley and crooks a finger at you.' },
     ],
     effects: ['travel:galley,4,2,left'],
