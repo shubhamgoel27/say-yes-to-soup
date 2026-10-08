@@ -3135,11 +3135,13 @@ function afterTalkHush(): boolean {
  * landed in the world and re-read the well, which closed, and the next press
  * read it again, forever. While Space was coming at a cadence, the hush after
  * the words close is half again that cadence (capped), and every swallowed
- * press renews it; a press after a real breath still acts.
+ * press renews it; a press after a real breath still acts, and so does one
+ * aimed somewhere new: a step or a turn since the words closed is intent.
  */
 let lastActAt = -Infinity;
 let actGap = Infinity;
 let spamHushUntil = 0;
+let spamHushAim = '';
 function noteAct(now: number) {
   actGap = now - lastActAt < 1500 ? now - lastActAt : Infinity;
   lastActAt = now;
@@ -3148,6 +3150,10 @@ const spamHushMs = () => Math.min(1400, actGap * 1.6);
 function spamHush(): boolean {
   const now = performance.now();
   if (now >= spamHushUntil) return false;
+  if (player.facingCell().join(',') !== spamHushAim) {
+    spamHushUntil = 0;
+    return false;
+  }
   spamHushUntil = now + spamHushMs();
   return true;
 }
@@ -3155,7 +3161,10 @@ function spamHush(): boolean {
 function endDialogue() {
   player.frozen = false;
   talkHushUntil = performance.now() + TALK_HUSH_MS;
-  if (Number.isFinite(actGap)) spamHushUntil = performance.now() + spamHushMs();
+  if (Number.isFinite(actGap)) {
+    spamHushUntil = performance.now() + spamHushMs();
+    spamHushAim = player.facingCell().join(',');
+  }
   // Whoever just finished speaking, for the ask-a-villager thread below.
   const speaker = talkingTo;
   howtoOfferedBy = speaker?.def.id ?? null;
