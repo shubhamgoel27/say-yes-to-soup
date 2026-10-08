@@ -1,5 +1,5 @@
 /**
- * The warmth layer, end to end on :5675.
+ * The warmth layer, end to end on :5675 (or BASE).
  *
  * A: the honest Carmen path. Flags to the weave offer, sit at the loom, win
  *    the weave by listening to the loom's own hint line, and let carmen.woven
@@ -12,7 +12,7 @@
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
-const BASE = 'http://localhost:5675';
+const BASE = process.env.BASE ?? 'http://localhost:5675';
 const SHOTS = new URL('./warmth-shots/', import.meta.url).pathname;
 mkdirSync(SHOTS, { recursive: true });
 
@@ -63,15 +63,19 @@ async function closeDialogue(page, max = 40) {
 const ARROW = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
 const DIRS = ['up', 'down', 'left', 'right'];
 
+/** The story loom: three rows of plain cloth, then the pallay border. */
+const WEAVE_ROWS = 4;
+
 /** Win the weave by feel: a wrong call changes the loom's hint line, a right
- * one does not, and the sequence survives a miss. Honest brute force. */
+ * one does not, and the sequence survives a miss. Honest brute force. The win
+ * must land on the last row, not before it and not after. */
 async function winWeave(page) {
   const waitInput = async () => {
     // Fast-forward Carmen's call, then wait for "Now you."
     await sim(page, 240);
     await waitFor(async () => (await hint(page)).startsWith('Now you'), 'weave input phase');
   };
-  for (let row = 0; row < 3; row++) {
+  for (let row = 0; row < WEAVE_ROWS; row++) {
     const known = [];
     let rowDone = false;
     await waitInput();
@@ -99,6 +103,7 @@ async function winWeave(page) {
           await sleep(250);
           rowDone = true;
         } else if (h.startsWith('The row holds')) {
+          check(row === WEAVE_ROWS - 1, `A: the cloth takes you in on row ${row + 1} of ${WEAVE_ROWS}`);
           await page.keyboard.press('Space'); // close the panel
           await sleep(400);
           return;
@@ -111,7 +116,7 @@ async function winWeave(page) {
   throw new Error('weave: rows exhausted without the win');
 }
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: ['--use-angle=metal', '--enable-gpu', '--ignore-gpu-blocklist'] });
 try {
   // ---------------------------------------------------------------- A + B + C
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } });
@@ -123,7 +128,10 @@ try {
   await waitFor(async () => (await wf(page)).mode === 'play', 'game boots');
   await page.evaluate(() => { document.body.dataset.wfCmd = 'freeze:1:boot'; });
   await sleep(600);
-  await closeDialogue(page); // the waking narration on a fresh save
+  // The waking narration opens 900ms into play; close it only once it is up,
+  // or it lands later on top of whatever the run is doing.
+  await waitFor(async () => (await wf(page)).dialogue === 'intro.wake', 'waking narration opens');
+  await closeDialogue(page);
 
   // The chip before the band: no nudge yet.
   check(!(await nudgePresent(page)), 'A: no nudge before the band exists');
@@ -226,6 +234,7 @@ try {
   await page2.goto(`${BASE}/?skiptitle`);
   await waitFor(async () => (await wf(page2)).mode === 'play', 'reduced-motion boot');
   await sleep(600);
+  await waitFor(async () => (await wf(page2)).dialogue === 'intro.wake', 'reduced-motion waking narration');
   await closeDialogue(page2); // the waking narration again
   await soup(page2, `band()`);
   await sleep(300);
