@@ -453,6 +453,15 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     state.set(flag);
     showHowto(g);
   },
+  onJournal: () => {
+    journalUI.open();
+    audio.pageFlip();
+  },
+  saveNow: () => {
+    if (mode !== 'play') return false;
+    state.save();
+    return !state.persistenceLost;
+  },
 });
 
 /** Chapter mini-games: the engine owns one overlay root per panel. */
