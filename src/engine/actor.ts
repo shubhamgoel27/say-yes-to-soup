@@ -61,6 +61,12 @@ export class Actor {
   private steps = 0;
   /** Frozen actors ignore intent entirely (used while dialogue is open). */
   frozen = false;
+  /**
+   * A render-only offset in logical pixels, eased toward by the renderer:
+   * two speakers with nowhere to step aside lean apart instead. Never moves
+   * the actor's cell, its collision, or where it stands.
+   */
+  nudge: [number, number] = [0, 0];
   /** Where a scripted step (stepTo) leaves the actor looking once it lands. */
   private faceOnLand: Dir | null = null;
   /** Transient body pose: 'sit' folds the legs and settles the figure. */

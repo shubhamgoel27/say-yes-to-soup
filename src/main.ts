@@ -2455,7 +2455,15 @@ function settleForTalk(v: Villager) {
       return;
     }
   }
+  // Nowhere to step (a one-plank pier, a doorway lane): they lean apart
+  // instead, a few pixels each way, so both faces stay clear for the talk.
+  const lower = py > ny ? player : v.actor;
+  const upper = lower === player ? v.actor : player;
+  lower.nudge = [-TALK_LEAN, 2];
+  upper.nudge = [TALK_LEAN, 0];
 }
+/** How far, in logical pixels, each of two cornered speakers leans apart. */
+const TALK_LEAN = 6;
 
 /**
  * Finish any step still in the air while the world is held for a
@@ -2910,7 +2918,9 @@ function endDialogue() {
   howtoOfferedBy = speaker?.def.id ?? null;
   // The intro has let go; now the village may introduce itself.
   if (pendingWelcome && !welcomeTimer) welcomeTimer = window.setTimeout(playWelcome, 420);
+  player.nudge = [0, 0];
   if (talkingTo) {
+    talkingTo.actor.nudge = [0, 0];
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward
     // (a stationed sitter faces their row, a bench sitter faces their bench).

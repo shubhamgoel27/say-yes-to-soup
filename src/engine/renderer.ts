@@ -1250,6 +1250,8 @@ export class Renderer {
     this.kept = actors;
   }
   private kept: Actor[] = [];
+  /** Eased render offsets per actor, chasing Actor.nudge. */
+  private nudges = new Map<Actor, [number, number]>();
   /** Eased opacity per tall prop cell ("x,y"), 1 when nobody is behind it. */
   private veils = new Map<string, number>();
   private alphaCache = new Map<HTMLCanvasElement, Uint8ClampedArray | null>();
@@ -1680,9 +1682,21 @@ export class Renderer {
     const need = sprites.length * 2;
     if (this.spriteXY.length < need) this.spriteXY = new Float64Array(need + 32);
     for (let i = 0; i < sprites.length; i++) {
-      const [px, py] = sprites[i]!.actor.renderPos();
-      this.spriteXY[i * 2] = px;
-      this.spriteXY[i * 2 + 1] = py;
+      const a = sprites[i]!.actor;
+      const [px, py] = a.renderPos();
+      // The lean-apart of two speakers with no room to step aside: eased,
+      // never snapped, and gone again the same way.
+      let n = this.nudges.get(a);
+      if (n || a.nudge[0] !== 0 || a.nudge[1] !== 0) {
+        n ??= [0, 0];
+        const k = Math.min(1, this.frameDt * 9);
+        n[0] += (a.nudge[0] - n[0]) * k;
+        n[1] += (a.nudge[1] - n[1]) * k;
+        if (a.nudge[0] === 0 && a.nudge[1] === 0 && Math.abs(n[0]) + Math.abs(n[1]) < 0.05) this.nudges.delete(a);
+        else this.nudges.set(a, n);
+      }
+      this.spriteXY[i * 2] = px + (n?.[0] ?? 0);
+      this.spriteXY[i * 2 + 1] = py + (n?.[1] ?? 0);
     }
 
     // Pass 1a: seamless ground, then the seams between materials broken.
