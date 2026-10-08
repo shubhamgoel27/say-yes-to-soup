@@ -102,6 +102,16 @@ function taperings(src: HTMLCanvasElement): HTMLCanvasElement[] {
  * haystacks side by side are still props, and a prop lies on its own cast
  * shadow rather than on a tile-wide wall strip.
  */
+/** How opaque a tall prop stays while a kept body stands behind it. */
+const PROP_VEIL = 0.4;
+/**
+ * Points down a standing figure's middle, in logical pixels from its cell's
+ * top-left: head, chest, hips, shins, each at the centre and either side.
+ * A figure is two tiles tall, so the head sits in the cell above.
+ */
+const VEIL_SAMPLES: [number, number][] = [];
+for (const fy of [-11, -4, 3, 10]) for (const fx of [5, 8, 11]) VEIL_SAMPLES.push([fx, fy]);
+
 /** Walls drawn as their top where they run north-south, not as a stack of faces. */
 const RUN_WALLS = new Set(['wallInt', 'wallStone', 'wallShoji', 'wallSteel']);
 const WALL_KIND = /wall|mural|fence|pirca|gate|portales|parapet|hedge/i;
@@ -1262,6 +1272,76 @@ export class Renderer {
     this.speaker = actor;
   }
 
+  /**
+   * Who must stay visible through the props: the player, and whoever the
+   * player is talking to. A tree's crown, a lamp's head or a gate's roof
+   * that would paint over one of them thins to a veil (see propVeil).
+   */
+  setKept(actors: Actor[]) {
+    this.kept = actors;
+  }
+  private kept: Actor[] = [];
+  /** Eased render offsets per actor, chasing Actor.nudge. */
+  private nudges = new Map<Actor, [number, number]>();
+  /** Eased opacity per tall prop cell ("x,y"), 1 when nobody is behind it. */
+  private veils = new Map<string, number>();
+  private alphaCache = new Map<HTMLCanvasElement, Uint8ClampedArray | null>();
+
+  /** Opaque enough at this pixel of a canvas to hide what is behind it? */
+  private solidPixel(cvs: HTMLCanvasElement, px: number, py: number): boolean {
+    let data = this.alphaCache.get(cvs);
+    if (data === undefined) {
+      try {
+        data = cvs.getContext('2d')?.getImageData(0, 0, cvs.width, cvs.height).data ?? null;
+      } catch {
+        data = null;
+      }
+      this.alphaCache.set(cvs, data);
+    }
+    const x = Math.round(px);
+    const y = Math.round(py);
+    if (!data || x < 0 || y < 0 || x >= cvs.width || y >= cvs.height) return false;
+    return (data[(y * cvs.width + x) * 4 + 3] ?? 0) > 140;
+  }
+
+  /**
+   * How opaque to draw the tall prop at (cx, cy): eased toward a veil while
+   * its painted pixels lie over a kept body that stands behind it (drawn
+   * first), back to solid once nobody is. Sampled on the prop's own art at
+   * points down the body's middle, so the empty corners of a tree's canvas
+   * never count, only leaves and posts actually in front of a face or chest.
+   */
+  private propVeil(kind: string, cx: number, cy: number, positions: [number, number][]): number {
+    const key = `${cx},${cy}`;
+    let target = 1;
+    const img = this.tiles.tallImage(kind, cx, cy);
+    if (img) {
+      // The art's origin in world units (logical pixels).
+      const ox = cx * TILE - img.ox / A;
+      const oy = cy * TILE - img.oy / A;
+      for (const [px, py] of positions) {
+        // Drawn later than the body only when the prop stands nearer the eye.
+        if (cy + 0.5 <= py / TILE) continue;
+        let hits = 0;
+        for (const [fx, fy] of VEIL_SAMPLES) {
+          if (this.solidPixel(img.cvs, (px + fx - ox) * A, (py + fy - oy) * A)) hits++;
+        }
+        if (hits >= 2) {
+          target = PROP_VEIL;
+          break;
+        }
+      }
+    }
+    const cur = this.veils.get(key) ?? 1;
+    const next = cur + (target - cur) * Math.min(1, this.frameDt * 10);
+    if (target === 1 && next > 0.995) {
+      this.veils.delete(key);
+      return 1;
+    }
+    this.veils.set(key, next);
+    return next;
+  }
+
   /** World tile that would respond to the action button, or null. */
   setHint(cell: [number, number] | null) {
     this.hint = cell;
@@ -1633,9 +1713,21 @@ export class Renderer {
     const need = sprites.length * 2;
     if (this.spriteXY.length < need) this.spriteXY = new Float64Array(need + 32);
     for (let i = 0; i < sprites.length; i++) {
-      const [px, py] = sprites[i]!.actor.renderPos();
-      this.spriteXY[i * 2] = px;
-      this.spriteXY[i * 2 + 1] = py;
+      const a = sprites[i]!.actor;
+      const [px, py] = a.renderPos();
+      // The lean-apart of two speakers with no room to step aside: eased,
+      // never snapped, and gone again the same way.
+      let n = this.nudges.get(a);
+      if (n || a.nudge[0] !== 0 || a.nudge[1] !== 0) {
+        n ??= [0, 0];
+        const k = Math.min(1, this.frameDt * 9);
+        n[0] += (a.nudge[0] - n[0]) * k;
+        n[1] += (a.nudge[1] - n[1]) * k;
+        if (a.nudge[0] === 0 && a.nudge[1] === 0 && Math.abs(n[0]) + Math.abs(n[1]) < 0.05) this.nudges.delete(a);
+        else this.nudges.set(a, n);
+      }
+      this.spriteXY[i * 2] = px + (n?.[0] ?? 0);
+      this.spriteXY[i * 2 + 1] = py + (n?.[1] ?? 0);
     }
 
     // Pass 1a: seamless ground, then the seams between materials broken.
@@ -1780,10 +1872,44 @@ export class Renderer {
         draw: () => this.drawSprite(s, (px - cam.x) * A, (py - cam.y) * A, i, reflect),
       });
     });
+    // A room's back wall is one tile of face and its people are two tiles
+    // tall, so anyone standing against it had their head over the top of
+    // the room, poking into the dark (Rosa's chichería, the corner by the
+    // charango). Rooms get the wall they need: the back wall's face carries
+    // on one more course above the top row, behind everything.
+    if (this.mood === 'interior' && y0 <= 0) {
+      const wall = map.object(0, 0)?.t;
+      if (wall && RUN_WALLS.has(wall)) {
+        layers.push({
+          sort: -1,
+          draw: () => {
+            for (let cx = Math.max(0, x0); cx <= Math.min(map.w - 1, x1); cx++) {
+              if (!map.object(cx, 0)?.solid) continue;
+              const tx = (cx * TILE - cam.x) * A;
+              const ty = (-TILE - cam.y) * A;
+              this.tiles.drawTall(ctx, wall, tx, ty, cx, -1);
+            }
+          },
+        });
+      }
+    }
+    // Where the kept bodies stand this frame, for the props' veils.
+    const keptAt: [number, number][] = [];
+    sprites.forEach((s, i) => {
+      if (this.kept.includes(s.actor)) keptAt.push([this.spriteXY[i * 2]!, this.spriteXY[i * 2 + 1]!]);
+    });
     for (const t of tall) {
+      const veil =
+        keptAt.length && !this.tiles.isBuilding(t.kind) && !RUN_WALLS.has(t.kind)
+          ? this.propVeil(t.kind, t.cx, t.cy, keptAt)
+          : 1;
       layers.push({
         sort: t.cy + 0.5,
         draw: () => {
+          if (veil < 1) {
+            ctx.save();
+            ctx.globalAlpha = veil;
+          }
           const tx = (t.cx * TILE - cam.x) * A;
           const ty = (t.cy * TILE - cam.y) * A;
           // The sun's own throw is laid down by drawCastShadows; what is left
@@ -1820,8 +1946,10 @@ export class Renderer {
               top: open(0, -1),
             });
           } else {
+            if (veil < 1) ctx.globalAlpha = veil;
             this.tiles.drawTall(ctx, t.kind, tx, ty, t.cx, t.cy);
           }
+          if (veil < 1) ctx.restore();
         },
       });
     }
