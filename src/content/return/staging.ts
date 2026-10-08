@@ -56,6 +56,10 @@ export const BLOCKING: Blocking[] = [
   // evening wander otherwise parks her right behind the writer, is the bowl
   // going down on a table two steps off.
   { id: 'rosa', when: { has: ['c10.lamp'], not: ['story.end'] }, map: 'village', at: [18, 18], dir: 'up' },
+  // Allqu never counts as a body, so on the walk down he settled on the
+  // writing stone itself and the last page was written with a dog drawn
+  // through the writer. He keeps the evening a step off, watching the well.
+  { id: 'allqu', when: { has: ['c10.apacheta.done'], not: ['story.end'] }, map: 'village', at: [24, 16], dir: 'left' },
 ];
 
 /**
