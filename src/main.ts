@@ -1794,6 +1794,9 @@ function updateStaging(dt: number) {
       v.actor.pose = 'none';
     }
     s.escort = !!w.escort;
+    // Someone busy at their work answers without looking up from it: the
+    // talk may turn everyone else, never them.
+    if (w.busy && s.arrived && v.def.map === map.id && !v.actor.isMoving) v.actor.face(w.dir!);
     if (v.actor.frozen || v === talkingTo) continue; // mid-word is sacred
     if (w.escort) {
       if (v.def.map !== map.id) {
@@ -1843,16 +1846,17 @@ function updateStaging(dt: number) {
       settle();
       s.path = [];
     } else if (map.id === w.map) {
-      // Arrived, they keep their place; while the talk is on, every face
-      // around the jug turns to the one person who was there. Someone sat
-      // at their work keeps facing it.
+      // Arrived, they keep their place; while a conversation is on, every
+      // face around the jug turns to the one person who was there. A
+      // narrator's line turns nobody (Hana keeps looking at her town), and
+      // someone busy at their work keeps facing it.
       s.arrived = stageStep(s, tx, ty, dt);
       if (s.arrived) {
         const [px, py] = player.occupies();
         const dx = px - tx;
         const dy = py - ty;
         const toward: Dir = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
-        v.actor.face(textbox.isOpen && !w.busy ? toward : w.dir!);
+        v.actor.face(textbox.isOpen && talkingTo && !w.busy ? toward : w.dir!);
         settle();
       }
     } else {
