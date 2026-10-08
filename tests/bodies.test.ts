@@ -64,11 +64,7 @@ const stacked = (a: [number, number], b: [number, number]) => a[0] === b[0] && M
  * ending's. What that turned up in staging data is listed here for the
  * staging owner to move; the list may only shrink.
  */
-const KNOWN_STACKED = new Set<string>([
-  // The lamplighter's cell 3 is a stop on her round, so this pile only forms
-  // while she lights that lamp during the goodbye.
-  'shionoura: genji (blocking) 25,22 over chochin-round cell 3 25,21',
-]);
+const KNOWN_STACKED = new Set<string>([]);
 
 describe('bodies never overlap', () => {
   it('no two bodies that can be present together are placed on one cell', () => {
@@ -223,24 +219,12 @@ describe('talk settling', () => {
  * stands there, but a placement that needs the veil is a staging slip. The
  * known ones are listed so the content can move them; the list only shrinks.
  */
+// Vendors behind their own stall, cart or containers: the counter in front of
+// them is the point.
 const KNOWN_UNDER_PROPS = new Set<string>([
   'marisol (home) on la-caleta at 27,20: stall in front',
   'bosun (home) on ship at 22,14: contA in front',
-  'chascaC3 (home) on ship at 18,15: contC in front',
-  'sachiko (home) on shionoura at 13,10: bambooWish behind the head',
   'mija (home) on busan at 12,14: hotteokcart in front',
-  'buyerC5 (home) on busan at 24,10: magpie behind the head',
-  'sethji (home) on delhi at 5,12: sethgaddi behind the head',
-  'turi (home) on sicily at 31,18: stall behind the head',
-  'eugenia (home) on oaxaca at 13,13: stall behind the head',
-  'teofilo (blocking) on village at 19,13: farol behind the head',
-  'bosun (blocking) on ship at 22,14: contA in front',
-  'joseph (blocking) on ship at 25,14: contA in front',
-  'olena (blocking) on ship at 27,14: contA in front',
-  'isao (blocking) on shionoura at 31,22: postbox behind the head',
-  'chochin-round cell 1 on shionoura at 23,11: chochin behind the head',
-  'chochin-round cell 3 on shionoura at 25,21: chochin behind the head',
-  'chochin-round cell 4 on shionoura at 26,21: chochin in front',
 ]);
 
 describe('people and tall props', () => {
