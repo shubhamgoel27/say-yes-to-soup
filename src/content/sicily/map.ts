@@ -100,8 +100,23 @@ const lungoY = (x: number) => 19.6 + 0.55 * Math.sin((x + 3) / 6.4);
 /** The mole's south face, seen across the water below its south lip. */
 const underMole = (x: number, y: number) => onMole(x, y - 1) && !onMole(x, y) && isSea(x, y);
 
+/**
+ * The scogliera: the armour stone tipped along the mole's seaward side and
+ * round its head, so the open water breaks on rubble and not on the wall.
+ * The south face stays a clean quay wall, because that is where the ship
+ * comes alongside. Every sea cell touching the mole, bar that side.
+ */
+export const onArmour = (x: number, y: number) => {
+  if (!isSea(x, y) || underMole(x, y)) return false;
+  // The quay side is the berth: nothing heaped where the ship lies alongside.
+  if (y > 21 && x < 43) return false;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (onMole(x + dx, y + dy)) return true;
+  return false;
+};
+
 function groundAt(x: number, y: number): string {
   if (underMole(x, y)) return 'O';
+  if (onArmour(x, y)) return 'R';
   if (isSea(x, y)) return 'S';
   // The mole: dressed blocks, a coping on each lip, bollards on the north one.
   if (onMole(x, y)) return !onMole(x, y - 1) ? 'W' : !onMole(x, y + 1) ? 'E' : 'B';
@@ -302,7 +317,7 @@ function objectAt(x: number, y: number): string {
 function sealPockets(ground: string[], objects: string[]) {
   const walkThrough = new Set([' ', 'i', 'z', 'w', 'H']);
   const solid = (x: number, y: number) =>
-    ground[y]?.[x] === 'S' || !walkThrough.has(objects[y]?.[x] ?? ' ');
+    'SOR'.includes(ground[y]?.[x] ?? 'S') || !walkThrough.has(objects[y]?.[x] ?? ' ');
   const seen = new Set<string>();
   const queue: [number, number][] = [[40, 20], [29, 13]];
   for (const [x, y] of queue) seen.add(`${x},${y}`);
@@ -375,6 +390,7 @@ export const SICILY_MAP: MapData = {
     W: { t: 'molonord' },
     E: { t: 'molosud' },
     O: { t: 'moloface', solid: true },
+    R: { t: 'scogliera', solid: true },
     h: { t: 'lavashore' },
     d: { t: 'dirt' },
     g: { t: 'grass' },

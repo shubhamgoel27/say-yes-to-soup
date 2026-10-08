@@ -202,16 +202,18 @@ function bajada(g: CanvasRenderingContext2D) {
   g.bezierCurveTo(96, 88, 150, 90, 158, 80);
   g.stroke();
   // Cactus and an apacheta keeping the road company.
+  // The cactus is the slope's own: columns straight up from the ground.
+  g.save();
   g.strokeStyle = '#4d7440';
-  g.lineWidth = 4;
+  g.lineWidth = 3.6;
+  g.lineCap = 'round';
   g.beginPath();
-  g.moveTo(206, 122);
-  g.lineTo(206, 104);
-  g.moveTo(206, 112);
-  g.lineTo(199, 106);
-  g.moveTo(206, 115);
-  g.lineTo(213, 108);
+  for (const [x, top] of [[201, 110], [206, 103], [211, 108], [215, 114]] as const) {
+    g.moveTo(x, 122);
+    g.lineTo(x, top);
+  }
   g.stroke();
+  g.restore();
   for (const [ax, ay, ar] of [[36, 118, 4.4], [36, 111, 3.4], [36, 105.5, 2.3]] as const) {
     oval(g, ax, ay, ar, ar * 0.62, '#8d8272');
   }

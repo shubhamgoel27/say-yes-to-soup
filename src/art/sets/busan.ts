@@ -22,6 +22,69 @@ const AWNINGS = ['#e0c15c', '#3f7fb0', '#4d7440', '#d9853f'];
 function paint(make: MakeTile) {
   // ------------------------------------------------------------ grounds
 
+  // The yard round the lane, which on every other map is plain dirt: here
+  // it is the market's poured concrete, hosed down before dawn and never
+  // quite dry. The shared dirt's orange-brown read as mud blotches spilled
+  // over the paving. Warm grey like the lane, a step paler and smoother, so
+  // the lane still reads as the lane; wet where the hose has been, a puddle
+  // holding the sky, a pour joint, scales, a rust tear from a barrow.
+  // Everything stays clear of the tile's edge, so nothing is cut at a seam.
+  make('yardBusan', 6, (g, r, i) => {
+    const base = shade('#8a8279', (r.next() - 0.5) * 0.04);
+    rect(g, 0, 0, S, S, base);
+    for (let k = 0; k < 18; k++) {
+      dot(g, 3 + r.int(S - 6), 3 + r.int(S - 6), 0.8 + r.next() * 0.7, r.chance(0.5) ? 'rgba(62,56,50,0.16)' : 'rgba(240,234,222,0.14)');
+    }
+    // The hose's dark: big soft wet patches, which is most of the look.
+    for (let k = 0; k < 2; k++) {
+      oval(g, 16 + r.int(32), 16 + r.int(32), 10 + r.int(6), 6 + r.int(4), 'rgba(58,56,60,0.13)');
+    }
+    // A pour joint on some cells, ruled once, the way the slab was cut.
+    if (i === 0) {
+      g.strokeStyle = 'rgba(52,46,42,0.26)';
+      g.lineWidth = 1.6;
+      const jy = 18 + r.int(28);
+      g.beginPath();
+      g.moveTo(0, jy);
+      g.lineTo(S, jy);
+      g.stroke();
+    }
+    // A puddle holding the pale morning: a dark rim, the sky in it.
+    if (i === 4) {
+      // One cell in six, and only every other one of those: a yard with a
+      // puddle in every stride read as a field of flat grey stones.
+      const px = 24 + r.int(16);
+      const py = 24 + r.int(16);
+      if (r.chance(0.5)) {
+        for (const [dx, w] of [[-6, 10], [6, 12]] as const) oval(g, px + dx, py, w, 5, 'rgba(48,50,58,0.2)');
+        for (const [dx, w] of [[-6, 8.6], [6, 10.6]] as const) oval(g, px + dx, py - 0.4, w, 3.8, 'rgba(214,222,230,0.34)');
+        oval(g, px - 6, py - 1.4, 4.5, 0.9, 'rgba(255,255,255,0.4)');
+      }
+    }
+    // Scales and a rust tear.
+    if (r.chance(0.5)) dot(g, 6 + r.int(S - 12), 6 + r.int(S - 12), 1.4, 'rgba(226,236,240,0.55)');
+    if (r.chance(0.18)) oval(g, 10 + r.int(S - 20), 10 + r.int(S - 20), 4, 1.4, 'rgba(150,84,44,0.22)');
+  });
+
+  // The track worn from the jetty up to the lane: the same concrete, darker
+  // where the barrows run and the ice melts off them.
+  make('trackBusan', 4, (g, r) => {
+    rect(g, 0, 0, S, S, '#7a7269');
+    for (let k = 0; k < 16; k++) {
+      dot(g, 3 + r.int(S - 6), 3 + r.int(S - 6), 0.8 + r.next() * 0.7, r.chance(0.5) ? 'rgba(52,46,40,0.2)' : 'rgba(236,230,218,0.12)');
+    }
+    // Two wheel lines, wet.
+    for (const x of [20, 44]) {
+      g.strokeStyle = 'rgba(52,50,54,0.18)';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(x + (r.next() - 0.5) * 3, 2);
+      g.lineTo(x + (r.next() - 0.5) * 3, S - 2);
+      g.stroke();
+    }
+    if (r.chance(0.5)) oval(g, 14 + r.int(36), 14 + r.int(36), 8, 3, 'rgba(210,218,226,0.22)');
+  });
+
   // The market lane: paving washed dark before dawn, scales catching light.
   // A warm granite grey, not a cool one: the night grade is blue, and a blue-
   // grey slab under it read as standing water across the whole lane.
@@ -1494,5 +1557,7 @@ export const ART: ChapterArt = {
   /** The tea house already had its own floor; now it has its own wall. */
   skins: {
     teahouse: { wallInt: 'wallHanji' },
+    // The yard and the jetty track are concrete here, not earth.
+    busan: { dirt: 'yardBusan', pathCore: 'trackBusan' },
   },
 };

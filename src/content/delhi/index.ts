@@ -80,12 +80,17 @@ export const CHAPTER: ChapterDef = {
   moods: {
     // Pre-storm sawan: brass light under a lid of heat, the whole lane
     // slightly overexposed, waiting for the sky to open its accounts.
+    // Brass, not fog: the old grade laid a cream veil over a chowk that is
+    // already all brick and dust, and the arrival frame went to one flat
+    // orange with nothing standing out of it. Less veil, a deeper foot, and
+    // an ambient closer to white keep the heat and give the lane back its
+    // shadows and its reds.
     brasslight: {
-      top: 'rgba(226,196,140,0.18)',
-      mid: 'rgba(232,208,160,0.08)',
-      bottom: 'rgba(160,130,92,0.11)',
-      vig: 0.26,
-      ambient: 0xf0dfb4,
+      top: 'rgba(232,200,140,0.1)',
+      mid: 'rgba(236,214,170,0.03)',
+      bottom: 'rgba(110,84,66,0.12)',
+      vig: 0.24,
+      ambient: 0xfbf1e0,
     },
     // The pigeon-wheeling hour: the sky stays lit long after the lanes
     // give up. Rose-gold afterglow off the domes, a warm west-facing glow,

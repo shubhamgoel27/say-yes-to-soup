@@ -3,7 +3,7 @@ import type { Actor } from './actor';
 import type { Dir } from './input';
 import type { TileMap } from './grid';
 import type { Camera } from './camera';
-import { PATHY, Tileset, WATERY } from '../art/tiles';
+import { OVER_SEA, PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
 import { cellHash, outlineSheet, surface, type Surface } from '../art/pix';
 
@@ -41,6 +41,9 @@ const LIFE_FAMILY: Record<string, string> = {
   corallane: 'sand',
   plaza: 'stone', lanepave: 'stone', basalto: 'stone', tataki: 'stone',
   galistone: 'stone', chowkbrick: 'stone',
+  // Busan's yard is the shared dirt re-skinned as hosed concrete: what grows
+  // there grows in its cracks, not pebbles strewn on earth. Looked up by art.
+  yardBusan: 'stone', trackBusan: 'stone',
 };
 /**
  * Base fraction of eligible cells that sprout, before the density field has
@@ -136,7 +139,7 @@ const EDGE_CUT = new Set([
   'pierdeck', 'deck', 'bridge', 'floorWood', 'floorSteel', 'floorOndol', 'floorEarth', 'tatami', 'tataki',
   'terrace', 'terracelime', 'terracerose',
   // A ship's side and a mole's face: built, so the shoreline never wanders them.
-  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface',
+  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface', 'scogliera',
 ]);
 /** Per class: wobble amplitude, then the width of the blend in tiles. */
 const EDGE_SHAPE: [number, number][] = [
@@ -218,7 +221,7 @@ function seamMasks(code: string, wob: number[], px: number, py: number): (HTMLCa
         sum += wm;
       }
       let acc = w[0]!;
-      const i = (y * SEAM_RES + x) * 4;
+      const i = ((y + 1) * SEAM_RES + x) * 4;
       for (let m = 1; m < k; m++) {
         acc += w[m]!;
         const a = sum > 0 && acc > 0 ? w[m]! / acc : 0;
@@ -245,10 +248,19 @@ type ShoreHit = { masks: ShoreMasks; wet: boolean; water: string; land: string }
  * coast costs one texture per neighbourhood rather than four.
  */
 type ShoreMasks = { cv: HTMLCanvasElement; has: number };
-const SHORE_LAND = 0;
-const SHORE_SEA = SEAM_RES;
-const SHORE_FOAM = SEAM_RES * 2;
-const SHORE_DAMP = SEAM_RES * 3;
+/**
+ * The rows sit SHORE_STRIDE apart with a one-pixel gutter above and below
+ * each, holding a copy of the row's own edge. A smoothed drawImage of one row
+ * samples half a texel past its source rect, and with the rows butted
+ * together the land mask's last line was read off the top of the sea mask
+ * under it: every shore cell drew a hairline of land along its tile edge,
+ * ruled across the water (Sicily's arrival, under the lava point).
+ */
+const SHORE_STRIDE = SEAM_RES + 2;
+const SHORE_LAND = 1;
+const SHORE_SEA = SHORE_STRIDE + 1;
+const SHORE_FOAM = SHORE_STRIDE * 2 + 1;
+const SHORE_DAMP = SHORE_STRIDE * 3 + 1;
 
 /**
  * Where land meets water inside one cell, from its 3x3 neighbourhood as a
@@ -266,10 +278,11 @@ const SHORE_DAMP = SEAM_RES * 3;
 function shoreMasks(wetBits: number, px: number, py: number): ShoreMasks {
   const dry: number[] = [];
   for (let c = 0; c < 9; c++) dry.push((wetBits >> c) & 1 ? 0 : 1);
-  const { cv, g } = surface(SEAM_RES, SEAM_RES * 4);
-  const img = g.createImageData(SEAM_RES, SEAM_RES * 4);
+  const { cv, g } = surface(SEAM_RES, SHORE_STRIDE * 4);
+  const img = g.createImageData(SEAM_RES, SHORE_STRIDE * 4);
   const d = img.data;
-  const ROW = SEAM_RES * SEAM_RES * 4;
+  const LINE = SEAM_RES * 4;
+  const ROW = SHORE_STRIDE * LINE;
   let has = 0;
   const TAU = Math.PI * 2;
   for (let y = 0; y < SEAM_RES; y++) {
@@ -291,7 +304,7 @@ function shoreMasks(wetBits: number, px: number, py: number): ShoreMasks {
         0.025 * Math.sin(3 * tx + 2 * ty + 1.7);
       const q = f + n;
       const a = Math.min(1, Math.max(0, (q - 0.45) / 0.1));
-      const i = (y * SEAM_RES + x) * 4;
+      const i = ((y + 1) * SEAM_RES + x) * 4;
       const put = (row: number, al: number, rgb: number[]) => {
         const k = row * ROW + i;
         d[k] = rgb[0]!;
@@ -307,6 +320,11 @@ function shoreMasks(wetBits: number, px: number, py: number): ShoreMasks {
       put(2, Math.exp(-fz * fz), FOAM_RGB);
       put(3, (q > 0.5 ? 1 - (q - 0.5) / 0.22 : a) * 0.22, DAMP_RGB);
     }
+  }
+  for (let row = 0; row < 4; row++) {
+    const top = row * ROW;
+    d.copyWithin(top, top + LINE, top + 2 * LINE);
+    d.copyWithin(top + (SEAM_RES + 1) * LINE, top + SEAM_RES * LINE, top + (SEAM_RES + 1) * LINE);
   }
   g.putImageData(img, 0, 0);
   return { cv, has };
@@ -326,6 +344,13 @@ const LATCH_KINDS = new Set(['doorShut', 'mlango']);
  * the water beside it stays square to it; only beaches and banks wander.
  */
 const SHORE_NEUTRAL = new Set(['void', 'scree', ...EDGE_LAID, ...EDGE_CUT]);
+/**
+ * Built, but standing in open water: a beach meeting armour stone meets the
+ * sea between the stones, so the land's edge wanders there as it would at
+ * the water. Without this the lava shore at the mole's root ended in a
+ * square block against the scogliera.
+ */
+const SHORE_BREAK = new Set(['scogliera']);
 
 /**
  * Every ground kind a seam on this map can ask to be feathered with. The draw
@@ -955,8 +980,10 @@ export class Renderer {
   private seamLayers(cx: number, cy: number, kind: string, kindAt: (x: number, y: number) => string): number {
     // Water banks autotile themselves and the outside of the world stays
     // calm; neither takes part in either direction, so a neighbour of either
-    // kind counts as more of this cell's own ground.
-    if (WATERY.has(kind) || kind === 'void' || kind === 'scree') return 1;
+    // kind counts as more of this cell's own ground. Nor does anything built
+    // over the sea take a feather: the shore's lava reached into the armour
+    // stone at the mole's root and laid a square of beach on the water.
+    if (WATERY.has(kind) || OVER_SEA.has(kind) || kind === 'void' || kind === 'scree') return 1;
     const mats = this.seamMats;
     const near = this.seamNear;
     mats.length = 1;
@@ -1772,7 +1799,7 @@ export class Renderer {
     for (let cy = y0; cy <= y1; cy++) {
       for (let cx = x0; cx <= x1; cx++) {
         if (!map.inBounds(cx, cy) || map.object(cx, cy)) continue;
-        const family = LIFE_FAMILY[kindAt(cx, cy)];
+        const family = LIFE_FAMILY[this.tiles.artName(kindAt(cx, cy))];
         if (!family) continue;
         const fk = this.fi(cx, cy);
         if (fk < 0) continue;
@@ -2015,12 +2042,21 @@ export class Renderer {
     const gy0 = Math.floor(y0 / GCHUNK);
     const gx1 = Math.floor(x1 / GCHUNK);
     const gy1 = Math.floor(y1 / GCHUNK);
+    // Live water is laid tile by tile, and a tile at a sub-pixel position has
+    // two antialiased half-covered edges that never add up to an opaque
+    // pixel: a faint dark grid ruled across every sea (Sicily's arrival read
+    // as a tiled floor). The camera's fraction is the same for every tile, so
+    // snapping the shared offset to a whole pixel lays the tiles edge to edge
+    // exactly. The half pixel this moves the water against the land is
+    // invisible under the shoreline's feathered edge.
+    const camPX = Math.round(cam.x * A);
+    const camPY = Math.round(cam.y * A);
     const live = (list: number[], kinds: string[]) => {
       for (let i = 0, j = 0; i < list.length; i += 2, j++) {
         const wx = list[i]!;
         const wy = list[i + 1]!;
-        const sx = (wx * TILE - cam.x) * A;
-        const sy = (wy * TILE - cam.y) * A;
+        const sx = wx * TILE * A - camPX;
+        const sy = wy * TILE * A - camPY;
         const conn = (dx: number, dy: number) => WATERY.has(kindAt(wx + dx, wy + dy));
         this.tiles.drawGround(ctx, kinds[j]!, sx, sy, wx, wy, conn, this.time);
       }
@@ -2172,7 +2208,21 @@ export class Renderer {
         const conn = group
           ? (dx: number, dy: number) => group.has(kindAt(cx + dx, cy + dy))
           : NEVER;
-        this.tiles.drawGround(g, kind, sx, sy, cx, cy, conn, 0);
+        if (OVER_SEA.has(kind)) {
+          // A hull's side, a quay face, a heap of armour stone: the sea round
+          // and under it moves with the rest of the sea. Baked over a frozen
+          // frame it showed as a still tile of water in a moving one.
+          e.water.push(cx, cy);
+          e.waterKind.push('sea');
+          this.tiles.drawOverSea(g, kind, sx, sy, cx, cy);
+          // Where a beach runs into armour stone, the beach's own edge
+          // wanders over the first stones, as it does into the water.
+          if (shore && shore.masks.has & 1) {
+            let list = layers.get(shore.land);
+            if (!list) layers.set(shore.land, (list = []));
+            list.push(sx, sy, shore.masks.cv, SHORE_LAND);
+          }
+        } else this.tiles.drawGround(g, kind, sx, sy, cx, cy, conn, 0);
         const n = this.seamLayers(cx, cy, kind, kindAt);
         for (let m = 1; m < n; m++) {
           const mask = this.seamLayerMask[m - 1];
@@ -2248,8 +2298,9 @@ export class Renderer {
     kind: string,
     kindAt: (x: number, y: number) => string,
   ): ShoreHit | null {
-    if (SHORE_NEUTRAL.has(kind)) return null;
-    const meWet = SHORE_WET.has(kind);
+    const breaks = SHORE_BREAK.has(kind);
+    if (SHORE_NEUTRAL.has(kind) && !breaks) return null;
+    const meWet = breaks || SHORE_WET.has(kind);
     // Every cell of every chunk asks, so the common answer (no water near)
     // must cost nine lookups and nothing else: no strings, no allocation.
     let bits = 0;
@@ -2258,13 +2309,13 @@ export class Renderer {
       const k = kindAt(cx + (c % 3) - 1, cy + ((c / 3) | 0) - 1);
       // The world's edge and anything built take no side: they count as
       // more of whatever this cell is.
-      const wet = SHORE_NEUTRAL.has(k) ? meWet : SHORE_WET.has(k);
+      const wet = SHORE_NEUTRAL.has(k) ? meWet || SHORE_BREAK.has(k) : SHORE_WET.has(k);
       if (wet) bits |= 1 << c;
       if (wet !== meWet) mixed = true;
     }
     if (!mixed) return null;
     if (!meWet && !this.tiles.groundImage(kind, 0)) return null;
-    let water = meWet ? kind : '';
+    let water = breaks ? 'sea' : meWet ? kind : '';
     let land = meWet ? '' : kind;
     for (let c = 0; c < 9; c++) {
       const wet = (bits >> c) & 1 ? true : false;
@@ -2272,7 +2323,7 @@ export class Renderer {
       const k = kindAt(cx + (c % 3) - 1, cy + ((c / 3) | 0) - 1);
       // Edge neighbours name the other side before diagonal ones do.
       const edge = c === 1 || c === 3 || c === 5 || c === 7;
-      if (wet && (!water || edge)) water = k;
+      if (wet && (!water || edge)) water = SHORE_BREAK.has(k) ? 'sea' : k;
       if (!wet && (!land || edge) && this.tiles.groundImage(k, 0)) land = k;
     }
     if (!water || !land) return null;
@@ -2830,16 +2881,25 @@ export class Renderer {
     const ctx = this.ctx;
     const baseY = sy + S - 2;
     const clipY = ((cy + 1) * TILE - cam.y) * A;
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(sx - S, clipY, S * 3, S * 2);
-    ctx.clip();
-    ctx.globalAlpha = 0.18;
     const wob = Math.sin(this.time * 1.7 + cx * 1.3) * 2;
-    ctx.translate(wob, 2 * baseY);
-    ctx.scale(1, -1);
-    ctx.drawImage(img.cvs, sx - img.ox, sy - img.oy);
-    ctx.restore();
+    // Fading with depth, in bands: one flat 18% copy clipped two tiles down
+    // ended in a hard straight edge, and a sea stack's reflection read as a
+    // pale slab laid on the water.
+    const BANDS = [0.2, 0.15, 0.1, 0.06, 0.03];
+    const bh = (S * 2) / BANDS.length;
+    for (let b = 0; b < BANDS.length; b++) {
+      ctx.save();
+      ctx.beginPath();
+      // Whole-pixel band edges, so neighbouring bands meet without a seam.
+      const t0 = Math.round(clipY + b * bh);
+      ctx.rect(sx - S, t0, S * 3, Math.round(clipY + (b + 1) * bh) - t0);
+      ctx.clip();
+      ctx.globalAlpha = BANDS[b]!;
+      ctx.translate(wob, 2 * baseY);
+      ctx.scale(1, -1);
+      ctx.drawImage(img.cvs, sx - img.ox, sy - img.oy);
+      ctx.restore();
+    }
   }
 
   private castShadow(sx: number, sy: number, w: number, strength = 0.22) {
@@ -3302,7 +3362,67 @@ export class Renderer {
     else if (id === 'zanzibar') this.drawSail(map, cam);
     else if (id === 'kerala') this.drawDragonflies(map, cam);
     else if (id === 'busan') this.drawMarketSteam(map, cam);
-    else if (id === 'village' || id === 'east-road' || id === 'la-bajada') this.drawCondor();
+    else if (id === 'village' || id === 'east-road' || id === 'la-bajada') {
+      if (id === 'east-road') this.drawPassWind();
+      this.drawCondor();
+    }
+  }
+
+  /**
+   * The pass: the wind made visible. Long pale strokes sweep across the
+   * pampa the way it is drawn in picture books, and loose ichu blows past
+   * low and fast. The road is the windy one, and it used to say so only in
+   * words and grey light.
+   */
+  private drawPassWind() {
+    const ctx = this.ctx;
+    const t = this.time;
+    const day = 1 - this.nightK * 0.7;
+    ctx.save();
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 5; i++) {
+      const h1 = cellHash(i, 3, 211);
+      const h2 = cellHash(i, 7, 223);
+      const len = W * (0.18 + h1 * 0.14);
+      const p = (t * (0.07 + h2 * 0.04) + h1) % 1;
+      const x0 = -len + p * (W + len * 2);
+      const y0 = H * (0.12 + ((i * 0.19 + h2 * 0.3) % 0.78));
+      const a = Math.sin(p * Math.PI) ** 2 * 0.3 * day;
+      if (a < 0.01) continue;
+      ctx.strokeStyle = `rgba(255,250,236,${a.toFixed(3)})`;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      const amp = 10 + h2 * 12;
+      for (let k = 0; k <= 16; k++) {
+        const u = k / 16;
+        const x = x0 + u * len;
+        const y = y0 + Math.sin(u * Math.PI * 2 + t * 1.3 + i) * amp * Math.sin(u * Math.PI);
+        if (k) ctx.lineTo(x, y);
+        else ctx.moveTo(x, y);
+      }
+      ctx.stroke();
+      // Now and then the stroke curls over at its head, a gust turning.
+      if (h1 > 0.5) {
+        ctx.beginPath();
+        ctx.arc(x0 + len + 8, y0 - 6, 9, Math.PI * 0.5, Math.PI * 1.9);
+        ctx.stroke();
+      }
+    }
+    // Loose ichu: short golden strands tumbling past, low over the grass.
+    ctx.lineWidth = 1.8;
+    for (let i = 0; i < 9; i++) {
+      const h1 = cellHash(i, 11, 227);
+      const h2 = cellHash(i, 13, 229);
+      const x = (((t * (90 + h1 * 70) + h2 * W) % (W + 80)) + W + 80) % (W + 80) - 40;
+      const y = H * (0.2 + h1 * 0.7) + Math.sin(t * 2.3 + i * 1.7) * 14;
+      const rot = t * (3 + h2 * 3) + i;
+      ctx.strokeStyle = `rgba(214,178,98,${(0.7 * day).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(x - Math.cos(rot) * 6, y - Math.sin(rot) * 2.5);
+      ctx.lineTo(x + Math.cos(rot) * 6, y + Math.sin(rot) * 2.5);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** Delhi: paper kites high over the rooftops, each on the end of its string. */

@@ -54,11 +54,33 @@ export const CHAPTER: ChapterDef = {
     },
   ],
   recall: RECALL,
+  moods: {
+    // The pass at four thousand metres: thin air, hard clean light, the ichu
+    // gone to gold. Windy, not grey. It was graded 'cool' once, and with the
+    // clock running the critics only ever met it as a blue dusk.
+    puna: {
+      top: 'rgba(255,222,160,0.12)',
+      mid: 'rgba(255,232,190,0.04)',
+      bottom: 'rgba(150,112,84,0.08)',
+      vig: 0.24,
+      ambient: 0xfff2dc,
+    },
+    // And the evening on it: the last sun lies along the pass and the
+    // snow behind it goes rose before anything goes dark.
+    alpenglow: {
+      top: 'rgba(255,170,118,0.26)',
+      mid: 'rgba(250,192,150,0.11)',
+      bottom: 'rgba(112,86,124,0.12)',
+      vig: 0.22,
+      glow: 'rgba(255,196,140,0.12)',
+      ambient: 0xffdcb8,
+    },
+  },
   meta: {
     village: { scene: 'outdoor', mood: 'warm' },
     chicheria: { scene: 'interior', mood: 'interior' },
     'casa-carmen': { scene: 'interior', mood: 'interior' },
-    'east-road': { scene: 'road', mood: 'cool' },
+    'east-road': { scene: 'road', mood: 'puna', moodDusk: 'alpenglow' },
     'la-bajada': { scene: 'road', mood: 'dusty' },
   },
   // Sitting: the chichería stools count, so Teófilo's room can be sat in.

@@ -63,11 +63,13 @@ function objectAt(x: number, y: number): string {
   // Boulders in twos and threes where the ridge has shed them.
   if ((x === 6 && y === ROAD_Y + 3) || (x === 7 && y === ROAD_Y + 2) || (x === 26 && y === ROAD_Y - 3)) return 'r';
 
-  // Windswept scatter, sparser than the valley floor.
+  // Windswept scatter: sparse ichu everywhere, and here and there a hollow
+  // out of the wind where the flowers have got together in a crowd.
   if (groundAt(x, y) === ',') {
     const h = cellHash(x, y, 33);
-    if (h < 0.02) return 'f';
-    if (h < 0.1) return 'i';
+    const lee = cellHash(Math.floor((x + 2) / 5), Math.floor(y / 4), 37) > 0.55;
+    if (h < (lee ? 0.22 : 0.025)) return 'f';
+    if (h < (lee ? 0.3 : 0.13)) return 'i';
     if (h > 0.992) return 'r';
   }
   return ' ';
