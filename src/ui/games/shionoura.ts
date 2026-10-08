@@ -86,6 +86,9 @@ export class KingyoPanel {
   private deepDips = 0; // of those, dips spent on a deep-lit fish
   private waterDips = 0; // and dips that found only water
   private steady = new Hold(); // story: the uncle's hand on a wrist that dipped into empty water
+  // How the hand behaved, for the words only: presses pushed against the
+  // uncle's grip while he steadied a wrist that had just dipped into water.
+  private pushes = 0;
 
   // Render-only state. None of it feeds back into the game.
   private scene = new Scene();
@@ -119,6 +122,7 @@ export class KingyoPanel {
     this.dips = 0;
     this.deepDips = 0;
     this.waterDips = 0;
+    this.pushes = 0;
     this.steady.reset();
     this.phase = 'scoop';
     this.sheet = 1;
@@ -234,12 +238,16 @@ export class KingyoPanel {
     // The dip. Shallow fish near the poi come up; deep ones just watch.
     if (this.steady.on) {
       // The uncle's hand is still on your wrist; pushing keeps it there a while.
+      this.pushes++;
       if (this.steady.heldFor < STEADY_PATIENCE) {
         this.steady.start(STEADY_HOLD);
         return;
       }
       this.steady.release();
     }
+    // A hand that has been pushing against the uncle's grip is mashing, and
+    // whatever it lifts was the tub's generosity, not its aim.
+    const hurried = this.pushes >= 2;
     const px = this.fishX(this.poiX);
     const py = 168;
     this.dipT = 0.34;
@@ -265,12 +273,18 @@ export class KingyoPanel {
       this.scene.flash('#ffe9c4', 0.16);
       this.scene.burst(px, py, { n: calm() ? 5 : 12, color: '#8fd0e0', size: 2.2, speed: 110, grav: 240, life: 0.55, kind: 'streak' });
       this.soak = Math.min(100, this.soak + (this.hard ? 24 : 18));
+      // Praise is for a hand that waited. A fish that swims into a flurry is
+      // caught all the same, and the uncle says so in fewer words.
       this.hint =
         this.sheet > 1
           ? this.caught - this.firstCatch === 1
-            ? 'One for her! She holds the bag up to a lantern to see it properly.'
+            ? hurried
+              ? 'One for her, out of a flurry. She looks at you, then at the fish, and decides not to ask.'
+              : 'One for her! She holds the bag up to a lantern to see it properly.'
             : 'Two! She names them both before they reach the bowl.'
-          : (['One! Level wrist, says the uncle.', 'Two! The uncle raises an eyebrow.', 'Three! Now you are showing off.'][
+          : ((hurried
+              ? ['One! It swam into the splashing. The uncle says nothing, pointedly.', 'Two. Luck, the uncle mutters, is a kind of skill. A small kind.', 'Three. The tub gave up before you did.']
+              : ['One! Level wrist, says the uncle.', 'Two! The uncle raises an eyebrow.', 'Three! Now you are showing off.'])[
               Math.min(this.caught - 1, 2)
             ] as string);
       const goal = this.sheet > 1 ? this.firstCatch + 2 : 3;
@@ -327,7 +341,9 @@ export class KingyoPanel {
     this.hint = !this.hard
       ? hers === 0
         ? 'Her paper goes soft and lets go. She is not troubled: she points at a fish in your bag and declares it hers, which settles that. Space.'
-        : wasted === 0
+        : this.pushes >= 3
+          ? 'Hers is bagged, and yours. The uncle shakes out the wrist he steadied all evening and says the fish were generous tonight, which is not the same as caught. Space.'
+          : wasted === 0
           ? `${hers === 1 ? 'One' : 'Two'} for her, ${['none', 'one', 'two', 'three'][this.firstCatch] ?? this.firstCatch} for you, and not a dip wasted. The uncle bags them in two bags and, very quietly, gives you a paper for later. Space.`
           : wasted >= 4
             ? 'Hers is bagged, and most of the tub with it. The uncle wrings out the scraps, laughing; she carries her bag off like a lantern. Space.'

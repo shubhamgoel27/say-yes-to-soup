@@ -292,3 +292,33 @@ describe('the watia dig answers the steam, not the leftover presses', () => {
     }
   });
 });
+
+describe('the last word tells the truth about the run', () => {
+  /** A hand that holds Up through every duel: birds, gusts and all. */
+  const yank = (): Bot => {
+    let f = 0;
+    return (p) => {
+      f++;
+      if (p.phase === 'duel') p.onDir('up');
+      else if (f % 6 === 0) p.onAction();
+    };
+  };
+  it('the kite: a careless win is not told it was clean', () => {
+    const lazy = storyRun('c11.kite.start', yank());
+    assert.ok(lazy.done, 'the yanking hand was locked out');
+    assert.ok(lazy.panel.lost > 0, 'the probe no longer loses a kite; pick a rougher hand');
+    assert.doesNotMatch(lazy.said, /No birds pulled/, `a run that lost kites heard: ${lazy.said}`);
+    assert.match(lazy.said, /given to the sky/);
+    const careful = storyRun('c11.kite.start', BOTS['c11.kite.start']!());
+    assert.match(careful.said, /No birds pulled, no patang lost/);
+  });
+  it('the goldfish: mashing is never praised as a dip not wasted', () => {
+    for (const seed of [1, 2, 3]) {
+      const lazy = storyRun('c4.kingyo.start', mash(), seed);
+      assert.ok(lazy.done, `seed ${seed}: a masher was locked out`);
+      assert.doesNotMatch(lazy.said, /not a dip wasted|showing off/, `seed ${seed}: mashing heard: ${lazy.said}`);
+      const careful = storyRun('c4.kingyo.start', BOTS['c4.kingyo.start']!(), seed);
+      assert.doesNotMatch(careful.said, /generous tonight/, `seed ${seed}: careful play was called lucky`);
+    }
+  });
+});
