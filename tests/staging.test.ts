@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES, holdOn } from '../src/content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES, SEATS, VESSELS, holdOn } from '../src/content/staging';
 import { CHAPTERS, DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
 import { DAWN_LANDING, SUNHEE_STALL } from '../src/content/busan/staging';
@@ -370,6 +370,35 @@ describe('staging: what the words let go of is shown going', () => {
       assert.equal(r.goals.length, node.lines.length, `${r.node}: one goal per line`);
       r.goals.forEach((g, i) => assert.ok(g >= (r.goals[i - 1] ?? 0) && g <= 1, `${r.node}: goal ${i} goes backwards`));
       assert.equal(r.goals[r.goals.length - 1], 1, `${r.node}: still in the air when the words end`);
+    }
+  });
+});
+
+describe('staging: talks you sit down for', () => {
+  it('seats you on open ground, clear of anything tall, for nodes that exist', () => {
+    for (const s of SEATS) {
+      const m = REGION_MAPS[s.map];
+      assert.ok(m, `seat on unknown map ${s.map}`);
+      for (const n of s.nodes) assert.ok(NODES[n], `seat names a missing node ${n}`);
+      const [x, y] = s.at;
+      assert.ok(!solidAt(m!, x, y), `${s.nodes[0]}: the seat ${s.at} is inside something`);
+      for (const dy of [-1, 1]) {
+        const o = objectAt(m!, x, y + dy);
+        assert.ok(!o?.tall, `${s.nodes[0]}: ${o?.t} is drawn ${dy < 0 ? 'out of the head' : 'across the body'} at ${s.at}`);
+      }
+    }
+  });
+});
+
+describe('staging: boats the words name', () => {
+  it('moors each vessel on water, under a scene that can happen', () => {
+    for (const v of VESSELS) {
+      const m = REGION_MAPS[v.map];
+      assert.ok(m, `vessel on unknown map ${v.map}`);
+      const g = m!.legend[m!.ground[v.at[1]]![v.at[0]]!];
+      assert.ok(g?.solid && /sea|water/.test(g.t), `${v.kind} at ${v.map} ${v.at} is not on the water`);
+      assert.ok(v.when || v.node, `${v.kind} at ${v.map} never comes`);
+      if (v.node) assert.ok(NODES[v.node], `${v.kind} waits on a missing node ${v.node}`);
     }
   });
 });

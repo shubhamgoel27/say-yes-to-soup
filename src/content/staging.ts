@@ -1,6 +1,6 @@
 import type { Look } from '../art/character';
 import type { Cond, EventNode } from './schema';
-import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS } from './return/staging';
+import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS, LAST_PAGE_SEAT } from './return/staging';
 import { STAGING as CHASKA } from './dev/staging';
 import { STAGING as CALETA } from './caleta/staging';
 import { STAGING as CROSSING } from './crossing/staging';
@@ -130,7 +130,7 @@ export type Staging = {
 };
 
 const CHAPTERS: Staging[] = [
-  { blocking: RETURN_BLOCKING, hours: RETURN_HOURS },
+  { blocking: RETURN_BLOCKING, hours: RETURN_HOURS, seats: [LAST_PAGE_SEAT] },
   CHASKA,
   CALETA,
   CROSSING,
