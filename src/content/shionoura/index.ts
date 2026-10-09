@@ -169,5 +169,7 @@ export const CHAPTER: ChapterDef = {
   completion: {
     flag: 'c4.complete',
     toasts: ['✦ your wish hangs on the town bamboo', 'the morning boat to Busan is provisioned'],
+    // The festival completes the town; the journal waits for Fumi's bow.
+    closeOn: 'c4.seenoff',
   },
 };

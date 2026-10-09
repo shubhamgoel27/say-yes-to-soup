@@ -1865,7 +1865,7 @@ function stageWants(): Map<Villager, Want> {
   for (const b of BLOCKING) {
     const v = byNpc(b.id);
     if (v && !want.has(v) && state.check(b.when)) {
-      want.set(v, { at: b.at, map: b.map, dir: b.dir, sit: b.sit, busy: b.sit || b.busy, look: b.look });
+      want.set(v, { at: b.at, map: b.map, dir: b.dir, sit: b.sit, busy: b.busy ?? b.sit, look: b.look });
     }
   }
   return want;
@@ -1939,12 +1939,12 @@ function settleInDark() {
   for (const [v, s] of [...staged]) {
     if (want.has(v) || s.escort) continue;
     if (v.def.map !== map.id && s.home.map !== map.id) continue;
-    if (v.actor.pose === 'sit' && !v.def.sits) v.actor.pose = 'none';
+    v.actor.pose = v.def.sits ? 'sit' : 'none';
     v.seated = !!v.def.sits;
     v.def.map = s.home.map;
     v.def.pos = s.home.pos;
     v.def.range = s.home.range;
-    v.actor.placeAt(s.home.pos[0], s.home.pos[1], 'down');
+    v.actor.placeAt(s.home.pos[0], s.home.pos[1], v.def.sits ?? 'down');
     if (v.costume) dress(v, undefined);
     staged.delete(v);
   }
@@ -2086,7 +2086,12 @@ function updateStaging(dt: number) {
       v.def.map = s.home.map;
       v.def.pos = s.home.pos;
       v.def.range = s.home.range;
-      v.actor.placeAt(s.home.pos[0], s.home.pos[1], 'down');
+      // A permanent sitter is put back on their stool, sat.
+      v.actor.placeAt(s.home.pos[0], s.home.pos[1], v.def.sits ?? 'down');
+      if (v.def.sits) {
+        v.actor.pose = 'sit';
+        v.seated = true;
+      }
       staged.delete(v);
     };
     if (v.def.map === map.id) {
@@ -3353,6 +3358,14 @@ const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', righ
 let talkingTo: Villager | null = null;
 let celebrated = state.has('story.complete');
 const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map((c) => c.flag));
+/**
+ * The chapter-close spreads already unfolded (or never to unfold), keyed by
+ * completion flag. Separate from the plates above: a chapter whose story
+ * peaks before its goodbye (closeOn) gets the plate at the peak and the
+ * spread after the farewell.
+ */
+const closeFlag = (c: { flag: string; closeOn?: string }) => c.closeOn ?? c.flag;
+const closedChapters = new Set(COMPLETIONS.filter((c) => state.has(closeFlag(c))).map((c) => c.flag));
 
 /**
  * The guards above keep a loaded journal from re-firing plates and the
@@ -3368,6 +3381,8 @@ function resyncCelebrations() {
   celebrated = state.has('story.complete');
   celebratedFlags.clear();
   for (const c of COMPLETIONS) if (state.has(c.flag)) celebratedFlags.add(c.flag);
+  closedChapters.clear();
+  for (const c of COMPLETIONS) if (state.has(closeFlag(c))) closedChapters.add(c.flag);
 }
 
 /** A journey taken from inside a conversation; the warp runs when it ends. */
@@ -3550,6 +3565,22 @@ function endDialogue() {
     startNarration('dig.finish');
     return;
   }
+  // A goodbye that casts off (the morning boat rounding the lighthouse):
+  // the journal closes the chapter here, on its own ground, and the boat
+  // leaves when the spread is put down. Later, on the next coast, the
+  // moment would be let go.
+  if (pendingTravel) {
+    const due = COMPLETIONS.find(
+      (c) => !closedChapters.has(c.flag) && state.has(closeFlag(c)) && closingChapter(c.flag, map.id),
+    );
+    if (due) {
+      closedChapters.add(due.flag);
+      window.clearTimeout(ceremonyTimer);
+      ceremonyTimer = 0;
+      openCeremony(due.flag, () => takeTravel());
+      return;
+    }
+  }
   // A journey taken in conversation runs first, always: an armed card can
   // wait, but "the faraglioni slide past" cannot be taken back.
   if (takeTravel()) return;
@@ -3591,6 +3622,10 @@ applyDressings();
       showPlate(c.plate, 5200);
       for (const t of c.toasts) toasts.show(t);
       celebrate();
+    }
+    // The spread waits for the goodbye, which is usually the same moment.
+    if (state.has(closeFlag(c)) && !closedChapters.has(c.flag)) {
+      closedChapters.add(c.flag);
       scheduleCeremony(c.flag);
     }
   }
@@ -3694,7 +3729,6 @@ function ceremonyMustWait(): boolean {
  */
 function scheduleCeremony(flag: string) {
   if (!closingChapter(flag, map.id)) return;
-  const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
   // Patience is not a count. A player who reads the journal for a minute
   // after the final scene has not left; the moment is let go only when the
   // road moves on (closingChapter returns null off the chapter's ground).
@@ -3710,14 +3744,26 @@ function scheduleCeremony(flag: string) {
       return;
     }
     ceremonyTimer = 0;
-    player.frozen = true;
-    audio.pageFlip();
-    chapterClose.open(chapter, hues, () => {
-      player.frozen = false;
-    });
+    openCeremony(flag);
   };
   window.clearTimeout(ceremonyTimer);
   ceremonyTimer = window.setTimeout(tryOpen, 1800);
+}
+
+/** Unfold the spread now; `then` runs when it is put down (a boat to catch). */
+function openCeremony(flag: string, then?: () => void) {
+  const chapter = closingChapter(flag, map.id);
+  if (!chapter) {
+    then?.();
+    return;
+  }
+  const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
+  player.frozen = true;
+  audio.pageFlip();
+  chapterClose.open(chapter, hues, () => {
+    player.frozen = false;
+    then?.();
+  });
 }
 
 // ---------------------------------------------------------------- sitting

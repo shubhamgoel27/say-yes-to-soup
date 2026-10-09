@@ -288,5 +288,16 @@ export type ChapterDef = {
   /** Chapter-complete beat: when `flag` first appears, show the plate. The
    * plate's words ("CHAPTER EIGHT · COMPLETE") are derived from play order
    * in world.ts, so inserting a chapter can never misnumber the rest. */
-  completion?: { flag: string; toasts: string[] };
+  completion?: {
+    flag: string;
+    toasts: string[];
+    /**
+     * The goodbye's flag, when the story peaks before the farewell: the
+     * journal closes a chapter only after its people have seen you off
+     * (Shionoura's festival completes it, but Fumi still bows on the pier
+     * the next morning). Absent, the card follows `flag` itself. When the
+     * goodbye also casts off, the card unfolds before the boat leaves.
+     */
+    closeOn?: string;
+  };
 };

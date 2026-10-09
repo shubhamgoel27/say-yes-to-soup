@@ -90,5 +90,8 @@ export const CHAPTER: ChapterDef = {
   completion: {
     flag: 'c3.complete',
     toasts: ['✦ a plate kept warm at the bow', 'Shionoura rises with the sun'],
+    // The captain's word completes the passage; the journal waits for the
+    // bow, Ben's covered plate and the pilot's launch.
+    closeOn: 'c3.landfall',
   },
 };

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
 import { BLOCKING, CUES, HOURS, LAMPS_LIT } from '../src/content/staging';
-import { DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
+import { CHAPTERS, DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
 import { DAWN_LANDING } from '../src/content/busan/staging';
 import { SHIP_AT, SIGNING_SPOT } from '../src/content/sicily/staging';
@@ -307,6 +307,36 @@ describe('staging: places and hours', () => {
         const ground = m.legend[m.ground[y]![x]!];
         assert.ok(ground?.solid && /sea|water/.test(ground.t), `the ship would cover walkable ${x},${y}`);
       }
+    }
+  });
+});
+
+describe('staging: the journal closes a chapter after its goodbye', () => {
+  /**
+   * The goodbye each chapter is written to end on. The close card follows the
+   * flag this node raises, so it never unfolds over a town you have not yet
+   * left (Shionoura's spread once opened at the festival, a night before
+   * Fumi bowed on the pier).
+   */
+  const FAREWELLS: Record<string, string> = {
+    'la-caleta': 'mar.rios.accept',
+    crossing: 'c3.depart',
+    shionoura: 'c4.depart',
+    busan: 'c5.sunhee.bye',
+    kerala: 'c6.mariamma.blessing',
+    delhi: 'c11.yusuf.bye2',
+    zanzibar: 'c7.dawn.bench',
+    sicily: 'c8.depart.horn',
+    oaxaca: 'c9.bye',
+  };
+
+  it("raises each chapter's close flag in its farewell", () => {
+    for (const c of CHAPTERS) {
+      if (!c.completion) continue;
+      const bye = FAREWELLS[c.id];
+      assert.ok(bye, `${c.id} completes but names no farewell here`);
+      const close = c.completion.closeOn ?? c.completion.flag;
+      assert.ok(NODES[bye]?.effects?.includes(`set:${close}`), `${c.id}: the card follows ${close}, which ${bye} does not raise`);
     }
   });
 });
