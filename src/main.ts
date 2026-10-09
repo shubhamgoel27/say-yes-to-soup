@@ -21,6 +21,7 @@ import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
+import { capUnder } from './ui/games/scene';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { chipHolds } from './ui/taskpage';
@@ -6197,6 +6198,14 @@ function attachPanelPointer(
   root.addEventListener('pointerdown', (e) => {
     if (!panel.isOpen || e.button !== 0) return;
     e.preventDefault();
+    // A painted key cap is a button: it presses its own key, whatever
+    // third of the card it sits in.
+    const cap = capUnder(root, e.clientX, e.clientY);
+    if (cap) {
+      if (cap === 'space') panel.onAction();
+      else panel.onDir(cap);
+      return;
+    }
     const card = root.querySelector('.w-panel') ?? root;
     const r = card.getBoundingClientRect();
     const fromLeft = (e.clientX - r.left) / r.width;

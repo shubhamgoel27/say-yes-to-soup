@@ -1927,7 +1927,17 @@
         transition: transform 0.12s ease;
       }
       .w-cell.on { transform: scale(1.12); }
-      .w-hint { font-size: var(--fs-135); font-style: italic; min-height: 20px; margin-bottom: 10px; }
+      /* Two lines held open: a caption that wraps to a second line used to
+       * grow the card and jump the painting ~20px. (Not flex: captions carry
+       * inline <b> and <br>, which flex would split into columns.) */
+      .w-hint {
+        font-size: var(--fs-135);
+        font-style: italic;
+        line-height: 1.4;
+        min-height: 2.8em;
+        margin-bottom: 10px;
+        text-wrap: balance;
+      }
       /* The key legend: the how-to card leaves, the keys stay. One row, the
        * same shape in every panel, quiet enough to sit under the painting. */
       .w-legend {
@@ -2992,7 +3002,7 @@
           max-height: min(62vh, 400px);
         }
         .w-title { margin-bottom: 4px; }
-        .w-hint { margin-bottom: 4px; min-height: 0; }
+        .w-hint { margin-bottom: 4px; }
         /* The key legend is desk furniture; the pad and taps replace it. */
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }

@@ -214,6 +214,9 @@ export class Scene {
    * simulated (0 during hit-stop) so panels can pause their own motion.
    */
   frame(dt: number, paint: (g: CanvasRenderingContext2D) => void): number {
+    // The caps painted this frame are the panel's touch targets; last
+    // frame's are gone (a cap that stopped being drawn stops answering).
+    capHits.set(this.cv, []);
     if (this.hitstopT > 0) {
       this.hitstopT -= dt;
       dt = 0;
@@ -506,15 +509,83 @@ export function keyCap(
   scale = 1,
 ): number {
   const cv = capSprite(k);
-  const w = (cv.width / CAP_SS) * scale;
-  const h = (cv.height / CAP_SS) * scale;
+  // On glass a cap is a button a thumb will try, so it is drawn a size up.
+  const glass = isCoarseTouch() ? GLASS_CAP : 1;
+  const w = (cv.width / CAP_SS) * scale * glass;
+  const h = (cv.height / CAP_SS) * scale * glass;
   const a = g.globalAlpha;
   g.globalAlpha = a * alpha;
   g.drawImage(cv, x - w / 2, y - h / 2, w, h);
   g.globalAlpha = a;
+  recordCap(g, k, x, y, w, h);
   // Returned so a caller can place text after the cap. Glyph widths differ a
   // lot ('space' against an arrow), so a fixed gap silently collides.
   return w;
+}
+
+/** How much bigger a cap is drawn under a finger. */
+const GLASS_CAP = 1.3;
+
+/**
+ * Where each painted cap sat this frame, as fractions of its canvas, so a
+ * tap on the cap presses its key. The caps look like buttons and players
+ * press them; under the panel's compass a tap on the bottom row's left
+ * arrow used to read as "down".
+ */
+export type CapHit = { k: KeyGlyph; cx: number; cy: number; w: number; h: number };
+const capHits = new WeakMap<HTMLCanvasElement, CapHit[]>();
+
+function recordCap(g: CanvasRenderingContext2D, k: KeyGlyph, x: number, y: number, w: number, h: number) {
+  const list = capHits.get(g.canvas);
+  if (!list || typeof g.getTransform !== 'function') return;
+  const m = g.getTransform();
+  const cx = m.a * x + m.c * y + m.e;
+  const cy = m.b * x + m.d * y + m.f;
+  const sx = Math.hypot(m.a, m.b);
+  const sy = Math.hypot(m.c, m.d);
+  const W = g.canvas.width || 1;
+  const H = g.canvas.height || 1;
+  list.push({ k, cx: cx / W, cy: cy / H, w: (w * sx) / W, h: (h * sy) / H });
+}
+
+/** The finger's least target, in CSS px (WCAG and Apple's HIG agree). */
+export const TOUCH_MIN = 44;
+
+/**
+ * The key a pointer at (px, py), in the canvas's own CSS box of size
+ * (bw, bh), presses, if it landed on a painted cap. Every cap answers over
+ * at least TOUCH_MIN square, more if it is drawn bigger; the nearest centre
+ * wins where two reach. Pure, for the tests.
+ */
+export function capAtPoint(caps: readonly CapHit[], px: number, py: number, bw: number, bh: number): KeyGlyph | null {
+  let best: KeyGlyph | null = null;
+  let bestD = Number.POSITIVE_INFINITY;
+  for (const c of caps) {
+    const cx = c.cx * bw;
+    const cy = c.cy * bh;
+    const hw = Math.max(c.w * bw, TOUCH_MIN) / 2;
+    const hh = Math.max(c.h * bh, TOUCH_MIN) / 2;
+    const dx = Math.abs(px - cx);
+    const dy = Math.abs(py - cy);
+    if (dx > hw || dy > hh) continue;
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = c.k;
+    }
+  }
+  return best;
+}
+
+/** The painted cap under a pointer in this panel, if any. */
+export function capUnder(root: HTMLElement, clientX: number, clientY: number): KeyGlyph | null {
+  const cv = root.querySelector<HTMLCanvasElement>('.g-stage canvas');
+  if (!cv) return null;
+  const caps = capHits.get(cv);
+  if (!caps || caps.length === 0) return null;
+  const r = cv.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0) return null;
+  return capAtPoint(caps, clientX - r.left, clientY - r.top, r.width, r.height);
 }
 
 const tagCache = new Map<string, HTMLCanvasElement>();
