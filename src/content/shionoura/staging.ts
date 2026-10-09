@@ -52,17 +52,20 @@ export const FESTIVAL_DRESSING = {
   ] as [number, number, { t: string; solid?: boolean; tall?: boolean }][],
 };
 
+/** The town's hours keep to the town (Busan has its own dawn). */
+const TOWN = ['shionoura', 'minshuku'];
+
 export const STAGING: Staging = {
   hours: [
     // Down to dusk while the town gathers: just past the chochin waking
     // (nightLevel 0.3), where the sky still has its ember in it and the
     // lamp round runs; held well short of the dark that sends people home.
-    { when: EVENING, min: 0.585, max: 0.605 },
+    { when: EVENING, on: TOWN, min: 0.585, max: 0.605 },
     // The festival keeps that hour, lanterns lit, until you go.
-    { when: FESTIVAL, min: 0.585, max: 0.615 },
+    { when: FESTIVAL, on: TOWN, min: 0.585, max: 0.615 },
     // "The tairyō-bata crack once in the morning wind": Isao's boat is the
     // morning one. Set in the dark the night passes in, never in view.
-    { when: SAILING, min: 0.12, max: 0.2, snap: true, notOn: ['busan'] },
+    { when: SAILING, on: TOWN, min: 0.12, max: 0.2, snap: true },
   ],
   // The goodbye itself, read as the morning comes up on the pier.
   // (Its own map is the gate: once Busan has you, no door leads back here.)

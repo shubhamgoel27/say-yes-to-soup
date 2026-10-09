@@ -98,13 +98,15 @@ export const CHAPTER: ChapterDef = {
     circolo: { scene: 'interior', mood: 'interior' },
   },
   moods: {
-    // Hard blue summer: glare off the water, black shadows at noon.
+    // Hard blue summer: glare off the water, black shadows at noon. The
+    // arrival is "the heat reaches you before the gangway does", so the
+    // stone takes a little sun-warmth under the blue instead of a cool cast.
     ciclopi: {
       top: 'rgba(110,185,245,0.13)',
-      mid: 'rgba(255,252,238,0.05)',
+      mid: 'rgba(255,248,228,0.05)',
       bottom: 'rgba(30,45,90,0.07)',
       vig: 0.2,
-      ambient: 0xf4faff,
+      ambient: 0xfffaf0,
     },
     // The passeggiata hour: gold pouring down the lungomare. The integrator
     // may swap the exterior to this by clock, as la-caleta does with glare.

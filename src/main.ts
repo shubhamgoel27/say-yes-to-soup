@@ -58,7 +58,7 @@ import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
-import { BLOCKING, CUES, HOURS, LAMPS_LIT } from './content/staging';
+import { BLOCKING, CUES, LAMPS_LIT, holdOn } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -1959,7 +1959,7 @@ function updateStaging(dt: number) {
     ? undefined
     : afterglow
       ? AFTERGLOW_HOUR
-      : HOURS.find((h) => state.check(h.when) && !(h.notOn ?? []).includes(map.id));
+      : holdOn((c) => state.check(c), map.id);
   if (hold && (dayT < hold.min || dayT > hold.max)) {
     const past = (dayT - hold.max + 1) % 1;
     if (past < 0.02) dayT = hold.max;
@@ -6588,6 +6588,17 @@ function installCheats() {
     tod(t: number) {
       dayT = Math.max(0, Math.min(0.999, t));
       return `time of day = ${dayT.toFixed(2)}`;
+    },
+    /** The light right now: the clock, the mood it picked, how dark it reads,
+     * and the ambient the stage is multiplying the world by. */
+    light() {
+      return {
+        t: +dayT.toFixed(3),
+        mood: moodFor(map.id),
+        night: +nightLevel(dayT).toFixed(2),
+        ambient: ambientNow().toString(16),
+        raining: rainingOn(map.id),
+      };
     },
     band() {
       state.set('keepsake.band');

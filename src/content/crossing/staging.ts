@@ -41,13 +41,16 @@ export const COURT_LANDING: [number, number] = [22, 9];
 /** Where the karaoke night seats you: between the stools, facing the machine. */
 export const KARAOKE_LANDING: [number, number] = [10, 2];
 
+/** The ship's hours keep to the ship. */
+const SHIP_MAPS = ['ship', 'galley'];
+
 export const STAGING: Staging = {
   hours: [
     // Noon. Set in the dark the night passes in, so nobody watches it jump.
-    { when: COURT_DAY, min: 0.38, max: 0.45, snap: true },
+    { when: COURT_DAY, on: SHIP_MAPS, min: 0.38, max: 0.45, snap: true },
     // After dinner: the mess lit against a dark porthole.
-    { when: KARAOKE, min: 0.74, max: 0.8, snap: true },
-    { when: { has: ['c3.stars.start'] }, min: 0.82, max: 0.9 },
+    { when: KARAOKE, on: SHIP_MAPS, min: 0.74, max: 0.8, snap: true },
+    { when: { has: ['c3.stars.start'] }, on: SHIP_MAPS, min: 0.82, max: 0.9 },
   ],
   cues: [
     { when: COURT_DAY, map: 'ship', node: 'c3.bosun.court' },

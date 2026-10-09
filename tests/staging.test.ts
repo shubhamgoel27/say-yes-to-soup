@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BLOCKING, CUES, HOURS, LAMPS_LIT } from '../src/content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, holdOn } from '../src/content/staging';
 import { DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
 import { DAWN_LANDING } from '../src/content/busan/staging';
@@ -205,7 +205,7 @@ describe('staging: the climaxes are on screen', () => {
     if (sc.hour) {
       it(`${sc.name}: is held at the hour it names`, () => {
         const { st } = bodies(sc);
-        const hold = HOURS.find((h) => st.check(h.when) && !(h.notOn ?? []).includes(sc.map));
+        const hold = holdOn((c) => st.check(c), sc.map);
         assert.ok(hold, 'no hour is held: the scene plays at whatever time it is');
         const [lo, hi] = sc.hour!;
         assert.ok(hold.min >= lo && hold.max <= hi, `held at ${hold.min}..${hold.max}, the words say ${lo}..${hi}`);
@@ -250,6 +250,32 @@ describe('staging: places and hours', () => {
     for (const h of HOURS) {
       assert.ok(h.min >= 0 && h.max < 1 && h.min < h.max, `bad hour window ${h.min}..${h.max}`);
     }
+  });
+
+  // A hold once applied on every map its flags stood on: with Shionoura's
+  // festival flags left standing, Kerala's "green light" arrival, Zanzibar's
+  // noon and Sicily's eleven o'clock were all dragged down to festival dusk
+  // within seconds of landing.
+  it("keeps every hold to its own chapter's maps", () => {
+    for (const h of HOURS) {
+      assert.ok(h.on.length > 0, `a hold at ${h.min}..${h.max} names no map`);
+      for (const id of h.on) assert.ok(REGION_MAPS[id], `a hold names unknown map ${id}`);
+    }
+    const st = new GameState();
+    for (const f of ['c4.arrived', 'c4.complete', 'c5.berth', 'c8.walking', 'c9.vigil.done', 'c10.well.called']) st.set(f);
+    for (const id of ['kerala', 'delhi', 'zanzibar']) {
+      assert.equal(holdOn((c) => st.check(c), id), undefined, `${id} is held at another chapter's hour`);
+    }
+  });
+
+  // "First light at the colectivo corner": the dawn window once ran to 0.3,
+  // and the goodbye played in full mid-morning sun.
+  it('keeps the Oaxaca goodbye at first light', () => {
+    const st = new GameState();
+    for (const f of ['c9.arrived', 'c9.ofrenda.done', 'c9.vigil.done']) st.set(f);
+    const hold = holdOn((c) => st.check(c), 'oaxaca');
+    assert.ok(hold, 'the goodbye plays at whatever hour it is');
+    assert.ok(hold.min >= 0 && hold.max <= 0.05, `held at ${hold.min}..${hold.max}, the words say first light`);
   });
 
   it('lights only lamps that a round actually tends', () => {
