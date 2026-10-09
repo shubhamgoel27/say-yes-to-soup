@@ -134,6 +134,15 @@ for (const s of states) {
     const vp = page.viewportSize();
     const onScreen = pt.x > 8 && pt.y > 8 && pt.x < vp.width - 8 && pt.y < vp.height - 8;
     if (onScreen && (cx !== tx0 || cy !== ty0) && (!now.thread.last.loop || Math.abs(cx - now.thread.last.loop[0]) + Math.abs(cy - now.thread.last.loop[1]) === 1)) {
+      // Let a scene's walkers reach their marks first: a click on someone's
+      // head as they pass is rightly a click on them (Aurelio walking down
+      // the well's column to his place at dusk), and that is not this check.
+      for (let i = 0, prev = ''; i < 20; i++) {
+        const cur = JSON.stringify((await st()).npcs);
+        if (cur === prev) break;
+        prev = cur;
+        await sleep(400);
+      }
       await page.mouse.click(pt.x, pt.y);
       for (let i = 0; i < 40; i++) {
         await sleep(150);
@@ -148,7 +157,10 @@ for (const s of states) {
       const loop = now.thread.last.loop;
       const underHead = !!loop && loop[0] === cx && loop[1] === cy + 1;
       const walked = !w.dialogue && w.tile[0] === cx && w.tile[1] === cy;
-      const talked = underHead && !!w.dialogue && !/^ex\./.test(w.dialogue);
+      // Or the walk there carried them into the very scene this step leads to
+      // (the dusk ring at the well starts the verdict as you arrive).
+      const own = !!w.dialogue && (w.dialogue === s.node || Object.values(s.nodes ?? {}).includes(w.dialogue));
+      const talked = (underHead && !!w.dialogue && !/^ex\./.test(w.dialogue)) || own;
       check(walked || talked, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
       // Whatever that click opened (and set) is undone by booting the state
       // again: Escape cannot shut a choice, and a scene left open swallowed
