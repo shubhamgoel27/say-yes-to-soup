@@ -869,7 +869,15 @@ function faceClearHud(quiet: boolean) {
   }
   const over = (boxes: Box[], r: DOMRect) =>
     r.width > 0 && boxes.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
-  const hits = (r: DOMRect) => over(bodies, r);
+  // A body counts when a real piece of it is under the chip, not a pair of
+  // feet peeking in at the frame's top edge: that sent the chip to the foot
+  // of the screen for someone standing off-frame.
+  const BITE = 12;
+  const hits = (r: DOMRect) =>
+    r.width > 0 &&
+    bodies.some(
+      ([l, t, rr, b]) => Math.min(r.right, rr) - Math.max(r.left, l) >= BITE && Math.min(r.bottom, b) - Math.max(r.top, t) >= BITE,
+    );
   for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', over(heads, el.getBoundingClientRect()));
   // The chip is measured at home whenever it is home, so a new thread (a
   // new height) or a turned phone is judged from the corner it holds.
