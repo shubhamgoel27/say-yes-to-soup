@@ -255,13 +255,9 @@ for (const [m, px, py, tx, ty, kind, want] of [
     const s = await st();
     if (s.map === m && s.tile[0] === px && s.tile[1] === py) break;
   }
-  const pt = await page.evaluate(([tx, ty]) => {
-    const s = JSON.parse(document.body.dataset.wfState);
-    const c = [...document.querySelectorAll('canvas')].sort((a, b) => b.clientWidth - a.clientWidth)[0];
-    const r = c.getBoundingClientRect();
-    const k = r.width / 320;
-    return { x: r.left + (tx * 16 + 8 - s.cam[0]) * k, y: r.top + (ty * 16 + 8 - s.cam[1]) * k };
-  }, [tx, ty]);
+  // Through the live camera and zoom (the view covers the window; width
+  // alone put this click on the player's own cell).
+  const pt = await screenOf(tx * 16 + 8, ty * 16 + 8);
   // A tap where the textbox just closed is not a walk order for two seconds.
   await sleep(2200);
   await page.mouse.click(pt.x, pt.y);

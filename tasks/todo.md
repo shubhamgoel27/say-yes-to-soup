@@ -733,9 +733,30 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   shelf Continue swap.
 
 ## 2026-10-08: pass 7 (round g notes, toward "most loved"). Brief: ../wayfare-review/pass7/BRIEF.md
-- [ ] B bodies/camera/input: overlaps in staged paths (Faustino, well, Pilar, baraza, crane), first click on walkers, talk camera at top edges, corner slide, Space after talk, Esc, wfState card
-- [ ] C UI: avatar swatches, shelf blank-slot trap, Tasks page, chip dodges bodies + location title, stale chip, iPhone portrait, 44px panel controls
-- [ ] S staging: close card after goodbye, Aurelio/Teofilo seated + patrons, loom strap, Marisol at stall, Busan red awning + porters + Gong booth, Delhi kite release, Shionoura dinner/crowd/Fumi, kanga, boats placed, night-after well
-- [ ] A art: frames match text light (grade pipeline), boat props, plaza paving + seam + flagpole, ship rails/hull, warm interiors, loom glow, mound glint, card = in-game hat, rickshaw scale
-- [ ] W words/thread/tuning: gate letter thread truth (+ e2e), adobo restart, kombu early pull cost, lazy-line variety, mole clock, slips
-- [ ] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live
+- [x] B bodies/camera/input: overlaps in staged paths (Faustino, well, Pilar, baraza, crane), first click on walkers, talk camera at top edges, corner slide, Space after talk, Esc, wfState card
+- [x] C UI: avatar swatches, shelf blank-slot trap, Tasks page, chip dodges bodies + location title, stale chip, iPhone portrait, 44px panel controls
+- [x] S staging: close card after goodbye, Aurelio/Teofilo seated + patrons, loom strap, Marisol at stall, Busan red awning + porters + Gong booth, Delhi kite release, Shionoura dinner/crowd/Fumi, kanga, boats placed, night-after well
+- [x] A art: frames match text light (grade pipeline), boat props, plaza paving + seam + flagpole, ship rails/hull, warm interiors, loom glow, mound glint, card = in-game hat, rickshaw scale
+- [x] W words/thread/tuning: gate letter thread truth (+ e2e), adobo restart, kombu early pull cost, lazy-line variety, mole clock, slips
+- [x] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live
+
+### Review (pass 7)
+- B: staged/ceremony/arrival cells clean (bodies test covers every placement, evening seats, beside tall props);
+  one click on a walker ends in the talk (engine/aim.ts); talk camera lifts at top edges too; held keys slip round
+  lone rocks; Space after a talk and Esc respond; wfState.card names modal cards.
+- C: swatch taps choose; shelf blank-slot trap closed; Tasks tab is a real page (ui/taskpage.ts); chip dodges every
+  body and refreshes on flag changes; iPhone portrait playable; painted key caps are 44px touch targets.
+- S: close card after the goodbye (closeOn); Aurelio/Teofilo/Carmen seated, chicheria regulars; Marisol keeps her
+  stall; Sun-hee at the red awning, porters, post window moved; Delhi kite release; Shionoura dinner, crowd, Fumi
+  facing; Zanzibar cat on its kanga; boats arrive and pull away; last page sat on the well's lip.
+- A: hour holds scoped per map (the dusk leak behind most "text says warm, frame is grey" notes); four boats;
+  Ch'aska stone, terrace edge, flag off Rosa's path; Yacana rails/hull; lit interiors; loom ball glow; mound
+  glints; chullo chosen and worn; rickshaws to scale; dinner table, cat on kanga, Delhi domes.
+- W: gate letter answers from any side, thread-e2e proves Space at every thread end; adobo resumes at the spoiled
+  step; early kombu pull costs; varied miss lines + help; mole clock waits; armed games lead the thread; slips.
+- Coordinator: wellseat stone (sitting read as standing); armed cards only on their own chapter's maps (a Caleta
+  caballito opened on the Delhi roof after a reload); kite weather seeded per flight and Yusuf's guiding hand at
+  half pull rate (care 14.5 s vs held Up 29.7 s, was a coin flip); thread-e2e click checks wait for walkers,
+  freeze wanderers, wait out the textbox grace, and map clicks through the live zoom.
+- Gate: tsc clean, npm test 491/491, thread-e2e 176 states (Delhi + pointer rerun after the last fix), attend-e2e
+  ALL GREEN, warmth all pass. Lesson: a forgotten driver poisoned the first gates (tasks/lessons.md).
