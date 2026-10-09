@@ -65,9 +65,16 @@ export const ART: ChapterArt = {
     delhi: [
       { kind: 'rickshaw', at: [40, 24], v: 0 },
       { kind: 'rickshaw', at: [43, 25], v: 4 },
-      { kind: 'rickshaw', at: [31, 27], v: 3 },
+      { kind: 'rickshaw', at: [30, 27], v: 3 },
       { kind: 'rickshaw', at: [32, 26], v: 1 },
-      { kind: 'rickshaw', at: [33, 26], v: 2 },
+      { kind: 'rickshaw', at: [34, 27], v: 2 },
+    ],
+    // The mosque itself behind the charkhi; lesser domes along the rest.
+    'delhi-rooftop': [
+      { kind: 'jamadomes', at: [13, 0], v: 0 },
+      { kind: 'jamadomes', at: [3, 0], v: 1 },
+      { kind: 'jamadomes', at: [23, 0], v: 1 },
+      { kind: 'jamadomes', at: [32, 0], v: 1 },
     ],
   },
   skins: {
@@ -1607,6 +1614,23 @@ export const ART: ChapterArt = {
       g.stroke();
     }, 64, 128);
 
+    /** The Red Fort's rampart along the bottom of a skyline sheet: low, so
+     * what stands behind it has the visible band to stand in. */
+    const rampart = (g: CanvasRenderingContext2D, w: number) => {
+      const red = '#a04a38';
+      vgrad(g, 0, 80, w, 16, shade(red, 0.06), shade(red, -0.1));
+      for (let x = 0; x < w; x += 16) rr(g, x + 2, 74, 12, 8, 2, shade(red, 0.02));
+      g.strokeStyle = 'rgba(60,24,18,0.3)';
+      g.lineWidth = 1.4;
+      for (let x = 8; x < w; x += 16) {
+        g.beginPath();
+        g.arc(x, 92, 3.6, Math.PI, 0);
+        g.stroke();
+      }
+      vgrad(g, 0, 80, w, 6, 'rgba(230,215,190,0.22)', 'rgba(0,0,0,0)');
+      vgrad(g, 0, 90, w, 6, 'rgba(0,0,0,0)', 'rgba(200,190,170,0.3)');
+    };
+
     // The Red Fort's wall, painted as distance: a long red rampart with
     // merlons, holding the horizon down. Seamless, so the whole northern
     // edge reads as one wall under one sky.
@@ -1646,82 +1670,102 @@ export const ART: ChapterArt = {
           g.stroke();
         }
       }
-      const red = '#a04a38';
-      vgrad(g, 0, 72, 64, 24, shade(red, 0.06), shade(red, -0.1));
-      // Merlons along the rampart.
-      for (let x = 0; x < 64; x += 16) {
-        rr(g, x + 2, 64, 12, 12, 2, shade(red, 0.02));
-      }
-      // Arched gallery line and heat haze at the base.
-      g.strokeStyle = 'rgba(60,24,18,0.3)';
-      g.lineWidth = 1.6;
-      for (let x = 8; x < 64; x += 16) {
-        g.beginPath();
-        g.arc(x, 88, 5, Math.PI, 0);
-        g.stroke();
-      }
-      vgrad(g, 0, 72, 64, 10, 'rgba(230,215,190,0.22)', 'rgba(0,0,0,0)');
-      vgrad(g, 0, 88, 64, 8, 'rgba(0,0,0,0)', 'rgba(200,190,170,0.3)');
+      rampart(g, 64);
     }, 64, 96);
 
-    // Jama Masjid's domes, painted as distance: white marble weather rising
-    // behind the fort wall's long red line. The wall band matches `fortwall`
-    // exactly, so the skyline reads as one horizon.
-    make('jamadomes', 1, (g) => {
-      // Composed for the camera: same 96 height as `fortwall` so the two
-      // share one horizon, domes rising from directly behind the merlons.
-      vgrad(g, 0, 0, 128, 76, '#d3cabb', '#b3ada0');
-      oval(g, 100, 40, 20, 5, 'rgba(240,238,232,0.25)');
-      oval(g, 26, 46, 15, 4, 'rgba(150,148,140,0.2)');
-      // The mosque, far off, riding above the rampart line.
-      const dome = (dx: number, s: number) => {
-        g.fillStyle = '#e8e4dc';
+    // Jama Masjid's domes, painted as distance: white marble rising behind
+    // the fort wall's long red line. Only the bottom tile of these sheets is
+    // ever on screen (the camera stops at the skyline row), and the domes
+    // used to stand in the half above it, so all the goodbye's "it climbs
+    // over the domes" ever showed was three finials under the task chip. Now
+    // the whole skyline lives in the band the camera shows (art rows 26 to
+    // 96 at the clamp, measured): a low rampart, and the
+    // domes and minarets standing on it. Variant 0 is the mosque itself,
+    // variant 1 the lesser domes and chhatris of the old city round it.
+    make('jamadomes', 2, (g, _r, i) => {
+      // Three tiles wide, so the cells either side (blocked, drawing nothing)
+      // can never paint their sky over its edges.
+      vgrad(g, 0, 0, 192, 82, '#d8cfbf', '#b9b2a4');
+      g.save();
+      g.translate(32, 0);
+      oval(g, 100, 46, 20, 4, 'rgba(240,238,232,0.3)');
+      oval(g, 26, 52, 15, 3.5, 'rgba(150,148,140,0.2)');
+      const marble = '#ece8e0';
+      const dome = (dx: number, s: number, base = 78) => {
+        // The drum, then the onion of the dome on it.
+        rr(g, dx - 11 * s, base - 8 * s, 22 * s, 8 * s + 2, 1.5, '#ddd7cb');
+        g.fillStyle = marble;
         g.beginPath();
-        g.moveTo(dx - 15 * s, 74);
-        g.quadraticCurveTo(dx - 16 * s, 52, dx, 42 - 6 * s);
-        g.quadraticCurveTo(dx + 16 * s, 52, dx + 15 * s, 74);
+        g.moveTo(dx - 14 * s, base - 7 * s);
+        g.quadraticCurveTo(dx - 17 * s, base - 26 * s, dx, base - 34 * s);
+        g.quadraticCurveTo(dx + 17 * s, base - 26 * s, dx + 14 * s, base - 7 * s);
         g.closePath();
         g.fill();
-        // Marble stripes and the golden finial.
-        g.strokeStyle = 'rgba(40,40,44,0.4)';
-        g.lineWidth = 1.4;
+        // The sun on its east shoulder, and the black marble ribs.
+        g.fillStyle = 'rgba(255,250,236,0.55)';
         g.beginPath();
-        g.moveTo(dx - 9 * s, 56);
-        g.quadraticCurveTo(dx, 46 - 5 * s, dx + 9 * s, 56);
-        g.stroke();
+        g.ellipse(dx + 5 * s, base - 20 * s, 4 * s, 9 * s, -0.3, 0, Math.PI * 2);
+        g.fill();
+        g.strokeStyle = 'rgba(40,40,44,0.45)';
+        g.lineWidth = 1.3;
+        for (const k of [-0.5, 0, 0.5]) {
+          g.beginPath();
+          g.moveTo(dx + k * 13 * s, base - 8 * s);
+          g.quadraticCurveTo(dx + k * 10 * s, base - 26 * s, dx, base - 33 * s);
+          g.stroke();
+        }
         g.strokeStyle = '#c8973b';
-        g.lineWidth = 1.6;
+        g.lineWidth = 1.8;
         g.beginPath();
-        g.moveTo(dx, 42 - 6 * s);
-        g.lineTo(dx, 36 - 6 * s);
+        g.moveTo(dx, base - 34 * s);
+        g.lineTo(dx, base - 41 * s);
         g.stroke();
-        dot(g, dx, 35 - 6 * s, 1.8, '#c8973b');
+        dot(g, dx, base - 42 * s, 2, '#c8973b');
       };
-      dome(40, 0.8);
-      dome(88, 0.8);
-      dome(64, 1.05);
-      // The minarets flanking, riding higher than everything.
-      for (const mx of [16, 112]) {
-        rr(g, mx - 3, 40, 6, 34, 2.5, '#d8d2c6');
-        oval(g, mx, 39, 5, 3, '#e8e4dc');
-        dot(g, mx, 35, 1.5, '#c8973b');
+      const minaret = (mx: number, top: number) => {
+        rr(g, mx - 3.5, top, 7, 80 - top, 2.5, '#ddd5c8');
+        for (let y = top + 10; y < 78; y += 12) rect(g, mx - 3.5, y, 7, 1.6, 'rgba(160,74,56,0.55)');
+        rr(g, mx - 6, top - 3, 12, 4, 1.5, '#e8e2d6');
+        oval(g, mx, top - 5, 4.5, 4, marble);
+        dot(g, mx, top - 10, 1.6, '#c8973b');
+      };
+      if (i === 0) {
+        // The prayer hall's red sandstone front, then three domes over it.
+        rr(g, 22, 64, 84, 16, 2, '#b5604a');
+        for (let x = 30; x < 100; x += 12) {
+          g.fillStyle = 'rgba(70,30,22,0.45)';
+          g.beginPath();
+          g.moveTo(x - 4, 80);
+          g.lineTo(x - 4, 71);
+          g.quadraticCurveTo(x, 66, x + 4, 71);
+          g.lineTo(x + 4, 80);
+          g.closePath();
+          g.fill();
+        }
+        minaret(14, 34);
+        minaret(114, 34);
+        dome(40, 0.78, 68);
+        dome(88, 0.78, 68);
+        dome(64, 1.0, 68);
+      } else {
+        // A smaller dome and two chhatris on a haveli's roofline.
+        rr(g, 30, 70, 70, 10, 1.5, '#c9b9a0');
+        dome(64, 0.8, 72);
+        for (const cx of [38, 92]) {
+          rr(g, cx - 7, 62, 2.4, 10, 1, '#d8d0c2');
+          rr(g, cx + 4.6, 62, 2.4, 10, 1, '#d8d0c2');
+          g.fillStyle = marble;
+          g.beginPath();
+          g.moveTo(cx - 9, 63);
+          g.quadraticCurveTo(cx, 50, cx + 9, 63);
+          g.closePath();
+          g.fill();
+          dot(g, cx, 49, 1.4, '#c8973b');
+        }
       }
-      // The rampart in front, exactly the fortwall recipe.
-      const red = '#a04a38';
-      vgrad(g, 0, 72, 128, 24, shade(red, 0.06), shade(red, -0.1));
-      for (let x = 0; x < 128; x += 16) {
-        rr(g, x + 2, 64, 12, 12, 2, shade(red, 0.02));
-      }
-      g.strokeStyle = 'rgba(60,24,18,0.3)';
-      g.lineWidth = 1.6;
-      for (let x = 8; x < 128; x += 16) {
-        g.beginPath();
-        g.arc(x, 88, 5, Math.PI, 0);
-        g.stroke();
-      }
-      vgrad(g, 0, 72, 128, 10, 'rgba(230,215,190,0.22)', 'rgba(0,0,0,0)');
-      vgrad(g, 0, 88, 128, 8, 'rgba(0,0,0,0)', 'rgba(200,190,170,0.3)');
-    }, 128, 96);
+      g.restore();
+      rampart(g, 192);
+    }, 192, 96);
 
     // The parapet: brick lace at knee height, edge to edge so runs of it
     // read as one low wall. The correct place for elbows and evenings.
