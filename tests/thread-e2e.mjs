@@ -7,7 +7,10 @@
  * does (stand where it runs out, ask again), then face the loop and press
  * Space. Each step must arrive on a free tile beside the loop, the loop must
  * sit on someone the task names (or the thing it names), and Space there must
- * open a scene. Every leg ends on bare floor (never on a tuft or a hose), and
+ * open the very scene the errand is (the walk's own next step, never an idle
+ * line). A thing must also answer from every side a player can stand on,
+ * and from the thread's end even while facing away from it (the gate letter
+ * once opened only to a player facing east). Every leg ends on bare floor (never on a tuft or a hose), and
  * a click on where the first leg ends walks there rather than reading
  * whatever is drawn on it. Then the pointer checks: a click on a prop you can
  * stand on walks onto it; a click on a solid prop still reads it; a click on
@@ -78,7 +81,8 @@ const screenOf = (wx, wy) =>
 await page.goto(`${BASE}/?skiptitle`);
 await page.waitForFunction(() => !!globalThis.soup, null, { timeout: 20000 });
 
-for (const s of states) {
+/** Boot the game into one of the walk's states, at the map's spawn, at midday. */
+async function load(s) {
   const [sx, sy] = spawns[s.place];
   const save = { flags: s.flags, journal: s.pages, errand: null, place: { map: s.place, x: sx, y: sy, dir: 'down' } };
   // A reload racing the last one's unload is occasionally aborted; once more.
@@ -95,6 +99,26 @@ for (const s of states) {
   await page.waitForFunction(() => !!document.body.dataset.wfState && !!globalThis.soup, null, { timeout: 20000 });
   await page.evaluate(() => globalThis.soup.tod(0.35));
   await sleep(900);
+}
+
+/** Stand on (x, y), turn toward `dir` with a one-frame tap, press Space; the scene that opens. */
+async function spaceFrom(m, x, y, dir) {
+  await warp(m, x, y);
+  await sleep(900);
+  // Toward a solid thing a tap only turns; away from it, over open floor, a
+  // tap would step, so the turn is made in place through the desk.
+  const name = { ArrowRight: 'right', ArrowLeft: 'left', ArrowUp: 'up', ArrowDown: 'down' }[dir];
+  await page.evaluate((d) => globalThis.soup.face(d), name);
+  await sleep(250);
+  await page.keyboard.press('Space');
+  await sleep(400);
+  return (await st()).dialogue ?? null;
+}
+const toward = (fx, fy, tx, ty) => (tx > fx ? 'ArrowRight' : tx < fx ? 'ArrowLeft' : ty > fy ? 'ArrowDown' : 'ArrowUp');
+const AWAY = { ArrowRight: 'ArrowLeft', ArrowLeft: 'ArrowRight', ArrowUp: 'ArrowDown', ArrowDown: 'ArrowUp' };
+
+for (const s of states) {
+  await load(s);
   await ask();
   await sleep(150);
   let now = await st();
@@ -126,9 +150,10 @@ for (const s of states) {
       const walked = !w.dialogue && w.tile[0] === cx && w.tile[1] === cy;
       const talked = underHead && !!w.dialogue && !/^ex\./.test(w.dialogue);
       check(walked || talked, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
-      if (w.dialogue) await page.keyboard.press('Escape');
-      await warp(now.map, tx0, ty0);
-      await sleep(900);
+      // Whatever that click opened (and set) is undone by booting the state
+      // again: Escape cannot shut a choice, and a scene left open swallowed
+      // the Space checks below.
+      await load(s);
       await ask();
       await sleep(150);
       now = await st();
@@ -162,18 +187,31 @@ for (const s of states) {
   } else if (s.target.at && s.target.at[0] === now.map) {
     check(lx === s.target.at[1] && ly === s.target.at[2], `${label}: loops ${last.loop}, the task's ${s.target.at.slice(1)}`);
   }
-  // Stand there, face the loop, press Space: a scene must open.
-  await warp(now.map, ex, ey);
-  await sleep(900);
-  const key = lx > ex ? 'ArrowRight' : lx < ex ? 'ArrowLeft' : ly > ey ? 'ArrowDown' : 'ArrowUp';
-  await page.keyboard.down(key);
-  await sleep(40);
-  await page.keyboard.up(key);
-  await sleep(250);
-  await page.keyboard.press('Space');
-  await sleep(400);
-  const after = await st();
-  check(!!after.dialogue, `${label}: Space at ${last.end} facing ${last.loop} opens a scene (${after.dialogue ?? 'nothing'})`);
+  // Stand there, face the loop, press Space: the errand's own scene must open.
+  const opened = await spaceFrom(now.map, ex, ey, toward(ex, ey, lx, ly));
+  if (!check(!!opened, `${label}: Space at ${last.end} facing ${last.loop} opens a scene (${opened ?? 'nothing'})`)) continue;
+  // The scene is that of whoever stands on the loop (a crowd task names several).
+  const there = Object.entries(now.npcs).find(([, c]) => c[0] === lx && c[1] === ly)?.[0];
+  const want = (there && s.nodes?.[there]) || s.node;
+  if (want) check(opened === want, `${label}: Space at ${last.end} does the errand (${want}), not ${opened}`);
+  // A thing answers from every side, and from the thread's end facing away.
+  if (s.target.at && s.node && s.target.at[0] === now.map) {
+    const tries = [
+      [ex, ey, AWAY[toward(ex, ey, lx, ly)], 'facing away'],
+      ...s.sides.filter(([x, y]) => x !== ex || y !== ey).map(([x, y]) => [x, y, toward(x, y, lx, ly), 'facing it']),
+    ];
+    for (const [x, y, dir, how] of tries) {
+      await load(s);
+      // Facing away onto a person talks to them, rightly; that side is not the thing's to answer.
+      const ahead = { ArrowRight: [x + 1, y], ArrowLeft: [x - 1, y], ArrowUp: [x, y - 1], ArrowDown: [x, y + 1] }[dir];
+      const npcs = (await st()).npcs;
+      if (Object.values(npcs).some((c) => c[0] === ahead[0] && c[1] === ahead[1])) continue;
+      const got = await spaceFrom(s.target.at[0], x, y, dir);
+      // Any mound is the dig: facing one mound beside another digs that one.
+      const same = got === s.node || (/^dig\.spot/.test(s.node) && /^dig\.spot/.test(got ?? ''));
+      check(same, `${label}: Space at ${x},${y} ${how} ${s.target.at.slice(1)} does the errand (${s.node}), not ${got ?? 'nothing'}`);
+    }
+  }
 }
 
 // Pointer: walkable props are floor to a click; solid ones still answer.

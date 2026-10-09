@@ -393,7 +393,7 @@ export const CROSSING_NODES: NodeMap = {
     lines: [
       { text: 'The pot settles, dark and glossy: garlic, soy, vinegar, and time.' },
       { who: 'Mang Ben', text: 'Masarap! Hear that word in the mess tonight and know you earned a piece of it.' },
-      { text: 'At dinner Joseph has two helpings of sinigang. Medicine, administered.' },
+      { text: 'At dinner Joseph has two helpings of your adobo. Medicine, administered.' },
     ],
     effects: ['clear:c3.cook.start', 'set:c3.cook.done', 'journal:dishes.adobo', 'journal:words.masarap'],
   },

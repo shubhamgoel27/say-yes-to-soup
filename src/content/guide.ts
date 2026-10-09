@@ -1,5 +1,6 @@
 import type { Cond } from './schema';
 import { CHAPTERS, DIG_SPOTS, LETTERS, MAP_CHAPTER, NODES, NPCS, REGION_MAPS, type WorldTask } from './world';
+import type { NodeMap } from './schema';
 
 /**
  * What Nani's red thread is allowed to point at, as pure functions of the
@@ -204,6 +205,66 @@ export function atFor(task: { at?: [string, number, number] }, state: GuideState
   return next ? ['village', next.at[0], next.at[1]] : at;
 }
 
+// ------------------------------------------------------------ armed games
+
+/**
+ * Who starts each game: the villager whose conversation raises its start
+ * flag (a replay's arm, which raises replay.mode with it, does not count).
+ * A game raised and then set aside ("Not yet", "Step away", a journey) waits
+ * with that person; talking to them brings the card back.
+ */
+export const GAME_HOSTS: Map<string, string> = (() => {
+  const nodes = NODES as NodeMap;
+  const hosts = new Map<string, string>();
+  const flags = new Set(CHAPTERS.flatMap((c) => (c.games ?? []).map((g) => g.flag)));
+  const arms = (id: string, seen: Set<string>, out: Set<string>) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const n = nodes[id];
+    if (!n) return;
+    const eff = n.effects ?? [];
+    if (!eff.includes('set:replay.mode')) for (const e of eff) if (e.startsWith('set:') && flags.has(e.slice(4))) out.add(e.slice(4));
+    if (n.next) arms(n.next, seen, out);
+    for (const c of n.choices ?? []) arms(c.goto, seen, out);
+  };
+  const visit = (npcId: string, entry: { node: string }[]) => {
+    const out = new Set<string>();
+    const seen = new Set<string>();
+    for (const e of entry) arms(e.node, seen, out);
+    for (const f of out) if (!hosts.has(f)) hosts.set(f, npcId);
+  };
+  for (const c of CHAPTERS) {
+    for (const n of c.npcs) visit(n.id, n.entry);
+    for (const x of c.npcExtensions ?? []) visit(x.npcId, x.entry);
+  }
+  return hosts;
+})();
+
+/**
+ * One task per game that has a host: while its start flag stands (armed and
+ * not played), the chip and the thread lead back to the person who offered
+ * it. Without these, an armed loom left nothing pointing at Carmen, and the
+ * chip sent the player to the chicheria with her loom still waiting.
+ */
+export const ARMED_TASKS: WorldTask[] = CHAPTERS.flatMap((c, chapter) =>
+  (c.games ?? []).flatMap((g) => {
+    const host = GAME_HOSTS.get(g.flag);
+    const npc = host ? NPC_BY_ID.get(host) : undefined;
+    if (!host || !npc) return [];
+    const who = npc.name.replace(/^The /, 'the ');
+    return [
+      {
+        when: { has: [g.flag], not: ['replay.mode'] },
+        text: `Waiting for you with ${who}: ${g.title ?? 'what you started'}. Go back and begin when you are ready.`,
+        who: host,
+        supersededBy: [],
+        chapter,
+        armed: true,
+      } satisfies WorldTask,
+    ];
+  }),
+);
+
 /** The people a task names, as a list, whether it names one or a crowd. */
 export function whoOf(task: { who?: string | string[] }): string[] {
   if (task.who === undefined) return [];
@@ -232,6 +293,8 @@ export function threadWho(
    * door the player can take yet yields to the rest. */
   reachable: (id: string) => boolean = () => true,
 ): string[] {
+  // A waiting game's host is the way back to it, whatever else they have to say.
+  if ((task as WorldTask).armed) return whoOf(task).filter((id) => state.check(NPC_BY_ID.get(id)?.when) && reachable(id));
   const live = liveWho(task, state).filter(reachable);
   const lead = whoOf(task)[0];
   return lead !== undefined && live.includes(lead) ? [lead] : live;
@@ -245,13 +308,21 @@ export function threadWho(
 export function openTasks(tasks: WorldTask[], state: GuideState, hereMap?: string): WorldTask[] {
   // Ground already walked into retires older chapters' threads (see MAP_CHAPTER).
   const here = hereMap === undefined ? undefined : MAP_CHAPTER[hereMap];
-  return tasks.filter(
-    (t) =>
-      (here === undefined || t.chapter >= here) &&
-      !t.supersededBy.some((f) => state.has(f)) &&
-      state.check(t.when) &&
-      (t.who === undefined || liveWho(t, state).length > 0),
+  // A game armed and waiting comes first: it is the thing the player was in
+  // the middle of, and its host may have nothing else left to say.
+  const armed = ARMED_TASKS.filter(
+    (t) => (here === undefined || t.chapter >= here) && state.check(t.when) && whoOf(t).some((id) => state.check(NPC_BY_ID.get(id)?.when)),
   );
+  return [
+    ...armed,
+    ...tasks.filter(
+      (t) =>
+        (here === undefined || t.chapter >= here) &&
+        !t.supersededBy.some((f) => state.has(f)) &&
+        state.check(t.when) &&
+        (t.who === undefined || liveWho(t, state).length > 0),
+    ),
+  ];
 }
 
 // ------------------------------------------------------------------ doors

@@ -3,7 +3,7 @@ import type { AudioBus } from '../../engine/audio';
 import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
-import { Hold } from './attend';
+import { Hold, missLine } from './attend';
 
 /**
  * Sicily's three hands-on verbs, each painted as a small moving picture.
@@ -2135,6 +2135,16 @@ const CANNOLO_LEGEND = [
   { keys: ['left', 'right'], does: 'choose the garnish' },
 ] as const;
 
+
+/** A shell ridden to the far wall, and what Alfio says while he eats it. */
+const BURST_LINES = [
+  'Too much. The shell splits along its seam and lets go from both ends at once. Alfio catches the wreck and eats it in one bite. "Quality control." Another shell is already on the board.',
+  'The seam gives. Alfio rescues the wreck with two fingers. "Structural failure. Delicious, but structural." Another shell is on the board.',
+  'Ricotta out of both ends again. Alfio eats this one slowly, as a lesson. "The far wall is not a target, friend."',
+  'Another wreck, another bite. "My dentist thanks you," Alfio says, and lays out a fresh shell.',
+];
+const BURST_HELP = 'The second Space stops the cream: press it while the meter sits in the gold, not when the shell is full.';
+
 export class CannoloPanel {
   private phase: CannoloPhase = 'pipe';
   private shell = 0; // 0..2
@@ -2263,9 +2273,7 @@ export class CannoloPanel {
             'Too much. The shell splits along its seam and Alfio eats the wreck without comment, which is worse. ' +
             `That is ${this.faults} of the three the feast can spare. Space, or wait for him to chew.`;
         } else {
-          this.hint =
-            'Too much. The shell splits along its seam and lets go from both ends at once. Alfio catches the wreck and eats it in one bite. ' +
-            '"Quality control." Another shell is already on the board. Space, or wait for him to chew.';
+          this.hint = `${missLine(BURST_LINES, this.overs - 1, BURST_HELP)} Space, or wait for him to chew.`;
         }
       }
     } else if (this.phase === 'burst') {
@@ -2298,7 +2306,10 @@ export class CannoloPanel {
     this.fill = 0;
     this.creamDone0 = 0;
     this.creamDone1 = 0;
-    this.hint = 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
+    this.hint =
+      this.overs >= 3 && !this.hard
+        ? `A fresh shell, blameless. <b>${BURST_HELP}</b>`
+        : 'A fresh shell, blameless. Space to pipe, Space to stop; the sweet zone forgives, the far wall does not.';
   }
 
   /** One line for the tendency this run actually had, for the next how-to. */

@@ -976,7 +976,7 @@ export const NODES: NodeMap = {
   'dig.finish': {
     lines: [
       { who: 'Justina', text: 'Five names, five faces. You know this field better than most cousins now.' },
-      { text: 'She loads your arms with the harvest, the knobbly one on top like a warning.' },
+      { text: 'She gathers the harvest into her shawl and knots the corners, the knobbly one on top like a warning.' },
     ],
     effects: ['set:dig.done', 'journal:dishes.llumchuy'],
   },
@@ -1005,9 +1005,8 @@ export const NODES: NodeMap = {
   },
   'watia.finish': {
     lines: [
-      { text: 'Earth over embers over papas, then the waiting. Justina rakes one out and splits it; the steam escapes.' },
-      { who: 'Justina', text: 'First bite is the field\'s fee. Eat.' },
-      { text: 'It tastes of smoke and rain and the ground you are standing on.' },
+      { who: 'Justina', text: 'First bite is the field\'s fee. Then it is lunch.' },
+      { text: 'You blow on your half until it lets you bite. It tastes of smoke and rain and the ground you are standing on.' },
     ],
     effects: ['clear:watia.start', 'set:watia.done', 'journal:dishes.watia'],
     next: 'justina.wichuna',

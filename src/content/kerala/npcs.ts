@@ -485,7 +485,7 @@ export const KERALA_NODES: NodeMap = {
     lines: [
       { who: 'Mariamma', text: 'Rowed with the club, served at my sadya, stood in the rain like a local fool. Kunje, you are done arriving.' },
       { text: 'She wets her thumb and draws a small cross on your forehead, the way this house has sent Joseph out of the door every voyage.' },
-      { who: 'Mariamma', text: 'The sea took my son and sends me letters. Now it takes you. Go to Moosa.' },
+      { who: 'Mariamma', text: 'The sea borrowed my son, and he writes to me from it. Now it borrows you. Go to Moosa.' },
     ],
     effects: ['set:c6.complete'],
   },

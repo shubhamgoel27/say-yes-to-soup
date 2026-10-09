@@ -1,7 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun, tip } from './run';
-import { Hold } from './attend';
+import { Hold, missLine } from './attend';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, PressMarks, offBy } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
@@ -1697,6 +1697,17 @@ const CHAYA_LEGEND = [
   { keys: ['left', 'right'], does: 'choose how it is served' },
 ] as const;
 
+
+/** A pour let go too low, answered a little differently each time. */
+const SURRENDER_LINES = [
+  '"That is not chaya, that is surrender," says Shaji. "Again. The wrist knows; let it brag a little."',
+  'The stream barely leaves the tumbler. Shaji looks at the ceiling. "Higher, kunje. The tea wants to fly."',
+  '"Flat," says Shaji, and pours it back for you. "Froth is made in the air, not in the glass."',
+  'A short pour, no foam at all. Shaji taps the chalk mark with one finger. "As high as this. Then let go."',
+];
+const SURRENDER_HELP =
+  'One Space lifts the arm and it keeps climbing on its own; wait until the stream passes the chalk mark, then Space again.';
+
 export class ChayaPanel {
   private phase: ChayaPhase = 'boil';
   private boil = 0;
@@ -1949,7 +1960,7 @@ export class ChayaPanel {
           this.arm = 0;
           this.lows++;
           this.chayaCoach();
-          this.hint = '"That is not chaya, that is surrender," says Shaji. "Again. The wrist knows; let it brag a little."';
+          this.hint = missLine(SURRENDER_LINES, this.lows - 1, SURRENDER_HELP);
           if (sc && !calm()) sc.thump(2.5, 0);
         }
       }

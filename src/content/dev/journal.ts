@@ -345,7 +345,7 @@ export const TASKS: TaskDef[] = [
   },
   {
     when: { has: ['errand.nani-letter'], not: ['story.complete'] },
-    text: "Nani's letter wants opening at the gate, past the terraces, where she meant to open it.",
+    text: "Nani's letter wants opening at the east gate, where the plaza road leaves the village. She meant to open it there.",
     at: ['village', 41, 16],
   },
   {

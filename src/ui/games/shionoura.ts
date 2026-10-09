@@ -4,7 +4,7 @@ import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
 import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, handWords } from './scene';
-import { RUN, coach, freshRun } from './run';
+import { RUN, coach, freshRun, tip } from './run';
 import { Hold } from './attend';
 
 /** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
@@ -917,6 +917,26 @@ const PACK_HI_HARD = 84;
 const SQUEEZE_RATE = 46;
 const SQUEEZE_RATE_HARD = 60;
 const DASHI_FLAG = 'c4.cook.start';
+/**
+ * The pull's patience, priced. Each early reach lifts the kombu out of its
+ * rhythm: the water clouds a shade and Fumi eases the flame back. Only the
+ * first few reaches cost heat (a hand that never stops would otherwise
+ * never reach the boil at all); every one of them clouds the broth, and the
+ * ending says so. Care is quicker and clearer; mashing still finishes.
+ */
+const EARLY_HEAT_COST = 9;
+const EARLY_HEAT_TIMES = 3;
+const CLOUD_MAX = 6;
+/** The skim's three clusters: well apart, and never under the ladle's first dip. */
+const FOAM_LANES = [0.13, 0.35, 0.86];
+const FOAM_GAP = 0.17;
+
+const EARLY_LINES = [
+  '"Not yet. See the little bubbles on the kombu, small as roe? When they hurry, you move." She eases the flame back a hair.',
+  'The kombu lifts and drops; a thread of cloud spreads through the water. Fumi turns the flame down a touch. "Each time you check, it starts again."',
+  '"Leave it be. Every poke clouds my dashi." The flame dips under her fingers.',
+  'Fumi says nothing this time. She only looks at the cloud in the water, then at your hand.',
+];
 
 const WAIT_LINES = [
   'Fumi, without looking up: "Not yet. The sea takes its time."',
@@ -969,6 +989,8 @@ export class DashiPanel {
   // The run's own record, so a boil-over can be coached specifically.
   private earlyPulls = 0;
   private lastEarlyHeat = 0;
+  /** How cloudy the early reaches have left the broth, 0..CLOUD_MAX. */
+  private clouds = 0;
 
   // Render-only state.
   private scene = new Scene();
@@ -1016,6 +1038,7 @@ export class DashiPanel {
     this.skimReach = this.hard ? 0.07 : 0.1;
     this.earlyPulls = 0;
     this.lastEarlyHeat = 0;
+    this.clouds = 0;
     this.phase = 'steep';
     this.dropped = false;
     this.steepT = 0;
@@ -1076,7 +1099,19 @@ export class DashiPanel {
     } else if (this.phase === 'skim') {
       for (const f of this.foam) {
         f.x += f.v * dt * (this.hard ? 0.3 : 0.12);
-        if (f.x < 0.06 || f.x > 0.94) f.v = -f.v;
+        if ((f.x < 0.08 && f.v < 0) || (f.x > 0.92 && f.v > 0)) f.v = -f.v;
+      }
+      // Clusters part when they drift close, so each is its own skim.
+      for (let i = 0; i < this.foam.length; i++) {
+        for (let j = i + 1; j < this.foam.length; j++) {
+          const a = this.foam[i]!;
+          const b = this.foam[j]!;
+          const [lo, hi] = a.x < b.x ? [a, b] : [b, a];
+          if (hi.x - lo.x < FOAM_GAP && lo.v > hi.v) {
+            lo.v = -Math.abs(lo.v) || -0.1;
+            hi.v = Math.abs(hi.v) || 0.1;
+          }
+        }
       }
     } else if (this.phase === 'onigiri' && this.squeezing) {
       this.squeeze += dt * this.squeezeRate;
@@ -1130,15 +1165,26 @@ export class DashiPanel {
     } else if (this.phase === 'pull') {
       if (this.heat < this.pullLo) {
         this.audio.blip();
-        this.earlyPulls++;
         this.lastEarlyHeat = this.heat;
-        this.hint = '"Not yet. See the little bubbles on the kombu, small as roe? When they hurry, you move."';
+        // Lifting the kombu early has a price: a cloud in the water, and
+        // (the first few times) Fumi easing the flame back down.
+        if (this.earlyPulls < EARLY_HEAT_TIMES) this.heat = Math.max(0, this.heat - EARLY_HEAT_COST);
+        this.clouds = Math.min(CLOUD_MAX, this.clouds + 1);
+        this.hint = EARLY_LINES[Math.min(this.earlyPulls, EARLY_LINES.length - 1)] as string;
+        this.earlyPulls++;
       } else {
         this.audio.chime();
         this.scene.flash('#fff2cf', 0.22);
         if (!calm()) this.scene.thump(3, 0.03);
         this.hint =
-          'The kombu comes out glossy, one breath before the boil. Fumi nods once, which in this kitchen is applause. The iriko simmer on.';
+          this.clouds === 0
+            ? 'The kombu comes out glossy, one breath before the boil. Fumi nods once, which in this kitchen is applause. The iriko simmer on.'
+            : this.clouds < 3
+              ? 'The kombu comes out glossy, one breath before the boil. "There. You found it," Fumi says. "Next time, find it once." The iriko simmer on.'
+              : 'The kombu comes out at last, tired from all the lifting, and the broth has gone cloudy. Fumi sighs through her nose. "It will still feed us. The iriko simmer on."';
+        if (this.clouds >= 3) {
+          tip(DASHI_FLAG, 'Every early lift clouded the broth and cooled the pot. Hands off until the roe-small bubbles hurry up the kombu; then one press.');
+        }
         this.liftKombu();
         this.startSkim();
       }
@@ -1201,7 +1247,7 @@ export class DashiPanel {
             this.audio.weaveDone();
             this.scene.flash('#ffd9a0', 0.35);
             this.hint =
-              'Two onigiri, three presses each, a tuck of umeboshi in the heart. Fumi wraps them while the miso blooms in the dashi. Space.';
+              'Two onigiri, pressed firm and kind, a tuck of umeboshi in each heart. Fumi wraps them while the miso blooms in the dashi. Space.';
           } else {
             this.hint = '"So. Your hands were listening." The first onigiri sits proud on the board. One more, for the other tray.';
           }
@@ -1242,13 +1288,14 @@ export class DashiPanel {
   private startSkim() {
     this.phase = 'skim';
     this.lx = 0.5;
-    this.foam = [
-      { x: 0.22, v: (Math.random() - 0.5) * 0.6 },
-      { x: 0.52, v: (Math.random() - 0.5) * 0.6 },
-      { x: 0.8, v: (Math.random() - 0.5) * 0.6 },
-    ];
-    // The higher flame throws a fourth cluster, and none of them dawdle.
-    if (this.hard) this.foam.push({ x: 0.36, v: (Math.random() - 0.5) * 0.6 });
+    // Spread across the whole surface, one lane each, mirrored half the time;
+    // none starts under the ladle, so even the first skim is a reach.
+    const flip = Math.random() < 0.5;
+    const lanes = this.hard ? [0.1, 0.3, 0.7, 0.9] : FOAM_LANES;
+    this.foam = lanes.map((x) => {
+      const jx = x + (Math.random() - 0.5) * 0.04;
+      return { x: flip ? 1 - jx : jx, v: (Math.random() - 0.5) * 0.6 };
+    });
   }
 
   // -------- render-only choreography
@@ -1514,10 +1561,11 @@ export class DashiPanel {
       }
     }
     // Water, clipped to the pot mouth.
-    const cold = mix('#b9d3da', '#9fc3cf', this.heatT);
+    // Every early lift leaves the water a shade milkier, all morning.
+    const cold = mix(mix('#b9d3da', '#9fc3cf', this.heatT), '#c7c6bb', (this.clouds / CLOUD_MAX) * 0.6);
     const surf = this.phase === 'ruined'
       ? mix(mix(cold, '#c9a35f', this.goldT), '#8e9a94', 0.55)
-      : mix(cold, '#c9a35f', this.goldT);
+      : mix(cold, mix('#c9a35f', '#b8a77e', (this.clouds / CLOUD_MAX) * 0.7), this.goldT);
     g.save();
     g.beginPath();
     g.ellipse(POT.cx, POT.sy, POT.rx - 6, POT.ry - 4, 0, 0, Math.PI * 2);
