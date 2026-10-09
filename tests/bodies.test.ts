@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 
 import { MAP_META, NODES, NPCS, REGION_MAPS, sitKindsOn } from '../src/content/world';
 import { BLOCKING } from '../src/content/staging';
-import { MEETING } from '../src/content/return/staging';
+import { LAST_PAGE_SEAT, MEETING } from '../src/content/return/staging';
 import { claimPerches } from '../src/engine/perch';
 import { DELHI_STATIONS } from '../src/content/delhi/stations';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
@@ -388,7 +388,12 @@ describe('reading a tall thing', () => {
   };
 
   it('the last page is written beside the well, clean', () => {
-    const g = groundFor('village');
+    // Aurelio's seat on the lip is staged only while his letter is still in
+    // his poncho (dev/staging.ts DECIDED); by the last page it is long gone.
+    const base = groundFor('village');
+    const always = bodies.filter((o) => o.map === 'village' && !o.dog && !o.when);
+    const g: Ground = { ...base, held: (x, y) => always.some((o) => o.at[0] === x && o.at[1] === y) };
+    assert.ok(g.clean(LAST_PAGE_SEAT.at[0], LAST_PAGE_SEAT.at[1]), 'the last-page seat is clean');
     const plan = planBesideProp(g, [21, 16], [21, 15]);
     assert.ok(plan, 'nowhere clean beside the well');
     assert.ok(roomFor(g, plan.at[0], plan.at[1]));
