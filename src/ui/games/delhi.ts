@@ -1880,6 +1880,14 @@ export class PatangPanel {
   private phase: KPhase = 'launch';
   private wind: Wind = 'steady';
   private windT = 0;
+  private skySeed = 0x9e3779b9;
+  /** The weather's dice (mulberry32): seeded per flight, see reset. */
+  private sky(): number {
+    let t = (this.skySeed = (this.skySeed + 0x6d2b79f5) | 0);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
   private windDur = 2;
   private progress = 0;
   private rivalIdx = 0;
@@ -1985,6 +1993,10 @@ export class PatangPanel {
     this.spent = false;
     this.rivalSawT = 0;
     for (const k of K_FAULTS) this.faults[k] = 0;
+    // Each flight's sky is dealt from the same deck: the weather keeps a
+    // clock of its own, so two hands flying the same story meet the same
+    // gusts and flocks, and only how they fly tells them apart.
+    this.skySeed = 0x9e3779b9;
     this.phase = 'launch';
     this.wind = 'steady';
     this.windT = 0;
@@ -2086,11 +2098,14 @@ export class PatangPanel {
    * shortens every window, so no answer gets to be leisurely.
    */
   private roll(): Wind {
-    const roll = Math.random();
+    const roll = this.sky();
     const stormRow = this.tournament && this.rivalIdx === 2;
     const gustChance = this.hard ? (stormRow ? 0.58 : 0.42) : stormRow ? 0.5 : 0.32;
     const birdChance = this.hard ? (this.tournament ? 0.34 : 0.3) : this.tournament ? 0.22 : 0.16;
-    return roll < birdChance ? 'birds' : roll < birdChance + gustChance ? 'gust' : 'steady';
+    const w: Wind = roll < birdChance ? 'birds' : roll < birdChance + gustChance ? 'gust' : 'steady';
+    // A flock passes and the air clears: two back to back read as one
+    // crossing on screen, and would be honored twice.
+    return w === 'birds' && this.wind === 'birds' ? 'steady' : w;
   }
 
   /** The wind turns. One place for every change of weather, scheduled or cued. */
@@ -2103,12 +2118,12 @@ export class PatangPanel {
       this.windDur = this.hard ? 2 : 2.4;
       this.hint = 'PIGEONS. A flock crosses your line, wings everywhere. Dheel, Down, give the sky back. Yusuf is watching.';
     } else if (w === 'gust') {
-      this.windDur = this.hard ? 1.2 + Math.random() * 0.7 : 1.6 + Math.random();
+      this.windDur = this.hard ? 1.2 + this.sky() * 0.7 : 1.6 + this.sky();
       this.hint = stormRow
         ? 'The storm front SHOVES. Dheel, Down, ride it or the dor sings itself apart.'
         : 'A gust leans hard on the line. Dheel, Down; let her drink some slack.';
     } else {
-      this.windDur = this.hard ? 1.3 + Math.random() * 0.9 : 1.8 + Math.random() * 1.4;
+      this.windDur = this.hard ? 1.3 + this.sky() * 0.9 : 1.8 + this.sky() * 1.4;
       this.rivalSawT = this.hard ? (stormRow ? 2 : 2.6) : 0;
       this.hint = 'The line comes taut and steady. Kheench, Up: saw, saw, the cotton knows its work.';
     }
@@ -2190,7 +2205,10 @@ export class PatangPanel {
         // Still coming taut from the last stroke: the pull draws nothing,
         // and costs nothing. Only the rhythm saws.
         if (this.tautT > 0) return;
-        this.tautT = PULL_STROKE;
+        // Under Yusuf's hand it is one stroke at a time, as he says: his hand
+        // keeps a held Up from every fault, and is slower for it, so a hand
+        // that only holds Up is never quicker than one that reads the sky.
+        this.tautT = !this.hard && this.lostHere >= GUIDE_AFTER ? PULL_STROKE * 2 : PULL_STROKE;
         this.progress += 1;
         this.altitude = Math.min(1, this.altitude + 0.08);
         // Your pull is also your answer to his saw: his patience restarts.

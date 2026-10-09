@@ -262,6 +262,8 @@ for (const [m, px, py, tx, ty, kind, want] of [
     const k = r.width / 320;
     return { x: r.left + (tx * 16 + 8 - s.cam[0]) * k, y: r.top + (ty * 16 + 8 - s.cam[1]) * k };
   }, [tx, ty]);
+  // A tap where the textbox just closed is not a walk order for two seconds.
+  await sleep(2200);
   await page.mouse.click(pt.x, pt.y);
   await sleep(900);
   const after = await st();
