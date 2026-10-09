@@ -57,6 +57,29 @@ export class Camera {
   }
 }
 
+/**
+ * How far to move the camera down (positive) or up (negative) while words
+ * are on screen, so the people in the scene stand in the band between the
+ * top of the frame and the top of the textbox. All in world px.
+ *
+ * `head` and `feet` span everyone who matters to the line; `top` and `box`
+ * are the frame's top edge and the textbox's top edge where they fall in the
+ * world right now. The lift is the smallest move that puts the feet `margin`
+ * above the box and the hats `pad` below the frame's top, and none at all
+ * when they already are. The camera stops at a map's edge, which is how a
+ * talk near the bottom of a map played under the box and an arrival at the
+ * top of one pinned the traveler's head to the frame (La Caleta); the lift
+ * goes past either edge if it must, into the frame's own margin. When the
+ * group is taller than the band, the faces win.
+ */
+export function wordsLiftTarget(head: number, feet: number, top: number, box: number, margin: number, pad: number): number {
+  // Moving the camera down by L moves everyone up the screen by L.
+  const lo = feet + margin - box; // at least this much, or the feet are under the box
+  const hi = head - top - pad; // at most this much, or the hats leave the top
+  if (lo > hi) return hi;
+  return clamp(0, lo, hi);
+}
+
 function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }

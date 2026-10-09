@@ -124,6 +124,53 @@ export function planSettle(g: Ground, player: Cell, npc: Cell, npcMay: boolean):
   return { kind: 'lean' };
 }
 
+/**
+ * Reading a tall thing from a cell its paint falls over (below a well, its
+ * arch round your head; above it, its stone over your legs): the one or two
+ * steps to a clean cell beside it, side cells first, and the way to face it
+ * from there. Null when the reader already stands clean, or nowhere clean is
+ * within two steps (a gate set in a wall). `g.passable` is a step a body can
+ * take now; `g.held` a cell somebody else holds.
+ */
+export function planBesideProp(
+  g: Ground,
+  player: Cell,
+  prop: Cell,
+): { steps: Dir[]; at: Cell; face: Dir } | null {
+  if (g.clean(player[0], player[1])) return null;
+  const free = (x: number, y: number) => g.passable(x, y) && !g.held(x, y);
+  let best: { steps: Dir[]; at: Cell; side: boolean } | null = null;
+  const consider = (steps: Dir[], at: Cell) => {
+    const [x, y] = at;
+    if (Math.abs(x - prop[0]) + Math.abs(y - prop[1]) !== 1) return;
+    if (!roomFor(g, x, y)) return;
+    const side = y === prop[1];
+    if (!best || steps.length < best.steps.length || (steps.length === best.steps.length && side && !best.side)) {
+      best = { steps, at, side };
+    }
+  };
+  const dirs: Dir[] = ['left', 'right', 'down', 'up'];
+  for (const d1 of dirs) {
+    const a = stepCell(player, d1);
+    if (!free(a[0], a[1])) continue;
+    consider([d1], a);
+    for (const d2 of dirs) {
+      const b = stepCell(a, d2);
+      if ((b[0] === player[0] && b[1] === player[1]) || !free(b[0], b[1])) continue;
+      consider([d1, d2], b);
+    }
+  }
+  if (!best) return null;
+  const { steps, at } = best as { steps: Dir[]; at: Cell };
+  const face: Dir = prop[0] > at[0] ? 'right' : prop[0] < at[0] ? 'left' : prop[1] > at[1] ? 'down' : 'up';
+  return { steps, at, face };
+}
+
+const stepCell = ([x, y]: Cell, d: Dir): Cell => [
+  x + (d === 'right' ? 1 : d === 'left' ? -1 : 0),
+  y + (d === 'down' ? 1 : d === 'up' ? -1 : 0),
+];
+
 // ---------------------------------------------------------------- props over a body
 
 /** A tall prop's art: its size and where it hangs from its cell, in art pixels. */

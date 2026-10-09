@@ -425,7 +425,7 @@ export const ZANZIBAR_NODES: NodeMap = {
    */
   'c7.dawn.go': {
     lines: [{ text: 'Ali writes your name in the ledger. You sleep above the counter, the tide loud under the floor.' }],
-    effects: ['set:c7.dawn', 'travel:zanzibar,15,10,left'],
+    effects: ['set:c7.dawn', 'travel:zanzibar,15,11,up'],
   },
   'c7.dawn.bench': {
     lines: [

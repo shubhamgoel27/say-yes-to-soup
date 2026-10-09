@@ -1051,7 +1051,7 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'The village lets you go the way it took you in: two women waving, one dog escorting the wheels to the edge of town, and no ceremony at all.' },
       { text: 'Weeks fold into wake and coastline. Then a grey morning, a familiar fog, a pier on old sugar-trade legs. La Caleta.' },
     ],
-    effects: ['travel:la-caleta,22,28,up'],
+    effects: ['travel:la-caleta,23,28,up'],
   },
   'c9.depart.stay': {
     lines: [
