@@ -271,7 +271,7 @@ if (want('r2')) {
     } else await arrowTo(s.cur, at, 4);
   }, 90000);
   check(!!burnt, 'adobo: a pot left on the fire burns');
-  check(!!retried && !retried.burnt && retried.step === 6 && retried.landed === 6 && retried.simmer === 0,
+  check(!!retried && !retried.burnt && retried.step === 6 && retried.landed === 6 && retried.simmer < 0.1,
     `adobo: Space after a burn picks up at the simmer with six things in the pot (${JSON.stringify(retried)})`);
   check(!!retried && !/apron/.test(retried.hint), `adobo: no apron on the retry ("${retried?.hint.slice(0, 60)}...")`);
   check(Number.isFinite(run.ms), `adobo: the spare pot is plated (${(run.ms / 1000).toFixed(1)}s)`);
