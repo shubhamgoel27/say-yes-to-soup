@@ -138,6 +138,40 @@ export const ART: ChapterArt = {
       g.lineTo(60, 45);
       g.stroke();
     });
+    // Zanzibar's dawn: a baraza block, a kanga folded on it (its hem saying
+    // a cream line), and the ginger cat asleep on the cloth.
+    // Drawn as a 64x96 tall prop: the bench where every baraza block is,
+    // the cloth and the cat rising above its seat.
+    make('pakakanga', 1, (g) => {
+      g.translate(0, 32);
+      softShadow(g, 32, 40, 26, 7, 0.16);
+      const stone = '#e6dcc2';
+      rr(g, 4, 16, 56, 22, 3, shade(stone, -0.16));
+      rr(g, 2, 8, 60, 14, 4, stone);
+      vgrad(g, 2, 8, 60, 5, 'rgba(255,252,240,0.5)', 'rgba(0,0,0,0)');
+      // The kanga, folded square: red field, gold border, the hem's words.
+      rr(g, 12, 3, 40, 18, 2.5, '#c0392b');
+      g.strokeStyle = '#e8b84d';
+      g.lineWidth = 2.2;
+      g.strokeRect(14.5, 5.5, 35, 13);
+      g.fillStyle = '#f2e6d0';
+      g.fillRect(17, 15, 30, 1.6);
+      dot(g, 32, 10, 2.6, '#1f3a5c');
+      // The ginger cat, curled asleep on it.
+      const coat = '#c97f42';
+      oval(g, 32, 6, 13, 7.5, coat);
+      oval(g, 35, 7.5, 7, 4, shade(coat, 0.28));
+      g.strokeStyle = shade(coat, -0.14);
+      g.lineWidth = 3.4;
+      g.beginPath(); g.moveTo(21, 8); g.quadraticCurveTo(30, 15, 43, 9); g.stroke();
+      dot(g, 22, 3, 5, coat);
+      g.fillStyle = coat;
+      g.beginPath(); g.moveTo(17.5, 1.5); g.lineTo(19.5, -2); g.lineTo(22, 1); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(22.5, 0.5); g.lineTo(25, -2); g.lineTo(26.5, 1.5); g.closePath(); g.fill();
+      g.strokeStyle = shade(coat, -0.3);
+      g.lineWidth = 1.1;
+      g.beginPath(); g.moveTo(19, 4); g.lineTo(22.5, 4.5); g.stroke();
+    }, 64, 96);
     make('boatFerry', 1, (g) => vessel(g, { w: 320, h: 192, hull: '#2f3a46', deck: '#b7ad94', trim: '#c0392b', house: '#efe9dc', houseAt: 10, mast: true }), 320, 192);
   },
 };
