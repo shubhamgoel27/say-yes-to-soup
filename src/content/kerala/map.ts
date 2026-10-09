@@ -222,6 +222,9 @@ function objectAt(x: number, y: number): string {
     if ((y <= bankY(x) + 1 || inCreek(x, y)) && cellHash(x, y, 70) < 0.34) return 'R';
     if (x === 33 && y === 27) return 'V'; // the kettuvallam, moored at the bank
     if (x === 20 && y === 26) return 'V';
+    // The Kochi boat tied up off the jetty's end, bow to the planks: "a
+    // chugging boat leaves you on a jetty one handcart wide".
+    if (x === 19 && y === 29) return 'Z';
     // Vallams out on the channel: the street has traffic on it.
     if ((x === 15 && y === 29) || (x === 35 && y === 30) || (x === 8 && y === 28)) return 'v';
     // The cheena vala stands out in the channel itself, net toward the far
@@ -304,6 +307,7 @@ export const KERALA_MAP: MapData = {
     b: { t: 'banana', solid: true, tall: true },
     v: { t: 'vallam', solid: true, tall: true },
     V: { t: 'kettuvallam', solid: true, tall: true },
+    Z: { t: 'boatKerala', solid: true, tall: true },
     c: { t: 'coirrack', solid: true, tall: true },
     K: { t: 'thattukada', solid: true, tall: true },
     M: { t: 'muralwall', solid: true, tall: true },

@@ -263,6 +263,9 @@ const POIS: Record<string, string> = {
   '20,24': 'f',
   '23,26': 'f',
   '21,30': 'I',
+  // Isao's boat, moored off the pier's east side in her tairyō-bata: the
+  // one that "rounds the lighthouse" with you aboard.
+  '25,29': '6',
   '18,24': 'K', // the kei truck, backed onto the sand by the pier head
   '14,24': 'i', // himono rack, one cat-jump too high
   '7,25': 't', // two boats hauled up together, one further out
@@ -339,6 +342,7 @@ export const SHIONOURA_MAP: MapData = {
     n: { t: 'bench', solid: true },
     h: { t: 'crate', solid: true },
     t: { t: 'boat', solid: true, tall: true },
+    '6': { t: 'boatFishing', solid: true, tall: true },
     v: { t: 'net', solid: true },
     w: { t: 'tuft' },
     j: { t: 'jizo', solid: true, tall: true },
