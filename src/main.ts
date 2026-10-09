@@ -3179,8 +3179,12 @@ function updateVillager(v: Villager, dt: number) {
   // An amble never ends behind a tall prop's head (a lamp, a crane, a
   // canopy), nor anywhere a prop is painted over the figure (cleanStand),
   // nor a row above or below somebody.
+  // Their own home cell is always theirs: a vendor's place behind the stall
+  // is behind the stall on purpose (Rosa at her pot, Marisol, Sun-hee).
+  const home = (x: number, y: number) => x === v.def.pos[0] && y === v.def.pos[1];
   const leash = (x: number, y: number) =>
-    x < hx - r || x > hx + r || y < hy - r || y > hy + r || !cleanStand(x, y) || crowdsSomeone(x, y, v.actor);
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || (!cleanStand(x, y) && !home(x, y)) ||
+    crowdsSomeone(x, y, v.actor);
   // Standing in somebody's column, a row off (the player stopped just above
   // or below, or two ambles met): the free one makes room, sideways first.
   // So does anyone who has ended up under a tall prop's paint: the walk to
@@ -3194,7 +3198,7 @@ function updateVillager(v: Villager, dt: number) {
   // player who then just stands there.)
   const [cx, cy] = v.actor.occupies();
   const pileWithOther = [cy - 1, cy + 1].some((y) => heldByOther(cx, y, v.actor) && !playerHolds(cx, y));
-  if (!outside && !v.actor.isMoving && (pileWithOther || !cleanStand(cx, cy))) {
+  if (!outside && !v.actor.isMoving && (pileWithOther || (!cleanStand(cx, cy) && !home(cx, cy)))) {
     const room = (['left', 'right', 'up', 'down'] as Dir[]).find((d) => {
       const [sx, sy] = stepFrom(cx, cy, d);
       return !blocked(sx, sy) && !leash(sx, sy);
