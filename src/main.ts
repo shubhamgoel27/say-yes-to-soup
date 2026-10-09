@@ -5569,6 +5569,7 @@ function update(dt: number) {
     card: modalCard(),
     pages: state.pageCount(),
     sitting,
+    pose: player.pose,
     errand: state.errand,
     npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
     rhythm: {

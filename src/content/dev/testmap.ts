@@ -195,6 +195,9 @@ function objectAt(x: number, y: number): string {
   // ---------------------------------------------------------- the plaza
   if (x === 21 && y === 15) return 'W'; // the well, the middle of everything
   if (x === 22 && y === 14) return 'C'; // cántaros queued for their turn at it
+  // The flat stone on the well's east lip, worn to a seat: where Aurelio
+  // sits with her letter and where the last page is written.
+  if (x === 22 && y === 15) return 's';
   if (x === 19 && y === 15) return 'z'; // the batea, where the washing happens
   // The market corner: two stalls set at an angle to each other, the sacks
   // behind them, and the barley that always ends up on the ground.
@@ -324,6 +327,7 @@ export const VILLAGE_MAP: MapData = {
     m: { t: 'mantas' },
     J: { t: 'loom', solid: true, tall: true },
     O: { t: 'olla', solid: true },
+    s: { t: 'wellseat' },
   },
   ground,
   objects,

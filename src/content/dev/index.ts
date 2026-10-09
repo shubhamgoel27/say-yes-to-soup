@@ -84,7 +84,7 @@ export const CHAPTER: ChapterDef = {
     'la-bajada': { scene: 'road', mood: 'dusty' },
   },
   // Sitting: the chichería stools count, so Teófilo's room can be sat in.
-  sitKinds: ['stool'],
+  sitKinds: ['stool', 'wellseat'],
   sitLines: {
     village: [
       "The well rope creaks its one note. Rosa's flag decides, slowly, which way the wind is.",

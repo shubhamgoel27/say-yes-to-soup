@@ -482,6 +482,16 @@ export class Tileset {
       oval(g, S / 2, 32, 15, 7, shade(wood, 0.12));
     });
 
+    // A flat fieldstone set against the well's east rim, polished by sitting.
+    this.make('wellseat', 1, (g) => {
+      const stone = '#9a8f80';
+      // Wide and low, so it shows either side of whoever sits on it.
+      softShadow(g, S / 2, S - 6, S / 2 - 2, 5, 0.24);
+      rr(g, 1, S - 20, S - 2, 15, 5, shade(stone, -0.22));
+      rr(g, 1, S - 24, S - 2, 12, 5, stone);
+      rr(g, 5, S - 23, S - 16, 3, 2, shade(stone, 0.18));
+    });
+
     this.make('pot', 2, (g, r) => {
       const clay = '#a5643c';
       const x = 24 + r.int(14);
