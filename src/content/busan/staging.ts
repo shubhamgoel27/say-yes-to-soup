@@ -123,7 +123,9 @@ export const AUCTION_NPCS: NpcDef[] = [
  * The ferry's morning: the quay is already at work when you come up the
  * jetty (the arrival frame was an empty deck under "diesel, salt"). Two
  * porters on the deck and a cart auntie at the mouth of the lane, until
- * the auction's own crowd takes the dawn after the berth.
+ * the auction's own crowd takes the dawn after the berth. They keep to the
+ * deck's edges and the lane's shoulder, off the walk from the jetty to the
+ * lane and to Mr. Gong (a wandering porter once stood on a thread's end).
  */
 const MORNING: Cond = { not: ['c5.berth'] };
 export const QUAY_NPCS: NpcDef[] = [
@@ -132,8 +134,8 @@ export const QUAY_NPCS: NpcDef[] = [
     name: 'A porter',
     map: 'busan',
     when: MORNING,
-    pos: [18, 24],
-    range: 1,
+    pos: [17, 25],
+    range: 0,
     look: {
       skin: '#c48f62',
       hair: '#1f1a16',
@@ -152,8 +154,8 @@ export const QUAY_NPCS: NpcDef[] = [
     name: 'A porter',
     map: 'busan',
     when: MORNING,
-    pos: [25, 25],
-    range: 1,
+    pos: [27, 26],
+    range: 0,
     look: {
       skin: '#d4a072',
       hair: '#2a2420',
@@ -172,8 +174,8 @@ export const QUAY_NPCS: NpcDef[] = [
     name: 'A cart auntie',
     map: 'busan',
     when: MORNING,
-    pos: [22, 21],
-    range: 1,
+    pos: [26, 22],
+    range: 0,
     look: {
       skin: '#e0b48a',
       hair: '#3a3436',
