@@ -99,7 +99,7 @@ const HURRY_LINES = [
   'It sloshes again. Chela keeps her hand on yours a moment longer. The spoon walks; it does not run.',
   'Chela slows your wrist with two fingers. Let the spoon arrive before you send it on.',
 ];
-const STIR_HELP = 'Watch the spoon: press the next arrow of up, right, down, left only once it has settled into its quarter.';
+const STIR_HELP = 'Watch the spoon: send it on to its next quarter, up, right, down, left, only once it has settled.';
 
 /** The mole's hour, as color: raw chile red down to polished-olla black. */
 const MOLE_RAMP = ['#a83a26', '#7c2e1c', '#54211a', '#33170f', '#1c0f0a'];
