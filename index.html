@@ -276,6 +276,10 @@
       /* Over the face of someone near the player, an overlay goes faint
        * (faceClearHud in main.ts) and comes back once the face moves on. */
       #errand.over-face, #plate.show.over-face, #toasts.over-face { opacity: 0.16; }
+      /* The place's name gets its own moment: while the nameplate is up the
+       * chip waits, then comes back. Two dark cards at the top of a new
+       * place competed, and the name read as the fainter one. */
+      #hud #plate.show ~ #errand { opacity: 0; transition: opacity 0.3s ease; }
 
       /* ---- toasts: "a page filled" whispers ---- */
       /* Overlays that carry the story mute the ambient HUD around them. */
@@ -3150,7 +3154,7 @@
           transition: opacity 0.25s ease, top 0.35s ease;
         }
         .toast, .toast.wh { max-width: 100%; box-sizing: border-box; }
-        #plate.show ~ #errand, #plate.show ~ #toasts {
+        #plate.show ~ #toasts {
           top: calc(46px + env(safe-area-inset-top));
           transition: opacity 0.25s ease, top 0.35s ease;
         }

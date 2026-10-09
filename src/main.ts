@@ -839,18 +839,34 @@ function faceClearHud(quiet: boolean) {
   }
   const s = viewScale();
   const [px, py] = player.occupies();
-  const heads: [number, number, number, number][] = [];
+  type Box = [number, number, number, number];
+  const heads: Box[] = [];
+  // The chip is a standing card, not a passing whisper: it steps aside for
+  // anyone it would cover, head to feet, near the player or not (Carmen at
+  // her loom sat under it, eleven tiles off), and for the player too when a
+  // map edge pins them into the corner.
+  const bodies: Box[] = [];
+  const body = (rx: number, ry: number) => {
+    const [l, t] = worldToScreen(rx + 1, ry - 15);
+    bodies.push([l, t, l + (TILE - 2) * s, t + (TILE + 15) * s]);
+  };
+  {
+    const [rx, ry] = player.renderPos();
+    body(rx, ry);
+  }
   for (const v of villagersHere()) {
+    const [rx, ry] = v.actor.renderPos();
+    body(rx, ry);
     const [ox, oy] = v.actor.occupies();
     if (Math.abs(ox - px) + Math.abs(oy - py) > 6) continue;
-    const [rx, ry] = v.actor.renderPos();
     // The head and hat: the top of a two-tile figure, crown to chin.
     const [l, t] = worldToScreen(rx + 2, ry - 14);
     heads.push([l, t, l + (TILE - 4) * s, t + 16 * s]);
   }
-  const hits = (r: DOMRect) =>
-    r.width > 0 && heads.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
-  for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', hits(el.getBoundingClientRect()));
+  const over = (boxes: Box[], r: DOMRect) =>
+    r.width > 0 && boxes.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
+  const hits = (r: DOMRect) => over(bodies, r);
+  for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', over(heads, el.getBoundingClientRect()));
   // The chip is measured at home whenever it is home, so a new thread (a
   // new height) or a turned phone is judged from the corner it holds.
   const moved = errandEl.classList.contains('face-moved');
@@ -963,30 +979,9 @@ let plateTimers: number[] = [];
 let plateHeld = false;
 let plateWaiting: { text: string; holdMs: number } | null = null;
 let plateLive: { text: string; holdMs: number } | null = null;
-/** A phone lying down moves the chip out of the plate's way in CSS. */
-const PLATE_PUSHES_CHIP = matchMedia('(pointer: coarse) and (max-height: 500px) and (orientation: landscape)');
-/**
- * The plate is centered and as wide as its name; the chip is in the corner
- * and as tall as its thread. A long name over a three-line chip ran under it
- * ("THE RIVIERA OF THE CYCLOPS" lost its T at 1280x800), so when the two
- * would touch, the plate steps down below the chip for this showing.
- */
-function clearPlateOfChip() {
-  plateEl.style.top = '';
-  if (PLATE_PUSHES_CHIP.matches || errandEl.hidden) return;
-  const p = plateEl.getBoundingClientRect();
-  const e = errandEl.getBoundingClientRect();
-  if (e.width === 0) return;
-  // The plate is measured mid-entrance, still 6px low (its slide in), and a
-  // 10px gap on top of that pushed it below a phone's chip even though the
-  // two have their own bands there: it then sat over the well and the first
-  // face on screen, with the walking tip under it. Measure where it settles.
-  const GAP = 4;
-  const bottom = p.bottom - 6;
-  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top - 6 < e.bottom + GAP && bottom > e.top - GAP) {
-    plateEl.style.top = `${Math.round(e.bottom + GAP)}px`;
-  }
-}
+// The plate no longer steps around the chip: the chip waits out the
+// plate's showing in CSS (#plate.show ~ #errand), so the name always reads
+// at its own home, first and clear.
 
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
@@ -1000,10 +995,7 @@ function showPlate(text: string, holdMs = 4200) {
   plateEl.textContent = text;
   plateLive = { text, holdMs };
   plateTimers = [
-    window.setTimeout(() => {
-      clearPlateOfChip();
-      plateEl.classList.add('show');
-    }, 350),
+    window.setTimeout(() => plateEl.classList.add('show'), 350),
     window.setTimeout(() => {
       plateEl.classList.remove('show');
       plateLive = null;
@@ -3256,7 +3248,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   // New ground can retire a whole chapter's threads (openTasks scopes by
   // map), and nothing else would tell the chip until the next flag.
   refreshTaskChip();
-  if (!samePlace) showPlate(map.name, 2600);
+  if (!samePlace) showPlate(map.name, 3600);
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
