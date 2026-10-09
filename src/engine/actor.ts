@@ -70,11 +70,11 @@ export class Actor {
   /** Where a scripted step (stepTo) leaves the actor looking once it lands. */
   private faceOnLand: Dir | null = null;
   /**
-   * The cell the last step left, and when (performance.now() ms). A click
-   * aimed at someone just as they step off lands on the cell they left; the
-   * pointer reads it to find who was meant (see engine/aim.ts).
+   * The cells the last few steps left, newest last, and when (performance.now()
+   * ms). A click aimed at someone just as they walk on lands on a cell they
+   * have left; the pointer reads these to find who was meant (engine/aim.ts).
    */
-  left: { x: number; y: number; at: number } | null = null;
+  left: { x: number; y: number; at: number }[] = [];
   /** Transient body pose: 'sit' folds the legs and settles the figure. */
   pose: 'none' | 'sit' = 'none';
   /**
@@ -202,7 +202,8 @@ export class Actor {
   }
 
   private noteLeft() {
-    this.left = { x: this.x, y: this.y, at: typeof performance === 'undefined' ? 0 : performance.now() };
+    this.left.push({ x: this.x, y: this.y, at: typeof performance === 'undefined' ? 0 : performance.now() });
+    if (this.left.length > 3) this.left.shift();
   }
 
   /** Teleport, cancelling any step in flight. Used by doors and loads. */
@@ -213,7 +214,7 @@ export class Actor {
     this.ny = y;
     if (dir) this.dir = dir;
     this.faceOnLand = null;
-    this.left = null;
+    this.left = [];
     this.moving = false;
     this.t = 0;
     this.turn = 0;

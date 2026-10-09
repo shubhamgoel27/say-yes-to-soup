@@ -24,15 +24,15 @@ describe('a click means the person it was aimed at', () => {
   it('the cell someone stepped off a moment ago still means them (g3 desk-32)', () => {
     // Justina stepped right as the hand came down: the click lands on the
     // grass she left, and the walk must still end in her talk.
-    const moved = { who: 'justina', at: at(6, 5), left: { cell: [5, 5] as [number, number], ago: 200 } };
+    const moved = { who: 'justina', at: at(6, 5), left: [{ cell: [5, 5] as [number, number], ago: 200 }] };
     assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [moved]), 'justina');
     // Long gone is gone: a click there later is a walk to the grass.
-    const old = { ...moved, left: { cell: [5, 5] as [number, number], ago: AIM_LAG_MS + 50 } };
+    const old = { ...moved, left: [{ cell: [5, 5] as [number, number], ago: AIM_LAG_MS + 50 }] };
     assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [old]), undefined);
   });
 
   it('a body drawn there now beats one that left it', () => {
-    const left = { who: 'rosa', at: at(6, 5), left: { cell: [5, 5] as [number, number], ago: 100 } };
+    const left = { who: 'rosa', at: at(6, 5), left: [{ cell: [5, 5] as [number, number], ago: 100 }] };
     const here = { who: 'mateo', at: at(5, 5) };
     assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [left, here]), 'mateo');
   });

@@ -2876,6 +2876,19 @@ function inPlayersWay(v: Villager, x: number, y: number): boolean {
 
 /** Seconds the player stands still in someone's column before they make room. */
 const STACK_PATIENCE = 1.1;
+/** Who is leaning apart from the idle player for want of room, if anyone. */
+let idleLean: Villager | null = null;
+/** The idle lean lets go as soon as the two are no longer one above the other. */
+function releaseIdleLean() {
+  const v = idleLean;
+  if (!v || talkingTo === v) return;
+  const [cx, cy] = v.actor.occupies();
+  const [px, py] = player.occupies();
+  if (!player.isMoving && v.def.map === map.id && cx === px && Math.abs(cy - py) === 1) return;
+  v.actor.nudge = [0, 0];
+  player.nudge = [0, 0];
+  idleLean = null;
+}
 
 /**
  * The player stopped a row above or below somebody and stayed: two figures
@@ -2893,7 +2906,18 @@ function makeRoomForIdlePlayer(v: Villager): boolean {
   const [px, py] = player.occupies();
   if (cx !== px || Math.abs(cy - py) !== 1) return false;
   const d = yieldStep(v.actor, () => false);
-  if (!d) return false;
+  if (!d) {
+    // Hemmed in (a wall, a fire, a tent): the two lean apart instead, as a
+    // cornered talk does, until the player moves on.
+    if (idleLean !== v) {
+      const lower = py > cy ? player : v.actor;
+      const upper = lower === player ? v.actor : player;
+      lower.nudge = [-TALK_LEAN, 2];
+      upper.nudge = [TALK_LEAN, 0];
+      idleLean = v;
+    }
+    return false;
+  }
   if (v.def.range === 0 && !v.postBack) v.postBack = { at: [cx, cy], dir: v.def.sits ?? v.actor.dir };
   v.actor.stepTo(d, towardPlayer(stepFrom(cx, cy, d)));
   yielding.add(v.actor);
@@ -2908,7 +2932,7 @@ function steppedAsideFrom(fx: number, fy: number): Villager | null {
   const now = performance.now();
   const [px, py] = player.occupies();
   for (const v of villagersHere()) {
-    const l = v.actor.left;
+    const l = v.actor.left[v.actor.left.length - 1];
     if (!l || l.x !== fx || l.y !== fy || now - l.at > 6000 || v.actor.isMoving) continue;
     const [x, y] = v.actor.occupies();
     if (Math.abs(x - px) <= 1 && Math.abs(y - py) <= 1) return v;
@@ -3198,12 +3222,15 @@ function updateVillager(v: Villager, dt: number) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
+  // Walking home from outside the leash never steps in a row above or below
+  // the player: Faustino made room, then walked straight back under them.
+  const homeBlocked = (x: number, y: number) => blocked(x, y) || playerHolds(x, y - 1) || playerHolds(x, y + 1);
   v.think -= dt;
   if (v.think <= 0) {
     // Outside the leash (walking to the lamp, or home at dawn): head for the
     // center. Inside: mostly stand around, occasionally amble. Village time.
     v.want = outside
-      ? stepToward(v.actor, hx, hy, blocked)
+      ? stepToward(v.actor, hx, hy, homeBlocked)
       : Math.random() < 0.4
         ? ((['up', 'down', 'left', 'right'] as Dir[])[Math.floor(Math.random() * 4)] ?? null)
         : null;
@@ -3220,7 +3247,7 @@ function updateVillager(v: Villager, dt: number) {
       v.think = 0.35; // one step, then village time again
     }
   }
-  v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
+  v.actor.update(dt, { intent: v.want, blocked: outside ? homeBlocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
 // ---------------------------------------------------------------- doors
@@ -3626,6 +3653,7 @@ function endDialogue() {
   player.nudge = [0, 0];
   if (talkingTo) {
     talkingTo.actor.nudge = [0, 0];
+    if (idleLean === talkingTo) idleLean = null;
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward
     // (a stationed sitter faces their row, a bench sitter faces their bench).
@@ -5247,6 +5275,7 @@ function update(dt: number) {
         const trig = map.triggerAt(ev.x, ev.y);
         if (trig?.type === 'door') startWarp(trig);
       }
+      releaseIdleLean();
       for (const v of villagersHere()) {
         if (v === paca && pacaWalk.length > 0) continue;
         updateVillager(v, dt);
@@ -5498,7 +5527,9 @@ function wordsPeople(): Actor[] {
     const named = villagersHere().find((v) => {
       if (v.def.name !== who || v === talkingTo) return false;
       const [x, y] = v.actor.occupies();
-      return Math.abs(x - px) <= 6 && Math.abs(y - py) <= 4;
+      // Near enough to share the frame: a speaker further off is a voice
+      // from elsewhere, and the camera should not leave the traveler for it.
+      return Math.abs(x - px) <= 8 && Math.abs(y - py) <= 7;
     });
     if (named) people.push(named.actor);
   }
@@ -5917,14 +5948,11 @@ function villagerAtPoint(wx: number, wy: number): Villager | undefined {
     wy,
     villagersHere()
       .filter((v) => v.fade > 0.02)
-      .map((v) => {
-        const l = v.actor.left;
-        return {
-          who: v,
-          at: v.actor.renderPos(),
-          left: l ? { cell: [l.x, l.y] as [number, number], ago: now - l.at } : undefined,
-        };
-      }),
+      .map((v) => ({
+        who: v,
+        at: v.actor.renderPos(),
+        left: v.actor.left.map((l) => ({ cell: [l.x, l.y] as [number, number], ago: now - l.at })),
+      })),
   );
 }
 

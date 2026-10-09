@@ -17,8 +17,8 @@ export type AimBody<T> = {
   who: T;
   /** Where the body is drawn now: its cell's top-left, in world px. */
   at: [number, number];
-  /** The cell its last step left, and how many ms ago, if it just moved. */
-  left?: { cell: [number, number]; ago: number };
+  /** The cells its last steps left, and how many ms ago each, if it just moved. */
+  left?: { cell: [number, number]; ago: number }[];
 };
 
 /** How long a body is still "there" after stepping off, in ms: a hand's lag. */
@@ -41,10 +41,13 @@ export function aimedAt<T>(wx: number, wy: number, bodies: AimBody<T>[]): T | un
   const tiers: ((b: AimBody<T>) => [number, number] | null)[] = [
     (b) => (inBody(wx, wy, b.at[0], b.at[1], 0) ? b.at : null),
     (b) => {
-      if (!b.left || b.left.ago > AIM_LAG_MS) return null;
-      const lx = b.left.cell[0] * TILE;
-      const ly = b.left.cell[1] * TILE;
-      return inBody(wx, wy, lx, ly, 0) ? [lx, ly] : null;
+      for (const l of b.left ?? []) {
+        if (l.ago > AIM_LAG_MS) continue;
+        const lx = l.cell[0] * TILE;
+        const ly = l.cell[1] * TILE;
+        if (inBody(wx, wy, lx, ly, 0)) return [lx, ly];
+      }
+      return null;
     },
     (b) => (inBody(wx, wy, b.at[0], b.at[1], AIM_SLOP) ? b.at : null),
   ];
