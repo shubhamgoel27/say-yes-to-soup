@@ -223,6 +223,8 @@ describe('talk settling', () => {
 // them is the point.
 const KNOWN_UNDER_PROPS = new Set<string>([
   'marisol (home) on la-caleta at 27,20: stall in front',
+  // The same counter: La Caleta's staging keeps her behind it all chapter.
+  'marisol (blocking) on la-caleta at 27,20: stall in front',
   'bosun (home) on ship at 22,14: contA in front',
   'mija (home) on busan at 12,14: hotteokcart in front',
 ]);

@@ -1,6 +1,8 @@
 import type { Look } from '../art/character';
 import type { Cond, EventNode } from './schema';
 import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS } from './return/staging';
+import { STAGING as CHASKA } from './dev/staging';
+import { STAGING as CALETA } from './caleta/staging';
 import { STAGING as CROSSING } from './crossing/staging';
 import { STAGING as SHIONOURA } from './shionoura/staging';
 import { STAGING as BUSAN } from './busan/staging';
@@ -27,7 +29,8 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
  * A villager who goes and stands somewhere while `when` holds. Everyone in
  * place turns to the player while words are on screen, except the `busy`,
  * who keep facing `dir` (a fishwife three customers deep does not look up).
- * With `sit` they also sit down there once arrived, busy at what they sat to.
+ * With `sit` they also sit down there once arrived, busy at what they sat to
+ * (unless `busy: false`: a weaver who looks up to talk).
  * With `look` they are dressed for the scene (a mop wig and a bedsheet, a
  * little umbrella), but only where nobody sees the change: in a door's dark,
  * or off the map or the screen; they change back the same way.
@@ -79,6 +82,8 @@ export type Staging = { blocking?: Blocking[]; hours?: HourHold[]; lamps?: LampH
 
 const CHAPTERS: Staging[] = [
   { blocking: RETURN_BLOCKING, hours: RETURN_HOURS },
+  CHASKA,
+  CALETA,
   CROSSING,
   SHIONOURA,
   BUSAN,

@@ -184,8 +184,11 @@ export const NPCS: NpcDef[] = [
     id: 'teofilo',
     name: 'Don Teófilo',
     map: 'chicheria',
-    pos: [4, 4],
+    // On his own stool at the table, the kept one empty below it. He pats
+    // it; standing, he once patted the air.
+    pos: [3, 3],
     range: 0,
+    sits: 'right',
     look: {
       skin: '#9c6b42',
       hair: '#8f8578',
@@ -201,6 +204,44 @@ export const NPCS: NpcDef[] = [
       { when: { has: ['story.complete'] }, node: 'teofilo.epilogue' },
       { node: 'teofilo.idle' },
     ],
+  },
+  // The chichería's regulars, so the room under the red flag is a room
+  // somebody comes back to. Sat where the tables and the rug are, two cells
+  // from everyone, out of the lane from the door.
+  {
+    id: 'saturnino',
+    name: 'Don Saturnino',
+    map: 'chicheria',
+    pos: [6, 4],
+    range: 0,
+    sits: 'left',
+    look: {
+      skin: '#a8754a',
+      hair: '#4a3f36',
+      cloth: '#7a3a2a',
+      stripe: PAL.cream,
+      hat: '#3a3a44',
+      hatStyle: 'chullu',
+    },
+    entry: [{ node: 'saturnino.idle' }],
+  },
+  {
+    id: 'hilaria',
+    name: 'Hilaria',
+    map: 'chicheria',
+    pos: [2, 6],
+    range: 0,
+    sits: 'right',
+    look: {
+      skin: '#b98756',
+      hair: '#1e140c',
+      cloth: '#2f5a4e',
+      stripe: PAL.gold,
+      hat: '#e8dcc0',
+      hatStyle: 'montera',
+      skirt: '#8a3a2e',
+    },
+    entry: [{ node: 'hilaria.idle' }],
   },
   {
     id: 'allqu',
@@ -646,6 +687,16 @@ export const NODES: NodeMap = {
       { who: 'Don Teófilo', text: 'The word still counts. You go; I supervise.' },
     ],
     effects: ['journal:words.haku'],
+  },
+  'saturnino.idle': {
+    lines: [
+      { who: 'Don Saturnino', text: 'That stool by Teófilo has been empty since before I had teeth. Nobody sits there unless he pats it.' },
+    ],
+  },
+  'hilaria.idle': {
+    lines: [
+      { who: 'Hilaria', text: 'Say yes to the second glass. The third one, Rosa decides for you.' },
+    ],
   },
   'teofilo.idle': {
     lines: [
