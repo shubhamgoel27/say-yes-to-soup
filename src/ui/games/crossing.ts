@@ -13,7 +13,9 @@ import { Hold } from './attend';
  * his aunties taught him. The adobo gets made either way; you get made too.
  * The one thing that can go wrong is the one thing adobo is actually about:
  * after the lid, the sauce reduces, and a pot left on the fire too long
- * catches. Ben is unbothered by that too. One press and the garlic starts over.
+ * catches. Ben is unbothered by that too. One press picks up from the step
+ * that went wrong (his spare pot, the lid back on, the pan scraped), never
+ * from the apron again.
  *
  * StarPanel: the dark bow after lights-out. One river of stars, three names.
  * Walk a reticle across the sky and find each reading; a miss only nudges
@@ -501,9 +503,7 @@ export class GalleyPanel {
 
   onAction() {
     if (this.burnt) {
-      // Scrub the pot, start the garlic again. Nothing was lost but one dinner.
-      const again = this.onDone;
-      if (again) this.open(again);
+      this.retry();
       return;
     }
     if (this.done) {
@@ -650,7 +650,7 @@ export class GalleyPanel {
 
   /**
    * The three ways a dinner goes wrong, each with its own face and its own
-   * coaching. One press and the garlic starts over; nothing is lost but tonight.
+   * coaching. One press picks up from the step that spoiled; nothing is lost but a pot.
    */
   private failPot(mode: 'burn' | 'scorch' | 'thin') {
     this.burnt = true;
@@ -668,7 +668,7 @@ export class GalleyPanel {
     }
     if (mode === 'burn') {
       this.hint =
-        'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, anak. Every cook owes the pot a few." Press Space and the garlic goes back in.';
+        'Nasunog. Ben lifts the pot off the fire, calm as weather. "Burnt one, anak. Every cook owes the pot a few." Press Space for his spare pot.';
       coach(
         'c3.cook.start',
         'You let the sarsa argue past dark; lift the pot the moment the gauge finds the gold band, on the first sweet-and-dark breath.',
@@ -676,7 +676,7 @@ export class GalleyPanel {
     } else if (mode === 'scorch') {
       const want = this.wantName(this.step) ?? 'garlic';
       const fumbled = (this.wrongBy[this.step] ?? 0) >= 2;
-      this.hint = `The garlic scorches while the pot waits. Ben lifts it off. "She lost patience at the ${want.toLowerCase()}, anak." Press Space and it starts over.`;
+      this.hint = `The garlic scorches while the pot waits. Ben lifts it off. "She lost patience at the ${want.toLowerCase()}, anak." Press Space to pick up at the ${want.toLowerCase()}.`;
       coach(
         'c3.cook.start',
         fumbled
@@ -685,12 +685,47 @@ export class GalleyPanel {
       );
     } else {
       this.hint =
-        'Ben tastes it and winces. "Labnaw. All vinegar still, anak; she had not finished arguing." Press Space and the garlic goes back in.';
+        'Ben tastes it and winces. "Labnaw. All vinegar still, anak; she had not finished arguing." Press Space and the lid goes back on.';
       coach(
         'c3.cook.start',
         'You pulled the pot while the sauce was still all vinegar; hold on until the gauge enters the gold band, then lift.',
       );
     }
+  }
+
+  /**
+   * Space after a spoiled pot: back to the step that went wrong, not the
+   * apron. Six things fed in the right order stay fed; a player who burned
+   * the sauce once should not have to recite the garlic again to try the
+   * one part they missed.
+   */
+  private retry() {
+    const mode = this.failMode;
+    freshRun('c3.cook.start');
+    this.burnt = false;
+    this.failMode = null;
+    this.ben.reset();
+    if (mode === 'scorch') {
+      // Hard telling, mid-pantry: the pan scraped, the same step called again.
+      this.simmer = -1;
+      this.stepLeft = this.stepTime;
+      this.wrongBy[this.step] = 0;
+      this.hint = `Ben scrapes the pan and turns the flame down a breath. ${HARD_STEPS[this.step]?.call ?? ''}`.trim();
+      return;
+    }
+    // The lid goes back on: over the spare pot after a burn, over the same
+    // thin sauce after an early lift.
+    if (mode === 'burn') {
+      this.simmer = 0;
+      this.peeked = 0;
+    }
+    this.sc.tween(this.lidT, 1, 0.45, easeOutBack, (v) => {
+      this.lidT = v;
+    });
+    this.hint =
+      mode === 'burn'
+        ? 'Ben slides his spare pot onto the flame, the same six things in it. "I always start two, anak." Lid on. Lift it on the first sweet, dark breath.'
+        : 'The lid goes back on. "She has not finished arguing, anak." Wait for the sweet.';
   }
 
   tick(dt: number) {

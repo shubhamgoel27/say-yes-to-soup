@@ -442,7 +442,14 @@ export const SABOTEURS: Record<string, () => Bot> = {
   },
   'c6.sadya.start': () => () => {},
   'c6.cook.start': () => () => {},
-  'c9.mole.start': () => () => {},
+  // One stroke lights the comal (an untouched pot never scorches); then the hand rests.
+  'c9.mole.start': () => {
+    let stirred = false;
+    return (p) => {
+      if (!stirred) p.onDir('up');
+      stirred = true;
+    };
+  },
   'c3.cook.start': () => () => {},
   'c3.stars.start': () => () => {},
   'c4.kingyo.start': () => () => {},

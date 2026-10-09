@@ -103,6 +103,7 @@ describe('the pause strip is a real pause', () => {
     const p = g.make(ghost(), ghost()) as Any;
     RUN.hard = true;
     p.open(() => {});
+    p.onDir('up'); // the first stroke lights the comal; an untouched pot never scorches
     for (let i = 0; i < 60 * 120; i++) tickPanels([p], 1 / 60, true);
     assert.equal(p.failed, false);
     assert.equal(peekCoach('c9.mole.start'), false);

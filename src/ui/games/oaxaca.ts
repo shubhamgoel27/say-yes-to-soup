@@ -1,7 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun } from './run';
-import { Hold } from './attend';
+import { Hold, missLine } from './attend';
 
 /** The start flag, spoken to coach() so the next how-to can pass advice on. */
 const MOLE_FLAG = 'c9.mole.start';
@@ -86,6 +86,20 @@ const STIR_PACE = 0.42;
 const STIR_HOLD = 0.5;
 const STIR_PATIENCE = 1.6;
 const STIR_HURRY_HINT = 'It sloshes. Chela rests her hand on yours: Slower. Let the spoon finish its quarter before the next.';
+/** A stroke against the circle, answered a little differently each time. */
+const SLOSH_LINES = [
+  'It sloshes. With the circle, not against it. The pot sets the pace.',
+  'The spoon bumps the wall and mole jumps the rim. Chela wipes it with her thumb and says nothing.',
+  'Wrong way round; the pot grumbles. Chela: The circle, mi vida. It has only the one direction.',
+  'A slop of mole on the comal, hissing. Chela laughs. Even the stove has opinions.',
+];
+/** Chela's hand on a hurried spoon, in turns. */
+const HURRY_LINES = [
+  STIR_HURRY_HINT,
+  'It sloshes again. Chela keeps her hand on yours a moment longer. The spoon walks; it does not run.',
+  'Chela slows your wrist with two fingers. Let the spoon arrive before you send it on.',
+];
+const STIR_HELP = 'Watch the spoon: press the next arrow of up, right, down, left only once it has settled into its quarter.';
 
 /** The mole's hour, as color: raw chile red down to polished-olla black. */
 const MOLE_RAMP = ['#a83a26', '#7c2e1c', '#54211a', '#33170f', '#1c0f0a'];
@@ -262,6 +276,12 @@ export class MolePanel {
   private hurries = 0;
   /** Story: Chela's hand on a spoon that hurried. */
   private steady = new Hold();
+  /**
+   * The comal is lit by your first touch, not by the panel opening: a player
+   * who opens the pot and reads (or looks away) comes back to the same calm
+   * pot, never to one scorched before they ever held the spoon.
+   */
+  private lit = false;
 
   private scene: Scene | null = null;
   private setHint: ((h: string) => void) | null = null;
@@ -309,6 +329,7 @@ export class MolePanel {
     this.sloshes = 0;
     this.hurries = 0;
     this.steady.reset();
+    this.lit = false;
     this.hint = this.againHint || (hard ? HARD_OPENING : OPENING);
     this.againHint = '';
     this.spoonA = this.spoonTarget = -Math.PI / 2;
@@ -330,6 +351,7 @@ export class MolePanel {
 
   onDir(dir: Dir) {
     if (this.done || this.failed) return;
+    this.lit = true;
     const sc = this.scene;
     const sincePress = this.sincePress;
     this.sincePress = 0;
@@ -360,7 +382,7 @@ export class MolePanel {
           this.audio.bump();
           this.sloshT = 0.45;
           sc?.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 4, color: this.moleColor(), speed: 54, grav: 320, life: 0.36, size: 2.4 });
-          this.hint = STIR_HURRY_HINT;
+          this.hint = missLine(HURRY_LINES, this.hurries - 1, STIR_HELP, 4);
           return;
         }
         this.steady.release();
@@ -397,7 +419,7 @@ export class MolePanel {
         sc.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 5, color: p, speed: 62, grav: 320, life: 0.4, size: 2.6 });
         if (!reduceMotion()) sc.thump(2.5, 0.02);
       }
-      this.hint = 'It sloshes. With the circle, not against it. The pot sets the pace.';
+      this.hint = missLine(SLOSH_LINES, this.sloshes - 1, STIR_HELP);
     }
   }
 
@@ -417,6 +439,7 @@ export class MolePanel {
       done?.();
       return;
     }
+    this.lit = true;
     if (this.smoke >= 0) {
       // The save: bare fingers, one sweep, the chiles land on the cloth.
       this.smoke = -1;
@@ -497,7 +520,7 @@ export class MolePanel {
     // The comal's own clock: the chiles catch, you get a few seconds of smoke
     // and a growing complaint before the pot turns bitter. The fiesta pot
     // gives less warning and comes back to the boil sooner.
-    if (!this.done && !this.failed) {
+    if (!this.done && !this.failed && this.lit) {
       const grace = this.hard ? HARD_SMOKE_GRACE : SMOKE_GRACE;
       if (this.smoke < 0) {
         this.comalT -= dt;

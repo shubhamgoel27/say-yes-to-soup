@@ -53,3 +53,14 @@ export class Hold {
     }
   }
 }
+
+/**
+ * A miss answered in words, for the n-th time this run (0-based). A hand
+ * that keeps missing used to hear one sentence sixty times over; now the
+ * lines take turns, and from the `after`-th miss on, one plain sentence of
+ * real help rides along, in the panel, where the hands are.
+ */
+export function missLine(lines: readonly string[], n: number, help: string, after = 3): string {
+  const line = lines[n % lines.length] ?? '';
+  return n >= after ? `${line} <b>${help}</b>` : line;
+}
