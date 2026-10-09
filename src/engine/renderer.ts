@@ -1637,6 +1637,11 @@ export class Renderer {
    * or with its head inside a wall or a prop (see stand.ts bodyCovered)?
    * Read off the art itself, once per cell per map.
    */
+  /** Is this kind a building (a house's facade, drawn from its anchor up)? */
+  isBuildingKind(kind: string): boolean {
+    return this.tiles.isBuilding(kind);
+  }
+
   coversBody(map: TileMap, x: number, y: number): boolean {
     let memo = this.coverCache.get(map.id);
     if (!memo) {

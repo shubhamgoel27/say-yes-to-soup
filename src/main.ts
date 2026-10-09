@@ -1,6 +1,6 @@
 import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
-import { Camera } from './engine/camera';
+import { Camera, wordsLiftTarget } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { ArmedCards, type Spot } from './engine/armed';
 import { DevBridge } from './engine/devbridge';
@@ -53,7 +53,10 @@ import { pickLetter } from './content/letters';
 import { WHISPERS } from './content/threadwhispers';
 import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/guide';
 import { cheapestPath } from './engine/path';
-import { planSettle } from './engine/stand';
+import { planBesideProp, planSettle } from './engine/stand';
+import { aimedAt } from './engine/aim';
+import { slideAround } from './engine/slide';
+import { claimPerches } from './engine/perch';
 import { ROUTE } from './content/route';
 import type { Cond, NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
@@ -555,6 +558,25 @@ let stripSel = 1;
 const STRIP_OPTS = ['Start over', 'Keep at it', 'Step away'];
 
 const uiCardOpen = () => !howtoEl.hidden || !stripEl.hidden;
+
+/**
+ * Which modal card owns the screen, if any, by name. Published in the dev
+ * state so a walker can see what a player sees: the chapter-close spread
+ * holds every key until it is put down, and a walker reading only the
+ * dialogue and the panels took a held card for a frozen game.
+ */
+function modalCard(): string | null {
+  if (chapterClose.isOpen) return 'chapterclose';
+  if (title.letterOpen) return 'letter';
+  if (!howtoEl.hidden) return 'howto';
+  if (!stripEl.hidden) return 'strip';
+  if (pauseMenu.isOpen) return 'pause';
+  if (albumUI.isOpen) return 'album';
+  if (journalUI.isOpen) return 'journal';
+  if (anyGameOpen()) return 'game';
+  if (curtainT !== null) return 'curtain';
+  return null;
+}
 
 /**
  * Armed cards (src/engine/armed.ts): "Not yet" and "Step away" set a card
@@ -1127,17 +1149,10 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
 
 // Seats, lamps, and keepers, found once at boot.
 {
-  const claimed = new Set<string>();
   // Bodies that stand in one place for good, as "map:x,y".
   const posted = new Set<string>(
     villagers.filter((v) => v.def.range === 0 && v !== dog).map((v) => `${v.def.map}:${v.def.pos[0]},${v.def.pos[1]}`),
   );
-  const PERCHES: [number, number, Dir][] = [
-    [0, 1, 'up'],
-    [-1, 0, 'right'],
-    [1, 0, 'left'],
-    [0, -1, 'down'],
-  ];
   for (const v of villagers) {
     const tm = maps[v.def.map];
     if (!tm || sceneFor(v.def.map) === 'interior') continue;
@@ -1154,48 +1169,24 @@ const fadeAt = (v: Villager) => FADE_NK - v.jitter * 0.04;
     }
     v.glow = bestGlow;
   }
-  // Every bench-like object recruits its evening sitter: the closest
-  // wandering human within eight tiles of home claims the walkable cell
-  // beside it, facing the seat, the same way the player sits. One villager
-  // per seat, seats in reading order, ties broken by roster order, so the
-  // same people take the same benches every single dusk.
-  for (const [mid, tm] of Object.entries(maps)) {
-    if (sceneFor(mid) === 'interior') continue;
-    const seats: [number, number][] = [];
-    for (let y = 0; y < tm.h; y++) {
-      for (let x = 0; x < tm.w; x++) {
-        if (sitKindsOn(mid).has(tm.object(x, y)?.t ?? '')) seats.push([x, y]);
-      }
-    }
-    const sitters = villagers.filter(
-      (v) => v.def.map === mid && !v.def.sprite && v.def.range > 0,
-    );
-    for (const [sx, sy] of seats) {
-      let best: Villager | null = null;
-      let bestD = 9;
-      for (const v of sitters) {
-        if (v.seat) continue;
-        const d = Math.max(Math.abs(sx - v.def.pos[0]), Math.abs(sy - v.def.pos[1]));
-        if (d < bestD) {
-          bestD = d;
-          best = v;
-        }
-      }
-      if (!best) continue;
-      for (const [dx, dy, dir] of PERCHES) {
-        const px = sx + dx;
-        const py = sy + dy;
-        const k = `${mid}:${px},${py}`;
-        if (!tm.inBounds(px, py) || tm.solid(px, py) || claimed.has(k)) continue;
-        // Personal space: a perch directly above or below another sitter or
-        // anyone posted for good would seat two bodies in one pile.
-        const near = (y: number) => claimed.has(`${mid}:${px},${y}`) || posted.has(`${mid}:${px},${y}`);
-        if (posted.has(k) || near(py - 1) || near(py + 1)) continue;
-        claimed.add(k);
-        best.seat = { at: [px, py], dir };
-        break;
-      }
-    }
+  // Every bench-like object recruits its evening sitter (engine/perch.ts),
+  // onto a cell with no prop drawn over the figure.
+  const perches = claimPerches(
+    maps,
+    villagers.map((v) => ({ id: v.def.id, map: v.def.map, pos: v.def.pos, range: v.def.range, sprite: v.def.sprite })),
+    {
+      sitKinds: sitKindsOn,
+      skip: (mid) => sceneFor(mid) === 'interior',
+      posted,
+      clean: (mid, x, y) => {
+        const tm = maps[mid];
+        return !!tm && !renderer.coversBody(tm, x, y);
+      },
+    },
+  );
+  for (const v of villagers) {
+    const p = perches.get(v.def.id);
+    if (p) v.seat = p;
   }
   // Keepers: anyone story-gated (`when`), the companions, and at least two
   // always-present anchors per map (lowest hash wins) so no square ever dies.
@@ -1845,7 +1836,12 @@ function stageStep(s: Staged, tx: number, ty: number, dt: number): boolean {
       [];
     next = s.path[0];
   }
-  if (!next || blocked(next[0], next[1])) {
+  // The last step onto a mark a row above or below where the player stands
+  // waits for the player to move on: Pilar walked into her place in the
+  // ring under the player, her head over their poncho, while the player
+  // waited by the well for the evening to begin (g2 rv-ring-0).
+  const intoPile = !!next && next[0] === tx && next[1] === ty && tx === px && Math.abs(ty - py) === 1;
+  if (!next || blocked(next[0], next[1]) || intoPile) {
     // Someone is in the way: stand, and look again in a moment.
     s.path = [];
     s.wait = (s.wait ?? 0) + dt;
@@ -2999,6 +2995,113 @@ function inPlayersWay(v: Villager, x: number, y: number): boolean {
   return !!pushCell && pushCell[0] === x && pushCell[1] === y && pushKnocks >= 3 && performance.now() - pushAt < 500;
 }
 
+/** Seconds the player stands still in someone's column before they make room. */
+const STACK_PATIENCE = 1.1;
+/** Who is leaning apart from the idle player for want of room, if anyone. */
+let idleLean: Villager | null = null;
+/** The idle lean lets go as soon as the two are no longer one above the other. */
+function releaseIdleLean() {
+  const v = idleLean;
+  if (!v || talkingTo === v) return;
+  const [cx, cy] = v.actor.occupies();
+  const [px, py] = player.occupies();
+  if (!player.isMoving && v.def.map === map.id && cx === px && Math.abs(cy - py) === 1) return;
+  v.actor.nudge = [0, 0];
+  player.nudge = [0, 0];
+  idleLean = null;
+}
+
+/**
+ * The player stopped a row above or below somebody and stayed: two figures
+ * drawn as one pile, the lower head over the upper chest (g1: on Faustino at
+ * his fire after his talk, still facing him, so he "waited to be talked to"
+ * forever). Whoever is free to move takes one step sideways after a moment,
+ * turns to the player, and a posted one comes back to their post once the
+ * player has gone. The seated, the staged and the stationed hold their place.
+ */
+function makeRoomForIdlePlayer(v: Villager): boolean {
+  if (v === dog || v.seated || v.actor.pose === 'sit' || v.actor.isMoving || v === talkingTo) return false;
+  if (v.def.sprite) return false;
+  if (player.isMoving || player.frozen || player.idleT < STACK_PATIENCE) return false;
+  const [cx, cy] = v.actor.occupies();
+  const [px, py] = player.occupies();
+  if (cx !== px || Math.abs(cy - py) !== 1) return false;
+  const d = yieldStep(v.actor, () => false);
+  if (!d) {
+    // Hemmed in (a wall, a fire, a tent): the two lean apart instead, as a
+    // cornered talk does, until the player moves on.
+    if (idleLean !== v) {
+      const lower = py > cy ? player : v.actor;
+      const upper = lower === player ? v.actor : player;
+      lower.nudge = [-TALK_LEAN, 2];
+      upper.nudge = [TALK_LEAN, 0];
+      idleLean = v;
+    }
+    return false;
+  }
+  if (v.def.range === 0 && !v.postBack) v.postBack = { at: [cx, cy], dir: v.def.sits ?? v.actor.dir };
+  v.actor.stepTo(d, towardPlayer(stepFrom(cx, cy, d)));
+  yielding.add(v.actor);
+  return true;
+}
+
+/**
+ * The person who just made room from the cell the player faces: Space still
+ * finds them, a step to the side, rather than the ground they left.
+ */
+function steppedAsideFrom(fx: number, fy: number): Villager | null {
+  const now = performance.now();
+  const [px, py] = player.occupies();
+  for (const v of villagersHere()) {
+    const l = v.actor.left[v.actor.left.length - 1];
+    if (!l || l.x !== fx || l.y !== fy || now - l.at > 6000 || v.actor.isMoving) continue;
+    const [x, y] = v.actor.occupies();
+    if (Math.abs(x - px) <= 1 && Math.abs(y - py) <= 1) return v;
+  }
+  return null;
+}
+
+/** How long the knock lasts before held feet step round a lone thing, in ms. */
+const SLIDE_AFTER_MS = 150;
+/** The way the player's last step went, for the slide's choice of side. */
+let lastStepDir: Dir | null = null;
+function stepDirBetween(a: [number, number], b: [number, number]): Dir | null {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  if (Math.abs(dx) + Math.abs(dy) !== 1) return null;
+  return dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
+}
+
+/**
+ * A held key into a lone rock, cactus or tree: one knock (the lean says
+ * "something is here", and Space still reads it), then, still held, the
+ * feet step round it and carry on (engine/slide.ts). Walls and anything
+ * wider than one cell stay solid. True when it stepped.
+ */
+function slideIfSnagged(held: Dir): boolean {
+  if (player.isMoving || player.frozen) return false;
+  const [px, py] = player.occupies();
+  const [ox, oy] = stepFrom(px, py, held);
+  // Only once a knock against this very thing has landed, still pushing.
+  const since = performance.now() - pushAt;
+  if (!pushCell || pushCell[0] !== ox || pushCell[1] !== oy || since < SLIDE_AFTER_MS || since > 450) return false;
+  const side = slideAround(
+    {
+      solid: (x, y) => !map.inBounds(x, y) || map.solid(x, y),
+      free: (x, y) =>
+        map.inBounds(x, y) && !map.solid(x, y) && !map.triggerAt(x, y) && !heldByOther(x, y, player),
+    },
+    [px, py],
+    held,
+    lastStepDir,
+  );
+  if (!side) return false;
+  player.stepTo(side, held);
+  pushCell = null;
+  pushKnocks = 0;
+  return true;
+}
+
 /** One sideways step out of the player's way, if they are in it and there is room. */
 function giveWay(v: Villager): boolean {
   if (v === dog || v.seated || v.actor.pose === 'sit' || v.actor.isMoving || v === talkingTo) return false;
@@ -3154,6 +3257,7 @@ function updateVillager(v: Villager, dt: number) {
     yielding.delete(v.actor);
   }
   if (giveWay(v)) return;
+  if (makeRoomForIdlePlayer(v)) return;
 
   if (v.def.range === 0 || dev.freezeWander) return;
   const nk = sceneFor(map.id) === 'interior' ? 0 : nightLevel(dayT);
@@ -3193,6 +3297,39 @@ function updateVillager(v: Villager, dt: number) {
   const r = gathering ? Math.max(v.def.range, 2) : v.def.range;
   const [ax, ay] = v.actor.occupies();
   const outside = ax < hx - r || ax > hx + r || ay < hy - r || ay > hy + r;
+  // An amble never ends behind a tall prop's head (a lamp, a crane, a
+  // canopy), nor anywhere a prop is painted over the figure (cleanStand),
+  // nor a row above or below somebody.
+  // Their own home cell is always theirs: a vendor's place behind the stall
+  // is behind the stall on purpose (Rosa at her pot, Marisol, Sun-hee).
+  const home = (x: number, y: number) => x === v.def.pos[0] && y === v.def.pos[1];
+  const leash = (x: number, y: number) =>
+    x < hx - r || x > hx + r || y < hy - r || y > hy + r || (!cleanStand(x, y) && !home(x, y)) ||
+    crowdsSomeone(x, y, v.actor);
+  // Standing in somebody's column, a row off (the player stopped just above
+  // or below, or two ambles met): the free one makes room, sideways first.
+  // So does anyone who has ended up under a tall prop's paint: the walk to
+  // a lamp at dusk is outside the leash and blind to overhangs, and Hana
+  // stopped beside the Busan lamp under the crane's crossbeam, drawn sitting
+  // on it for the whole of Mr. Gong's scene (g2 bu-gong-01). Before the
+  // evening's stillness and before any hold: a pile or a prop through a
+  // face is never the place to wait.
+  // (A row off the player is left to the holds below: someone the player
+  // is walking up to waits for them, and makeRoomForIdlePlayer handles the
+  // player who then just stands there.)
+  const [cx, cy] = v.actor.occupies();
+  const pileWithOther = [cy - 1, cy + 1].some((y) => heldByOther(cx, y, v.actor) && !playerHolds(cx, y));
+  if (!outside && !v.actor.isMoving && (pileWithOther || (!cleanStand(cx, cy) && !home(cx, cy)))) {
+    const room = (['left', 'right', 'up', 'down'] as Dir[]).find((d) => {
+      const [sx, sy] = stepFrom(cx, cy, d);
+      return !blocked(sx, sy) && !leash(sx, sy);
+    });
+    if (room) {
+      v.actor.stepTo(room);
+      yielding.add(v.actor);
+      return;
+    }
+  }
   // Deep evening: the wandering stops. People stand where the hour has led
   // them (lamplight, mostly), finishing conversations as the village settles.
   if (nk > 0.6 && !outside) return;
@@ -3210,26 +3347,21 @@ function updateVillager(v: Villager, dt: number) {
     v.actor.update(dt, { intent: null, blocked });
     return;
   }
+  // Walking home from outside the leash never steps in a row above or below
+  // the player: Faustino made room, then walked straight back under them.
+  const homeBlocked = (x: number, y: number) => blocked(x, y) || playerHolds(x, y - 1) || playerHolds(x, y + 1);
   v.think -= dt;
   if (v.think <= 0) {
     // Outside the leash (walking to the lamp, or home at dawn): head for the
     // center. Inside: mostly stand around, occasionally amble. Village time.
     v.want = outside
-      ? stepToward(v.actor, hx, hy, blocked)
+      ? stepToward(v.actor, hx, hy, homeBlocked)
       : Math.random() < 0.4
         ? ((['up', 'down', 'left', 'right'] as Dir[])[Math.floor(Math.random() * 4)] ?? null)
         : null;
     v.think = 1.0 + Math.random() * 2.8;
   }
-  // An amble never ends behind a tall prop's head (a lamp, a crane, a
-  // canopy): from up here that cell paints the prop over the face.
-  const over = renderer.overhung(map);
-  const leash = (x: number, y: number) =>
-    x < hx - r || x > hx + r || y < hy - r || y > hy + r || onDoorstep(x, y) || over[y * map.w + x] === 1 ||
-    crowdsSomeone(x, y, v.actor);
-  // Standing in somebody's column, a row off (the player stopped just above
-  // or below, or two ambles met): the free one makes room, sideways first.
-  const [cx, cy] = v.actor.occupies();
+  // A row off the player and not held for them: make room, sideways first.
   if (!outside && !v.actor.isMoving && crowdsSomeone(cx, cy, v.actor)) {
     const room = (['left', 'right', 'up', 'down'] as Dir[]).find((d) => {
       const [sx, sy] = stepFrom(cx, cy, d);
@@ -3240,7 +3372,7 @@ function updateVillager(v: Villager, dt: number) {
       v.think = 0.35; // one step, then village time again
     }
   }
-  v.actor.update(dt, { intent: v.want, blocked: outside ? blocked : (x, y) => blocked(x, y) || leash(x, y) });
+  v.actor.update(dt, { intent: v.want, blocked: outside ? homeBlocked : (x, y) => blocked(x, y) || leash(x, y) });
 }
 
 // ---------------------------------------------------------------- doors
@@ -3574,16 +3706,47 @@ function noteAct(now: number) {
   actGap = now - lastActAt < 1500 ? now - lastActAt : Infinity;
   lastActAt = now;
 }
-const spamHushMs = () => Math.min(1400, actGap * 1.6);
+/**
+ * It covers one beat of the hand, once. It used to renew on every press it
+ * swallowed, at up to 1.4s a time, so a player pressing Space about once a
+ * second to open the gate they had just read about was swallowed again and
+ * again: a dead key for as long as they kept trying (g1, at the gate). Now
+ * the press that comes on the hammer's next beat is the only one taken, and
+ * never later than the normal short hush allows for; the press after it acts.
+ */
+const SPAM_HUSH_MAX_MS = 900;
+const spamHushMs = () => Math.min(SPAM_HUSH_MAX_MS, actGap * 1.3);
 function spamHush(): boolean {
   const now = performance.now();
   if (now >= spamHushUntil) return false;
-  if (player.facingCell().join(',') !== spamHushAim) {
-    spamHushUntil = 0;
-    return false;
-  }
-  spamHushUntil = now + spamHushMs();
-  return true;
+  spamHushUntil = 0;
+  return player.facingCell().join(',') === spamHushAim;
+}
+
+/**
+ * Bare ground answers Space quietly (the path, the grass): undiscovered on
+ * purpose. Read in the second after a conversation closed, it is never what
+ * the press was for; it is a press that leaked past the hush, and its words
+ * then caught the Esc meant for the pause menu (g3: the path's line opened
+ * after Rosa's talk and the first Esc only closed it). People, props and
+ * seats still answer as soon as the short hush is over.
+ */
+const GROUND_HUSH_MS = 1500;
+let talkEndedAt = -Infinity;
+function bareGroundAhead(): boolean {
+  const [fx, fy] = player.facingCell();
+  if (!map.inBounds(fx, fy)) return false;
+  if (villagersHere().some((v) => v.actor.occupies()[0] === fx && v.actor.occupies()[1] === fy)) return false;
+  if (nearMound() || threadPersonBeside() || isTaskTarget(fx, fy)) return false;
+  const o = map.object(fx, fy);
+  if (o && o.t !== 'blocked') return false;
+  // Ground that is a seat, or an errand's own spot (the petal path), is not bare.
+  const g = map.ground(fx, fy).t;
+  if (sitKindsOn(map.id).has(g)) return false;
+  return !EXAMINES[g]?.some((a) => a.cue && (!a.map || a.map === map.id) && state.check(a.when));
+}
+function groundHush(): boolean {
+  return performance.now() - talkEndedAt < GROUND_HUSH_MS && bareGroundAhead();
 }
 
 /**
@@ -3608,6 +3771,7 @@ function onTextboxThatWas(x: number, y: number): boolean {
 function endDialogue() {
   player.frozen = false;
   talkHushUntil = performance.now() + TALK_HUSH_MS;
+  talkEndedAt = performance.now();
   if (Number.isFinite(actGap)) {
     spamHushUntil = performance.now() + spamHushMs();
     spamHushAim = player.facingCell().join(',');
@@ -3624,6 +3788,7 @@ function endDialogue() {
   player.nudge = [0, 0];
   if (talkingTo) {
     talkingTo.actor.nudge = [0, 0];
+    if (idleLean === talkingTo) idleLean = null;
     talkingTo.actor.frozen = false;
     // A seated villager turned to face the player; they settle back afterward
     // (a stationed sitter faces their row, a bench sitter faces their bench).
@@ -4050,6 +4215,16 @@ function tryInteract(aimFirst = true): boolean {
     startNpcDialogue(v);
     return true;
   }
+  const aside = steppedAsideFrom(fx, fy);
+  if (aside) {
+    const [ox, oy] = aside.actor.occupies();
+    if (ox === player.x || oy === player.y) {
+      player.face(ox > player.x ? 'right' : ox < player.x ? 'left' : oy > player.y ? 'down' : 'up');
+    }
+    startNpcDialogue(aside);
+    if (ox !== player.x && oy !== player.y) aside.actor.face(towardPlayer([ox, oy]));
+    return true;
+  }
   const aim = aimFirst ? threadPersonBeside() : null;
   if (aim) {
     threadAim = null;
@@ -4082,9 +4257,37 @@ function tryInteract(aimFirst = true): boolean {
   );
   if (arm) {
     startNarration(arm.node);
+    settleBesideProp(fx, fy);
     return true;
   }
   return false;
+}
+
+/**
+ * Reading a tall thing from where its paint falls over you: step beside it.
+ * Examined from below, a well's posts and arch rise round the reader's head
+ * and from above its stone is drawn over their legs, and the last page is
+ * written there and the night after it held there, so the frame was the
+ * traveler standing inside the well (g1, g2 night-01/04). While its words
+ * are on screen the reader takes one or two steps to a clean cell beside it,
+ * like the side-by-side settle of a talk, and turns back to it. Nowhere clean
+ * within two steps (a gate set in a wall): they stay where they are.
+ */
+function settleBesideProp(fx: number, fy: number) {
+  const o = map.object(fx, fy);
+  if (!o?.tall || !o.solid || o.t === 'blocked' || renderer.isBuildingKind(o.t) || player.isMoving) return;
+  const plan = planBesideProp(
+    {
+      passable: (x, y) => map.inBounds(x, y) && !map.solid(x, y) && !map.triggerAt(x, y),
+      clean: cleanStand,
+      held: (x, y) => heldByOther(x, y, player),
+    },
+    player.occupies(),
+    [fx, fy],
+  );
+  if (!plan) return;
+  settleSteps.set(player, { steps: [...plan.steps], face: plan.face });
+  landHeldSteps(0);
 }
 
 // ---------------------------------------------------------------- nani's red thread
@@ -5200,7 +5403,7 @@ function update(dt: number) {
     } else if (settling()) {
       // A talk's settling steps still landing after its words closed.
       landHeldSteps(dt);
-    } else if (act && (afterTalkHush() || spamHush() || introTimer !== 0)) {
+    } else if (act && (afterTalkHush() || spamHush() || groundHush() || introTimer !== 0)) {
       // The press that closed the last line had company: swallowed. So is
       // a press in the breath between the letter and the first words: it
       // used to read the well before the game had said anything at all.
@@ -5217,6 +5420,7 @@ function update(dt: number) {
       // A held key or stick always outranks a click-to-walk in progress.
       if (manual && autoGoal) cancelAuto();
       const intent = manual ?? autoIntent();
+      if (manual) slideIfSnagged(manual);
       MW.lastIntent = intent ?? '-';
       walkHeading = intent;
       // The camera leans a little into sustained walking, easing home at rest.
@@ -5280,12 +5484,14 @@ function update(dt: number) {
         }
       }
       if (ev?.kind === 'arrived') {
+        lastStepDir = stepDirBetween([prevX, prevY], [ev.x, ev.y]);
         audio.step(map.ground(ev.x, ev.y).t);
         petalStep(ev.x, ev.y);
         renderer.puffAt(prevX, prevY);
         const trig = map.triggerAt(ev.x, ev.y);
         if (trig?.type === 'door') startWarp(trig);
       }
+      releaseIdleLean();
       for (const v of villagersHere()) {
         if (v === paca && pacaWalk.length > 0) continue;
         updateVillager(v, dt);
@@ -5360,6 +5566,7 @@ function update(dt: number) {
     weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
     howtoOpen: !howtoEl.hidden,
     stripOpen: !stripEl.hidden,
+    card: modalCard(),
     pages: state.pageCount(),
     sitting,
     errand: state.errand,
@@ -5518,6 +5725,32 @@ let wordsLift = 0;
 let wordsTop = -1;
 let wordsTopAt = -Infinity;
 const WORDS_MARGIN = 6; // logical px of air between feet and the box
+const WORDS_HEADROOM = 6; // and between the hats and the frame's top
+/** How far a standing figure's hat rises above its cell, in logical px. */
+const FIGURE_HAT = 13;
+/**
+ * Who the words are about: the player, whoever they are talking to, and the
+ * person named on the line if they are here and near. A narration can be
+ * spoken by someone standing beside you (Justina at the dig: "Puma maki!"
+ * came from under the textbox, g3 desk-37), and an arrival's narration has
+ * nobody but the traveler.
+ */
+function wordsPeople(): Actor[] {
+  const people = [player, ...(talkingTo ? [talkingTo.actor] : [])];
+  const who = NODES[textbox.currentNode]?.lines[textbox.currentLine]?.who;
+  if (who) {
+    const [px, py] = player.occupies();
+    const named = villagersHere().find((v) => {
+      if (v.def.name !== who || v === talkingTo) return false;
+      const [x, y] = v.actor.occupies();
+      // Near enough to share the frame: a speaker further off is a voice
+      // from elsewhere, and the camera should not leave the traveler for it.
+      return Math.abs(x - px) <= 8 && Math.abs(y - py) <= 7;
+    });
+    if (named) people.push(named.actor);
+  }
+  return people;
+}
 function liftForWords(dt: number) {
   let target = 0;
   if (textbox.isOpen && mode === 'play' && !vistaOn) {
@@ -5529,18 +5762,17 @@ function liftForWords(dt: number) {
       wordsTop = r && r.height > 0 ? r.top : -1;
     }
     if (wordsTop > 0) {
-      const people = [player, ...(talkingTo ? [talkingTo.actor] : [])];
       let feet = -Infinity;
       let head = Infinity;
-      for (const a of people) {
+      for (const a of wordsPeople()) {
         const [, ry] = a.renderPos();
         feet = Math.max(feet, ry + TILE);
-        head = Math.min(head, ry - TILE);
+        head = Math.min(head, ry - FIGURE_HAT);
       }
       const boxWorld = screenToWorld(0, wordsTop)[1];
       const topWorld = screenToWorld(0, 0)[1];
-      // Lift enough to clear the box, never so far the hats leave the top.
-      target = Math.max(0, Math.min(feet + WORDS_MARGIN - boxWorld, head - topWorld - 4));
+      // Clear of the box below and of the frame's top above, at either edge of the map.
+      target = wordsLiftTarget(head, feet, topWorld, boxWorld, WORDS_MARGIN, WORDS_HEADROOM);
     }
   } else {
     wordsTopAt = -Infinity;
@@ -5920,24 +6152,27 @@ function faceAndInteract(tx: number, ty: number) {
  * the geraniums there instead. Their drawn body is what the eye clicks.
  */
 function villagerAtPoint(wx: number, wy: number): Villager | undefined {
-  let best: Villager | undefined;
-  let bestD = Infinity;
-  for (const v of villagersHere()) {
-    if (v.fade <= 0.02) continue;
-    const [rx, ry] = v.actor.renderPos();
-    // A figure is two tiles tall: the head and hat fill most of the cell
-    // above. The box used to stop half a tile up, so a click on the face of
-    // someone walking past landed on the ground behind them and walked you
-    // to where they had been (Bantu, the Caleta stalls). The hat's crown,
-    // the top couple of pixels, still belongs to whatever is up there.
-    if (wx < rx + 2 || wx > rx + TILE - 2 || wy < ry - 13 || wy > ry + TILE) continue;
-    const d = Math.abs(wx - (rx + TILE / 2)) + Math.abs(wy - (ry + TILE / 2));
-    if (d < bestD) {
-      best = v;
-      bestD = d;
-    }
-  }
-  return best;
+  // A figure is two tiles tall: the head and hat fill most of the cell
+  // above. The box used to stop half a tile up, so a click on the face of
+  // someone walking past landed on the ground behind them and walked you
+  // to where they had been (Bantu, the Caleta stalls). The hat's crown,
+  // the top couple of pixels, still belongs to whatever is up there. And a
+  // click on where someone stood a moment ago still means them (aim.ts).
+  const now = performance.now();
+  return aimedAt(
+    wx,
+    wy,
+    villagersHere()
+      .filter((v) => v.fade > 0.02)
+      .map((v) => ({
+        who: v,
+        at: v.actor.renderPos(),
+        left:
+          stagedControls(v) || stationControls(v)
+            ? undefined
+            : v.actor.left.map((l) => ({ cell: [l.x, l.y] as [number, number], ago: now - l.at })),
+      })),
+  );
 }
 
 function requestMove(tx: number, ty: number, hit?: Villager) {
@@ -6041,7 +6276,13 @@ function replanAuto() {
   const goal = autoGoal;
   if (!goal) return;
   const [tx, ty] = goal.npc ? goal.npc.actor.occupies() : goal.cell;
-  const path = findPath(tx, ty, goal.kind === 'interact');
+  // Bodies in the way are walked around as they move, exactly as the first
+  // plan does: only the bare map can put the goal out of reach. A follow-up
+  // plan that gave up whenever someone stood in a lane dropped the talk
+  // silently and left the player beside the person, facing nowhere.
+  const path =
+    findPath(tx, ty, goal.kind === 'interact') ??
+    pathBetween(player.occupies(), tx, ty, (x, y) => map.solid(x, y), goal.kind === 'interact');
   if (!path) {
     cancelAuto();
     return;
@@ -6716,6 +6957,23 @@ function installCheats() {
       // next dialogue to end replayed every plate and chapter-close at once.
       resyncCelebrations();
       return jump(target.map);
+    },
+    /** Where on screen a villager's body (or a cell, given x and y) is drawn,
+     * in CSS pixels: what a walker clicks to click it the way a hand would. */
+    screenAt(who: string | number, y?: number): [number, number] | null {
+      let wx: number;
+      let wy: number;
+      if (typeof who === 'number') {
+        wx = who * TILE + TILE / 2;
+        wy = (y ?? 0) * TILE + TILE / 2;
+      } else {
+        const v = villagersHere().find((n) => n.def.id === who);
+        if (!v) return null;
+        const [rx, ry] = v.actor.renderPos();
+        wx = rx + TILE / 2;
+        wy = ry + 2;
+      }
+      return worldToScreen(wx, wy).map(Math.round) as [number, number];
     },
     warp: (mapId: string, x?: number, y?: number) =>
       jump(mapId, x !== undefined && y !== undefined ? [x, y] : undefined),

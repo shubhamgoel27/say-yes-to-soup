@@ -1,13 +1,15 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { NPCS, REGION_MAPS } from '../src/content/world';
+import { MAP_META, NODES, NPCS, REGION_MAPS, sitKindsOn } from '../src/content/world';
 import { BLOCKING } from '../src/content/staging';
+import { MEETING } from '../src/content/return/staging';
+import { claimPerches } from '../src/engine/perch';
 import { DELHI_STATIONS } from '../src/content/delhi/stations';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
 import type { Cond } from '../src/content/schema';
 import { TileMap } from '../src/engine/grid';
-import { bodyCovered, planSettle, roomFor, type Ground, type PropArt } from '../src/engine/stand';
+import { bodyCovered, headIn, planBesideProp, planSettle, roomFor, type Ground, type PropArt } from '../src/engine/stand';
 // The art kit, built against a stand-in canvas: nothing is painted, but every
 // prop's sprite comes out at its real size and anchor, which is all the cover
 // test needs. It then reads the whole rectangle as paint, so it can only be
@@ -48,13 +50,30 @@ for (const st of [...DELHI_STATIONS, ...SHIONOURA_STATIONS]) {
   });
 }
 
-const arrivals: { map: string; at: [number, number]; label: string }[] = [];
+/**
+ * Every cell the content puts the player on. Doors and spawns, and (missed
+ * until round g) the journeys taken inside a conversation: `travel:map,x,y`
+ * effects that cut to a dawn or a pier, the cells where Zanzibar's goodbye
+ * stood the traveler on Rashid's bench and La Caleta's return stood them
+ * between Simón and Ríos. A journey's own flags say who can be there.
+ */
+type Arrival = { map: string; at: [number, number]; label: string; when?: Cond };
+const arrivals: Arrival[] = [];
 for (const m of Object.values(REGION_MAPS)) {
   arrivals.push({ map: m.id, at: m.spawn as [number, number], label: `${m.id} spawn` });
   for (const t of m.triggers ?? []) {
     if (t.type === 'door') arrivals.push({ map: t.to, at: t.spawn as [number, number], label: `door ${m.id} -> ${t.to}` });
   }
 }
+for (const [id, node] of Object.entries(NODES)) {
+  const sets = (node.effects ?? []).filter((e) => e.startsWith('set:')).map((e) => e.slice(4));
+  for (const e of node.effects ?? []) {
+    const t = /^travel:([^,]+),(\d+),(\d+)/.exec(e);
+    if (t) arrivals.push({ map: t[1]!, at: [Number(t[2]), Number(t[3])], label: `journey in ${id}`, when: { has: sets } });
+  }
+}
+// The ring's open place at the well, where the player walks in to begin the verdict.
+arrivals.push({ map: MEETING.map, at: MEETING.spot, label: 'the ring at the well', when: MEETING.when });
 
 const same = (a: [number, number], b: [number, number]) => a[0] === b[0] && a[1] === b[1];
 const stacked = (a: [number, number], b: [number, number]) => a[0] === b[0] && Math.abs(a[1] - b[1]) === 1;
@@ -84,7 +103,7 @@ describe('bodies never overlap', () => {
     const bad: string[] = [];
     for (const s of arrivals) {
       for (const b of bodies) {
-        if (b.map === s.map && same(b.at, s.at)) bad.push(`${s.label} lands on ${b.label} at ${s.at}`);
+        if (b.map === s.map && same(b.at, s.at) && together(b.when, s.when)) bad.push(`${s.label} lands on ${b.label} at ${s.at}`);
       }
     }
     assert.deepEqual(bad, []);
@@ -258,5 +277,152 @@ describe('people and tall props', () => {
     }
     const fresh = found.filter((f) => !KNOWN_UNDER_PROPS.has(f));
     assert.deepEqual(fresh, []);
+  });
+});
+
+// ---------------------------------------------------------------- where the player is put
+
+/** Bodies standing for good where a player lands: posted homes and the staging's marks. */
+const postedBodies = bodies.filter((b) => b.posted && !b.dog);
+
+describe('every cell the player is put on is clean', () => {
+  // Pass 6 held the people the content places; the player's own landings
+  // (doors, spawns, journeys inside a conversation, the ring's open place)
+  // were only held to "nobody on the very cell". Round g found the rest:
+  // the traveler stood on Rashid's bench at the Zanzibar dawn, and landed on
+  // the return between Simón and Ríos on La Caleta's pier. A landing is
+  // floor, not a seat or a tall prop; no tall prop rises through the head
+  // or is painted over the legs; and nobody who can be there stands on it,
+  // directly above it or directly below it.
+  it('no landing is a seat, a prop, a pile or under paint', () => {
+    const bad: string[] = [];
+    for (const a of arrivals) {
+      const data = REGION_MAPS[a.map];
+      if (!data) {
+        bad.push(`${a.label}: no map ${a.map}`);
+        continue;
+      }
+      const m = new TileMap(data);
+      const [x, y] = a.at;
+      const o = m.object(x, y);
+      const where = `${a.label} on ${a.map} at ${a.at}`;
+      if (m.solid(x, y)) bad.push(`${where}: solid`);
+      // (A tall thing you can walk under, papel picado or wires, is overhead.)
+      if (o && sitKindsOn(a.map).has(o.t)) bad.push(`${where}: stands on a ${o.t}`);
+      if (headIn(m, x, y, isBuilding)) bad.push(`${where}: head inside the ${m.object(x, y - 1)?.t}`);
+      const front = m.object(x, y + 1);
+      if (front?.tall && front.solid && front.t !== 'blocked' && !isBuilding(front.t)) {
+        const art = artFor(a.map)(front.t, x, y + 1);
+        if (art && art.h > 64) bad.push(`${where}: ${front.t} painted over the legs`);
+      }
+      for (const b of postedBodies) {
+        if (b.map !== a.map || !together(b.when, a.when)) continue;
+        // A door or a spawn has no flags of its own: only those always there count.
+        if (!a.when && b.when) continue;
+        if (b.at[0] === x && Math.abs(b.at[1] - y) === 1) bad.push(`${where}: in ${b.label}'s column`);
+      }
+    }
+    assert.deepEqual(bad, []);
+  });
+});
+
+// ---------------------------------------------------------------- evening seats
+
+describe('evening seats', () => {
+  // The golden-hour perches are claimed at boot (engine/perch.ts), so no
+  // content lists them and no test saw them. Claimed blind, eight of them
+  // sat under a tall prop's paint. With the cover check the claim takes the
+  // seat's next side instead; this holds the claim to it, and to the
+  // personal-space rule, on every map.
+  const maps = Object.fromEntries(Object.values(REGION_MAPS).map((d) => [d.id, new TileMap(d)]));
+  const posted = new Set(NPCS.filter((n) => n.range === 0 && n.sprite !== 'dog').map((n) => `${n.map}:${n.pos[0]},${n.pos[1]}`));
+  const opts = { sitKinds: sitKindsOn, skip: (id: string) => MAP_META[id]?.scene === 'interior', posted };
+  const covered = (id: string, x: number, y: number) => bodyCovered(maps[id]!, x, y, artFor(id), isBuilding);
+
+  it('a blind claim finds covered perches: the cover check is load-bearing', () => {
+    const blind = claimPerches(maps, NPCS, opts);
+    const dirty = [...blind].filter(([id, p]) => covered(NPCS.find((n) => n.id === id)!.map, p.at[0], p.at[1]));
+    assert.ok(dirty.length > 0, 'if no perch is ever covered, this test has lost its teeth');
+  });
+
+  it('every perch claimed with the cover check is clean and in nobody\'s column', () => {
+    const seats = claimPerches(maps, NPCS, { ...opts, clean: (id, x, y) => !covered(id, x, y) });
+    assert.ok(seats.size >= 30, `only ${seats.size} evening seats`);
+    const bad: string[] = [];
+    const taken = new Map<string, string>();
+    for (const [id, p] of seats) {
+      const mapId = NPCS.find((n) => n.id === id)!.map;
+      const k = `${mapId}:${p.at[0]},${p.at[1]}`;
+      if (covered(mapId, p.at[0], p.at[1])) bad.push(`${id} sits under paint at ${p.at}`);
+      if (maps[mapId]!.solid(p.at[0], p.at[1])) bad.push(`${id} sits in a solid cell at ${p.at}`);
+      if (taken.has(k)) bad.push(`${id} and ${taken.get(k)} share ${p.at}`);
+      taken.set(k, id);
+      for (const dy of [-1, 1]) {
+        if (posted.has(`${mapId}:${p.at[0]},${p.at[1] + dy}`)) bad.push(`${id} sits in a posted body's column at ${p.at}`);
+      }
+    }
+    assert.deepEqual(bad, []);
+  });
+});
+
+// ---------------------------------------------------------------- reading a tall thing
+
+describe('reading a tall thing', () => {
+  // The last page is written at the well, and the night after it is held
+  // there. Read from below, the well's posts and arch rose round the
+  // traveler's head for both (g2 night-01/04). A reader standing where a
+  // tall prop's paint falls over them steps to a clean cell beside it
+  // (stand.ts planBesideProp), or stays when nowhere clean is near.
+  const mapsHere = Object.fromEntries(Object.values(REGION_MAPS).map((d) => [d.id, new TileMap(d)]));
+  const groundFor = (id: string): Ground => {
+    const m = mapsHere[id]!;
+    const art = artFor(id);
+    const others = bodies.filter((o) => o.map === id && !o.dog);
+    return {
+      passable: (x, y) => m.inBounds(x, y) && !m.solid(x, y) && !m.triggerAt(x, y),
+      clean: (x, y) =>
+        m.inBounds(x, y) && !m.solid(x, y) && !m.triggerAt(x, y) && !doorsteps.has(`${id}:${x},${y}`) &&
+        !bodyCovered(m, x, y, art, isBuilding),
+      held: (x, y) => others.some((o) => o.at[0] === x && o.at[1] === y),
+    };
+  };
+
+  it('the last page is written beside the well, clean', () => {
+    const g = groundFor('village');
+    const plan = planBesideProp(g, [21, 16], [21, 15]);
+    assert.ok(plan, 'nowhere clean beside the well');
+    assert.ok(roomFor(g, plan.at[0], plan.at[1]));
+    assert.equal(plan.at[1], 15, 'beside it, on its row');
+  });
+
+  it('every step beside any tall examinable thing lands clean and adjacent', () => {
+    const bad: string[] = [];
+    let moved = 0;
+    for (const [id, m] of Object.entries(mapsHere)) {
+      const g = groundFor(id);
+      for (let y = 0; y < m.h; y++) {
+        for (let x = 0; x < m.w; x++) {
+          const o = m.object(x, y);
+          if (!o?.tall || !o.solid || o.t === 'blocked' || isBuilding(o.t)) continue;
+          for (const [dx, dy] of [[0, 1], [0, -1], [1, 0], [-1, 0]] as const) {
+            const p: [number, number] = [x + dx, y + dy];
+            if (!g.passable(p[0], p[1]) || g.held(p[0], p[1])) continue;
+            const plan = planBesideProp(g, p, [x, y]);
+            if (!plan) continue;
+            moved++;
+            let c = p;
+            for (const d of plan.steps) {
+              c = [c[0] + (d === 'right' ? 1 : d === 'left' ? -1 : 0), c[1] + (d === 'down' ? 1 : d === 'up' ? -1 : 0)];
+              if (!g.passable(c[0], c[1]) || g.held(c[0], c[1])) bad.push(`${id} ${o.t} ${x},${y} from ${p}: walks through ${c}`);
+            }
+            if (!same(c, plan.at)) bad.push(`${id} ${o.t} from ${p}: ends at ${c}, plan says ${plan.at}`);
+            if (!roomFor(g, c[0], c[1])) bad.push(`${id} ${o.t} from ${p}: lands unclean at ${c}`);
+            if (Math.abs(c[0] - x) + Math.abs(c[1] - y) !== 1) bad.push(`${id} ${o.t} from ${p}: not beside it at ${c}`);
+          }
+        }
+      }
+    }
+    assert.ok(moved > 0);
+    assert.deepEqual(bad, []);
   });
 });
