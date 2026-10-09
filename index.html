@@ -3236,16 +3236,16 @@
 
       /* ---- landscape-first: the journal reads best sideways ----
        * Phones upright see a quarter of a page drawn wide, so responsive.ts
-       * steers them sideways: an offer card where the browser can lock
-       * orientation, a full rotate page where it cannot, and a quiet corner
-       * pin once the offer has been waved off twice. The elements only ever
+       * offers sideways once a session: a card that lays the page sideways
+       * where the browser can lock orientation and asks for the turn where
+       * it cannot, and a quiet corner pin once the offer is waved off.
+       * Upright always stays playable. The elements only ever
        * mount on phones (screen's short side under 600px), and every rule
        * here is coarse-and-hoverless gated besides, so desktop mice and
        * narrow desktop windows can never feel any of it. */
       @media (pointer: coarse) and (hover: none) {
-        /* The veils: the rotate page outranks everything (it is the door),
-         * the offer sits above the HUD but under nothing of its own. */
-        #sideways, #rotatehold {
+        /* The veil: the offer sits above the HUD. */
+        #sideways {
           position: fixed;
           inset: 0;
           display: grid;
@@ -3256,8 +3256,7 @@
           backdrop-filter: blur(3px);
           z-index: 190;
         }
-        #rotatehold { z-index: 200; }
-        #sideways[hidden], #rotatehold[hidden], #sidewayspin[hidden] { display: none; }
+        #sideways[hidden], #sidewayspin[hidden] { display: none; }
 
         /* The card is a journal page like every other surface. */
         .sw-card {
@@ -3293,6 +3292,7 @@
           color: var(--ink-soft);
           border-top: 1px dashed rgba(43, 33, 24, 0.3);
           padding-top: 10px;
+          margin-bottom: 6px;
         }
 
         /* The glyph: a small phone drawn in ink, turning itself sideways.

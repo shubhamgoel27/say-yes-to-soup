@@ -9,14 +9,18 @@
  * turns (180x320, config.viewFor), which plays, but the road reads best
  * wide, so phones are still steered sideways, firmly but kindly:
  *
- * - Where the browser can lock orientation (Android, mostly): on the first
- *   natural tap in the world while upright (never on the cover or a card,
- *   whose taps are spoken for), a journal card offers to lay the journal
- *   sideways. Accepting goes fullscreen and locks landscape. One decline
- *   retires the card for the session and leaves a small pin at the top of
- *   the pad's button column instead.
- * - Where it cannot (iOS, or any lock failure): a full paper page asks for
- *   the turn and waits. It leaves the instant the phone turns.
+ * - On the first natural tap in the world while upright (never on the
+ *   cover or a card, whose taps are spoken for), a journal card offers to
+ *   lay the journal sideways, once a session. Upright stays playable either
+ *   way: one policy on every phone.
+ * - Where the browser can lock orientation (Android, mostly), accepting goes
+ *   fullscreen and locks landscape, and a decline leaves a small pin at the
+ *   top of the pad's button column instead.
+ * - Where it cannot (iOS, or a lock that failed), the card asks for the turn
+ *   itself, says how to lift a rotation lock, and leaves the instant the
+ *   phone turns or the player says upright is fine. It used to be a wall
+ *   that waited for the turn, so an iPhone could not play upright while an
+ *   Android phone could.
  *
  * Tablets and desktops are exempt: nothing here mounts, nothing changes.
  * All styling lives in index.html behind (pointer: coarse) and (hover: none).
@@ -202,7 +206,7 @@ let offerAllowed: () => boolean = () => true;
 let pinHost: HTMLElement | null = null;
 
 let offerEl: HTMLElement | null = null;
-let holdEl: HTMLElement | null = null;
+let offerKind: OfferKind | null = null;
 let pinEl: HTMLButtonElement | null = null;
 
 // ---------------------------------------------------------------------------
@@ -219,39 +223,14 @@ function buildGlyph(): HTMLElement {
   return glyph;
 }
 
-function ensureHold(): HTMLElement {
-  if (holdEl) return holdEl;
-  const veil = document.createElement('div');
-  veil.id = 'rotatehold';
-  veil.hidden = true;
+/** 'lock': the browser can lay the journal sideways itself. 'turn': the
+ * player has to turn the phone, so the card says how. */
+export type OfferKind = 'lock' | 'turn';
 
-  const card = document.createElement('div');
-  card.className = 'sw-card';
-  card.setAttribute('role', 'status');
-
-  const title = document.createElement('div');
-  title.className = 'sw-title';
-  title.textContent = 'Turn your phone sideways.';
-
-  const line = document.createElement('div');
-  line.className = 'sw-line';
-  line.textContent = 'Nani drew her pages wide; the road needs the room.';
-
-  // A phone that will not turn is almost always a phone with its rotation
-  // lock on, and the card has no way to know; say how to lift it.
-  const lock = document.createElement('div');
-  lock.className = 'sw-lock';
-  lock.textContent = 'Not turning? The rotation lock may be on: open Control Center and tap the lock.';
-
-  card.append(buildGlyph(), title, line, lock);
-  veil.appendChild(card);
-  document.body.appendChild(veil);
-  holdEl = veil;
-  return veil;
-}
-
-function ensureOffer(): HTMLElement {
-  if (offerEl) return offerEl;
+function ensureOffer(kind: OfferKind): HTMLElement {
+  if (offerEl && offerKind === kind) return offerEl;
+  offerEl?.remove();
+  offerKind = kind;
   const veil = document.createElement('div');
   veil.id = 'sideways';
   veil.hidden = true;
@@ -269,22 +248,32 @@ function ensureOffer(): HTMLElement {
   line.className = 'sw-line';
   line.textContent = 'Nani drew her pages wide. Turn with them and the whole road fits in your hands.';
 
-  const go = document.createElement('button');
-  go.type = 'button';
-  go.className = 'sw-go';
-  go.textContent = 'Lay it sideways';
-  go.addEventListener('click', () => {
-    hideOffer();
-    void goSideways();
-  });
-
   const stay = document.createElement('button');
   stay.type = 'button';
   stay.className = 'sw-stay';
-  stay.textContent = 'Maybe in a moment';
   stay.addEventListener('click', declineOffer);
 
-  card.append(buildGlyph(), title, line, go, stay);
+  if (kind === 'lock') {
+    const go = document.createElement('button');
+    go.type = 'button';
+    go.className = 'sw-go';
+    go.textContent = 'Lay it sideways';
+    go.addEventListener('click', () => {
+      hideOffer();
+      void goSideways();
+    });
+    stay.textContent = 'Maybe in a moment';
+    card.append(buildGlyph(), title, line, go, stay);
+  } else {
+    // The browser cannot turn the page, so the card asks the hands to. A
+    // phone that will not turn almost always has its rotation lock on, and
+    // the card has no way to know; say how to lift it.
+    const lock = document.createElement('div');
+    lock.className = 'sw-lock';
+    lock.textContent = 'Not turning? The rotation lock may be on: open Control Center and tap the lock.';
+    stay.textContent = 'Upright is fine';
+    card.append(buildGlyph(), title, line, lock, stay);
+  }
   veil.appendChild(card);
   document.body.appendChild(veil);
   offerEl = veil;
@@ -322,7 +311,7 @@ function ensurePin(): HTMLButtonElement {
 // ---------------------------------------------------------------------------
 
 function showOffer(): void {
-  ensureOffer().hidden = false;
+  ensureOffer(fallbackMode || !canLockLandscape() ? 'turn' : 'lock').hidden = false;
 }
 
 function hideOffer(): void {
@@ -361,26 +350,45 @@ export async function goSideways(): Promise<void> {
   }
 }
 
-/** Any failure of the lock path drops us, for the session, to the rotate page. */
+/**
+ * Any failure of the lock path: for the rest of the session the browser is
+ * treated as one that cannot turn the page. The player just asked to go
+ * sideways, so the card says how to turn by hand; upright stays playable.
+ */
 function enterFallback(): void {
   fallbackMode = true;
   lockActive = false;
-  hideOffer();
   if (pinEl) pinEl.hidden = true;
-  ensureHold();
-  syncHold();
+  if (inPortrait()) ensureOffer('turn').hidden = false;
+  else hideOffer();
 }
 
-function offerEligible(): boolean {
-  if (fallbackMode || lockActive) return false;
-  if (document.fullscreenElement) return false;
-  if (!inPortrait()) return false;
-  if (offerEl && !offerEl.hidden) return false;
+/** Whether a natural tap right now earns the sideways card. Pure, for the tests. */
+export function offerDue(at: {
+  portrait: boolean;
+  declines: number;
+  lockActive: boolean;
+  fullscreen: boolean;
+  offerShowing: boolean;
+  allowed: boolean;
+}): boolean {
+  if (at.lockActive || at.fullscreen || !at.portrait || at.offerShowing) return false;
   // Once a session. It used to come back on the next tap after five
   // seconds, which was the name card's "write it down": two interruptions
   // in the first half minute.
-  if (declines >= 1) return false;
-  return offerAllowed();
+  if (at.declines >= 1) return false;
+  return at.allowed;
+}
+
+function offerEligible(): boolean {
+  return offerDue({
+    portrait: inPortrait(),
+    declines,
+    lockActive,
+    fullscreen: !!document.fullscreenElement,
+    offerShowing: !!offerEl && !offerEl.hidden,
+    allowed: offerAllowed(),
+  });
 }
 
 /**
@@ -450,15 +458,6 @@ function syncPin(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Rotate page (iOS and every fallback).
-// ---------------------------------------------------------------------------
-
-function syncHold(): void {
-  if (!holdEl) return;
-  holdEl.hidden = !inPortrait();
-}
-
-// ---------------------------------------------------------------------------
 // Entry point. main.ts calls this once at boot.
 // ---------------------------------------------------------------------------
 
@@ -475,7 +474,6 @@ export function initRotateNudge(opts: { canOffer?: () => boolean; pinHost?: HTML
   declines = readDeclines();
 
   const onOrientationSettled = (): void => {
-    syncHold();
     syncPin();
     if (!inPortrait()) hideOffer();
   };
@@ -488,8 +486,9 @@ export function initRotateNudge(opts: { canOffer?: () => boolean; pinHost?: HTML
   }
   window.addEventListener('resize', onOrientationSettled);
 
+  // Every phone gets the same offer on its first natural upright tap.
+  window.addEventListener('pointerdown', onGesture, { capture: true, passive: false });
   if (canLockLandscape()) {
-    window.addEventListener('pointerdown', onGesture, { capture: true, passive: false });
     document.addEventListener('fullscreenchange', () => {
       // Entering counts too: the pin that asked for the room must leave the
       // moment the room is granted, whatever the orientation lock decides
@@ -514,8 +513,5 @@ export function initRotateNudge(opts: { canOffer?: () => boolean; pinHost?: HTML
       if (!document.hidden) syncPin();
     });
     syncPin();
-  } else {
-    ensureHold();
-    syncHold();
   }
 }
