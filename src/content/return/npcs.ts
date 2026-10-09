@@ -880,7 +880,7 @@ export const RETURN_NODES: NodeMap = {
    */
   'c10.end.hold': {
     lines: [
-      { text: 'You cap the pen. The journal shuts on itself with the sound a full book makes, which is a different sound from an empty one.' },
+      { text: 'You cap the pen. A full book sits differently in the hand from an empty one: heavier, and quieter about it.' },
       { text: 'Don Aurelio, two steps off, has been not reading over your shoulder for some time. He nods once, at the page, not at you.' },
       { text: 'Fifty years ago a woman sat on this stone with this same book half written, and got up, and went. You got up, and came back.' },
       { text: 'Behind you a bowl goes down on a table, and somebody laughs at a joke you were not told. The lamps hold. You stay a while.' },

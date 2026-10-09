@@ -279,7 +279,7 @@ export const SICILY_NODES: NodeMap = {
   'c8.arrive': {
     lines: [
       { text: 'The ship noses past two black stone towers in the sea. The heat reaches you before the gangway does.' },
-      { text: 'A grey mountain smokes above the lemon terraces. A bell counts eleven; a voice sings about fish.' },
+      { text: 'Somewhere above the lemon terraces a mountain is smoking; you smell it before you see it. A bell counts eleven; a voice sings about fish.' },
     ],
     effects: ['set:c8.arrived'],
   },
