@@ -79,19 +79,24 @@ export const ESCORTS: Escort[] = [
   { id: 'carmen', when: { has: ['c10.carmen.her'], not: ['c10.lamp'] } },
 ];
 
+/** The village and the pass road up to the apacheta. */
+const HOME = ['village', 'east-road'];
+
 export const HOURS: HourHold[] = [
   // The ofrenda is finished in Refugio's kitchen, and "tonight we take the
   // last candle to the camposanto": the evening comes down while you are
   // indoors, so the lane outside is already dusk.
-  { when: { has: ['c9.ofrenda.done'], not: ['c9.vigil.done'] }, min: 0.6, max: 0.85 },
+  { when: { has: ['c9.ofrenda.done'], not: ['c9.vigil.done'] }, on: ['oaxaca', 'cocina', 'camposanto'], min: 0.6, max: 0.85 },
   // You stay at the vigil until the candles are low, and the colectivo
-  // corner is first light. Set during the journey card's black.
-  { when: { has: ['c9.vigil.done'], not: ['c10.arrived'] }, min: 0.03, max: 0.3, snap: true, notOn: ['camposanto'] },
+  // corner is first light. Set during the journey card's black, and held in
+  // the gold of the first minutes (as Busan's dawn is): a window to 0.3 let
+  // the goodbye's "First light" play in full mid-morning sun.
+  { when: { has: ['c9.vigil.done'], not: ['c10.arrived'] }, on: ['oaxaca', 'cocina'], min: 0.005, max: 0.035, snap: true },
   // Carmen names the hour and the afternoon goes: dusk at the well, and the
   // last light for the walk up to the apacheta.
-  { when: { has: ['c10.well.called'], not: ['c10.apacheta.done'] }, min: 0.555, max: 0.6 },
+  { when: { has: ['c10.well.called'], not: ['c10.apacheta.done'] }, on: HOME, min: 0.555, max: 0.6 },
   // Down from the pass the lamps come on, and the last page is written by them.
-  { when: { has: ['c10.apacheta.done'], not: ['story.end'] }, min: 0.66, max: 0.7 },
+  { when: { has: ['c10.apacheta.done'], not: ['story.end'] }, on: HOME, min: 0.66, max: 0.7 },
 ];
 
 /**

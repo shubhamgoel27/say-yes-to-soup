@@ -242,9 +242,11 @@ export function writeSlotRaw(slot: number, raw: string): boolean {
   }
 }
 
-/** The three strokes of the traveler the player may choose at the flyleaf.
- * null everywhere means Nani's original sketch (the default look). */
-export type PlayerLook = { skin: string; cloth: string; hair: string };
+/** The strokes of the traveler the player may choose at the flyleaf.
+ * null everywhere means Nani's original sketch (the default look). `hat` is
+ * the chullo's colour, or 'none' to go bareheaded; absent (older saves) is
+ * Nani's gold chullo, which is what those travelers have always worn. */
+export type PlayerLook = { skin: string; cloth: string; hair: string; hat?: string };
 
 type Events = {
   journal: (id: string) => void;
@@ -540,7 +542,12 @@ export class GameState {
         typeof look.skin === 'string' &&
         typeof look.cloth === 'string' &&
         typeof look.hair === 'string'
-          ? { skin: look.skin, cloth: look.cloth, hair: look.hair }
+          ? {
+              skin: look.skin,
+              cloth: look.cloth,
+              hair: look.hair,
+              ...(typeof look.hat === 'string' ? { hat: look.hat } : {}),
+            }
           : null;
     } catch {
       // A corrupt save should never brick the game; start fresh.

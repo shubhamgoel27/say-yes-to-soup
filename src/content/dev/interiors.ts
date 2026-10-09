@@ -44,7 +44,12 @@ export const CHICHERIA_MAP: MapData = {
   name: 'La Chichería',
   spawn: [6, 7],
   spawnFacing: 'up',
-  legend: INTERIOR_LEGEND,
+  legend: {
+    ...INTERIOR_LEGEND,
+    W: { t: 'wayunka', solid: true, tall: true },
+    M: { t: 'mechero', solid: true },
+    U: { t: 'urpus', solid: true, tall: true },
+  },
   ground: [
     '.............',
     '.............',
@@ -62,15 +67,18 @@ export const CHICHERIA_MAP: MapData = {
   // door lane rather than across it. The far corner is the household's, not
   // the trade's: the ají rack, the jars, the niche with its candle, and a hen
   // who has opinions. The q'epi by the door is what you come in past.
+  // Round the walls, out of the drinking floor: maize braids hung to dry
+  // above the trade end, two tin mecheros so the room is lit to drink in
+  // and not only to brew in, and the urpus working in the far corner.
   objects: [
     '##SS####S####',
-    '#Cqp     c  #',
+    '#Cqp W M c W#',
     '#jb         #',
     '#  oTT    an#',
     '#u   T   k  #',
-    '#  s      g #',
+    '#M s      g #',
     '#yrr        #',
-    '# r  Q  h   #',
+    '# r  Q  h  U#',
     '######m######',
   ],
   triggers: [{ at: [6, 8], type: 'door', to: 'village', spawn: [12, 26], facing: 'down' }],

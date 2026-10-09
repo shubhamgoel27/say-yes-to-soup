@@ -23,6 +23,7 @@ export const ART: ChapterArt = {
     'nilavilakku', 'jacktree', 'peppervine', 'oars', 'spicesacks', 'postbox',
     'cricketwall', 'posterwall', 'lungiline', 'busstop',
     'kallupalm', 'vaikkol', 'cheenavala',
+    'thookku',
   ],
   buildings: ['veedu'],
   windows: {
@@ -31,12 +32,14 @@ export const ART: ChapterArt = {
       [67, -10],
     ],
   },
-  glows: ['thattukada', 'aduppu', 'nilavilakku'],
+  glows: ['thattukada', 'aduppu', 'nilavilakku', 'thookku'],
   noInk: ['huskpile', 'hyacinth', 'waterlily', 'anthill', 'fallennut', 'tennisball', 'keralacat', 'chappals'],
   /** Inside Mariamma's house is laterite and red oxide, like the lane outside. */
   skins: {
-    'mariamma-veedu': { wallInt: 'wallLaterite', floorEarth: 'floorOxide', rug: 'rugCoir' },
+    'mariamma-veedu': { wallInt: 'wallLaterite', floorEarth: 'floorOxide', rug: 'rugCoir', mat: 'matSadya' },
   },
+  /** The mat at the threshold is for feet, not for a meal: no leaf on it. */
+  pins: { 'mariamma-veedu': [{ kind: 'mat', at: [7, 9], v: 2 }] },
 
   paint(make) {
     // ---------------------------------------------------------- grounds
@@ -1665,6 +1668,106 @@ export const ART: ChapterArt = {
       if (r.chance(0.5)) glowSpot(g, r.next() * S, r.next() * S, 20 + r.next() * 12, '#ffe6ca', 0.15);
       if (r.chance(0.3)) glowSpot(g, r.next() * S, r.next() * S, 15, '#3c1a12', 0.1);
       grit(g, r, base, 9, 0.09, 0.6);
+    });
+
+    /**
+     * A pandanus sitting mat with a banana leaf laid on it, tip to the left,
+     * the way a sadya is served: Mariamma's floor is set for a meal, not
+     * strewn with bare squares of straw.
+     */
+    make('matSadya', 3, (g, r, i) => {
+      // The mat, woven in a two-tone check, frayed a little at one end.
+      const pand = '#c8ad74';
+      rr(g, 6, 12, S - 12, S - 22, 4, pand);
+      for (let y = 14; y < S - 12; y += 6) {
+        for (let x = 8; x < S - 8; x += 6) {
+          if (((x + y) / 6) % 2 < 1) rect(g, x, y, 6, 6, shade(pand, -0.06));
+        }
+      }
+      rr(g, 6, 12, S - 12, 3, 2, shade(pand, 0.12));
+      rr(g, 6, S - 13, S - 12, 3, 2, shade(pand, -0.18));
+      if (i === 2) return; // one mat left for whoever is late
+      // The leaf: a long green blade with its midrib and its fine veins.
+      const leaf = i === 0 ? '#4f8a3e' : '#5a9446';
+      g.fillStyle = leaf;
+      g.beginPath();
+      g.moveTo(10, 32);
+      g.quadraticCurveTo(22, 18, 54, 22);
+      g.lineTo(56, 42);
+      g.quadraticCurveTo(22, 46, 10, 32);
+      g.closePath();
+      g.fill();
+      g.strokeStyle = shade(leaf, 0.3);
+      g.lineWidth = 1.4;
+      g.beginPath(); g.moveTo(11, 32); g.quadraticCurveTo(30, 31, 55, 32); g.stroke();
+      g.strokeStyle = 'rgba(30,60,24,0.25)';
+      g.lineWidth = 0.8;
+      for (let x = 18; x < 54; x += 4) {
+        g.beginPath(); g.moveTo(x, 31.5); g.lineTo(x + 3, 24 + (x - 18) * 0.02); g.stroke();
+        g.beginPath(); g.moveTo(x, 32.5); g.lineTo(x + 3, 41); g.stroke();
+      }
+      // A little salt and pickle in the corner of the leaf, waiting.
+      dot(g, 18, 29, 2, '#f2eee6');
+      dot(g, 22, 35, 2.4, '#b8452c');
+      if (r.chance(0.5)) dot(g, 26, 29, 2.2, '#e8c050');
+    });
+
+    /** The thookku vilakku: a brass oil lamp hung on a chain from the rafter,
+     * five wicks lit round its dish. A kitchen keeps one lit at dusk. */
+    make('thookku', 1, (g) => {
+      const brass = '#c9973a';
+      g.strokeStyle = '#8a6a2e';
+      g.lineWidth = 1.6;
+      for (let y = 0; y < 52; y += 5) {
+        g.beginPath(); g.ellipse(32, y + 2, 1.6, 2.6, 0, 0, Math.PI * 2); g.stroke();
+      }
+      // The finial and the dish.
+      oval(g, 32, 56, 4, 5, shade(brass, -0.1));
+      oval(g, 32, 66, 17, 6, shade(brass, -0.2));
+      oval(g, 32, 64, 16, 4.5, brass);
+      oval(g, 28, 62.5, 7, 1.6, 'rgba(255,240,200,0.5)');
+      oval(g, 32, 72, 5, 4, shade(brass, -0.25));
+      // Five flames round the rim.
+      for (const [fx, fy] of [[18, 63], [25, 60], [32, 59], [39, 60], [46, 63]] as const) {
+        glowSpot(g, fx, fy - 4, 8, '#ffcf72', 0.5);
+        oval(g, fx, fy - 4, 1.5, 3.2, '#ffb54d');
+        oval(g, fx, fy - 3.4, 0.8, 1.6, '#fff1c4');
+      }
+      softShadow(g, 32, 122, 12, 3, 0.12);
+    }, 64, 128);
+
+    /** An uruli: the wide bell-metal pan, too heavy to move, with a coconut
+     * ladle resting in it. Polished by every Saturday of its life. */
+    make('uruli', 1, (g) => {
+      softShadow(g, 32, 50, 24, 6, 0.24);
+      oval(g, 32, 42, 24, 10, '#8f6a2c');
+      oval(g, 32, 38, 24, 8, '#c9973a');
+      oval(g, 32, 38, 19, 5.5, '#6e4f22');
+      oval(g, 26, 35, 9, 1.8, 'rgba(255,240,200,0.45)');
+      for (const hx of [8, 56]) rr(g, hx - 3, 35, 6, 5, 2, '#a07a30');
+      // The chiratta ladle: half a coconut shell on a stick.
+      g.strokeStyle = '#6b4a2a';
+      g.lineWidth = 2.4;
+      g.beginPath(); g.moveTo(30, 38); g.lineTo(52, 24); g.stroke();
+      oval(g, 28, 39, 6, 3.4, '#5a3c22');
+    });
+
+    /** Bharani: the glazed pickle jars, lids tied on with cloth, mango and
+     * lime working in oil until somebody's wedding. */
+    make('bharani', 1, (g) => {
+      softShadow(g, 32, 56, 26, 6, 0.24);
+      const jar = (x: number, y: number, w: number, h: number, c: string) => {
+        oval(g, x, y, w, h, c);
+        oval(g, x - w * 0.35, y - h * 0.2, w * 0.25, h * 0.45, 'rgba(255,248,230,0.3)');
+        // The cloth tied over the mouth.
+        oval(g, x, y - h * 0.92, w * 0.55, h * 0.2, '#efe6d2');
+        g.strokeStyle = '#b8452c';
+        g.lineWidth = 1.4;
+        g.beginPath(); g.ellipse(x, y - h * 0.82, w * 0.5, h * 0.1, 0, 0, Math.PI); g.stroke();
+      };
+      jar(20, 42, 12, 14, '#7e5c34');
+      jar(44, 44, 11, 12, '#6b4f2e');
+      jar(32, 50, 9, 9, '#8f6a3e');
     });
 
     /** A coir mat, woven from the husks piled in the yard. Bleeds edge to

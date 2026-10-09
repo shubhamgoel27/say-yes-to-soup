@@ -55,9 +55,11 @@ export type Escort = { id: string; when: Cond };
  * is eased forward into [min, max] and then held below max. `snap` sets it
  * outright, but only where nobody sees it change: never while words are on
  * screen or a door is closing, always in a door's dark or at a reload.
- * `notOn` maps are exempt, so a scene still running there keeps its own hour.
+ * `on` names the maps the hold is kept on, and only those: a hold is a
+ * chapter's light, and a flag left standing (a skipped beat, a cheat desk
+ * jump) once dragged every later coast down to Shionoura's festival dusk.
  */
-export type HourHold = { when: Cond; min: number; max: number; snap?: boolean; notOn?: string[] };
+export type HourHold = { when: Cond; on: string[]; min: number; max: number; snap?: boolean };
 
 /**
  * Lamps that a scene says are lit. While `when` holds, every lamp a
@@ -146,3 +148,8 @@ export const CUES: Cue[] = CHAPTERS.flatMap((c) => c.cues ?? []);
 export const RELEASES: Release[] = CHAPTERS.flatMap((c) => c.releases ?? []);
 export const VESSELS: Vessel[] = CHAPTERS.flatMap((c) => c.vessels ?? []);
 export const SEATS: TalkSeat[] = CHAPTERS.flatMap((c) => c.seats ?? []);
+
+/** The hour held on `mapId` under these flags, if any. */
+export function holdOn(check: (c: Cond) => boolean, mapId: string, hours: HourHold[] = HOURS): HourHold | undefined {
+  return hours.find((h) => h.on.includes(mapId) && check(h.when));
+}

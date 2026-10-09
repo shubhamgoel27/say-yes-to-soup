@@ -17,6 +17,9 @@ const STEEL = '#e3ded0'; // superstructure white, sun-warmed
 const BUFF = '#d2a548'; // funnel buff
 const NAVY = '#2c3e57';
 
+/** Her name across the transom, one letter a plate, pinned by the ship's map. */
+export const STERN_NAME = 'YACANA';
+
 function paint(make: MakeTile) {
   // ------------------------------------------------------------ grounds
 
@@ -45,25 +48,109 @@ function paint(make: MakeTile) {
   /** The sea part of a hull cell is left clear: the tileset lays the live sea under it. */
 
   // The stern: the transom seen square on, weld seams, the boot-top, the wake.
-  make('hullstern', 3, (g, r) => {
+  // Variants 0-2 are plain plating; 3 onward each carry one letter of her
+  // name, pinned across the transom by the map (see STERN_NAME), because a
+  // ship with no name on her stern was a box on the sea.
+  const sternPlate = (g: CanvasRenderingContext2D, r: { next(): number }) => {
     vgrad(g, 0, 0, S, 46, shade(HULL, 0.1), shade(HULL, -0.12));
     rect(g, 0, 0, S, 3, '#e9e7dd'); // the rubbing strake under the rail
     rect(g, 0, 3, S, 2, 'rgba(0,0,0,0.3)');
+    // A horizontal weld seam and the frame seams, faint, as plating shows them.
+    rect(g, 0, 24, S, 1.2, 'rgba(0,0,0,0.22)');
+    rect(g, 0, 25.2, S, 0.8, 'rgba(255,255,255,0.06)');
+    for (const x of [16, 48]) rect(g, x, 6, 1.2, 40, 'rgba(255,255,255,0.06)');
     rect(g, 0, 46, S, 8, BOOT);
     rect(g, 0, 46, S, 1.4, shade(BOOT, 0.2));
-    for (const x of [16, 48]) rect(g, x, 6, 1.2, 40, 'rgba(255,255,255,0.06)');
-    if (r.next() < 0.4) oval(g, 12 + r.next() * 40, 30, 5, 3, 'rgba(138,84,48,0.35)'); // a rust weep
     vgrad(g, 0, 54, S, 10, 'rgba(30,50,60,0.4)', 'rgba(30,50,60,0)');
     foamLine(g, r, false, 55);
+  };
+  make('hullstern', 3 + STERN_NAME.length, (g, r, i) => {
+    sternPlate(g, r);
+    const letter = i >= 3 ? STERN_NAME[i - 3] : undefined;
+    if (letter) {
+      g.fillStyle = '#ece8dc';
+      g.font = 'bold 26px Georgia, serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(letter, S / 2, 15);
+      // Weathered: salt runs down from the paint.
+      vgrad(g, S / 2 - 4, 26, 8, 16, 'rgba(236,232,220,0.14)', 'rgba(0,0,0,0)');
+    } else if (r.next() < 0.5) {
+      // A rust weep from a scupper, and draft marks on the plain plates.
+      rect(g, 8 + r.next() * 44, 6, 3, 3, 'rgba(20,24,30,0.6)');
+      vgrad(g, 10 + r.next() * 40, 9, 3, 24, 'rgba(150,86,44,0.45)', 'rgba(150,86,44,0)');
+    } else {
+      for (let k = 0; k < 3; k++) rect(g, 54, 14 + k * 10, 6, 1.6, 'rgba(236,232,220,0.55)');
+    }
   });
 
-  // The port side (deck to the east): plating darkest at the waterline.
+  // The stern's two quarters: plating rounded from the side onto the
+  // transom, so the ship ends in a hull and not in the corner of a box.
+  const quarter = (g: CanvasRenderingContext2D, r: { next(): number }, port: boolean) => {
+    g.save();
+    if (!port) {
+      g.translate(S, 0);
+      g.scale(-1, 1);
+    }
+    const R = 34;
+    const path = (inset: number) => {
+      g.beginPath();
+      g.moveTo(14 + inset, 0);
+      g.lineTo(14 + inset, 54 - inset - R);
+      g.quadraticCurveTo(14 + inset, 54 - inset, 14 + inset + R, 54 - inset);
+      g.lineTo(S, 54 - inset);
+    };
+    // The hull's shade on the water: flat down her side, fading off the stern.
+    rect(g, 0, 0, 14, 54, 'rgba(30,50,60,0.22)');
+    vgrad(g, 0, 54, S, 10, 'rgba(30,50,60,0.4)', 'rgba(30,50,60,0)');
+    // Plating.
+    path(0);
+    g.lineTo(S, 0);
+    g.closePath();
+    const grad = g.createLinearGradient(14, 0, S, 54);
+    grad.addColorStop(0, shade(HULL, -0.14));
+    grad.addColorStop(1, shade(HULL, 0.06));
+    g.fillStyle = grad;
+    g.fill();
+    // The boot-top following the curve, then the strakes.
+    g.strokeStyle = BOOT;
+    g.lineWidth = 7;
+    path(3.5);
+    g.stroke();
+    // Where the side's strake meets the transom's, at the deck's corner.
+    rect(g, S - 4, 0, 4, 3, '#e9e7dd');
+    // Foam where the curve meets the sea.
+    g.strokeStyle = 'rgba(240,246,246,0.85)';
+    g.lineWidth = 3.2;
+    g.setLineDash([4, 2]);
+    path(-1.5);
+    g.stroke();
+    g.setLineDash([]);
+    for (let k = 0; k < 4; k++) dot(g, 6 + r.next() * 20, 46 + r.next() * 14, 1.1, 'rgba(240,246,246,0.6)');
+    g.restore();
+  };
+  make('hullquarterport', 1, (g, r) => quarter(g, r, true));
+  make('hullquarterstbd', 1, (g, r) => quarter(g, r, false));
+
+  // The port side (deck to the east): plating darkest at the waterline,
+  // a frame seam every few metres and now and then a scupper's rust run.
+  const sideMarks = (g: CanvasRenderingContext2D, r: { next(): number }, x0: number, x1: number) => {
+    rect(g, x0, 0, x1 - x0, 1.2, 'rgba(0,0,0,0.24)');
+    rect(g, x0, 1.2, x1 - x0, 0.8, 'rgba(255,255,255,0.06)');
+    if (r.next() < 0.35) {
+      const y = 10 + r.next() * 40;
+      rect(g, x1 - 4, y, 3, 3, 'rgba(20,24,30,0.6)');
+      g.fillStyle = 'rgba(150,86,44,0.35)';
+      g.fillRect(x0 + 6, y + 1, x1 - x0 - 10, 2);
+    }
+  };
   make('hullport', 2, (g, r) => {
     const grad = g.createLinearGradient(14, 0, S, 0);
     grad.addColorStop(0, shade(HULL, -0.16));
     grad.addColorStop(1, shade(HULL, 0.12));
     g.fillStyle = grad;
     g.fillRect(14, 0, S - 14, S);
+    sideMarks(g, r, 21, S - 4);
     rect(g, S - 4, 0, 4, S, '#e9e7dd');
     rect(g, 14, 0, 7, S, BOOT);
     rect(g, 0, 0, 14, S, 'rgba(30,50,60,0.22)'); // the hull's shade on the water
@@ -121,6 +208,7 @@ function paint(make: MakeTile) {
     grad.addColorStop(1, shade(HULL, -0.16));
     g.fillStyle = grad;
     g.fillRect(0, 0, S - 14, S);
+    sideMarks(g, r, 4, S - 21);
     rect(g, 0, 0, 4, S, '#e9e7dd');
     rect(g, S - 21, 0, 7, S, BOOT);
     rect(g, S - 14, 0, 14, S, 'rgba(30,50,60,0.22)');
@@ -587,6 +675,30 @@ function paint(make: MakeTile) {
       rect(g, 0, ry - 1.6, S, 1.4, white);
     }
     if (r.chance(0.3)) oval(g, 6 + r.int(50), 15, 3, 1.6, 'rgba(138,84,48,0.4)'); // rust kiss
+  });
+
+  // The same rail seen along its length, down the ship's sides. Drawn as the
+  // south-facing rail it was a ladder in every cell with a gap between each,
+  // a fence of white rungs down both sides; along the run the eye sees the
+  // top rail as one line, the stanchions as posts beside it, and the lower
+  // rails as the same line's shadow. Continuous top to bottom, so a run of
+  // cells is one rail.
+  make('railrun', 1, (g) => {
+    const white = '#e9e7dd';
+    const x = 30;
+    // Its shadow on the deck.
+    rect(g, x + 5, 0, 4, S, 'rgba(20,28,26,0.18)');
+    // The lower rails, a step down and to the side.
+    rect(g, x + 3, 0, 2.2, S, shade(white, -0.22));
+    rect(g, x + 1.5, 0, 2.2, S, shade(white, -0.12));
+    // Stanchions, on the same pitch as the rail across the stern.
+    for (const y of [10, 32, 54]) {
+      rr(g, x - 2.5, y - 3, 8, 7, 2, shade(white, -0.18));
+      dot(g, x + 1.4, y, 2.6, white);
+    }
+    // The top rail.
+    rect(g, x - 1.6, 0, 3.4, S, shade(white, -0.06));
+    rect(g, x - 1.6, 0, 1.6, S, white);
   });
 
   const container = (color: string) => (g: CanvasRenderingContext2D) => {
@@ -1475,6 +1587,12 @@ export const ART: ChapterArt = {
   },
   /** The range is one drawing across two cells. */
   pins: {
+    // The transom: plain plates, and her name in the middle six.
+    ship: Array.from({ length: 16 }, (_, k) => {
+      const x = 14 + k;
+      const n = x - 19;
+      return { kind: 'hullstern', at: [x, 30] as [number, number], v: n >= 0 && n < STERN_NAME.length ? 3 + n : (x * 7) % 3 };
+    }),
     galley: [
       { kind: 'stove', at: [1, 1], v: 0 },
       { kind: 'stove', at: [2, 1], v: 1 },

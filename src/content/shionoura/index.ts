@@ -106,14 +106,17 @@ export const CHAPTER: ChapterDef = {
     },
     // Shionoura after dusk, festival night included: indigo above, the quay
     // low in the frame lantern-paper orange ("the quay turns paper-orange"),
-    // clouds stood down for the star river.
+    // clouds stood down for the star river. The ambient was a mauve that the
+    // dusk curve's blue turned to lilac, so the whole quay read cool purple
+    // under the line that calls it orange; a warm ember ambient keeps the
+    // evening dark and lets the lanterns' paper colour be the town's colour.
     tanabataNight: {
-      top: 'rgba(28,36,84,0.26)',
-      mid: 'rgba(70,48,84,0.12)',
-      bottom: 'rgba(196,110,58,0.2)',
-      vig: 0.36,
-      glow: 'rgba(255,176,96,0.16)',
-      ambient: 0xa898b4,
+      top: 'rgba(30,38,92,0.32)',
+      mid: 'rgba(120,64,52,0.10)',
+      bottom: 'rgba(232,132,56,0.24)',
+      vig: 0.34,
+      glow: 'rgba(255,176,96,0.2)',
+      ambient: 0xdcaa8c,
       noClouds: true,
     },
   },

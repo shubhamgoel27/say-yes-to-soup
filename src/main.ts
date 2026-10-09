@@ -58,7 +58,7 @@ import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
-import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES, SEATS, VESSELS, type TalkSeat, type Vessel } from './content/staging';
+import { BLOCKING, CUES, LAMPS_LIT, RELEASES, SEATS, VESSELS, holdOn, type TalkSeat, type Vessel } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -1959,7 +1959,7 @@ function updateStaging(dt: number) {
     ? undefined
     : afterglow
       ? AFTERGLOW_HOUR
-      : HOURS.find((h) => state.check(h.when) && !(h.notOn ?? []).includes(map.id));
+      : holdOn((c) => state.check(c), map.id);
   if (hold && (dayT < hold.min || dayT > hold.max)) {
     const past = (dayT - hold.max + 1) % 1;
     if (past < 0.02) dayT = hold.max;
@@ -2660,7 +2660,12 @@ function petalStep(x: number, y: number) {
  * the flyleaf (persisted in the save), gilded if the older code is known.
  */
 function currentPlayerLook() {
-  const base = { ...PLAYER_LOOK, ...(state.playerLook ?? {}) };
+  // The chullo chosen at the flyleaf, or none: what the card showed is what
+  // walks out of it. (It used to show the traveler bareheaded and then put
+  // a gold chullo on them the moment the game began.)
+  const { hat: chosenHat, ...strokes } = state.playerLook ?? {};
+  const hat = chosenHat === 'none' ? { hatStyle: 'none' as const } : chosenHat ? { hat: chosenHat } : {};
+  const base = { ...PLAYER_LOOK, ...strokes, ...hat };
   /** The golden traveler, for those who remember an older code. */
   return state.has('konami')
     ? { ...base, cloth: '#c8a55b', stripe: '#f2e6d0', hat: '#e8c97a' }
@@ -4907,6 +4912,8 @@ function update(dt: number) {
   } else {
     renderer.setHint(null);
   }
+  // The undug mounds glint until they are dug, wherever you stand.
+  renderer.setGlints(moundsHere().map((m) => [m.actor.x, m.actor.y]));
   updateSitting(dt);
   updateWarp(dt);
 
@@ -6731,6 +6738,17 @@ function installCheats() {
     tod(t: number) {
       dayT = Math.max(0, Math.min(0.999, t));
       return `time of day = ${dayT.toFixed(2)}`;
+    },
+    /** The light right now: the clock, the mood it picked, how dark it reads,
+     * and the ambient the stage is multiplying the world by. */
+    light() {
+      return {
+        t: +dayT.toFixed(3),
+        mood: moodFor(map.id),
+        night: +nightLevel(dayT).toFixed(2),
+        ambient: ambientNow().toString(16),
+        raining: rainingOn(map.id),
+      };
     },
     band() {
       state.set('keepsake.band');

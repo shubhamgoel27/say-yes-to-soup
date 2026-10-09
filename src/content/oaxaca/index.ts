@@ -121,7 +121,7 @@ export const CHAPTER: ChapterDef = {
   ],
   recall: RECALL,
   meta: {
-    oaxaca: { scene: 'outdoor', mood: 'cempaluz' },
+    oaxaca: { scene: 'outdoor', mood: 'cempaluz', moodDawn: 'albazo' },
     cocina: { scene: 'interior', mood: 'interior' },
     // The camposanto used to be hardcoded to the vigil, so a first scouting
     // visit at noon arrived in deep-blue candle night. It is a graveyard being
@@ -136,6 +136,15 @@ export const CHAPTER: ChapterDef = {
       bottom: 'rgba(190,110,150,0.07)',
       vig: 0.26,
       ambient: 0xffe8c2,
+    },
+    // First light at the colectivo corner, after the vigil: the valley still
+    // blue in its shadows, the first gold on the walls, candle smoke thinning.
+    albazo: {
+      top: 'rgba(150,160,206,0.22)',
+      mid: 'rgba(236,206,196,0.08)',
+      bottom: 'rgba(255,186,110,0.14)',
+      vig: 0.3,
+      ambient: 0xe6d6d0,
     },
     // The camposanto by day: whitewash, dust, and a lot of open sky.
     campodia: {

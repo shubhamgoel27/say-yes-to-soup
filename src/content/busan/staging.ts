@@ -35,7 +35,7 @@ export const STAGING: Staging = {
     // from dawn into the loading morning.
     // Held in the gold of the first quarter hour, where the day curve still
     // reads as dawn ("a dawn like oyster shell").
-    { when: { has: ['c5.berth'], not: ['c5.bye'] }, min: 0.005, max: 0.03, snap: true },
+    { when: { has: ['c5.berth'], not: ['c5.bye'] }, on: ['busan', 'teahouse'], min: 0.005, max: 0.03, snap: true },
   ],
   blocking: [
     // She keeps her stall: the bag is packed and she is not looking up.

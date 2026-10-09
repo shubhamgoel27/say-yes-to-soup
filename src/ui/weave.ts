@@ -877,27 +877,72 @@ export class WeavePanel {
     }
   }
 
+  /**
+   * Which ball the call is holding up right now, and how strongly. "Watch
+   * which ball lights" was a coloured glow on a coloured ball that faded in a
+   * third of a second, on a basket the same warm tone as the glow: the real
+   * cue was the arrow on the heddle stick. Now the called ball is held lit
+   * for most of its beat (dark for the rest, so the same ball called twice
+   * reads as two calls), rises out of the basket inside a ring of light, and
+   * the other three step back.
+   */
+  private called(): { idx: number; k: number } | null {
+    if (this.phase !== 'show' || this.lit === null) return null;
+    const stepT = this.hard ? HARD_SHOW_STEP : SHOW_STEP;
+    const f = (this.t % stepT) / stepT;
+    const idx = this.seq[this.lit];
+    if (idx === undefined) return null;
+    // Up fast, held, and out before the next call comes.
+    const k = f < 0.08 ? f / 0.08 : f < 0.7 ? 1 : Math.max(0, 1 - (f - 0.7) / 0.12);
+    return { idx, k };
+  }
+
   private paintBalls(g: CanvasRenderingContext2D, time: number) {
+    const call = this.called();
     for (let i = 0; i < 4; i++) {
       const b = BALLS[i]!;
       const c = COLORS[i]!.hex;
-      const k = this.ballK[i] ?? 0;
-      const r = 23 * (1 + k * 0.3 + wobble(time, 1.7, i * 1.9) * 0.015);
+      const held = call && call.idx === i ? call.k : 0;
+      const k = Math.max(this.ballK[i] ?? 0, held);
+      const lift = k * 7;
+      const r = 23 * (1 + k * 0.32 + wobble(time, 1.7, i * 1.9) * 0.015);
+      const by = b.y - lift;
+      // While a call is up, the balls it is not calling step back.
+      const dim = call && call.idx !== i ? 0.5 : 1;
       if (k > 0.02) {
-        g.globalAlpha = k * 0.9;
-        g.drawImage(glowCv(c), b.x - 52, b.y - 52, 104, 104);
+        g.globalAlpha = Math.min(1, k * 1.1);
+        g.drawImage(glowCv('#fff4d8'), b.x - 60, by - 60, 120, 120);
+        g.drawImage(glowCv(c), b.x - 52, by - 52, 104, 104);
+        // A ring of light round it, and short rays turning slowly.
+        g.strokeStyle = `rgba(255,248,226,${0.95 * k})`;
+        g.lineWidth = 3;
+        g.beginPath();
+        g.arc(b.x, by, r + 7, 0, Math.PI * 2);
+        g.stroke();
+        g.lineWidth = 2.2;
+        g.lineCap = 'round';
+        for (let a = 0; a < 8; a++) {
+          const th = (a / 8) * Math.PI * 2 + time * 0.8;
+          g.beginPath();
+          g.moveTo(b.x + Math.cos(th) * (r + 11), by + Math.sin(th) * (r + 11));
+          g.lineTo(b.x + Math.cos(th) * (r + 17), by + Math.sin(th) * (r + 17));
+          g.stroke();
+        }
+        g.lineCap = 'butt';
         g.globalAlpha = 1;
       }
-      oval(g, b.x, b.y + r * 0.85, r * 0.9, r * 0.28, 'rgba(30,20,12,0.3)');
-      dot(g, b.x, b.y, r, c);
+      g.globalAlpha = dim;
+      oval(g, b.x, b.y + r * 0.85, r * (0.9 - k * 0.15), r * 0.28, `rgba(30,20,12,${0.3 - k * 0.12})`);
+      dot(g, b.x, by, r, k > 0.02 ? shade(c, 0.12 * k) : c);
       g.strokeStyle = shade(c, -0.22);
       g.lineWidth = 1.8;
       for (const [a0, a1, tilt] of [[0.4, 2.6, 0.5], [3.4, 5.6, -0.6], [1.4, 3.6, 1.7]] as const) {
         g.beginPath();
-        g.ellipse(b.x, b.y, r * 0.92, r * 0.5, tilt, a0, a1);
+        g.ellipse(b.x, by, r * 0.92, r * 0.5, tilt, a0, a1);
         g.stroke();
       }
-      dot(g, b.x - r * 0.34, b.y - r * 0.4, r * 0.22, shade(c, 0.4));
+      dot(g, b.x - r * 0.34, by - r * 0.4, r * 0.22, shade(c, 0.4));
+      g.globalAlpha = 1;
     }
   }
 }

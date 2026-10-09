@@ -121,16 +121,18 @@ export const CHAPTER: ChapterDef = {
     'mariamma-veedu': { scene: 'interior', mood: 'interior' },
   },
   moods: {
-    // The held breath of a mid-season dry week: white heat, heavy air, a
-    // haze that flattens the light without cooling anything. (Timeline:
-    // Tanabata two chapters back pins early July; edavappathi broke in late
-    // May, so the player-facing rain is the rains returning, not the first.)
+    // The held breath of a mid-season dry week: heavy air, and the light
+    // coming down green through the coconut fronds onto green water, as the
+    // arrival says ("Green water, green light"). It was a cream haze once,
+    // which with the channel's own blue read as a cool grey afternoon.
+    // (Timeline: Tanabata two chapters back pins early July; edavappathi
+    // broke in late May, so the player-facing rain is the rains returning.)
     premonsoon: {
-      top: 'rgba(240,234,205,0.16)',
-      mid: 'rgba(235,224,190,0.07)',
-      bottom: 'rgba(185,172,140,0.09)',
+      top: 'rgba(200,232,170,0.16)',
+      mid: 'rgba(222,236,186,0.06)',
+      bottom: 'rgba(96,150,104,0.12)',
       vig: 0.24,
-      ambient: 0xf5ecd4,
+      ambient: 0xecf4d6,
     },
     // After c6.rain: grey-green, silver light, a rain ceiling instead of a
     // sky. The integrator may switch the kerala map to this mood once the

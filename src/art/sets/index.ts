@@ -118,6 +118,7 @@ import { ART as DELHI_ART } from './delhi';
 import { ART as ZANZIBAR_ART } from './zanzibar';
 import { ART as SICILY_ART } from './sicily';
 import { ART as OAXACA_ART } from './oaxaca';
+import { ART as BOATS_ART } from './boats';
 registerArt(CHASKA_ART);
 registerArt(CALETA_ART);
 registerArt(CROSSING_ART);
@@ -128,6 +129,8 @@ registerArt(DELHI_ART);
 registerArt(ZANZIBAR_ART);
 registerArt(SICILY_ART);
 registerArt(OAXACA_ART);
+// The vessels the words name, shared by every coast that arrives by water.
+registerArt(BOATS_ART);
 // The ending's props last, so its apacheta replaces the plain one.
 import { ART as ENDING_ART } from '../ending';
 registerArt(ENDING_ART);

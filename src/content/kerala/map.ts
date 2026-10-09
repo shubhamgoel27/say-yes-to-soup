@@ -222,6 +222,9 @@ function objectAt(x: number, y: number): string {
     if ((y <= bankY(x) + 1 || inCreek(x, y)) && cellHash(x, y, 70) < 0.34) return 'R';
     if (x === 33 && y === 27) return 'V'; // the kettuvallam, moored at the bank
     if (x === 20 && y === 26) return 'V';
+    // The Kochi boat tied up off the jetty's end, bow to the planks: "a
+    // chugging boat leaves you on a jetty one handcart wide".
+    if (x === 19 && y === 29) return 'Z';
     // Vallams out on the channel: the street has traffic on it.
     if ((x === 15 && y === 29) || (x === 35 && y === 30) || (x === 8 && y === 28)) return 'v';
     // The cheena vala stands out in the channel itself, net toward the far
@@ -304,6 +307,7 @@ export const KERALA_MAP: MapData = {
     b: { t: 'banana', solid: true, tall: true },
     v: { t: 'vallam', solid: true, tall: true },
     V: { t: 'kettuvallam', solid: true, tall: true },
+    Z: { t: 'boatKerala', solid: true, tall: true },
     c: { t: 'coirrack', solid: true, tall: true },
     K: { t: 'thattukada', solid: true, tall: true },
     M: { t: 'muralwall', solid: true, tall: true },
@@ -364,6 +368,9 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
     U: { t: 'umbrellas', solid: true },
     k: { t: 'spicesacks', solid: true, tall: true },
     O: { t: 'chappals' },
+    B: { t: 'uruli', solid: true },
+    L: { t: 'thookku', tall: true },
+    J: { t: 'bharani', solid: true },
   },
   ground: [
     '..............',
@@ -381,11 +388,13 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
   // the sadya is eaten drift across the east floor in a stagger, not a grid.
   // Nothing stands in the line between the door and Mariamma at her hearth,
   // which is the one sightline this room has to keep. The uri hangs over the
-  // working end, and the prayer lamp holds the far corner by the door.
+  // working end, and the prayer lamp holds the far corner by the door. Along
+  // the north wall the uruli and the pickle jars, and a brass lamp hung from
+  // the rafter, so the room is a kitchen someone lives in and not a floor.
   objects: [
     '#SS##S####S###',
-    '#ap u        #',
-    '#p           #',
+    '#ap u B    L #',
+    '#p          J#',
     '#         k  #',
     '#T g     mm  #',
     '#Ts    mmmm  #',

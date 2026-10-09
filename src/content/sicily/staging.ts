@@ -46,8 +46,8 @@ export const STAGING: Staging = {
   hours: [
     // The passeggiata hour (the bar lamp comes on first), and the send-off
     // kept in it: the town walks down to the mole in its evening clothes.
-    { when: WALKING, min: 0.585, max: 0.6 },
-    { when: SEEING_OFF, min: 0.585, max: 0.62 },
+    { when: WALKING, on: ['sicily', 'circolo'], min: 0.585, max: 0.6 },
+    { when: SEEING_OFF, on: ['sicily', 'circolo'], min: 0.585, max: 0.62 },
   ],
   blocking: [
     // Out in the piazza for the walk, between Concetta's door and the chair

@@ -865,7 +865,20 @@ export const ART: ChapterArt = {
       g.stroke();
       rr(g, 9, 68, 9, 4, 1, '#e8d24a');
     };
+    // The rickshaws were painted at the scale of the carts, about half a
+    // person high, so the wallah on the saddle was a child's toy beside the
+    // people walking past. Every telling is drawn at its old size into a
+    // bigger sheet, scaled up from the ground contact, which puts the hood
+    // at a standing person's shoulder and the length at two tiles.
+    const RICKSHAW_K = 1.7;
     make('rickshaw', 5, (g, r, i) => {
+      g.save();
+      g.translate(64 - 32 * RICKSHAW_K, 156 - 90 * RICKSHAW_K);
+      g.scale(RICKSHAW_K, RICKSHAW_K);
+      paintRickshaw(g, r, i);
+      g.restore();
+    }, 128, 160);
+    function paintRickshaw(g: CanvasRenderingContext2D, r: Parameters<Parameters<typeof make>[2]>[1], i: number) {
       if (i === 4) {
         // The goods rickshaw: a flatbed tricycle, sacks and a tin trunk
         // roped on, a mattress folded on top, nobody aboard yet.
@@ -971,7 +984,7 @@ export const ART: ChapterArt = {
       g.moveTo(14, 40);
       g.quadraticCurveTo(32, 34, 50, 40);
       g.stroke();
-    }, 64, 96);
+    }
 
     // The mango thela: a handcart of langra and chausa in straw, priced by
     // conviction, haggled by choreography.

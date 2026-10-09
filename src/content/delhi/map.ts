@@ -182,7 +182,9 @@ const DECOR: Record<string, string> = {
   '23,28': 'q',
   '26,29': 'K',
   '29,28': 'q', // the drivers' waiting charpai, occupancy always one nap
-  '31,27': 'r', '32,26': 'r', '33,26': 'r', // Bantu's uncle's fleet, nose to tail
+  // Bantu's uncle's fleet, nose to tail: a cell apart, now they are drawn
+  // the size of rickshaws and not of toys.
+  '30,27': 'r', '32,26': 'r', '34,27': 'r',
   '35,24': '4', '33,28': '4',
   // ---- The chowk: everything faces everything, so nothing faces a wall.
   '45,7': 'n', // the nishan sahib, saffron over the whole square
