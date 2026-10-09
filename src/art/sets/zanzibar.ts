@@ -74,6 +74,88 @@ export const ART: ChapterArt = {
       }
     });
 
+    /**
+     * The dawn goodbye: "At Rashid's end of the bench the ginger cat sleeps
+     * on a folded kanga left for you." The baraza block exactly as its
+     * neighbours are laid, and on the seat a kanga folded in four, one
+     * corner hanging over the front edge so it reads as cloth, its border,
+     * its field, and the line of its jina along the hem; on that, curled
+     * nose to tail, the ginger cat, the one fixed at this cell all chapter.
+     * Tall, so the cat can rise above the seat it sleeps on.
+     */
+    make('pakakanga', 1, (g) => {
+      g.translate(0, 32);
+      softShadow(g, S / 2, 40, 26, 7, 0.16);
+      const stone = '#e6dcc2';
+      rr(g, 4, 16, 56, 22, 3, shade(stone, -0.16));
+      rr(g, 2, 8, 60, 14, 4, stone);
+      vgrad(g, 2, 8, 60, 5, 'rgba(255,252,240,0.5)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(120,100,70,0.35)';
+      g.lineWidth = 1.6;
+      for (const lx of [20, 42]) {
+        g.beginPath(); g.moveTo(lx, 24); g.lineTo(lx, 36); g.stroke();
+      }
+      g.beginPath(); g.moveTo(6, 28); g.lineTo(58, 28); g.stroke();
+      // The kanga, folded, lying on the seat: indigo border, saffron field.
+      const border = '#2f4f7f';
+      const field = '#e0a43a';
+      rr(g, 10, 2, 44, 18, 2.5, border);
+      rr(g, 13, 4.5, 38, 13, 1.5, field);
+      // The printed centre, a cashew-pattern medallion.
+      oval(g, 32, 11, 7, 4.2, '#c1512f');
+      oval(g, 32, 11, 3.6, 2, field);
+      for (const dx of [-12, 12]) dot(g, 32 + dx, 11, 1.8, '#c1512f');
+      // The jina along the hem: a line of small cream letters.
+      g.fillStyle = '#f2e6d0';
+      for (let x = 15; x < 49; x += 3) g.fillRect(x, 16, 2, 1.2);
+      // One corner hanging over the front of the seat, folds and all.
+      g.fillStyle = border;
+      g.beginPath();
+      g.moveTo(40, 19);
+      g.lineTo(54, 19);
+      g.quadraticCurveTo(53, 26, 49, 31);
+      g.quadraticCurveTo(45, 26, 40, 19);
+      g.closePath();
+      g.fill();
+      g.fillStyle = field;
+      g.beginPath();
+      g.moveTo(43, 19.5);
+      g.lineTo(51, 19.5);
+      g.quadraticCurveTo(50, 24, 48, 27);
+      g.quadraticCurveTo(45.5, 23.5, 43, 19.5);
+      g.closePath();
+      g.fill();
+      // The cat: the curled ginger, nose under tail, on the cloth.
+      const coat = '#c97f42';
+      const belly = shade(coat, 0.28);
+      softShadow(g, 31, 9, 15, 4, 0.2);
+      oval(g, 32, 3, 14, 8.5, coat);
+      oval(g, 35.5, 4.5, 7.5, 4.5, belly);
+      // Tabby bars over the back.
+      g.strokeStyle = shade(coat, -0.2);
+      g.lineWidth = 1.4;
+      for (const bx of [28, 33, 38]) {
+        g.beginPath(); g.moveTo(bx - 2, -4.5); g.quadraticCurveTo(bx, -2, bx + 1, 0); g.stroke();
+      }
+      // The tail, wrapped round to the nose.
+      g.strokeStyle = shade(coat, -0.12);
+      g.lineWidth = 3.8;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(45, 5); g.quadraticCurveTo(36, 13, 22, 8); g.stroke();
+      g.lineCap = 'butt';
+      // Head tucked down at the west end, ears up, eyes shut.
+      dot(g, 21, 1.5, 5.6, coat);
+      g.fillStyle = coat;
+      g.beginPath(); g.moveTo(16, 0); g.lineTo(17.5, -6.5); g.lineTo(21, -1.5); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(21.5, -2); g.lineTo(24.5, -7); g.lineTo(26, -0.5); g.closePath(); g.fill();
+      g.fillStyle = '#e8a08a';
+      g.beginPath(); g.moveTo(17.6, -1); g.lineTo(18.2, -4.5); g.lineTo(20, -1.6); g.closePath(); g.fill();
+      g.strokeStyle = shade(coat, -0.4);
+      g.lineWidth = 1.1;
+      g.beginPath(); g.moveTo(17.5, 2); g.quadraticCurveTo(19, 3, 20.5, 2); g.stroke();
+      dot(g, 16.4, 4, 0.9, '#8a4a3a');
+    }, 64, 96);
+
     // A mat of cloves drying by the lane: rust-red on woven palm.
     make('clovemat', 3, (g, r) => {
       softShadow(g, 32, 54, 26, 6, 0.12);

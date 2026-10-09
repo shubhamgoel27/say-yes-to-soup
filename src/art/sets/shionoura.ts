@@ -218,6 +218,107 @@ function paintMachiya(g: CanvasRenderingContext2D, r: Rng, office: boolean) {
 
 export const ART: ChapterArt = {
   paint(make) {
+    /**
+     * Fumi's dinner: "A low table, a fish grilled whole, pickles the color
+     * of stained glass." One black-lacquered zataku across two cells (variant
+     * 0 its west half, 1 its east), a place laid at each half along its north
+     * edge, where the two of you kneel: a whole aji salt-grilled on a long
+     * plate, head west, char on its skin and a wedge of sudachi; rice, miso
+     * under its lid, and the pickles (takuan yellow, shibazuke purple,
+     * cucumber green) catching the lamp in a small dish.
+     */
+    make('mealtable', 2, (g, _r, i) => {
+      const west = i === 0;
+      const lac = '#2a1a16';
+      // Its shadow on the boards, and the stubby legs at the far ends only.
+      g.fillStyle = 'rgba(26,18,12,0.2)';
+      g.fillRect(west ? 8 : 0, 50, west ? 56 : 56, 8);
+      rr(g, west ? 8 : 48, 44, 8, 12, 2, shade(lac, 0.08));
+      // The top: square at the seam, rounded at the outer end, one surface.
+      g.fillStyle = lac;
+      g.beginPath();
+      if (west) g.roundRect(3, 12, 61, 36, [7, 0, 0, 7]);
+      else g.roundRect(0, 12, 61, 36, [0, 7, 7, 0]);
+      g.fill();
+      // Lacquer: a vermilion rim, and the lamp's sheen across the top.
+      g.strokeStyle = '#8f2a1e';
+      g.lineWidth = 1.6;
+      g.beginPath();
+      g.moveTo(west ? 9 : 0, 13.5);
+      g.lineTo(west ? 64 : 55, 13.5);
+      g.stroke();
+      vgrad(g, west ? 3 : 0, 12, 61, 9, 'rgba(255,214,170,0.22)', 'rgba(0,0,0,0)');
+      // The long plate and the fish, along the north edge.
+      const px = west ? 10 : 5;
+      rr(g, px, 16, 46, 13, 3, '#f1ece2');
+      rr(g, px + 2, 18, 42, 9, 2, '#e3dccd');
+      const fx = px + 23;
+      const fy = 22.5;
+      const skin = g.createLinearGradient(0, fy - 5, 0, fy + 5);
+      skin.addColorStop(0, '#6f7c86');
+      skin.addColorStop(0.55, '#c9cfd2');
+      skin.addColorStop(1, '#e8e2d2');
+      g.fillStyle = skin;
+      g.beginPath();
+      g.moveTo(fx - 17, fy);
+      g.quadraticCurveTo(fx - 8, fy - 6, fx + 9, fy - 3.4);
+      g.lineTo(fx + 15, fy - 6);
+      g.lineTo(fx + 14, fy);
+      g.lineTo(fx + 15, fy + 6);
+      g.lineTo(fx + 9, fy + 3.4);
+      g.quadraticCurveTo(fx - 8, fy + 6, fx - 17, fy);
+      g.closePath();
+      g.fill();
+      // The grill's char across it, the salt-white fins, and its eye.
+      g.strokeStyle = 'rgba(70,40,20,0.42)';
+      g.lineWidth = 1.2;
+      for (const dx of [-6, 0, 6]) {
+        g.beginPath();
+        g.moveTo(fx + dx - 1.5, fy - 4);
+        g.lineTo(fx + dx + 1.5, fy + 4);
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(250,248,240,0.85)';
+      g.beginPath();
+      g.moveTo(fx + 12, fy - 3);
+      g.lineTo(fx + 16, fy - 7);
+      g.lineTo(fx + 14, fy - 1.5);
+      g.closePath();
+      g.fill();
+      dot(g, fx - 12.5, fy - 1, 1.6, '#f6f2e8');
+      dot(g, fx - 12.5, fy - 1, 0.8, '#1a1210');
+      // Sudachi and a little grated daikon at the plate's corner.
+      dot(g, px + 41, 25, 2.6, '#7fae3e');
+      dot(g, px + 41, 25, 1.2, '#d6e6a0');
+      oval(g, px + 36, 26, 3, 2, '#f4f1e8');
+      // Rice, miso under its lid, and the pickle dish.
+      const by = 38;
+      dot(g, px + 7, by, 6, '#2c2420');
+      oval(g, px + 7, by - 1, 4.6, 3.6, '#fbf8f0');
+      dot(g, px + 22, by, 6, '#6e2f22');
+      oval(g, px + 22, by - 1.5, 5.4, 4, '#8a3a2a');
+      dot(g, px + 22, by - 3, 1.4, '#c58a5a');
+      oval(g, px + 37, by, 6.5, 4.5, '#efe8da');
+      dot(g, px + 34.5, by - 0.5, 1.8, '#e8c84a');
+      dot(g, px + 37.5, by + 0.5, 1.8, '#8a3a7a');
+      dot(g, px + 40, by - 0.8, 1.7, '#6fa84a');
+      // Chopsticks on their rest, nearest the diner.
+      oval(g, px + 47, by + 1, 2.4, 1.4, '#c9b48a');
+      g.strokeStyle = '#3a2416';
+      g.lineWidth = 1.3;
+      g.beginPath();
+      g.moveTo(px + 44, 31);
+      g.lineTo(px + 49, 45);
+      g.moveTo(px + 46.5, 31);
+      g.lineTo(px + 51.5, 45);
+      g.stroke();
+      // Between the two places, the teapot's handle and a cup each.
+      if (!west) {
+        dot(g, 59, 40, 3.2, '#c9b9a0');
+        dot(g, 59, 39.4, 2, '#7a8a54');
+      }
+    });
+
     // ---------------------------------------------------------- grounds
 
     /**
@@ -1443,6 +1544,13 @@ export const ART: ChapterArt = {
   /** In Fumi's house a mat is a goza, not the shared Andean weave. */
   skins: {
     minshuku: { mat: 'goza' },
+  },
+  /** Fumi's dinner is one long low table across two cells: west half, east half. */
+  pins: {
+    minshuku: [
+      { kind: 'mealtable', at: [5, 6], v: 0 },
+      { kind: 'mealtable', at: [6, 6], v: 1 },
+    ],
   },
 };
 

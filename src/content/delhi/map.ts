@@ -489,7 +489,11 @@ function roofObjectAt(x: number, y: number): string {
   // The skyline row: Jama Masjid's domes and the Red Fort's long red wall,
   // painted as distance. You cannot walk to them. You can only look.
   if (y === 0) {
-    if (x === 7 || x === 24) return 'J';
+    // The mosque behind Yusuf's charkhi, where the goodbye looks, and the
+    // old city's lesser domes along the rest of the line.
+    const DOMES = [3, 13, 23, 32];
+    if (DOMES.includes(x)) return 'J';
+    if (DOMES.includes(x - 1) || DOMES.includes(x + 1)) return '_';
     return 'R';
   }
   if (ROOF_WALLS.has(`${x},${y}`)) {
@@ -545,6 +549,7 @@ export const DELHI_ROOFTOP_MAP: MapData = {
     v: { t: 'terracerose' },
     R: { t: 'fortwall', solid: true, tall: true },
     J: { t: 'jamadomes', solid: true, tall: true },
+    _: { t: 'blocked', solid: true, tall: true },
     p: { t: 'parapet', solid: true },
     P: { t: 'parapetside', solid: true },
     K: { t: 'kabootarkhana', solid: true, tall: true },
