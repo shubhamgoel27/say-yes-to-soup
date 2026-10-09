@@ -1713,6 +1713,7 @@
         box-shadow: inset 0 1px 1px rgba(255, 252, 244, 0.35);
       }
       .cc-dot.on { outline: 1.5px solid #7a3b22; outline-offset: 2px; }
+      .cc-dot { cursor: pointer; }
       .cc-actions { margin-top: 2px; }
       .cc-btn {
         font-family: var(--hand);
@@ -2766,6 +2767,11 @@
           justify-content: center;
         }
         .cc-btn { min-height: 44px; }
+        /* A swatch is a finger target too: big enough to land on, with the
+         * row itself tall enough to hold a whole fingertip. */
+        .cc-dots { gap: 10px; }
+        .cc-dot { width: 24px; height: 24px; }
+        .cc-mid { min-height: 44px; }
         /* The chip's quiet last line is small print under small print;
          * held in a hand it keeps a legible floor. */
         .errand-nudge { font-size: max(0.85em, 12.5px); }

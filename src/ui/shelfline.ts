@@ -66,3 +66,25 @@ export function shelfOneLine(data: SaveData | null): string | null {
   if (!l) return null;
   return [l.who, l.where, ...l.tally].join(' &middot; ');
 }
+
+/**
+ * The shelf's verb cursor moves along one row's verbs and stops at the ends.
+ * It used to wrap, so on a blank journal (open, unpack) one more press right
+ * from unpack landed on open, and the next Space opened a blank journal the
+ * player never meant to touch.
+ */
+export function stepShelfVerb(at: number, dir: 'left' | 'right', count: number): number {
+  if (count <= 0) return 0;
+  const next = at + (dir === 'right' ? 1 : -1);
+  return Math.max(0, Math.min(count - 1, next));
+}
+
+/**
+ * What "open" does to a shelf row. A written journal goes on the table and
+ * the journey resumes. A blank one only becomes the journal on the table
+ * once the traveler sets out from its flyleaf: until then the written
+ * journey stays where it was, Continue and all.
+ */
+export function shelfOpenPlan(occupied: boolean): 'resume' | 'flyleaf' {
+  return occupied ? 'resume' : 'flyleaf';
+}

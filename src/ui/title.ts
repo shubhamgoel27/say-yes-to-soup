@@ -18,7 +18,7 @@ import {
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
-import { shelfLines, shelfOneLine } from './shelfline';
+import { shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
 import { isCoarseTouch } from './responsive';
 
 /**
@@ -200,6 +200,10 @@ export class TitleScreen {
     /** Called when a written journal is opened from the shelf: the engine
      * walks straight into it, exactly as Continue would. */
     private onOpenJournal?: () => void,
+    /** Called when a blank journal is opened from the shelf: the engine
+     * opens the flyleaf and puts this journal on the table only when the
+     * traveler sets out. */
+    private onBeginInBlank?: (row: number) => void,
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
@@ -413,9 +417,7 @@ export class TitleScreen {
       this.shelfVerb = 0;
       this.shelfNote = null;
     } else {
-      const verbs = this.shelfVerbs(this.shelfRow);
-      const d = dir === 'right' ? 1 : verbs.length - 1;
-      this.shelfVerb = (this.shelfVerb + d) % verbs.length;
+      this.shelfVerb = stepShelfVerb(this.shelfVerb, dir, this.shelfVerbs(this.shelfRow).length);
     }
     this.renderShelf();
   }
@@ -427,6 +429,16 @@ export class TitleScreen {
   shelfActivate(): 'confirm' | 'warn' | 'none' {
     const row = this.shelfRow;
     const verb = this.shelfVerbs(row)[this.shelfVerb] ?? 'open';
+    if (verb === 'open' && shelfOpenPlan(slotOccupied(row)) === 'flyleaf') {
+      // A blank journal is not put on the table yet: the flyleaf opens, and
+      // only setting out from it makes this the journal in play. Backing off
+      // the flyleaf returns to the cover with the written journey still
+      // there to Continue.
+      this.returnTo = null;
+      this.hideTitle();
+      this.onBeginInBlank?.(row);
+      return 'confirm';
+    }
     if (verb === 'open') {
       setActiveSlot(row);
       this.onShelfChange?.();
@@ -884,6 +896,12 @@ export class NamingCard {
       this.cycle(row, arr.dataset.d === '-1' ? -1 : 1);
       return;
     }
+    // A swatch is the choice itself: tap the blue and the poncho is blue.
+    const dot = t.closest<HTMLElement>('.cc-dot');
+    if (dot) {
+      this.choose(Number.parseInt(dot.dataset.row ?? '0', 10), Number.parseInt(dot.dataset.j ?? '0', 10));
+      return;
+    }
     const rowEl = t.closest<HTMLElement>('.cc-row');
     if (rowEl) {
       this.row = Number.parseInt(rowEl.dataset.row ?? '0', 10);
@@ -892,6 +910,45 @@ export class NamingCard {
     }
     if (t.closest('.cc-btn')) this.advance();
   };
+
+  /** A direction from a device that is not the keyboard (a gamepad). The
+   * name step belongs to the pen, so only the look step listens. */
+  dir(d: Dir) {
+    if (!this.isOpen || this.step !== 2) return;
+    const n = CC_ROWS.length;
+    if (d === 'up') this.row = (this.row + n - 1) % n;
+    else if (d === 'down') this.row = (this.row + 1) % n;
+    else {
+      this.cycle(this.row, d === 'left' ? -1 : 1);
+      return;
+    }
+    this.renderRows();
+  }
+
+  /** The pad's confirm: the same as Enter. */
+  act() {
+    if (this.isOpen) this.advance();
+  }
+
+  /** The pad's back: the same as Esc. */
+  cancel() {
+    if (this.isOpen) this.back();
+  }
+
+  /** Pick option `j` of row `row` outright (a swatch tap), and steer there. */
+  private choose(row: number, j: number) {
+    const opts = CC_ROWS[row]?.options;
+    if (!opts || j < 0 || j >= opts.length) return;
+    this.row = row;
+    this.idx[row] = j;
+    this.sheet = null;
+    this.renderRows();
+  }
+
+  /** Test seam: the card's cursor and choices, read without the DOM. */
+  get state(): { row: number; idx: number[] } {
+    return { row: this.row, idx: [...this.idx] };
+  }
 
   private cycle(row: number, d: number) {
     const opts = CC_ROWS[row]?.options;
@@ -952,7 +1009,7 @@ export class NamingCard {
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
         <div class="cc-hint">${
-          COARSE ? 'tap &lsaquo; &rsaquo; to choose' : 'arrows choose &middot; Enter sets out &middot; Esc back'
+          COARSE ? 'tap a colour to choose' : 'arrows choose &middot; Enter sets out &middot; Esc back'
         }</div>
       </div>`;
     this.renderRows();
@@ -969,7 +1026,7 @@ export class NamingCard {
       dots.innerHTML = (CC_ROWS[i]?.options ?? [])
         .map(
           (c, j) =>
-            `<span class="cc-dot${j === (this.idx[i] ?? 0) ? ' on' : ''}" style="background:${c}"></span>`,
+            `<span class="cc-dot${j === (this.idx[i] ?? 0) ? ' on' : ''}" data-row="${i}" data-j="${j}" style="background:${c}"></span>`,
         )
         .join('');
     }

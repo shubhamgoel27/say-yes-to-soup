@@ -450,6 +450,14 @@ const title = new TitleScreen(
     openFlyleaf(freshSlate);
   },
   () => continueJourney(),
+  (row) => {
+    // A blank journal off the shelf: the same path as Begin again, so the
+    // switch happens only when the traveler sets out from the flyleaf.
+    openFlyleaf(() => {
+      setActiveSlot(row);
+      freshSlate();
+    });
+  },
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -4872,8 +4880,13 @@ function update(dt: number) {
       if (act) titleActivate();
     }
   } else if (mode === 'naming') {
-    // The flyleaf card owns the keyboard entirely (capture-phase listener);
-    // any stray edges from other devices drain here without effect.
+    // The flyleaf card owns the keyboard entirely (capture-phase listener),
+    // so keys never arrive here. A gamepad's stick and buttons do: they steer
+    // the look rows the same way the arrows do, or the highlight would sit
+    // on "skin" while the pad had nowhere to go.
+    if (menuDir) naming.dir(menuDir);
+    if (act) naming.act();
+    else if (back) naming.cancel();
   } else if (mode === 'letter') {
     if (act || back) letterAdvance();
   } else if (title.letterOpen) {
