@@ -739,7 +739,7 @@ export class TitleScreen {
 // Between "Begin the journey" and Nani's letter: a quiet card in the journal
 // idiom. Step one writes a name on the flyleaf (or leaves it blank); step two
 // dresses the small traveler she sketched in the margin. Deliberately slight,
-// three rows, not a character editor.
+// four rows, not a character editor.
 
 /** What the flyleaf hands back: a name (or blank) and the traveler's look. */
 export type FlyleafResult = { name: string | null; look: PlayerLook };
@@ -748,11 +748,16 @@ export type FlyleafResult = { name: string | null; look: PlayerLook };
 const CC_SKINS = [PLAYER_LOOK.skin, '#f2cfa5', '#b3814f', '#7c4f30'];
 const CC_CLOTHS = [PLAYER_LOOK.cloth, '#3f7fb0', '#6b8e4e', '#5c4a6e'];
 const CC_HAIRS = [PLAYER_LOOK.hair, '#191310', '#7a4a2a'];
+/** The chullo: Nani's gold first, two more dyes, or none at all. */
+const CC_HATS = [PLAYER_LOOK.hat ?? '#c8a55b', '#a8382c', '#2f5f8f', 'none'];
 const CC_ROWS: { label: string; options: string[] }[] = [
   { label: 'skin', options: CC_SKINS },
   { label: 'poncho', options: CC_CLOTHS },
   { label: 'hair', options: CC_HAIRS },
+  { label: 'chullo', options: CC_HATS },
 ];
+/** The row whose choice the chullo would hide: the preview lifts it off while you choose. */
+const CC_HAIR_ROW = 2;
 
 /** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
 const NAME_MAX = 24;
@@ -772,11 +777,12 @@ export function ccClean(raw: string): string {
 export class NamingCard {
   private step: 1 | 2 = 1;
   private row = 0;
-  private idx = [0, 0, 0];
+  private idx = [0, 0, 0, 0];
   private name = '';
   private onDone: ((res: FlyleafResult) => void) | null = null;
   private onCancel: (() => void) | null = null;
   private sheet: HTMLCanvasElement | null = null;
+  private sheetBare = false;
   private raf = 0;
   private animT = 0;
 
@@ -795,7 +801,7 @@ export class NamingCard {
     this.onCancel = onCancel ?? null;
     this.step = 1;
     this.row = 0;
-    this.idx = [0, 0, 0];
+    this.idx = [0, 0, 0, 0];
     this.name = '';
     this.root.hidden = false;
     // Capture phase, so the game's own window listener never sees these keys:
@@ -817,14 +823,7 @@ export class NamingCard {
     const done = this.onDone;
     this.onDone = null;
     this.onCancel = null;
-    done?.({
-      name: this.name.trim() || null,
-      look: {
-        skin: CC_SKINS[this.idx[0] ?? 0] ?? PLAYER_LOOK.skin,
-        cloth: CC_CLOTHS[this.idx[1] ?? 0] ?? PLAYER_LOOK.cloth,
-        hair: CC_HAIRS[this.idx[2] ?? 0] ?? PLAYER_LOOK.hair,
-      },
-    });
+    done?.({ name: this.name.trim() || null, look: this.currentLook() });
   }
 
   /** Enter confirms the step. A blank name is a fine answer ("traveler"). */
@@ -963,7 +962,16 @@ export class NamingCard {
       skin: CC_SKINS[this.idx[0] ?? 0] ?? PLAYER_LOOK.skin,
       cloth: CC_CLOTHS[this.idx[1] ?? 0] ?? PLAYER_LOOK.cloth,
       hair: CC_HAIRS[this.idx[2] ?? 0] ?? PLAYER_LOOK.hair,
+      hat: CC_HATS[this.idx[3] ?? 0] ?? CC_HATS[0],
     };
+  }
+
+  /** The sketch exactly as the game will draw it, except while the hair row is
+   * being chosen: then the chullo comes off so the colour can be seen. */
+  private previewLook() {
+    const { hat, ...strokes } = this.currentLook();
+    const bare = hat === 'none' || this.row === CC_HAIR_ROW;
+    return { ...PLAYER_LOOK, ...strokes, ...(bare || !hat ? { hatStyle: 'none' as const } : { hat }) };
   }
 
   private render() {
@@ -1026,7 +1034,9 @@ export class NamingCard {
       dots.innerHTML = (CC_ROWS[i]?.options ?? [])
         .map(
           (c, j) =>
-            `<span class="cc-dot${j === (this.idx[i] ?? 0) ? ' on' : ''}" data-row="${i}" data-j="${j}" style="background:${c}"></span>`,
+            `<span class="cc-dot${j === (this.idx[i] ?? 0) ? ' on' : ''}" data-row="${i}" data-j="${j}" style="${
+              c === 'none' ? 'background:transparent;border-style:dashed' : `background:${c}`
+            }"></span>`,
         )
         .join('');
     }
@@ -1047,9 +1057,12 @@ export class NamingCard {
       if (!this.isOpen || this.step !== 2) return;
       this.animT += (now - last) / 1000;
       last = now;
-      // Bareheaded in the margin: the chullu covers the whole crown, and a
-      // hair colour chosen under it could not be seen being chosen.
-      if (!this.sheet) this.sheet = makeSheet({ ...PLAYER_LOOK, ...this.currentLook(), hatStyle: 'none' });
+      // As the game will draw it; bareheaded only while the hair is chosen,
+      // since the chullu covers the whole crown.
+      const want = this.row === CC_HAIR_ROW;
+      if (want !== this.sheetBare) this.sheet = null;
+      this.sheetBare = want;
+      if (!this.sheet) this.sheet = makeSheet(this.previewLook());
       const frame = Math.floor(this.animT / 0.13) % 6;
       const dir = dirs[Math.floor(this.animT / 2.1) % dirs.length] ?? 'down';
       g.clearRect(0, 0, cv.width, cv.height);

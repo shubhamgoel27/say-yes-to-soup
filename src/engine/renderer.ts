@@ -137,12 +137,16 @@ const SEAM_RES = 32;
 const EDGE_LAID = new Set([
   'plaza', 'plazaWorn', 'wellstone', 'chowkbrick', 'galistone', 'lanepave', 'basalto', 'cempa',
   'molo', 'molonord', 'molosud',
+  // A field is dug to a line. Feathered like grass, the terraces' furrows
+  // dissolved into the puna down a wavy grey seam at their east end.
+  'crop',
 ]);
 const EDGE_CUT = new Set([
   'pierdeck', 'deck', 'bridge', 'floorWood', 'floorSteel', 'floorOndol', 'floorEarth', 'tatami', 'tataki',
   'terrace', 'terracelime', 'terracerose',
   // A ship's side and a mole's face: built, so the shoreline never wanders them.
-  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface', 'scogliera',
+  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'hullquarterport', 'hullquarterstbd',
+  'moloface', 'scogliera',
 ]);
 /** Per class: wobble amplitude, then the width of the blend in tiles. */
 const EDGE_SHAPE: [number, number][] = [
@@ -1411,6 +1415,12 @@ export class Renderer {
     this.hint = cell;
   }
 
+  /** Cells holding something that glints until it is found (the dig's mounds). */
+  setGlints(cells: [number, number][]) {
+    this.glints = cells;
+  }
+  private glints: [number, number][] = [];
+
   /** Pop a little thought bubble over someone's head. */
   emote(actor: Actor, kind: '!' | '♥' | '♪' | '?') {
     this.emotes = this.emotes.filter((e) => e.actor !== actor);
@@ -2049,6 +2059,30 @@ export class Renderer {
     }
     layers.sort((a, b) => a.sort - b.sort);
     for (const l of layers) l.draw();
+
+    // "Promising mounds, glinting": a small star of light catches on each in
+    // turn, never all at once, so the eye is led from one to the next.
+    for (let i = 0; i < this.glints.length; i++) {
+      const [gx, gy] = this.glints[i]!;
+      const phase = (this.time * 0.55 + i * 0.37) % 1;
+      // A quick catch of light, then a long rest.
+      const k = phase < 0.22 ? Math.sin((phase / 0.22) * Math.PI) : 0;
+      const x = (gx * TILE + TILE / 2 + 3 - cam.x) * A;
+      const y = (gy * TILE + TILE * 0.62 - cam.y) * A;
+      ctx.save();
+      ctx.globalAlpha = 0.25 + 0.75 * k;
+      ctx.fillStyle = 'rgba(255,246,214,0.35)';
+      ctx.beginPath();
+      ctx.arc(x, y, 3 + 6 * k, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff8e2';
+      const arm = 4 + 12 * k;
+      ctx.beginPath();
+      ctx.moveTo(x, y - arm); ctx.lineTo(x + 1.6, y); ctx.lineTo(x, y + arm); ctx.lineTo(x - 1.6, y); ctx.closePath();
+      ctx.moveTo(x - arm, y); ctx.lineTo(x, y + 1.6); ctx.lineTo(x + arm, y); ctx.lineTo(x, y - 1.6); ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
 
     // The quiet cursor of curiosity: a breathing dot over what would answer.
     if (this.hint) {

@@ -187,7 +187,10 @@ function objectAt(x: number, y: number): string {
   // look at a time, so the intro can stop narrating them.
   if (x === 22 && y === 17) return 'A';
   if (x === 32 && y === 26) return 'k'; // the chakitaqlla leans on the house wall
-  if (x === 13 && y === 26) return 'F'; // Rosa's chicha flag, beside her door
+  // Rosa's chicha flag, at her house's west corner where nobody walks:
+  // at 13,26 it stood on the path to her door, and anyone going in walked
+  // behind the pole, which veiled it and took the village's landmark with it.
+  if (x === 10 && y === 26) return 'F';
   if (x === 14 && y === 28) return 'O'; // and her soup olla, steaming, by her corner
   // ---------------------------------------------------------- the plaza
   if (x === 21 && y === 15) return 'W'; // the well, the middle of everything

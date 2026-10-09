@@ -184,6 +184,10 @@ const PROPS: Record<string, string> = {
   '40,25': 'p',
   '17,28': 'J', // one stranded jellyfish, tide's own still life
   '23,30': 'j', // the sign at the end of the pier
+  // "The gangway to the launch. Beyond, at anchor, a cargo ship": the
+  // launch tied up off the pier's end, and the ship standing off the bay.
+  '26,31': '1',
+  '32,33': '2',
 };
 
 /**
@@ -322,6 +326,8 @@ export const LA_CALETA_MAP: MapData = {
     g: { t: 'signpost', solid: true, tall: true },
     h: { t: 'harborsign', solid: true, tall: true },
     j: { t: 'piersign', solid: true, tall: true },
+    '1': { t: 'boatLaunch', solid: true, tall: true },
+    '2': { t: 'boatFerry', solid: true, tall: true },
     e: { t: 'emoliente', solid: true, tall: true },
     c: { t: 'caballito', solid: true, tall: true },
     B: { t: 'boat', solid: true, tall: true },

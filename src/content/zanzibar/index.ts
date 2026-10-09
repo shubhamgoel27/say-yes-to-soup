@@ -119,12 +119,15 @@ export const CHAPTER: ChapterDef = {
     tideout: {
       // Coral lime is already near white, so a bright ambient on top of it
       // blew the lanes out and set the bloom halos bleeding across the sand.
-      // The light is still hard noon; it just has somewhere left to go.
-      top: 'rgba(150,178,198,0.20)',
-      mid: 'rgba(228,220,198,0.06)',
-      bottom: 'rgba(148,168,176,0.16)',
-      vig: 0.34,
-      ambient: 0xe2d4b8,
+      // The cure went too far the other way: a blue-grey lid and a heavy
+      // vignette over a khaki ambient turned "a coast the color of bone and
+      // palm" into an overcast sepia afternoon. Bone above, a turquoise
+      // breath off the flats below, and an ambient just short of white.
+      top: 'rgba(246,240,224,0.10)',
+      mid: 'rgba(238,230,206,0.04)',
+      bottom: 'rgba(110,188,186,0.09)',
+      vig: 0.24,
+      ambient: 0xf1e9d6,
     },
     // The market corner at dusk: lamp-warm, the sky giving up its blue gently.
     dusklamp: {

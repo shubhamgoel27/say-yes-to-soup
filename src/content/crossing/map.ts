@@ -59,7 +59,10 @@ const BAYS: [number, number, number, number, string][] = [
  */
 function hullSideAt(x: number, y: number): string | null {
   if (inHull(x, y)) return null;
-  if (y === 30 && x >= 13 && x <= 30) return 'Q';
+  // The stern's quarters round off the corners of the transom.
+  if (y === 30 && x === 13) return 'K';
+  if (y === 30 && x === 30) return 'Z';
+  if (y === 30 && x >= 14 && x <= 29) return 'Q';
   // The bow's steps: the notch outboard of each one is a diagonal of plating,
   // so the bow reads as one swept line rather than a staircase of teeth.
   if (inHull(x + 1, y) && inHull(x, y + 1)) return 'U';
@@ -80,7 +83,9 @@ function objectAt(x: number, y: number): string {
   // the stern's: both belong to the rail, not to the lane inside it.
   if (x === 21 && y === 2) return 'J';
   if (x === 24 && y === 29) return 'z'; // the rod, lashed to the stern rail
-  if (isEdge(x, y)) return '=';
+  // Down the sides the rail is seen along its length; across the stern and
+  // round the bow, face on.
+  if (isEdge(x, y)) return inHull(x, y - 1) && inHull(x, y + 1) ? '|' : '=';
   // The house aft, casa-pattern: anchor char, blocked cells, open door.
   const [hx, hy] = HOUSE;
   if (x >= hx && x < hx + 5 && y >= hy && y < hy + 5) {
@@ -161,6 +166,9 @@ export const SHIP_MAP: MapData = {
     I: { t: 'hullbowstbd', solid: true },
     ' ': { t: 'void' },
     '=': { t: 'railing', solid: true },
+    '|': { t: 'railrun', solid: true },
+    K: { t: 'hullquarterport', solid: true },
+    Z: { t: 'hullquarterstbd', solid: true },
     J: { t: 'jackstaff', solid: true, tall: true },
     H: { t: 'shiphouse', solid: true, tall: true },
     x: { t: 'blocked', solid: true, tall: true },
