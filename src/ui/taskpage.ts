@@ -128,3 +128,15 @@ export function taskPage(tasks: WorldTask[], openNow: WorldTask[], s: TaskPageSt
     nani: ROUTE[here]?.nani ?? null,
   };
 }
+
+/**
+ * Whether the HUD chip keeps its words through a flag change. Only while an
+ * activity's how-to card or panel is actually on screen (the start flag has
+ * just retired the task that asked for it, and the chip must not jump to the
+ * next errand under the card). A start flag merely being up is not enough:
+ * an armed card set aside, or one left behind in an earlier village, froze
+ * the chip for whole chapters.
+ */
+export function chipHolds(at: { activityOnScreen: boolean; showing: boolean }): boolean {
+  return at.activityOnScreen && at.showing;
+}

@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import type { Cond } from '../src/content/schema';
 import { CHAPTERS, TASKS } from '../src/content/world';
 import { openTasks } from '../src/content/guide';
-import { currentChapter, firstSentence, taskDone, taskPage, type TaskPageState } from '../src/ui/taskpage';
+import { chipHolds, currentChapter, firstSentence, taskDone, taskPage, type TaskPageState } from '../src/ui/taskpage';
 
 /**
  * The Tasks tab was one row on an empty sheet (g3 desk-16, gal-14). It is
@@ -79,6 +79,14 @@ describe('the task page', () => {
     const ret = CHAPTERS.length - 1;
     const back = CHAPTERS[ret]!.arrival!.flag;
     assert.equal(currentChapter(fake([back]), 'village'), ret);
+  });
+
+  it('the chip holds its words only while a card or panel is on screen', () => {
+    // An armed card set aside, or left behind in an earlier village, used to
+    // freeze the chip for chapters (Kerala's errand shown in Delhi).
+    assert.equal(chipHolds({ activityOnScreen: false, showing: true }), false);
+    assert.equal(chipHolds({ activityOnScreen: true, showing: true }), true);
+    assert.equal(chipHolds({ activityOnScreen: true, showing: false }), false, 'an empty chip always fills');
   });
 
   it('a first sentence stops at the first full stop', () => {

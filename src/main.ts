@@ -23,6 +23,7 @@ import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
+import { chipHolds } from './ui/taskpage';
 import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
@@ -764,14 +765,8 @@ function stripActivate() {
   // "Keep at it": the panel is still there, exactly as it was.
 }
 
-/**
- * A story activity is underway from the moment its start flag goes up (the
- * how-to card, the panel, a "not yet" still owed) until its done narration
- * clears the flag. Replays never hold anything.
- */
-function activityUnderway(): boolean {
-  return !state.has('replay.mode') && games.some((g) => state.has(g.def.flag));
-}
+/** A refresh was held back while a card or panel was up; run it once they go. */
+let chipStale = false;
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
@@ -780,10 +775,18 @@ function refreshTaskChip() {
     errandEl.hidden = true;
     return;
   }
-  // The chip moves on when the activity ENDS, not when it is offered: the
+  // The chip holds still while an activity's card or panel is on screen: the
   // start flag retires the task that asked for it, and the chip used to jump
-  // to the next errand while the watia's how-to card was still open.
-  if (activityUnderway() && errandEl.textContent && !errandEl.hidden) return;
+  // to the next errand while the watia's how-to card was still open. It used
+  // to hold for as long as ANY start flag stayed up, and an armed card the
+  // player had stepped away from (or one left behind in an earlier village)
+  // froze the chip for chapters: Kerala's errand in Delhi, the red awning at
+  // Busan's goodbye, the chicheria while Carmen's loom waited after Continue.
+  if (chipHolds({ activityOnScreen: uiCardOpen() || anyGameOpen(), showing: !!errandEl.textContent && !errandEl.hidden })) {
+    chipStale = true;
+    return;
+  }
+  chipStale = false;
   const top = journalUI.activeTasks()[0];
   // The chip shows whole thoughts; CSS clamps politely at two lines. It kept
   // hiding outright once story.end was set, which orphaned the epilogue task
@@ -4721,6 +4724,8 @@ function update(dt: number) {
       toasts.setHeld(quiet);
       holdPlate(quiet);
     }
+    // A refresh held back behind a card runs the moment the card is gone.
+    if (chipStale && !uiCardOpen() && !anyGameOpen()) refreshTaskChip();
     chipFold.tick(quiet);
     faceClearHud(quiet);
   }
