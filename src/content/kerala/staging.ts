@@ -23,6 +23,11 @@ const SEEING_OFF: Cond = { has: ['c6.complete'], not: ['c11.arrived'] };
 export const TICKET_SPOT: [number, number] = [23, 23];
 
 export const STAGING: Staging = {
+  // "A chugging boat from Kochi leaves you on a jetty one handcart wide":
+  // the art pass moors it off the jetty's end (map.ts, 19,29); it lies there
+  // as the light comes up, and once the words have set you down it chugs
+  // off west down the channel and is gone.
+  vessels: [{ kind: 'boatKerala', map: 'kerala', at: [19, 29], away: 'left', when: { not: ['c6.arrived'] }, node: 'c6.arrive', leaves: true }],
   blocking: [
     // On the bank above the jetty's root, so that while the ticket is bought
     // below them they turn to you face on (on the planks they showed their

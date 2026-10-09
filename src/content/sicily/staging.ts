@@ -38,6 +38,11 @@ export const SHIP_AT: [number, number] = [37, 24];
 export const SIGNING_SPOT: [number, number] = [41, 19];
 
 export const STAGING: Staging = {
+  // "The ship noses past two black stone towers in the sea": the steamer
+  // that brought you lies off the mole's end while the arrival is read,
+  // then goes on east. (Clear of the barca at 38,22, and of the send-off's
+  // own ship, which comes later and lies at SHIP_AT.)
+  vessels: [{ kind: 'boatFerry', map: 'sicily', at: [38, 25], away: 'right', when: { not: ['c8.arrived'] }, node: 'c8.arrive' }],
   hours: [
     // The passeggiata hour (the bar lamp comes on first), and the send-off
     // kept in it: the town walks down to the mole in its evening clothes.

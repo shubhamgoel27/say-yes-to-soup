@@ -104,6 +104,10 @@ export function registerArt(set: ChapterArt) {
 }
 
 // ---- chapter art modules (registered here; two lines per chapter) ----
+// The staging's stand-in props first, so a chapter (or the art pass)
+// painting the same kind name replaces them.
+import { ART as STAGED_STANDINS } from './staged';
+registerArt(STAGED_STANDINS);
 import { ART as CHASKA_ART } from './chaska';
 import { ART as CALETA_ART } from './caleta';
 import { ART as CROSSING_ART } from './crossing';

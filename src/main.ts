@@ -4,7 +4,7 @@ import { Camera } from './engine/camera';
 import { STEP_DUR, TILE, TURN_DELAY, VIEW_H, VIEW_W } from './engine/config';
 import { ArmedCards, type Spot } from './engine/armed';
 import { DevBridge } from './engine/devbridge';
-import { TileMap, stepFrom, type TriggerDef } from './engine/grid';
+import { TileMap, stepFrom, type TileDef, type TriggerDef } from './engine/grid';
 import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
@@ -58,7 +58,7 @@ import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
-import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES } from './content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES, SEATS, VESSELS, type TalkSeat, type Vessel } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -2117,6 +2117,8 @@ function updateStaging(dt: number) {
   lampT = lampOn ? Math.min(1, lampT + dt / LAMP.seconds) : 0;
 
   updateReleases();
+  updateVessels();
+  updateTalkSeats();
   noteTrail();
   updateProps();
   updateMeeting(dt);
@@ -2191,6 +2193,77 @@ let cairnStone: boolean | null = null;
  * the hand on the first line, is as far along as the line on screen says,
  * and finishes its flight after the words close. Another map ends it.
  */
+/**
+ * The vessels the words name, moored while their scene holds and cast off
+ * (watched) or simply gone (unwatched) when it ends. A vessel's cell keeps
+ * what it held before, to give back.
+ */
+const moored = new Map<Vessel, TileDef | null>();
+function updateVessels() {
+  for (const v of VESSELS) {
+    const tm = maps[v.map];
+    if (!tm) continue;
+    const want =
+      (v.when !== undefined && state.check(v.when)) || (!!v.node && textbox.isOpen && textbox.currentNode === v.node);
+    const [x, y] = v.at;
+    // A boat the map moors that has already left (a reload after its scene).
+    if (!want && !moored.has(v) && v.leaves && tm.object(x, y)?.t === v.kind) {
+      tm.setObject(x, y, null);
+      renderer.forgetProps(v.map);
+      continue;
+    }
+    if (want && !moored.has(v)) {
+      moored.set(v, v.leaves ? null : (tm.object(x, y) ?? null));
+      tm.setObject(x, y, { t: v.kind, solid: true, tall: true });
+      renderer.forgetProps(v.map);
+    } else if (!want && moored.has(v)) {
+      tm.setObject(x, y, moored.get(v) ?? null);
+      moored.delete(v);
+      renderer.forgetProps(v.map);
+      if (map.id === v.map && !warp) renderer.castOff(v.kind, x, y, v.away);
+    }
+  }
+}
+
+/**
+ * A talk you sit down for: the player walks the few steps to the seat as
+ * the words begin (the talk's own settle machinery walks them), sits, and
+ * stands again when the words close. Unreachable, the talk stays standing.
+ */
+let talkSeat: TalkSeat | null = null;
+let talkSeatTried: TalkSeat | null = null;
+function updateTalkSeats() {
+  const s = textbox.isOpen ? SEATS.find((x) => x.map === map.id && x.nodes.includes(textbox.currentNode)) : undefined;
+  if (s) {
+    if (talkSeat === s || player.isMoving || settleSteps.has(player)) return;
+    const [px, py] = player.occupies();
+    const [sx, sy] = s.at;
+    if (px === sx && py === sy) {
+      player.face(s.dir);
+      player.pose = 'sit';
+      talkSeat = s;
+      return;
+    }
+    if (talkSeatTried === s) return;
+    talkSeatTried = s;
+    const path = pathBetween([px, py], sx, sy, (x, y) => map.solid(x, y) || heldByOther(x, y, player));
+    if (!path?.length) return;
+    const steps: Dir[] = [];
+    let [cx, cy] = [px, py];
+    for (const [nx, ny] of path) {
+      steps.push(nx > cx ? 'right' : nx < cx ? 'left' : ny > cy ? 'down' : 'up');
+      [cx, cy] = [nx, ny];
+    }
+    settleSteps.set(player, { steps, face: s.dir });
+    return;
+  }
+  if (!textbox.isOpen && (talkSeat || talkSeatTried)) {
+    if (talkSeat && player.pose === 'sit' && !sitting) player.pose = 'none';
+    talkSeat = null;
+    talkSeatTried = null;
+  }
+}
+
 let releaseMap: string | null = null;
 function updateReleases() {
   const r = RELEASES.find((x) => x.node === textbox.currentNode);

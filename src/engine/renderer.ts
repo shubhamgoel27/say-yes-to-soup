@@ -58,6 +58,8 @@ const AH = CHAR_H * A;
 // (config.setView); Renderer.resizeView re-reads it.
 let W = VIEW_W * A;
 let H = VIEW_H * A;
+/** Seconds a vessel takes to cast off and go out of sight. */
+const CAST_OFF_DUR = 7;
 
 /**
  * The sun's shadows are composed in a small buffer and blown back up to the
@@ -1227,10 +1229,49 @@ export class Renderer {
     return this.loosed ? this.loosed.k : null;
   }
 
+  /**
+   * A moored vessel casting off in view: its prop has left the map, and its
+   * art goes on drawing here, sliding away along the water, easing up to
+   * speed and getting smaller, until it is a mark on the horizon and gone.
+   */
+  /**
+   * A map's tall props changed at runtime (a vessel moored or gone): its
+   * per-map caches of who casts what and what overhangs where are rebuilt
+   * on the next frame, so a boat that has left leaves no shadow behind.
+   */
+  forgetProps(mapId: string) {
+    this.casterCache.delete(mapId);
+    this.overhangCache.delete(mapId);
+  }
+  private castOffs: { kind: string; cx: number; cy: number; dir: number; t: number }[] = [];
+  castOff(kind: string, cx: number, cy: number, away: 'left' | 'right') {
+    this.castOffs.push({ kind, cx, cy, dir: away === 'left' ? -1 : 1, t: 0 });
+  }
+  private drawCastOffs(cam: Camera) {
+    const ctx = this.ctx;
+    for (const c of this.castOffs) {
+      const k = Math.min(1, c.t / CAST_OFF_DUR);
+      const go = k * k * (3 - 2 * k);
+      const sc = 1 - 0.55 * go;
+      const alpha = k > 0.7 ? (1 - k) / 0.3 : 1;
+      if (alpha <= 0.01) continue;
+      const x = (c.cx * TILE + TILE / 2 - cam.x) * A + c.dir * go * 8 * TILE * A;
+      const y = ((c.cy + 1) * TILE - cam.y) * A - go * 0.6 * TILE * A + Math.sin(this.time * 1.6) * 1.5;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(x, y);
+      ctx.scale(sc, sc);
+      this.tiles.drawTall(ctx, c.kind, -S / 2, -S, c.cx, c.cy);
+      ctx.restore();
+    }
+  }
+
   /** Advance ambient animation. Called from the fixed-timestep update. */
   tick(dt: number) {
     this.time += dt;
     this.frameDt = dt;
+    for (const c of this.castOffs) c.t += dt;
+    this.castOffs = this.castOffs.filter((c) => c.t < CAST_OFF_DUR);
     if (this.loosed) {
       const f = this.loosed;
       const d = f.goal - f.k;
@@ -2109,6 +2150,7 @@ export class Renderer {
       this.drawRegional(map, cam);
       this.drawLoosedKite(cam);
     }
+    this.drawCastOffs(cam);
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
     const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];

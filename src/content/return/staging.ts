@@ -100,3 +100,4 @@ export const HOURS: HourHold[] = [
  * leans in. `zoom` is where the lean ends; it gets there slowly.
  */
 export const LAMP = { flag: 'c10.lamp', zoom: 1.45, seconds: 10 };
+

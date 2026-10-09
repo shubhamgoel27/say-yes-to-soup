@@ -85,6 +85,37 @@ export type Cue = EventNode & { when: Cond; map: string };
  */
 export type Release = { node: string; goals: number[] };
 
+/**
+ * A vessel the words name ("The launch noses in past a stone lantern", "a
+ * chugging boat leaves you on a jetty"). It lies at `at`, its anchor cell on
+ * the water, drawn like any tall prop, while `when` holds or while `node` is
+ * on screen; when that ends in view it does not blink out, it casts off and
+ * goes `away`, getting smaller. An arrival's boat is `when` the arrival has
+ * not happened (it is there as the light comes up) plus the arrival `node`
+ * (still there while its words are read), and leaves as they close.
+ * `kind` is the art: boatLaunch, boatFishing, boatKerala, boatFerry.
+ * `leaves`: the map itself moors this boat there (the art pass placed it),
+ * and once its scene is over it has gone for good: cast off in view, or
+ * simply not there when you next look.
+ */
+export type Vessel = {
+  kind: string;
+  map: string;
+  at: [number, number];
+  away: 'left' | 'right';
+  when?: Cond;
+  node?: string;
+  leaves?: boolean;
+};
+
+/**
+ * A talk you sit down for ("Sit when she says sit"): while any of `nodes` is
+ * on screen on `map`, the player walks the few steps to `at` and sits there
+ * facing `dir`, and gets up when the words close. If the place cannot be
+ * reached, the talk is had standing, as before.
+ */
+export type TalkSeat = { nodes: string[]; map: string; at: [number, number]; dir: Dir };
+
 /** One chapter's stage directions. */
 export type Staging = {
   blocking?: Blocking[];
@@ -92,6 +123,8 @@ export type Staging = {
   lamps?: LampHold[];
   cues?: Cue[];
   releases?: Release[];
+  vessels?: Vessel[];
+  seats?: TalkSeat[];
 };
 
 const CHAPTERS: Staging[] = [
@@ -111,3 +144,5 @@ export const HOURS: HourHold[] = CHAPTERS.flatMap((c) => c.hours ?? []);
 export const LAMPS_LIT: LampHold[] = CHAPTERS.flatMap((c) => c.lamps ?? []);
 export const CUES: Cue[] = CHAPTERS.flatMap((c) => c.cues ?? []);
 export const RELEASES: Release[] = CHAPTERS.flatMap((c) => c.releases ?? []);
+export const VESSELS: Vessel[] = CHAPTERS.flatMap((c) => c.vessels ?? []);
+export const SEATS: TalkSeat[] = CHAPTERS.flatMap((c) => c.seats ?? []);
