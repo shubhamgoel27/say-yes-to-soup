@@ -2558,7 +2558,12 @@ function petalStep(x: number, y: number) {
  * the flyleaf (persisted in the save), gilded if the older code is known.
  */
 function currentPlayerLook() {
-  const base = { ...PLAYER_LOOK, ...(state.playerLook ?? {}) };
+  // The chullo chosen at the flyleaf, or none: what the card showed is what
+  // walks out of it. (It used to show the traveler bareheaded and then put
+  // a gold chullo on them the moment the game began.)
+  const { hat: chosenHat, ...strokes } = state.playerLook ?? {};
+  const hat = chosenHat === 'none' ? { hatStyle: 'none' as const } : chosenHat ? { hat: chosenHat } : {};
+  const base = { ...PLAYER_LOOK, ...strokes, ...hat };
   /** The golden traveler, for those who remember an older code. */
   return state.has('konami')
     ? { ...base, cloth: '#c8a55b', stripe: '#f2e6d0', hat: '#e8c97a' }

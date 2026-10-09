@@ -295,3 +295,29 @@ describe('the persistence-lost signal survives per slot', () => {
     assert.ok(store.has('elsewhere.save.2'), 'and it landed in the slot keys');
   });
 });
+
+// The flyleaf's chullo is worn in the game: a chosen colour, or 'none', has
+// to survive a save, and a journal from before the chullo row stays gold.
+describe('the traveler in the margin: the chullo is kept', () => {
+  const look = { skin: '#d8a06c', cloth: '#c1512f', hair: '#3a2a1c' };
+  it('keeps a chosen chullo, and going bareheaded', () => {
+    setActiveSlot(0);
+    for (const hat of ['#a8382c', 'none']) {
+      store.set('elsewhere.save', rawSave(['intro.done'], { look: { ...look, hat } }));
+      const s = new GameState();
+      s.load();
+      assert.equal(s.playerLook?.hat, hat);
+    }
+  });
+  it('leaves an older journal without one, and drops a hat that is not a string', () => {
+    setActiveSlot(0);
+    store.set('elsewhere.save', rawSave(['intro.done'], { look }));
+    const s = new GameState();
+    s.load();
+    assert.deepEqual(s.playerLook, look);
+    store.set('elsewhere.save', rawSave(['intro.done'], { look: { ...look, hat: 7 } }));
+    const t = new GameState();
+    t.load();
+    assert.equal(t.playerLook?.hat, undefined);
+  });
+});
