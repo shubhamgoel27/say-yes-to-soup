@@ -42,7 +42,9 @@ function pircaStones(g: CanvasRenderingContext2D, r: Rng) {
 }
 
 export const ART: ChapterArt = {
-  grounded: ['tuna', 'ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva'],
+  grounded: ['tuna', 'ajirack', 'nicho', 'chakitaqlla', 'tendedero', 'sapling', 'condorkite', 'hitchpost', 'parva', 'wayunka', 'urpus'],
+  // The chichería's tin lamps: a room brewing in the dark needs its own light.
+  glows: ['mechero'],
   noInk: ['chuno', 'grano', 'gallina', 'lagarto', 'andenpirca', 'rugPaja'],
   pathy: ['plazaWorn'],
   // The chichería is a smoked brewing room with straw on the floor; Carmen's
@@ -921,6 +923,93 @@ export const ART: ChapterArt = {
       }
       dot(g, 30, 23, 1.6, 'rgba(255,255,255,0.6)');
     }, 64, 192);
+
+    // ------------------------------------------------- the chichería's room
+
+    /**
+     * A mechero: the tin kerosene lamp of every Andean back room, a wick in a
+     * can with a little chimney of soot above it, set on an upturned crate.
+     * The room had one fire and one candle, and was dim enough that the
+     * critics called it empty; two of these give it the light it is drunk in.
+     */
+    make('mechero', 1, (g) => {
+      softShadow(g, 32, 56, 18, 5, 0.24);
+      // The crate it stands on.
+      rr(g, 18, 34, 28, 22, 2, '#6b4e32');
+      vgrad(g, 18, 34, 28, 6, 'rgba(255,230,190,0.2)', 'rgba(0,0,0,0)');
+      g.strokeStyle = 'rgba(40,26,14,0.45)';
+      g.lineWidth = 1.2;
+      g.beginPath(); g.moveTo(18, 45); g.lineTo(46, 45); g.stroke();
+      // The tin, its handle and the wick tube.
+      rr(g, 25, 22, 14, 13, 3, '#9aa0a2');
+      vgrad(g, 25, 22, 5, 13, 'rgba(255,255,255,0.35)', 'rgba(255,255,255,0)');
+      g.strokeStyle = '#6c7274';
+      g.lineWidth = 1.6;
+      g.beginPath(); g.arc(32, 26, 9, Math.PI * 1.1, Math.PI * 1.9); g.stroke();
+      rr(g, 30.5, 16, 3, 7, 1, '#7a7f80');
+      // The flame, and the soot it lays on the air above it.
+      glowSpot(g, 32, 12, 14, '#ffc56a', 0.55);
+      oval(g, 32, 12, 2.8, 5.4, '#ffb04a');
+      oval(g, 32, 13, 1.5, 3, '#fff1c4');
+      oval(g, 33, 3, 3, 2, 'rgba(40,30,24,0.18)');
+    });
+
+    /**
+     * A wayunka: maize cobs braided by their husks and hung from a peg to dry,
+     * the seed for next year, kept where the smoke keeps the weevils off.
+     */
+    make('wayunka', 1, (g) => {
+      // The peg and the husk rope.
+      rr(g, 28, 6, 8, 5, 2, '#5a4029');
+      g.strokeStyle = '#d9c38c';
+      g.lineWidth = 3;
+      g.lineCap = 'round';
+      g.beginPath(); g.moveTo(32, 10); g.quadraticCurveTo(30, 30, 32, 44); g.stroke();
+      // Cobs in their colours, hanging in a loose cluster.
+      const cobs: [number, number, number, string][] = [
+        [24, 40, -0.3, '#e8b23c'], [40, 40, 0.3, '#c2412e'], [30, 56, -0.1, '#f0d27a'],
+        [38, 58, 0.15, '#7a3a5e'], [22, 64, -0.35, '#e8b23c'], [42, 70, 0.3, '#f0d27a'],
+        [31, 76, 0, '#c2412e'], [36, 88, 0.1, '#e8b23c'], [26, 92, -0.2, '#f6e6b4'],
+      ];
+      for (const [x, y, rot, c] of cobs) {
+        // Husks folded back above each cob.
+        oval(g, x - Math.sin(rot) * 9, y - 9, 3.2, 6, '#e3d2a0', rot);
+        oval(g, x, y, 5.2, 9.5, c, rot);
+        // Kernel rows.
+        for (let k = -6; k <= 6; k += 3) dot(g, x + Math.sin(rot) * k, y + Math.cos(rot) * k * 0.9, 1.1, shade(c, -0.25));
+        oval(g, x - 1.5, y - 2, 1.6, 5, 'rgba(255,250,230,0.3)', rot);
+      }
+      softShadow(g, 32, 122, 14, 3, 0.12);
+    }, 64, 128);
+
+    /**
+     * The urpus: the big-bellied clay jars the chicha works in for days,
+     * three together under a sack, and a gourd ladle across one mouth.
+     */
+    make('urpus', 1, (g) => {
+      softShadow(g, 32, 88, 30, 7, 0.26);
+      const jar = (x: number, y: number, rw: number, rh: number, c: string) => {
+        oval(g, x, y, rw, rh, c);
+        oval(g, x - rw * 0.3, y - rh * 0.25, rw * 0.35, rh * 0.45, 'rgba(255,236,200,0.18)');
+        oval(g, x, y - rh * 0.88, rw * 0.42, rh * 0.14, shade(c, -0.35));
+        oval(g, x, y - rh * 0.94, rw * 0.36, rh * 0.09, '#3a2414');
+        // Its painted band, the way the potter in Pucará paints them.
+        g.strokeStyle = 'rgba(240,224,190,0.45)';
+        g.lineWidth = 1.6;
+        g.beginPath();
+        g.ellipse(x, y - rh * 0.4, rw * 0.84, rh * 0.18, 0, 0.1, Math.PI - 0.1);
+        g.stroke();
+      };
+      jar(18, 66, 15, 20, '#9a5a34');
+      jar(46, 68, 14, 18, '#8a4e2c');
+      jar(32, 74, 17, 16, '#a8653a');
+      // A sack thrown over the back pair and a gourd ladle across the front.
+      oval(g, 30, 46, 16, 6, 'rgba(214,196,150,0.9)', -0.15);
+      g.strokeStyle = '#6b4a2a';
+      g.lineWidth = 2;
+      g.beginPath(); g.moveTo(22, 58); g.lineTo(44, 54); g.stroke();
+      oval(g, 46, 54, 5, 3.6, '#c79a52');
+    }, 64, 96);
 
     // ------------------------------------------------------- the plaza itself
 

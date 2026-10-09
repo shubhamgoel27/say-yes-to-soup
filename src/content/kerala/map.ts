@@ -368,6 +368,9 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
     U: { t: 'umbrellas', solid: true },
     k: { t: 'spicesacks', solid: true, tall: true },
     O: { t: 'chappals' },
+    B: { t: 'uruli', solid: true },
+    L: { t: 'thookku', tall: true },
+    J: { t: 'bharani', solid: true },
   },
   ground: [
     '..............',
@@ -385,11 +388,13 @@ export const MARIAMMA_VEEDU_MAP: MapData = {
   // the sadya is eaten drift across the east floor in a stagger, not a grid.
   // Nothing stands in the line between the door and Mariamma at her hearth,
   // which is the one sightline this room has to keep. The uri hangs over the
-  // working end, and the prayer lamp holds the far corner by the door.
+  // working end, and the prayer lamp holds the far corner by the door. Along
+  // the north wall the uruli and the pickle jars, and a brass lamp hung from
+  // the rafter, so the room is a kitchen someone lives in and not a floor.
   objects: [
     '#SS##S####S###',
-    '#ap u        #',
-    '#p           #',
+    '#ap u B    L #',
+    '#p          J#',
     '#         k  #',
     '#T g     mm  #',
     '#Ts    mmmm  #',
