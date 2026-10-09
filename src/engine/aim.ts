@@ -17,12 +17,16 @@ export type AimBody<T> = {
   who: T;
   /** Where the body is drawn now: its cell's top-left, in world px. */
   at: [number, number];
-  /** The cells its last steps left, and how many ms ago each, if it just moved. */
+  /** The cells its last steps left, and how many ms ago each, if it just
+   * moved. Leave it out for someone walking with purpose (a scene's walk to
+   * its mark): a click on the floor behind them is a click on the floor. */
   left?: { cell: [number, number]; ago: number }[];
 };
 
 /** How long a body is still "there" after stepping off, in ms: a hand's lag. */
 export const AIM_LAG_MS = 650;
+/** ...and only while they are still within this many cells of it. */
+export const AIM_NEAR = 2;
 /** A near miss still counts within this many world px of the drawn body. */
 export const AIM_SLOP = 3;
 
@@ -43,6 +47,8 @@ export function aimedAt<T>(wx: number, wy: number, bodies: AimBody<T>[]): T | un
     (b) => {
       for (const l of b.left ?? []) {
         if (l.ago > AIM_LAG_MS) continue;
+        // Still near it: an ambler a step or two on, not someone striding past.
+        if (Math.abs(b.at[0] / TILE - l.cell[0]) + Math.abs(b.at[1] / TILE - l.cell[1]) > AIM_NEAR) continue;
         const lx = l.cell[0] * TILE;
         const ly = l.cell[1] * TILE;
         if (inBody(wx, wy, lx, ly, 0)) return [lx, ly];

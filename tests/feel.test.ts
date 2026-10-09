@@ -31,6 +31,15 @@ describe('a click means the person it was aimed at', () => {
     assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [old]), undefined);
   });
 
+  it('the floor behind someone striding past is still floor', () => {
+    // Aurelio walking to his place in the ring passed the thread's end; a
+    // click there a moment later is a walk to the floor, not a talk.
+    const striding = { who: 'aurelio', at: at(8, 5), left: [{ cell: [5, 5] as [number, number], ago: 300 }] };
+    assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [striding]), undefined);
+    const purposeful = { who: 'aurelio', at: at(6, 5) };
+    assert.equal(aimedAt(5 * TILE + 8, 5 * TILE + 8, [purposeful]), undefined);
+  });
+
   it('a body drawn there now beats one that left it', () => {
     const left = { who: 'rosa', at: at(6, 5), left: [{ cell: [5, 5] as [number, number], ago: 100 }] };
     const here = { who: 'mateo', at: at(5, 5) };

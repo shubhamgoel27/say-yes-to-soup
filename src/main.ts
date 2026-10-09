@@ -5955,7 +5955,10 @@ function villagerAtPoint(wx: number, wy: number): Villager | undefined {
       .map((v) => ({
         who: v,
         at: v.actor.renderPos(),
-        left: v.actor.left.map((l) => ({ cell: [l.x, l.y] as [number, number], ago: now - l.at })),
+        left:
+          stagedControls(v) || stationControls(v)
+            ? undefined
+            : v.actor.left.map((l) => ({ cell: [l.x, l.y] as [number, number], ago: now - l.at })),
       })),
   );
 }
