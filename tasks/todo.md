@@ -731,3 +731,11 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   lacks, Shionoura chapter card before its goodbye, adobo burn restarts the recipe, kombu pull rewards mashing,
   click on a wandering NPC sometimes only walks, journal Tasks tab sparse, Delhi haze, avatar swatch taps,
   shelf Continue swap.
+
+## 2026-10-08: pass 7 (round g notes, toward "most loved"). Brief: ../wayfare-review/pass7/BRIEF.md
+- [ ] B bodies/camera/input: overlaps in staged paths (Faustino, well, Pilar, baraza, crane), first click on walkers, talk camera at top edges, corner slide, Space after talk, Esc, wfState card
+- [ ] C UI: avatar swatches, shelf blank-slot trap, Tasks page, chip dodges bodies + location title, stale chip, iPhone portrait, 44px panel controls
+- [ ] S staging: close card after goodbye, Aurelio/Teofilo seated + patrons, loom strap, Marisol at stall, Busan red awning + porters + Gong booth, Delhi kite release, Shionoura dinner/crowd/Fumi, kanga, boats placed, night-after well
+- [ ] A art: frames match text light (grade pipeline), boat props, plaza paving + seam + flagpole, ship rails/hull, warm interiors, loom glow, mound glint, card = in-game hat, rickshaw scale
+- [ ] W words/thread/tuning: gate letter thread truth (+ e2e), adobo restart, kombu early pull cost, lazy-line variety, mole clock, slips
+- [ ] merge, gate (tsc, npm test, 3 e2e alone, prod smoke desk + phone), ship, verify live
