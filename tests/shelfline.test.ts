@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { SaveData } from '../src/engine/state';
-import { shelfLines, walkedLine } from '../src/ui/shelfline';
+import { shelfLines, shelfOpenPlan, stepShelfVerb, walkedLine } from '../src/ui/shelfline';
 
 /**
  * Two journals with the same name on the shelf once read identically; the
@@ -37,5 +37,28 @@ describe('the shelf tells its journals apart', () => {
   it('a map the build no longer knows falls back to the first village', () => {
     const l = shelfLines(save({ place: { map: 'nowhere', x: 0, y: 0, dir: 'down' } } as Partial<SaveData>));
     assert.match(l!.where, /^chapter one/);
+  });
+});
+
+/**
+ * The shelf trap (g3 desk-47): on a blank journal the verb cursor wrapped
+ * from unpack back to open, Space opened the blank journal, and it took the
+ * table from the real journey, so the cover lost Continue.
+ */
+describe('the shelf cursor and the blank journal', () => {
+  it('the verb cursor stops at both ends instead of wrapping', () => {
+    // blank row: open, unpack
+    assert.equal(stepShelfVerb(1, 'right', 2), 1, 'unpack, right: stays on unpack');
+    assert.equal(stepShelfVerb(0, 'left', 2), 0, 'open, left: stays on open');
+    assert.equal(stepShelfVerb(0, 'right', 2), 1);
+    assert.equal(stepShelfVerb(1, 'left', 2), 0);
+    // full row: open, pack, unpack, erase
+    assert.equal(stepShelfVerb(3, 'right', 4), 3, 'erase is the end of the line');
+    assert.equal(stepShelfVerb(0, 'right', 0), 0, 'no verbs, no movement');
+  });
+
+  it('opening a blank journal goes to its flyleaf, never straight onto the table', () => {
+    assert.equal(shelfOpenPlan(false), 'flyleaf');
+    assert.equal(shelfOpenPlan(true), 'resume');
   });
 });

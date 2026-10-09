@@ -21,8 +21,10 @@ import { NamingCard, TitleScreen } from './ui/title';
 import { PauseMenu } from './ui/pause';
 import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
+import { capUnder } from './ui/games/scene';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
+import { chipHolds } from './ui/taskpage';
 import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
@@ -450,6 +452,14 @@ const title = new TitleScreen(
     openFlyleaf(freshSlate);
   },
   () => continueJourney(),
+  (row) => {
+    // A blank journal off the shelf: the same path as Begin again, so the
+    // switch happens only when the traveler sets out from the flyleaf.
+    openFlyleaf(() => {
+      setActiveSlot(row);
+      freshSlate();
+    });
+  },
 );
 const naming = new NamingCard($('cc-card'));
 const albumUI = new AlbumUI($('album'), state, audio);
@@ -756,14 +766,8 @@ function stripActivate() {
   // "Keep at it": the panel is still there, exactly as it was.
 }
 
-/**
- * A story activity is underway from the moment its start flag goes up (the
- * how-to card, the panel, a "not yet" still owed) until its done narration
- * clears the flag. Replays never hold anything.
- */
-function activityUnderway(): boolean {
-  return !state.has('replay.mode') && games.some((g) => state.has(g.def.flag));
-}
+/** A refresh was held back while a card or panel was up; run it once they go. */
+let chipStale = false;
 
 /** The HUD chip always shows the most pressing open thread, shortened. */
 function refreshTaskChip() {
@@ -772,10 +776,18 @@ function refreshTaskChip() {
     errandEl.hidden = true;
     return;
   }
-  // The chip moves on when the activity ENDS, not when it is offered: the
+  // The chip holds still while an activity's card or panel is on screen: the
   // start flag retires the task that asked for it, and the chip used to jump
-  // to the next errand while the watia's how-to card was still open.
-  if (activityUnderway() && errandEl.textContent && !errandEl.hidden) return;
+  // to the next errand while the watia's how-to card was still open. It used
+  // to hold for as long as ANY start flag stayed up, and an armed card the
+  // player had stepped away from (or one left behind in an earlier village)
+  // froze the chip for chapters: Kerala's errand in Delhi, the red awning at
+  // Busan's goodbye, the chicheria while Carmen's loom waited after Continue.
+  if (chipHolds({ activityOnScreen: uiCardOpen() || anyGameOpen(), showing: !!errandEl.textContent && !errandEl.hidden })) {
+    chipStale = true;
+    return;
+  }
+  chipStale = false;
   const top = journalUI.activeTasks()[0];
   // The chip shows whole thoughts; CSS clamps politely at two lines. It kept
   // hiding outright once story.end was set, which orphaned the epilogue task
@@ -831,18 +843,42 @@ function faceClearHud(quiet: boolean) {
   }
   const s = viewScale();
   const [px, py] = player.occupies();
-  const heads: [number, number, number, number][] = [];
+  type Box = [number, number, number, number];
+  const heads: Box[] = [];
+  // The chip is a standing card, not a passing whisper: it steps aside for
+  // anyone it would cover, head to feet, near the player or not (Carmen at
+  // her loom sat under it, eleven tiles off), and for the player too when a
+  // map edge pins them into the corner.
+  const bodies: Box[] = [];
+  const body = (rx: number, ry: number) => {
+    const [l, t] = worldToScreen(rx + 1, ry - 15);
+    bodies.push([l, t, l + (TILE - 2) * s, t + (TILE + 15) * s]);
+  };
+  {
+    const [rx, ry] = player.renderPos();
+    body(rx, ry);
+  }
   for (const v of villagersHere()) {
+    const [rx, ry] = v.actor.renderPos();
+    body(rx, ry);
     const [ox, oy] = v.actor.occupies();
     if (Math.abs(ox - px) + Math.abs(oy - py) > 6) continue;
-    const [rx, ry] = v.actor.renderPos();
     // The head and hat: the top of a two-tile figure, crown to chin.
     const [l, t] = worldToScreen(rx + 2, ry - 14);
     heads.push([l, t, l + (TILE - 4) * s, t + 16 * s]);
   }
+  const over = (boxes: Box[], r: DOMRect) =>
+    r.width > 0 && boxes.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
+  // A body counts when a real piece of it is under the chip, not a pair of
+  // feet peeking in at the frame's top edge: that sent the chip to the foot
+  // of the screen for someone standing off-frame.
+  const BITE = 12;
   const hits = (r: DOMRect) =>
-    r.width > 0 && heads.some(([l, t, rr, b]) => r.left < rr && r.right > l && r.top < b && r.bottom > t);
-  for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', hits(el.getBoundingClientRect()));
+    r.width > 0 &&
+    bodies.some(
+      ([l, t, rr, b]) => Math.min(r.right, rr) - Math.max(r.left, l) >= BITE && Math.min(r.bottom, b) - Math.max(r.top, t) >= BITE,
+    );
+  for (const el of [plateEl, toastsEl]) el.classList.toggle('over-face', over(heads, el.getBoundingClientRect()));
   // The chip is measured at home whenever it is home, so a new thread (a
   // new height) or a turned phone is judged from the corner it holds.
   const moved = errandEl.classList.contains('face-moved');
@@ -859,7 +895,9 @@ function faceClearHud(quiet: boolean) {
   }
   const away = !!chipHome && hits(chipHome);
   errandEl.classList.toggle('face-moved', away);
-  errandEl.classList.toggle('over-face', away && moved && hits(errandEl.getBoundingClientRect()));
+  // Moved, it goes faint only over a face: a pair of feet under the foot of
+  // the frame is no reason to stop being readable.
+  errandEl.classList.toggle('over-face', away && moved && over(heads, errandEl.getBoundingClientRect()));
 }
 
 /** Journal announcements: the pen and the margin-note spark. */
@@ -955,30 +993,9 @@ let plateTimers: number[] = [];
 let plateHeld = false;
 let plateWaiting: { text: string; holdMs: number } | null = null;
 let plateLive: { text: string; holdMs: number } | null = null;
-/** A phone lying down moves the chip out of the plate's way in CSS. */
-const PLATE_PUSHES_CHIP = matchMedia('(pointer: coarse) and (max-height: 500px) and (orientation: landscape)');
-/**
- * The plate is centered and as wide as its name; the chip is in the corner
- * and as tall as its thread. A long name over a three-line chip ran under it
- * ("THE RIVIERA OF THE CYCLOPS" lost its T at 1280x800), so when the two
- * would touch, the plate steps down below the chip for this showing.
- */
-function clearPlateOfChip() {
-  plateEl.style.top = '';
-  if (PLATE_PUSHES_CHIP.matches || errandEl.hidden) return;
-  const p = plateEl.getBoundingClientRect();
-  const e = errandEl.getBoundingClientRect();
-  if (e.width === 0) return;
-  // The plate is measured mid-entrance, still 6px low (its slide in), and a
-  // 10px gap on top of that pushed it below a phone's chip even though the
-  // two have their own bands there: it then sat over the well and the first
-  // face on screen, with the walking tip under it. Measure where it settles.
-  const GAP = 4;
-  const bottom = p.bottom - 6;
-  if (p.left < e.right + GAP && p.right > e.left - GAP && p.top - 6 < e.bottom + GAP && bottom > e.top - GAP) {
-    plateEl.style.top = `${Math.round(e.bottom + GAP)}px`;
-  }
-}
+// The plate no longer steps around the chip: the chip waits out the
+// plate's showing in CSS (#plate.show ~ #errand), so the name always reads
+// at its own home, first and clear.
 
 function showPlate(text: string, holdMs = 4200) {
   for (const t of plateTimers) clearTimeout(t);
@@ -992,10 +1009,7 @@ function showPlate(text: string, holdMs = 4200) {
   plateEl.textContent = text;
   plateLive = { text, holdMs };
   plateTimers = [
-    window.setTimeout(() => {
-      clearPlateOfChip();
-      plateEl.classList.add('show');
-    }, 350),
+    window.setTimeout(() => plateEl.classList.add('show'), 350),
     window.setTimeout(() => {
       plateEl.classList.remove('show');
       plateLive = null;
@@ -3248,7 +3262,7 @@ function arriveAt(trig: TriggerDef & { type: 'door' }) {
   // New ground can retire a whole chapter's threads (openTasks scopes by
   // map), and nothing else would tell the chip until the next flag.
   refreshTaskChip();
-  if (!samePlace) showPlate(map.name, 2600);
+  if (!samePlace) showPlate(map.name, 3600);
   audio.setScene(sceneFor(map.id));
   audio.setRegion(regionFor(map.id));
   renderer.setMood(moodFor(map.id));
@@ -4721,6 +4735,8 @@ function update(dt: number) {
       toasts.setHeld(quiet);
       holdPlate(quiet);
     }
+    // A refresh held back behind a card runs the moment the card is gone.
+    if (chipStale && !uiCardOpen() && !anyGameOpen()) refreshTaskChip();
     chipFold.tick(quiet);
     faceClearHud(quiet);
   }
@@ -4872,8 +4888,13 @@ function update(dt: number) {
       if (act) titleActivate();
     }
   } else if (mode === 'naming') {
-    // The flyleaf card owns the keyboard entirely (capture-phase listener);
-    // any stray edges from other devices drain here without effect.
+    // The flyleaf card owns the keyboard entirely (capture-phase listener),
+    // so keys never arrive here. A gamepad's stick and buttons do: they steer
+    // the look rows the same way the arrows do, or the highlight would sit
+    // on "skin" while the pad had nowhere to go.
+    if (menuDir) naming.dir(menuDir);
+    if (act) naming.act();
+    else if (back) naming.cancel();
   } else if (mode === 'letter') {
     if (act || back) letterAdvance();
   } else if (title.letterOpen) {
@@ -6187,6 +6208,14 @@ function attachPanelPointer(
   root.addEventListener('pointerdown', (e) => {
     if (!panel.isOpen || e.button !== 0) return;
     e.preventDefault();
+    // A painted key cap is a button: it presses its own key, whatever
+    // third of the card it sits in.
+    const cap = capUnder(root, e.clientX, e.clientY);
+    if (cap) {
+      if (cap === 'space') panel.onAction();
+      else panel.onDir(cap);
+      return;
+    }
     const card = root.querySelector('.w-panel') ?? root;
     const r = card.getBoundingClientRect();
     const fromLeft = (e.clientX - r.left) / r.width;

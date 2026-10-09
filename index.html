@@ -276,6 +276,10 @@
       /* Over the face of someone near the player, an overlay goes faint
        * (faceClearHud in main.ts) and comes back once the face moves on. */
       #errand.over-face, #plate.show.over-face, #toasts.over-face { opacity: 0.16; }
+      /* The place's name gets its own moment: while the nameplate is up the
+       * chip waits, then comes back. Two dark cards at the top of a new
+       * place competed, and the name read as the fainter one. */
+      #hud #plate.show ~ #errand { opacity: 0; transition: opacity 0.3s ease; }
 
       /* ---- toasts: "a page filled" whispers ---- */
       /* Overlays that carry the story mute the ambient HUD around them. */
@@ -524,7 +528,6 @@
       #tb-text {
         font-size: var(--fs-body);
         min-height: 48px; /* two lines: the box breathes but never yawns */
-        text-wrap: pretty;
       }
       #tb-text.narrator { font-style: italic; color: #4c3d2e; }
       /* The continue cue: a quill resting its ink on the page, breathing. */
@@ -831,6 +834,141 @@
         color: var(--ink);
       }
       .j-task.now::before { content: '\25B8'; color: #c1512f; }
+      /* The Tasks tab as a page of her book: now (large) beside what this
+       * place already gave you, and the places behind you folded below. */
+      .jt {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        column-gap: 22px;
+        row-gap: 14px;
+      }
+      /* Her pencil note for the place sits at the foot of the sheet, so a
+       * short page still reads as a whole page of her book. */
+      .jt-nani {
+        grid-column: 1 / -1;
+        grid-row: -2 / -1;
+        align-self: end;
+        font-family: var(--hand);
+        font-size: var(--fs-hand17);
+        line-height: 1.3;
+        color: #6b5334;
+        border-top: 1px dashed rgba(43, 33, 24, 0.18);
+        padding-top: 8px;
+        transform: rotate(-0.4deg);
+      }
+      .jt-nani span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        opacity: 0.65;
+        transform: none;
+      }
+      .jt-nowcol, .jt-herecol { min-width: 0; }
+      .jt-herecol { border-left: 1px solid rgba(43, 33, 24, 0.22); padding-left: 18px; }
+      .jt-past { grid-column: 1 / -1; border-top: 1px dashed rgba(107, 83, 52, 0.45); padding-top: 8px; }
+      .jt-place {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 22px;
+        line-height: 1.15;
+        margin-bottom: 12px;
+        text-wrap: balance;
+      }
+      .jt-place span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-weight: normal;
+        font-style: italic;
+        font-size: var(--fs-125);
+        color: #6b5334;
+        margin-top: 2px;
+      }
+      .jt-k {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #6b5334;
+        margin: 0 0 6px;
+      }
+      .jt-k:not(:first-child) { margin-top: 14px; }
+      .jt-now {
+        font-size: 17.5px;
+        line-height: 1.5;
+        color: var(--ink);
+        padding: 10px 12px 10px 14px;
+        border-left: 3px solid #c1512f;
+        background: rgba(193, 81, 47, 0.08);
+        border-radius: 0 3px 3px 0;
+      }
+      .jt-now.quiet { font-style: italic; color: #57452f; border-left-color: rgba(107, 83, 52, 0.45); background: none; }
+      .jt-bag { font-family: var(--hand); font-size: var(--fs-hand17); color: #6a4c2e; margin-top: 10px; transform: rotate(-0.4deg); }
+      .jt-bag span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        opacity: 0.75;
+        transform: none;
+      }
+      .jt-also, .jt-done { list-style: none; margin: 0; padding: 0; }
+      .jt-also li { font-size: var(--fs-13); color: #57452f; padding: 3px 0 3px 16px; position: relative; }
+      .jt-also li::before { content: '\25E6'; position: absolute; left: 2px; color: #6f5c40; }
+      /* Crossed off the way a pencil does it: a tick, and a line through
+       * that still lets the words be read. */
+      .jt-done li {
+        font-size: var(--fs-13);
+        line-height: 1.4;
+        color: #6b5a42;
+        padding: 3px 0 3px 20px;
+        position: relative;
+        text-decoration: line-through;
+        text-decoration-color: rgba(107, 83, 52, 0.55);
+        text-decoration-thickness: 1px;
+      }
+      .jt-done li::before {
+        content: '\2713';
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        color: #6b8e4e;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .jt-none { font-style: italic; color: #6f5c40; font-size: var(--fs-13); }
+      .jt-marks { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 10px; align-items: center; }
+      .jt-dish { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-12); color: #57452f; }
+      .jt-dish i { display: inline-block; width: 52px; height: 38px; }
+      .jt-dish canvas { display: block; width: 52px; height: 38px; }
+      .jt-dish b { font-weight: normal; font-style: italic; }
+      .jt-who {
+        font-family: var(--hand);
+        font-size: var(--fs-hand16);
+        color: #5d4b35;
+        padding: 0 8px;
+        border: 1px solid rgba(107, 83, 52, 0.35);
+        border-radius: 12px;
+        line-height: 1.5;
+      }
+      .jt-leaf { padding: 4px 0; border-bottom: 1px dotted rgba(107, 83, 52, 0.3); }
+      .jt-leaf summary {
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        list-style: none;
+        padding: 4px 2px;
+      }
+      .jt-leaf summary::-webkit-details-marker { display: none; }
+      .jt-leaf summary::before { content: '\25B8'; color: #a3542f; font-size: 11px; transition: transform 0.15s; }
+      .jt-leaf[open] summary::before { transform: rotate(90deg); }
+      .jt-leaf-name { font-family: var(--display); font-size: 15px; color: var(--ink); }
+      .jt-leaf-tally { font-size: var(--fs-12); font-style: italic; color: #6b5334; margin-left: auto; }
+      .jt-leaf > .jt-done, .jt-leaf > .jt-marks { margin-left: 18px; margin-bottom: 6px; }
       /* The foot is ruled off from the page, and a page that scrolls fades out
        * above the rule instead of running its last line into the hint. */
       .j-hint {
@@ -889,7 +1027,6 @@
         color: #4c3a28;
         padding: 4px 2px 2px;
         transform: rotate(-0.4deg);
-        text-wrap: pretty;
       }
       .j-ph-stamp {
         display: inline-block;
@@ -1144,7 +1281,6 @@
         color: #c4ac83;
         max-width: 300px;
         margin: 0 auto 20px;
-        text-wrap: pretty;
       }
       .t-menu { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
       .t-opt {
@@ -1629,7 +1765,6 @@
         max-width: 320px;
         margin: 0 auto 16px;
         transform: rotate(-0.4deg);
-        text-wrap: pretty;
       }
       .cc-input {
         display: block;
@@ -1713,6 +1848,7 @@
         box-shadow: inset 0 1px 1px rgba(255, 252, 244, 0.35);
       }
       .cc-dot.on { outline: 1.5px solid #7a3b22; outline-offset: 2px; }
+      .cc-dot { cursor: pointer; }
       .cc-actions { margin-top: 2px; }
       .cc-btn {
         font-family: var(--hand);
@@ -1786,7 +1922,17 @@
         transition: transform 0.12s ease;
       }
       .w-cell.on { transform: scale(1.12); }
-      .w-hint { font-size: var(--fs-135); font-style: italic; min-height: 20px; margin-bottom: 10px; }
+      /* Two lines held open: a caption that wraps to a second line used to
+       * grow the card and jump the painting ~20px. (Not flex: captions carry
+       * inline <b> and <br>, which flex would split into columns.) */
+      .w-hint {
+        font-size: var(--fs-135);
+        font-style: italic;
+        line-height: 1.4;
+        min-height: 2.8em;
+        margin-bottom: 10px;
+        text-wrap: balance;
+      }
       /* The key legend: the how-to card leaves, the keys stay. One row, the
        * same shape in every panel, quiet enough to sit under the painting. */
       .w-legend {
@@ -2024,7 +2170,6 @@
         color: #4c3a28;
         padding: 7px 3px 4px;
         transform: rotate(-0.5deg);
-        text-wrap: pretty;
       }
       .al-stamp {
         position: absolute;
@@ -2705,6 +2850,12 @@
         }
         .j-ph-grid { flex: 0 0 auto; max-height: 44%; }
         .j-task { padding-top: 10px; padding-bottom: 10px; }
+        /* The task page reads top to bottom in a hand: now, then crossed
+         * off, then the folded places. */
+        .jt { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; }
+        .jt-herecol { border-left: none; padding-left: 0; border-top: 1px dashed rgba(107, 83, 52, 0.35); padding-top: 10px; }
+        .jt-now { font-size: 17px; }
+        .jt-leaf summary { min-height: 40px; align-items: center; }
         .j-eph { width: 90px; margin: 4px 0 4px 10px; }
 
         /* ---- overlays taller than a phone: center small, scroll tall ---- */
@@ -2766,6 +2917,11 @@
           justify-content: center;
         }
         .cc-btn { min-height: 44px; }
+        /* A swatch is a finger target too: big enough to land on, with the
+         * row itself tall enough to hold a whole fingertip. */
+        .cc-dots { gap: 10px; }
+        .cc-dot { width: 24px; height: 24px; }
+        .cc-mid { min-height: 44px; }
         /* The chip's quiet last line is small print under small print;
          * held in a hand it keeps a legible floor. */
         .errand-nudge { font-size: max(0.85em, 12.5px); }
@@ -2840,7 +2996,7 @@
           max-height: min(62vh, 400px);
         }
         .w-title { margin-bottom: 4px; }
-        .w-hint { margin-bottom: 4px; min-height: 0; }
+        .w-hint { margin-bottom: 4px; }
         /* The key legend is desk furniture; the pad and taps replace it. */
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }
@@ -3002,7 +3158,7 @@
           transition: opacity 0.25s ease, top 0.35s ease;
         }
         .toast, .toast.wh { max-width: 100%; box-sizing: border-box; }
-        #plate.show ~ #errand, #plate.show ~ #toasts {
+        #plate.show ~ #toasts {
           top: calc(46px + env(safe-area-inset-top));
           transition: opacity 0.25s ease, top 0.35s ease;
         }
@@ -3084,16 +3240,16 @@
 
       /* ---- landscape-first: the journal reads best sideways ----
        * Phones upright see a quarter of a page drawn wide, so responsive.ts
-       * steers them sideways: an offer card where the browser can lock
-       * orientation, a full rotate page where it cannot, and a quiet corner
-       * pin once the offer has been waved off twice. The elements only ever
+       * offers sideways once a session: a card that lays the page sideways
+       * where the browser can lock orientation and asks for the turn where
+       * it cannot, and a quiet corner pin once the offer is waved off.
+       * Upright always stays playable. The elements only ever
        * mount on phones (screen's short side under 600px), and every rule
        * here is coarse-and-hoverless gated besides, so desktop mice and
        * narrow desktop windows can never feel any of it. */
       @media (pointer: coarse) and (hover: none) {
-        /* The veils: the rotate page outranks everything (it is the door),
-         * the offer sits above the HUD but under nothing of its own. */
-        #sideways, #rotatehold {
+        /* The veil: the offer sits above the HUD. */
+        #sideways {
           position: fixed;
           inset: 0;
           display: grid;
@@ -3104,8 +3260,7 @@
           backdrop-filter: blur(3px);
           z-index: 190;
         }
-        #rotatehold { z-index: 200; }
-        #sideways[hidden], #rotatehold[hidden], #sidewayspin[hidden] { display: none; }
+        #sideways[hidden], #sidewayspin[hidden] { display: none; }
 
         /* The card is a journal page like every other surface. */
         .sw-card {
@@ -3141,6 +3296,7 @@
           color: var(--ink-soft);
           border-top: 1px dashed rgba(43, 33, 24, 0.3);
           padding-top: 10px;
+          margin-bottom: 6px;
         }
 
         /* The glyph: a small phone drawn in ink, turning itself sideways.
