@@ -290,3 +290,11 @@ you would not mind losing tonight.
 - An agent can keep committing after its report (S added aa4a5f4 after I merged its tip). Before the final gate,
   re-check `git log HEAD..<branch>` for every agent branch, and never merge into a tree while e2e runs on its
   dev server (hot reload changes the game under the test).
+
+## A forgotten driver poisons the e2e gate (2026-10-09)
+- After a manual browser check I "stopped" my driver with a pkill pattern that missed it. Its headless game kept
+  rendering for an hour, and every e2e suite failed in a new way (navigation mid-test, `soup` undefined, minigames
+  that never finish). With it gone, the same suites passed.
+- Rule: stop drivers by PID (`lsof -ti :<port>`), and before any e2e gate confirm no other game page is running
+  (`lsof -ti :<driver port>` empty, no stray chromium). Gate servers run with `hmr: false, watch: null`, so a
+  file save or a server restart cannot reload the page under a test.
