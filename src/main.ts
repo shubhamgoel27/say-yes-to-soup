@@ -46,6 +46,7 @@ import {
   NPCS,
   REGION_MAPS,
   sitKindsOn,
+  GAME_MAPS,
   SIT_LINES,
   TASKS,
 } from './content/world';
@@ -594,7 +595,7 @@ const hereSpot = (npc: string | null): Spot => ({ map: map.id, at: [player.x, pl
 /** A game whose start flag is raised but whose panel is not yet on screen,
  * and which the player has not set aside. */
 function pendingGame(): GameEntry | null {
-  return gameByFlag(armed.pending((f) => state.has(f), panelOpen));
+  return gameByFlag(armed.pending((f) => state.has(f) && (GAME_MAPS[f]?.has(map.id) ?? true), panelOpen));
 }
 
 /** Open air near where a card was set aside: that card, forgiven. */

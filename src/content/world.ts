@@ -157,6 +157,15 @@ export const LETTERS: LetterDef[] = [...BASE_LETTERS, ...CHAPTERS.flatMap((c) =>
 
 export const GAMES: GameDef[] = CHAPTERS.flatMap((c) => c.games ?? []);
 
+/**
+ * The maps each game belongs to: its chapter's. An armed card is offered only
+ * there, so a caballito left waiting in La Caleta cannot open on a Delhi roof
+ * after a reload.
+ */
+export const GAME_MAPS: Record<string, ReadonlySet<string>> = Object.fromEntries(
+  CHAPTERS.flatMap((c) => (c.games ?? []).map((g) => [g.flag, new Set(Object.keys(c.meta))] as const)),
+);
+
 export const REGION_MAPS: Record<string, MapData> = Object.fromEntries(
   CHAPTERS.flatMap((c) => c.maps.map((m) => [m.id, m])),
 );

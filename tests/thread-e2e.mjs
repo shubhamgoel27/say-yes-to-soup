@@ -137,6 +137,8 @@ for (const s of states) {
       // Let a scene's walkers reach their marks first: a click on someone's
       // head as they pass is rightly a click on them (Aurelio walking down
       // the well's column to his place at dusk), and that is not this check.
+      // Wanderers hold still for it too (Hana ambling under the shrine steps).
+      await page.evaluate(() => (document.body.dataset.wfCmd = `freeze:1:${Date.now()}`));
       for (let i = 0, prev = ''; i < 20; i++) {
         const cur = JSON.stringify((await st()).npcs);
         if (cur === prev) break;
@@ -162,6 +164,7 @@ for (const s of states) {
       const own = !!w.dialogue && (w.dialogue === s.node || Object.values(s.nodes ?? {}).includes(w.dialogue));
       const talked = (underHead && !!w.dialogue && !/^ex\./.test(w.dialogue)) || own;
       check(walked || talked, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
+      await page.evaluate(() => (document.body.dataset.wfCmd = `freeze:0:${Date.now()}`));
       // Whatever that click opened (and set) is undone by booting the state
       // again: Escape cannot shut a choice, and a scene left open swallowed
       // the Space checks below.
@@ -240,7 +243,7 @@ const quiet = async () => {
 await sleep(2500);
 await quiet();
 for (const [m, px, py, tx, ty, kind, want] of [
-  ['delhi-rooftop', 21, 6, 21, 5, 'pecking pigeons', 'walk'],
+  ['delhi-rooftop', 21, 4, 21, 5, 'pecking pigeons', 'walk'], // from floor: 21,6 is the parapet
   ['delhi-rooftop', 19, 9, 19, 8, 'the kite mast', 'read'],
 ]) {
   // A warp is refused mid-wipe or mid-narration; ask until it lands.
