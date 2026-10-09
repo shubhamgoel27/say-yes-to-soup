@@ -241,6 +241,84 @@ if (want('r2')) {
   check(/aunties/.test(run.last), 'adobo: no wrong reach, so Ben suspects aunties');
 }
 
+// Adobo, burnt once on purpose: Space brings Ben's spare pot with all six
+// things in it, and the lift that follows still plates the dinner.
+if (want('r2')) {
+  const F = 'c3.cook.start';
+  await open(F, 3);
+  let burnt = null;
+  let retried = null;
+  const run = await drive(F, ['step', 'cur', 'simmer', 'done', 'burnt', 'landed'], async (s) => {
+    if (s.burnt) {
+      burnt ??= s;
+      await page.keyboard.press('Space');
+      await sleep(300);
+      retried ??= await peek(F, ['step', 'landed', 'simmer', 'burnt']);
+      return;
+    }
+    if (s.simmer >= 0 || s.done) {
+      // The first pot is left to burn; the spare one is lifted on Ben's call.
+      if (s.done || (burnt && /Ngayon/.test(s.hint))) await page.keyboard.press('Space');
+      return;
+    }
+    const said = PANTRY.map((n) => [n, s.hint.toLowerCase().lastIndexOf(n.toLowerCase())]).filter((x) => x[1] >= 0);
+    if (!said.length) return;
+    said.sort((a, b) => b[1] - a[1]);
+    const at = PANTRY.indexOf(said[0][0]);
+    if (s.cur === at) {
+      await page.keyboard.press('Space');
+      await sleep(250);
+    } else await arrowTo(s.cur, at, 4);
+  }, 90000);
+  check(!!burnt, 'adobo: a pot left on the fire burns');
+  check(!!retried && !retried.burnt && retried.step === 6 && retried.landed === 6 && retried.simmer === 0,
+    `adobo: Space after a burn picks up at the simmer with six things in the pot (${JSON.stringify(retried)})`);
+  check(!!retried && !/apron/.test(retried.hint), `adobo: no apron on the retry ("${retried?.hint.slice(0, 60)}...")`);
+  check(Number.isFinite(run.ms), `adobo: the spare pot is plated (${(run.ms / 1000).toFixed(1)}s)`);
+}
+
+// Dawn kitchen: a hand mashing through the pull clouds the broth and is not
+// applauded; a hand that waits for the hurrying bubbles is. Both finish.
+if (want('r2')) {
+  const F = 'c4.cook.start';
+  const KEYS = ['phase', 'heat', 'pullLo', 'foam', 'lx', 'skimReach', 'squeezing', 'squeeze', 'packLo', 'packHi', 'clouds'];
+  const dashi = async (mashPull) => {
+    await open(F, 4);
+    let pulled = null;
+    const r = await drive(F, KEYS, async (s) => {
+      if (s.phase === 'pull') {
+        if (mashPull || s.heat >= s.pullLo + 1) await page.keyboard.press('Space');
+        if (mashPull) await sleep(70);
+        return;
+      }
+      if (s.phase === 'skim') {
+        pulled ??= s;
+        if (!s.foam.length) return;
+        const near = s.foam.reduce((a, b) => (Math.abs(a.x - s.lx) <= Math.abs(b.x - s.lx) ? a : b));
+        if (Math.abs(near.x - s.lx) < s.skimReach * 0.7) {
+          await page.keyboard.press('Space');
+          await sleep(150);
+        } else await page.keyboard.press(near.x < s.lx ? 'ArrowLeft' : 'ArrowRight');
+        return;
+      }
+      if (s.phase === 'onigiri') {
+        if (!s.squeezing || s.squeeze >= (s.packLo + s.packHi) / 2) await page.keyboard.press('Space');
+        return;
+      }
+      if (s.phase === 'steep' && s.heat === 0 && /In they go/.test(s.hint)) await page.keyboard.press('Space');
+      if (s.phase === 'done' || s.phase === 'ruined') await page.keyboard.press('Space');
+    }, 90000);
+    return { ...r, pulled };
+  };
+  const careful = await dashi(false);
+  const mashed = await dashi(true);
+  check(Number.isFinite(careful.ms) && Number.isFinite(mashed.ms), `dashi: both mornings finish (careful ${(careful.ms / 1000).toFixed(1)}s, mashed ${(mashed.ms / 1000).toFixed(1)}s)`);
+  check(/applause/.test(careful.pulled?.hint ?? ''), 'dashi: the careful pull is applauded');
+  check(!/applause/.test(mashed.pulled?.hint ?? '') && (mashed.pulled?.clouds ?? 0) >= 3, `dashi: a mashed pull clouds the broth (${mashed.pulled?.clouds} clouds)`);
+  const xs = (careful.pulled?.foam ?? []).map((f) => f.x).sort((a, b) => a - b);
+  check(xs.length === 3 && xs[1] - xs[0] >= 0.15 && xs[2] - xs[1] >= 0.15, `dashi: the three foams spread across the pot (${xs.map((x) => x.toFixed(2))})`);
+}
+
 // Sadya: readable seat names during her walk; a hand that ignores her still gets served.
 if (want('r2')) {
   const F = 'c6.sadya.start';

@@ -315,6 +315,17 @@ class Walker {
     return null;
   }
 
+  /** The scene Space where the thread ends opens: a person's entry, a mound, an examine. */
+  sceneAt(t: Target): string | null {
+    if (t.kind === 'who') return npcById.get(t.id)?.entry.find((e) => this.state.check(e.when))?.node ?? null;
+    const tm = dressed(this.state, t.map);
+    if (!tm || tm.triggerAt(t.x, t.y)?.type === 'door') return null;
+    const mound = DIG_SPOTS.find((s) => s.at[0] === t.x && s.at[1] === t.y && !this.state.has(s.flag));
+    if (t.map === 'village' && mound && this.state.has('dig.invite') && !this.state.has('dig.done')) return mound.node;
+    const kind = tm.object(t.x, t.y)?.t ?? tm.ground(t.x, t.y).t;
+    return EXAMINES[kind]?.find((a) => (!a.map || a.map === t.map) && this.state.check(a.when))?.node ?? null;
+  }
+
   /** Press Space where the thread ends. Returns a complaint, or null. */
   act(t: Target): string | null {
     if (!this.goTo(t.map)) return `cannot walk to ${t.map} from ${this.place}`;
@@ -418,7 +429,9 @@ function journey(avoid: ((nodeId: string) => boolean) | null = null): string[] {
           }
         }
       }
-      // For tests/thread-e2e.mjs, which replays each of these in the engine.
+      // For tests/thread-e2e.mjs, which replays each of these in the engine:
+      // the scene Space there must open (the errand, not an idle line), and
+      // for a thing, every floor beside it a player can stand on.
       dumped.push({
         ch: ch.id,
         place: w.place,
@@ -426,6 +439,8 @@ function journey(avoid: ((nodeId: string) => boolean) | null = null): string[] {
         pages: [...w.state.pages()],
         target: t.kind === 'who' ? { who: t.id, all: t.all } : { at: [t.map, t.x, t.y] },
         task: t.task.text,
+        node: w.sceneAt(t),
+        sides: t.kind === 'at' ? facingTiles(w.state, t.map, t.x, t.y) : [],
       });
       const before = w.sig();
       const where = t.kind === 'who' ? t.id : `[${t.map},${t.x},${t.y}]`;

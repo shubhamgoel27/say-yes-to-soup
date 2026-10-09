@@ -851,7 +851,7 @@ export const SHIONOURA_NODES: NodeMap = {
   'c4.depart': {
     lines: [
       { text: 'The tairyō-bata crack once in the morning wind. Okaeri, the town said when you came; itterasshai, it says now: go, and come back.' },
-      { text: 'Fumi stands at the end of the pier and bows. When the boat rounds the lighthouse, she is still bowing.' },
+      { text: 'Fumi stands at the end of the pier and bows. When the boat slides out past the stone lantern, she is still bowing.' },
     ],
     effects: ['travel:busan'],
   },

@@ -3807,6 +3807,33 @@ function threadPersonBeside(): Villager | null {
   return Math.abs(px - ox) + Math.abs(py - oy) === 1 ? v : null;
 }
 
+/**
+ * The thing the errand in hand is about, if you are standing at its side.
+ * Nani's letter wanted opening at the gate: a player who walked up the road
+ * and stopped beside the gate posts facing the grass (or the ridge) pressed
+ * Space and read the grass, and learned to face east before the letter
+ * would open. The thread's thing answers from any side you stand on, the
+ * way its person does (threadPersonBeside). A thing drawn over two cells
+ * (the gate's two leaves) answers from beside either.
+ */
+function errandThingBeside(): [number, number] | null {
+  for (const task of journalUI.activeTaskDefs()) {
+    if (task.who === undefined && !task.at) continue;
+    const at = atFor(task, state);
+    // Only the first task with a target counts: the one the chip and the thread name.
+    if (!at || at[0] !== map.id || map.triggerAt(at[1], at[2])) return null;
+    const kind = map.object(at[1], at[2])?.t;
+    if (!kind) return null;
+    const cells: [number, number][] = [[at[1], at[2]]];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      if (map.object(at[1] + dx, at[2] + dy)?.t === kind) cells.push([at[1] + dx, at[2] + dy]);
+    }
+    const [px, py] = player.occupies();
+    return cells.find(([cx, cy]) => Math.abs(cx - px) + Math.abs(cy - py) === 1) ?? null;
+  }
+  return null;
+}
+
 /** An undug mound at (x, y), while Justina's invitation stands. */
 function moundAt(x: number, y: number) {
   if (map.id !== 'village' || !state.has('dig.invite') || state.has('dig.done')) return undefined;
@@ -3868,6 +3895,20 @@ function tryInteract(aimFirst = true): boolean {
     player.face(ox > player.x ? 'right' : ox < player.x ? 'left' : oy > player.y ? 'down' : 'up');
     startNpcDialogue(aim);
     return true;
+  }
+  // The errand's thing at your side answers before the grass you happen to face.
+  const thing = aimFirst ? errandThingBeside() : null;
+  if (thing && (thing[0] !== fx || thing[1] !== fy)) {
+    const tk = map.object(thing[0], thing[1])?.t ?? '';
+    const tarm = EXAMINES[tk]?.find(
+      (a) => (!a.map || a.map === map.id) && state.check(a.when) && (!a.dark || nightLevel(dayT) > 0.3),
+    );
+    if (tarm && !sitKindsOn(map.id).has(tk)) {
+      const [px, py] = player.occupies();
+      player.face(thing[0] > px ? 'right' : thing[0] < px ? 'left' : thing[1] > py ? 'down' : 'up');
+      startNarration(tarm.node);
+      return true;
+    }
   }
   const kind = map.object(fx, fy)?.t ?? map.ground(fx, fy).t;
   if (sitKindsOn(map.id).has(kind)) {
@@ -6554,6 +6595,11 @@ function installCheats() {
     },
     /** One page, granted the way play grants it, so rhymes and gates see it.
      * A raw soup.flag('page.x') writes a flag the journal never reads. */
+    /** Turn the player in place (a key tap along open floor takes a step instead). */
+    face(dir: 'up' | 'down' | 'left' | 'right') {
+      player.face(dir);
+      return `facing ${dir}`;
+    },
     page(id: string) {
       if (!JOURNAL.some((e) => e.id === id)) return `no such page: ${id}`;
       state.apply([`journal:${id}`]);
