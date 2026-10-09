@@ -49,6 +49,8 @@ export const ART: ChapterArt = {
   // house keeps the lime-washed shell and the frazadas she wove herself.
   skins: {
     chicheria: { wallInt: 'wallChicha', rug: 'rugPaja', shelf: 'shelfChicha' },
+    // The square is the village's own stone, not the coast's grey slab.
+    village: { plaza: 'plazaAndes' },
   },
   // The east gateway is one drawing across two cells: west half, east half,
   // shut or swung open.
@@ -921,6 +923,59 @@ export const ART: ChapterArt = {
     }, 64, 192);
 
     // ------------------------------------------------------- the plaza itself
+
+    /**
+     * The square: flat fieldstone from the river, laid in big irregular
+     * slabs, the same warm stone as the worn lanes across it, only not yet
+     * rubbed pale. The shared grey slab was a cooler, darker stone than
+     * either the puna round it or the lanes on it, so its ragged edge read
+     * as grey stains spreading over the grass rather than paving. Here the
+     * lanes are a step lighter than the square, the square a step lighter
+     * than nothing, and the joints carry the pattern.
+     */
+    make('plazaAndes', 6, (g, r) => {
+      const base = '#ac9d80';
+      rect(g, 0, 0, S, S, base);
+      // Three or four slabs a cell, never on a grid: a broken course.
+      const sy2 = 22 + r.int(20);
+      const v1 = 14 + r.int(20);
+      const v2 = 26 + r.int(24);
+      const slabs: [number, number, number, number][] = [
+        [1.5, 1.5, v1 - 3, sy2 - 3],
+        [v1 + 1.5, 1.5, S - v1 - 3, sy2 - 3],
+        [1.5, sy2 + 1.5, v2 - 3, S - sy2 - 3],
+        [v2 + 1.5, sy2 + 1.5, S - v2 - 3, S - sy2 - 3],
+      ];
+      for (const [rx, ry, rw, rh] of slabs) {
+        rr(g, rx, ry, rw, rh, 6, shade(base, (r.next() - 0.5) * 0.07));
+        // A faint crown where the sun sits on each stone.
+        oval(g, rx + rw * 0.45, ry + rh * 0.4, rw * 0.36, rh * 0.32, 'rgba(255,244,214,0.12)');
+      }
+      // Joints: a soft shadow line with dust settled along its lower lip.
+      g.strokeStyle = 'rgba(92,78,58,0.3)';
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(0, sy2); g.lineTo(S, sy2);
+      g.moveTo(v1, 0); g.lineTo(v1, sy2);
+      g.moveTo(v2, sy2); g.lineTo(v2, S);
+      g.stroke();
+      g.strokeStyle = 'rgba(214,198,164,0.35)';
+      g.lineWidth = 1.2;
+      g.beginPath();
+      g.moveTo(0, sy2 + 1.6); g.lineTo(S, sy2 + 1.6);
+      g.stroke();
+      // Grit and the odd stray grass blade in a joint.
+      for (let i = 0; i < 5; i++) dot(g, r.int(S), r.int(S), 1.2, 'rgba(110,94,70,0.16)');
+      if (r.chance(0.3)) {
+        g.strokeStyle = shade(PAL.greenDark, 0.1);
+        g.lineWidth = 1.4;
+        g.lineCap = 'round';
+        const gx = 6 + r.int(S - 12);
+        g.beginPath(); g.moveTo(gx, sy2); g.lineTo(gx - 2, sy2 - 5);
+        g.moveTo(gx + 1, sy2); g.lineTo(gx + 3, sy2 - 4);
+        g.stroke();
+      }
+    });
 
     /**
      * Paving that people have walked the shine off. Same slabs as the plaza,

@@ -137,6 +137,9 @@ const SEAM_RES = 32;
 const EDGE_LAID = new Set([
   'plaza', 'plazaWorn', 'wellstone', 'chowkbrick', 'galistone', 'lanepave', 'basalto', 'cempa',
   'molo', 'molonord', 'molosud',
+  // A field is dug to a line. Feathered like grass, the terraces' furrows
+  // dissolved into the puna down a wavy grey seam at their east end.
+  'crop',
 ]);
 const EDGE_CUT = new Set([
   'pierdeck', 'deck', 'bridge', 'floorWood', 'floorSteel', 'floorOndol', 'floorEarth', 'tatami', 'tataki',
