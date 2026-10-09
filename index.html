@@ -831,6 +831,142 @@
         color: var(--ink);
       }
       .j-task.now::before { content: '\25B8'; color: #c1512f; }
+      /* The Tasks tab as a page of her book: now (large) beside what this
+       * place already gave you, and the places behind you folded below. */
+      .jt {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-rows: auto auto 1fr;
+        column-gap: 22px;
+        row-gap: 14px;
+      }
+      /* Her pencil note for the place sits at the foot of the sheet, so a
+       * short page still reads as a whole page of her book. */
+      .jt-nani {
+        grid-column: 1 / -1;
+        grid-row: -2 / -1;
+        align-self: end;
+        font-family: var(--hand);
+        font-size: var(--fs-hand17);
+        line-height: 1.3;
+        color: #6b5334;
+        border-top: 1px dashed rgba(43, 33, 24, 0.18);
+        padding-top: 8px;
+        transform: rotate(-0.4deg);
+      }
+      .jt-nani span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        opacity: 0.65;
+        transform: none;
+      }
+      .jt-nowcol, .jt-herecol { min-width: 0; }
+      .jt-herecol { border-left: 1px solid rgba(43, 33, 24, 0.22); padding-left: 18px; }
+      .jt-past { grid-column: 1 / -1; border-top: 1px dashed rgba(107, 83, 52, 0.45); padding-top: 8px; }
+      .jt-place {
+        font-family: var(--display);
+        font-weight: 600;
+        font-size: 22px;
+        line-height: 1.15;
+        margin-bottom: 12px;
+        text-wrap: balance;
+      }
+      .jt-place span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-weight: normal;
+        font-style: italic;
+        font-size: var(--fs-125);
+        color: #6b5334;
+        margin-top: 2px;
+      }
+      .jt-k {
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: #6b5334;
+        margin: 0 0 6px;
+      }
+      .jt-k:not(:first-child) { margin-top: 14px; }
+      .jt-now {
+        font-size: 17.5px;
+        line-height: 1.5;
+        color: var(--ink);
+        padding: 10px 12px 10px 14px;
+        border-left: 3px solid #c1512f;
+        background: rgba(193, 81, 47, 0.08);
+        border-radius: 0 3px 3px 0;
+        text-wrap: pretty;
+      }
+      .jt-now.quiet { font-style: italic; color: #57452f; border-left-color: rgba(107, 83, 52, 0.45); background: none; }
+      .jt-bag { font-family: var(--hand); font-size: var(--fs-hand17); color: #6a4c2e; margin-top: 10px; transform: rotate(-0.4deg); }
+      .jt-bag span {
+        display: block;
+        font-family: 'Literata', Georgia, serif;
+        font-size: 10.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        opacity: 0.75;
+        transform: none;
+      }
+      .jt-also, .jt-done { list-style: none; margin: 0; padding: 0; }
+      .jt-also li { font-size: var(--fs-13); color: #57452f; padding: 3px 0 3px 16px; position: relative; }
+      .jt-also li::before { content: '\25E6'; position: absolute; left: 2px; color: #6f5c40; }
+      /* Crossed off the way a pencil does it: a tick, and a line through
+       * that still lets the words be read. */
+      .jt-done li {
+        font-size: var(--fs-13);
+        line-height: 1.4;
+        color: #6b5a42;
+        padding: 3px 0 3px 20px;
+        position: relative;
+        text-decoration: line-through;
+        text-decoration-color: rgba(107, 83, 52, 0.55);
+        text-decoration-thickness: 1px;
+      }
+      .jt-done li::before {
+        content: '\2713';
+        position: absolute;
+        left: 2px;
+        top: 2px;
+        color: #6b8e4e;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .jt-none { font-style: italic; color: #6f5c40; font-size: var(--fs-13); }
+      .jt-marks { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 10px; align-items: center; }
+      .jt-dish { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-12); color: #57452f; }
+      .jt-dish i { display: inline-block; width: 52px; height: 38px; }
+      .jt-dish canvas { display: block; width: 52px; height: 38px; }
+      .jt-dish b { font-weight: normal; font-style: italic; }
+      .jt-who {
+        font-family: var(--hand);
+        font-size: var(--fs-hand16);
+        color: #5d4b35;
+        padding: 0 8px;
+        border: 1px solid rgba(107, 83, 52, 0.35);
+        border-radius: 12px;
+        line-height: 1.5;
+      }
+      .jt-leaf { padding: 4px 0; border-bottom: 1px dotted rgba(107, 83, 52, 0.3); }
+      .jt-leaf summary {
+        cursor: pointer;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        list-style: none;
+        padding: 4px 2px;
+      }
+      .jt-leaf summary::-webkit-details-marker { display: none; }
+      .jt-leaf summary::before { content: '\25B8'; color: #a3542f; font-size: 11px; transition: transform 0.15s; }
+      .jt-leaf[open] summary::before { transform: rotate(90deg); }
+      .jt-leaf-name { font-family: var(--display); font-size: 15px; color: var(--ink); }
+      .jt-leaf-tally { font-size: var(--fs-12); font-style: italic; color: #6b5334; margin-left: auto; }
+      .jt-leaf > .jt-done, .jt-leaf > .jt-marks { margin-left: 18px; margin-bottom: 6px; }
       /* The foot is ruled off from the page, and a page that scrolls fades out
        * above the rule instead of running its last line into the hint. */
       .j-hint {
@@ -2706,6 +2842,12 @@
         }
         .j-ph-grid { flex: 0 0 auto; max-height: 44%; }
         .j-task { padding-top: 10px; padding-bottom: 10px; }
+        /* The task page reads top to bottom in a hand: now, then crossed
+         * off, then the folded places. */
+        .jt { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto 1fr; }
+        .jt-herecol { border-left: none; padding-left: 0; border-top: 1px dashed rgba(107, 83, 52, 0.35); padding-top: 10px; }
+        .jt-now { font-size: 17px; }
+        .jt-leaf summary { min-height: 40px; align-items: center; }
         .j-eph { width: 90px; margin: 4px 0 4px 10px; }
 
         /* ---- overlays taller than a phone: center small, scroll tall ---- */

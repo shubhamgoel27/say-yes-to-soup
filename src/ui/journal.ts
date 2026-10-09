@@ -7,6 +7,7 @@ import { makeDishArt } from '../art/dishes';
 import { makePhotoArt } from '../art/albumart';
 import { PHOTOS } from './album';
 import { openTasks } from '../content/guide';
+import { taskPage, type ChapterLeaf } from './taskpage';
 
 export type { TaskDef };
 
@@ -167,6 +168,13 @@ export class JournalUI {
       this.tab = (this.tab + 1) % TABS.length;
       this.cursor = 0;
     } else {
+      // The flat pages (tasks, route) have no cursor: the arrows read down
+      // the page instead, so a keyboard can reach the folded places.
+      const flat = this.root.querySelector<HTMLElement>('.j-tasks, .j-route');
+      if (flat) {
+        flat.scrollBy({ top: dir === 'down' ? 80 : -80, behavior: 'smooth' });
+        return;
+      }
       const count =
         TABS[this.tab]?.id === 'photos' ? this.earnedPhotos().length : this.unlockedInTab().length;
       if (count === 0) return;
@@ -452,28 +460,81 @@ export class JournalUI {
       </div>`;
   }
 
-  /** The Tasks tab: every open thread, written like directions from a friend. */
+  /**
+   * The Tasks tab, as a page of her book: what you are doing now, written
+   * large; what this place has already given you, crossed off, with its
+   * dishes and people; the places behind you folded at the foot. It was one
+   * row on an empty sheet.
+   */
   private renderTasks() {
-    const tasks = this.activeTasks();
+    const page = taskPage(this.tasks, this.activeTaskDefs(), this.state, this.state.place?.map);
     const tabsHtml = TABS.map(
       (t, i) => `<span class="j-tab${i === this.tab ? ' on' : ''}">${t.label}</span>`,
     ).join('');
-    const items = tasks.length
-      ? tasks.map((t, i) => `<div class="j-task${i === 0 ? ' now' : ''}">${t}</div>`).join('')
-      : '<div class="j-empty">Nothing pressing. Wander, talk, pet the dog.</div>';
     const total = this.entries.length;
     const found = this.entries.filter((e) => this.state.hasPage(e.id)).length;
+
+    const marks = (leaf: ChapterLeaf) =>
+      leaf.dishes.length || leaf.people.length
+        ? `<div class="jt-marks">${leaf.dishes
+            .map((d) => `<span class="jt-dish" data-dish="${d.id}" title="${d.title}"><i></i><b>${d.title}</b></span>`)
+            .join('')}${leaf.people.map((p) => `<span class="jt-who">${p.title}</span>`).join('')}</div>`
+        : '';
+    const doneList = (leaf: ChapterLeaf) =>
+      leaf.done.length ? `<ul class="jt-done">${leaf.done.map((d) => `<li>${d}</li>`).join('')}</ul>` : '';
+
+    const nowHtml = page.now
+      ? `<div class="jt-now">${page.now}</div>`
+      : '<div class="jt-now quiet">Nothing pressing. Wander, talk, pet the dog.</div>';
+    const bagHtml = page.carrying ? `<div class="jt-bag"><span>in your bag</span>${page.carrying}</div>` : '';
+    const alsoHtml = page.also.length
+      ? `<div class="jt-k">also on your mind</div><ul class="jt-also">${page.also.map((a) => `<li>${a}</li>`).join('')}</ul>`
+      : '';
+    const hereHtml =
+      page.done.length || page.dishes.length || page.people.length
+        ? doneList(page) + marks(page)
+        : '<div class="jt-none">Nothing crossed off here yet. The day is young.</div>';
+    const pastHtml = page.past.length
+      ? `<div class="jt-past"><div class="jt-k">earlier pages</div>${page.past
+          .map((leaf) => {
+            const tally = [
+              leaf.done.length ? `${leaf.done.length} crossed off` : '',
+              leaf.dishes.length ? `${leaf.dishes.length} dish${leaf.dishes.length > 1 ? 'es' : ''}` : '',
+              leaf.people.length ? `${leaf.people.length} ${leaf.people.length > 1 ? 'people' : 'person'}` : '',
+            ]
+              .filter(Boolean)
+              .join(' &middot; ');
+            return `<details class="jt-leaf"><summary><span class="jt-leaf-name">${leaf.place}</span><span class="jt-leaf-tally">${tally}</span></summary>${doneList(leaf)}${marks(leaf)}</details>`;
+          })
+          .join('')}</div>`
+      : '';
 
     this.root.innerHTML = `
       <div class="j-book${this.opening ? ' opening' : ''}">
         ${this.headHtml(found, total, tabsHtml)}
         <div class="j-body">
-          <div class="j-tasks">
-            <div class="j-sub" style="margin-bottom:10px">Loose threads, most pressing first:</div>
-            ${items}
+          <div class="j-tasks jt">
+            <div class="jt-nowcol">
+              <div class="jt-place">${page.place}<span>${page.chapterWord}</span></div>
+              <div class="jt-k">now</div>
+              ${nowHtml}
+              ${bagHtml}
+              ${alsoHtml}
+            </div>
+            <div class="jt-herecol">
+              <div class="jt-k">crossed off here</div>
+              ${hereHtml}
+            </div>
+            ${pastHtml}
+            ${page.nani ? `<div class="jt-nani"><span>Nani, 1974, inside the front cover</span>${page.nani}</div>` : ''}
           </div>
         </div>
         <div class="j-hint">${hintLine('flat')}</div>
       </div>`;
+    // Each dish gets its little painting as a mark, the same one its page has.
+    for (const slot of this.root.querySelectorAll<HTMLElement>('.jt-dish i')) {
+      const art = makeDishArt(slot.parentElement?.dataset.dish ?? '', 1);
+      if (art) slot.appendChild(art);
+    }
   }
 }
