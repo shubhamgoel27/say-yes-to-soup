@@ -228,8 +228,8 @@ export const BUSAN_TASKS: TaskDef[] = [
   },
   {
     when: { has: ['c5.arrived'], not: ['letter.read.c5.marisol'] },
-    text: 'A postal window the size of a biscuit tin sits by the ferry office. Mail crosses oceans faster than you do; ask.',
-    at: ['busan', 40, 23],
+    text: 'A postal window the size of a biscuit tin sits up the lane by the red awning. Mail crosses oceans faster than you do; ask.',
+    at: ['busan', 15, 10],
   },
   {
     when: { has: ['c5.arrived'], not: ['c5.berth', 'c5.complete'] },

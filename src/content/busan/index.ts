@@ -4,7 +4,7 @@ import { BUSAN_EVENTS, BUSAN_EXAMINES, BUSAN_LETTERS, BUSAN_NODES, BUSAN_NPCS } 
 import { BUSAN_JOURNAL, BUSAN_TASKS } from './journal';
 import { BUSAN_MAP, TEAHOUSE_MAP } from './map';
 import { RECALL } from './recall';
-import { AUCTION_DRESSING, AUCTION_NODES, AUCTION_NPCS } from './staging';
+import { AUCTION_DRESSING, AUCTION_NODES, AUCTION_NPCS, QUAY_NPCS } from './staging';
 import { HotteokPanel } from '../../ui/games/busan';
 import { handWords } from '../../ui/games/scene';
 
@@ -12,7 +12,7 @@ import { handWords } from '../../ui/games/scene';
 export const CHAPTER: ChapterDef = {
   id: 'busan',
   maps: [BUSAN_MAP, TEAHOUSE_MAP],
-  npcs: [...BUSAN_NPCS, ...AUCTION_NPCS],
+  npcs: [...BUSAN_NPCS, ...AUCTION_NPCS, ...QUAY_NPCS],
   nodes: { ...BUSAN_NODES, ...AUCTION_NODES },
   examines: BUSAN_EXAMINES,
   events: BUSAN_EVENTS,
