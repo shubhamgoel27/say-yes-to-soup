@@ -150,9 +150,10 @@ for (const s of states) {
       const walked = !w.dialogue && w.tile[0] === cx && w.tile[1] === cy;
       const talked = underHead && !!w.dialogue && !/^ex\./.test(w.dialogue);
       check(walked || talked, `${label}: a click on the thread's end ${now.thread.last.end} walks there (at ${w.tile}, ${w.dialogue || 'no scene'})`);
-      if (w.dialogue) await page.keyboard.press('Escape');
-      await warp(now.map, tx0, ty0);
-      await sleep(900);
+      // Whatever that click opened (and set) is undone by booting the state
+      // again: Escape cannot shut a choice, and a scene left open swallowed
+      // the Space checks below.
+      await load(s);
       await ask();
       await sleep(150);
       now = await st();
@@ -189,7 +190,10 @@ for (const s of states) {
   // Stand there, face the loop, press Space: the errand's own scene must open.
   const opened = await spaceFrom(now.map, ex, ey, toward(ex, ey, lx, ly));
   if (!check(!!opened, `${label}: Space at ${last.end} facing ${last.loop} opens a scene (${opened ?? 'nothing'})`)) continue;
-  if (s.node) check(opened === s.node, `${label}: Space at ${last.end} does the errand (${s.node}), not ${opened}`);
+  // The scene is that of whoever stands on the loop (a crowd task names several).
+  const there = Object.entries(now.npcs).find(([, c]) => c[0] === lx && c[1] === ly)?.[0];
+  const want = (there && s.nodes?.[there]) || s.node;
+  if (want) check(opened === want, `${label}: Space at ${last.end} does the errand (${want}), not ${opened}`);
   // A thing answers from every side, and from the thread's end facing away.
   if (s.target.at && s.node && s.target.at[0] === now.map) {
     const tries = [

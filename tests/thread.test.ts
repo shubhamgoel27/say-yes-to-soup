@@ -440,6 +440,8 @@ function journey(avoid: ((nodeId: string) => boolean) | null = null): string[] {
         target: t.kind === 'who' ? { who: t.id, all: t.all } : { at: [t.map, t.x, t.y] },
         task: t.task.text,
         node: w.sceneAt(t),
+        // A crowd task: the engine takes whichever named person is nearest.
+        nodes: t.kind === 'who' ? Object.fromEntries(t.all.map((id) => [id, w.sceneAt({ ...t, id })])) : {},
         sides: t.kind === 'at' ? facingTiles(w.state, t.map, t.x, t.y) : [],
       });
       const before = w.sig();

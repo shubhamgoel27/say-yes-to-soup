@@ -124,7 +124,12 @@ export const JOURNAL_BY_ID = new Map(JOURNAL.map((e) => [e.id, e]));
  * tasks into one list meant Ch'aska Pampa was still telling you to meet the
  * village while you stood in the endgame, an ocean and ten villages later.
  */
-export type WorldTask = TaskDef & { supersededBy: string[]; chapter: number };
+export type WorldTask = TaskDef & {
+  supersededBy: string[];
+  chapter: number;
+  /** A game armed and waiting: its host is the place to go, news or not. */
+  armed?: boolean;
+};
 
 export const TASKS: WorldTask[] = newestFirst.flatMap((c) => {
   const own = CHAPTERS.indexOf(c);
