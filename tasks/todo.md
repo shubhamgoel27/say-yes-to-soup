@@ -719,3 +719,15 @@ Brief: ../wayfare-review/pass4/BRIEF.md
   the three vendors behind their stalls.
 - Gate: tsc clean, npm test 400/400, thread-e2e 175 states, attend-e2e ALL GREEN, warmth all pass (each alone),
   prod smoke desktop + Galaxy NO ERRORS.
+
+## 2026-10-08: critic round g (after pass 6, build 2978a55). Reports: ../wayfare-review/g/
+- Overall 8.0 (first hour) / 8.3 (back half + ending) / 8.3 (systems + devices); round f was 8.0 / 8.4 / 8.0.
+- Writing 9.0 / 9.2 / 8.8. No regressions from pass 6 found. Three critics stalled repeatedly (host latency);
+  g1 lost its save once and skipped the ship scenes, so pass 6's ship staging went unverified.
+- Real bug found and fixed (1c5255b): the langar station seated Bantu in the hall at Delhi's arrival hour, so the
+  first errand led to an empty stand. Stations now take `when`; tests/firstmeet.test.ts.
+- Remaining notes (not started): gate letter wayfinding (thread south, gate needs facing from the west), Marisol
+  off her stall, a few overlap frames (Faustino, the well, Hana on the crane), text naming light/boats the frame
+  lacks, Shionoura chapter card before its goodbye, adobo burn restarts the recipe, kombu pull rewards mashing,
+  click on a wandering NPC sometimes only walks, journal Tasks tab sparse, Delhi haze, avatar swatch taps,
+  shelf Continue swap.
