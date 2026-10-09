@@ -1205,10 +1205,37 @@ export class Renderer {
     this.fires = cells;
   }
 
+  /**
+   * A kite let go from a hand, for a goodbye that releases one (Delhi's
+   * roof: "It climbs over the domes... West over the roofs it goes, small,
+   * then smaller"). `k` runs 0..1 along the whole flight: the climb on its
+   * line to 0.4, then the line let out and the drift west, shrinking, gone
+   * at 1. The story sets `goal` line by line and the kite eases toward it,
+   * so it is never further on than the words, and never waits mid-air.
+   */
+  private loosed: { x: number; y: number; k: number; goal: number } | null = null;
+  loseKite(wx: number, wy: number) {
+    this.loosed = { x: wx, y: wy, k: 0, goal: 0 };
+  }
+  kiteGoal(goal: number) {
+    if (this.loosed) this.loosed.goal = Math.max(this.loosed.goal, Math.min(1, goal));
+  }
+  endKite() {
+    this.loosed = null;
+  }
+  get kiteFlight(): number | null {
+    return this.loosed ? this.loosed.k : null;
+  }
+
   /** Advance ambient animation. Called from the fixed-timestep update. */
   tick(dt: number) {
     this.time += dt;
     this.frameDt = dt;
+    if (this.loosed) {
+      const f = this.loosed;
+      const d = f.goal - f.k;
+      if (d > 0) f.k += Math.min(d, dt * (0.05 + d * 0.45));
+    }
     if (this.flock) {
       this.flock.t += dt;
       if (this.flock.t > this.flock.dur) this.flock = null;
@@ -2080,6 +2107,7 @@ export class Renderer {
       if (this.nightK > 0.4) this.drawFireflies(map, cam);
       this.drawFliers();
       this.drawRegional(map, cam);
+      this.drawLoosedKite(cam);
     }
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
@@ -3494,7 +3522,8 @@ export class Renderer {
 
   /** Delhi: paper kites high over the rooftops, each on the end of its string. */
   private drawKites() {
-    if (this.raining || this.nightK > 0.45) return;
+    // A goodbye kite in the air has the sky to itself.
+    if (this.raining || this.nightK > 0.45 || this.loosed) return;
     const ctx = this.ctx;
     const arts = this.regionalArt.kites;
     const t = this.time;
@@ -3519,6 +3548,55 @@ export class Renderer {
       ctx.drawImage(img, (-img.width * sc) / 2, (-img.height * sc) / 2, img.width * sc, img.height * sc);
       ctx.restore();
     }
+  }
+
+  /** The goodbye kite: climbing on its line, then loosed and drifting west. */
+  private drawLoosedKite(cam: Camera) {
+    const f = this.loosed;
+    const img = this.regionalArt.kites[0];
+    if (!f || !img) return;
+    const ctx = this.ctx;
+    const t = this.time;
+    const rise = Math.min(1, f.k / 0.4);
+    const drift = Math.max(0, (f.k - 0.4) / 0.6);
+    const ease = 1 - (1 - rise) ** 2;
+    // The climb: up and a little west of the hand, swaying as it bites the wind.
+    // The top of the climb is the skyline: just under the top of the view
+    // (where the roof's far edge and the domes are), never off it.
+    const ax = f.x - 1.2 * TILE;
+    const ay = Math.max(cam.y + 1.3 * TILE, f.y - 4.2 * TILE);
+    let wx = f.x + (ax - f.x) * ease + Math.sin(rise * Math.PI) * 10;
+    let wy = f.y + (ay - f.y) * ease;
+    // Loosed: west over the roofs, a little higher, small, then smaller.
+    wx -= drift * 9 * TILE;
+    wy -= drift * 0.7 * TILE + Math.sin(drift * 5 + t) * 3 * drift;
+    const sc = 1.3 * (1 - 0.82 * drift);
+    const alpha = drift > 0.8 ? (1 - drift) / 0.2 : 1;
+    if (alpha <= 0.01) return;
+    const x = (wx - cam.x) * A;
+    const y = (wy - cam.y) * A;
+    const hx = (f.x - cam.x) * A;
+    const hy = (f.y - cam.y) * A;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = 'rgba(38,26,16,0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    if (drift === 0) {
+      // On the line: from the hand to the kite, a slack belly under it.
+      ctx.moveTo(hx, hy);
+      ctx.quadraticCurveTo((hx + x) / 2 + 10, (hy + y) / 2 + 24, x, y + 10 * sc);
+    } else {
+      // Let go: the dor trails under it, shorter as it goes.
+      const len = 120 * (1 - drift) + 20;
+      ctx.moveTo(x, y + 10 * sc);
+      ctx.quadraticCurveTo(x + len * 0.3, y + len * 0.5, x + len * 0.6, y + len);
+    }
+    ctx.stroke();
+    ctx.translate(x, y);
+    ctx.rotate(Math.sin(t * 1.4) * 0.22 - drift * 0.3);
+    ctx.drawImage(img, (-img.width * sc) / 2, (-img.height * sc) / 2, img.width * sc, img.height * sc);
+    ctx.restore();
   }
 
   /** Sicily: two swifts chasing each other in tight loops at dusk. */

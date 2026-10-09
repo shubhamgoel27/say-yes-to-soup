@@ -8,6 +8,7 @@ import { STAGING as SHIONOURA } from './shionoura/staging';
 import { STAGING as BUSAN } from './busan/staging';
 import { STAGING as SICILY } from './sicily/staging';
 import { STAGING as KERALA } from './kerala/staging';
+import { STAGING as DELHI } from './delhi/staging';
 
 /**
  * Stage directions: where people stand when a scene has something to say,
@@ -77,8 +78,21 @@ export type LampHold = { when: Cond; map: string };
  */
 export type Cue = EventNode & { when: Cond; map: string };
 
+/**
+ * Something let go of while `node` is read (Delhi's goodbye kite): it leaves
+ * the player's hand on the node's first line and has flown `goals[i]` of
+ * its way (0..1) by line i, so the frame is never ahead of the words.
+ */
+export type Release = { node: string; goals: number[] };
+
 /** One chapter's stage directions. */
-export type Staging = { blocking?: Blocking[]; hours?: HourHold[]; lamps?: LampHold[]; cues?: Cue[] };
+export type Staging = {
+  blocking?: Blocking[];
+  hours?: HourHold[];
+  lamps?: LampHold[];
+  cues?: Cue[];
+  releases?: Release[];
+};
 
 const CHAPTERS: Staging[] = [
   { blocking: RETURN_BLOCKING, hours: RETURN_HOURS },
@@ -88,6 +102,7 @@ const CHAPTERS: Staging[] = [
   SHIONOURA,
   BUSAN,
   KERALA,
+  DELHI,
   SICILY,
 ];
 
@@ -95,3 +110,4 @@ export const BLOCKING: Blocking[] = CHAPTERS.flatMap((c) => c.blocking ?? []);
 export const HOURS: HourHold[] = CHAPTERS.flatMap((c) => c.hours ?? []);
 export const LAMPS_LIT: LampHold[] = CHAPTERS.flatMap((c) => c.lamps ?? []);
 export const CUES: Cue[] = CHAPTERS.flatMap((c) => c.cues ?? []);
+export const RELEASES: Release[] = CHAPTERS.flatMap((c) => c.releases ?? []);

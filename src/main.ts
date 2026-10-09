@@ -58,7 +58,7 @@ import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
 import { ESCORTS, JUG, LAMP, MEETING } from './content/return/staging';
-import { BLOCKING, CUES, HOURS, LAMPS_LIT } from './content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES } from './content/staging';
 import { CAIRN_AT, setCairnStone, setJugPoured } from './art/ending';
 
 // ---------------------------------------------------------------- boot
@@ -2116,6 +2116,7 @@ function updateStaging(dt: number) {
   audio.setHearth(lampOn || curtainT !== null);
   lampT = lampOn ? Math.min(1, lampT + dt / LAMP.seconds) : 0;
 
+  updateReleases();
   noteTrail();
   updateProps();
   updateMeeting(dt);
@@ -2184,6 +2185,29 @@ function updateProps() {
   setCairnStone(stone);
 }
 let cairnStone: boolean | null = null;
+
+/**
+ * Something let go of while its words are read (Delhi's kite): it leaves
+ * the hand on the first line, is as far along as the line on screen says,
+ * and finishes its flight after the words close. Another map ends it.
+ */
+let releaseMap: string | null = null;
+function updateReleases() {
+  const r = RELEASES.find((x) => x.node === textbox.currentNode);
+  if (r && textbox.isOpen) {
+    if (renderer.kiteFlight === null) {
+      const [px, py] = player.renderPos();
+      renderer.loseKite(px + TILE / 2, py + 2);
+      releaseMap = map.id;
+    }
+    renderer.kiteGoal(r.goals[textbox.currentLine] ?? 1);
+    return;
+  }
+  const k = renderer.kiteFlight;
+  if (k === null) return;
+  if (releaseMap !== map.id || k >= 0.999) renderer.endKite();
+  else renderer.kiteGoal(1);
+}
 
 /**
  * Taking your place: once the ring has formed, stepping into its open side

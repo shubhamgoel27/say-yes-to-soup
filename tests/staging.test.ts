@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BLOCKING, CUES, HOURS, LAMPS_LIT } from '../src/content/staging';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES } from '../src/content/staging';
 import { CHAPTERS, DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
-import { DAWN_LANDING } from '../src/content/busan/staging';
+import { DAWN_LANDING, SUNHEE_STALL } from '../src/content/busan/staging';
+import { YUSUF_AT_CHARKHI } from '../src/content/delhi/staging';
+import { AURELIO_AT_WELL } from '../src/content/dev/staging';
 import { SHIP_AT, SIGNING_SPOT } from '../src/content/sicily/staging';
 import { COURT_LANDING, KARAOKE_LANDING } from '../src/content/crossing/staging';
 import { PIER_LANDING } from '../src/content/shionoura/staging';
@@ -122,6 +124,29 @@ const SCENES: Scene[] = [
     map: 'village',
     player: MEETING.spot,
     nodes: ['c10.verdict'],
+  },
+  {
+    name: 'the Delhi rooftop goodbye',
+    flags: ['c11.arrived', 'c11.met.yusuf', 'c11.names', 'c11.kite.done', 'c11.her', 'c11.duel.done', 'c11.chit.bombay'],
+    map: 'delhi-rooftop',
+    // Beside him at the charkhi, mid-terrace, with room both sides.
+    player: [YUSUF_AT_CHARKHI[0] + 1, YUSUF_AT_CHARKHI[1]],
+    nodes: ['c11.yusuf.bye', 'c11.yusuf.bye2'],
+  },
+  {
+    name: 'sitting with Aurelio at the well',
+    flags: ['intro.done', 'bundle.delivered', 'challar.done', 'pallay.done', 'her.zoila', 'met.aurelio'],
+    map: 'village',
+    // The settle lands you on his row, east of him, from above or below.
+    player: [AURELIO_AT_WELL[0] + 1, AURELIO_AT_WELL[1]],
+    nodes: ['aurelio.nani', 'aurelio.nani2'],
+  },
+  {
+    name: 'Sun-hee under the red awning',
+    flags: ['c5.arrived'],
+    map: 'busan',
+    player: [SUNHEE_STALL[0] + 1, SUNHEE_STALL[1]],
+    nodes: ['c5.sunhee.first'],
   },
   {
     name: 'Bantu working the gali',
@@ -307,6 +332,18 @@ describe('staging: places and hours', () => {
         const ground = m.legend[m.ground[y]![x]!];
         assert.ok(ground?.solid && /sea|water/.test(ground.t), `the ship would cover walkable ${x},${y}`);
       }
+    }
+  });
+});
+
+describe('staging: what the words let go of is shown going', () => {
+  it('flies each release once per line of its node, never backwards, gone by the last', () => {
+    for (const r of RELEASES) {
+      const node = NODES[r.node];
+      assert.ok(node, `release names a missing node ${r.node}`);
+      assert.equal(r.goals.length, node.lines.length, `${r.node}: one goal per line`);
+      r.goals.forEach((g, i) => assert.ok(g >= (r.goals[i - 1] ?? 0) && g <= 1, `${r.node}: goal ${i} goes backwards`));
+      assert.equal(r.goals[r.goals.length - 1], 1, `${r.node}: still in the air when the words end`);
     }
   });
 });
