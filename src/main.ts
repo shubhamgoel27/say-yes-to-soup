@@ -895,7 +895,9 @@ function faceClearHud(quiet: boolean) {
   }
   const away = !!chipHome && hits(chipHome);
   errandEl.classList.toggle('face-moved', away);
-  errandEl.classList.toggle('over-face', away && moved && hits(errandEl.getBoundingClientRect()));
+  // Moved, it goes faint only over a face: a pair of feet under the foot of
+  // the frame is no reason to stop being readable.
+  errandEl.classList.toggle('over-face', away && moved && over(heads, errandEl.getBoundingClientRect()));
 }
 
 /** Journal announcements: the pen and the margin-note spark. */
