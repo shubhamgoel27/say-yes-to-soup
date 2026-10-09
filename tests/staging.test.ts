@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { BLOCKING, CUES, HOURS, LAMPS_LIT, holdOn } from '../src/content/staging';
-import { DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
+import { BLOCKING, CUES, HOURS, LAMPS_LIT, RELEASES, SEATS, VESSELS, holdOn } from '../src/content/staging';
+import { CHAPTERS, DRESSINGS, EXAMINES, NODES, NPCS, REGION_MAPS } from '../src/content/world';
 import { SHIONOURA_STATIONS } from '../src/content/shionoura/stations';
-import { DAWN_LANDING } from '../src/content/busan/staging';
+import { DAWN_LANDING, SUNHEE_STALL } from '../src/content/busan/staging';
+import { YUSUF_AT_CHARKHI } from '../src/content/delhi/staging';
+import { AURELIO_AT_WELL } from '../src/content/dev/staging';
 import { SHIP_AT, SIGNING_SPOT } from '../src/content/sicily/staging';
 import { COURT_LANDING, KARAOKE_LANDING } from '../src/content/crossing/staging';
 import { PIER_LANDING } from '../src/content/shionoura/staging';
@@ -122,6 +124,29 @@ const SCENES: Scene[] = [
     map: 'village',
     player: MEETING.spot,
     nodes: ['c10.verdict'],
+  },
+  {
+    name: 'the Delhi rooftop goodbye',
+    flags: ['c11.arrived', 'c11.met.yusuf', 'c11.names', 'c11.kite.done', 'c11.her', 'c11.duel.done', 'c11.chit.bombay'],
+    map: 'delhi-rooftop',
+    // Beside him at the charkhi, mid-terrace, with room both sides.
+    player: [YUSUF_AT_CHARKHI[0] + 1, YUSUF_AT_CHARKHI[1]],
+    nodes: ['c11.yusuf.bye', 'c11.yusuf.bye2'],
+  },
+  {
+    name: 'sitting with Aurelio at the well',
+    flags: ['intro.done', 'bundle.delivered', 'challar.done', 'pallay.done', 'her.zoila', 'met.aurelio'],
+    map: 'village',
+    // The settle lands you on his row, east of him, from above or below.
+    player: [AURELIO_AT_WELL[0] + 1, AURELIO_AT_WELL[1]],
+    nodes: ['aurelio.nani', 'aurelio.nani2'],
+  },
+  {
+    name: 'Sun-hee under the red awning',
+    flags: ['c5.arrived'],
+    map: 'busan',
+    player: [SUNHEE_STALL[0] + 1, SUNHEE_STALL[1]],
+    nodes: ['c5.sunhee.first'],
   },
   {
     name: 'Bantu working the gali',
@@ -333,6 +358,77 @@ describe('staging: places and hours', () => {
         const ground = m.legend[m.ground[y]![x]!];
         assert.ok(ground?.solid && /sea|water/.test(ground.t), `the ship would cover walkable ${x},${y}`);
       }
+    }
+  });
+});
+
+describe('staging: what the words let go of is shown going', () => {
+  it('flies each release once per line of its node, never backwards, gone by the last', () => {
+    for (const r of RELEASES) {
+      const node = NODES[r.node];
+      assert.ok(node, `release names a missing node ${r.node}`);
+      assert.equal(r.goals.length, node.lines.length, `${r.node}: one goal per line`);
+      r.goals.forEach((g, i) => assert.ok(g >= (r.goals[i - 1] ?? 0) && g <= 1, `${r.node}: goal ${i} goes backwards`));
+      assert.equal(r.goals[r.goals.length - 1], 1, `${r.node}: still in the air when the words end`);
+    }
+  });
+});
+
+describe('staging: talks you sit down for', () => {
+  it('seats you on open ground, clear of anything tall, for nodes that exist', () => {
+    for (const s of SEATS) {
+      const m = REGION_MAPS[s.map];
+      assert.ok(m, `seat on unknown map ${s.map}`);
+      for (const n of s.nodes) assert.ok(NODES[n], `seat names a missing node ${n}`);
+      const [x, y] = s.at;
+      assert.ok(!solidAt(m!, x, y), `${s.nodes[0]}: the seat ${s.at} is inside something`);
+      for (const dy of [-1, 1]) {
+        const o = objectAt(m!, x, y + dy);
+        assert.ok(!o?.tall, `${s.nodes[0]}: ${o?.t} is drawn ${dy < 0 ? 'out of the head' : 'across the body'} at ${s.at}`);
+      }
+    }
+  });
+});
+
+describe('staging: boats the words name', () => {
+  it('moors each vessel on water, under a scene that can happen', () => {
+    for (const v of VESSELS) {
+      const m = REGION_MAPS[v.map];
+      assert.ok(m, `vessel on unknown map ${v.map}`);
+      const g = m!.legend[m!.ground[v.at[1]]![v.at[0]]!];
+      assert.ok(g?.solid && /sea|water/.test(g.t), `${v.kind} at ${v.map} ${v.at} is not on the water`);
+      assert.ok(v.when || v.node, `${v.kind} at ${v.map} never comes`);
+      if (v.node) assert.ok(NODES[v.node], `${v.kind} waits on a missing node ${v.node}`);
+    }
+  });
+});
+
+describe('staging: the journal closes a chapter after its goodbye', () => {
+  /**
+   * The goodbye each chapter is written to end on. The close card follows the
+   * flag this node raises, so it never unfolds over a town you have not yet
+   * left (Shionoura's spread once opened at the festival, a night before
+   * Fumi bowed on the pier).
+   */
+  const FAREWELLS: Record<string, string> = {
+    'la-caleta': 'mar.rios.accept',
+    crossing: 'c3.depart',
+    shionoura: 'c4.depart',
+    busan: 'c5.sunhee.bye',
+    kerala: 'c6.mariamma.blessing',
+    delhi: 'c11.yusuf.bye2',
+    zanzibar: 'c7.dawn.bench',
+    sicily: 'c8.depart.horn',
+    oaxaca: 'c9.bye',
+  };
+
+  it("raises each chapter's close flag in its farewell", () => {
+    for (const c of CHAPTERS) {
+      if (!c.completion) continue;
+      const bye = FAREWELLS[c.id];
+      assert.ok(bye, `${c.id} completes but names no farewell here`);
+      const close = c.completion.closeOn ?? c.completion.flag;
+      assert.ok(NODES[bye]?.effects?.includes(`set:${close}`), `${c.id}: the card follows ${close}, which ${bye} does not raise`);
     }
   });
 });

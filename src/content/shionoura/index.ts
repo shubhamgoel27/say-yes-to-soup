@@ -5,7 +5,7 @@ import { SHIONOURA_JOURNAL, SHIONOURA_TASKS } from './journal';
 import { MINSHUKU_MAP, SHIONOURA_MAP } from './map';
 import { SHIONOURA_STATION_EVENTS, SHIONOURA_STATION_JOURNAL, SHIONOURA_STATION_NODES } from './stations';
 import { RECALL } from './recall';
-import { FESTIVAL_DRESSING, STAGING } from './staging';
+import { DINNER_CLEARED, DINNER_DRESSING, FESTIVAL_DRESSING, STAGING } from './staging';
 import { DashiPanel, KingyoPanel } from '../../ui/games/shionoura';
 import { handWords } from '../../ui/games/scene';
 
@@ -160,6 +160,8 @@ export const CHAPTER: ChapterDef = {
         [28, 22, null],
       ],
     },
+    DINNER_DRESSING,
+    DINNER_CLEARED,
     // A guest who makes breakfast has stopped being a guest: a fourth zabuton
     // waits at the low table from that morning on, and it is yours.
     {
@@ -172,5 +174,7 @@ export const CHAPTER: ChapterDef = {
   completion: {
     flag: 'c4.complete',
     toasts: ['✦ your wish hangs on the town bamboo', 'the morning boat to Busan is provisioned'],
+    // The festival completes the town; the journal waits for Fumi's bow.
+    closeOn: 'c4.seenoff',
   },
 };

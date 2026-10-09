@@ -1,5 +1,5 @@
 import type { Cond } from '../schema';
-import type { Blocking, Escort, HourHold } from '../staging';
+import type { Blocking, Escort, HourHold, TalkSeat } from '../staging';
 
 /**
  * Stage directions for the last two evenings of the journey: where people
@@ -105,3 +105,27 @@ export const HOURS: HourHold[] = [
  * leans in. `zoom` is where the lean ends; it gets there slowly.
  */
 export const LAMP = { flag: 'c10.lamp', zoom: 1.45, seconds: 10 };
+
+
+/**
+ * The last page is written sitting: "You sit where she sat." The player
+ * sits on the well's east lip for the page (where Aurelio sat to hand over
+ * her letter), not standing in front of the well with its posts rising out
+ * of their hat, and is still beside the well, not inside it, when the
+ * closing book is put down and the lamplit night comes back up.
+ */
+export const LAST_PAGE_SEAT: TalkSeat = {
+  nodes: [
+    'c10.well.wishnani',
+    'c10.well.wishroad',
+    'c10.well.wishpeople',
+    'c10.lastpage',
+    'c10.lastline.word',
+    'c10.lastline.trick',
+    'c10.lastline.begun',
+    'c10.end.hold',
+  ],
+  map: 'village',
+  at: [22, 15],
+  dir: 'down',
+};

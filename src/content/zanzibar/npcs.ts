@@ -425,7 +425,9 @@ export const ZANZIBAR_NODES: NodeMap = {
    */
   'c7.dawn.go': {
     lines: [{ text: 'Ali writes your name in the ledger. You sleep above the counter, the tide loud under the floor.' }],
-    effects: ['set:c7.dawn', 'travel:zanzibar,15,10,left'],
+    // You wake at the bench's front, before Rashid's empty seat, his cat on her
+    // kanga beside it (landed on the seat itself you stood on the baraza).
+    effects: ['set:c7.dawn', 'travel:zanzibar,15,11,up'],
   },
   'c7.dawn.bench': {
     lines: [
@@ -1241,6 +1243,12 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   coralblocks: [{ node: 'c7.ex.coral' }],
   limepail: [{ node: 'c7.ex.limepail' }],
   scaffold: [{ node: 'c7.ex.scaffold' }],
+  // Dawn: the ginger cat asleep on the folded kanga at Rashid's end of the
+  // bench (a dressing in index.ts swaps her in).
+  pakakanga: [
+    { when: { has: ['c7.dawn'], not: ['c7.complete'] }, node: 'c7.dawn.bench' },
+    { node: 'c7.dawn.cat' },
+  ],
   paka: [
     // At dawn only the ginger cat is out, beside Rashid's empty bench.
     { when: { has: ['c7.dawn'], not: ['c7.complete'] }, node: 'c7.dawn.bench' },

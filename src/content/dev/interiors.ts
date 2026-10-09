@@ -14,6 +14,8 @@ const INTERIOR_LEGEND: MapData['legend'] = {
   q: { t: 'qoncha', solid: true },
   T: { t: 'table', solid: true },
   s: { t: 'stool', solid: true },
+  // A stool somebody is sitting on: the sitter is the obstacle, not the stool.
+  o: { t: 'stool' },
   B: { t: 'bed', solid: true },
   L: { t: 'loom', solid: true, tall: true },
   p: { t: 'pot', solid: true },
@@ -72,7 +74,7 @@ export const CHICHERIA_MAP: MapData = {
     '##SS####S####',
     '#Cqp W M c W#',
     '#jb         #',
-    '#  sTT    an#',
+    '#  oTT    an#',
     '#u   T   k  #',
     '#M s      g #',
     '#yrr        #',

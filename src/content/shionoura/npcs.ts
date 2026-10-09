@@ -344,7 +344,8 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'Laughing, she sets out slippers pointed the right way. Hana radioed from the ship; your room is aired, as threatened.' },
     ],
     effects: ['set:met.fumi', 'journal:people.fumi', 'journal:customs.genkan'],
-    next: 'c4.fumi.meal',
+    // The meal is its own beat: she goes to lay the low table, and the chip
+    // says to sit when she says sit (staging.ts seats you across from her).
   },
   'c4.fumi.meal': {
     lines: [
@@ -844,7 +845,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { who: 'Captain Isao', text: 'Six sharp. The boat does not wait for festivals, and neither, tomorrow, do I.' },
       { text: 'One more night at the minshuku. Down on the quay the chochin go out one by one, and the town goes home to bed.' },
     ],
-    effects: ['set:c4.sailing', 'travel:shionoura,21,26,down'],
+    effects: ['set:c4.sailing', 'travel:shionoura,22,29,up'],
   },
   // Miokuri: a house sees its guest off until the guest is out of sight.
   // Shionoura's goodbye is a bow that outlasts the view of it.
@@ -853,7 +854,7 @@ export const SHIONOURA_NODES: NodeMap = {
       { text: 'The tairyō-bata crack once in the morning wind. Okaeri, the town said when you came; itterasshai, it says now: go, and come back.' },
       { text: 'Fumi stands at the end of the pier and bows. When the boat rounds the lighthouse, she is still bowing.' },
     ],
-    effects: ['travel:busan'],
+    effects: ['set:c4.seenoff', 'travel:busan'],
   },
   'c4.isao.wait': {
     lines: [

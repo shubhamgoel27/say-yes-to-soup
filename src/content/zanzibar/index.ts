@@ -166,6 +166,9 @@ export const CHAPTER: ChapterDef = {
         [7, 17, null],
         [14, 18, null],
         [44, 18, null],
+        // "At Rashid's end of the bench the ginger cat sleeps on a folded
+        // kanga left for you": up on the baraza, on the cloth, not the ground.
+        [14, 10, { t: 'pakakanga', solid: true, tall: true }],
       ],
     },
   ],

@@ -19,6 +19,9 @@ import type { Staging } from '../staging';
 /** The dawn after the berth, until the Malabar Star has you. */
 const DAWN: Cond = { has: ['c5.berth'], not: ['c6.arrived'] };
 
+/** Under the red awning, among the red basins: Sun-hee's stall. */
+export const SUNHEE_STALL: [number, number] = [17, 12];
+
 /**
  * Where the night's door lands you: on the lane beside her stall, facing
  * her, so the first Space is the goodbye and nobody is drawn over anybody.
@@ -37,6 +40,11 @@ export const STAGING: Staging = {
   blocking: [
     // She keeps her stall: the bag is packed and she is not looking up.
     { id: 'sunhee', when: DAWN, map: 'busan', at: [17, 12], dir: 'down', busy: true },
+    // And before the dawn, the same: "Red awning, red basins" is where her
+    // first words put her, and the chip sends you there. Wandering her leash
+    // (and, at dusk, toward the lamp) she was found by a yellow stall with
+    // the red awning empty three stalls on. Here she looks up to talk.
+    { id: 'sunhee', when: { has: ['c5.arrived'], not: ['c5.berth'] }, map: 'busan', at: SUNHEE_STALL, dir: 'down' },
     // The lane's regulars are buying, not selling, at this hour.
     { id: 'daeho', when: DAWN, map: 'busan', at: [21, 11], dir: 'down' },
     { id: 'bak', when: DAWN, map: 'busan', at: [22, 14], dir: 'up' },
@@ -111,7 +119,94 @@ export const AUCTION_NPCS: NpcDef[] = [
   },
 ];
 
+/**
+ * The ferry's morning: the quay is already at work when you come up the
+ * jetty (the arrival frame was an empty deck under "diesel, salt"). Two
+ * porters on the deck and a cart auntie at the mouth of the lane, until
+ * the auction's own crowd takes the dawn after the berth. They keep to the
+ * deck's edges and the lane's shoulder, off the walk from the jetty to the
+ * lane and to Mr. Gong (a wandering porter once stood on a thread's end).
+ */
+const MORNING: Cond = { not: ['c5.berth'] };
+export const QUAY_NPCS: NpcDef[] = [
+  {
+    id: 'porterQ1',
+    name: 'A porter',
+    map: 'busan',
+    when: MORNING,
+    pos: [17, 25],
+    range: 0,
+    look: {
+      skin: '#c48f62',
+      hair: '#1f1a16',
+      cloth: '#3f5a6e',
+      stripe: '#c9a35f',
+      hat: '#b8483a',
+      hatStyle: 'beanie',
+      garb: 'coveralls',
+      pants: '#2f3a48',
+      sleeves: 'short',
+    },
+    entry: [{ node: 'c5.quay.porter1' }],
+  },
+  {
+    id: 'porterQ2',
+    name: 'A porter',
+    map: 'busan',
+    when: MORNING,
+    pos: [27, 26],
+    range: 0,
+    look: {
+      skin: '#d4a072',
+      hair: '#2a2420',
+      cloth: '#6e6a52',
+      stripe: '#f2e6d0',
+      hat: '#e8dcc4',
+      hatStyle: 'visor',
+      garb: 'shirt',
+      pants: '#3d3a36',
+      apron: '#2c3e57',
+    },
+    entry: [{ node: 'c5.quay.porter2' }],
+  },
+  {
+    id: 'cartauntie',
+    name: 'A cart auntie',
+    map: 'busan',
+    when: MORNING,
+    pos: [26, 22],
+    range: 0,
+    look: {
+      skin: '#e0b48a',
+      hair: '#3a3436',
+      cloth: '#c96a8a',
+      stripe: '#f2e6d0',
+      hat: '#e8d0b0',
+      hatStyle: 'visor',
+      garb: 'shirt',
+      pants: '#4a4a5c',
+      apron: '#7a9a6e',
+    },
+    entry: [{ node: 'c5.quay.auntie' }],
+  },
+];
+
 export const AUCTION_NODES: NodeMap = {
+  'c5.quay.porter1': {
+    lines: [
+      { who: 'A porter', text: 'The ferry came in heavy. Six crates for the lane and no hands to spare, so: excuse me, excuse me.' },
+    ],
+  },
+  'c5.quay.porter2': {
+    lines: [
+      { who: 'A porter', text: 'Market? Up the lane, follow the sugar. If you smell diesel, you went the wrong way.' },
+    ],
+  },
+  'c5.quay.auntie': {
+    lines: [
+      { who: 'A cart auntie', text: 'First ferry, first customer. Do not waste a morning like this on looking. Buy something.' },
+    ],
+  },
   'c5.auction.caller': {
     lines: [
       { text: 'He sings the prices in one long breath of numbers. The buyers answer with their fingers and never with their mouths.' },

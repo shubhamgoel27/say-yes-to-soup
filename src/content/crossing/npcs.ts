@@ -810,7 +810,7 @@ export const CROSSING_NODES: NodeMap = {
       { text: 'Ben comes up the ladder with a covered plate, its cloth tucked like a blanket, and leaves it in your hands. This watch, the baon is yours.' },
       { text: 'Islands rise out of the haze. The engine drops to a murmur, the anchor chain runs out, and the pilot’s launch comes alongside for you. Shionoura.' },
     ],
-    effects: ['travel:shionoura'],
+    effects: ['set:c3.landfall', 'travel:shionoura'],
   },
 
   // ---------------- examines: the deck ----------------

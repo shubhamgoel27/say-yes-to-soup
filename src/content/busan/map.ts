@@ -183,6 +183,11 @@ const POIS: Record<string, string> = {
   // ---- Sun-hee's stall: the red awning the letter tells you to find.
   '17,11': 'R',
   '16,10': 'b',
+  // The post window her mother sent her to, two stalls up from it: "chin
+  // pointed at the post window" is a look across the lane, not across the
+  // town. It stood by the ferry office once, and in Mr. Gong's frame its
+  // painted clerk read as the window he had just been written out of.
+  '15,10': 'm',
 
   // ---- the auction floor: loud along its north lip, piled in its east
   // corner, and swept clear down the middle where the barrows come up.
@@ -287,7 +292,6 @@ const POIS: Record<string, string> = {
   '15,24': 'y',
   '35,23': 'L',
   '37,23': 'F',
-  '40,23': 'm',
   '38,22': 'K',
   '39,22': 'K',
   '38,23': 'K',

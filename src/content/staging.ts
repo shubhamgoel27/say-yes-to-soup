@@ -1,11 +1,14 @@
 import type { Look } from '../art/character';
 import type { Cond, EventNode } from './schema';
-import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS } from './return/staging';
+import { BLOCKING as RETURN_BLOCKING, HOURS as RETURN_HOURS, LAST_PAGE_SEAT } from './return/staging';
+import { STAGING as CHASKA } from './dev/staging';
+import { STAGING as CALETA } from './caleta/staging';
 import { STAGING as CROSSING } from './crossing/staging';
 import { STAGING as SHIONOURA } from './shionoura/staging';
 import { STAGING as BUSAN } from './busan/staging';
 import { STAGING as SICILY } from './sicily/staging';
 import { STAGING as KERALA } from './kerala/staging';
+import { STAGING as DELHI } from './delhi/staging';
 
 /**
  * Stage directions: where people stand when a scene has something to say,
@@ -27,7 +30,8 @@ export type Dir = 'up' | 'down' | 'left' | 'right';
  * A villager who goes and stands somewhere while `when` holds. Everyone in
  * place turns to the player while words are on screen, except the `busy`,
  * who keep facing `dir` (a fishwife three customers deep does not look up).
- * With `sit` they also sit down there once arrived, busy at what they sat to.
+ * With `sit` they also sit down there once arrived, busy at what they sat to
+ * (unless `busy: false`: a weaver who looks up to talk).
  * With `look` they are dressed for the scene (a mop wig and a bedsheet, a
  * little umbrella), but only where nobody sees the change: in a door's dark,
  * or off the map or the screen; they change back the same way.
@@ -76,15 +80,64 @@ export type LampHold = { when: Cond; map: string };
  */
 export type Cue = EventNode & { when: Cond; map: string };
 
+/**
+ * Something let go of while `node` is read (Delhi's goodbye kite): it leaves
+ * the player's hand on the node's first line and has flown `goals[i]` of
+ * its way (0..1) by line i, so the frame is never ahead of the words.
+ */
+export type Release = { node: string; goals: number[] };
+
+/**
+ * A vessel the words name ("The launch noses in past a stone lantern", "a
+ * chugging boat leaves you on a jetty"). It lies at `at`, its anchor cell on
+ * the water, drawn like any tall prop, while `when` holds or while `node` is
+ * on screen; when that ends in view it does not blink out, it casts off and
+ * goes `away`, getting smaller. An arrival's boat is `when` the arrival has
+ * not happened (it is there as the light comes up) plus the arrival `node`
+ * (still there while its words are read), and leaves as they close.
+ * `kind` is the art: boatLaunch, boatFishing, boatKerala, boatFerry.
+ * `leaves`: the map itself moors this boat there (the art pass placed it),
+ * and once its scene is over it has gone for good: cast off in view, or
+ * simply not there when you next look.
+ */
+export type Vessel = {
+  kind: string;
+  map: string;
+  at: [number, number];
+  away: 'left' | 'right';
+  when?: Cond;
+  node?: string;
+  leaves?: boolean;
+};
+
+/**
+ * A talk you sit down for ("Sit when she says sit"): while any of `nodes` is
+ * on screen on `map`, the player walks the few steps to `at` and sits there
+ * facing `dir`, and gets up when the words close. If the place cannot be
+ * reached, the talk is had standing, as before.
+ */
+export type TalkSeat = { nodes: string[]; map: string; at: [number, number]; dir: Dir };
+
 /** One chapter's stage directions. */
-export type Staging = { blocking?: Blocking[]; hours?: HourHold[]; lamps?: LampHold[]; cues?: Cue[] };
+export type Staging = {
+  blocking?: Blocking[];
+  hours?: HourHold[];
+  lamps?: LampHold[];
+  cues?: Cue[];
+  releases?: Release[];
+  vessels?: Vessel[];
+  seats?: TalkSeat[];
+};
 
 const CHAPTERS: Staging[] = [
-  { blocking: RETURN_BLOCKING, hours: RETURN_HOURS },
+  { blocking: RETURN_BLOCKING, hours: RETURN_HOURS, seats: [LAST_PAGE_SEAT] },
+  CHASKA,
+  CALETA,
   CROSSING,
   SHIONOURA,
   BUSAN,
   KERALA,
+  DELHI,
   SICILY,
 ];
 
@@ -92,6 +145,9 @@ export const BLOCKING: Blocking[] = CHAPTERS.flatMap((c) => c.blocking ?? []);
 export const HOURS: HourHold[] = CHAPTERS.flatMap((c) => c.hours ?? []);
 export const LAMPS_LIT: LampHold[] = CHAPTERS.flatMap((c) => c.lamps ?? []);
 export const CUES: Cue[] = CHAPTERS.flatMap((c) => c.cues ?? []);
+export const RELEASES: Release[] = CHAPTERS.flatMap((c) => c.releases ?? []);
+export const VESSELS: Vessel[] = CHAPTERS.flatMap((c) => c.vessels ?? []);
+export const SEATS: TalkSeat[] = CHAPTERS.flatMap((c) => c.seats ?? []);
 
 /** The hour held on `mapId` under these flags, if any. */
 export function holdOn(check: (c: Cond) => boolean, mapId: string, hours: HourHold[] = HOURS): HourHold | undefined {
