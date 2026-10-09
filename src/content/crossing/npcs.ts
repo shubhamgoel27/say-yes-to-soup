@@ -1134,6 +1134,7 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   blocked: [{ map: 'ship', node: 'c3.ex.wall' }, { map: 'galley', node: 'c3.ex.wall' }],
   deck: [{ node: 'c3.ex.deck' }],
   railing: [{ node: 'c3.ex.railing' }],
+  railrun: [{ node: 'c3.ex.railing' }],
   contA: [{ node: 'c3.ex.contA' }],
   contB: [{ node: 'c3.ex.contB' }],
   contC: [{ node: 'c3.ex.contC' }],

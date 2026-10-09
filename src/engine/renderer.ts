@@ -145,7 +145,8 @@ const EDGE_CUT = new Set([
   'pierdeck', 'deck', 'bridge', 'floorWood', 'floorSteel', 'floorOndol', 'floorEarth', 'tatami', 'tataki',
   'terrace', 'terracelime', 'terracerose',
   // A ship's side and a mole's face: built, so the shoreline never wanders them.
-  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'moloface', 'scogliera',
+  'hullstern', 'hullport', 'hullstbd', 'hullbowport', 'hullbowstbd', 'hullquarterport', 'hullquarterstbd',
+  'moloface', 'scogliera',
 ]);
 /** Per class: wobble amplitude, then the width of the blend in tiles. */
 const EDGE_SHAPE: [number, number][] = [
