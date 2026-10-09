@@ -4764,6 +4764,8 @@ function update(dt: number) {
   } else {
     renderer.setHint(null);
   }
+  // The undug mounds glint until they are dug, wherever you stand.
+  renderer.setGlints(moundsHere().map((m) => [m.actor.x, m.actor.y]));
   updateSitting(dt);
   updateWarp(dt);
 
