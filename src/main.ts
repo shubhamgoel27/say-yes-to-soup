@@ -53,7 +53,7 @@ import { atFor, doorsFrom, nextMapToward, npcMap, threadWho } from './content/gu
 import { cheapestPath } from './engine/path';
 import { planSettle } from './engine/stand';
 import { ROUTE } from './content/route';
-import type { NpcDef } from './content/schema';
+import type { Cond, NpcDef } from './content/schema';
 import type { WorldTask } from './content/world';
 import { DELHI_STATIONS } from './content/delhi/stations';
 import { SHIONOURA_STATIONS } from './content/shionoura/stations';
@@ -1341,6 +1341,8 @@ export type StationDef = {
   mode: 'gather' | 'round';
   /** nightLevel band [begin, end) that the custom keeps. */
   window: [number, number];
+  /** Story gate: the custom keeps its hours only once this holds. */
+  when?: Cond;
   cells: StationCell[];
   /** Roster ids, wherever they live; the doors between their maps and the
    * station's are found from the map data at boot. */
@@ -1391,7 +1393,8 @@ const stationsRt: StationRt[] = [...DELHI_STATIONS, ...SHIONOURA_STATIONS].map((
   return { def, berths, doorOut, doorIn, wasOn: false, round: { idx: 0, pauseT: 0, done: false } };
 });
 
-const gatherOn = (st: StationRt, nk: number) => nk >= st.def.window[0] && nk < st.def.window[1];
+const gatherOn = (st: StationRt, nk: number) =>
+  state.check(st.def.when) && nk >= st.def.window[0] && nk < st.def.window[1];
 /**
  * A round STARTS only inside its window, but once the keeper is out on the
  * map with her taper it runs to the last lamp however fast dusk deepens
@@ -1399,6 +1402,7 @@ const gatherOn = (st: StationRt, nk: number) => nk >= st.def.window[0] && nk < s
  */
 const roundRuns = (st: StationRt, nk: number) =>
   !st.round.done &&
+  state.check(st.def.when) &&
   nk >= st.def.window[0] &&
   (st.round.idx > 0 || st.berths[0]?.v.def.map === st.def.map || nk < st.def.window[1]);
 

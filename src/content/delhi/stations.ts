@@ -19,6 +19,9 @@ export const DELHI_STATIONS: StationDef[] = [
     mode: 'gather',
     // Golden hour into early dark: the evening pangat.
     window: [0.28, 0.62],
+    // Not before Bantu has met you at the rickshaw stand: the day you arrive
+    // sits inside this band, and he is the first face the chapter sends you to.
+    when: { has: ['c11.met.bantu'] },
     // One body per stop, spread along the hall's three uneven rows,
     // all facing the aisle the dal comes down.
     cells: [
