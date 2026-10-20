@@ -4786,7 +4786,10 @@ function beginPlay(freshStart: boolean) {
     const introTry = () => {
       introTimer = 0;
       if (state.has('intro.done')) return;
-      if (!textbox.isOpen) startNarration('intro.wake');
+      // Not only the textbox: a journal or the pause menu opened inside the
+      // 900ms once let the intro start underneath it, where Space and Esc
+      // advanced dialogue nobody could see for over a minute.
+      if (!ceremonyMustWait()) startNarration('intro.wake');
       else introTimer = window.setTimeout(introTry, 400);
     };
     window.clearTimeout(introTimer);
