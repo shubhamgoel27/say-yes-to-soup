@@ -461,22 +461,31 @@ export class GameState {
   }
 
   save() {
+    if (this.superseded) return;
     try {
-      const payload = JSON.stringify({
-        flags: [...this.flags],
-        journal: [...this.journal],
-        errand: this.errand,
-        place: this.place,
-        name: this.playerName,
-        look: this.playerLook,
-        walked: Date.now(),
-      });
-      // Keep the last known-good copy before overwriting. A journey can be
-      // thirty hours long; a single torn write must never be able to end it.
+      // Nothing walked since the last read or write: leave the slot alone.
+      // An idle second window must not stamp its copy over a journey moving
+      // on elsewhere just because its timer came round.
+      const body = this.journeyBody();
+      if (body === this.lastBody) return;
+      const payload = `${body.slice(0, -1)},"walked":${Date.now()}}`;
       const k = slotKeys(this.slot);
       const prev = localStorage.getItem(k.save);
+      // Another window wrote this journal since we last read or wrote it.
+      // Ours is the stale copy: writing would erase whatever was walked
+      // there, and two such writes rotate the good copy out of the backup
+      // too. Stop saving here and say so; the other window keeps the book.
+      if (prev !== this.lastRaw) {
+        this.superseded = true;
+        this.onSuperseded?.();
+        return;
+      }
+      // Keep the last known-good copy before overwriting. A journey can be
+      // thirty hours long; a single torn write must never be able to end it.
       if (prev && parseSave(prev)) localStorage.setItem(k.bak, prev);
       localStorage.setItem(k.save, payload);
+      this.lastRaw = payload;
+      this.lastBody = body;
       this.persistenceLost = false;
     } catch {
       // Private browsing or full storage: play on without persistence, but
@@ -492,6 +501,16 @@ export class GameState {
 
   /** True after a save failed; cleared by the next save that lands. */
   persistenceLost = false;
+  /** The slot's stored text as this window last read or wrote it. A
+   * different string there at save time means another window wrote it. */
+  private lastRaw: string | null = null;
+  /** The journey (without its timestamp) as this window last wrote it. */
+  private lastBody: string | null = null;
+  /** Set once another window has written this journal: this one stops
+   * saving until a journal is (re)loaded. */
+  superseded = false;
+  /** Fired once when another window takes the journal over. */
+  onSuperseded: (() => void) | null = null;
   /** Fired once when saving stops working, so the UI can warn the player. */
   onPersistenceLost: (() => void) | null = null;
 
@@ -509,6 +528,8 @@ export class GameState {
     this.playerName = null;
     this.playerLook = null;
     this.persistenceLost = false;
+    this.superseded = false;
+    this.lastBody = null;
   }
 
   /** Wipe everything for a fresh journey in the active slot. Fires no
@@ -519,6 +540,28 @@ export class GameState {
     // eraseSlot also clears the pre-rename save for slot 0, or the old
     // journey resurrects as Continue on the next boot.
     eraseSlot(this.slot);
+    this.syncStored();
+  }
+
+  /** The journey as saved, without its timestamp. */
+  private journeyBody(): string {
+    return JSON.stringify({
+      flags: [...this.flags],
+      journal: [...this.journal],
+      errand: this.errand,
+      place: this.place,
+      name: this.playerName,
+      look: this.playerLook,
+    });
+  }
+
+  /** Take the slot's stored text as the copy this window holds. */
+  private syncStored() {
+    try {
+      this.lastRaw = localStorage.getItem(slotKeys(this.slot).save);
+    } catch {
+      this.lastRaw = null;
+    }
   }
 
   hasSave(): boolean {
@@ -537,12 +580,15 @@ export class GameState {
         localStorage.removeItem(k.save);
         localStorage.removeItem(k.bak);
         if (k.legacy) localStorage.removeItem(k.legacy);
+        this.lastRaw = null;
         return;
       }
+      this.lastRaw = localStorage.getItem(k.save);
       // Primary first, then the last known-good copy, then the old key.
       // Silently starting a fresh journey is the one unacceptable outcome.
+      const primary = parseSave(this.lastRaw);
       const data =
-        parseSave(localStorage.getItem(k.save)) ??
+        primary ??
         parseSave(localStorage.getItem(k.bak)) ??
         (k.legacy ? parseSave(localStorage.getItem(k.legacy)) : null);
       if (!data) return;
@@ -568,6 +614,10 @@ export class GameState {
               ...(typeof look.hat === 'string' ? { hat: look.hat } : {}),
             }
           : null;
+      // Read straight from the slot, the journey is already written: the
+      // first save rewrites only once something has moved. Recovered from
+      // a backup, the slot still holds the torn copy and must be rewritten.
+      if (primary) this.lastBody = this.journeyBody();
     } catch {
       // A corrupt save should never brick the game; start fresh.
     }

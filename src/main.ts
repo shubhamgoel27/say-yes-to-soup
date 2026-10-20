@@ -498,7 +498,7 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
   saveNow: () => {
     if (mode !== 'play') return false;
     state.save();
-    return !state.persistenceLost;
+    return !state.persistenceLost && !state.superseded;
   },
 });
 
@@ -969,6 +969,9 @@ state.on('letter', (id) => {
 // hears about it once instead of losing every session from there on.
 state.onPersistenceLost = () => {
   toasts.show('⚠ the journal cannot be written here; this session will not be remembered');
+};
+state.onSuperseded = () => {
+  toasts.show('⚠ this journal was written in another window; this one has stopped saving. Reload to pick up from there');
 };
 // Bound mid-walk loss: the save also fires when the tab hides or closes,
 // and every 30 seconds of play, not only on story beats.
