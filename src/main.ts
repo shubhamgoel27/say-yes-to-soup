@@ -6648,6 +6648,10 @@ function attachPanelPointer(
   root.addEventListener('pointerdown', (e) => {
     if (!panel.isOpen || e.button !== 0) return;
     e.preventDefault();
+    // The pause strip or the how-to card is over the panel: its clock is
+    // held, and a press that reached it now would land a frozen marker in
+    // the gold (or play a card behind "Keep at it"). Only the card answers.
+    if (uiCardOpen()) return;
     // A painted key cap is a button: it presses its own key, whatever
     // third of the card it sits in.
     const cap = capUnder(root, e.clientX, e.clientY);
