@@ -62,6 +62,15 @@ export class Input {
     });
     target.addEventListener('gamepaddisconnected', () => {
       this.padSeen = (navigator.getGamepads?.() ?? []).some((p) => p && p.connected);
+      // pollGamepad() stops looking once no pad is seen, so a stick held at
+      // the moment the battery died would walk the player on forever.
+      // Let go of everything the pad was holding, here, while we still can.
+      if (this.padDir) {
+        this.dirStack = this.dirStack.filter((d) => d !== this.padDir);
+        this.padDir = null;
+      }
+      this.padButtons = [];
+      this.padAwake = false;
     });
   }
 
@@ -74,6 +83,9 @@ export class Input {
       this.dirStack.push(dir);
       this.tapDir = dir;
       this.menuDirEdge = dir;
+      // Held keys are what stillHeld() and releaseDir() consult: W and
+      // ArrowUp both down must survive either one's release.
+      this.pressed.add(e.code);
       return;
     }
     if (ACTION_KEYS.has(e.code)) {

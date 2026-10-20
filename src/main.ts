@@ -498,7 +498,7 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
   saveNow: () => {
     if (mode !== 'play') return false;
     state.save();
-    return !state.persistenceLost;
+    return !state.persistenceLost && !state.superseded;
   },
 });
 
@@ -969,6 +969,9 @@ state.on('letter', (id) => {
 // hears about it once instead of losing every session from there on.
 state.onPersistenceLost = () => {
   toasts.show('⚠ the journal cannot be written here; this session will not be remembered');
+};
+state.onSuperseded = () => {
+  toasts.show('⚠ this journal was written in another window; this one has stopped saving. Reload to pick up from there');
 };
 // Bound mid-walk loss: the save also fires when the tab hides or closes,
 // and every 30 seconds of play, not only on story beats.
@@ -4783,7 +4786,10 @@ function beginPlay(freshStart: boolean) {
     const introTry = () => {
       introTimer = 0;
       if (state.has('intro.done')) return;
-      if (!textbox.isOpen) startNarration('intro.wake');
+      // Not only the textbox: a journal or the pause menu opened inside the
+      // 900ms once let the intro start underneath it, where Space and Esc
+      // advanced dialogue nobody could see for over a minute.
+      if (!ceremonyMustWait()) startNarration('intro.wake');
       else introTimer = window.setTimeout(introTry, 400);
     };
     window.clearTimeout(introTimer);
@@ -6642,6 +6648,10 @@ function attachPanelPointer(
   root.addEventListener('pointerdown', (e) => {
     if (!panel.isOpen || e.button !== 0) return;
     e.preventDefault();
+    // The pause strip or the how-to card is over the panel: its clock is
+    // held, and a press that reached it now would land a frozen marker in
+    // the gold (or play a card behind "Keep at it"). Only the card answers.
+    if (uiCardOpen()) return;
     // A painted key cap is a button: it presses its own key, whatever
     // third of the card it sits in.
     const cap = capUnder(root, e.clientX, e.clientY);
