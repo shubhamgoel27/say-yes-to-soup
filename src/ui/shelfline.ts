@@ -22,9 +22,14 @@ const CHAPTER_WORDS = [
   'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve',
 ];
 
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+}
+
 export function shelfLines(data: SaveData | null, now = new Date()): ShelfLines | null {
   if (!data) return null;
-  const who = data.name && data.name.trim() ? data.name : 'unsigned';
+  // The shelf is drawn as HTML; a name is text, whatever file it came from.
+  const who = data.name && data.name.trim() ? escapeHtml(data.name) : 'unsigned';
   const mapId = typeof data.place?.map === 'string' && REGION_MAPS[data.place.map] ? data.place.map : 'village';
   const ci = CHAPTERS.findIndex((c) => c.maps.some((m) => m.id === mapId));
   const chapter = ci >= 0 ? `chapter ${CHAPTER_WORDS[ci] ?? String(ci + 1)}` : '';

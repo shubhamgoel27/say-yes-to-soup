@@ -6,6 +6,8 @@ import type { PlayerLook } from '../engine/state';
 import {
   SLOT_COUNT,
   activeSlot,
+  cleanName,
+  NAME_MAX,
   eraseSlot,
   firstBlankSlot,
   packSlot,
@@ -759,20 +761,8 @@ const CC_ROWS: { label: string; options: string[] }[] = [
 /** The row whose choice the chullo would hide: the preview lifts it off while you choose. */
 const CC_HAIR_ROW = 2;
 
-/** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
-const NAME_MAX = 24;
-/** Keep whatever the keyboard offers down to letters, single spaces, and the
- * hyphens and apostrophes real names carry (Bartholomew-Ashwini, O'Neill,
- * N’Dour). Nothing that could be markup survives. */
-export function ccClean(raw: string): string {
-  return raw
-    .replace(/[\u2018\u2019\u02bc]/g, '\u2019')
-    .replace(/'/g, '\u2019')
-    .replace(/[^\p{L}\p{M} \-\u2019]/gu, '')
-    .replace(/ {2,}/g, ' ')
-    .replace(/-{2,}/g, '-')
-    .slice(0, NAME_MAX);
-}
+/** The flyleaf's name filter; see cleanName. */
+export const ccClean = cleanName;
 
 export class NamingCard {
   private step: 1 | 2 = 1;

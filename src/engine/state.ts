@@ -59,6 +59,24 @@ export type SaveData = {
   walked?: number;
 };
 
+/** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
+export const NAME_MAX = 24;
+
+/** Keep a name down to letters, single spaces, and the hyphens and
+ * apostrophes real names carry (Bartholomew-Ashwini, O'Neill, N’Dour).
+ * Nothing that could be markup survives. The flyleaf types through this,
+ * and every save read goes through it too: a shared .soup pack is someone
+ * else's file, and its name is drawn into the shelf and Nani's letter. */
+export function cleanName(raw: string): string {
+  return raw
+    .replace(/[\u2018\u2019\u02bc]/g, '\u2019')
+    .replace(/'/g, '\u2019')
+    .replace(/[^\p{L}\p{M} \-\u2019]/gu, '')
+    .replace(/ {2,}/g, ' ')
+    .replace(/-{2,}/g, '-')
+    .slice(0, NAME_MAX);
+}
+
 /** Parse a stored save, returning null for anything we cannot trust. */
 function parseSave(raw: string | null): SaveData | null {
   if (!raw) return null;
@@ -84,6 +102,7 @@ function parseSave(raw: string | null): SaveData | null {
     }
     if (data.errand !== undefined && data.errand !== null && typeof data.errand !== 'string') return null;
     if (data.name !== undefined && data.name !== null && typeof data.name !== 'string') return null;
+    if (typeof data.name === 'string') data.name = cleanName(data.name);
     return data;
   } catch {
     return null;
