@@ -477,6 +477,9 @@ export class ScopaPanel {
   private fedKey = -1; // the card you just fed, watched for one opposing turn
   private fedLight = false; // whether the table was sweepable right after that feed
   private consolI = 0;
+  /** Story matches lost this sitting. Each one, he watches the cards a
+   * little less and the espresso a little more: a story table always ends. */
+  private losses = 0;
   private hint = '';
   private flourish = '';
   private onDone: (() => void) | null = null;
@@ -513,6 +516,7 @@ export class ScopaPanel {
     this.myPts = 0;
     this.oppPts = 0;
     this.target = this.hard ? 8 : 6;
+    this.losses = 0;
     this.coachI = 0;
     this.lesson = '';
     this.missedSette = 0;
@@ -845,6 +849,9 @@ export class ScopaPanel {
         }
         continue;
       }
+      // After a lost match or two, he lets some captures go by, more each
+      // time, never all: a beaten player was losing forty matches running.
+      if (Math.random() < Math.min(0.8, this.losses * 0.25)) continue;
       const single = this.table.some((t) => t.v === c.v);
       const sum = single ? null : findSum(this.table, c.v);
       if (!single && !sum) continue;
@@ -1074,9 +1081,11 @@ export class ScopaPanel {
           const said = this.lesson || CONSOLATIONS[this.consolI % CONSOLATIONS.length] || '';
           this.consolI++;
           this.lesson = '';
+          this.losses++;
+          const eased = this.losses >= 2 ? ' He orders another espresso and seems to watch it more than the cards.' : '';
           this.hint =
             `${this.oppPts} to ${this.myPts}, his. He gathers the cards without hurrying and taps them square. ` +
-            `"${said}" Nobody has ever left this table after one game. Space, and he deals again.`;
+            `"${said}"${eased} Nobody has ever left this table after one game. Space, and he deals again.`;
         }
       } else {
         this.startRound();
@@ -1094,6 +1103,8 @@ export class ScopaPanel {
       }
       this.myPts = 0;
       this.oppPts = 0;
+      // Three down and he shortens the evening: first to four, not six.
+      if (this.losses >= 3) this.target = 4;
       // A fresh match gets a fresh diagnosis; the old misses were coached.
       freshRun(SCOPA_FLAG);
       this.missedSette = 0;
