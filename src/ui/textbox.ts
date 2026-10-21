@@ -22,6 +22,9 @@ type Els = {
   text: HTMLElement;
   arrow: HTMLElement;
   choices: HTMLElement;
+  /** A polite live region for screen readers: each line arrives whole, not
+   * one typed letter at a time. */
+  live?: HTMLElement;
 };
 
 export class Textbox {
@@ -164,6 +167,7 @@ export class Textbox {
     this.shown = 0;
     this.els.text.textContent = '';
     this.typing = true;
+    if (this.els.live) this.els.live.textContent = line.who ? `${line.who}: ${this.lineText}` : this.lineText;
   }
 
   /** Advance the typewriter. Called from the fixed-timestep update. */
@@ -211,6 +215,14 @@ export class Textbox {
       div.textContent = c.text;
       this.els.choices.appendChild(div);
     });
+    // Read the options once as they appear, then each one the cursor lands on.
+    const live = this.els.live;
+    if (live) {
+      const opts = this.activeChoices(node).map((c) => c.text);
+      live.textContent = entering
+        ? `Choose: ${opts.map((t, i) => `${i + 1}, ${t}`).join('; ')}`
+        : (opts[this.cursor] ?? '');
+    }
   }
 
   /** The single action button. */

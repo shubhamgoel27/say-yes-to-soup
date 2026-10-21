@@ -410,6 +410,7 @@ const textbox = new Textbox(
     text: $('tb-text'),
     arrow: $('tb-arrow'),
     choices: $('tb-choices'),
+    live: $('sr-line'),
   },
   state,
   (who) => audio.speak(who),

@@ -3436,6 +3436,15 @@
        * responsive.ts) is 1 up to 1280x800 and follows the smaller of the
        * two stretches above it, capped, so a 1280 window is unchanged. */
       #plate, #toasts, #errand, #textbox, .mg-overlay, #weave, .ht-veil, .ht-strip { zoom: var(--ui-k, 1); }
+      /* Read aloud, never drawn: the dialogue line whole, for screen readers. */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
@@ -3466,13 +3475,13 @@
         <canvas id="game"></canvas>
         <div id="hud">
           <div id="plate"></div>
-          <div id="toasts"></div>
+          <div id="toasts" role="status" aria-live="polite"></div>
           <div id="errand" hidden></div>
           <div id="textbox" hidden>
             <div id="tb-portrait"></div>
             <div id="tb-main">
               <div id="tb-name"></div>
-              <div id="tb-text"></div>
+              <div id="tb-text" aria-hidden="true"></div>
               <div id="tb-arrow">&#9662;</div>
               <div id="tb-choices"></div>
             </div>
@@ -3491,6 +3500,7 @@
         </div>
       </div>
     </div>
+    <div id="sr-line" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <pre id="debug"></pre>
     <script type="module" src="/src/main.ts"></script>
   </body>
