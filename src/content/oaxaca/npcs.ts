@@ -443,7 +443,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.refugio.riddle': {
     lines: [
-      { text: 'Ayni, yapa, deom, pilón, guelaguetza. In Busan an old tea sage asked what the weightless thing weighs.' },
+      { text: 'Ayni, yapa, deom, seva, guelaguetza. In Busan an old tea sage asked what the weightless thing weighs.' },
       { text: 'You answer him out loud: nothing. And a village remembers it for fifty years.' },
       { who: 'Doña Refugio', text: 'Tell whoever asked you that an old woman in the valley says: correct.' },
     ],
