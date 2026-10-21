@@ -546,6 +546,8 @@ export class Renderer {
   /** Per-map caster heights in tiles, spread across each footprint. Once. */
   private casterCache = new Map<string, { h: Float32Array; foot: Float32Array }>();
   /** The visible window's fields: distance to solid, to water, seam flag. */
+  /** Which map and object revision the fields were last built for. */
+  private fieldKey = '';
   private fx0 = 0;
   private fy0 = 0;
   private fw = 0;
@@ -1902,7 +1904,16 @@ export class Renderer {
     type TallEntry = { cx: number; cy: number; kind: string };
     const tall: TallEntry[] = [];
 
-    this.buildFields(map, x0, y0, x1, y1);
+    // The fields depend only on the map's ground and objects, so they are
+    // worked out over the whole map (plus a ring of off-map solid) once per
+    // object revision. Built from the cull window instead, cells near its
+    // edge could not see walls or water just past it, and wear patches up to
+    // five tiles wide changed colour and strength as the window slid.
+    const fieldKey = `${map.id}:${map.objectsRev}`;
+    if (fieldKey !== this.fieldKey) {
+      this.fieldKey = fieldKey;
+      this.buildFields(map, -1, -1, map.w, map.h);
+    }
 
     // Where everybody is, worked out once. Two passes want it now: the sun
     // lays their shadows down with the buildings' before the ground is
@@ -2544,14 +2555,14 @@ export class Renderer {
   }
 
   /**
-   * The visible window's three fields, rebuilt once a frame and read by every
-   * pass that needs to know what a cell is *near*: how far to the nearest
+   * A map's three fields, rebuilt when the map or its objects change and read
+   * by every pass that needs to know what a cell is *near*: how far to the nearest
    * solid thing, how far to water, and whether a ground seam runs through it.
    *
    * This is what turns a flat probability into a place. Weeds want wall bases
    * and seams; shells want the tide line; the middle of a thoroughfare wants
-   * to stay bare, because feet keep it bare. Two chamfer sweeps over some six
-   * hundred cells, into arrays allocated once.
+   * to stay bare, because feet keep it bare. Two chamfer sweeps over the map,
+   * into arrays grown only when a bigger map comes along.
    */
   private buildFields(map: TileMap, x0: number, y0: number, x1: number, y1: number) {
     const w = x1 - x0 + 1;
