@@ -7168,7 +7168,7 @@ function installCheats() {
   (globalThis as unknown as { soup: typeof api }).soup = api;
   console.log('%csoup cheat desk ready. soup.help() for the list.', 'color:#c8a55b');
 }
-installCheats();
+if (import.meta.env.DEV) installCheats(); // the guard here, not inside, lets the build drop the desk
 
 // Dev-only: lets automation advance the simulation synchronously, independent
 // of rAF (which Chrome pauses entirely in hidden tabs).
