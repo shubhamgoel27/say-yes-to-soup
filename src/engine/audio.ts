@@ -416,7 +416,7 @@ export class AudioBus {
       this.sharedNoise = this.noiseBuffer(ctx, 3);
 
       const musicGain = ctx.createGain();
-      musicGain.gain.value = 0.85 * this.mix.music;
+      musicGain.gain.value = this.musicLevel();
       musicGain.connect(master);
 
       // A small synthesized room off the music bus: a decaying-noise impulse
@@ -499,7 +499,7 @@ export class AudioBus {
     } catch { /* private browsing */ }
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    if (channel === 'music' && this.musicGain) this.musicGain.gain.setTargetAtTime(0.85 * this.mix.music, t, 0.05);
+    if (channel === 'music' && this.musicGain) this.musicGain.gain.setTargetAtTime(this.musicLevel(), t, 0.05);
     if (channel === 'sfx' && this.sfxGain) this.sfxGain.gain.setTargetAtTime(this.mix.sfx, t, 0.05);
     if (channel === 'ambience') {
       this.applyScene();
@@ -774,8 +774,7 @@ export class AudioBus {
     this.nextPhraseAt = 0;
     this.queueKsPrewarm();
     if (this.musicGain && this.ctx) {
-      const base = this.ducked ? 0.45 : 0.85;
-      this.musicGain.gain.setTargetAtTime(base * this.mix.music * (on ? 0.7 : 1), this.ctx.currentTime, 2.5);
+      this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 2.5);
     }
   }
 
@@ -803,6 +802,18 @@ export class AudioBus {
     this.ksWarmQueue = q;
   }
 
+  /**
+   * The music bus level, from everything that moves it at once: the player's
+   * slider, someone talking, sitting down, the ending's hush. Every setter
+   * asks here. Each used to write its own partial sum, so sitting down
+   * brought a slider set to zero back up to a third.
+   */
+  private musicLevel(): number {
+    return (
+      (this.ducked ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1) * (this.hearthPrev ? 0.7 : 1)
+    );
+  }
+
   /** Dialogue ducking: the band lowers its voice while someone talks.
    * Guarded: scheduling a gain ramp EVERY frame floods the automation
    * timeline and stutters the whole page; only edges may schedule. */
@@ -811,8 +822,7 @@ export class AudioBus {
     if (on === this.ducked) return;
     this.ducked = on;
     if (!this.musicGain || !this.ctx) return;
-    const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1) * (this.hearthPrev ? 0.7 : 1);
-    this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, on ? 0.2 : 0.5);
+    this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, on ? 0.2 : 0.5);
   }
 
   /** A soft reversed-feeling cancel: the confirm's two notes, walked back. */
@@ -842,7 +852,7 @@ export class AudioBus {
     if (this.sitting === on) return;
     this.sitting = on;
     if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(on ? 0.35 : 0.85, this.ctx.currentTime, 1.2);
+      this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 1.2);
     }
     this.applyScene();
   }
