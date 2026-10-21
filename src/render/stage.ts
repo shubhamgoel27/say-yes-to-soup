@@ -49,6 +49,11 @@ export class PixiStage {
   private ambientSprite!: Sprite;
   private lightPool: Sprite[] = [];
   private glowPool: Sprite[] = [];
+  /** GPU pieces this build made itself, released before a rebuild: the app's
+   * own destroy reaches only app.stage, which holds just the present sprite. */
+  private owned: { destroy(): void }[] = [];
+  /** Rebuilds tried since the last one that came up; see recover(). */
+  private rebuildTries = 0;
   private specs: LightSpec[] = [];
   private zoom = 1;
   private zoomTarget = 1;
@@ -159,7 +164,8 @@ export class PixiStage {
 
     // The world frame, uploaded from the Canvas2D composer every render.
     s.worldSource = new CanvasSource({ resource: worldCanvas, scaleMode: 'linear' });
-    const worldSprite = new Sprite(new Texture({ source: s.worldSource }));
+    const worldTex = new Texture({ source: s.worldSource });
+    const worldSprite = new Sprite(worldTex);
     s.worldSprite = worldSprite;
 
     // Light map: ambient base + screened radial lights, multiplied over the world.
@@ -258,6 +264,23 @@ export class PixiStage {
     (bloom as unknown as { _extractFilter: Filter })._extractFilter = new SoftExtractFilter(BLOOM_THRESHOLD);
     s.scene.filters = [grade, bloom];
     s.bloom = bloom;
+    // Everything above that outlives its sprites, for the next teardown.
+    // Containers go first so no sprite outlives the texture it shows; the
+    // textures are held here, since a destroyed sprite forgets its own.
+    const washTex = s.washSprite.texture;
+    const vigTex = s.vigSprite.texture;
+    s.owned = [
+      { destroy: () => s.scene.destroy({ children: true }) },
+      { destroy: () => s.lightScene.destroy({ children: true }) },
+      grade,
+      bloom,
+      { destroy: () => s.lightRT.destroy(true) },
+      { destroy: () => radial.destroy(true) },
+      { destroy: () => halo.destroy(true) },
+      { destroy: () => washTex.destroy(true) },
+      { destroy: () => vigTex.destroy(true) },
+      { destroy: () => worldTex.destroy(true) },
+    ];
     s.applyBloom();
 
     // Compose at native art resolution, then scale smoothly to the window.
@@ -268,6 +291,7 @@ export class PixiStage {
     });
     s.present = new Sprite(s.prescaleRT);
     app.stage.addChild(s.present);
+    s.owned.push({ destroy: () => s.prescaleRT.destroy(true) });
     s.ambientSprite.tint = s.ambient;
     s.live = true;
     // Pointer handlers bind to the canvas element, and this canvas is new on
@@ -300,6 +324,17 @@ export class PixiStage {
     // A recovered WebGPU device has lost every resource anyway, and WebGL's
     // context restoration is the better-worn path; take it on the way back.
     this.preference = 'webgl';
+    // Each piece on its own: a dead renderer may refuse any of them, and
+    // one refusal must not keep the rest (forty lights, the bloom chain,
+    // every frame-sized texture) alive across every recovery.
+    for (const o of this.owned) {
+      try {
+        o.destroy();
+      } catch {
+        // Gone with the device, or never fully made.
+      }
+    }
+    this.owned = [];
     try {
       this.app.canvas.remove();
       this.app.destroy(false, { children: true, texture: true });
@@ -310,6 +345,15 @@ export class PixiStage {
     try {
       await this.init();
       this.resize();
+      this.rebuildTries = 0;
+    } catch (e) {
+      // A rebuild that throws left nothing live, and nothing else would
+      // ever try again: the game simulated on behind a blank page. Try a
+      // few more times, further apart each time, then leave it be.
+      console.warn('[soup] stage rebuild failed', e);
+      if (++this.rebuildTries <= 4) {
+        setTimeout(() => void this.recover('retrying a failed rebuild'), 1500 * this.rebuildTries);
+      }
     } finally {
       this.recovering = false;
     }
