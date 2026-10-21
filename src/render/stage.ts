@@ -121,6 +121,11 @@ export class PixiStage {
    */
   private async init(): Promise<void> {
     const s = this;
+    // The frame this build is cut to. A phone turned while the build awaits
+    // (the GPU, the grain texture) changes it, and fitView() no-ops until
+    // the stage is live; the end of the build checks and catches up.
+    const cutW = VIEW_W;
+    const cutH = VIEW_H;
     const worldCanvas = this.worldCanvas;
     const host = this.host;
     const app = new Application();
@@ -164,8 +169,7 @@ export class PixiStage {
 
     // The world frame, uploaded from the Canvas2D composer every render.
     s.worldSource = new CanvasSource({ resource: worldCanvas, scaleMode: 'linear' });
-    const worldTex = new Texture({ source: s.worldSource });
-    const worldSprite = new Sprite(worldTex);
+    const worldSprite = new Sprite(new Texture({ source: s.worldSource }));
     s.worldSprite = worldSprite;
 
     // Light map: ambient base + screened radial lights, multiplied over the world.
@@ -270,6 +274,8 @@ export class PixiStage {
     const washTex = s.washSprite.texture;
     const vigTex = s.vigSprite.texture;
     s.owned = [
+      // Read at teardown, not now: a turned frame swaps the world texture.
+      { destroy: () => s.worldSprite.texture.destroy(true) },
       { destroy: () => s.scene.destroy({ children: true }) },
       { destroy: () => s.lightScene.destroy({ children: true }) },
       grade,
@@ -279,7 +285,6 @@ export class PixiStage {
       { destroy: () => halo.destroy(true) },
       { destroy: () => washTex.destroy(true) },
       { destroy: () => vigTex.destroy(true) },
-      { destroy: () => worldTex.destroy(true) },
     ];
     s.applyBloom();
 
@@ -294,6 +299,7 @@ export class PixiStage {
     s.owned.push({ destroy: () => s.prescaleRT.destroy(true) });
     s.ambientSprite.tint = s.ambient;
     s.live = true;
+    if (VIEW_W !== cutW || VIEW_H !== cutH) s.fitView();
     // Pointer handlers bind to the canvas element, and this canvas is new on
     // every build; whoever registered gets the fresh one each time.
     for (const fn of s.canvasHooks) fn(app.canvas);
