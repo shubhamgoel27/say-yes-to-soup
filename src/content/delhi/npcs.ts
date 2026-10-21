@@ -1725,7 +1725,7 @@ export const DELHI_LETTERS: LetterDef[] = [
     from: 'Pilar, Bridge Authority, ELECTION HEADQUARTERS',
     when: { has: ['c6.row.done'] },
     body: [
-      'Dear business partner. It is ELECTION DAY on the bridge. Electorate: nine people and one dog. Current count: four for me, four for my opponent, who is my cousin and wrong.',
+      'Dear admiral-elect. It is ELECTION DAY on the bridge. Electorate: nine people and one dog. Current count: four for me, four for my opponent, who is my cousin and wrong.',
       'The ninth voter has gone fishing. Fishing! During history! We have sent the dog to negotiate; the dog is deputy-eligible and motivated by jerky.',
       'I hear you rowed seat forty-one in a boat with one hundred oars. When I win, I am adding a navy to my platform retroactively. You are its admiral. The fee for admiral is one fact about India.',
       'Suspense is expensive. You owe me one day of it, payable in mail. Vote Pilar, wherever voting finds you.',

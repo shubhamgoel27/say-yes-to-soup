@@ -66,6 +66,28 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
+      when: { has: ['pilar.gift.star'] },
+      body: [
+        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge: nine votes for, zero against, one abstention (the dog, on principle).',
+        'The sea star you posted presides over the swearing-in shelf, four arms raised in every direction like a quorum. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
+        'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
+        'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
+      ],
+    },
+    {
+      id: 'c7.pilar',
+      from: 'Pilar, Mayor of the Bridge (landslide)',
+      when: { has: ['pilar.gift.claw'] },
+      body: [
+        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge: nine votes for, zero against, one abstention (the dog, on principle).',
+        'The comma claw you posted presides over the swearing-in shelf. My oath did not end, it paused there, so technically I am still being sworn in. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
+        'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
+        'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
+      ],
+    },
+    {
+      id: 'c7.pilar',
+      from: 'Pilar, Mayor of the Bridge (landslide)',
       body: [
         'Dear voter. You missed the election. I won in a landslide: nine votes for, zero against, one abstention (the dog, on principle).',
         'The Museum of the Sea thrives. The gift shop sells rocks, and, new this quarter, smaller rocks.',

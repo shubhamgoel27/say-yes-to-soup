@@ -27,6 +27,28 @@ const SICILY_LETTERS: LetterDef[] = [
   {
     id: 'sicily.pilar',
     from: 'Pilar, Mayor of the Bridge (electorate: nine)',
+    when: { has: ['pilar.gift.star'] },
+    body: [
+      'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
+      'The Museum of the Sea thrives. Your four-armed sea star remains the main exhibit. Visitors ask where the fifth arm went. I charge for the answer.',
+      'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
+      'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
+    ],
+  },
+  {
+    id: 'sicily.pilar',
+    from: 'Pilar, Mayor of the Bridge (electorate: nine)',
+    when: { has: ['pilar.gift.claw'] },
+    body: [
+      'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
+      'The Museum of the Sea thrives. Your comma claw remains the main exhibit. Visitors ask which sentence it belongs to. I charge for the answer.',
+      'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
+      'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
+    ],
+  },
+  {
+    id: 'sicily.pilar',
+    from: 'Pilar, Mayor of the Bridge (electorate: nine)',
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'As deputy, he now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
