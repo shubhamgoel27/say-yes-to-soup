@@ -70,7 +70,7 @@ proven template:
 - Every NEW tile kind gets an examine with a bespoke line (looking is never
   wasted). New-kind examine arms need an untagged unconditional fallback.
   Shared-kind arms must ALL carry `map: '<your map id>'`.
-- Journal pages: aim for the count in story-arc.md; four tabs; Nani entries
+- Journal pages: aim for the count in story-arc.md; five tabs (words, dishes, people, customs, and `her` for Nani's own pages); Nani entries
   obey canon (none after mid-Sicily). Rhymes are authored on YOUR page via
   `rhyme: { with, note }`, the note in Nani's voice, and every rhyme is also
   declared in `recall.rhymes` as `[yourPageId, oldPageId]`.
@@ -84,7 +84,7 @@ proven template:
   earlier-chapter flag. Serve them from a post-office examine via the
   `letter:<id>` effect (gate arms on `letter.read.<id>` to avoid repeats).
 - Arrival: `arrival: { map, node, flag }`; the node's effects MUST
-  `set:` that flag. Completion: `completion: { flag, plate, toasts }`.
+  `set:` that flag. Completion: `completion: { flag, toasts }`.
 - Chasca: one NpcDef (unique id like `chascaC4`), one photo scene setting
   `set:photo.flash` + `set:photo.c<N>.<scene>`; declare the photo flag in
   `recall.plants`.
@@ -112,7 +112,7 @@ Gated choices use `when` on the choice; always leave an ungated path.
 ## Verify before you finish
 
 Run, and iterate until clean:
-1. `cd /Users/shubhamgoel/work/wayfare && npx tsc --noEmit`
+1. `npx tsc --noEmit` (from the repo root)
 2. `npx tsx tests/lint-chapter.ts src/content/<id>`
 
 Your final report: 6-10 lines: chapter id, map ids + entry spawn (map,x,y,dir

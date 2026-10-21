@@ -14,7 +14,7 @@ You grew up on your grandmother Nani's postcards. Then the postcards stopped. Th
 
 ## The journey
 
-Ten chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos, and the same road home, upward.
+Eleven chapters, every hop a real connection: an Andean village, the Peruvian desert coast, a cargo ship across the Pacific, a Seto Inland Sea town at Tanabata, a Busan market lane, the Kerala backwaters at monsoon onset, a lane of Old Delhi in the sawan rains, a Zanzibar shore village, a Sicilian fishing town under Etna, a valley in Oaxaca at Día de los Muertos, and the same road home, upward.
 
 | | |
 |---|---|
@@ -48,7 +48,7 @@ What you learn uphill changes how every coast treats you. The reciprocity chain 
 - **Letters chase you** around the world, including the escalating correspondence of a nine-year-old bridge magnate.
 - **Every village cooks with you** once you've cared enough to learn: a watía earth oven, the lime-kiss timing of ceviche, morning dashi, a meter-long chaya pour, urojo built to a customer's call, cannoli filled at the moment and never before.
 - **You can just sit down.** Any bench, baraza, fish crate, or bollard. The camera settles, the music steps aside for the wind, and the place thinks out loud around you.
-- **You can hear where you are**: nine regional generative music styles (bombo, taiko, janggu, chenda, taarab, tarantella, marimba), speech babble shaped by each language's pitch and gait, footsteps that know steel decks from sand.
+- **You can hear where you are**: ten regional generative music styles (bombo, taiko, janggu, chenda, tabla and bansuri, taarab, tarantella, marimba among them), speech babble shaped by each language's pitch and gait, footsteps that know steel decks from sand.
 
 ## Play it
 
@@ -120,7 +120,7 @@ soup.end()                    // set up the endgame
 - Vite + TypeScript and a thin custom engine (variable timestep clamped at 50 ms, 16 px logical tiles); PixiJS handles only the final composite: screen-space lighting, bloom, iris wipes, and shimmer-free zoom over a Canvas2D-painted world. The sim advances by exactly the time the display shows, which is what keeps motion smooth on a 120 Hz panel.
 - All world art is procedural: painterly canvas drawing at 4x resolution, no sprite sheets. Buildings cast the sun's shadow at the angle the hour actually implies, ground kinds feather into each other, and floors carry wear where feet have been. All audio is synthesized WebAudio, zero audio files. The only bitmaps are CC0 paper and cloth textures dressing the UI, and four public-domain plates taped into the journal as Nani's own clippings.
 - Content is data: maps are ASCII rows plus a legend; dialogue is a condition-gated node graph; one `effects` array is the entire learning system. Each chapter is a self-contained plugin folder (content, art set, minigames, weather moods, recall manifest).
-- The test suite plays the game abstractly: a reachability fixpoint proves all 254 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, a recall ledger proves every cross-chapter callback was planted before it pays off, a flood fill proves no map has ground a player can see but never stand on, and two coverage tests prove no map names art that does not exist. 45 tests, and each one exists because the thing it checks went wrong once.
+- The test suite plays the game abstractly: a reachability fixpoint proves all 254 journal pages earnable, a stuck-detector proves every reachable state leaves you a task, a recall ledger proves every cross-chapter callback was planted before it pays off, a flood fill proves no map has ground a player can see but never stand on, and two coverage tests prove no map names art that does not exist. Over five hundred test cases, and each one exists because the thing it checks went wrong once.
 
 ## On the cultures
 
