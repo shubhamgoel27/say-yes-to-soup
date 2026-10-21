@@ -19,7 +19,7 @@ import type { Dir } from '../src/engine/input';
 const FRAME = 1 / 60;
 
 /** Runs the simulation for a stretch of time holding one direction. */
-function hold(actor: Actor, dir: Dir | null, seconds: number, blocked = never) {
+function hold(actor: Actor, dir: Dir | null, seconds: number, blocked: (x: number, y: number) => boolean = never) {
   let bumps = 0;
   const frames = Math.round(seconds / FRAME);
   for (let i = 0; i < frames; i++) {
@@ -465,7 +465,7 @@ describe('the stride pose survives micro-pauses', () => {
 describe('the wall lean never hides real movement', () => {
   it('walking away from a graze advances the render position every frame', () => {
     const a = new Actor(5, 5, 'up');
-    const wallAbove = (x: number, y: number) => y < 5;
+    const wallAbove = (_x: number, y: number) => y < 5;
     for (let i = 0; i < 30; i++) a.update(1 / 120, { intent: 'up', blocked: wallAbove });
     // Leaned into the wall; now walk right while the lean eases out.
     let prev = a.renderPos()[0];

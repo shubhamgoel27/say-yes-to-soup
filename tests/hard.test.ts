@@ -4,6 +4,9 @@ import { afterEach, describe, it } from 'node:test';
 import { ghost, play, seedRandom, type Bot, type Panel } from './panelrig';
 import { BOTS, SABOTEURS } from './bots';
 
+/** The road so far, for panels that read it (the ofrenda); none of the hard ones do. */
+const NO_FLAGS = () => new Set<string>();
+
 /**
  * The hard tellings, end to end. Every game with a hard card must be
  * winnable clean by an honest player (its star reachable), the coach line
@@ -31,7 +34,7 @@ function hardRun(flag: string, bot: Bot, seed = 1, maxSeconds = 400) {
   assert.ok(g, `no game ${flag}`);
   const undo = seedRandom(seed * 7919);
   try {
-    const panel = g.make(ghost(), ghost()) as Panel & Any;
+    const panel = g.make(ghost(), ghost(), NO_FLAGS) as Panel & Any;
     RUN.hard = true;
     const r = play(panel, bot, maxSeconds);
     return { ...r, panel };
@@ -100,7 +103,7 @@ describe('the pause strip is a real pause', () => {
     // The fiesta pot catches when the spoon rests: two seconds of strip
     // must not scorch it, and neither must two minutes.
     const g = GAMES.find((x) => x.flag === 'c9.mole.start')!;
-    const p = g.make(ghost(), ghost()) as Any;
+    const p = g.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = true;
     p.open(() => {});
     p.onDir('up'); // the first stroke lights the comal; an untouched pot never scorches
@@ -218,7 +221,7 @@ describe('scopa at the circolo, the hard telling', () => {
   });
 
   it('only a light table is blamed on a light table', () => {
-    const p = GAMES.find((x) => x.flag === 'c8.scopa.start')!.make(ghost(), ghost()) as Any;
+    const p = GAMES.find((x) => x.flag === 'c8.scopa.start')!.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = true;
     p.open(() => {});
     p.gifts = 2;
@@ -234,7 +237,7 @@ describe('scopa at the circolo, the hard telling', () => {
 
 describe('the pastry bag, the hard telling', () => {
   it('an end ridden past the gold is a wreck, not a pass', () => {
-    const p = GAMES.find((x) => x.flag === 'c8.cook.start')!.make(ghost(), ghost()) as Any;
+    const p = GAMES.find((x) => x.flag === 'c8.cook.start')!.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = true;
     p.open(() => {});
     p.onAction(); // the ricotta moves
@@ -247,7 +250,7 @@ describe('the pastry bag, the hard telling', () => {
   });
 
   it('the story bag still forgives a generous end', () => {
-    const p = GAMES.find((x) => x.flag === 'c8.cook.start')!.make(ghost(), ghost()) as Any;
+    const p = GAMES.find((x) => x.flag === 'c8.cook.start')!.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = false;
     p.open(() => {});
     p.onAction();
@@ -259,7 +262,7 @@ describe('the pastry bag, the hard telling', () => {
 
 describe('the coach says true things', () => {
   it("the ustad's rabri is named once, not 'the the'", () => {
-    const p = GAMES.find((x) => x.flag === 'c11.cook.start')!.make(ghost(), ghost()) as Any;
+    const p = GAMES.find((x) => x.flag === 'c11.cook.start')!.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = true;
     p.open(() => {});
     p.course = p.courses.length - 1;
@@ -272,7 +275,7 @@ describe('the coach says true things', () => {
   });
 
   it('a lopsided second roll is not blamed on a seal that cannot split', () => {
-    const p = GAMES.find((x) => x.flag === 'c11.cook.start')!.make(ghost(), ghost()) as Any;
+    const p = GAMES.find((x) => x.flag === 'c11.cook.start')!.make(ghost(), ghost(), NO_FLAGS) as Any;
     RUN.hard = true;
     p.open(() => {});
     p.fault('rollSecond');
