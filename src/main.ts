@@ -503,6 +503,12 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
   },
 });
 
+/** Which panel's phase was last seen, and since when; see the panel branch of update(). */
+let panelSeen: unknown = null;
+let panelPhase: unknown = null;
+let panelPhaseAt = 0;
+const DONE_GRACE_MS = 450;
+
 /** Chapter mini-games: the engine owns one overlay root per panel. */
 function makeOverlayRoot(id: string): HTMLElement {
   const el = document.createElement('div');
@@ -5374,12 +5380,23 @@ function update(dt: number) {
   } else if (anyGameOpen()) {
     const g = games.find((x) => x.panel.isOpen);
     if (g) {
+      // A rhythm won on Space would close its own payoff on the next beat
+      // of the same rhythm: for a moment after a panel reaches 'done', the
+      // action key rests. (The andes and the ofrenda keep graces of their own.)
+      const phase = (g.panel as { phase?: unknown }).phase;
+      const now = performance.now();
+      if (g !== panelSeen || phase !== panelPhase) {
+        panelSeen = g;
+        panelPhase = phase;
+        panelPhaseAt = now;
+      }
+      const resting = phase === 'done' && now - panelPhaseAt < DONE_GRACE_MS;
       if (back || pauseKey) {
         showStrip(g);
         audio.pageFlip();
       } else {
         if (menuDir) g.panel.onDir(menuDir);
-        if (act) g.panel.onAction();
+        if (act && !resting) g.panel.onAction();
       }
     }
   } else if (textbox.isOpen) {
