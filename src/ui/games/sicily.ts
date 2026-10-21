@@ -511,6 +511,7 @@ export class ScopaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.steamAt = this.sparkleAt = 0; // scene time restarts at zero; old stamps froze the steam
     freshRun(SCOPA_FLAG);
     this.hard = RUN.hard;
     this.myPts = 0;
@@ -1538,6 +1539,7 @@ export class PisciPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.foamAt = this.smokeAt = this.sparkAt = 0; // scene time restarts at zero
     freshRun(PISCI_FLAG);
     this.hard = RUN.hard;
     this.baseSpeed = this.hard ? 0.72 : 0.5;
@@ -2206,6 +2208,7 @@ export class CannoloPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.spitAt = 0; // stamps are scene time, and restart() winds it back to zero
     freshRun(CANNOLO_FLAG);
     this.hard = RUN.hard;
     this.shellsN = this.hard ? 5 : 3;
