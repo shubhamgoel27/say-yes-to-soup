@@ -20,6 +20,22 @@ export const easeOutBack: Ease = (t) => 1 + 2.70158 * (t - 1) ** 3 + 1.70158 * (
 export const easeOutElastic: Ease = (t) =>
   t === 0 || t === 1 ? t : 2 ** (-10 * t) * Math.sin((t * 10 - 0.75) * ((2 * Math.PI) / 3)) + 1;
 
+/**
+ * Randomness for looks only: particles, sparks, shake. A stream of its own,
+ * so how many sparks a hit throws (fewer under reduced motion) can never
+ * reshuffle the deck or the wind. On Math.random, toggling reduce-motion
+ * flipped seeded scopa results, and any new particle re-rolled pinned tests.
+ */
+let fxSeed = (Date.now() ^ 0x9e3779b9) >>> 0 || 1;
+export function fxRandom(): number {
+  fxSeed ^= fxSeed << 13;
+  fxSeed >>>= 0;
+  fxSeed ^= fxSeed >>> 17;
+  fxSeed ^= fxSeed << 5;
+  fxSeed >>>= 0;
+  return fxSeed / 4294967296;
+}
+
 /** A soft wobble for idle life: wobble(time, 2.3) in [-1, 1]. */
 export function wobble(time: number, speed = 1, phase = 0): number {
   return Math.sin(time * speed + phase);
@@ -144,24 +160,24 @@ export class Scene {
    * spawns a token three so the beat still reads without the shower.
    */
   confettiSoft(x: number, y: number, palette: readonly string[] = PETAL_NEUTRALS) {
-    const n = calmHere() ? 3 : 6 + Math.floor(Math.random() * 5);
+    const n = calmHere() ? 3 : 6 + Math.floor(fxRandom() * 5);
     for (let i = 0; i < n; i++) {
-      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.9;
-      const sp = 55 + Math.random() * 55;
+      const a = -Math.PI / 2 + (fxRandom() - 0.5) * 1.9;
+      const sp = 55 + fxRandom() * 55;
       this.parts.push({
-        x: x + (Math.random() - 0.5) * 14,
-        y: y + (Math.random() - 0.5) * 8,
+        x: x + (fxRandom() - 0.5) * 14,
+        y: y + (fxRandom() - 0.5) * 8,
         vx: Math.cos(a) * sp,
         vy: Math.sin(a) * sp,
-        life: 0.75 + Math.random() * 0.35,
+        life: 0.75 + fxRandom() * 0.35,
         age: 0,
-        size: 2.6 + Math.random() * 1.8,
+        size: 2.6 + fxRandom() * 1.8,
         color: palette[i % palette.length] ?? '#e8c86a',
         grav: 70,
         drag: 1.6,
         kind: 'petal',
-        spin: (Math.random() - 0.5) * 9,
-        rot: Math.random() * Math.PI * 2,
+        spin: (fxRandom() - 0.5) * 9,
+        rot: fxRandom() * Math.PI * 2,
       });
     }
   }
@@ -169,11 +185,11 @@ export class Scene {
   burst(x: number, y: number, opts: Partial<Particle> & { n?: number; spread?: number; speed?: number } = {}) {
     const n = opts.n ?? 10;
     for (let i = 0; i < n; i++) {
-      const a = Math.random() * Math.PI * 2;
-      const sp = (opts.speed ?? 90) * (0.4 + Math.random() * 0.8);
+      const a = fxRandom() * Math.PI * 2;
+      const sp = (opts.speed ?? 90) * (0.4 + fxRandom() * 0.8);
       this.parts.push({
-        x: x + (Math.random() - 0.5) * (opts.spread ?? 6),
-        y: y + (Math.random() - 0.5) * (opts.spread ?? 6),
+        x: x + (fxRandom() - 0.5) * (opts.spread ?? 6),
+        y: y + (fxRandom() - 0.5) * (opts.spread ?? 6),
         vx: Math.cos(a) * sp,
         vy: Math.sin(a) * sp - (opts.grav ?? 120) * 0.25,
         life: opts.life ?? 0.7,
@@ -183,8 +199,8 @@ export class Scene {
         grav: opts.grav ?? 120,
         drag: opts.drag ?? 2.2,
         kind: opts.kind ?? 'dot',
-        spin: (Math.random() - 0.5) * 6,
-        rot: Math.random() * Math.PI * 2,
+        spin: (fxRandom() - 0.5) * 6,
+        rot: fxRandom() * Math.PI * 2,
       });
     }
   }
@@ -192,10 +208,10 @@ export class Scene {
   /** Slow rising particles: steam over a deg, flour over a rolling board. */
   waft(x: number, y: number, color = 'rgba(255,252,244,0.35)', size = 7) {
     this.parts.push({
-      x: x + (Math.random() - 0.5) * 10,
+      x: x + (fxRandom() - 0.5) * 10,
       y,
-      vx: (Math.random() - 0.5) * 8,
-      vy: -14 - Math.random() * 10,
+      vx: (fxRandom() - 0.5) * 8,
+      vy: -14 - fxRandom() * 10,
       life: 1.6,
       age: 0,
       size,
@@ -238,7 +254,7 @@ export class Scene {
     if (this.shakeT > 0) {
       this.shakeT -= dt;
       const k = (this.shakeT / 0.28) * this.shakeAmp;
-      g.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k);
+      g.translate((fxRandom() - 0.5) * k, (fxRandom() - 0.5) * k);
     }
     if (this.wobT > 0) {
       this.wobT -= dt;
