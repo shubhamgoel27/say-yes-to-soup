@@ -99,6 +99,9 @@ function parseSave(raw: string | null): SaveData | null {
         typeof pl !== 'object' || typeof pl.map !== 'string' ||
         !Number.isFinite(pl.x) || !Number.isFinite(pl.y) || typeof pl.dir !== 'string'
       ) return null;
+      // An unpacked journal is someone else's file: a facing the sprite
+      // sheet has no row for would fail every frame the traveler is drawn.
+      if (!['up', 'down', 'left', 'right'].includes(pl.dir)) pl.dir = 'down';
     }
     if (data.errand !== undefined && data.errand !== null && typeof data.errand !== 'string') return null;
     if (data.name !== undefined && data.name !== null && typeof data.name !== 'string') return null;

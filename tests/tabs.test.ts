@@ -103,3 +103,11 @@ describe('a name from someone else\'s file', () => {
     assert.equal(peekSlot(1)?.name, 'Siobhán O’Neill-Ashwini');
   });
 });
+
+describe('the rest of someone else\'s file', () => {
+  it('a facing no sprite can draw becomes down', () => {
+    const raw = rawSave({ place: { map: 'village', x: 3, y: 4, dir: 'sideways' } });
+    assert.ok(writeSlotRaw(1, raw));
+    assert.equal(peekSlot(1)?.place?.dir, 'down');
+  });
+});
