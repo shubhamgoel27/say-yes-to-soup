@@ -676,7 +676,10 @@ function renderHowto() {
   const hardOffered = howtoOpts.includes(HARD_OPT);
   const hardDone = state.has(`hard.${g.def.flag}`);
   // The body scrolls when the glass is short; the foot never does, so the
-  // hint and the "more below" pill sit under the text, never over it.
+  // hint and the "more below" pill sit under the text, never over it. A
+  // cursor move re-renders, and must leave the body where the player had
+  // scrolled it: it once snapped to the top, hiding the row just chosen.
+  const scrolled = howtoEl.querySelector<HTMLElement>('.ht-body')?.scrollTop ?? 0;
   howtoEl.innerHTML = `
     <div class="ht-card">
       <div class="ht-body">
@@ -701,7 +704,9 @@ function renderHowto() {
         <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
       </div>
     </div>`;
-  watchScrollCue(howtoEl.querySelector<HTMLElement>('.ht-body'), howtoEl.querySelector<HTMLElement>('.ht-more'));
+  const body = howtoEl.querySelector<HTMLElement>('.ht-body');
+  if (body) body.scrollTop = scrolled;
+  watchScrollCue(body, howtoEl.querySelector<HTMLElement>('.ht-more'));
 }
 
 function showHowto(g: GameEntry) {
@@ -716,6 +721,7 @@ function showHowto(g: GameEntry) {
     state.has('replay.mode') && g.def.hardHow ? ['Begin', HARD_OPT, 'Not yet'] : ['Begin', 'Not yet'];
   player.frozen = true;
   howtoEl.hidden = false;
+  howtoEl.innerHTML = ''; // a new card starts at its top
   renderHowto();
   audio.pageFlip();
 }
