@@ -3629,6 +3629,8 @@ const closedChapters = new Set(COMPLETIONS.filter((c) => state.has(closeFlag(c))
  */
 function resyncCelebrations() {
   window.clearTimeout(ceremonyTimer);
+  // Zero too: whisperMustWait() reads a live timer as a ceremony on its way.
+  ceremonyTimer = 0;
   chapterClose.close();
   celebrated = state.has('story.complete');
   celebratedFlags.clear();
@@ -4804,15 +4806,14 @@ function beginPlay(freshStart: boolean) {
 }
 
 /**
- * A different journal was put on the table (chosen, erased, or unpacked
- * over): the loaded journey is forgotten wholesale and the new slot is read
- * from a clean slate, exactly like a boot. The world is stood back up for
- * the title's attract drift; Continue and Begin then travel the usual paths.
+ * Everything queued or counted for the journey being put down dies here,
+ * whichever way it is put down (another journal chosen, or Begin again). A
+ * pending whisper once crossed this seam and stamped its once-ever flag into
+ * the wrong save; a fading toast once followed the player into another
+ * journal's morning; a half-spilled chicha carried its sloshes into a fresh
+ * one, and petals sown in one journal counted toward another's path.
  */
-function reloadJourney() {
-  // Everything queued for the OLD journey dies here: a pending whisper once
-  // crossed this seam and stamped its once-ever flag into the wrong save; a
-  // fading toast once followed the player into another journal's morning.
+function dropJourneyTransients() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
@@ -4825,8 +4826,21 @@ function reloadJourney() {
   welcomeTimer = 0;
   toasts.dismissAll();
   dropPlate();
+  sloshes = 0;
+  PETAL_SOWN.clear();
+}
+
+/**
+ * A different journal was put on the table (chosen, erased, or unpacked
+ * over): the loaded journey is forgotten wholesale and the new slot is read
+ * from a clean slate, exactly like a boot. The world is stood back up for
+ * the title's attract drift; Continue and Begin then travel the usual paths.
+ */
+function reloadJourney() {
+  dropJourneyTransients();
   state.forget();
   state.load();
+  journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();
@@ -4943,8 +4957,9 @@ function continueJourney() {
 
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
+  dropJourneyTransients();
   state.reset();
-  armed.clear();
+  journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   resyncCelebrations();
   applyGateState();

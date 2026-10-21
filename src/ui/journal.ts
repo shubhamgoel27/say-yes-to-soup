@@ -94,7 +94,16 @@ export class JournalUI {
      * chapter dividers in the long lists. */
     private placeOf: (id: string) => string | undefined = () => undefined,
   ) {
-    for (const e of entries) {
+    this.resync();
+  }
+
+  /** Everything already written counts as seen: at boot, and whenever a
+   * different journal is put on the table (another slot, or Begin again),
+   * so the new-page sweep follows the journal open now, not the first one. */
+  resync() {
+    this.seenPages.clear();
+    this.seenThreads.clear();
+    for (const e of this.entries) {
       if (!this.state.hasPage(e.id)) continue;
       this.seenPages.add(e.id);
       if (e.rhyme && this.state.hasPage(e.rhyme.with)) {
