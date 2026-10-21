@@ -5,6 +5,7 @@ export const RECALL: RecallManifest = {
   consumes: [
     'keepsake.band', // Elías recognizes the cochineal at your wrist
     'riddle.cho', // Old Man Cho's question is answered at the ledger
+    'c11.seva.langar', // the ledger washed with the dishes, set beside the one written down
     'omiyage.petro', // an unposted gift becomes an ofrenda item
     'omiyage.pilar',
     'omiyage.aurelio',

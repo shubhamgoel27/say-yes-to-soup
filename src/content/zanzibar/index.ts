@@ -15,6 +15,8 @@ const RECALL: RecallManifest = {
     'page.dishes.sudado', // sour soup as medicine; Zuberi recognizes a believer
     'page.words.lamar', // Ríos, ashore, hears her word said back to her
     'c3.shellback', // Neptune's court does not revoke; the Capitana checks
+    'c11.chit.bombay', // Sethji's cousin's cargo, unloading at the jahazi
+    'c11.attar.mitti', // Mehr Aapa's bottled first rain, breathed out by the clove mats
   ],
   plants: [
     'c7.arrived', // hands the task list over once you step off the jahazi

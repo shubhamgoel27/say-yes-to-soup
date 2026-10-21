@@ -13,7 +13,7 @@ export const RECALL: RecallManifest = {
     'c11.arrived', // earlier task lists hand over once you step off the rickshaw
     'c11.complete',
     'photo.c11.kites', // Chasca's storm-and-kites photograph, paid off in the Return
-    'c11.chit.bombay', // Sethji's chit: consumed at c7 arrival, the agent knows his cousin
+    'c11.chit.bombay', // Sethji's chit: his cousin's cargo unloads at c7's jahazi
     'c11.attar.mitti', // the bottled monsoon: one nose, two seasons, met again at the clove mats
     'c11.seva.langar', // the reciprocity bead with the ledger erased; echoed at c9's ledger
     'c11.promise.daulat', // a winter IOU, twice inherited; the Return may honor it with a line

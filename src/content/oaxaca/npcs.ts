@@ -438,8 +438,21 @@ export const OAXACA_NODES: NodeMap = {
         goto: 'c9.refugio.riddle',
         when: { has: ['riddle.cho'] },
       },
+      {
+        text: 'Tell her about the langar, where the ledger is washed with the dishes',
+        goto: 'c9.refugio.seva',
+        when: { has: ['c11.seva.langar'] },
+      },
       { text: 'Ask what a guelaguetza asks of you', goto: 'c9.refugio.chain' },
     ],
+  },
+  'c9.refugio.seva': {
+    lines: [
+      { text: 'You tell her about Delhi: a kitchen that feeds anyone who sits, and pays itself back in washed plates, so nobody leaves a debtor.' },
+      { who: 'Doña Refugio', text: 'A beautiful way. Nobody owes, so nobody is shamed.' },
+      { who: 'Doña Refugio', text: 'Here we keep the other way. We write it down, so nobody is forgotten.' },
+    ],
+    next: 'c9.refugio.chain',
   },
   'c9.refugio.riddle': {
     lines: [
