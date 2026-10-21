@@ -843,6 +843,9 @@ export class NamingCard {
   private onKey = (e: KeyboardEvent) => {
     if (!this.isOpen) return;
     e.stopPropagation();
+    // Mid-composition (kana to kanji, jamo to hangul), Enter and Esc belong
+    // to the input method: Enter confirms the conversion, it does not sign.
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.code === 'Escape') {
       e.preventDefault();
       this.back();
