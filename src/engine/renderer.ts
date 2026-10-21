@@ -1402,6 +1402,8 @@ export class Renderer {
   private nudges = new Map<Actor, [number, number]>();
   /** Eased opacity per tall prop cell ("x,y"), 1 when nobody is behind it. */
   private veils = new Map<string, number>();
+  /** The map the veils belong to; another map starts every prop solid. */
+  private veilMap = '';
   private alphaCache = new Map<HTMLCanvasElement, Uint8ClampedArray | null>();
 
   /** Opaque enough at this pixel of a canvas to hide what is behind it? */
@@ -1878,6 +1880,10 @@ export class Renderer {
     // Which room we are in decides what its walls are made of. One lookup a
     // frame, and only when the map actually changed.
     this.tiles.setMap(map.id);
+    if (map.id !== this.veilMap) {
+      this.veilMap = map.id;
+      this.veils.clear();
+    }
     const kindAt = (x: number, y: number) => (map.inBounds(x, y) ? map.ground(x, y).t : 'scree');
     this.warmSeams(map, kindAt);
 
@@ -2781,7 +2787,18 @@ export class Renderer {
         // A lone tree, cactus or lamp swept as a square left a tile-edged
         // block on the ground; its base is round, so its shadow is a capsule.
         if (this.wallRun(map, cx, cy) >= 0) sweep(bx, by + inset, w, w, dx, dy);
-        else if (round.length < 512) round.push(bx + w / 2, by + inset + w / 2, w / 2, dx, dy);
+        else {
+          // Only a capsule that can reach the buffer takes a slot. Scanned in
+          // row order from well off the top-left, the margin's props once
+          // filled the budget and on-screen trees in the lower right went
+          // shadowless, popping as the camera moved.
+          const x = bx + w / 2;
+          const y = by + inset + w / 2;
+          const r = w / 2;
+          const onBuffer =
+            x + r + Math.max(0, dx) >= 0 && x - r + Math.min(0, dx) <= SHW && y + r + Math.max(0, dy) >= 0 && y - r + Math.min(0, dy) <= SHH;
+          if (onBuffer && round.length < 2048) round.push(x, y, r, dx, dy);
+        }
       }
     }
     // And the people. Their base is a shoe's width of ground at their feet,
@@ -4104,7 +4121,10 @@ export class Renderer {
       // Fog bands sliding sideways, barely there, plus the finest drizzle.
       for (let i = 0; i < 4; i++) {
         const h1 = cellHash(i, 211, 13);
-        const wy = ((h1 * H * 1.4 + this.time * 6 * (i % 2 ? 1 : -1)) % (H * 1.4)) - H * 0.2;
+        // Wrapped both ways: the leftward bands go negative a few minutes in,
+        // and JS % keeps the sign, which parked them above the canvas for good.
+        const P = H * 1.4;
+        const wy = ((((h1 * P + this.time * 6 * (i % 2 ? 1 : -1)) % P) + P) % P) - H * 0.2;
         const grad = ctx.createLinearGradient(0, wy - 40, 0, wy + 40);
         grad.addColorStop(0, 'rgba(215,222,226,0)');
         grad.addColorStop(0.5, `rgba(215,222,226,${mood === 'garua' ? 0.1 : 0.06})`);
