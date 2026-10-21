@@ -128,15 +128,18 @@ export class JournalUI {
 
   /**
    * The rhyme partner of a page, if the player holds both halves. A rhyme is
-   * authored on the later page but stitches from either side.
+   * authored on the later page but stitches from either side. The page's own
+   * rhyme wins: Delhi's abhi reaches forward to ahorita, and found first in
+   * journal order it once covered ahorita's own note about al toque.
    */
   private rhymeFor(id: string): { other: JournalEntry; note: string } | null {
     if (!this.state.hasPage(id)) return null;
+    const own = this.entries.find((e) => e.id === id);
+    if (own?.rhyme && this.state.hasPage(own.rhyme.with)) {
+      const other = this.entries.find((o) => o.id === own.rhyme?.with);
+      if (other) return { other, note: own.rhyme.note };
+    }
     for (const e of this.entries) {
-      if (e.id === id && e.rhyme && this.state.hasPage(e.rhyme.with)) {
-        const other = this.entries.find((o) => o.id === e.rhyme?.with);
-        if (other) return { other, note: e.rhyme.note };
-      }
       if (e.rhyme?.with === id && this.state.hasPage(e.id)) {
         return { other: e, note: e.rhyme.note };
       }
