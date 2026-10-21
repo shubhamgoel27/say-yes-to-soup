@@ -118,8 +118,12 @@ export class TileMap {
   /** Overlay tile at a cell, or null if the object layer is blank there. */
   object(x: number, y: number): TileDef | null {
     if (!this.inBounds(x, y)) return null;
-    const k = key(x, y);
-    if (this.objectOverrides.has(k)) return this.objectOverrides.get(k) ?? null;
+    // Called per cell, many times a frame: build the key only when some
+    // override could be there.
+    if (this.objectOverrides.size > 0) {
+      const k = key(x, y);
+      if (this.objectOverrides.has(k)) return this.objectOverrides.get(k) ?? null;
+    }
     const ch = this.data.objects?.[y]?.[x];
     if (!ch || ch === ' ') return null;
     return this.lookup(ch);

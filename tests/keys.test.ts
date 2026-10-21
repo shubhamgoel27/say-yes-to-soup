@@ -97,3 +97,17 @@ describe('shortcuts are not steps', () => {
     assert.equal(r.held(), null);
   });
 });
+
+describe('a pad across a lost focus', () => {
+  it('a stick still held after the window comes back walks again', () => {
+    const { target, input, held } = rig();
+    pads = [stickRight()];
+    target.dispatchEvent(new Event('gamepadconnected'));
+    input.pollGamepad();
+    assert.equal(held(), 'right');
+    target.dispatchEvent(new Event('blur'));
+    assert.equal(held(), null);
+    input.pollGamepad();
+    assert.equal(held(), 'right');
+  });
+});

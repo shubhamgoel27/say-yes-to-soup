@@ -385,7 +385,7 @@ export class AudioBus {
       // tab was hidden or a call came in; it wakes the same way. (Not in the
       // DOM typings, hence the string compare.)
       const st = this.ctx.state as string;
-      if (st === 'suspended' || st === 'interrupted') void this.ctx.resume();
+      if (st === 'suspended' || st === 'interrupted') void this.ctx.resume().catch(() => {}); // refused without a gesture; the next one asks again
       return;
     }
     try {

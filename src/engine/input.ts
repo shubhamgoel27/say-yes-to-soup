@@ -136,6 +136,9 @@ export class Input {
     this.dirStack = [];
     this.pressed.clear();
     this.tapDir = null;
+    // The stick, if still held, is re-read on the next poll; kept, it was
+    // ignored until it changed direction.
+    this.padDir = null;
   };
 
   /** WASD and arrows can map to the same direction; don't drop it while either is down. */
