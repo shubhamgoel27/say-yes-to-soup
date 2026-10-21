@@ -1204,7 +1204,12 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c3.complete'] }, node: 'c3.ex.galleyplant2' },
     { node: 'c3.ex.galleyplant' },
   ],
-  stove: [{ node: 'c3.ex.stove' }],
+  stove: [
+    // After the adobo, the stockpot is the line worth reading: the galley
+    // has no separate pot to stand at, and this arm was once unreachable.
+    { map: 'galley', when: { has: ['c3.cook.done'] }, node: 'c3.ex.pot' },
+    { node: 'c3.ex.stove' },
+  ],
   galleycounter: [{ node: 'c3.ex.counter' }],
   karaoke: [
     { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke.call' },
@@ -1224,7 +1229,6 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   table: [{ map: 'galley', node: 'c3.ex.table' }],
   shelf: [{ map: 'galley', node: 'c3.ex.shelf' }],
-  pot: [{ map: 'galley', node: 'c3.ex.pot' }],
   // The entry hook: La Caleta's pier sign now boards the Yacana.
   piersign: [{ map: 'la-caleta', when: { has: ['c2.complete'] }, node: 'c3.board' }],
 };
