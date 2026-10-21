@@ -74,3 +74,26 @@ describe('a pad that goes away mid-walk', () => {
     assert.equal(held(), null);
   });
 });
+
+describe('shortcuts are not steps', () => {
+  const chord = (rigged: ReturnType<typeof rig>, code: string, mods: Record<string, boolean>) => {
+    const e = new Event('keydown') as Event & Record<string, unknown>;
+    Object.assign(e, { code, repeat: false, ...mods });
+    rigged.target.dispatchEvent(e);
+  };
+
+  it('Cmd+A does not start a walk the missing keyup could never end', () => {
+    const r = rig();
+    chord(r, 'KeyA', { metaKey: true });
+    assert.equal(r.held(), null);
+  });
+
+  it('letting go of Cmd releases a direction whose keyup macOS swallowed', () => {
+    const r = rig();
+    r.key('keydown', 'KeyD');
+    assert.equal(r.held(), 'right');
+    // Cmd goes down, D comes up under it: macOS sends no keyup for D.
+    r.key('keyup', 'MetaLeft');
+    assert.equal(r.held(), null);
+  });
+});

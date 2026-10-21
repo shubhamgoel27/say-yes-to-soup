@@ -76,6 +76,10 @@ export class Input {
 
   private onDown = (e: KeyboardEvent) => {
     if (e.repeat) return;
+    // A browser or OS shortcut (Cmd+S, Ctrl+D, Alt+Tab...) is not a step,
+    // and it stays the browser's: macOS never sends the keyup for a key
+    // let go while Cmd is down, so a Cmd+A walked left until focus moved.
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
     const dir = DIR_KEYS[e.code];
     if (dir) {
       e.preventDefault();
@@ -115,6 +119,12 @@ export class Input {
   };
 
   private onUp = (e: KeyboardEvent) => {
+    // Every key released under Cmd lost its keyup on macOS; letting go of
+    // Cmd is the last word we will hear about any of them.
+    if (e.code === 'MetaLeft' || e.code === 'MetaRight') {
+      this.releaseAll();
+      return;
+    }
     const dir = DIR_KEYS[e.code];
     if (dir && !this.stillHeld(dir, e.code)) {
       this.dirStack = this.dirStack.filter((d) => d !== dir);
