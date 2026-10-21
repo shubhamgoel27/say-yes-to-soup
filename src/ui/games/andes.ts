@@ -1,7 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { surface, rect, rr, oval, dot, vgrad, shade, glowSpot, softShadow, Rng, type Surface } from '../../art/pix';
-import { Scene, mountScene, easeInCubic, easeOutCubic, wobble } from './scene';
+import { Scene, mountScene, easeInCubic, easeOutCubic, wobble, calm } from './scene';
 import { RUN, coach, freshRun } from './run';
 
 /**
@@ -89,7 +89,6 @@ const DIG_WAIT = 1.0;
 /** Papas buried under the heap; the story dig finds them by their steam. */
 const DIG_PAPAS = 3;
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 // ------------------------------------------------------------- baked artwork
 let bgCache: Surface | null = null;

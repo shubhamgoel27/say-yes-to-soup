@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, PressMarks, offBy } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, PressMarks, offBy, calm } from './scene';
 import { RUN, coach, freshRun, tip } from './run';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art/pix';
 
@@ -51,7 +51,6 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow } from '../../art
 
 const linear = (t: number) => t;
 
-const calmMotion = () => document.body.classList.contains('reduce-motion');
 
 /** Hex blend, for dough browning and sky moods. */
 function mixHex(a: string, b: string, t: number): string {
@@ -733,7 +732,7 @@ export class ParanthaPanel {
           this.hint = OOPS_IGNORED;
           this.brownDown = Math.min(1, this.brownDown + 0.3);
           if (s) {
-            if (!calmMotion()) s.thump(2, 0.02);
+            if (!calm()) s.thump(2, 0.02);
             for (let i = 0; i < 3; i++) s.waft(TAWA.x - 20 + i * 22, TAWA.y - 24, 'rgba(96,86,78,0.5)', 8);
           }
         }
@@ -795,8 +794,8 @@ export class ParanthaPanel {
       this.audio.blip();
       this.freshDough(`Fresh atta in your palm and the same ${c.name} to make. Space stops the pin when the disc is even.`);
       if (s) {
-        s.burst(CHAKLA.x, CHAKLA.y - 8, { n: calmMotion() ? 4 : 11, color: 'rgba(246,238,216,0.85)', speed: 60, grav: 70, size: 2.6, life: 0.5 });
-        if (!calmMotion()) s.thump(2, 0.02);
+        s.burst(CHAKLA.x, CHAKLA.y - 8, { n: calm() ? 4 : 11, color: 'rgba(246,238,216,0.85)', speed: 60, grav: 70, size: 2.6, life: 0.5 });
+        if (!calm()) s.thump(2, 0.02);
       }
       this.render();
       return;
@@ -808,8 +807,8 @@ export class ParanthaPanel {
         this.rolled++;
         this.audio.chime();
         if (s) {
-          if (!calmMotion()) s.thump(2, 0.02);
-          s.burst(CHAKLA.x, CHAKLA.y - 10, { n: calmMotion() ? 4 : 10, color: 'rgba(246,238,216,0.8)', speed: 55, grav: 60, size: 2.6, life: 0.5 });
+          if (!calm()) s.thump(2, 0.02);
+          s.burst(CHAKLA.x, CHAKLA.y - 10, { n: calm() ? 4 : 10, color: 'rgba(246,238,216,0.8)', speed: 55, grav: 60, size: 2.6, life: 0.5 });
         }
         if (this.rolled === 1) {
           this.hint = `Even. Now cup the stuffing: ${c.stuffing}. Space to seal it in, gently, like closing a letter.`;
@@ -825,8 +824,8 @@ export class ParanthaPanel {
           this.brownUp = 0;
           this.brownDown = 0;
           if (s) {
-            if (!calmMotion()) s.thump(3, 0.03);
-            s.burst(TAWA.x, TAWA.y - 8, { n: calmMotion() ? 5 : 14, color: '#ffd98a', kind: 'spark', speed: 120, grav: 40, size: 2.2, life: 0.5 });
+            if (!calm()) s.thump(3, 0.03);
+            s.burst(TAWA.x, TAWA.y - 8, { n: calm() ? 5 : 14, color: '#ffd98a', kind: 'spark', speed: 120, grav: 40, size: 2.2, life: 0.5 });
             for (let i = 0; i < 3; i++) s.waft(TAWA.x - 24 + i * 24, TAWA.y - 20);
           }
         }
@@ -858,7 +857,7 @@ export class ParanthaPanel {
         this.meter = 0;
         this.dir = 1;
         if (s) {
-          s.burst(CHAKLA.x, CHAKLA.y - 8, { n: calmMotion() ? 3 : 8, color: 'rgba(246,238,216,0.8)', speed: 45, grav: 70, size: 2.2, life: 0.45 });
+          s.burst(CHAKLA.x, CHAKLA.y - 8, { n: calm() ? 3 : 8, color: 'rgba(246,238,216,0.8)', speed: 45, grav: 70, size: 2.2, life: 0.45 });
         }
       } else {
         this.audio.chime();
@@ -891,7 +890,7 @@ export class ParanthaPanel {
         this.fault(early ? 'early' : 'late');
         this.hint = this.howFar(off, early ? OOPS_EARLY : OOPS_LATE);
         if (s) {
-          if (!calmMotion()) s.thump(2, 0.02);
+          if (!calm()) s.thump(2, 0.02);
           s.burst(TAWA.x, TAWA.y - 6, { n: 4, color: 'rgba(255,226,160,0.7)', speed: 60, grav: 100, size: 2, life: 0.4 });
           if (early) {
             this.landSq = 0.85;
@@ -1002,9 +1001,9 @@ export class ParanthaPanel {
     }
     const s = this.scene;
     if (!s) return;
-    if (!calmMotion()) s.thump(5, 0.05);
+    if (!calm()) s.thump(5, 0.05);
     for (let i = 0; i < 6; i++) s.waft(TAWA.x - 46 + i * 18, TAWA.y - 18, 'rgba(64,58,54,0.6)', 11);
-    s.burst(TAWA.x, TAWA.y - 6, { n: calmMotion() ? 5 : 13, color: 'rgba(58,44,34,0.8)', speed: 90, grav: -30, size: 3.4, life: 0.9 });
+    s.burst(TAWA.x, TAWA.y - 6, { n: calm() ? 5 : 13, color: 'rgba(58,44,34,0.8)', speed: 90, grav: -30, size: 3.4, life: 0.9 });
   }
 
   /**
@@ -1036,7 +1035,7 @@ export class ParanthaPanel {
         this.slideA = 0;
         s.tween(0, 1, 0.75, easeInOutSine, (v) => (this.slideA = v), () => {
           this.stacked++;
-          if (!calmMotion()) s.thump(2, 0.02);
+          if (!calm()) s.thump(2, 0.02);
           s.burst(STACK.x, STACK.y - 14, { n: 6, color: '#ffd98a', kind: 'spark', speed: 70, grav: 60, size: 2, life: 0.45 });
         });
       }
@@ -1049,7 +1048,7 @@ export class ParanthaPanel {
     this.servedT = 0;
     if (s) {
       s.flash('#ffe9c0', 0.3);
-      s.burst(320, 200, { n: calmMotion() ? 8 : 20, color: '#ffd98a', kind: 'spark', speed: 130, grav: 90, size: 2.4, life: 0.8 });
+      s.burst(320, 200, { n: calm() ? 8 : 20, color: '#ffd98a', kind: 'spark', speed: 130, grav: 90, size: 2.4, life: 0.8 });
     }
   }
 
@@ -1060,8 +1059,8 @@ export class ParanthaPanel {
     this.flipA = 0;
     this.flipSwapped = false;
     s.tween(0, 1, 0.58, linear, (v) => (this.flipA = v), () => {
-      if (!calmMotion()) s.thump(4, 0.05);
-      s.burst(TAWA.x, TAWA.y - 4, { n: calmMotion() ? 6 : 16, color: '#ffd98a', kind: 'spark', speed: 150, grav: 160, size: 2.4, life: 0.55 });
+      if (!calm()) s.thump(4, 0.05);
+      s.burst(TAWA.x, TAWA.y - 4, { n: calm() ? 6 : 16, color: '#ffd98a', kind: 'spark', speed: 150, grav: 160, size: 2.4, life: 0.55 });
       s.burst(TAWA.x, TAWA.y, { n: 5, color: 'rgba(255,236,190,0.6)', speed: 70, grav: 30, size: 3, life: 0.5 });
       this.landSq = 0.72;
       s.tween(0.72, 1, 0.35, easeOutBack, (v) => (this.landSq = v));
@@ -1074,7 +1073,7 @@ export class ParanthaPanel {
     this.steamT -= dt;
     this.flourT -= dt;
     this.singT -= dt;
-    const heavy = !calmMotion();
+    const heavy = !calm();
     if (this.phase === 'tawa' && this.brownDown > 0.15 && this.steamT <= 0) {
       this.steamT = heavy ? 0.3 : 0.6;
       s.waft(TAWA.x - 40 + Math.random() * 80, TAWA.y - 22);
@@ -2221,9 +2220,9 @@ export class PatangPanel {
           this.sawGlowT = 0.55;
           const cross = this.crossing();
           if (cross) {
-            s.burst(cross[0], cross[1], { n: calmMotion() ? 3 : 7, color: '#ffd98a', kind: 'spark', speed: 110, grav: 140, size: 2, life: 0.4 });
+            s.burst(cross[0], cross[1], { n: calm() ? 3 : 7, color: '#ffd98a', kind: 'spark', speed: 110, grav: 140, size: 2, life: 0.4 });
           }
-          if (!calmMotion()) s.thump(2, 0.015);
+          if (!calm()) s.thump(2, 0.015);
         }
         if (this.progress >= rival.need) this.cutRival(rival);
         else if (!this.hard) {
@@ -2242,7 +2241,7 @@ export class PatangPanel {
         if (s) {
           this.kvx += 210;
           this.kvy += 60;
-          if (!calmMotion()) s.thump(3, 0.03);
+          if (!calm()) s.thump(3, 0.03);
         }
         // Pulling into a shove strains your own cotton, not his.
         this.fray('You pulled into the gust; the patang staggers sideways. "Dheel!" barks Yusuf. "The sky is bigger than you!"');
@@ -2254,8 +2253,8 @@ export class PatangPanel {
         this.hint = 'Yusuf\'s hand closes on the dor. "Not through birds. Never through birds." The flock passes; the duel waits.';
         if (s) {
           this.kvy += 130;
-          if (!calmMotion()) s.thump(4, 0.04);
-          s.burst(this.kx, 140, { n: calmMotion() ? 4 : 10, color: '#8b8798', kind: 'streak', speed: 180, grav: -20, size: 6, life: 0.5 });
+          if (!calm()) s.thump(4, 0.04);
+          s.burst(this.kx, 140, { n: calm() ? 4 : 10, color: '#8b8798', kind: 'streak', speed: 180, grav: -20, size: 6, life: 0.5 });
         }
       }
     } else if (dir === 'down') {
@@ -2275,7 +2274,7 @@ export class PatangPanel {
         this.audio.chime();
         this.blessed++;
         this.hint = 'You give ground; the flock pours past your slack line, close enough to hear. Yusuf says nothing, loudly, with approval.';
-        if (s && !calmMotion()) {
+        if (s && !calm()) {
           for (let i = 0; i < 4; i++) s.waft(this.kx - 60 + i * 40, 150, 'rgba(236,230,224,0.4)', 4);
         }
       } else {
@@ -2311,7 +2310,7 @@ export class PatangPanel {
     s.wobble(5); // the fray felt through the fingers: a sway, not an impact
     const cross = this.crossing();
     if (cross) {
-      s.burst(cross[0], cross[1], { n: calmMotion() ? 3 : 6, color: '#ffb070', kind: 'spark', speed: 80, grav: 120, size: 1.8, life: 0.45 });
+      s.burst(cross[0], cross[1], { n: calm() ? 3 : 6, color: '#ffb070', kind: 'spark', speed: 80, grav: 120, size: 1.8, life: 0.45 });
     }
   }
 
@@ -2350,7 +2349,7 @@ export class PatangPanel {
     }
     if (!s) return;
     s.flash('#e2d8e8', 0.28);
-    if (!calmMotion()) s.thump(8, 0.08);
+    if (!calm()) s.thump(8, 0.08);
     // Your patang becomes the loose one: same machinery, your colors.
     this.cutT = 0;
     this.cutX = this.kx;
@@ -2368,8 +2367,8 @@ export class PatangPanel {
     this.scatterT = 1.5;
     this.scatterX = this.kx - 30;
     this.scatterY = Math.min(190, this.ky + 56);
-    s.burst(this.kx, this.ky, { n: calmMotion() ? 4 : 10, color: '#c1512f', speed: 100, grav: 60, size: 2.6, life: 0.9 });
-    s.burst(this.scatterX, this.scatterY, { n: calmMotion() ? 6 : 16, color: '#8b8798', kind: 'streak', speed: 260, grav: -40, size: 8, life: 0.7 });
+    s.burst(this.kx, this.ky, { n: calm() ? 4 : 10, color: '#c1512f', speed: 100, grav: 60, size: 2.6, life: 0.9 });
+    s.burst(this.scatterX, this.scatterY, { n: calm() ? 6 : 16, color: '#8b8798', kind: 'streak', speed: 260, grav: -40, size: 8, life: 0.7 });
   }
 
   /**
@@ -2396,7 +2395,7 @@ export class PatangPanel {
     this.bokataMine = false;
     this.audio.chime();
     this.hint = 'The new patang lies on your palm, lighter than the last one felt. Space when the breeze leans in, and up she goes.';
-    this.scene?.burst(322, 292, { n: calmMotion() ? 4 : 9, color: 'rgba(214,180,140,0.6)', speed: 60, grav: 90, size: 2.4, life: 0.5 });
+    this.scene?.burst(322, 292, { n: calm() ? 4 : 9, color: 'rgba(214,180,140,0.6)', speed: 60, grav: 90, size: 2.4, life: 0.5 });
   }
 
   private cutRival(rival: Rival) {
@@ -2405,13 +2404,13 @@ export class PatangPanel {
     const look = this.looks[this.rivalIdx] ?? { paper: '#332b36', patch: '#8a7f98' };
     if (s) {
       s.flash('#ffe4b8', 0.3);
-      if (!calmMotion()) s.thump(7, 0.07);
+      if (!calm()) s.thump(7, 0.07);
       const cross = this.crossing() ?? [this.rkx, this.rky + 30];
-      s.burst(cross[0], cross[1], { n: calmMotion() ? 6 : 16, color: '#ffd98a', kind: 'spark', speed: 190, grav: 160, size: 2.6, life: 0.6 });
+      s.burst(cross[0], cross[1], { n: calm() ? 6 : 16, color: '#ffd98a', kind: 'spark', speed: 190, grav: 160, size: 2.6, life: 0.6 });
       // Patang-paper petals off the cut, in the rooftop kite colors.
       s.confettiSoft(cross[0], cross[1], ['#c1512f', '#3f7fb0', '#d9a441', '#6b8e4e']);
-      s.burst(this.rkx, this.rky, { n: calmMotion() ? 4 : 9, color: look.paper, speed: 90, grav: 40, size: 2.6, life: 0.8 });
-      s.burst(360, 140, { n: calmMotion() ? 5 : 14, color: '#8b8798', kind: 'streak', speed: 220, grav: -30, size: 7, life: 0.6 });
+      s.burst(this.rkx, this.rky, { n: calm() ? 4 : 9, color: look.paper, speed: 90, grav: 40, size: 2.6, life: 0.8 });
+      s.burst(360, 140, { n: calm() ? 5 : 14, color: '#8b8798', kind: 'streak', speed: 220, grav: -30, size: 7, life: 0.6 });
       this.cutT = 0;
       this.cutX = this.rkx;
       this.cutY = this.rky;
@@ -2486,7 +2485,7 @@ export class PatangPanel {
       if (s) {
         this.kvy = -330;
         this.kvx = -40;
-        s.burst(322, 292, { n: calmMotion() ? 4 : 9, color: 'rgba(214,180,140,0.6)', speed: 60, grav: 90, size: 2.4, life: 0.5 });
+        s.burst(322, 292, { n: calm() ? 4 : 9, color: 'rgba(214,180,140,0.6)', speed: 60, grav: 90, size: 2.4, life: 0.5 });
       }
       this.render();
       return;
@@ -2515,7 +2514,7 @@ export class PatangPanel {
       this.hint = `The sky opens properly. Nobody leaves the roofs; the kites come down and the kulhads come out. ${this.verdict()} Press Space.`;
       if (s) {
         s.flash('#fff3d8', 0.35);
-        if (!calmMotion()) s.thump(3, 0.03);
+        if (!calm()) s.thump(3, 0.03);
       }
       this.render();
       return;

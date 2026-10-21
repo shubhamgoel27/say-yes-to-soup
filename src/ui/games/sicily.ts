@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy } from './scene';
+import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy, calm } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold, missLine } from './attend';
@@ -24,7 +24,6 @@ import { Hold, missLine } from './attend';
 
 // ---------------------------------------------------------------- shared kit
 
-const calm = (): boolean => typeof document !== 'undefined' && document.body.classList.contains('reduce-motion');
 
 type TextOpt = { size?: number; color?: string; align?: CanvasTextAlign; italic?: boolean; bold?: boolean; alpha?: number };
 

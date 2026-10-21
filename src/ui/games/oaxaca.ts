@@ -5,7 +5,7 @@ import { Hold, missLine } from './attend';
 
 /** The start flag, spoken to coach() so the next how-to can pass advice on. */
 const MOLE_FLAG = 'c9.mole.start';
-import { Scene, mountScene, wobble, easeOutCubic, keyCap } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, keyCap, calm } from './scene';
 import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot } from '../../art/pix';
 
 /**
@@ -24,7 +24,6 @@ import { type Surface, Rng, surface, rect, rr, oval, dot, vgrad, shade, glowSpot
 
 // ------------------------------------------------------------ shared helpers
 
-const reduceMotion = () => document.body.classList.contains('reduce-motion');
 
 function hex2(c: string): [number, number, number] {
   const n = Number.parseInt(c.slice(1), 16);
@@ -367,7 +366,7 @@ export class MolePanel {
         this.sloshT = 0.45;
         if (sc) {
           sc.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 5, color: this.moleColor(), speed: 62, grav: 320, life: 0.4, size: 2.6 });
-          if (!reduceMotion()) sc.thump(2.5, 0.02);
+          if (!calm()) sc.thump(2.5, 0.02);
         }
         this.hint = HURRY_HINT;
         return;
@@ -417,7 +416,7 @@ export class MolePanel {
       if (sc) {
         const p = this.moleColor();
         sc.burst(POT_X + Math.cos(this.spoonA) * 58, POT_Y - 3, { n: 5, color: p, speed: 62, grav: 320, life: 0.4, size: 2.6 });
-        if (!reduceMotion()) sc.thump(2.5, 0.02);
+        if (!calm()) sc.thump(2.5, 0.02);
       }
       this.hint = missLine(SLOSH_LINES, this.sloshes - 1, STIR_HELP);
     }
@@ -445,7 +444,7 @@ export class MolePanel {
       this.smoke = -1;
       this.comalT = this.hard ? HARD_SMOKE_GAP + Math.random() * 2 : SMOKE_GAP + Math.random() * 3;
       this.audio.blip();
-      this.scene?.burst(505, 236, { n: reduceMotion() ? 3 : 8, color: '#7c2e1c', speed: 96, grav: 300, life: 0.5, size: 2.6 });
+      this.scene?.burst(505, 236, { n: calm() ? 3 : 8, color: '#7c2e1c', speed: 96, grav: 300, life: 0.5, size: 2.6 });
       this.scene?.waft(505, 228, 'rgba(240,232,220,0.3)', 7);
       this.hint = SMOKE_SAVED;
       return;
@@ -487,7 +486,7 @@ export class MolePanel {
     const sc = this.scene;
     if (sc) {
       sc.flash('#2a1710', 0.35);
-      if (!reduceMotion()) sc.thump(4, 0.05);
+      if (!calm()) sc.thump(4, 0.05);
       const sx = cause === 'rest' ? POT_X - 20 : 485;
       for (let i = 0; i < 3; i++) sc.waft(sx + i * 20, cause === 'rest' ? POT_Y - 8 : 232, 'rgba(38,30,26,0.55)', 12);
     }
@@ -511,8 +510,8 @@ export class MolePanel {
       const was = this.chocoT;
       this.chocoT += dt;
       if (was < 0.85 && this.chocoT >= 0.85) {
-        sc.burst(POT_X, POT_Y - 4, { n: reduceMotion() ? 4 : 9, color: '#3a2418', speed: 70, grav: 300, life: 0.45, size: 2.8 });
-        if (!reduceMotion()) sc.thump(3, 0.03);
+        sc.burst(POT_X, POT_Y - 4, { n: calm() ? 4 : 9, color: '#3a2418', speed: 70, grav: 300, life: 0.45, size: 2.8 });
+        if (!calm()) sc.thump(3, 0.03);
       }
     }
     if (this.done && this.restT < 1) this.restT = Math.min(1, this.restT + dt / 0.8);
@@ -573,7 +572,7 @@ export class MolePanel {
     if (this.popT <= 0) {
       this.popT = 0.9 + Math.random() * 1.5;
       const px = 480 + Math.random() * 50;
-      sc.burst(px, 238, { n: reduceMotion() ? 2 : 5, kind: 'spark', color: '#f4d98c', speed: 74, grav: 240, life: 0.45, size: 2 });
+      sc.burst(px, 238, { n: calm() ? 2 : 5, kind: 'spark', color: '#f4d98c', speed: 74, grav: 240, life: 0.45, size: 2 });
       sc.burst(px, 238, { n: 2, color: '#e8dcc4', speed: 46, grav: 260, life: 0.4, size: 1.6 });
     }
 
@@ -1341,9 +1340,9 @@ export class OfrendaPanel {
           sc.flash('#ffe7c0', 0.12);
           sc.waft(rec.x, rec.y - 14, 'rgba(255,220,150,0.35)', 6);
           if (rec.id === 'cempa') {
-            sc.burst(rec.x, rec.y - 12, { n: reduceMotion() ? 5 : 13, color: '#e8863a', speed: 46, grav: 70, life: 1.6, size: 2.6 });
-            sc.burst(rec.x, rec.y - 12, { n: reduceMotion() ? 2 : 6, color: '#c96a2e', speed: 34, grav: 60, life: 1.4, size: 2.1 });
-            sc.burst(rec.x, rec.y - 14, { n: reduceMotion() ? 2 : 4, color: '#f4b04c', speed: 40, grav: 55, life: 1.5, size: 1.8 });
+            sc.burst(rec.x, rec.y - 12, { n: calm() ? 5 : 13, color: '#e8863a', speed: 46, grav: 70, life: 1.6, size: 2.6 });
+            sc.burst(rec.x, rec.y - 12, { n: calm() ? 2 : 6, color: '#c96a2e', speed: 34, grav: 60, life: 1.4, size: 2.1 });
+            sc.burst(rec.x, rec.y - 14, { n: calm() ? 2 : 4, color: '#f4b04c', speed: 40, grav: 55, life: 1.5, size: 1.8 });
           }
           const want = this.done ? CANDLES.length : Math.floor((CANDLES.length * this.idx) / this.items.length);
           if (want > this.lit) {
@@ -1413,7 +1412,7 @@ export class OfrendaPanel {
 
     // Papel picado, strung with a little sway that settles as dusk does.
     const flags = bakePicado();
-    const amp = (reduceMotion() ? 0.02 : 0.09) * Math.exp(-t * 0.25) + 0.022;
+    const amp = (calm() ? 0.02 : 0.09) * Math.exp(-t * 0.25) + 0.022;
     g.strokeStyle = 'rgba(43,33,24,0.55)';
     g.lineWidth = 1.4;
     g.beginPath();

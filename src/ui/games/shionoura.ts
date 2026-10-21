@@ -3,14 +3,10 @@ import type { AudioBus } from '../../engine/audio';
 import { PAL } from '../../engine/config';
 import { Rng, dot, oval, rr, rect, shade, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import type { Surface } from '../../art/pix';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, handWords } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, keyCap, handWords, calm } from './scene';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold } from './attend';
 
-/** Shared: honor the reduce-motion toggle by muting shakes and thinning particles. */
-function calm(): boolean {
-  return document.body.classList.contains('reduce-motion');
-}
 
 /** The panel chrome inherits line-height 0; give the hint real lines so long copy wraps. */
 function fixHint(root: HTMLElement) {

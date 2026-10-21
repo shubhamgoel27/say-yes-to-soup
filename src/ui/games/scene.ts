@@ -70,12 +70,15 @@ type Particle = {
 /** Warm neutrals for confettiSoft when a panel has no palette of its own. */
 const PETAL_NEUTRALS = ['#e8c86a', '#d9a441', '#c1512f', '#f2e6d0'] as const;
 
-/** True when either the in-game calm toggle or the OS asks for less motion. */
-function calmHere(): boolean {
-  return (
-    (typeof document !== 'undefined' && document.body.classList.contains('reduce-motion')) ||
-    (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
-  );
+/**
+ * Less motion, please: the in-game toggle, which the OS preference seeds on
+ * first boot and the player's own choice overrides after. The one answer
+ * for every panel and the scene alike; eight local copies once disagreed,
+ * the scene also reading the OS and so overruling a player who turned
+ * motion back on.
+ */
+export function calm(): boolean {
+  return typeof document !== 'undefined' && document.body.classList.contains('reduce-motion');
 }
 
 export class Scene {
@@ -139,7 +142,7 @@ export class Scene {
    *  keeps the cue but takes the sting out: half as long, dimmer (see frame). */
   flash(color = '#fff7e0', dur = 0.22) {
     this.flashColor = color;
-    this.flashT = calmHere() ? dur * 0.5 : dur;
+    this.flashT = calm() ? dur * 0.5 : dur;
   }
 
   /**
@@ -148,7 +151,7 @@ export class Scene {
    * motion is reduced. (The exported wobble() below is the idle math helper.)
    */
   wobble(amp = 5) {
-    if (calmHere()) return;
+    if (calm()) return;
     this.wobAmp = amp;
     this.wobT = 0.36;
   }
@@ -160,7 +163,7 @@ export class Scene {
    * spawns a token three so the beat still reads without the shower.
    */
   confettiSoft(x: number, y: number, palette: readonly string[] = PETAL_NEUTRALS) {
-    const n = calmHere() ? 3 : 6 + Math.floor(fxRandom() * 5);
+    const n = calm() ? 3 : 6 + Math.floor(fxRandom() * 5);
     for (let i = 0; i < n; i++) {
       const a = -Math.PI / 2 + (fxRandom() - 0.5) * 1.9;
       const sp = 55 + fxRandom() * 55;
@@ -307,7 +310,7 @@ export class Scene {
     if (this.flashT > 0) {
       this.flashT -= dt;
       const a = Math.max(0, this.flashT / 0.22) * 0.5;
-      g.globalAlpha = calmHere() ? Math.min(a, 0.25) : a;
+      g.globalAlpha = calm() ? Math.min(a, 0.25) : a;
       g.fillStyle = this.flashColor;
       g.fillRect(-20, -20, this.W + 40, this.H + 40);
       g.globalAlpha = 1;

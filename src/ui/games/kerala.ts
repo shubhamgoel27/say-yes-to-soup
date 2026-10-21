@@ -2,7 +2,7 @@ import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold, missLine } from './attend';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, PressMarks, offBy } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutBack, easeInOutSine, PressMarks, offBy, calm } from './scene';
 import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type Surface } from '../../art/pix';
 
 /**
@@ -23,7 +23,6 @@ import { Rng, dot, oval, rr, shade, surface, vgrad, softShadow, glowSpot, type S
  * amber ribbon stretching between tumblers, froth climbing the catch glass.
  */
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 /** The frame chrome zeroes line-height for canvas snugness; hints need theirs back. */
 function unclampHint(root: HTMLElement) {

@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap, handWords } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap, handWords, calm } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import { RUN, coach, freshRun, tip, takeCoach } from './run';
 import { Hold } from './attend';
@@ -33,7 +33,6 @@ if (devEnv?.DEV) {
 
 type Cv = HTMLCanvasElement;
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 /** Maps a 0..1 track value (wind or sheet) onto a visible rig angle in radians. */
 const visAng = (v: number) => (v - 0.5) * 0.9;
