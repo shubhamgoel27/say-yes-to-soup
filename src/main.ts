@@ -5388,7 +5388,13 @@ function update(dt: number) {
       textbox.onDir(menuDir);
       audio.select();
     }
-    if (act || back) textbox.onAction();
+    // Esc mid-conversation opens the settings, straight to the sliders and
+    // with no road back to the title: volume and text speed were out of
+    // reach for the whole minute-long intro. X and Backspace still advance.
+    if (pauseKey && celebrateT <= 0) {
+      pauseMenu.open('settings');
+      audio.pageFlip();
+    } else if (act || back) textbox.onAction();
   } else if (journalUI.isOpen) {
     if (menuDir) {
       journalUI.onDir(menuDir);
