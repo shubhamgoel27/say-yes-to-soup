@@ -1246,6 +1246,21 @@ export class Renderer {
   forgetProps(mapId: string) {
     this.casterCache.delete(mapId);
     this.overhangCache.delete(mapId);
+    this.coverCache.delete(mapId);
+    this.chimneyCache.delete(mapId);
+    this.anchorCache.delete(mapId);
+    this.potCache.delete(mapId);
+  }
+
+  /** The object-layer revision each map's caches were worked out against. */
+  private propsRev = new Map<string, number>();
+
+  /** Drop a map's prop caches if its objects changed since they were built:
+   * a dressing adding a tall prop, a gate opening, a journal switched. */
+  private freshProps(map: TileMap) {
+    if (this.propsRev.get(map.id) === map.objectsRev) return;
+    this.propsRev.set(map.id, map.objectsRev);
+    this.forgetProps(map.id);
   }
   private castOffs: { kind: string; cx: number; cy: number; dir: number; t: number }[] = [];
   castOff(kind: string, cx: number, cy: number, away: 'left' | 'right') {
@@ -1580,6 +1595,7 @@ export class Renderer {
    * and a tree's air beside the canopy stays floor. Worked out once per map.
    */
   overhung(map: TileMap): Uint8Array {
+    this.freshProps(map);
     const hit = this.overhangCache.get(map.id);
     if (hit) return hit;
     const out = new Uint8Array(map.w * map.h);
@@ -1643,6 +1659,7 @@ export class Renderer {
   }
 
   coversBody(map: TileMap, x: number, y: number): boolean {
+    this.freshProps(map);
     let memo = this.coverCache.get(map.id);
     if (!memo) {
       memo = new Uint8Array(map.w * map.h);
@@ -2608,6 +2625,7 @@ export class Renderer {
    * single cell that happens to carry its sprite. Worked out once per map.
    */
   private casterHeights(map: TileMap): { h: Float32Array; foot: Float32Array } {
+    this.freshProps(map);
     const hit = this.casterCache.get(map.id);
     if (hit) return hit;
     const grid = new Float32Array(map.w * map.h);
@@ -3490,6 +3508,7 @@ export class Renderer {
 
   /** Scan a map once for the things its set-pieces hang from. */
   private regionalAnchors(map: TileMap): RegionAnchors {
+    this.freshProps(map);
     let a = this.anchorCache.get(map.id);
     if (a) return a;
     const water: [number, number][] = [];
@@ -3802,6 +3821,7 @@ export class Renderer {
    * of text may be pointing the player at them.
    */
   private drawPotSteam(map: TileMap, cam: Camera) {
+    this.freshProps(map);
     let pots = this.potCache.get(map.id);
     if (!pots) {
       pots = [];
@@ -3981,6 +4001,7 @@ export class Renderer {
    * buildings, anchored to the real roofline of each sprite. Found once.
    */
   private chimneysFor(map: TileMap): [number, number][] {
+    this.freshProps(map);
     let cells = this.chimneyCache.get(map.id);
     if (cells) return cells;
     cells = map.smoke.map(([ex, ey]) => [ex * TILE + TILE / 2, ey * TILE] as [number, number]);

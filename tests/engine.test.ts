@@ -481,3 +481,36 @@ describe('the wall lean never hides real movement', () => {
     assert.ok(advanced >= 10, `expected steady motion, saw only ${advanced} advancing frames`);
   });
 });
+
+describe('TileMap runtime edits', () => {
+  const fresh = () =>
+    new TileMap({
+      ...OPEN,
+      ground: ['....', '....'],
+      objects: [' T  ', '    '],
+      triggers: [{ at: [3, 1], type: 'script', id: 'old' }],
+    });
+
+  it('counts a revision only when the object layer really changes', () => {
+    const m = fresh();
+    const r0 = m.objectsRev;
+    m.setObject(1, 0, { t: 'crop', tall: true });
+    assert.equal(m.objectsRev, r0, 'same kind again is no change');
+    m.setObject(2, 0, { t: 'well', solid: true });
+    assert.equal(m.objectsRev, r0 + 1);
+    m.clearOverrides();
+    assert.equal(m.objectsRev, r0 + 2);
+    m.clearOverrides();
+    assert.equal(m.objectsRev, r0 + 2, 'nothing left to clear');
+  });
+
+  it('a fresh journey forgets the doors a story opened', () => {
+    const m = fresh();
+    m.addTrigger({ at: [0, 1], type: 'door', to: 'east', spawn: [0, 0] });
+    m.addTrigger({ at: [3, 1], type: 'script', id: 'new' });
+    m.clearOverrides();
+    assert.equal(m.triggerAt(0, 1), undefined);
+    const kept = m.triggerAt(3, 1);
+    assert.equal(kept?.type === 'script' ? kept.id : null, 'old');
+  });
+});

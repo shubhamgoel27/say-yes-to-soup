@@ -4842,6 +4842,9 @@ function reloadJourney() {
   state.load();
   journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
+  // The boats went with the overrides; forget them too, or a boat moored in
+  // the old journal never moors again in this one.
+  moored.clear();
   resyncCelebrations();
   applyGateState();
   applyDressings();
@@ -4961,6 +4964,9 @@ function freshSlate() {
   state.reset();
   journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
+  // The boats went with the overrides; forget them too, or a boat moored in
+  // the old journal never moors again in this one.
+  moored.clear();
   resyncCelebrations();
   applyGateState();
   applyDressings();
