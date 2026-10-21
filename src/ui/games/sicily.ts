@@ -1529,11 +1529,11 @@ export class PisciPanel {
     this.onDone = onDone;
     freshRun(PISCI_FLAG);
     this.hard = RUN.hard;
-    this.baseSpeed = this.hard ? 0.85 : 0.5;
-    this.gain = this.hard ? 0.2 : 0.14;
-    this.winHi = this.hard ? 0.13 : 0.24;
+    this.baseSpeed = this.hard ? 0.72 : 0.5;
+    this.gain = this.hard ? 0.12 : 0.14;
+    this.winHi = this.hard ? 0.14 : 0.24;
     this.winLo = this.hard ? -0.05 : -0.08;
-    this.brokeLimit = this.hard ? 2 : 3;
+    this.brokeLimit = 3;
     this.early = 0;
     this.late = 0;
     this.marks.clear();

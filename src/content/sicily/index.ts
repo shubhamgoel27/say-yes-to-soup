@@ -98,7 +98,7 @@ export const CHAPTER: ChapterDef = {
         handWords('The rais calls, and the call rolls across the water toward the boat. Space pulls the oar the moment it arrives.'),
         'Three good strokes close each pass. Rush one and the harbor is delighted, and he simply calls again.',
       ],
-      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea.',
+      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Three missed calls in one pass and the fish keeps the sea.',
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
     {
