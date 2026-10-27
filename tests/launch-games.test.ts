@@ -162,3 +162,39 @@ describe('the ceviche, the hard noon', () => {
     assert.equal(r.verdict, 'star');
   });
 });
+
+describe('the dashi, the pale band', () => {
+  /** A dashi pot with the kombu in, steeped, and the flame just lit. */
+  function atThePull(hard: boolean): Any {
+    const p = opened('c4.cook.start', hard);
+    p.onAction(); // kombu and iriko in
+    while (p.phase === 'steep') p.tick(1 / 60);
+    assert.equal(p.phase, 'pull');
+    return p;
+  }
+
+  it('a hard pull past the band is the boil, and the card says it was late', () => {
+    const p = atThePull(true);
+    while (p.heat <= p.pullHi) p.tick(1 / 60);
+    assert.ok(p.heat < 100, 'still short of the boil itself');
+    p.onAction();
+    assert.equal(p.phase, 'ruined');
+    assert.equal(verdictFor('c4.cook.start', true, true), 'short');
+    assert.match(takeCoach('c4.cook.start') ?? '', /after the pale band/);
+  });
+
+  it('a hard pull inside the band still lifts the kombu clean', () => {
+    const p = atThePull(true);
+    while (p.heat < (p.pullLo + p.pullHi) / 2) p.tick(1 / 60);
+    p.onAction();
+    assert.equal(p.phase, 'skim');
+  });
+
+  it('the story forgives a late pull, and says it was late', () => {
+    const p = atThePull(false);
+    while (p.heat <= p.pullHi) p.tick(1 / 60);
+    p.onAction();
+    assert.equal(p.phase, 'skim');
+    assert.match(p.hint, /first big bubbles/);
+  });
+});
