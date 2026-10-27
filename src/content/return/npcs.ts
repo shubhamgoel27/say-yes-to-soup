@@ -48,6 +48,8 @@ export const RETURN_NPCS: NpcDef[] = [
       },
       { when: { has: ['c10.arrived'], not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { when: { has: ['story.end'], not: ['c10.traveler.mail'] }, node: 'c10.traveler.mail' },
+      // Handed over is saved at once; the letter unfolds when the words close.
+      { when: { has: ['c10.traveler.mail'], not: ['letter.read.australia.hook'] }, node: 'c10.traveler.mail' },
       { when: { has: ['story.end'] }, node: 'c10.traveler.after' },
       { node: 'c10.traveler.idle' },
     ],

@@ -333,6 +333,15 @@ export const KERALA_NODES: NodeMap = {
       'letter:joseph.amma',
     ],
   },
+  // Joseph's letter, if the journal was closed before it could unfold: it
+  // waits on her table until it is read.
+  'c6.ex.letter': {
+    lines: [
+      { text: 'Joseph’s letter lies open on her table, held flat under a steel tumbler so it cannot fly away.' },
+      { text: 'You carried it across a whole ocean. Mariamma catches your eye and nods at it: read.' },
+    ],
+    effects: ['letter:joseph.amma'],
+  },
   'c6.mariamma.read': {
     lines: [
       { text: 'She reads it aloud, to you, to the kitchen, to the smoke. At "Amma, nobody cooks like you" she cries.' },
@@ -1477,6 +1486,11 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   shelf: [{ map: 'mariamma-veedu', node: 'c6.ex.shelf' }],
   mat: [{ map: 'mariamma-veedu', node: 'c6.ex.mat' }],
   stool: [{ map: 'mariamma-veedu', node: 'c6.ex.stool' }],
+  // Delivered is saved as the door opens; the letter unfolds only when the
+  // words close. A journal closed in between finds it here, unread.
+  table: [
+    { map: 'mariamma-veedu', when: { has: ['c6.letter.delivered'], not: ['letter.read.joseph.amma'] }, node: 'c6.ex.letter' },
+  ],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */

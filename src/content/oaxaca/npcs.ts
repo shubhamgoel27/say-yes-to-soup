@@ -1278,6 +1278,15 @@ export const OAXACA_NODES: NodeMap = {
     ],
     effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
   },
+  // The telegram, if the journal was closed before it could unfold: Refugio
+  // set it in your hands, and it waits on her table until it is read.
+  'c9.ex.telegram': {
+    lines: [
+      { text: 'The telegram lies on the table where she set it down, folded small, soft as cloth at the creases.' },
+      { text: 'Fifty years it waited at the back of a ledger. It can be opened now.' },
+    ],
+    effects: ['letter:oax.telegram'],
+  },
   'c9.ex.ledger.after': {
     lines: [{ text: 'The ledger, back under the altar table, and one line that waited for you.' }],
   },
@@ -1365,6 +1374,9 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   // the 1975 line is the player's own act, and it grants the journal page.
   table: [
     { map: 'cocina', when: { has: ['c9.ledger.out'], not: ['c9.ledger'] }, node: 'c9.ledger.read' },
+    // The telegram is saved as she hands it over and unfolds only when the
+    // words close; a journal closed in between finds it here, unread.
+    { map: 'cocina', when: { has: ['c9.telegram'], not: ['letter.read.oax.telegram'] }, node: 'c9.ex.telegram' },
     { map: 'cocina', when: { has: ['c9.ledger'] }, node: 'c9.ex.ledger.after' },
     { map: 'cocina', node: 'c9.ex.mesa' },
   ],

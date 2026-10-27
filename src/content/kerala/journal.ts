@@ -194,6 +194,13 @@ export const KERALA_JOURNAL: JournalEntry[] = [
 /** Backwater loose threads; merged ahead of the earlier chapters' lists. */
 export const KERALA_TASKS: TaskDef[] = [
   {
+    // Only after a journal closed in the doorway: the letter unfolds when
+    // the words close, and a reload in between left it on her table.
+    when: { has: ['c6.letter.delivered'], not: ['letter.read.joseph.amma'] },
+    text: 'Joseph’s letter is on Mariamma’s table and you have never read it. You carried it across an ocean; read it now.',
+    at: ['mariamma-veedu', 1, 4],
+  },
+  {
     when: { has: ['c6.arrived'], not: ['c6.letter.delivered'] },
     text: 'Joseph’s letter and parcel have crossed an ocean in your pocket. His mother Mariamma is up from the jetty, the veedu with the open door.',
     who: 'mariamma',

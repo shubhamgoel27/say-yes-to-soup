@@ -484,16 +484,6 @@ const KNOWN_STUCK: string[] = [
   'examine well@village: reload after c10.lastline.begun loses end.book',
   'examine well@village: reload after c10.lastline.trick loses end.book',
   'examine well@village: reload after c10.lastline.word loses end.book',
-  // Pre-launch review item 15: letters queued as a conversation closes.
-  'examine harborsign@la-caleta: reload after mar.post.send loses letter.read.home.pilar',
-  'npc mariamma: reload after c6.mariamma.letter loses letter.read.joseph.amma',
-  'npc refugio: reload after c9.refugio.chain loses letter.read.oax.telegram',
-  'npc refugio: reload after c9.refugio.name loses letter.read.oax.telegram',
-  'npc refugio: reload after c9.refugio.owe loses letter.read.oax.telegram',
-  'npc refugio: reload after c9.refugio.riddle loses letter.read.oax.telegram',
-  'npc refugio: reload after c9.refugio.seva loses letter.read.oax.telegram',
-  'npc refugio: reload after c9.refugio.telegram loses letter.read.oax.telegram',
-  'npc traveler: reload after c10.traveler.mail loses letter.read.australia.hook',
 ];
 
 describe('no conversation can be cut off for good by closing the journal', () => {

@@ -1009,6 +1009,12 @@ export const CALETA_NODES: NodeMap = {
     ],
     effects: ['set:c2.gift.sent', 'letter:home.pilar'],
   },
+  'mar.post.pilar': {
+    lines: [
+      { text: 'The clerk lifts the tin of pins. Your mail is still under it, in handwriting like an invoice.' },
+    ],
+    effects: ['letter:home.pilar'],
+  },
   'mar.post.aurelio': {
     lines: [
       { text: 'The clerk digs under the counter and produces a second envelope, soft with re-reading weather.' },
@@ -1364,6 +1370,10 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   emoliente: [{ node: 'mar.ex.emoliente' }],
   harborsign: [
     { when: { has: ['c2.gift'], not: ['c2.gift.sent'] }, node: 'mar.post.send' },
+    // The gift is posted, and saved, as the counter opens; Pilar's envelope
+    // unfolds only when the words close. A journal closed in between left it
+    // under the pins, and nothing ever handed it over.
+    { when: { has: ['c2.gift', 'c2.gift.sent'], not: ['letter.read.home.pilar'] }, node: 'mar.post.pilar' },
     { when: { has: ['c2.gift.sent'], not: ['letter.read.home.aurelio'] }, node: 'mar.post.aurelio' },
     { node: 'mar.post.idle' },
   ],
