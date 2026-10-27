@@ -5857,54 +5857,58 @@ function update(dt: number) {
   }
 
   motionWitness();
-  dev.publish({
-    mode,
-    map: map.id,
-    tile: [player.x, player.y],
-    px: player.renderPos(),
-    cam: [camera.x, camera.y],
-    dir: player.dir,
-    facing: player.facingCell(),
-    dialogue: textbox.currentNode,
-    journalOpen: journalUI.isOpen,
-    weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
-    howtoOpen: !howtoEl.hidden,
-    stripOpen: !stripEl.hidden,
-    card: modalCard(),
-    pages: state.pageCount(),
-    sitting,
-    pose: player.pose,
-    errand: state.errand,
-    npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
-    rhythm: {
-      nk: Number(nightLevel(dayT).toFixed(3)),
-      seated: villagersHere().filter((v) => v.seated).map((v) => v.def.id),
-      gone: villagers.filter((v) => v.def.map === map.id && v.fade <= 0.02).map((v) => v.def.id),
-      fading: villagers
-        .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
-        .map((v) => v.def.id),
-    },
-    stations: stationsRt.map((st) => ({
-      id: st.def.id,
-      on: st.def.mode === 'gather' ? gatherOn(st, nightLevel(dayT)) : roundRuns(st, nightLevel(dayT)),
-      idx: st.round.idx,
-      done: st.round.done,
-      here: st.berths.filter((b) => b.v.def.map === st.def.map).map((b) => b.v.def.id),
-      seated: st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).map((b) => b.v.def.id),
-      at: st.berths.map((b) => [b.v.def.map, ...b.v.actor.occupies(), b.v.actor.frozen ? 'F' : '']),
-      lamps: [...stationLampEase.entries()]
-        .filter(([k]) => k.startsWith(`${st.def.map}:`))
-        .map(([, e]) => Number(e.k.toFixed(2))),
-    })),
-    bumps,
-    auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
-    thread: {
-      out: renderer.threadOut,
-      shownAt: Math.round(threadShownAt),
-      glintAt: Math.round(glintShownAt),
-      last: threadLast,
-    },
-  });
+  // The dev snapshot is built only where a walker can read it: in a shipped
+  // build publish() returned at once, after the object was built every frame.
+  if (import.meta.env.DEV) {
+    dev.publish({
+      mode,
+      map: map.id,
+      tile: [player.x, player.y],
+      px: player.renderPos(),
+      cam: [camera.x, camera.y],
+      dir: player.dir,
+      facing: player.facingCell(),
+      dialogue: textbox.currentNode,
+      journalOpen: journalUI.isOpen,
+      weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
+      howtoOpen: !howtoEl.hidden,
+      stripOpen: !stripEl.hidden,
+      card: modalCard(),
+      pages: state.pageCount(),
+      sitting,
+      pose: player.pose,
+      errand: state.errand,
+      npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
+      rhythm: {
+        nk: Number(nightLevel(dayT).toFixed(3)),
+        seated: villagersHere().filter((v) => v.seated).map((v) => v.def.id),
+        gone: villagers.filter((v) => v.def.map === map.id && v.fade <= 0.02).map((v) => v.def.id),
+        fading: villagers
+          .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
+          .map((v) => v.def.id),
+      },
+      stations: stationsRt.map((st) => ({
+        id: st.def.id,
+        on: st.def.mode === 'gather' ? gatherOn(st, nightLevel(dayT)) : roundRuns(st, nightLevel(dayT)),
+        idx: st.round.idx,
+        done: st.round.done,
+        here: st.berths.filter((b) => b.v.def.map === st.def.map).map((b) => b.v.def.id),
+        seated: st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).map((b) => b.v.def.id),
+        at: st.berths.map((b) => [b.v.def.map, ...b.v.actor.occupies(), b.v.actor.frozen ? 'F' : '']),
+        lamps: [...stationLampEase.entries()]
+          .filter(([k]) => k.startsWith(`${st.def.map}:`))
+          .map(([, e]) => Number(e.k.toFixed(2))),
+      })),
+      bumps,
+      auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
+      thread: {
+        out: renderer.threadOut,
+        shownAt: Math.round(threadShownAt),
+        glintAt: Math.round(glintShownAt),
+        last: threadLast,
+      },
+    });
+  }
 }
 
 /** Frames that rendered to the end; the loader waits for the first. */

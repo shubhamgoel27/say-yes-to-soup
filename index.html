@@ -37,10 +37,21 @@
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Not render-blocking: on a network that stalls Google's servers the
+         blocking stylesheet held back first paint, the loader included. The
+         page draws at once in the fallback serifs and swaps when it lands. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400..600&family=Caveat:wght@500;600&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400..600&family=Caveat:wght@500;600&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <style>
       /*
        * The UI conceit: every surface you read is a page of Nani's journal.
