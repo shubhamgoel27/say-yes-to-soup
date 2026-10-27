@@ -26,7 +26,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'oax.pilar',
       from: 'Pilar, Bridge Authority (co-owner: you)',
-      when: { has: ['pilar.gift.puffer'] },
+      when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
       body: [
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
@@ -37,7 +37,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'oax.pilar',
       from: 'Pilar, Bridge Authority (co-owner: you)',
-      when: { has: ['pilar.gift.star'] },
+      when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
       body: [
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',
@@ -48,7 +48,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'oax.pilar',
       from: 'Pilar, Bridge Authority (co-owner: you)',
-      when: { has: ['pilar.gift.claw'] },
+      when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
       body: [
         'Dear business partner. This letter contains no bridge news. The bridge would understand.',
         'It is quiet here since you left, and I have checked the ledgers: the quiet is your fault. Aurelio asks the road about you in his slow way, and the road takes an hour to answer him too.',

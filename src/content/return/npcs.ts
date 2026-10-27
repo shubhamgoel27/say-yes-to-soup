@@ -176,9 +176,9 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
       // her now, as a stranger: no co-owner, no reunion, no exhibit owed.
       { when: { has: ['c10.arrived'], not: ['c10.pilar.seen', 'met.pilar'] }, node: 'c10.pilar.stranger' },
       { when: { has: ['c10.pilar.seen'], not: ['met.pilar'] }, node: 'c10.pilar.stranger.after' },
-      { when: { has: ['c10.arrived', 'pilar.gift.puffer'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.puffer' },
-      { when: { has: ['c10.arrived', 'pilar.gift.star'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.star' },
-      { when: { has: ['c10.arrived', 'pilar.gift.claw'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.claw' },
+      { when: { has: ['c10.arrived', 'pilar.gift.puffer', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.puffer' },
+      { when: { has: ['c10.arrived', 'pilar.gift.star', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.star' },
+      { when: { has: ['c10.arrived', 'pilar.gift.claw', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.claw' },
       { when: { has: ['c10.arrived'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.plain' },
       { when: { has: ['c10.pilar.seen'] }, node: 'c10.pilar.after' },
     ],

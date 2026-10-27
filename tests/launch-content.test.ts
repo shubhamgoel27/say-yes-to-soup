@@ -8,6 +8,7 @@ import {
   EVENT_NODES,
   EXAMINES,
   GAMES,
+  LETTERS,
   NODES,
   NPCS,
   REGION_MAPS,
@@ -537,5 +538,43 @@ describe('the ofrenda remembers whose omiyage it took', () => {
     assert.ok(soup.includes('c10.aurelio.ofrenda') && !soup.includes('c10.aurelio.omiyage'), soup.join());
     const museum = offered('c10.pilar.museum', his);
     assert.ok(museum.includes('c10.pilar.wing') && !museum.includes('c10.pilar.ofrenda'), museum.join());
+  });
+});
+
+/**
+ * Choosing a sea thing for Pilar (pilar.gift.*) is not posting it
+ * (c2.gift.sent, at the harbor office). The letters that named the creature
+ * checked only the choice, so a player who skipped the counter read "the box
+ * arrived" from mid-ocean and "zero objects" from Japan, and met the puffer
+ * fish as exhibit one at home.
+ */
+describe('a sea thing only arrives if it was posted', () => {
+  const creature = /puffer|sea star|claw|comma/i;
+  const gifts = ['pilar.gift.puffer', 'pilar.gift.star', 'pilar.gift.claw'];
+
+  it('every letter or scene that names the creature also needs it posted', () => {
+    const conds: [string, Cond | undefined][] = [
+      ...LETTERS.map((l) => [`letter ${l.id}`, l.when] as [string, Cond | undefined]),
+      ...NPCS.flatMap((n) => n.entry.map((e) => [`npc ${n.id} -> ${e.node}`, e.when] as [string, Cond | undefined])),
+    ];
+    for (const [where, when] of conds) {
+      if (!(when?.has ?? []).some((f) => gifts.includes(f))) continue;
+      assert.ok(when!.has!.includes('c2.gift.sent'), `${where} names the sea thing without it being posted`);
+    }
+  });
+
+  it('chosen but never posted: Pilar writes as someone still waiting, all the way home', () => {
+    for (const gift of gifts) {
+      const unsent = new Set(['met.pilar', 'pilar.sea', 'pilar.promoted', 'c2.gift', gift]);
+      for (const id of new Set(LETTERS.filter((l) => l.when?.has?.some((f) => gifts.includes(f))).map((l) => l.id))) {
+        const letter = LETTERS.find((l) => l.id === id && holds(unsent, l.when))!;
+        assert.ok(!letter.when, `${id}: ${gift} unposted still reads a variant gated on ${JSON.stringify(letter.when)}`);
+        for (const p of letter.body) assert.doesNotMatch(p, creature, `${id}: "${p}"`);
+      }
+      const home = entryFor('pilar', [...unsent, 'c10.arrived']);
+      assert.equal(home, 'c10.pilar.plain', `${gift} unposted: Pilar opens with ${home}`);
+      const posted = entryFor('pilar', [...unsent, 'c2.gift.sent', 'c10.arrived']);
+      assert.equal(posted, `c10.pilar.${gift.slice('pilar.gift.'.length)}`);
+    }
   });
 });

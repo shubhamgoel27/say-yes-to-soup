@@ -9,6 +9,7 @@ export const RECALL: RecallManifest = {
     'omiyage.petro', // an unposted gift becomes an ofrenda item
     'omiyage.pilar',
     'omiyage.aurelio',
+    'c2.gift.sent', // Pilar's museum letter names the sea thing only if it was posted
     'kanga.gift', // the one meant for giving finds its person
     'wish.road', // the tanzaku wish, refolded onto the altar
     'wish.people',

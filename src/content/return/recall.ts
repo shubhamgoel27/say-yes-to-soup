@@ -16,6 +16,7 @@ export const RECALL: RecallManifest = {
     'pilar.gift.puffer', // the museum's exhibit one, variant by creature
     'pilar.gift.star',
     'pilar.gift.claw',
+    'c2.gift.sent', // exhibit one is only on the shelf if it was posted
     'omiyage.pilar', // exhibit two: the museum goes international
     'omiyage.aurelio', // the gift that lands at the well
     'kanga.gift', // the cloth kept for giving, given to Carmen

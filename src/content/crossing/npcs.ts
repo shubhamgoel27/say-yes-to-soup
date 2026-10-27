@@ -1251,7 +1251,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.puffer'] },
+    when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a fish that had clearly heard amazing news and decided to stay that way forever.',
       'The puffer fish now guards the toll sign. Traffic pays faster. Astonishment, it turns out, is good for business.',
@@ -1262,7 +1262,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.star'] },
+    when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a sea star with four arms that refuses to discuss the fifth. I respect it deeply.',
       'It has been appointed Toll Inspector. It inspects nothing, slowly. The position suits it and morale at the bridge is high.',
@@ -1273,7 +1273,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.claw'] },
+    when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a crab claw shaped exactly like a comma. The sea punctuates! This changes everything.',
       'The claw now sits on the toll sign, where it makes the sign a longer sentence. Tourists read it twice. Twice the facts. Genius.',
