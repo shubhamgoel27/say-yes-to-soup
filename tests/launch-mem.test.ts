@@ -61,6 +61,9 @@ function countingCanvas(): Counted {
 };
 (globalThis as unknown as { location: unknown }).location = { search: '' };
 
+const MB = 1024 * 1024;
+const held = (list: Counted[]) => list.reduce((n, c) => n + c.width * c.height * 4, 0);
+
 /** Canvases of exactly this size still holding pixels. */
 const sized = (w: number, h: number, but?: Counted) => made.filter((c) => c !== but && c.width === w && c.height === h).length;
 
@@ -108,5 +111,69 @@ describe('mood overlays', () => {
       setView(1280, 720);
       r.resizeView();
     }
+  });
+});
+
+describe('villager art on demand', async () => {
+  const { PLAYER_LOOK } = await import('../src/art/character');
+  const ROSA = { ...PLAYER_LOOK, cloth: '#b5403a' };
+
+  it('bakes nothing until a villager is drawn, then shares one sheet per look', async () => {
+    const { Wardrobe } = await import('../src/art/wardrobe');
+    const before = made.length;
+    const a = new Wardrobe(() => ({ ...ROSA }));
+    const b = new Wardrobe(() => ({ ...ROSA }));
+    const dog = new Wardrobe(() => ({ ...ROSA }), 'dog');
+    assert.equal(made.length, before, 'a wardrobe costs nothing until it is opened');
+
+    const sheet = a.sheet;
+    assert.equal(sheet.width * sheet.height, 720 * 512);
+    assert.equal(b.sheet, sheet, 'the same look is baked once');
+    assert.notEqual(dog.sheet, sheet);
+    assert.equal(dog.portrait, null, 'animals have no portrait');
+    assert.equal(a.portrait, b.portrait, 'the same face is painted once');
+    // The painted sheet and the outline's scratch are handed back at once.
+    const scratch = made.slice(before).filter((c) => c.width * c.height > 0 && c !== (sheet as unknown) && c !== (dog.sheet as unknown));
+    assert.ok(held(scratch) < 0.2 * MB, `scratch still held: ${(held(scratch) / MB).toFixed(1)} MB`);
+
+    b.dress({ cloth: '#204060' });
+    assert.notEqual(b.sheet, sheet, 'a costume is its own sheet');
+    b.dress(undefined);
+    assert.equal(b.sheet, sheet, 'back in their own clothes');
+  });
+
+  it('fades on the sheet being drawn and hands the copy back when the fade settles', async () => {
+    const { Wardrobe } = await import('../src/art/wardrobe');
+    const w = new Wardrobe(() => ({ ...ROSA, cloth: '#335577' }));
+    assert.equal(w.at(1), w.sheet);
+    const faded = w.at(0.5);
+    assert.notEqual(faded, w.sheet);
+    assert.equal(w.at(0.4), faded, 'one copy, repainted as the fade moves');
+    w.settle();
+    assert.equal(faded.width * faded.height, 0, 'settled: the copy holds nothing');
+    const again = w.at(0.3);
+    assert.ok(again.width > 0, 'a later fade paints a fresh copy, never the released one');
+  });
+
+  it('keeps a bounded few, and never drops one drawn a moment ago', async () => {
+    const { BakeCache } = await import('../src/art/wardrobe');
+    const { release } = await import('../src/art/pix');
+    const bake = (n: number) => () => {
+      const cv = countingCanvas();
+      cv.width = n;
+      cv.height = n;
+      cv.getContext('2d');
+      return cv as unknown as HTMLCanvasElement;
+    };
+    const lru = new BakeCache(3, release, 0);
+    const first = lru.get('a', bake(10));
+    for (const k of ['b', 'c', 'd', 'e']) lru.get(k, bake(10));
+    assert.equal(lru.size, 3);
+    assert.equal(first.width, 0, 'the least recently used is handed back');
+    assert.notEqual(lru.get('a', bake(10)), first, 'and baked afresh if it is wanted again');
+
+    const busy = new BakeCache(3, release, 60_000);
+    for (const k of ['a', 'b', 'c', 'd', 'e']) busy.get(k, bake(10));
+    assert.equal(busy.size, 5, 'a crowd on screen outgrows the cap rather than re-bake every frame');
   });
 });

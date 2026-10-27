@@ -9,11 +9,12 @@ import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
 import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
-import { PLAYER_LOOK, makePortrait, makeSheet, type Look } from './art/character';
+import { PLAYER_LOOK, makeSheet, type Look } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
-import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
+import { makeMoundSheet } from './art/animals';
+import { Wardrobe } from './art/wardrobe';
 import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
@@ -1077,9 +1078,11 @@ function dropPlate() {
 
 // ---------------------------------------------------------------- villagers
 
-type Villager = Sprite & {
+type Villager = Omit<Sprite, 'sheet'> & {
+  /** Drawn from the wardrobe at the current fade; never assigned. */
+  readonly sheet: HTMLCanvasElement;
   def: NpcDef;
-  portrait: HTMLCanvasElement | null;
+  readonly portrait: HTMLCanvasElement | null;
   think: number;
   want: Dir | null;
   // -- village rhythm (all derived at boot; see the section below) --
@@ -1096,28 +1099,27 @@ type Villager = Sprite & {
   fade: number;
   /** Per-villager timing jitter so nobody moves in lockstep. Timing only. */
   jitter: number;
-  baseSheet: HTMLCanvasElement;
-  fadeSheet: HTMLCanvasElement | null;
+  /** Sheet, face and night fade, each baked on first need (art/wardrobe.ts). */
+  wardrobe: Wardrobe;
   /** The scene's costume this villager is wearing (see `dress`), if any. */
   costume?: string;
 };
 
-function sheetFor(def: NpcDef): HTMLCanvasElement {
-  if (def.sprite === 'dog') return makeDogSheet();
-  if (def.sprite === 'llama') return makeLlamaSheet('#e8ddc8');
-  if (def.sprite === 'llamaBrown') return makeLlamaSheet('#9c6b42');
-  return makeSheet(lookFor(def.id, def.look));
-}
-
 const villagers: Villager[] = NPCS.map((def) => {
-  const sheet = sheetFor(def);
-  return {
+  // Nobody's art is baked here: a sheet when they are first drawn, a face
+  // when they first speak. All 122 at boot held 175 MB of canvas.
+  const wardrobe = new Wardrobe(() => lookFor(def.id, def.look), def.sprite);
+  const v: Villager = {
     def,
     actor: new Actor(def.pos[0], def.pos[1], def.sits ?? 'down'),
-    sheet,
+    get sheet() {
+      return wardrobe.at(v.fade);
+    },
     rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
     species: def.sprite, greetId: def.id, // renderer idle life: tail wags, chews, greeting nods
-    portrait: def.sprite ? null : makePortrait(lookFor(def.id, def.look)),
+    get portrait() {
+      return wardrobe.portrait;
+    },
     think: Math.random() * 2,
     want: null,
     seat: def.sits ? { at: [def.pos[0], def.pos[1]] as [number, number], dir: def.sits } : null,
@@ -1127,9 +1129,9 @@ const villagers: Villager[] = NPCS.map((def) => {
     postBack: null,
     fade: 1,
     jitter: Math.random(),
-    baseSheet: sheet,
-    fadeSheet: null,
+    wardrobe,
   };
+  return v;
 });
 
 // Diners and other permanent sitters start, and stay, seated.
@@ -1261,23 +1263,13 @@ function refreshErranded() {
 refreshErranded();
 state.on('changed', refreshErranded);
 
-/** Swap in a sheet drawn at the current fade alpha; full sheets swap back. */
+/**
+ * The faded sheet is painted when the villager is drawn, so only people on
+ * screen fade one; once the fade comes to rest at full or at nothing, its
+ * 1.4 MB copy is handed back.
+ */
 function applyFade(v: Villager) {
-  if (v.fade >= 1) {
-    v.sheet = v.baseSheet;
-    return;
-  }
-  if (!v.fadeSheet) {
-    v.fadeSheet = document.createElement('canvas');
-    v.fadeSheet.width = v.baseSheet.width;
-    v.fadeSheet.height = v.baseSheet.height;
-  }
-  const g = v.fadeSheet.getContext('2d');
-  if (!g) return;
-  g.clearRect(0, 0, v.fadeSheet.width, v.fadeSheet.height);
-  g.globalAlpha = v.fade;
-  g.drawImage(v.baseSheet, 0, 0);
-  v.sheet = v.fadeSheet;
+  if (v.fade <= 0 || v.fade >= 1) v.wardrobe.settle();
 }
 
 /** One greedy step toward a cell, preferring the longer axis; null when stuck. */
@@ -1932,13 +1924,8 @@ function watched(v: Villager): boolean {
 /** Dress a villager for a scene (a mop wig, a little umbrella), or back in their own clothes. */
 function dress(v: Villager, look: Partial<Look> | undefined) {
   if (v.def.sprite) return;
-  const lk = { ...lookFor(v.def.id, v.def.look), ...(look ?? {}) };
-  v.baseSheet = makeSheet(lk);
-  v.sheet = v.baseSheet;
-  v.fadeSheet = null;
-  v.portrait = makePortrait(lk);
+  v.wardrobe.dress(look);
   v.costume = costumeKey(look) || undefined;
-  if (v.fade < 1) applyFade(v);
 }
 
 /**
