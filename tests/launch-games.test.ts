@@ -9,12 +9,13 @@ import { BOTS } from './bots';
  */
 
 const { GAMES } = await import('../src/content/world');
-const { RUN, takeCoach, verdictFor } = await import('../src/ui/games/run');
+const { RUN, takeCoach, verdictFor, tickPanels } = await import('../src/ui/games/run');
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 afterEach(() => {
   RUN.hard = false;
+  RUN.held = false;
   for (const g of GAMES) takeCoach(g.flag);
 });
 
@@ -250,4 +251,49 @@ describe('the ceviche, a late pull', () => {
       assert.equal(p.step, 'lime', 'the fish stays in; the lime has it');
     });
   }
+});
+
+describe('the loom, by pointer', () => {
+  it('a ball answers only the primary button, and never through the pause strip', () => {
+    // Catch the loom's own canvas listener: the stage is headless.
+    let down: ((e: Any) => void) | null = null;
+    const cv = ghost();
+    cv.addEventListener = (type: string, fn: (e: Any) => void) => {
+      if (type === 'pointerdown') down = fn;
+    };
+    cv.getBoundingClientRect = () => ({ left: 0, top: 0, width: 640, height: 340 });
+    const doc = globalThis.document as Any;
+    doc.createElement = () => cv;
+    let p: Any;
+    try {
+      p = GAMES.find((g) => g.flag === 'weave.start')!.make(ghost(), ghost(), () => new Set());
+    } finally {
+      doc.createElement = () => ghost();
+    }
+    assert.ok(down, 'the loom listens on its canvas');
+    RUN.hard = true;
+    p.open(() => {});
+    while (p.phase !== 'input') p.tick(1 / 60);
+    // The basket, as painted: left, up, right, down (scene px = client px here).
+    const BALL = [
+      [452, 178],
+      [523, 106],
+      [594, 178],
+      [523, 250],
+    ];
+    const tap = (button: number) => {
+      const [x, y] = BALL[p.seq[p.at]]!;
+      down!({ button, clientX: x, clientY: y, preventDefault() {}, stopPropagation() {} });
+    };
+    tap(2);
+    tap(1);
+    assert.equal(p.at, 0, 'a right or middle click is not a call-back');
+    tickPanels([p], 1 / 60, true); // Esc: the strip is up, the clock stands still
+    tap(0);
+    tap(0);
+    assert.equal(p.at, 0, 'no ball answers behind the strip');
+    tickPanels([p], 1 / 60, false); // "Keep at it"
+    tap(0);
+    assert.equal(p.at, 1, 'with the strip gone, the right ball answers');
+  });
 });
