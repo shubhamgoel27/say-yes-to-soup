@@ -153,7 +153,12 @@ export class Input {
     this.pressed.delete(e.code);
   };
 
+  /** Told when focus loss (or letting go of Cmd) drops every held input,
+   * so an on-screen stick that still thinks it holds a direction lets go. */
+  onReleaseAll: (() => void) | null = null;
+
   private releaseAll = () => {
+    this.onReleaseAll?.();
     this.dirStack = [];
     this.pressed.clear();
     this.tapDir = null;

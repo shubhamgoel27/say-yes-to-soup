@@ -4134,6 +4134,8 @@ function resumeInterrupted() {
         settleForTalk(v);
         textbox.open(NODES, talk.node, v.portrait, endDialogue);
       } else {
+        // The wake lines, cut off: the welcome that follows them is still owed.
+        if (talk.node.startsWith('intro.')) pendingWelcome = true;
         startNarration(talk.node);
       }
       return;
@@ -6448,6 +6450,9 @@ function interactableAt(x: number, y: number): boolean {
 
 /** Turn toward an adjacent cell and press the same button Space presses. */
 function faceAndInteract(tx: number, ty: number) {
+  // The intro is about to speak: a tap on the canvas in that moment read the
+  // q'epi before the game's first words, as the keyboard's act already may not.
+  if (introTimer) return;
   const dir: Dir =
     tx > player.x ? 'right' : tx < player.x ? 'left' : ty > player.y ? 'down' : 'up';
   player.face(dir);
@@ -7063,6 +7068,9 @@ const stick = makeStick(
   (d) => input.releaseDir(d),
   () => audio.ensure(),
 );
+// A blur or a released Cmd drops every held direction; the stick, still
+// believing it held one, ignored the thumb until it changed direction.
+input.onReleaseAll = () => stick.calm();
 
 if (isCoarseTouch()) {
   vpad.hidden = false;

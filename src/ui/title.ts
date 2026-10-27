@@ -509,6 +509,14 @@ export class TitleScreen {
    * in the document while the picker is up; some browsers ignore detached
    * ones. It is invisible and removed as soon as the picker settles. */
   private pickPack(row: number) {
+    // A file picker opens only from a key, click or tap; a pad press is no
+    // gesture to the browser, and the picker silently never came.
+    const ua = (navigator as { userActivation?: { isActive: boolean } }).userActivation;
+    if (ua && !ua.isActive) {
+      this.shelfNote = 'the browser opens its file picker only for a click, a tap or a key: choose unpack with one of those.';
+      this.renderShelf();
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.soup,application/json,text/plain';
