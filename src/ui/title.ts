@@ -22,7 +22,7 @@ import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
 import { shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
-import { isCoarseTouch } from './responsive';
+import { isCoarseTouch, keysOrTaps } from './responsive';
 
 /** Saves may not outlast this browser (itch's embed in Safari or Brave). */
 const FRAGILE = savesAreFragile();
@@ -996,11 +996,11 @@ export class NamingCard {
           <input class="cc-input" type="text" maxlength="${NAME_MAX}" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>
-          <div class="cc-hint">${
-            COARSE
-              ? 'leave it blank and you are &ldquo;traveler&rdquo;'
-              : 'leave it blank and you are &ldquo;traveler&rdquo; &middot; Enter writes it in &middot; Esc back'
-          }</div>
+          <div class="cc-hint">${keysOrTaps(
+            'leave it blank and you are &ldquo;traveler&rdquo; &middot; Enter writes it in &middot; Esc back',
+            'leave it blank and you are &ldquo;traveler&rdquo;',
+            COARSE,
+          )}</div>
         </div>`;
       const input = this.root.querySelector<HTMLInputElement>('.cc-input');
       if (input) {
@@ -1037,9 +1037,7 @@ export class NamingCard {
         <div class="cc-fig"><canvas width="${CHAR_W * ART * 2}" height="${CHAR_H * ART * 2}"></canvas></div>
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
-        <div class="cc-hint">${
-          COARSE ? 'tap a colour to choose' : 'arrows choose &middot; Enter sets out &middot; Esc back'
-        }</div>
+        <div class="cc-hint">${keysOrTaps('arrows choose &middot; Enter sets out &middot; Esc back', 'tap a colour to choose', COARSE)}</div>
       </div>`;
     this.renderRows();
     this.startWalk();

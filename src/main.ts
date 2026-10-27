@@ -28,7 +28,7 @@ import { capUnder } from './ui/games/scene';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { chipHolds } from './ui/taskpage';
-import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, noteDevice, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -111,6 +111,7 @@ for (const ev of ['pointerup', 'touchend', 'click']) {
 // Deck player otherwise heard nothing and was never told why.
 let padSoundHinted = false;
 input.onPadPress = () => {
+  noteDevice('pad'); // hints and help speak in the pad's buttons from here
   audio.ensure();
   if (padSoundHinted) return;
   window.setTimeout(() => {
@@ -844,12 +845,14 @@ function showStrip(g: GameEntry) {
   stripFor = g;
   stripSel = 1; // "Keep at it" is the default: Esc twice changes nothing
   stripEl.hidden = false;
+  RUN.held = true; // this frame, not the next tick: the loom reads it on a tap
   renderStrip();
 }
 
 function closeStrip() {
   stripEl.hidden = true;
   stripFor = null;
+  RUN.held = false;
 }
 
 function stripActivate() {

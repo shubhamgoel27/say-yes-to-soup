@@ -238,6 +238,7 @@ export class Input {
     if (dir !== this.padDir) {
       if (this.padDir) this.dirStack = this.dirStack.filter((d) => d !== this.padDir);
       if (dir) {
+        this.onPadPress?.(); // the stick is the pad in hand as much as a button
         this.dirStack = this.dirStack.filter((d) => d !== dir);
         this.dirStack.push(dir);
         this.tapDir = dir;
