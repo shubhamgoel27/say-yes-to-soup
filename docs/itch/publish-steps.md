@@ -26,8 +26,8 @@ Budget: about ten minutes.
 
 These appear once a playable upload exists:
 
-1. **Embed in page**, with **Manually set size**: width `1280`, height `720`.
-2. Check **Fullscreen button**.
+1. **Embed in page**, with **Manually set size**: width `1024`, height `576`. A 1366x768 laptop, still a very common screen, shows only about 650px of page under the browser's bars; at 720 tall the frame ran past the bottom and Carmen's first line opened below the fold, until the player thought to scroll the itch page. The game already lays itself out for short windows, so the smaller frame costs nothing. Do not go back up to 1280x720.
+2. Check **Fullscreen button**. This is how a big screen gets the big picture.
 3. Leave **Automatically start on page load** unchecked (audio wants a click first anyway).
 4. Check **Mobile friendly** and allow both orientations (the game has touch controls).
 5. Leave scrollbars off.
@@ -47,7 +47,7 @@ These appear once a playable upload exists:
 
 1. At the bottom, keep visibility on **Draft** and click **Save**.
 2. Click **View page**, then actually play it for a minute in the embedded frame: title loads, "Begin the journey" works, sound comes on after a click, fullscreen button works.
-3. If the frame looks cramped on your monitor, bump the embed height, but do not go below 1280x720.
+3. If you can, look once at a laptop-sized window too (about 1366x768): the dialogue box should be on screen without scrolling the itch page. On a big monitor the frame will look modest; that is what the Fullscreen button is for.
 4. Back in the editor, set visibility to **Public** and save. The page is live.
 
 ## Updating the game later

@@ -57,7 +57,7 @@ Special thanks to Angli and Nishant.
 
 | Setting | Value |
 |---|---|
-| Embed size | 1280 x 720 (treat as the minimum; the game scales up cleanly) |
+| Embed size | 1024 x 576 (keeps the dialogue box on a 1366x768 laptop's screen; 1280 x 720 put it below the fold there. The game lays itself out for short windows, and the Fullscreen button gives a big screen the rest) |
 | Fullscreen button | **On** |
 | Autostart | **Off** (let the player click; audio needs a user gesture anyway) |
 | Mobile friendly | On (touch controls appear automatically); enable both orientations |
