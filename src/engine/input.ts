@@ -197,8 +197,14 @@ export class Input {
     const pads = navigator.getGamepads?.() ?? [];
     const pad = pads.find((p) => p && p.connected && p.mapping === 'standard');
     // A pad the browser cannot map was ignored without a word, and its owner
-    // pressed buttons at a game that seemed not to listen. Say so once.
-    if (!pad && !this.oddPadTold && pads.some((p) => p && p.connected)) {
+    // pressed buttons at a game that seemed not to listen. Say so once, and
+    // only for a press: some keyboards and motion sensors also present as
+    // unmapped 'gamepads', and their owners were never holding one.
+    if (
+      !pad &&
+      !this.oddPadTold &&
+      pads.some((p) => p && p.connected && p.mapping !== 'standard' && p.buttons.some((b) => b.pressed))
+    ) {
       this.oddPadTold = true;
       this.onOddPad?.();
     }

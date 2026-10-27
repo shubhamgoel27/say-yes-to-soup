@@ -3510,12 +3510,11 @@
       // bowl steaming forever. The game sets window.__soupBooted once a real
       // frame has drawn; it calls window.__soupFail when it gives up itself.
       (function () {
-        var told = false;
         function fail(why) {
-          if (told || window.__soupBooted) return;
-          told = true;
+          if (window.__soupBooted) return;
           var p = document.querySelector('#loader .ld-slow');
           if (!p) return;
+          // A later, better reason may replace an earlier one.
           p.textContent =
             'The game could not start in this browser' + (why ? ' (' + why + ')' : '') +
             '. Reloading the page often helps, and your journal is kept safe in this browser. ' +
@@ -3529,13 +3528,28 @@
           setTimeout(function () { fail(why); }, 3000);
         }
         window.addEventListener('error', function (e) {
-          soon(e && e.message ? String(e.message).slice(0, 220) : '');
+          // Only the game's own scripts: an extension's error, or a
+          // cross-origin one the browser reduces to "Script error.", says
+          // nothing about whether the game is starting.
+          var file = e && e.filename ? String(e.filename) : '';
+          if (!file || file.indexOf(location.origin) !== 0) return;
+          soon(e.message ? String(e.message).slice(0, 220) : '');
         });
         window.addEventListener('unhandledrejection', function (e) {
           var r = e && e.reason;
           soon(r ? String((r && r.message) || r).slice(0, 220) : '');
         });
-        setTimeout(function () { fail(''); }, 45000);
+        // Patience is counted only while the page is in view: a tab opened in
+        // the background pauses the game's frames, and that is not a failure.
+        var waited = 0;
+        var tick = setInterval(function () {
+          if (window.__soupBooted) return clearInterval(tick);
+          if (document.visibilityState === 'visible') waited += 1;
+          if (waited >= 45) {
+            clearInterval(tick);
+            fail('');
+          }
+        }, 1000);
       })();
     </script>
     <div id="stage">

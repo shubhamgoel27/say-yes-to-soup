@@ -62,9 +62,10 @@ export type SaveData = {
   talk?: Talk | null;
 };
 
-/** A conversation in progress: the node on screen, and who is speaking it
- * (a villager's id), or null for narration and examines. */
-export type Talk = { node: string; who: string | null };
+/** A conversation in progress: the node on screen, who is speaking it (a
+ * villager's id, or null), and how it was opened. */
+export type Talk = { node: string; who: string | null; kind?: TalkKind };
+export type TalkKind = 'talk' | 'pet' | 'examine' | 'narration';
 
 /** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
 export const NAME_MAX = 24;
@@ -115,10 +116,15 @@ function parseSave(raw: string | null): SaveData | null {
     if (typeof data.name === 'string') data.name = cleanName(data.name);
     // The open conversation is a convenience, never a reason to refuse a
     // journal: anything malformed simply means none was open.
-    const t = data.talk as { node?: unknown; who?: unknown } | null | undefined;
+    const t = data.talk as { node?: unknown; who?: unknown; kind?: unknown } | null | undefined;
+    const kinds = ['talk', 'pet', 'examine', 'narration'];
     data.talk =
       t && typeof t === 'object' && typeof t.node === 'string'
-        ? { node: t.node, who: typeof t.who === 'string' ? t.who : null }
+        ? {
+            node: t.node,
+            who: typeof t.who === 'string' ? t.who : null,
+            ...(typeof t.kind === 'string' && kinds.includes(t.kind) ? { kind: t.kind as TalkKind } : {}),
+          }
         : null;
     return data;
   } catch {
@@ -485,6 +491,11 @@ export class GameState {
    * keeping the next real save carries (the ceremonies' seen-marks). */
   markQuietly(flags: string[]) {
     for (const f of flags) this.flags.add(f);
+  }
+
+  /** The other half: put flags down with no save and no event. */
+  unmarkQuietly(flags: string[]) {
+    for (const f of flags) this.flags.delete(f);
   }
 
   grantPagesQuietly(ids: string[]) {

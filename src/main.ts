@@ -10,7 +10,7 @@ import { TileMap, stepFrom, type TileDef, type TriggerDef } from './engine/grid'
 import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
+import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot, type TalkKind } from './engine/state';
 import { PLAYER_LOOK, makeSheet, type Look } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
@@ -686,7 +686,11 @@ const DONE_FLAG = new Map(REPLAY_GAMES.map((g) => [g.flag, g.doneFlag]));
  */
 function dropOrphanedReplays() {
   for (const [start, done] of DONE_FLAG) {
-    if (state.has(start) && state.has(done) && !panelOpen(start)) state.clearFlag(start);
+    // Quietly: this runs at boot over the title, where a save would claim
+    // the journal from a window that is only looking at the cover (another
+    // window playing it then stopped saving) before any warning is wired.
+    // The next real save carries it.
+    if (state.has(start) && state.has(done) && !panelOpen(start)) state.unmarkQuietly([start]);
   }
 }
 dropOrphanedReplays();
@@ -2243,7 +2247,9 @@ function updateStaging(dt: number) {
   // The last page's hush: from its first word until the book is put down.
   // The book put down in front of you (not a reload after it) leaves the
   // night it was written in: the afterglow, held while you stay.
-  if (!lampOver && state.has('story.end') && !textbox.isOpen && !albumUI.isOpen) {
+  // Not while the closing book is still owed (a reload before it was read):
+  // it reopens a moment after Continue, and should play under the hush.
+  if (!lampOver && state.has('story.end') && state.has('end.book.read') && !textbox.isOpen && !albumUI.isOpen) {
     lampOver = true;
     if (lampT > 0 && map.id === 'village') afterglow = true;
   }
@@ -3744,6 +3750,9 @@ const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', righ
 
 let talkingTo: Villager | null = null;
 let celebrated = false;
+/** Chapter one's closing spread, which COMPLETIONS does not cover: unfolded,
+ * or scheduled this session. */
+let storyClosed = false;
 const celebratedFlags = new Set<string>();
 /**
  * The chapter-close spreads already unfolded (or never to unfold), keyed by
@@ -3762,12 +3771,12 @@ const closedChapters = new Set<string>();
  * stale guards re-celebrated finished chapters one way and swallowed fresh
  * ones the other.
  */
-function resyncCelebrations() {
+function resyncCelebrations(trustFlags = false) {
   window.clearTimeout(ceremonyTimer);
   // Zero too: whisperMustWait() reads a live timer as a ceremony on its way.
   ceremonyTimer = 0;
   chapterClose.close();
-  seedCelebrations();
+  seedCelebrations(trustFlags);
 }
 
 /**
@@ -3779,10 +3788,12 @@ function resyncCelebrations() {
  * appear. A journal from before the marks existed is taken at its word once:
  * whatever it had completed counts as celebrated, so nothing re-fires.
  */
-function seedCelebrations() {
-  if (!state.has('ceremonies.kept')) {
+function seedCelebrations(trustFlags = false) {
+  // trustFlags: the dev desk jumped over chapters, and everything completed
+  // counts as celebrated, exactly as an old journal is taken at its word.
+  if (trustFlags || !state.has('ceremonies.kept')) {
     const marks = ['ceremonies.kept'];
-    if (state.has('story.complete')) marks.push('seen.plate.story.complete');
+    if (state.has('story.complete')) marks.push('seen.plate.story.complete', 'seen.close.story.complete');
     // A journal finished before the closing book kept its own mark: taken as read.
     if (state.has('story.end')) marks.push('end.book.read');
     for (const c of COMPLETIONS) {
@@ -3792,6 +3803,7 @@ function seedCelebrations() {
     state.markQuietly(marks);
   }
   celebrated = state.has('seen.plate.story.complete');
+  storyClosed = state.has('seen.close.story.complete');
   celebratedFlags.clear();
   for (const c of COMPLETIONS) if (state.has(`seen.plate.${c.flag}`)) celebratedFlags.add(c.flag);
   closedChapters.clear();
@@ -4036,6 +4048,12 @@ applyDressings();
     showPlate(chapterPlate(0), 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
+    storyClosed = true;
+    scheduleCeremony('story.complete');
+  } else if (state.has('story.complete') && !storyClosed) {
+    // The plate was seen but the spread was not (the tab closed while it
+    // waited): it unfolds after this talk instead.
+    storyClosed = true;
     scheduleCeremony('story.complete');
   }
   for (const c of COMPLETIONS) {
@@ -4097,8 +4115,17 @@ function openPendingLetter(): boolean {
 
 // The text box keeps the journal told which conversation is open, so a tab
 // closed mid-talk reopens it on Continue (see resumeInterrupted).
+/** How the talk being opened was opened; recorded with it for resuming. */
+let openingKind: TalkKind = 'narration';
 textbox.onEnter = (id) => {
-  state.talk = { node: id, who: talkingTo?.def.id ?? null };
+  state.talk = { node: id, who: talkingTo?.def.id ?? null, kind: openingKind };
+  // A talk the player opened themselves while a resume waited supersedes it:
+  // resuming afterwards showed it twice and re-applied what it had set
+  // (a finished loom's start flag, and the whole loom again).
+  if (resumeTimer) {
+    window.clearTimeout(resumeTimer);
+    resumeTimer = 0;
+  }
 };
 textbox.onLeave = () => {
   state.talk = null;
@@ -4115,28 +4142,43 @@ textbox.onLeave = () => {
 let resumeTimer = 0;
 function resumeInterrupted() {
   window.clearTimeout(resumeTimer);
-  const talk = state.talk;
-  const due = [...state.flagSet()]
-    .filter((f) => f.startsWith('letter.due.'))
-    .map((f) => f.slice('letter.due.'.length))
-    .filter((id) => !state.has(`letter.read.${id}`));
   const tryResume = () => {
     resumeTimer = 0;
-    if (ceremonyMustWait()) {
+    if (ceremonyMustWait() || chapterClose.isOpen) {
       resumeTimer = window.setTimeout(tryResume, 400);
       return;
     }
+    // Read now, not when Continue was pressed: whatever happened while this
+    // waited (a talk, a letter read) is what the journal says now.
+    const talk = state.talk;
+    const due = [...state.flagSet()]
+      .filter((f) => f.startsWith('letter.due.'))
+      .map((f) => f.slice('letter.due.'.length))
+      .filter((id) => !state.has(`letter.read.${id}`));
     const node = talk ? NODES[talk.node] : undefined;
-    // Only a talk that carries the story: a lone examine line is not worth
-    // standing the player back in front of.
-    if (talk && node && (node.effects?.length || node.choices?.length || node.next)) {
-      const v = talk.who ? villagers.find((x) => x.def.id === talk.who && x.def.map === map.id) : undefined;
+    // Only a talk that carries the story: examines and pets are not worth
+    // standing the player back in front of, and a villager not here, or not
+    // within a few steps, is met again in their own time (their entry arms
+    // catch a reload up).
+    const v = talk?.who ? villagers.find((x) => x.def.id === talk.who && x.def.map === map.id) : undefined;
+    const near = !!v && Math.abs(v.actor.x - player.x) + Math.abs(v.actor.y - player.y) <= 4;
+    const resumable =
+      !!talk &&
+      !!node &&
+      talk.kind !== 'examine' &&
+      talk.kind !== 'pet' &&
+      (talk.who === null || near) &&
+      !!(node.effects?.length || node.choices?.length || node.next);
+    if (talk && node && resumable) {
+      // A letter owed from before unfolds when this talk closes.
+      if (due[0]) pendingLetter = due[0];
       if (v) {
         v.actor.face(OPPOSITE[player.dir]);
         v.actor.frozen = true;
         player.frozen = true;
         talkingTo = v;
         settleForTalk(v);
+        openingKind = 'talk';
         textbox.open(NODES, talk.node, v.portrait, endDialogue);
       } else {
         // The wake lines, cut off: the welcome that follows them is still owed.
@@ -4178,6 +4220,7 @@ function startNpcDialogue(v: Villager) {
     v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
     v.actor.frozen = true;
     talkingTo = v;
+    openingKind = 'pet';
     textbox.open(NODES, node, null, endDialogue);
     return;
   }
@@ -4198,11 +4241,13 @@ function startNpcDialogue(v: Villager) {
   if (!v.def.sprite) renderer.wave(v.actor);
   if (v.def.sprite === 'dog') audio.bark();
   else if (v.def.sprite) audio.hum();
+  openingKind = 'talk';
   textbox.open(NODES, entry.node, v.portrait, endDialogue);
 }
 
-function startNarration(nodeId: string) {
+function startNarration(nodeId: string, kind: TalkKind = 'narration') {
   player.frozen = true;
+  openingKind = kind;
   textbox.open(NODES, nodeId, null, endDialogue);
 }
 
@@ -4499,7 +4544,7 @@ function tryInteract(aimFirst = true): boolean {
     if (tarm && !sitKindsOn(map.id).has(tk)) {
       const [px, py] = player.occupies();
       player.face(thing[0] > px ? 'right' : thing[0] < px ? 'left' : thing[1] > py ? 'down' : 'up');
-      startNarration(tarm.node);
+      startNarration(tarm.node, 'examine');
       return true;
     }
   }
@@ -4512,7 +4557,7 @@ function tryInteract(aimFirst = true): boolean {
     (a) => (!a.map || a.map === map.id) && state.check(a.when) && (!a.dark || nightLevel(dayT) > 0.3),
   );
   if (arm) {
-    startNarration(arm.node);
+    startNarration(arm.node, 'examine');
     settleBesideProp(fx, fy);
     return true;
   }
@@ -5718,7 +5763,7 @@ function update(dt: number) {
     } else if (settling()) {
       // A talk's settling steps still landing after its words closed.
       landHeldSteps(dt);
-    } else if (act && (afterTalkHush() || spamHush() || groundHush() || introTimer !== 0)) {
+    } else if (act && (afterTalkHush() || spamHush() || groundHush() || introTimer !== 0 || resumeTimer !== 0)) {
       // The press that closed the last line had company: swallowed. So is
       // a press in the breath between the letter and the first words: it
       // used to read the well before the game had said anything at all.
@@ -6467,7 +6512,7 @@ function interactableAt(x: number, y: number): boolean {
 function faceAndInteract(tx: number, ty: number) {
   // The intro is about to speak: a tap on the canvas in that moment read the
   // q'epi before the game's first words, as the keyboard's act already may not.
-  if (introTimer) return;
+  if (introTimer || resumeTimer) return;
   const dir: Dir =
     tx > player.x ? 'right' : tx < player.x ? 'left' : ty > player.y ? 'down' : 'up';
   player.face(dir);
@@ -7281,7 +7326,7 @@ function installCheats() {
       if (!arrival || arrival.map !== target.map || !state.check(arrival.when)) state.set(target.flag);
       // Chapters skipped over are already celebrated; without this, the
       // next dialogue to end replayed every plate and chapter-close at once.
-      resyncCelebrations();
+      resyncCelebrations(true);
       return jump(target.map);
     },
     /** Where on screen a villager's body (or a cell, given x and y) is drawn,
@@ -7441,7 +7486,7 @@ function installCheats() {
         'c10.pilar.seen', 'c10.album.seen', 'c10.well.called', 'c10.carmen.her', 'c10.apacheta.done',
       ]) state.set(f);
       // The endgame has its own authored ending; nothing here celebrates.
-      resyncCelebrations();
+      resyncCelebrations(true);
       return jump('village');
     },
     wipe() {

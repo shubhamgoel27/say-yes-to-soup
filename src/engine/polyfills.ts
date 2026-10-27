@@ -18,15 +18,25 @@ function corners(r: Radii | undefined, w: number, h: number): [number, number, n
     n.length >= 4 ? [a, b, c, d] : n.length === 3 ? [a, b, c, b] : n.length === 2 ? [a, b, a, b] : [a, a, a, a];
   const [tl, tr, br, bl] = radii;
   // Scaled down together so neighbouring corners never cross, as the native call does.
-  const k = Math.min(1, w / (tl + tr || 1), w / (bl + br || 1), h / (tl + bl || 1), h / (tr + br || 1));
+  const fit = (side: number, sum: number) => (sum > 0 ? side / sum : Infinity);
+  const k = Math.min(1, fit(w, tl + tr), fit(w, bl + br), fit(h, tl + bl), fit(h, tr + br));
   return [tl * k, tr * k, br * k, bl * k];
 }
 
 function roundRect(this: CanvasPath, x: number, y: number, w: number, h: number, r?: Radii) {
-  // Negative sizes draw from the other edge, as the native call does.
-  if (w < 0) (x += w), (w = -w);
-  if (h < 0) (y += h), (h = -h);
-  const [tl, tr, br, bl] = corners(r, w, h);
+  // Negative sizes draw from the other edge, as the native call does, and
+  // the corners mirror with it.
+  let [tl, tr, br, bl] = corners(r, Math.abs(w), Math.abs(h));
+  if (w < 0) {
+    x += w;
+    w = -w;
+    [tl, tr, br, bl] = [tr, tl, bl, br];
+  }
+  if (h < 0) {
+    y += h;
+    h = -h;
+    [tl, tr, br, bl] = [bl, br, tr, tl];
+  }
   this.moveTo(x + tl, y);
   this.lineTo(x + w - tr, y);
   this.arcTo(x + w, y, x + w, y + tr, tr);
