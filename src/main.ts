@@ -7470,7 +7470,7 @@ stage.onGiveUp = () => {
   else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');
 };
 startLoop(update, render, (err) => {
-  const why = err instanceof Error ? err.message.slice(0, 140) : '';
+  const why = err instanceof Error ? err.message.slice(0, 220) : '';
   const w = window as BootWindow;
   if (!w.__soupBooted) w.__soupFail?.(why);
   else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');

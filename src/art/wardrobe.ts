@@ -1,6 +1,6 @@
 import { makeDogSheet, makeLlamaSheet } from './animals';
 import { makePortrait, makeSheet, type Look } from './character';
-import { context2d, release } from './pix';
+import { release } from './pix';
 
 /**
  * Villagers' art, baked when it is first needed instead of all at boot.
@@ -36,6 +36,9 @@ export class BakeCache {
     const hit = this.entries.get(key);
     if (hit) {
       hit.at = now;
+      // Past the cap after a crowd's grace ran out, with no new look coming
+      // to prompt a trim: trim on a hit too, at most once a second.
+      if (this.entries.size > this.cap && now - this.trimmedAt > 1000) this.trim(now);
       return hit.cv;
     }
     const cv = make();
@@ -44,7 +47,10 @@ export class BakeCache {
     return cv;
   }
 
+  private trimmedAt = 0;
+
   private trim(now: number) {
+    this.trimmedAt = now;
     const oldest = [...this.entries].sort((a, b) => a[1].at - b[1].at);
     for (const [key, e] of oldest) {
       if (this.entries.size <= this.cap || now - e.at < this.graceMs) break;
@@ -66,6 +72,16 @@ export class BakeCache {
 export const SHEETS = new BakeCache(16, release);
 /** Faces. Not handed back when dropped: the dialogue box may still show one. */
 export const FACES = new BakeCache(24);
+
+/** A sheet with nothing on it: drawing any frame from it draws nothing. */
+let blank: HTMLCanvasElement | null = null;
+function nothing(): HTMLCanvasElement {
+  if (!blank) {
+    blank = document.createElement('canvas');
+    blank.width = blank.height = 1;
+  }
+  return blank;
+}
 
 function animalSheet(species: Species): HTMLCanvasElement {
   if (species === 'dog') return makeDogSheet();
@@ -96,17 +112,32 @@ export class Wardrobe {
     return this.key;
   }
 
-  /** The full-strength walk sheet. */
+  /** The full-strength walk sheet. Baked during play now, not at boot: a
+   * browser out of canvas memory refuses it mid-frame, and a throw here
+   * stopped every frame the villager was on screen. They go undrawn instead,
+   * and the bake is tried again on the next frame. */
   get sheet(): HTMLCanvasElement {
     const species = this.species;
-    if (species) return SHEETS.get(this.lookKey(), () => animalSheet(species));
-    return SHEETS.get(this.lookKey(), () => makeSheet(this.look()));
+    try {
+      if (species) return SHEETS.get(this.lookKey(), () => animalSheet(species));
+      return SHEETS.get(this.lookKey(), () => makeSheet(this.look()));
+    } catch (err) {
+      console.warn('[soup] a villager could not be painted:', err);
+      return nothing();
+    }
   }
 
-  /** The dialogue portrait; animals have none. */
+  /** The dialogue portrait; animals have none. A face the browser cannot
+   * paint is no face, not a conversation that never opens (the player was
+   * already frozen for it, and nothing would have let them go). */
   get portrait(): HTMLCanvasElement | null {
     if (this.species) return null;
-    return FACES.get(this.lookKey(), () => makePortrait(this.look()));
+    try {
+      return FACES.get(this.lookKey(), () => makePortrait(this.look()));
+    } catch (err) {
+      console.warn('[soup] a face could not be painted:', err);
+      return null;
+    }
   }
 
   /**
@@ -123,7 +154,13 @@ export class Wardrobe {
       this.faded.height = base.height;
     }
     if (alpha !== this.fadedAt || base !== this.fadedFrom) {
-      const g = context2d(this.faded);
+      // No canvas memory for the faded copy: draw them at full strength
+      // rather than stop the frame (the old fade simply skipped).
+      const g = this.faded.getContext('2d');
+      if (!g) {
+        this.settle();
+        return base;
+      }
       g.clearRect(0, 0, this.faded.width, this.faded.height);
       g.globalAlpha = alpha;
       g.drawImage(base, 0, 0);

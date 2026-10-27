@@ -3529,11 +3529,11 @@
           setTimeout(function () { fail(why); }, 3000);
         }
         window.addEventListener('error', function (e) {
-          soon(e && e.message ? String(e.message).slice(0, 140) : '');
+          soon(e && e.message ? String(e.message).slice(0, 220) : '');
         });
         window.addEventListener('unhandledrejection', function (e) {
           var r = e && e.reason;
-          soon(r ? String((r && r.message) || r).slice(0, 140) : '');
+          soon(r ? String((r && r.message) || r).slice(0, 220) : '');
         });
         setTimeout(function () { fail(''); }, 45000);
       })();
