@@ -606,7 +606,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.hana.words': {
     lines: [
       { who: 'Hana', text: 'You gave me a constellation, so: arigatou. Your first word of Japanese.' },
-      { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
+      { who: 'Hana', text: 'In Shionoura, ask for the Shiosai, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
     ],
     effects: ['set:c3.hana.tanabata'],
   },
