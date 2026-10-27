@@ -66,7 +66,8 @@ export class KingyoPanel {
   private cx = 0.5; // the poi's position over the tub, 0..1
   private soak = 0; // 0..100; at 100 the paper gives way
   private caught = 0;
-  private phase: 'scoop' | 'torn' | 'between' | 'done' = 'scoop';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: 'scoop' | 'torn' | 'between' | 'done' = 'scoop';
   /** Story: which paper this is. The second is for the uncle's granddaughter. */
   private sheet = 1;
   /** Fish already in the bowl when the second paper went in. */
@@ -960,7 +961,8 @@ const DASHI_LEGEND = [
 ] as const;
 
 export class DashiPanel {
-  private phase: DashiPhase = 'steep';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: DashiPhase = 'steep';
   private dropped = false; // the kombu and iriko are in the water
   private steepT = 0; // seconds rested before the flame goes on
   private heat = 0; // 0..100 toward the boil
@@ -1168,16 +1170,22 @@ export class DashiPanel {
         this.clouds = Math.min(CLOUD_MAX, this.clouds + 1);
         this.hint = EARLY_LINES[Math.min(this.earlyPulls, EARLY_LINES.length - 1)] as string;
         this.earlyPulls++;
+      } else if (this.hard && this.heat > this.pullHi) {
+        // Past the pale band the kombu has met the boil. The hard band is
+        // one breath wide, and it used to run on unmarked to the rim.
+        this.boilOver(true);
       } else {
         this.audio.chime();
         this.scene.flash('#fff2cf', 0.22);
         if (!calm()) this.scene.thump(3, 0.03);
         this.hint =
-          this.clouds === 0
-            ? 'The kombu comes out glossy, one breath before the boil. Fumi nods once, which in this kitchen is applause. The iriko simmer on.'
-            : this.clouds < 3
-              ? 'The kombu comes out glossy, one breath before the boil. "There. You found it," Fumi says. "Next time, find it once." The iriko simmer on.'
-              : 'The kombu comes out at last, tired from all the lifting, and the broth has gone cloudy. Fumi sighs through her nose. "It will still feed us. The iriko simmer on."';
+          this.heat > this.pullHi
+            ? 'The kombu comes out with the first big bubbles already rolling up it. "Just," Fumi says. "Next time, while they are still small, inside the pale band." The iriko simmer on.'
+            : this.clouds === 0
+              ? 'The kombu comes out glossy, one breath before the boil. Fumi nods once, which in this kitchen is applause. The iriko simmer on.'
+              : this.clouds < 3
+                ? 'The kombu comes out glossy, one breath before the boil. "There. You found it," Fumi says. "Next time, find it once." The iriko simmer on.'
+                : 'The kombu comes out at last, tired from all the lifting, and the broth has gone cloudy. Fumi sighs through her nose. "It will still feed us. The iriko simmer on."';
         if (this.clouds >= 3) {
           tip(DASHI_FLAG, 'Every early lift clouded the broth and cooled the pot. Hands off until the roe-small bubbles hurry up the kombu; then one press.');
         }
@@ -1262,16 +1270,18 @@ export class DashiPanel {
    * amount of skimming saves it. Fumi tips the pot, refills it cold, and
    * says the thing her mother-in-law said. Space begins the dawn again.
    */
-  private boilOver() {
+  private boilOver(late = false) {
     this.phase = 'ruined';
     // Name the mistimed pull, so the next how-to re-arms the hands.
     coach(
       DASHI_FLAG,
-      this.earlyPulls === 0
-        ? 'You watched the boil arrive with your hands at your sides. When the roe-small bubbles start to hurry up the kombu, that is Space, right then.'
-        : this.lastEarlyHeat >= this.pullLo - 10
-          ? 'Your last pull was one breath early, and the boil caught you waiting for a second chance. Hold on the pale band; press the instant the fill enters it.'
-          : 'You reached in while the bubbles were still roe-small, then stopped trusting yourself. Watch the pale band on the meter; press the instant the fill enters it.',
+      late
+        ? 'You pulled after the pale band had gone by, and the kombu had already met the boil. Press the instant the fill enters the band; it is one breath wide.'
+        : this.earlyPulls === 0
+          ? 'You watched the boil arrive with your hands at your sides. When the roe-small bubbles start to hurry up the kombu, that is Space, right then.'
+          : this.lastEarlyHeat >= this.pullLo - 10
+            ? 'Your last pull was one breath early, and the boil caught you waiting for a second chance. Hold on the pale band; press the instant the fill enters it.'
+            : 'You reached in while the bubbles were still roe-small, then stopped trusting yourself. Watch the pale band on the meter; press the instant the fill enters it.',
     );
     this.audio.slosh();
     this.scene.flash('#dfe6e2', 0.22);

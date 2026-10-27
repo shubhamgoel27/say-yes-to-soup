@@ -53,7 +53,7 @@ export const CHAPTER: ChapterDef = {
         'Pull too soon and Petro takes the bowl back for a second.',
       ],
       hardHow:
-        'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. The kiss, exactly, or the noon goes on without you.',
+        'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. Pull before the sliver and she remembers it; the kiss, exactly, or the noon goes on without you.',
       make: (root, audio) => new CevichePanel(root, audio as AudioBus),
     },
   ],

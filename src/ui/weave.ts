@@ -337,7 +337,8 @@ const LOOM_LEGEND = [
 ] as const;
 
 export class WeavePanel {
-  private phase: Phase = 'show';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: Phase = 'show';
   private row = 0;
   private seq: number[] = [];
   private at = 0; // reveal index or input index
@@ -376,8 +377,12 @@ export class WeavePanel {
   ) {
     // A ball is its own answer: touch one and that colour is called back.
     // Only while the hand is answering; otherwise the tap falls through to
-    // the panel's compass as before (the middle still means Space).
+    // the panel's compass as before (the middle still means Space). Only the
+    // primary button or a finger, and never while the pause strip is up:
+    // the strip lets taps through to the canvas, and a ball answered behind
+    // it, with the hard clock stopped, was a call-back with no time limit.
     this.scene.cv.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 || RUN.held) return;
       if (this.phase !== 'input' || !this.isOpen) return;
       const r = this.scene.cv.getBoundingClientRect();
       if (!r.width || !r.height) return;

@@ -615,7 +615,8 @@ const P_COACH: Record<PFault, (where: string) => string> = {
 const TAWA_LEGEND = [{ keys: ['space'], does: 'stop the pin, turn the parantha, lift it off' }] as const;
 
 export class ParanthaPanel {
-  private phase: PPhase = 'roll';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: PPhase = 'roll';
   private course = 0;
   private meter = 0; // rolling meter position, bounces 0..1
   private dir = 1;
@@ -1556,6 +1557,17 @@ const GUIDE_AFTER = 3;
 /** Yusuf's hard-telling spool: three patangs for the evening, not one more. */
 const HARD_DOR_LIMIT = 3;
 
+/**
+ * Seconds of steady air every duel opens with before the sky first turns.
+ * The story's two seconds are a welcome, and its cues bring the weather on
+ * time anyway. The hard telling has no cues, and seven strokes take only
+ * 1.74 s: two seconds of guaranteed calm let a held Up cut the waxed rival
+ * (and the first two on the tournament roofs) before any gust or flock
+ * arrived, for a star in two seconds. Its sky turns almost at once.
+ */
+const OPEN_AIR = 2;
+const HARD_OPEN_AIR = 0.6;
+
 /** The ways a dor gets sawed, for the run's honest ledger. */
 type KFault = 'pigeon' | 'gust' | 'slack' | 'sawed';
 const K_FAULTS: KFault[] = ['pigeon', 'gust', 'slack', 'sawed'];
@@ -1876,7 +1888,8 @@ const KITE_LEGEND = [
 ] as const;
 
 export class PatangPanel {
-  private phase: KPhase = 'launch';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: KPhase = 'launch';
   private wind: Wind = 'steady';
   private windT = 0;
   private skySeed = 0x9e3779b9;
@@ -1999,7 +2012,7 @@ export class PatangPanel {
     this.phase = 'launch';
     this.wind = 'steady';
     this.windT = 0;
-    this.windDur = 2;
+    this.windDur = this.hard ? HARD_OPEN_AIR : OPEN_AIR;
     this.progress = 0;
     this.rivalIdx = 0;
     this.cuts = 0;
@@ -2479,7 +2492,7 @@ export class PatangPanel {
         }
       } else {
         this.windT = 0;
-        this.windDur = 2;
+        this.windDur = this.hard ? HARD_OPEN_AIR : OPEN_AIR;
         this.wind = 'steady';
       }
       if (s) {
@@ -2498,7 +2511,10 @@ export class PatangPanel {
         s?.flash('#ffe9c0', 0.3);
       } else {
         this.phase = 'duel';
+        // The next rival meets the same opening breath, not whatever was
+        // left of the last weather's clock.
         this.windT = 0;
+        this.windDur = this.hard ? HARD_OPEN_AIR : OPEN_AIR;
         this.wind = 'steady';
         this.rivalSawT = this.tournament && this.rivalIdx === 2 ? 2 : 2.6;
         this.hint = `${this.rivals[this.rivalIdx]?.name} rises to meet you. Kheench on taut, dheel on gusts, and mind the birds.`;

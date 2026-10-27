@@ -303,7 +303,7 @@ function drawSwell(g: CanvasRenderingContext2D, wx: number, baseY: number, h: nu
   oval(g, wx - 46, baseY + 22, 32, 7, 'rgba(246,240,226,0.45)');
 }
 
-/** Story telling: seconds an eager paddle stays out of the water. */
+/** Seconds an eager paddle stays out of the water, in either telling. */
 const EAGER_HOLD = 0.4;
 
 const WAVE_LEGEND = [
@@ -312,7 +312,7 @@ const WAVE_LEGEND = [
 ] as const;
 
 export class WavePanel {
-  private phase: WavePhase = 'paddle';
+  private stage: WavePhase = 'paddle';
   private waves = 0; // waves punched through
   private x = 1; // incoming wave position, 1 -> 0 across the track
   private speed = 0.55;
@@ -343,10 +343,11 @@ export class WavePanel {
   private lastLateSwell = 0;
   private escapes = 0; // swells that rolled past unpunched
 
-  // The story telling's attention: an eager stroke leaves the paddle out of
-  // the water for a beat (mashing keeps it there), and two swells lost that
-  // way earn a slow, wide one that waits for you. The ride home leans too,
-  // so the arrows matter; a horse pinned on its rail rights itself in time.
+  // Attention: an eager stroke leaves the paddle out of the water for a beat
+  // (mashing keeps it there), in both tellings. In the story, two swells lost
+  // that way earn a slow, wide one that waits for you; the hard water only
+  // counts them as escapes. The story's ride home leans too, so the arrows
+  // matter; a horse pinned on its rail rights itself in time.
   private eager = new Hold();
   private eagerEscapes = 0;
   private lull = false; // the mercy swell: no hold on this one
@@ -378,10 +379,19 @@ export class WavePanel {
     return !this.root.hidden;
   }
 
+  /**
+   * See GamePanel.phase. The story's first landing is not the end: the
+   * beach dares you out again and Space paddles the second set, so that
+   * landing reads 'ashore', and only the last one reads 'done'.
+   */
+  get phase(): WavePhase | 'ashore' {
+    return this.stage === 'done' && !this.hard && this.set === 1 ? 'ashore' : this.stage;
+  }
+
   open(onDone: () => void) {
     this.onDone = onDone;
     freshRun('wave.start');
-    this.phase = 'paddle';
+    this.stage = 'paddle';
     this.waves = 0;
     this.x = 1;
     this.hard = RUN.hard;
@@ -435,7 +445,7 @@ export class WavePanel {
   tick(dt: number) {
     if (!this.isOpen) return;
     this.marks.tick(dt);
-    if (this.phase === 'paddle') {
+    if (this.stage === 'paddle') {
       this.x -= dt * (this.lull ? this.speed * 0.8 : this.speed);
       this.eager.tick(dt);
       if (this.x < -0.08) {
@@ -479,7 +489,7 @@ export class WavePanel {
                 : 'It rolls you back a little. Again: Space right as it arrives.';
         }
       }
-    } else if (this.phase === 'ride') {
+    } else if (this.stage === 'ride') {
       this.drift += (Math.random() - 0.5) * 2.6 * dt;
       this.drift = Math.max(-1, Math.min(1, this.drift));
       this.balance += this.drift * dt * this.driftMul;
@@ -523,12 +533,12 @@ export class WavePanel {
         }
       }
       if (this.rideT >= this.rideNeed) {
-        this.phase = 'done';
+        this.stage = 'done';
         this.audio.weaveDone();
         this.hint =
           !this.hard && this.set === 1
             ? 'The wave sets you down on the sand like a parcel. The boys on the beach are already pointing past you at the next set, bigger: "Otra, otra." Space to paddle out again.'
-            : !this.hard && this.escapes === 0
+            : !this.hard && this.escapes === 0 && this.earlyMisses + this.lateMisses === 0
               ? 'Six strokes, six swells, not one wasted. The second wave sets you down on the sand like a parcel, and the boys on the beach whistle. Press Space.'
               : !this.hard && this.holds >= 2
                 ? 'The wave sets you down on the sand like a parcel, mostly sideways. Someone on the beach is laughing kindly. Press Space.'
@@ -562,7 +572,7 @@ export class WavePanel {
 
   /** The hard telling's graceful end: no penalty, one honest line owed. */
   private lose(hint: string, advice?: string) {
-    this.phase = 'lost';
+    this.stage = 'lost';
     this.hint = hint;
     coach('wave.start', advice ?? this.paddleAdvice());
     this.audio.bump();
@@ -574,7 +584,7 @@ export class WavePanel {
   }
 
   onDir(dir: Dir) {
-    if (this.phase !== 'ride') return;
+    if (this.stage !== 'ride') return;
     if (dir === 'left') this.balance -= 0.16;
     if (dir === 'right') this.balance += 0.16;
     // A correction kicks spray off the hull.
@@ -586,7 +596,7 @@ export class WavePanel {
   }
 
   onAction() {
-    if (this.phase === 'paddle') {
+    if (this.stage === 'paddle') {
       if (this.eager.on) {
         // The paddle is still coming back from the last eager stroke; pushing
         // again only keeps it in the air.
@@ -613,7 +623,7 @@ export class WavePanel {
         }
         this.lunge = 1;
         if (this.waves >= 3) {
-          this.phase = 'ride';
+          this.stage = 'ride';
           this.hint = this.hard
             ? 'Past the break. The chop wants a rail; hold the middle with the arrows, and never let a lean grow old.'
             : 'Past the break. Now the wave home: hold the middle with the arrows.';
@@ -640,13 +650,16 @@ export class WavePanel {
         const off = this.x > this.zoneHi ? (this.zoneHi - this.x) / this.speed : (this.zoneLo - this.x) / this.speed;
         const far = this.hard ? ` That was ${offBy(off)}.` : '';
         this.hint = (this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.') + far;
-        // Story only: an eager stroke leaves the paddle in the air a beat.
-        if (!this.hard && !this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
+        // An eager stroke leaves the paddle in the air a beat, in the hard
+        // water too: without it a hand mashing Space always had a stroke
+        // landing in the strike, and won the hard star without looking.
+        // (The story's slow mercy swell lets the paddle straight back in.)
+        if (!this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
       }
-    } else if (this.phase === 'done' && !this.hard && this.set === 1) {
+    } else if (this.stage === 'done' && !this.hard && this.set === 1) {
       // The second set: the same three strokes against taller water.
       this.set = 2;
-      this.phase = 'paddle';
+      this.stage = 'paddle';
       this.waves = 0;
       this.x = 1;
       this.speed = 0.62;
@@ -659,7 +672,7 @@ export class WavePanel {
       this.eagerEscapes = 0;
       this.hx = 170;
       this.hint = 'The second set stands up taller and comes quicker. Space as each one reaches the horse.';
-    } else if (this.phase === 'done' || this.phase === 'lost') {
+    } else if (this.stage === 'done' || this.stage === 'lost') {
       this.root.hidden = true;
       const done = this.onDone;
       this.onDone = null;
@@ -690,22 +703,22 @@ export class WavePanel {
     band(b.bands[0]!, 148, 9, 1.2);
     band(b.bands[1]!, 178, 18, 2);
 
-    const riding = this.phase === 'ride' || this.phase === 'done';
+    const riding = this.stage === 'ride' || this.stage === 'done';
     // Horse target position and posture.
     let targetX = 170;
     let tilt = wobble(t, 1.6) * 0.05;
     let lean = 0;
-    if (this.phase === 'ride') {
+    if (this.stage === 'ride') {
       targetX = 320 + this.balance * 180;
       this.leanV += (this.balance - this.leanV) * Math.min(1, dt * 6);
       tilt = this.leanV * 0.28 + wobble(t, 2.1) * 0.03;
       lean = this.leanV * (Math.abs(this.balance) > 0.45 ? 1.5 : 1);
-    } else if (this.phase === 'done') {
+    } else if (this.stage === 'done') {
       // Set down on the sand, level and dripping.
       targetX = 476;
       this.leanV += (0 - this.leanV) * Math.min(1, dt * 3);
       tilt = this.leanV * 0.28;
-    } else if (this.phase === 'lost') {
+    } else if (this.stage === 'lost') {
       // Washed back toward the shallows, upright and unhurt.
       targetX = 120;
       this.leanV += (0 - this.leanV) * Math.min(1, dt * 3);
@@ -718,7 +731,7 @@ export class WavePanel {
     g.fillStyle = shade(PAL.waterDark, -0.08);
     g.fillRect(0, 242, 640, 98);
 
-    if (this.phase === 'paddle') {
+    if (this.stage === 'paddle') {
       // Strike zone shimmer where the swell must meet the horse.
       const near = this.x <= 0.3;
       stampGlow(g, this.hx + 44, 262, 54, '#f2ead2', near ? 0.32 + wobble(t, 6) * 0.1 : 0.12);
@@ -730,7 +743,7 @@ export class WavePanel {
 
     // The beach slides in from the right as the ride home progresses.
     if (riding) {
-      const p = this.phase === 'done' ? 1 : Math.min(1, this.rideT / 4);
+      const p = this.stage === 'done' ? 1 : Math.min(1, this.rideT / 4);
       const bw = 60 + easeOutCubic(p) * 220;
       g.fillStyle = '#dcC49a'.toLowerCase();
       g.beginPath();
@@ -747,14 +760,14 @@ export class WavePanel {
 
     // Wake foam behind a moving horse.
     this.foamT += dt;
-    if (this.foamT > 0.16 && this.phase !== 'done' && !calm()) {
+    if (this.foamT > 0.16 && this.stage !== 'done' && !calm()) {
       this.foamT = 0;
       sc.waft(this.hx - 70, hy + 4, 'rgba(246,240,226,0.5)', 5);
     }
 
     band(b.bands[2]!, 262, 34, 2.4);
 
-    if (this.phase === 'done') {
+    if (this.stage === 'done') {
       // Ashore: the hull rests on the sand while gulls take the credit.
       this.gullT += dt;
       if (this.gullT > 1.4 && !calm()) {
@@ -766,7 +779,7 @@ export class WavePanel {
     }
 
     // Progress, painted small: three foam medallions, then the ride clock.
-    if (this.phase === 'paddle') {
+    if (this.stage === 'paddle') {
       for (let i = 0; i < 3; i++) {
         const cx = 26 + i * 22;
         if (i < this.waves) dot(g, cx, 24, 7, 'rgba(246,240,226,0.95)');
@@ -781,7 +794,7 @@ export class WavePanel {
       g.font = '12px system-ui, sans-serif';
       g.textAlign = 'right';
       g.fillText(
-        this.phase === 'done' ? 'ashore' : this.phase === 'lost' ? 'the sea keeps it' : `${Math.max(0, this.rideNeed - this.rideT).toFixed(1)}s`,
+        this.stage === 'done' ? 'ashore' : this.stage === 'lost' ? 'the sea keeps it' : `${Math.max(0, this.rideNeed - this.rideT).toFixed(1)}s`,
         622,
         28,
       );
@@ -940,6 +953,15 @@ export class NetPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /**
+   * See GamePanel.phase: 'done' once the whole net is mended. The story's
+   * first stretch, whole, reads 'between' (Space hauls the pelican's one
+   * across your knees), and a dusk that ran out reads 'lost'.
+   */
+  get phase(): 'mend' | 'between' | 'lost' | 'done' {
+    return this.lost ? 'lost' : this.done ? 'done' : this.between ? 'between' : 'mend';
   }
 
   open(onDone: () => void) {
@@ -1541,6 +1563,16 @@ export class CevichePanel {
     return !this.root.hidden;
   }
 
+  /**
+   * See GamePanel.phase: the step the dish is on. The story's first glass
+   * reads 'between' (Space starts the fishermen's plate), so only the last
+   * glass poured is 'done'; a hard noon given up reads 'lost'.
+   */
+  get phase(): CevicheStep | 'between' | 'lost' {
+    if (this.lost) return 'lost';
+    return this.step === 'done' && !this.hard && this.plate === 1 ? 'between' : this.step;
+  }
+
   open(onDone: () => void) {
     this.onDone = onDone;
     freshRun('c2.cook.start');
@@ -1635,12 +1667,15 @@ export class CevichePanel {
 
   /** The run's own verdict on the lime: early hands or married fish. */
   private cevAdvice(): string {
-    if (this.earlies > this.spoiled) {
-      const at = (this.lastEarlyKiss / this.kissRate).toFixed(1);
-      const brightens = (this.zoneLo / this.kissRate).toFixed(1);
-      return `You pulled at ${at} seconds; the bar only brightens at ${brightens}. Wait for it.`;
-    }
+    if (this.earlies > this.spoiled) return this.earlyAdvice();
     return `The lime had the fish for the whole bar${this.spoiled > 1 ? `, ${this.spoiled} times` : ''}; pull the instant it brightens. A kiss, not a marriage.`;
+  }
+
+  /** The early hand, named: when it pulled, and when the bar brightens. */
+  private earlyAdvice(): string {
+    const at = (this.lastEarlyKiss / this.kissRate).toFixed(1);
+    const brightens = (this.zoneLo / this.kissRate).toFixed(1);
+    return `You pulled at ${at} seconds; the bar only brightens at ${brightens}. Wait for it.`;
   }
 
   onAction() {
@@ -1711,9 +1746,19 @@ export class CevichePanel {
           if (!this.hard && !this.trust) {
             this.petro.start(PETRO_HOLD);
             this.hint = 'Too soon. Petro takes the bowl back for a second. "The lime has barely said hello, corazón. Wait for it to burn bright."';
+          } else if (this.hard) {
+            this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello, and Petro saw it. Back in. The hard noon wants the sliver, exactly.`;
           } else {
             this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello. Back in. Wait for the bright zone, then pull.`;
           }
+        } else {
+          // Past the bright zone the lime already has it: no pull saves this
+          // fish, and the press is answered instead of swallowed in silence.
+          this.audio.bump();
+          sc?.thump(calm() ? 0 : 2, 0.02);
+          this.hint = this.hard
+            ? `Too late, ${offBy((this.kiss - this.zoneHi) / this.kissRate)}; the sliver has gone by and the lime has the fish now.`
+            : 'Too late. The bright moment went by and the lime is marrying the fish; Petro lets it finish. Next one, pull while the bar burns.';
         }
         break;
       }
@@ -1750,9 +1795,13 @@ export class CevichePanel {
         this.pour = 1;
         this.audio.weaveDone();
         this.advance();
-        // Done with a wobble: Petro's second lisa was promised, so the win
-        // (and the hard star) stands; the next card still owes the fix.
-        if (this.spoiled + this.earlies > 0) tip('c2.cook.start', this.cevAdvice());
+        // Done with a wobble: Petro's second lisa was promised, so a spoiled
+        // fish leaves the win (and the hard star) standing; the next card
+        // still owes the fix. An early pull does not: the hard card asks for
+        // the kiss exactly, and with no hold in the hard noon a hand mashing
+        // Space always had a pull land in the sliver, star and all.
+        if (this.hard && this.earlies > 0) coach('c2.cook.start', this.earlyAdvice());
+        else if (this.spoiled + this.earlies > 0) tip('c2.cook.start', this.cevAdvice());
         if (sc) {
           this.pourAt = sc.time;
           sc.flash('#ffe9c0', 0.3);
@@ -1766,7 +1815,9 @@ export class CevichePanel {
                 ? 'The second glass goes out. Petro tastes it: "Edible. Next time, let the lime do the talking." The fishermen do not complain; they are busy. Press Space.'
                 : !this.hard
                   ? 'The second glass goes out, and the fishermen raise it to the kitchen. Noon, near enough, which is exactly on time. Press Space.'
-                  : 'The tiger gets its glass. Noon, near enough, which is exactly on time. Press Space.';
+                  : this.earlies > 0
+                    ? 'The tiger gets its glass. Petro tastes it and says nothing about the early pull, which is how you know she noticed. Press Space.'
+                    : 'The tiger gets its glass. Noon, near enough, which is exactly on time. Press Space.';
         break;
       }
       case 'done': {
@@ -1813,6 +1864,16 @@ export class CevichePanel {
     }
     sc.frame(dt, (g) => this.paint(g, sc));
     this.ui?.setHint(hintHtml(this.hint));
+  }
+
+  /**
+   * The kitchen clock: a minute past noon, half a minute a step, a minute a
+   * spoiled lisa. The story's fish never run out, so the minutes stop at
+   * :59 rather than reading 12:67; the clock approves of noon, not of one.
+   */
+  private clock(): string {
+    const min = 1 + CEVICHE_ORDER.indexOf(this.step) * 0.5 + this.spoiled + (this.plate - 1) * 4.5;
+    return `12:${String(Math.min(59, Math.floor(min))).padStart(2, '0')}`;
   }
 
   /** One ingredient on the shelf, painted at its own small still-life scale. */
@@ -2213,11 +2274,10 @@ export class CevichePanel {
     }
 
     // The clock, still approving.
-    const clockMin = 1 + idx * 0.5 + this.spoiled + (this.plate - 1) * 4.5;
     g.fillStyle = 'rgba(255,248,235,0.65)';
     g.font = '11px system-ui, sans-serif';
     g.textAlign = 'right';
-    g.fillText(`12:${String(Math.floor(clockMin)).padStart(2, '0')} · the clock approves`, 628, 332);
+    g.fillText(`${this.clock()} · the clock approves`, 628, 332);
     g.textAlign = 'left';
   }
 }

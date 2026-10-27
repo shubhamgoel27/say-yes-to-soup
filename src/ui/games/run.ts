@@ -21,8 +21,13 @@
  * from the panel's own "Space, and again", begins with nothing filed, so
  * advice from a run the player already put behind them cannot cost the
  * next one its star.
+ *
+ * RUN.held: whether the pause strip held the panels on the engine's last
+ * frame. tickPanels() records it, so it needs no other wiring; a panel with
+ * an input path of its own (the loom's yarn balls take taps) reads it and
+ * stays still while the strip is up, as its clock does.
  */
-export const RUN = { hard: false };
+export const RUN = { hard: false, held: false };
 
 const faults = new Map<string, string>();
 const tips = new Map<string, string>();
@@ -92,6 +97,7 @@ export function everyStar(games: readonly { flag: string; hardHow?: string }[], 
  * timers, fuel, spoilage, and clocks all wait while the player decides.
  */
 export function tickPanels(panels: readonly { tick?(dt: number): void }[], dt: number, paused: boolean): void {
+  RUN.held = paused;
   if (paused) return;
   for (const p of panels) p.tick?.(dt);
 }
