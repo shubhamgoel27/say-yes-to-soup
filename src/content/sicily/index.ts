@@ -16,7 +16,7 @@ const SICILY_LETTERS: LetterDef[] = [
   {
     id: 'sicily.pilar',
     from: 'Pilar, Mayor of the Bridge (electorate: nine)',
-    when: { has: ['pilar.gift.puffer'] },
+    when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'The Museum of the Sea thrives. Your permanently astonished puffer fish remains the main exhibit. Visitors ask if it is real. I charge for the answer.',
@@ -27,7 +27,7 @@ const SICILY_LETTERS: LetterDef[] = [
   {
     id: 'sicily.pilar',
     from: 'Pilar, Mayor of the Bridge (electorate: nine)',
-    when: { has: ['pilar.gift.star'] },
+    when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'The Museum of the Sea thrives. Your four-armed sea star remains the main exhibit. Visitors ask where the fifth arm went. I charge for the answer.',
@@ -38,7 +38,7 @@ const SICILY_LETTERS: LetterDef[] = [
   {
     id: 'sicily.pilar',
     from: 'Pilar, Mayor of the Bridge (electorate: nine)',
-    when: { has: ['pilar.gift.claw'] },
+    when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'The Museum of the Sea thrives. Your comma claw remains the main exhibit. Visitors ask which sentence it belongs to. I charge for the answer.',

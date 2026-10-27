@@ -7,6 +7,7 @@ export const RECALL: RecallManifest = {
     'page.words.deom', // the thattukada choice recognizes Busan's stall extra
     'wish.written', // Hana's letter variant reacts to the Tanabata tanzaku (c4)
     'pilar.gift.puffer', // Pilar's letter variant remembers the sea thing you mailed (c2)
+    'c2.gift.sent', // and only if it was actually posted
     'page.customs.twohands', // serving the chaya can quote Busan's hand-under-the-gift lesson
     'c3.shellback', // Joseph's homecoming quiz accepts Neptune's court as testimony
     'page.dishes.sinigang', // and the two-helpings night from Ben's galley

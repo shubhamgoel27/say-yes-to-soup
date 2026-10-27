@@ -49,6 +49,10 @@ export const CALETA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.simon'] }, node: 'mar.simon.first' },
+      // Met as the rail scene opens, la mar only once you answer him: a
+      // journal closed between the two lost the word for good. He waits for
+      // your answer again.
+      { when: { has: ['met.simon'], not: ['c2.trade', 'page.words.lamar'] }, node: 'mar.simon.first' },
       { when: { has: ['met.simon'], not: ['c2.trade'] }, node: 'mar.simon.trade' },
       { when: { has: ['c2.trade', 'c2.ride.done'], not: ['c2.nets.done'] }, node: 'mar.simon.nets' },
       // Once you are somebody's casero the pier talks to you differently, and
@@ -205,7 +209,9 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'faustinoC',
     name: 'Faustino',
     map: 'la-caleta',
-    when: { has: ['c2.arrived'] },
+    // Down with the trade for this chapter only. In the Return he is home on
+    // the pass road, and a second Faustino here replayed his first descent.
+    when: { has: ['c2.arrived'], not: ['c10.arrived'] },
     pos: [8, 22],
     range: 1,
     look: {
@@ -226,7 +232,7 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'llama-costa',
     name: 'Llama',
     map: 'la-caleta',
-    when: { has: ['c2.arrived'] },
+    when: { has: ['c2.arrived'], not: ['c10.arrived'] },
     pos: [6, 23],
     range: 1,
     sprite: 'llamaBrown',
@@ -244,6 +250,9 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'chascaC',
     name: 'Chasca',
     map: 'la-caleta',
+    // In the Return she is home too, on the road up with the album; this pier
+    // copy of her would meet you for the first time all over again.
+    when: { not: ['c10.arrived'] },
     pos: [25, 24],
     range: 0,
     look: {
@@ -963,7 +972,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Two photographs of you now: the star plain and the sea’s edge. The album is becoming a road.' },
+      { who: 'Chasca', text: 'The sea’s edge is in the album now, and you in front of it. The album is becoming a road.' },
     ],
   },
 
@@ -1004,6 +1013,12 @@ export const CALETA_NODES: NodeMap = {
       { text: 'And mail for you, under a tin of pins, in handwriting like an invoice.' },
     ],
     effects: ['set:c2.gift.sent', 'letter:home.pilar'],
+  },
+  'mar.post.pilar': {
+    lines: [
+      { text: 'The clerk lifts the tin of pins. Your mail is still under it, in handwriting like an invoice.' },
+    ],
+    effects: ['letter:home.pilar'],
   },
   'mar.post.aurelio': {
     lines: [
@@ -1360,9 +1375,16 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
   emoliente: [{ node: 'mar.ex.emoliente' }],
   harborsign: [
     { when: { has: ['c2.gift'], not: ['c2.gift.sent'] }, node: 'mar.post.send' },
+    // The gift is posted, and saved, as the counter opens; Pilar's envelope
+    // unfolds only when the words close. A journal closed in between left it
+    // under the pins, and nothing ever handed it over.
+    { when: { has: ['c2.gift', 'c2.gift.sent'], not: ['letter.read.home.pilar'] }, node: 'mar.post.pilar' },
     { when: { has: ['c2.gift.sent'], not: ['letter.read.home.aurelio'] }, node: 'mar.post.aurelio' },
     { node: 'mar.post.idle' },
   ],
+  // On this pier the Crossing's gangway front-runs these words once the
+  // chapter is done, and from the first night at sea on, the Return's
+  // homecoming sign front-runs both (this chapter cannot name either flag).
   piersign: [
     { when: { has: ['c2.complete'] }, node: 'mar.pier.next' },
     { node: 'mar.pier.locked' },

@@ -76,6 +76,10 @@ export const SICILY_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.alfio'] }, node: 'c8.alfio.first' },
+      // Met as the bar opens, served only at the end of the order. A journal
+      // closed in between lost his whole line, granita to cannolo; he asks
+      // what he can make you again.
+      { when: { has: ['met.alfio'], not: ['c8.granita'] }, node: 'c8.alfio.first' },
       { when: { has: ['c8.granita'], not: ['c8.arancino'] }, node: 'c8.alfio.lunch' },
       { when: { has: ['c8.arancino'], not: ['c8.cannolo'] }, node: 'c8.alfio.cannolo' },
       { when: { has: ['page.dishes.cannolo'], not: ['c8.cook.done'] }, node: 'c8.alfio.bag' },
@@ -916,7 +920,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Nine photographs now, and you in front of each one, slightly more somebody.' },
+      { who: 'Chasca', text: 'The stones are in the album now, and you in front of them, slightly more somebody.' },
       { who: 'Chasca', text: 'The album ends where you end. No, that came out wrong. Where you arrive. Better.' },
     ],
   },

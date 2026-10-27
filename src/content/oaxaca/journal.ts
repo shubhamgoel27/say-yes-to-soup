@@ -197,6 +197,13 @@ export const OAXACA_JOURNAL: JournalEntry[] = [
 /** Valley loose threads; merged ahead of the earlier chapters' lists. */
 export const OAXACA_TASKS: TaskDef[] = [
   {
+    // Only after a journal closed while she was handing it over: the paper
+    // unfolds when the words close, and it is the chapter's whole answer.
+    when: { has: ['c9.telegram'], not: ['letter.read.oax.telegram'] },
+    text: 'The telegram Refugio put in your hands is on her table, still folded. Open it; it has waited fifty years.',
+    at: ['cocina', 10, 4],
+  },
+  {
     // First, because the night is over: whatever errands are still open,
     // the morning belongs to the two women at the corner.
     when: { has: ['c9.vigil.done'], not: ['c9.bye'] },

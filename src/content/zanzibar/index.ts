@@ -17,6 +17,7 @@ const RECALL: RecallManifest = {
     'c3.shellback', // Neptune's court does not revoke; the Capitana checks
     'c11.chit.bombay', // Sethji's cousin's cargo, unloading at the jahazi
     'c11.attar.mitti', // Mehr Aapa's bottled first rain, breathed out by the clove mats
+    'c2.gift.sent', // Pilar's swearing-in shelf holds the sea thing only if it was posted
   ],
   plants: [
     'c7.arrived', // hands the task list over once you step off the jahazi
@@ -57,7 +58,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
-      when: { has: ['pilar.gift.puffer'] },
+      when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
       body: [
         'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
         'The puffer fish you posted presides over the swearing-in shelf. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
@@ -68,7 +69,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
-      when: { has: ['pilar.gift.star'] },
+      when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
       body: [
         'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
         'The sea star you posted presides over the swearing-in shelf, four arms raised in every direction like a quorum. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
@@ -79,7 +80,7 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
-      when: { has: ['pilar.gift.claw'] },
+      when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
       body: [
         'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
         'The comma claw you posted presides over the swearing-in shelf. My oath did not end, it paused there, so technically I am still being sworn in. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',

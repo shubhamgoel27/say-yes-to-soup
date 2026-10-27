@@ -48,6 +48,8 @@ export const RETURN_NPCS: NpcDef[] = [
       },
       { when: { has: ['c10.arrived'], not: ['c10.torch'] }, node: 'c10.traveler.first' },
       { when: { has: ['story.end'], not: ['c10.traveler.mail'] }, node: 'c10.traveler.mail' },
+      // Handed over is saved at once; the letter unfolds when the words close.
+      { when: { has: ['c10.traveler.mail'], not: ['letter.read.australia.hook'] }, node: 'c10.traveler.mail' },
       { when: { has: ['story.end'] }, node: 'c10.traveler.after' },
       { node: 'c10.traveler.idle' },
     ],
@@ -80,6 +82,15 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
   {
     npcId: 'felix',
     entry: [{ when: { has: ['c10.arrived'], not: ['c10.felix.seen'] }, node: 'c10.felix.reunion' }],
+  },
+  {
+    // The pier where she first looked you over. She speaks first; the old
+    // "the Pacific is long" belongs to the morning you sailed.
+    npcId: 'rios',
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.rios.seen'] }, node: 'c10.rios.reunion' },
+      { when: { has: ['c10.arrived'] }, node: 'c10.rios.after' },
+    ],
   },
   // ---- the road up ----
   {
@@ -174,9 +185,9 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
       // her now, as a stranger: no co-owner, no reunion, no exhibit owed.
       { when: { has: ['c10.arrived'], not: ['c10.pilar.seen', 'met.pilar'] }, node: 'c10.pilar.stranger' },
       { when: { has: ['c10.pilar.seen'], not: ['met.pilar'] }, node: 'c10.pilar.stranger.after' },
-      { when: { has: ['c10.arrived', 'pilar.gift.puffer'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.puffer' },
-      { when: { has: ['c10.arrived', 'pilar.gift.star'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.star' },
-      { when: { has: ['c10.arrived', 'pilar.gift.claw'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.claw' },
+      { when: { has: ['c10.arrived', 'pilar.gift.puffer', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.puffer' },
+      { when: { has: ['c10.arrived', 'pilar.gift.star', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.star' },
+      { when: { has: ['c10.arrived', 'pilar.gift.claw', 'c2.gift.sent'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.claw' },
       { when: { has: ['c10.arrived'], not: ['c10.pilar.seen'] }, node: 'c10.pilar.plain' },
       { when: { has: ['c10.pilar.seen'] }, node: 'c10.pilar.after' },
     ],
@@ -191,6 +202,13 @@ export const RETURN_NODES: NodeMap = {
       { text: 'The road up is the same road down, older now. So are you. Everything between here and home wants to say hello first.' },
     ],
     effects: ['set:c10.arrived', 'journal:words.elsewhere'],
+  },
+  // The sign that once boarded you, read from the other side of the trip.
+  'c10.ex.piersign': {
+    lines: [
+      { text: 'THE CROSSING, says the board, the paint gone soft in the garúa. Under it, in chalk and in a hurry, someone has added: YA VOLVIÓ.' },
+      { text: 'The thirty rungs were kinder going down. The road up starts where the pier ends.' },
+    ],
   },
 
   // ---------------- Marisol, your stall forever ----------------
@@ -248,6 +266,21 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Maestro Félix', text: 'The going wears out; the knowing how comes home.' },
     ],
     effects: ['set:c10.felix.seen'],
+  },
+
+  // ---------------- Capitana Ríos, on her own pier ----------------
+  'c10.rios.reunion': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'The galley hand, back on my pier. Report.' },
+      { text: 'You give her the short version, which is still long. She hears it the way she reads weather: all of it, nodding at none of it.' },
+      { who: 'Capitana Ríos', text: 'All the way round and up the same pier. La mar approves. So do I, which is rarer.' },
+    ],
+    effects: ['set:c10.rios.seen'],
+  },
+  'c10.rios.after': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Go up. Somebody on that mountain has soup, and the galley coffee is still a punishment from God.' },
+    ],
   },
 
   // ---------------- Chasca, home too, with THE ALBUM ----------------
@@ -385,9 +418,11 @@ export const RETURN_NODES: NodeMap = {
     ],
     choices: [
       // A gift set on Nani's ofrenda in Oaxaca cannot also be handed over
-      // here; the choice becomes the telling of where it went instead.
-      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage'] } },
-      { text: 'Tell him where his omiyage went', goto: 'c10.aurelio.ofrenda', when: { has: ['omiyage.aurelio', 'c9.of.omiyage'] } },
+      // here; the choice becomes the telling of where it went instead. Only
+      // his own: the altar takes one omiyage, and if it took Petro's or
+      // Pilar's, his is still in your bag.
+      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage.aurelio'] } },
+      { text: 'Tell him where his omiyage went', goto: 'c10.aurelio.ofrenda', when: { has: ['omiyage.aurelio', 'c9.of.omiyage.aurelio'] } },
       { text: 'Tell him about a ledger in Oaxaca', goto: 'c10.aurelio.ledger', when: { has: ['c9.debt.paid'] } },
       { text: 'Say yes to soup', goto: 'c10.aurelio.eat' },
     ],
@@ -650,8 +685,9 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Pilar', text: 'The museum accepts donations, facts, rocks, and respectful staring.' },
     ],
     choices: [
-      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] } },
-      { text: 'Explain where her omiyage went', goto: 'c10.pilar.ofrenda', when: { has: ['omiyage.pilar', 'c9.of.omiyage'] } },
+      // Hers only if hers is the one the altar took (see Aurelio's soup).
+      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage.pilar'] } },
+      { text: 'Explain where her omiyage went', goto: 'c10.pilar.ofrenda', when: { has: ['omiyage.pilar', 'c9.of.omiyage.pilar'] } },
       { text: 'Stare respectfully', goto: 'c10.pilar.stare' },
     ],
   },
@@ -943,6 +979,12 @@ export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'village', when: { has: ['c10.well.called'], not: ['c10.carmen.her'] }, node: 'c10.ex.jug.waiting' },
     { node: 'c10.ex.jug' },
   ],
+  // La Caleta's pier sign, home again. Tagged to the pier so it front-runs
+  // the Crossing's gangway and the coast's own sign. Gated on the crossing
+  // having begun, not on c10.arrived: past the first night at sea the only
+  // way back to this pier is the voyage home, and a save that lands here
+  // before the homecoming's arrival flag is raised must read this too.
+  piersign: [{ map: 'la-caleta', when: { has: ['c3.arrived'] }, node: 'c10.ex.piersign' }],
   // The cairn on the pass road. Tagged to the road so it front-runs the
   // first chapter's own apacheta words only while the stone is in hand.
   apacheta: [
