@@ -6,10 +6,25 @@ export function surface(w: number, h: number): Surface {
   const cv = document.createElement('canvas');
   cv.width = w;
   cv.height = h;
-  const g = cv.getContext('2d');
-  if (!g) throw new Error('2d context unavailable');
+  const g = context2d(cv);
   g.imageSmoothingEnabled = true; // the smooth-art era
   return { cv, g };
+}
+
+/**
+ * A canvas's 2D context, or an error that says what happened. A browser out
+ * of canvas memory (iOS before 17 caps the total every page may hold) hands
+ * back null instead of a context, and the boot error card shows this text.
+ */
+export function context2d(cv: HTMLCanvasElement, opts?: CanvasRenderingContext2DSettings): CanvasRenderingContext2D {
+  const g = cv.getContext('2d', opts);
+  if (!g) {
+    throw new Error(
+      `Out of canvas memory: the browser gave a ${cv.width}x${cv.height} canvas no 2D context. ` +
+        'Closing other tabs or restarting the browser may free enough to start.',
+    );
+  }
+  return g;
 }
 
 /**

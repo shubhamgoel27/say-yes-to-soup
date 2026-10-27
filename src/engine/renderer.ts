@@ -5,7 +5,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { OVER_SEA, PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, outlineSheet, surface, type Surface } from '../art/pix';
+import { cellHash, context2d, outlineSheet, surface, type Surface } from '../art/pix';
 import { bodyCovered } from './stand';
 
 /**
@@ -641,8 +641,7 @@ export class Renderer {
   private ambientDebug = false;
 
   constructor(readonly canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) throw new Error('2d canvas context unavailable');
+    const ctx = context2d(canvas, { alpha: false });
     this.ctx = ctx;
     if (import.meta.env.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
     canvas.width = W;
