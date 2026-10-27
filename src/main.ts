@@ -3790,6 +3790,8 @@ function seedCelebrations() {
   if (!state.has('ceremonies.kept')) {
     const marks = ['ceremonies.kept'];
     if (state.has('story.complete')) marks.push('seen.plate.story.complete');
+    // A journal finished before the closing book kept its own mark: taken as read.
+    if (state.has('story.end')) marks.push('end.book.read');
     for (const c of COMPLETIONS) {
       if (state.has(c.flag)) marks.push(`seen.plate.${c.flag}`);
       if (state.has(closeFlag(c))) marks.push(`seen.close.${c.flag}`);
@@ -3982,22 +3984,7 @@ function endDialogue() {
   if (openPendingLetter()) return;
 
   // Chasca's album unfolds once the conversation has stepped back from it.
-  if (state.has('album.open')) {
-    state.clearFlag('album.open');
-    player.frozen = true;
-    audio.pageFlip();
-    albumUI.open((curtain) => {
-      // The closing book went dark over the end of the journey: hold it.
-      if (curtain) {
-        startCurtain();
-        return;
-      }
-      player.frozen = false;
-      // The first viewing earns her closing words; reopenings close quietly.
-      if (!state.has('c10.album.seen')) startNarration('c10.album.close');
-    });
-    return;
-  }
+  if (openRaisedAlbum()) return;
   if (
     state.has('dig.invite') &&
     !state.has('dig.done') &&
@@ -4074,6 +4061,31 @@ applyDressings();
   }
 }
 
+/** Open the album (or, after the last page, the closing book) if a
+ * conversation raised it; true if it opened. */
+function openRaisedAlbum(): boolean {
+  if (!state.has('album.open')) return false;
+  state.clearFlag('album.open');
+  player.frozen = true;
+  audio.pageFlip();
+  albumUI.open((curtain) => {
+    // The closing book went dark over the end of the journey: hold it.
+    if (curtain) {
+      // Read to its end: only now is it done. end.book is spent the moment
+      // the book opens, so a tab closed on its first spreads used to lose
+      // the closing leaves and the curtain for good.
+      state.markQuietly(['end.book.read']);
+      state.save();
+      startCurtain();
+      return;
+    }
+    player.frozen = false;
+    // The first viewing earns her closing words; reopenings close quietly.
+    if (!state.has('c10.album.seen')) startNarration('c10.album.close');
+  });
+  return true;
+}
+
 /** Unfold the letter waiting to be read, if there is one. */
 function openPendingLetter(): boolean {
   if (!pendingLetter) return false;
@@ -4145,6 +4157,12 @@ function resumeInterrupted() {
     if (letter) {
       pendingLetter = letter;
       if (openPendingLetter()) return;
+    }
+    // The last page was written, but the closing book was never read to its
+    // end: it opens again.
+    if (state.has('story.end') && !state.has('end.book.read')) {
+      state.markQuietly(['end.book', 'album.open']);
+      if (openRaisedAlbum()) return;
     }
     playArrival();
   };
