@@ -12,6 +12,18 @@ export function surface(w: number, h: number): Surface {
   return { cv, g };
 }
 
+/**
+ * Hands a scratch canvas's pixels back now. A canvas keeps its backing store
+ * until the element is collected, which a synchronous boot never waits for,
+ * and before Safari 17 every canvas still held counts against one total cap.
+ * Zero-sized, it holds nothing while it waits. Only for canvases nothing else
+ * keeps: drawing a zero-sized canvas throws.
+ */
+export function release(cv: HTMLCanvasElement) {
+  cv.width = 0;
+  cv.height = 0;
+}
+
 /** mulberry32. Art must be identical on every load, so no Math.random anywhere. */
 export class Rng {
   private s: number;
@@ -322,5 +334,7 @@ export function outlineSheet(
       g.restore();
     }
   }
+  release(cell);
+  release(sil);
   return out;
 }

@@ -1,5 +1,5 @@
 import { ART, PAL } from '../engine/config';
-import { dot, outlineSheet, oval, shade, softShadow, surface } from './pix';
+import { dot, outlineSheet, oval, release, shade, softShadow, surface } from './pix';
 import { CHAR_H, CHAR_W, DIR_ROW } from './character';
 
 /**
@@ -30,7 +30,9 @@ function sheet(draw: (g: CanvasRenderingContext2D, dir: 'down' | 'up' | 'left', 
     }
   }
   // Same cut-paper edge as the people; the dog is pasted in too.
-  return outlineSheet(cv, AW, AH);
+  const inked = outlineSheet(cv, AW, AH);
+  release(cv);
+  return inked;
 }
 
 /** The village dog: tan, optimistic, employed. */
