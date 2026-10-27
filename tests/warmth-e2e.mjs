@@ -104,6 +104,9 @@ async function winWeave(page) {
           rowDone = true;
         } else if (h.startsWith('The row holds')) {
           check(row === WEAVE_ROWS - 1, `A: the cloth takes you in on row ${row + 1} of ${WEAVE_ROWS}`);
+          // The payoff rests the action key for 450ms after it appears
+          // (DONE_GRACE_MS in main.ts): wait that out before closing.
+          await sleep(600);
           await page.keyboard.press('Space'); // close the panel
           await sleep(400);
           return;

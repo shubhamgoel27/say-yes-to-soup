@@ -57,7 +57,15 @@ export type SaveData = {
   /** When this journal was last written to (epoch ms), for the shelf's
    * "last walked" line. Saves from before it simply have none. */
   walked?: number;
+  /** The conversation open when the journal was written, if any; see
+   * GameState.talk. Saves from before it simply have none. */
+  talk?: Talk | null;
 };
+
+/** A conversation in progress: the node on screen, who is speaking it (a
+ * villager's id, or null), and how it was opened. */
+export type Talk = { node: string; who: string | null; kind?: TalkKind };
+export type TalkKind = 'talk' | 'pet' | 'examine' | 'narration';
 
 /** The longest name the flyleaf takes ("Bartholomew-Ashwini" fits). */
 export const NAME_MAX = 24;
@@ -99,10 +107,25 @@ function parseSave(raw: string | null): SaveData | null {
         typeof pl !== 'object' || typeof pl.map !== 'string' ||
         !Number.isFinite(pl.x) || !Number.isFinite(pl.y) || typeof pl.dir !== 'string'
       ) return null;
+      // An unpacked journal is someone else's file: a facing the sprite
+      // sheet has no row for would fail every frame the traveler is drawn.
+      if (!['up', 'down', 'left', 'right'].includes(pl.dir)) pl.dir = 'down';
     }
     if (data.errand !== undefined && data.errand !== null && typeof data.errand !== 'string') return null;
     if (data.name !== undefined && data.name !== null && typeof data.name !== 'string') return null;
     if (typeof data.name === 'string') data.name = cleanName(data.name);
+    // The open conversation is a convenience, never a reason to refuse a
+    // journal: anything malformed simply means none was open.
+    const t = data.talk as { node?: unknown; who?: unknown; kind?: unknown } | null | undefined;
+    const kinds = ['talk', 'pet', 'examine', 'narration'];
+    data.talk =
+      t && typeof t === 'object' && typeof t.node === 'string'
+        ? {
+            node: t.node,
+            who: typeof t.who === 'string' ? t.who : null,
+            ...(typeof t.kind === 'string' && kinds.includes(t.kind) ? { kind: t.kind as TalkKind } : {}),
+          }
+        : null;
     return data;
   } catch {
     return null;
@@ -279,6 +302,10 @@ type Events = {
 export class GameState {
   /** ?fresh may clear storage once per page load; see load(). */
   static freshConsumed = false;
+  /** ?fresh is for automation on the dev server only. In a shipped build a
+   * shared or bookmarked link carrying it erased the player's journal and its
+   * backup on every load, including the reload a warning had asked for. */
+  static allowFresh = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
   private flags = new Set<string>();
   private journal = new Set<string>();
   errand: string | null = null;
@@ -290,6 +317,15 @@ export class GameState {
   playerName: string | null = null;
   /** The traveler's chosen look, or null for the default. */
   playerLook: PlayerLook | null = null;
+  /**
+   * The conversation on screen right now, kept by the text box. A node's
+   * effects are saved the moment it opens, but the flag that moves the story
+   * on is often set a node or two later in the same talk; a tab closed in
+   * between left Rosa, Justina and Joginder with no line that hands out the
+   * next errand, and a 30-hour journey ended in chapter one. Saved with the
+   * journey, so Continue can reopen the talk where it stood.
+   */
+  talk: Talk | null = null;
   /**
    * The shelf slot this journey belongs to, pinned when it is loaded or
    * wiped. save() writes here and never re-reads the shelf key: a second
@@ -402,7 +438,10 @@ export class GameState {
           // read flag is set only when the player closes it. Marking it here
           // meant a reload between the handover and the unfolding lost the
           // letter forever; the clerk never offered it again and no re-read
-          // path exists anywhere.
+          // path exists anywhere. And it is owed until then, durably: held
+          // only in memory, a tab closed while the 1975 telegram lay unfolded
+          // lost Oaxaca's central reveal for good.
+          this.flags.add(`letter.due.${arg}`);
           for (const fn of this.onLetter) fn(arg);
           break;
 
@@ -414,6 +453,7 @@ export class GameState {
           break;
         case 'letterread':
           this.flags.add(`letter.read.${arg}`);
+          this.flags.delete(`letter.due.${arg}`);
           break;
         case 'travel': {
           // "travel:map,x,y,dir" or just "travel:map" (arrive at the map's
@@ -447,6 +487,17 @@ export class GameState {
    * news. They are what the last journey already wrote in you. One save
    * and one changed event, however many pages come along.
    */
+  /** Note flags in the journal without a save or a changed event: book-
+   * keeping the next real save carries (the ceremonies' seen-marks). */
+  markQuietly(flags: string[]) {
+    for (const f of flags) this.flags.add(f);
+  }
+
+  /** The other half: put flags down with no save and no event. */
+  unmarkQuietly(flags: string[]) {
+    for (const f of flags) this.flags.delete(f);
+  }
+
   grantPagesQuietly(ids: string[]) {
     let grew = false;
     for (const id of ids) {
@@ -527,6 +578,7 @@ export class GameState {
     this.place = null;
     this.playerName = null;
     this.playerLook = null;
+    this.talk = null;
     this.persistenceLost = false;
     this.superseded = false;
     this.lastBody = null;
@@ -552,6 +604,7 @@ export class GameState {
       place: this.place,
       name: this.playerName,
       look: this.playerLook,
+      talk: this.talk,
     });
   }
 
@@ -575,7 +628,7 @@ export class GameState {
       // ?fresh serves automation; it must fire once per page load, not on
       // every journal switch (reloadJourney re-enters load(), and a shared
       // link with ?fresh once ate the active slot on every shelf browse).
-      if (new URLSearchParams(location.search).has('fresh') && !GameState.freshConsumed) {
+      if (GameState.allowFresh && new URLSearchParams(location.search).has('fresh') && !GameState.freshConsumed) {
         GameState.freshConsumed = true;
         localStorage.removeItem(k.save);
         localStorage.removeItem(k.bak);
@@ -614,6 +667,7 @@ export class GameState {
               ...(typeof look.hat === 'string' ? { hat: look.hat } : {}),
             }
           : null;
+      this.talk = data.talk ?? null;
       // Read straight from the slot, the journey is already written: the
       // first save rewrites only once something has moved. Recovered from
       // a backup, the slot still holds the torn copy and must be rewritten.

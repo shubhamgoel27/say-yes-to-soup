@@ -22,6 +22,15 @@ const DIR_KEYS: Record<string, Dir> = {
 const ACTION_KEYS = new Set(['Space', 'Enter', 'KeyZ', 'KeyE']);
 const BACK_KEYS = new Set(['Escape', 'KeyX', 'Backspace']);
 const JOURNAL_KEYS = new Set(['KeyJ', 'Tab']);
+/** Keys the browser would spend scrolling the page. The game's own page
+ * cannot scroll, so in an embed (itch) the scroll lands on the host page. */
+const SCROLL_KEYS = new Set(['PageUp', 'PageDown', 'Home', 'End']);
+
+/** Typing into a field (the flyleaf's name): its keys are the field's. */
+function typingIn(t: EventTarget | null): boolean {
+  const el = t as HTMLElement | null;
+  return !!el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable === true);
+}
 
 export class Input {
   /**
@@ -75,7 +84,23 @@ export class Input {
   }
 
   private onDown = (e: KeyboardEvent) => {
-    if (e.repeat) return;
+    const chord = e.metaKey || e.ctrlKey || e.altKey;
+    const ours = !chord && !typingIn(e.target) && (!!DIR_KEYS[e.code] || ACTION_KEYS.has(e.code) || SCROLL_KEYS.has(e.code));
+    if (e.repeat) {
+      // A held key's repeats carry no new input, but each one would still
+      // scroll: inside itch's iframe, holding Down slid the game frame off
+      // the host page while the traveler kept walking.
+      if (ours) e.preventDefault();
+      return;
+    }
+    // A browser or OS shortcut (Cmd+S, Ctrl+D, Alt+Tab...) is not a step,
+    // and it stays the browser's: macOS never sends the keyup for a key
+    // let go while Cmd is down, so a Cmd+A walked left until focus moved.
+    if (chord) return;
+    if (ours && SCROLL_KEYS.has(e.code)) {
+      e.preventDefault();
+      return;
+    }
     const dir = DIR_KEYS[e.code];
     if (dir) {
       e.preventDefault();
@@ -115,6 +140,12 @@ export class Input {
   };
 
   private onUp = (e: KeyboardEvent) => {
+    // Every key released under Cmd lost its keyup on macOS; letting go of
+    // Cmd is the last word we will hear about any of them.
+    if (e.code === 'MetaLeft' || e.code === 'MetaRight') {
+      this.releaseAll();
+      return;
+    }
     const dir = DIR_KEYS[e.code];
     if (dir && !this.stillHeld(dir, e.code)) {
       this.dirStack = this.dirStack.filter((d) => d !== dir);
@@ -122,10 +153,18 @@ export class Input {
     this.pressed.delete(e.code);
   };
 
+  /** Told when focus loss (or letting go of Cmd) drops every held input,
+   * so an on-screen stick that still thinks it holds a direction lets go. */
+  onReleaseAll: (() => void) | null = null;
+
   private releaseAll = () => {
+    this.onReleaseAll?.();
     this.dirStack = [];
     this.pressed.clear();
     this.tapDir = null;
+    // The stick, if still held, is re-read on the next poll; kept, it was
+    // ignored until it changed direction.
+    this.padDir = null;
   };
 
   /** WASD and arrows can map to the same direction; don't drop it while either is down. */
@@ -143,6 +182,13 @@ export class Input {
    */
   private padAwake = false;
   private padSeen = false;
+  /** Told of every pad button press: the pad is the device in hand, and a
+   * press is the moment to try waking audio (a keyboard or tap would have). */
+  onPadPress: (() => void) | null = null;
+  /** Told once when a pad is connected that the browser gives no standard
+   * button layout for, so it cannot be read. */
+  onOddPad: (() => void) | null = null;
+  private oddPadTold = false;
 
   pollGamepad() {
     // navigator.getGamepads() every frame is measurable overhead; skip it
@@ -150,6 +196,18 @@ export class Input {
     if (!this.padSeen) return;
     const pads = navigator.getGamepads?.() ?? [];
     const pad = pads.find((p) => p && p.connected && p.mapping === 'standard');
+    // A pad the browser cannot map was ignored without a word, and its owner
+    // pressed buttons at a game that seemed not to listen. Say so once, and
+    // only for a press: some keyboards and motion sensors also present as
+    // unmapped 'gamepads', and their owners were never holding one.
+    if (
+      !pad &&
+      !this.oddPadTold &&
+      pads.some((p) => p && p.connected && p.mapping !== 'standard' && p.buttons.some((b) => b.pressed))
+    ) {
+      this.oddPadTold = true;
+      this.onOddPad?.();
+    }
     // A resting controller with axis drift must not ghost-drive the menus:
     // ignore every pad until it shows a deliberate press or a hard stick push.
     if (pad && !this.padAwake) {
@@ -171,10 +229,17 @@ export class Input {
       this.padButtons[i] = now;
       return now && !was;
     };
-    if (edge(0)) this.actionEdge = true; // A / Cross
-    if (edge(1)) this.backEdge = true; // B / Circle
-    if (edge(3)) this.journalEdge = true; // Y / Triangle
-    if (edge(9)) this.pauseEdge = true; // Start / Options
+    const act = edge(0); // A / Cross
+    const back = edge(1); // B / Circle
+    const thread = edge(2); // X / Square: the red thread, N on a keyboard
+    const journal = edge(3); // Y / Triangle
+    const pause = edge(9); // Start / Options
+    if (act) this.actionEdge = true;
+    if (back) this.backEdge = true;
+    if (thread) this.threadEdge = true;
+    if (journal) this.journalEdge = true;
+    if (pause) this.pauseEdge = true;
+    if (act || back || thread || journal || pause) this.onPadPress?.();
 
     const ax = pad.axes[0] ?? 0;
     const ay = pad.axes[1] ?? 0;
@@ -189,6 +254,7 @@ export class Input {
     if (dir !== this.padDir) {
       if (this.padDir) this.dirStack = this.dirStack.filter((d) => d !== this.padDir);
       if (dir) {
+        this.onPadPress?.(); // the stick is the pad in hand as much as a button
         this.dirStack = this.dirStack.filter((d) => d !== dir);
         this.dirStack.push(dir);
         this.tapDir = dir;

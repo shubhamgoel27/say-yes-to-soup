@@ -384,7 +384,7 @@ export const OAXACA_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c9.ex.wall': {
-    lines: [{ text: "Adobe under paint the colour of a parrot's opinion. Where a flake has fallen, an older colour was waiting." }],
+    lines: [{ text: "Adobe under paint the color of a parrot's opinion. Where a flake has fallen, an older color was waiting." }],
   },
   // ---------------- arrival ----------------
   'c9.arrive': {
@@ -438,12 +438,25 @@ export const OAXACA_NODES: NodeMap = {
         goto: 'c9.refugio.riddle',
         when: { has: ['riddle.cho'] },
       },
+      {
+        text: 'Tell her about the langar, where the ledger is washed with the dishes',
+        goto: 'c9.refugio.seva',
+        when: { has: ['c11.seva.langar'] },
+      },
       { text: 'Ask what a guelaguetza asks of you', goto: 'c9.refugio.chain' },
     ],
   },
+  'c9.refugio.seva': {
+    lines: [
+      { text: 'You tell her about Delhi: a kitchen that feeds anyone who sits, and pays itself back in washed plates, so nobody leaves a debtor.' },
+      { who: 'Doña Refugio', text: 'A beautiful way. Nobody owes, so nobody is shamed.' },
+      { who: 'Doña Refugio', text: 'Here we keep the other way. We write it down, so nobody is forgotten.' },
+    ],
+    next: 'c9.refugio.chain',
+  },
   'c9.refugio.riddle': {
     lines: [
-      { text: 'Ayni, yapa, deom, pilón, guelaguetza. In Busan an old tea sage asked what the weightless thing weighs.' },
+      { text: 'Ayni, yapa, deom, seva, guelaguetza. In Busan an old tea sage asked what the weightless thing weighs.' },
       { text: 'You answer him out loud: nothing. And a village remembers it for fifty years.' },
       { who: 'Doña Refugio', text: 'Tell whoever asked you that an old woman in the valley says: correct.' },
     ],
@@ -491,17 +504,17 @@ export const OAXACA_NODES: NodeMap = {
     choices: [
       {
         text: 'The omiyage from Shionoura, chosen for Doña Petro and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.petro',
         when: { has: ['omiyage.petro'], not: ['c9.of.omiyage'] },
       },
       {
         text: 'The omiyage from Shionoura, chosen for Pilar and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.pilar',
         when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] },
       },
       {
         text: 'The omiyage from Shionoura, chosen for Aurelio and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.aurelio',
         when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage'] },
       },
       {
@@ -528,12 +541,31 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'Not yet. Your hands are not ready.', goto: 'c9.altar.wait' },
     ],
   },
-  'c9.altar.omiyage': {
+  // One omiyage fits on the altar (c9.of.omiyage), and the Return needs to
+  // know whose it was: the other two are still in your bag for the well and
+  // the bridge, and only the one placed here becomes a telling.
+  'c9.altar.omiyage.petro': {
     lines: [
-      { text: 'The little parcel from the Seto sea, still in its careful paper.' },
+      { text: 'The lemon yokan meant for Doña Petro, still in paper the color of sea haze.' },
       { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
     ],
-    effects: ['set:c9.of.omiyage'],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.petro'],
+    next: 'c9.altar.hub',
+  },
+  'c9.altar.omiyage.pilar': {
+    lines: [
+      { text: 'The tenugui meant for Pilar’s museum, its one emphatic tai still folded small.' },
+      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
+    ],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.pilar'],
+    next: 'c9.altar.hub',
+  },
+  'c9.altar.omiyage.aurelio': {
+    lines: [
+      { text: 'The olive-leaf tea meant for Don Aurelio, the tin still smelling of a warm, dry hillside.' },
+      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
+    ],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.aurelio'],
     next: 'c9.altar.hub',
   },
   'c9.altar.kanga': {
@@ -1012,7 +1044,7 @@ export const OAXACA_NODES: NodeMap = {
   },
   'c9.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Ten chapters of you in one bag. When you get home, come see the album. Endings are where albums learn what they are.' },
+      { who: 'Chasca', text: 'Every road of you I caught is in this bag. When you get home, come see the album. Endings are where albums learn what they are.' },
     ],
   },
 
@@ -1265,6 +1297,15 @@ export const OAXACA_NODES: NodeMap = {
     ],
     effects: ['set:c9.ledger', 'journal:words.guelaguetza'],
   },
+  // The telegram, if the journal was closed before it could unfold: Refugio
+  // set it in your hands, and it waits on her table until it is read.
+  'c9.ex.telegram': {
+    lines: [
+      { text: 'The telegram lies on the table where she set it down, folded small, soft as cloth at the creases.' },
+      { text: 'Fifty years it waited at the back of a ledger. It can be opened now.' },
+    ],
+    effects: ['letter:oax.telegram'],
+  },
   'c9.ex.ledger.after': {
     lines: [{ text: 'The ledger, back under the altar table, and one line that waited for you.' }],
   },
@@ -1330,7 +1371,7 @@ export const OAXACA_NODES: NodeMap = {
     effects: ['set:c9.alebrije.close'],
   },
   'c9.ex.wallcal': {
-    lines: [{ text: 'Cal above, colour below. The top has gone brown with thirty years of comal smoke; Refugio calls that seasoning.' }],
+    lines: [{ text: 'Cal above, color below. The top has gone brown with thirty years of comal smoke; Refugio calls that seasoning.' }],
   },
   'c9.ex.floorsaltillo': {
     lines: [{ text: 'Saltillo tiles, no two the same red. A marigold petal has got into the grout. Several have. It is that month.' }],
@@ -1352,6 +1393,9 @@ export const OAXACA_EXAMINES: Record<string, ExamineArm[]> = {
   // the 1975 line is the player's own act, and it grants the journal page.
   table: [
     { map: 'cocina', when: { has: ['c9.ledger.out'], not: ['c9.ledger'] }, node: 'c9.ledger.read' },
+    // The telegram is saved as she hands it over and unfolds only when the
+    // words close; a journal closed in between finds it here, unread.
+    { map: 'cocina', when: { has: ['c9.telegram'], not: ['letter.read.oax.telegram'] }, node: 'c9.ex.telegram' },
     { map: 'cocina', when: { has: ['c9.ledger'] }, node: 'c9.ex.ledger.after' },
     { map: 'cocina', node: 'c9.ex.mesa' },
   ],

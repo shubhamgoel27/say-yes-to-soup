@@ -3,6 +3,7 @@ import type { ChapterDef, JournalTab } from '../content/schema';
 import { ROUTE } from '../content/route';
 import { CHAPTERS } from '../content/world';
 import { PHOTOS } from './album';
+import { lastDevice } from './responsive';
 
 /**
  * The chapter-close spread: when a chapter's story finishes, the journal
@@ -122,7 +123,7 @@ export class ChapterCloseUI {
           ${note}
         </div>
         <div class="cx-go">Onward</div>
-        <div class="cx-hint">${COARSE ? 'tap anywhere' : 'Space, Enter, or Esc'}</div>
+        <div class="cx-hint">${lastDevice() === 'pad' ? 'A or B' : COARSE ? 'tap anywhere' : 'Space, Enter, or Esc'}</div>
       </div>`;
     this.root.hidden = false;
   }

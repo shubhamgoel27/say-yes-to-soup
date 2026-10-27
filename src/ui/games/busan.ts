@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag, PressMarks, offBy } from './scene';
+import { Scene, mountScene, easeInCubic, easeOutCubic, easeOutElastic, easeInOutSine, wobble, squashed, keyCap, paperTag, PressMarks, offBy, calm } from './scene';
 import { Rng, dot, oval, rr, rect, vgrad, surface, shade, glowSpot } from '../../art/pix';
 import { RUN, coach, freshRun } from './run';
 import { Hold } from './attend';
@@ -117,7 +117,6 @@ function edgeTone(t: number): string {
   return EDGE_STOPS[EDGE_STOPS.length - 1]![1];
 }
 
-const calm = () => document.body.classList.contains('reduce-motion');
 const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
 
 /** Where the i-th finished disc rests in the tin. A five-disc batch stacks
@@ -392,7 +391,8 @@ const T_LAND = 0.56; // disc lands, cooked side up
 const T_SLIDE1 = 0.92; // disc arrives in the tin
 
 export class HotteokPanel {
-  private phase: HotteokPhase = 'press';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: HotteokPhase = 'press';
   private round = 0;
   private golden = 0;
   private darks = 0;

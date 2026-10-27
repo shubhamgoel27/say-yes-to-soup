@@ -103,3 +103,32 @@ describe('a name from someone else\'s file', () => {
     assert.equal(peekSlot(1)?.name, 'Siobhán O’Neill-Ashwini');
   });
 });
+
+describe('the rest of someone else\'s file', () => {
+  it('a facing no sprite can draw becomes down', () => {
+    const raw = rawSave({ place: { map: 'village', x: 3, y: 4, dir: 'sideways' } });
+    assert.ok(writeSlotRaw(1, raw));
+    assert.equal(peekSlot(1)?.place?.dir, 'down');
+  });
+});
+
+describe('a journal put down mid-moment', () => {
+  it('remembers the open conversation and a letter not yet read', () => {
+    const a = new GameState();
+    a.load();
+    a.talk = { node: 'rosa.coins', who: 'rosa' };
+    a.apply(['set:met.rosa', 'letter:oax.telegram']);
+    const b = new GameState();
+    b.load();
+    assert.deepEqual(b.talk, { node: 'rosa.coins', who: 'rosa' });
+    assert.ok(b.has('letter.due.oax.telegram'));
+    b.apply(['letterread:oax.telegram']);
+    assert.ok(!b.has('letter.due.oax.telegram'));
+    assert.ok(b.has('letter.read.oax.telegram'));
+  });
+
+  it('a malformed open conversation is no reason to refuse the journal', () => {
+    assert.ok(writeSlotRaw(1, rawSave({ talk: { node: 7 } })));
+    assert.equal(peekSlot(1)?.talk, null);
+  });
+});

@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap, handWords } from './scene';
+import { Scene, mountScene, wobble, easeOutCubic, easeOutElastic, squashed, keyCap, handWords, calm } from './scene';
 import { Rng, blob, dot, oval, rect, rr, surface, vgrad, glowSpot, softShadow } from '../../art/pix';
 import { RUN, coach, freshRun, tip, takeCoach } from './run';
 import { Hold } from './attend';
@@ -33,7 +33,6 @@ if (devEnv?.DEV) {
 
 type Cv = HTMLCanvasElement;
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 /** Maps a 0..1 track value (wind or sheet) onto a visible rig angle in radians. */
 const visAng = (v: number) => (v - 0.5) * 0.9;
@@ -233,7 +232,8 @@ const ROSE_A1 = -Math.PI * 0.14;
 const roseAng = (v: number) => ROSE_A0 + (ROSE_A1 - ROSE_A0) * Math.max(0, Math.min(1, v));
 
 export class SailPanel {
-  private phase: SailPhase = 'sail';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: SailPhase = 'sail';
   private wind = 0.5; // where the good trim lives on the track, 0..1
   private windTarget = 0.5;
   private shiftT = 0; // seconds until the kaskazi wanders again
@@ -1205,7 +1205,8 @@ const UROJO_LEGEND = [
 ] as const;
 
 export class UrojoPanel {
-  private phase: UrojoPhase = 'build';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: UrojoPhase = 'build';
   private round = 0;
   private cur = 0;
   private counts: number[] = [];

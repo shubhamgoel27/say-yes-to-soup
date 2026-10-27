@@ -16,10 +16,32 @@ const SICILY_LETTERS: LetterDef[] = [
   {
     id: 'sicily.pilar',
     from: 'Pilar, Mayor of the Bridge (electorate: nine)',
-    when: { has: ['pilar.gift.puffer'] },
+    when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
     body: [
       'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
       'The Museum of the Sea thrives. Your permanently astonished puffer fish remains the main exhibit. Visitors ask if it is real. I charge for the answer.',
+      'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
+      'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
+    ],
+  },
+  {
+    id: 'sicily.pilar',
+    from: 'Pilar, Mayor of the Bridge (electorate: nine)',
+    when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
+    body: [
+      'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
+      'The Museum of the Sea thrives. Your four-armed sea star remains the main exhibit. Visitors ask where the fifth arm went. I charge for the answer.',
+      'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
+      'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
+    ],
+  },
+  {
+    id: 'sicily.pilar',
+    from: 'Pilar, Mayor of the Bridge (electorate: nine)',
+    when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
+    body: [
+      'Dear business partner. Administrative news: the dog has been named DEPUTY. There was a ceremony. He ate the sash, which legally completes it.',
+      'The Museum of the Sea thrives. Your comma claw remains the main exhibit. Visitors ask which sentence it belongs to. I charge for the answer.',
       'As deputy, the dog now collects tolls when I am at school. Collection is down eighty percent but morale, as an electorate, is up.',
       'Send nothing this time. The museum is full. This is not sentiment, it is a storage report.',
     ],
@@ -76,7 +98,7 @@ export const CHAPTER: ChapterDef = {
         handWords('The rais calls, and the call rolls across the water toward the boat. Space pulls the oar the moment it arrives.'),
         'Three good strokes close each pass. Rush one and the harbor is delighted, and he simply calls again.',
       ],
-      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea.',
+      hardHow: 'The hard telling: the rais calls at feast tempo and the crest is a hand-width. Three missed calls in one pass and the fish keeps the sea.',
       make: (root, audio) => new PisciPanel(root, audio as AudioBus),
     },
     {

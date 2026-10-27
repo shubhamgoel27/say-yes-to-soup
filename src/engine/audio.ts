@@ -314,6 +314,8 @@ export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private windGain: GainNode | null = null;
+  /** Depth of the wind's slow breath; scaled with the wind itself. */
+  private windLfoGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
   /** One 3s noise buffer shared by every burst sound. Allocating a fresh
@@ -378,6 +380,11 @@ export class AudioBus {
     void ctx.resume().catch(() => {});
   }
 
+  /** True once the context exists and is actually playing. */
+  get running(): boolean {
+    return this.ctx?.state === 'running';
+  }
+
   /** Create the context. Must be called from a user gesture the first time. */
   ensure() {
     if (this.ctx) {
@@ -385,7 +392,7 @@ export class AudioBus {
       // tab was hidden or a call came in; it wakes the same way. (Not in the
       // DOM typings, hence the string compare.)
       const st = this.ctx.state as string;
-      if (st === 'suspended' || st === 'interrupted') void this.ctx.resume();
+      if (st === 'suspended' || st === 'interrupted') void this.ctx.resume().catch(() => {}); // refused without a gesture; the next one asks again
       return;
     }
     try {
@@ -416,7 +423,7 @@ export class AudioBus {
       this.sharedNoise = this.noiseBuffer(ctx, 3);
 
       const musicGain = ctx.createGain();
-      musicGain.gain.value = 0.85 * this.mix.music;
+      musicGain.gain.value = this.musicLevel();
       musicGain.connect(master);
 
       // A small synthesized room off the music bus: a decaying-noise impulse
@@ -459,6 +466,7 @@ export class AudioBus {
       // The audition harness reads counters and taps the bus. Dev only.
       if (import.meta.env.DEV) (globalThis as unknown as { __soupAudio: AudioBus }).__soupAudio = this;
       this.windGain = windGain;
+      this.windLfoGain = lfoGain;
       this.musicGain = musicGain;
       this.sfxGain = sfxGain;
       this.applyScene();
@@ -499,7 +507,7 @@ export class AudioBus {
     } catch { /* private browsing */ }
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    if (channel === 'music' && this.musicGain) this.musicGain.gain.setTargetAtTime(0.85 * this.mix.music, t, 0.05);
+    if (channel === 'music' && this.musicGain) this.musicGain.gain.setTargetAtTime(this.musicLevel(), t, 0.05);
     if (channel === 'sfx' && this.sfxGain) this.sfxGain.gain.setTargetAtTime(this.mix.sfx, t, 0.05);
     if (channel === 'ambience') {
       this.applyScene();
@@ -619,9 +627,16 @@ export class AudioBus {
 
   /** Typewriter tick, throttled to every third character. */
   blip() {
+    this.pluck(1150, 0, 0.025, 0.05);
+  }
+
+  /** The typewriter's tick: one in three letters, or it chatters. Kept apart
+   * from blip(), whose callers are single cues (a minigame's tick, the SFX
+   * slider's preview) and once went silent two times in three. */
+  private typeBlip() {
     this.blipCount++;
     if (this.blipCount % 3 !== 0) return;
-    this.pluck(1150, 0, 0.025, 0.05);
+    this.blip();
   }
 
   /**
@@ -630,7 +645,7 @@ export class AudioBus {
    */
   speak(who: string | undefined) {
     if (!who) {
-      this.blip();
+      this.typeBlip();
       return;
     }
     const v = VOICES[this.region] ?? VOICES['andes'];
@@ -774,8 +789,7 @@ export class AudioBus {
     this.nextPhraseAt = 0;
     this.queueKsPrewarm();
     if (this.musicGain && this.ctx) {
-      const base = this.ducked ? 0.45 : 0.85;
-      this.musicGain.gain.setTargetAtTime(base * this.mix.music * (on ? 0.7 : 1), this.ctx.currentTime, 2.5);
+      this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 2.5);
     }
   }
 
@@ -803,6 +817,18 @@ export class AudioBus {
     this.ksWarmQueue = q;
   }
 
+  /**
+   * The music bus level, from everything that moves it at once: the player's
+   * slider, someone talking, sitting down, the ending's hush. Every setter
+   * asks here. Each used to write its own partial sum, so sitting down
+   * brought a slider set to zero back up to a third.
+   */
+  private musicLevel(): number {
+    return (
+      (this.ducked ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1) * (this.hearthPrev ? 0.7 : 1)
+    );
+  }
+
   /** Dialogue ducking: the band lowers its voice while someone talks.
    * Guarded: scheduling a gain ramp EVERY frame floods the automation
    * timeline and stutters the whole page; only edges may schedule. */
@@ -811,8 +837,7 @@ export class AudioBus {
     if (on === this.ducked) return;
     this.ducked = on;
     if (!this.musicGain || !this.ctx) return;
-    const target = (on ? 0.45 : 0.85) * this.mix.music * (this.sitting ? 0.4 : 1) * (this.hearthPrev ? 0.7 : 1);
-    this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, on ? 0.2 : 0.5);
+    this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, on ? 0.2 : 0.5);
   }
 
   /** A soft reversed-feeling cancel: the confirm's two notes, walked back. */
@@ -842,7 +867,7 @@ export class AudioBus {
     if (this.sitting === on) return;
     this.sitting = on;
     if (this.musicGain && this.ctx) {
-      this.musicGain.gain.setTargetAtTime(on ? 0.35 : 0.85, this.ctx.currentTime, 1.2);
+      this.musicGain.gain.setTargetAtTime(this.musicLevel(), this.ctx.currentTime, 1.2);
     }
     this.applyScene();
   }
@@ -852,6 +877,9 @@ export class AudioBus {
     let target = this.scene === 'interior' ? 0.03 : this.scene === 'road' ? 0.14 : 0.1;
     if (this.sitting && this.scene !== 'interior') target += 0.06;
     this.windGain.gain.setTargetAtTime(target * this.mix.ambience, this.ctx.currentTime, 1.0);
+    // The breath rides on top of the level; left at its fixed depth it kept
+    // the wind audible with Ambience at zero, and swinging past zero indoors.
+    this.windLfoGain?.gain.setTargetAtTime(0.45 * target * this.mix.ambience, this.ctx.currentTime, 1.0);
   }
 
   // ----------------------------------------------------------- instruments
@@ -1408,6 +1436,8 @@ export class AudioBus {
 
   /** Grid-locked region gestures: strums and picking, not melody. */
   private gesture(t: number, step: number, bar: number, chord: number[]) {
+    // The ending's hush is the hum alone; the region's hands rest with it.
+    if (this.hearthPrev) return;
     const r = this.region;
     if (r === 'andes' && step === 0 && bar % 2 === 1) {
       // Charango rasgueado on the bar turn: doubled courses, ten cents apart.

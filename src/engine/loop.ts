@@ -155,7 +155,12 @@ export function makeDtSmoother(): (raw: number) => number {
   };
 }
 
-export function startLoop(update: (dt: number) => void, render: () => void): Loop {
+export function startLoop(
+  update: (dt: number) => void,
+  render: () => void,
+  /** Called once, if frames keep throwing: the world has stopped for good. */
+  onStuck?: (err: unknown) => void,
+): Loop {
   let last = performance.now();
   let prevNow = 0;
   let running = true;
@@ -201,12 +206,16 @@ export function startLoop(update: (dt: number) => void, render: () => void): Loo
   // The fix: step by the display's typical interval (rolling median), and
   // nudge toward the real clock so sim time never drifts from wall time.
   const smoothDt = makeDtSmoother();
+  let failing = 0;
+  const STUCK_FRAMES = 120;
 
   function frame(now: number) {
     if (!running) return;
     const dt = Math.min(smoothDt(now - last) / 1000, MAX_DT);
     last = now;
     // A thrown frame must never kill the game; log it and keep breathing.
+    // But a frame that throws every time is a stopped world behind a calm
+    // screen: after a couple of seconds of nothing else, say so once.
     try {
       if (perf || hud) {
         const t0 = performance.now();
@@ -230,8 +239,10 @@ export function startLoop(update: (dt: number) => void, render: () => void): Loo
         update(dt);
         render();
       }
+      failing = 0;
     } catch (err) {
       console.error('[soup] frame error:', err);
+      if (++failing === STUCK_FRAMES) onStuck?.(err);
     }
     requestAnimationFrame(frame);
   }

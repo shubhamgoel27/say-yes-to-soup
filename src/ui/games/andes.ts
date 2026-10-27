@@ -1,7 +1,7 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
 import { surface, rect, rr, oval, dot, vgrad, shade, glowSpot, softShadow, Rng, type Surface } from '../../art/pix';
-import { Scene, mountScene, easeInCubic, easeOutCubic, wobble } from './scene';
+import { Scene, mountScene, easeInCubic, easeOutCubic, wobble, calm } from './scene';
 import { RUN, coach, freshRun } from './run';
 
 /**
@@ -89,7 +89,6 @@ const DIG_WAIT = 1.0;
 /** Papas buried under the heap; the story dig finds them by their steam. */
 const DIG_PAPAS = 3;
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 // ------------------------------------------------------------- baked artwork
 let bgCache: Surface | null = null;
@@ -430,7 +429,7 @@ const DIG_LEGEND = [
 const DONE_LEGEND = [{ keys: ['space'], does: 'go on' }] as const;
 
 export class WatiaPanel {
-  private phase: WatiaPhase = 'stack';
+  private stage: WatiaPhase = 'stack';
   private placed: boolean[] = [];
   private cursor = 0;
   private glow = 0; // 0..1 the clods' heat
@@ -481,10 +480,20 @@ export class WatiaPanel {
     return !this.root.hidden;
   }
 
+  /**
+   * See GamePanel.phase. The story's dome comes down into a 'done' that is
+   * not the end: Space there takes Justina's stick and digs, so until the
+   * papas are out it reads 'heap', and Esc on it offers the strip as on any
+   * other mid-run beat.
+   */
+  get phase(): WatiaPhase | 'heap' {
+    return this.stage === 'done' && !this.hard && !this.dugOut ? 'heap' : this.stage;
+  }
+
   open(onDone: () => void) {
     this.onDone = onDone;
     freshRun(WATIA_FLAG);
-    this.phase = 'stack';
+    this.stage = 'stack';
     this.placed = SLOTS.map(() => false);
     this.cursor = 0;
     this.glow = 0;
@@ -529,12 +538,12 @@ export class WatiaPanel {
       // run's own data has one to give.
       if (this.live) {
         this.live = false;
-        if (this.phase !== 'done' && this.phase !== 'lost') this.coachAbandon();
+        if (this.stage !== 'done' && this.stage !== 'lost') this.coachAbandon();
       }
       return;
     }
     this.pulse += dt;
-    if (this.phase === 'fire') {
+    if (this.stage === 'fire') {
       this.glow = Math.max(0, this.glow - dt * (this.hard ? HARD_DECAY : 0.055));
       if (this.hard) {
         this.fuel += dt;
@@ -545,7 +554,7 @@ export class WatiaPanel {
           );
         }
       }
-    } else if (this.phase === 'collapse' && this.hard) {
+    } else if (this.stage === 'collapse' && this.hard) {
       // The hard telling's collapse window: the heat drains while you admire.
       this.glow = Math.max(0, this.glow - dt * HARD_DECAY);
       if (this.glow < COLLAPSE_FLOOR) {
@@ -559,25 +568,25 @@ export class WatiaPanel {
     this.emit(sdt);
     this.setHintFn?.(this.hint);
     this.setLegendFn?.(
-      this.phase === 'stack'
+      this.stage === 'stack'
         ? WATIA_LEGEND
-        : this.phase === 'fire'
+        : this.stage === 'fire'
           ? FIRE_LEGEND
-          : this.phase === 'collapse'
+          : this.stage === 'collapse'
             ? COLLAPSE_LEGEND
-            : this.phase === 'dig'
+            : this.stage === 'dig'
               ? DIG_LEGEND
               : DONE_LEGEND,
     );
   }
 
   onDir(dir: Dir) {
-    if (this.phase === 'dig') {
+    if (this.stage === 'dig') {
       if (dir === 'left' || dir === 'up') this.digCur = Math.max(0, this.digCur - 1);
       if (dir === 'right' || dir === 'down') this.digCur = Math.min(DIG_ORDER.length - 1, this.digCur + 1);
       return;
     }
-    if (this.phase !== 'stack') return;
+    if (this.stage !== 'stack') return;
     if (dir === 'left' || dir === 'up') this.cursor = (this.cursor + SLOTS.length - 1) % SLOTS.length;
     if (dir === 'right' || dir === 'down') this.cursor = (this.cursor + 1) % SLOTS.length;
   }
@@ -587,7 +596,7 @@ export class WatiaPanel {
     // a flurry that finished the fire must not also drop the dome, take the
     // stick and dig a blind hole before the player has read a word.
     if (!this.hard && this.pulse < this.graceUntil) return;
-    if (this.phase === 'stack') {
+    if (this.stage === 'stack') {
       if (this.placed[this.cursor]) {
         this.audio.bump();
         this.hint = 'That one is set. The dome wants a gap filled, not a clod polished.';
@@ -616,14 +625,14 @@ export class WatiaPanel {
             ? `Good. It holds. ${left} more and the little house has a roof.`
             : 'A dome! Crooked, and standing anyway. Now the fire goes in the mouth.';
         if (left === 0) {
-          this.phase = 'fire';
+          this.stage = 'fire';
           this.glow = 0.12;
           this.hint = this.hard
             ? 'Feed the fire on a true heartbeat: not a flurry, not a lull, before the fuel spends.'
             : 'Feed the fire: press Space with the flame, steady as a heartbeat.';
         }
       }
-    } else if (this.phase === 'fire') {
+    } else if (this.stage === 'fire') {
       if (!this.hard) {
         // The story fire forgives a slow hand, never a flurry: presses piled
         // on top of each other smother the mouth and add nothing.
@@ -667,7 +676,7 @@ export class WatiaPanel {
       this.audio.weaveNote(Math.floor(this.glow * 6));
       this.animFeed();
       if (this.glow >= 1) {
-        this.phase = 'collapse';
+        this.stage = 'collapse';
         this.graceUntil = this.pulse + PHASE_GRACE;
         this.scene.flash('#ffb45e', 0.25);
         this.hint =
@@ -681,9 +690,9 @@ export class WatiaPanel {
       } else {
         this.hint = 'The fire eats and asks for more. Steady presses, like a heartbeat.';
       }
-    } else if (this.phase === 'collapse') {
+    } else if (this.stage === 'collapse') {
       this.fallen = true;
-      this.phase = 'done';
+      this.stage = 'done';
       this.graceUntil = this.pulse + DIG_WAIT;
       this.audio.weaveDone();
       this.animCollapse();
@@ -695,16 +704,16 @@ export class WatiaPanel {
           : this.chokes === 0
             ? `WHUMP. Earth over embers over papas, and not one clod wasted on the way.${wait}`
             : `WHUMP. Earth over embers over papas. The field is cooking its own.${wait}`;
-    } else if (this.phase === 'done' && !this.hard && !this.dugOut) {
+    } else if (this.stage === 'done' && !this.hard && !this.dugOut) {
       // The story's last beat: the papas come out the way they went in, by hand.
       this.dugOut = true;
-      this.phase = 'dig';
+      this.stage = 'dig';
       this.buried.clear();
       const spots = [...DIG_ORDER].sort(() => Math.random() - 0.5);
       for (const i of spots.slice(0, DIG_PAPAS)) this.buried.add(i);
       this.graceUntil = this.pulse + PHASE_GRACE;
       this.hint = 'The heap breathes. Three wisps of steam leak out of it: move the ring onto one and dig. Where nothing steams, it is only earth.';
-    } else if (this.phase === 'dig') {
+    } else if (this.stage === 'dig') {
       const spot = DIG_ORDER[this.digCur] ?? 0;
       const f = digPx(this.digCur);
       if (this.buried.has(spot)) {
@@ -715,7 +724,7 @@ export class WatiaPanel {
         this.scene.burst(f.x, f.y, { n: calm() ? 4 : 10, kind: 'puff', color: 'rgba(255,250,240,0.6)', speed: 50, grav: -50, life: 0.8, size: 5 });
         if (!calm()) this.scene.thump(2, 0.02);
         if (this.found >= DIG_PAPAS) {
-          this.phase = 'done';
+          this.stage = 'done';
           this.audio.weaveDone();
           this.scene.flash('#ffd98a', 0.3);
           this.hint =
@@ -730,7 +739,7 @@ export class WatiaPanel {
         this.scene.burst(f.x, f.y + 4, { n: calm() ? 2 : 5, kind: 'puff', color: 'rgba(140,105,70,0.5)', speed: 40, grav: -10, life: 0.5, size: 4 });
         this.hint = 'Only earth here, still warm, and no steam. Move the ring onto a wisp.';
       }
-    } else if (this.phase === 'done' || this.phase === 'lost') {
+    } else if (this.stage === 'done' || this.stage === 'lost') {
       this.live = false;
       this.root.hidden = true;
       const done = this.onDone;
@@ -741,7 +750,7 @@ export class WatiaPanel {
 
   /** End a hard run short: record the lesson, cool the scene, wait for Space. */
   private lose(coachLine: string, hint: string) {
-    this.phase = 'lost';
+    this.stage = 'lost';
     coach(WATIA_FLAG, coachLine);
     this.audio.bump();
     this.scene.burst(300, 260, {
@@ -763,13 +772,13 @@ export class WatiaPanel {
 
   /** A run walked away from mid-phase still owes its lesson, if it has one. */
   private coachAbandon() {
-    if (this.phase === 'fire') {
+    if (this.stage === 'fire') {
       if (this.hard && (this.chokes > 0 || this.lates > 0)) {
         coach(WATIA_FLAG, this.diagnoseFire());
       } else if (this.best > 0.2) {
         coach(WATIA_FLAG, 'The clods were already warming when you stepped away; steady presses, like a heartbeat, and they blush past red.');
       }
-    } else if (this.phase === 'collapse') {
+    } else if (this.stage === 'collapse') {
       coach(WATIA_FLAG, 'The dome was glowing and ready; one committed press brings it down on the papas.');
     }
   }
@@ -827,7 +836,7 @@ export class WatiaPanel {
   private emit(sdt: number) {
     if (sdt <= 0) return;
     const q = calm() ? 0.4 : 1;
-    if (this.phase === 'fire' || this.phase === 'collapse') {
+    if (this.stage === 'fire' || this.stage === 'collapse') {
       this.emberAcc += sdt * (1.5 + this.glow * 4.5) * q;
       while (this.emberAcc > 1) {
         this.emberAcc -= 1;
@@ -838,7 +847,7 @@ export class WatiaPanel {
         this.shimmerAcc -= 1;
         this.scene.waft(230 + Math.random() * 140, 186, 'rgba(255,236,200,0.14)', 14);
       }
-    } else if (this.phase === 'dig') {
+    } else if (this.stage === 'dig') {
       this.steamAcc += sdt * 3.2 * q;
       while (this.steamAcc > 1) {
         this.steamAcc -= 1;
@@ -848,7 +857,7 @@ export class WatiaPanel {
           if (Math.random() < 0.8) this.scene.waft(f.x + (Math.random() - 0.5) * 4, f.y - 2, 'rgba(255,253,248,0.8)', 8);
         }
       }
-    } else if (this.phase === 'done') {
+    } else if (this.stage === 'done') {
       this.doneT += sdt;
       this.steamAcc += sdt * 2.6 * q;
       while (this.steamAcc > 1) {
@@ -874,10 +883,10 @@ export class WatiaPanel {
     g.restore();
 
     const heat = Math.min(1, this.glow);
-    const emberFade = this.phase === 'done' ? Math.max(0.3, 1 - this.doneT * 0.12) : 1;
+    const emberFade = this.stage === 'done' ? Math.max(0.3, 1 - this.doneT * 0.12) : 1;
 
     // The baked ember glow breathing behind the whole oven.
-    if (this.phase !== 'stack') {
+    if (this.stage !== 'stack') {
       const r = 135 + heat * 70 + Math.sin(this.pulse * 5) * 7;
       g.globalAlpha = (0.2 + heat * 0.45) * emberFade;
       g.drawImage(emberCv(), 300 - r, 252 - r * 0.62, r * 2, r * 1.24);
@@ -887,7 +896,7 @@ export class WatiaPanel {
     // Papas in the pit, until the earth takes them.
     if (!this.fallen) g.drawImage(papasCv().cv, 238, 273, 124, 39);
 
-    if (this.phase === 'stack') this.paintGhosts(g, time);
+    if (this.stage === 'stack') this.paintGhosts(g, time);
     if (this.fallen) {
       const settle = Math.min(1, (this.fallT[0] ?? 0) + (this.fallT[1] ?? 0));
       g.globalAlpha = settle * 0.9;
@@ -895,11 +904,11 @@ export class WatiaPanel {
       g.globalAlpha = 1;
     }
     this.paintClods(g, heat, emberFade);
-    if (this.phase === 'fire' || this.phase === 'collapse') this.paintFlame(g, time);
-    if (this.phase === 'stack') this.paintCursor(g, time);
+    if (this.stage === 'fire' || this.stage === 'collapse') this.paintFlame(g, time);
+    if (this.stage === 'stack') this.paintCursor(g, time);
     if (this.popped) this.paintPoppedPapa(g);
-    if (this.phase === 'fire') this.paintMeter(g);
-    if (this.phase === 'dig') this.paintDig(g, time);
+    if (this.stage === 'fire') this.paintMeter(g);
+    if (this.stage === 'dig') this.paintDig(g, time);
     if (this.found > 0) this.paintCloth(g);
   }
 
@@ -965,7 +974,7 @@ export class WatiaPanel {
       g.scale(1 + sq * 0.22, 1 - sq * 0.26);
       g.drawImage(cold.cv, -cold.cv.width / 2, -cold.cv.height / 2);
       const flick = 0.85 + 0.15 * Math.sin(this.pulse * 7 + i * 1.7);
-      const hotA = heat * flick * emberFade * (this.phase === 'stack' ? 0 : 1);
+      const hotA = heat * flick * emberFade * (this.stage === 'stack' ? 0 : 1);
       if (hotA > 0.01) {
         g.globalAlpha = hotA;
         g.drawImage(hot.cv, -hot.cv.width / 2, -hot.cv.height / 2);

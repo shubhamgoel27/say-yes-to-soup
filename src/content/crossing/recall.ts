@@ -7,6 +7,7 @@ export const RECALL: RecallManifest = {
     'pilar.gift.puffer', // the mail bundle names the actual creature sent
     'pilar.gift.star',
     'pilar.gift.claw',
+    'c2.gift.sent', // and only if it was actually posted at the harbor office
     'c2.casero', // crew respect: "Marisol's casero, good enough for my galley"
     'c2.complete', // the pier sign in La Caleta becomes the gangway
     'page.words.lamar', // Ríos and Simón's word; recognized aboard if learned

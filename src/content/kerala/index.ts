@@ -38,10 +38,32 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'kochi.pilar',
       from: 'Pilar, Bridge Authority, CANDIDATE',
-      when: { has: ['pilar.gift.puffer'] },
+      when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
       body: [
         'Dear business partner. I am running for Mayor of the Bridge. The bridge needed leadership and I was already standing on it.',
         'My platform: the toll stays, the facts get audited, the museum gains a second shelf. The puffer fish you mailed is my campaign manager. He has the correct face for politics: permanently astonished.',
+        'The electorate is nine people and one dog. I have secured the dog with jerky. Democracy is easier than the radio makes it sound.',
+        'Vote Pilar. You cannot vote, you are in India. Consider this letter your ballot, filled in correctly.',
+      ],
+    },
+    {
+      id: 'kochi.pilar',
+      from: 'Pilar, Bridge Authority, CANDIDATE',
+      when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
+      body: [
+        'Dear business partner. I am running for Mayor of the Bridge. The bridge needed leadership and I was already standing on it.',
+        'My platform: the toll stays, the facts get audited, the museum gains a second shelf. The four-armed sea star you mailed is my campaign manager. It reaches toward every voter at once, which in politics is called a coalition.',
+        'The electorate is nine people and one dog. I have secured the dog with jerky. Democracy is easier than the radio makes it sound.',
+        'Vote Pilar. You cannot vote, you are in India. Consider this letter your ballot, filled in correctly.',
+      ],
+    },
+    {
+      id: 'kochi.pilar',
+      from: 'Pilar, Bridge Authority, CANDIDATE',
+      when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
+      body: [
+        'Dear business partner. I am running for Mayor of the Bridge. The bridge needed leadership and I was already standing on it.',
+        'My platform: the toll stays, the facts get audited, the museum gains a second shelf. The comma claw you mailed is my campaign manager. With a comma on the podium, none of my sentences ever has to end, which in politics is called a speech.',
         'The electorate is nine people and one dog. I have secured the dog with jerky. Democracy is easier than the radio makes it sound.',
         'Vote Pilar. You cannot vote, you are in India. Consider this letter your ballot, filled in correctly.',
       ],
@@ -186,6 +208,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c6.complete',
-    toasts: ['✦ the village calls you kunje now', 'a spice ship is turning west'],
+    toasts: ['✦ the village calls you kunje now', 'the rails run north'],
   },
 };

@@ -326,6 +326,13 @@ export const TASKS: TaskDef[] = [
     who: 'rosa',
   },
   {
+    // Only after a reload cut Justina off between the bundle and her watia
+    // invitation: nothing else pointed back to her.
+    when: { has: ['bundle.delivered'], not: ['dig.invite'] },
+    text: 'Justina took the bundle and was about to tell you something about the potatoes. Go back to her in the terraces.',
+    who: 'justina',
+  },
+  {
     when: { has: ['bundle.delivered'], not: ['challar.done'] },
     text: 'People keep mentioning the chichería under the red flag. Step through the doorway of Rosa\'s house; someone inside has been holding a seat for fifty years.',
     who: 'teofilo',

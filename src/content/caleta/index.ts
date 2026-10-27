@@ -28,7 +28,7 @@ export const CHAPTER: ChapterDef = {
         handWords('Past the break the horse leans; the arrows keep it in the middle while the wave carries you home.'),
       ],
       hardHow:
-        'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. On the ride home, a rail held under is a swim.',
+        'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. An eager stroke still hangs the paddle in the air a beat. On the ride home, a rail held under is a swim.',
       make: (root, audio) => new WavePanel(root, audio as AudioBus),
     },
     {
@@ -53,7 +53,7 @@ export const CHAPTER: ChapterDef = {
         'Pull too soon and Petro takes the bowl back for a second.',
       ],
       hardHow:
-        'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. The kiss, exactly, or the noon goes on without you.',
+        'The hard noon: the lime works fast, the bright bar is a sliver near the end, and Petro has two lisas and no third. Pull before the sliver and she remembers it; the kiss, exactly, or the noon goes on without you.',
       make: (root, audio) => new CevichePanel(root, audio as AudioBus),
     },
   ],

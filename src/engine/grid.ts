@@ -79,26 +79,51 @@ export class TileMap {
   /** Runtime object edits: story events reshape the world (gates open). */
   private objectOverrides = new Map<string, TileDef | null>();
 
+  /**
+   * Bumped whenever the object layer actually changes, so anything worked
+   * out once per map from its props (shadows, overhangs, where a body is
+   * hidden) knows to work it out again. Dressings re-apply on every state
+   * change; only a real difference counts.
+   */
+  objectsRev = 0;
+
   /** Replace (or clear, with null) the object at a cell at runtime. */
   setObject(x: number, y: number, def: TileDef | null) {
+    if ((this.object(x, y)?.t ?? null) !== (def?.t ?? null)) this.objectsRev++;
     this.objectOverrides.set(key(x, y), def);
   }
 
-  /** Drop all runtime overrides (a fresh journey starts undressed). */
+  /** Runtime triggers, with whatever the map itself had at that cell. */
+  private addedTriggers = new Map<string, TriggerDef | undefined>();
+
+  /** Drop all runtime overrides (a fresh journey starts undressed): object
+   * edits, and the triggers story events added (an opened gate's door). */
   clearOverrides() {
+    if (this.objectOverrides.size > 0) this.objectsRev++;
     this.objectOverrides.clear();
+    for (const [k, original] of this.addedTriggers) {
+      if (original) this.triggerIndex.set(k, original);
+      else this.triggerIndex.delete(k);
+    }
+    this.addedTriggers.clear();
   }
 
   /** Add or replace a trigger at runtime. */
   addTrigger(trig: TriggerDef) {
-    this.triggerIndex.set(key(trig.at[0], trig.at[1]), trig);
+    const k = key(trig.at[0], trig.at[1]);
+    if (!this.addedTriggers.has(k)) this.addedTriggers.set(k, this.triggerIndex.get(k));
+    this.triggerIndex.set(k, trig);
   }
 
   /** Overlay tile at a cell, or null if the object layer is blank there. */
   object(x: number, y: number): TileDef | null {
     if (!this.inBounds(x, y)) return null;
-    const k = key(x, y);
-    if (this.objectOverrides.has(k)) return this.objectOverrides.get(k) ?? null;
+    // Called per cell, many times a frame: build the key only when some
+    // override could be there.
+    if (this.objectOverrides.size > 0) {
+      const k = key(x, y);
+      if (this.objectOverrides.has(k)) return this.objectOverrides.get(k) ?? null;
+    }
     const ch = this.data.objects?.[y]?.[x];
     if (!ch || ch === ' ') return null;
     return this.lookup(ch);

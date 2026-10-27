@@ -78,6 +78,9 @@ export const DELHI_NPCS: NpcDef[] = [
       // Head covered first, then the row: both are the player's own doing.
       { when: { has: ['c11.met.jog'], not: ['c11.rumal'] }, node: 'c11.jog.basket' },
       { when: { has: ['c11.rumal'], not: ['c11.jog.fed'] }, node: 'c11.jog.sit' },
+      // Fed is saved as the meal opens, the Tuesday ask only once you answer
+      // him. A journal closed at the meal sits you back down in the row.
+      { when: { has: ['c11.jog.fed'], not: ['errand.seva-atta', 'c11.seva.done'] }, node: 'c11.jog.meal' },
       { when: { has: ['errand.seva-atta'], not: ['c11.seva.done'] }, node: 'c11.jog.seva' },
       { when: { has: ['c11.seva.done'], not: ['c11.jog2'] }, node: 'c11.jog.tuesday' },
       { node: 'c11.jog.idle' },
@@ -180,6 +183,8 @@ export const DELHI_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c11.met.sushila'] }, node: 'c11.sushila.first' },
+      // Met while the wing is still loose; her page waits on holding it.
+      { when: { has: ['c11.met.sushila'], not: ['page.people.sushila'] }, node: 'c11.sushila.first' },
       {
         when: { has: ['c11.met.sushila', 'c11.met.yusuf'], not: ['errand.pigeon-home', 'c11.pigeon.home'] },
         node: 'c11.sushila.errand',
@@ -1725,7 +1730,7 @@ export const DELHI_LETTERS: LetterDef[] = [
     from: 'Pilar, Bridge Authority, ELECTION HEADQUARTERS',
     when: { has: ['c6.row.done'] },
     body: [
-      'Dear business partner. It is ELECTION DAY on the bridge. Electorate: nine people and one dog. Current count: four for me, four for my opponent, who is my cousin and wrong.',
+      'Dear admiral-elect. It is ELECTION DAY on the bridge. Electorate: nine people and one dog. Current count: four for me, four for my opponent, who is my cousin and wrong.',
       'The ninth voter has gone fishing. Fishing! During history! We have sent the dog to negotiate; the dog is deputy-eligible and motivated by jerky.',
       'I hear you rowed seat forty-one in a boat with one hundred oars. When I win, I am adding a navy to my platform retroactively. You are its admiral. The fee for admiral is one fact about India.',
       'Suspense is expensive. You owe me one day of it, payable in mail. Vote Pilar, wherever voting finds you.',

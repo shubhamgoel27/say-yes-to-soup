@@ -33,12 +33,70 @@ export function isCoarseTouch(): boolean {
   return typeof matchMedia === 'function' && matchMedia(COARSE_TOUCH_QUERY).matches;
 }
 
+/** What the player last played with: the keys, a mouse (still the desk's
+ * words), a finger, or a gamepad. */
+export type Device = 'keys' | 'mouse' | 'touch' | 'pad';
+
+let device: Device | null = null;
+
 /**
- * Keyboard words on a desk, finger words on glass. Copy that names a key
- * (Space, Esc, N, the arrows) reads as a riddle under a thumb, so every such
- * line passes both spellings through here. Same capability test as the pad.
+ * Record the hand on the game. Keys and pointers are heard here; the engine's
+ * gamepad poll (src/engine/input.ts) calls noteDevice('pad') on each button
+ * press or deliberate stick push, since a pad fires no DOM events.
  */
-export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch()): string {
+export function noteDevice(d: Device): void {
+  device = d;
+}
+
+/** The device the player last used, or the one this screen implies before
+ * anything has been pressed. */
+export function lastDevice(): Device {
+  return device ?? (isCoarseTouch() ? 'touch' : 'keys');
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  // Capture on window, before any card can stop the event on its way down.
+  window.addEventListener('keydown', () => noteDevice('keys'), { capture: true, passive: true });
+  window.addEventListener('pointerdown', (e) => noteDevice(e.pointerType === 'mouse' ? 'mouse' : 'touch'), {
+    capture: true,
+    passive: true,
+  });
+}
+
+/**
+ * Keyboard copy in a gamepad's words: Space (and Enter) is A, Esc is B, J is
+ * Y, N is X, the arrow keys are the stick or the d-pad, and any key is any
+ * button. Only the spellings the game's copy uses are rewritten; a lone
+ * capital J or N in prose is left alone. Pure, for the tests.
+ */
+export function padWords(keys: string): string {
+  if (keys === 'space') return 'A'; // a painted key cap
+  // In prose a sentence opening on a bare 'A' reads as the article ("A to
+  // paddle"), so there the key is named as a button. Legends and chips
+  // ('A to begin · B, not yet') keep the short form.
+  const prose = /[.!?](\s|$)/.test(keys);
+  const opener = prose ? /(^|[.!?]\s+)(Space|Enter|Esc)\b/g : /(?!)/g;
+  return keys
+    .replace(opener, (_m, lead: string, k: string) => `${lead}The ${k === 'Esc' ? 'B' : 'A'} button`)
+    .replace(/\bthe arrow keys or WASD\b/g, 'the stick or the d-pad')
+    .replace(/\b(?:the )?arrow keys\b/g, 'the d-pad')
+    .replace(/\bany key\b/g, 'any button')
+    .replace(/\b(?:Space|Enter)\b/g, 'A')
+    .replace(/\bEsc\b/g, 'B')
+    .replace(/\b([Pp]ress) J\b/g, '$1 Y')
+    .replace(/\bJ (close|closes|opens)\b/g, 'Y $1')
+    .replace(/\b([Pp]ress) N\b/g, '$1 X');
+}
+
+/**
+ * Keyboard words on a desk, finger words on glass, and pad words while a
+ * gamepad is in hand. Copy that names a key (Space, Esc, N, the arrows)
+ * reads as a riddle under a thumb, so every such line passes both spellings
+ * through here; a pad player gets the keyboard spelling in the pad's words.
+ * Same capability test as the touch pad.
+ */
+export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch(), pad = device === 'pad'): string {
+  if (pad) return padWords(keys);
   return coarse ? taps : keys;
 }
 
@@ -151,6 +209,36 @@ export function isPhone(): boolean {
   const s = window.screen;
   if (!s || !s.width || !s.height) return false;
   return Math.min(s.width, s.height) < 600;
+}
+
+/**
+ * Whether a window of iw x ih covers a screen of sw x sh, to within `slack`
+ * CSS px on each side. Sides are compared long to long and short to short,
+ * since some browsers keep reporting the screen upright when it lies down.
+ * Pure, for the tests.
+ */
+export function fillsScreen(iw: number, ih: number, sw: number, sh: number, slack = 8): boolean {
+  if (!(iw > 0 && ih > 0 && sw > 0 && sh > 0)) return false;
+  return (
+    Math.abs(Math.max(iw, ih) - Math.max(sw, sh)) <= slack && Math.abs(Math.min(iw, ih) - Math.min(sw, sh)) <= slack
+  );
+}
+
+function windowFillsScreen(): boolean {
+  if (typeof window === 'undefined' || !window.screen) return false;
+  return fillsScreen(window.innerWidth, window.innerHeight, window.screen.width, window.screen.height);
+}
+
+/**
+ * Fullscreen as the player sees it: this page's own, or a window that covers
+ * the glass anyway. Inside itch's embed the Fullscreen button makes the
+ * parent page's iframe the fullscreen element, so this document's
+ * fullscreenElement stays null while the game fills the screen; the
+ * browser's own full screen (F11) looks the same from in here.
+ */
+export function looksFullscreen(): boolean {
+  if (typeof document !== 'undefined' && document.fullscreenElement) return true;
+  return windowFillsScreen();
 }
 
 function inPortrait(): boolean {
@@ -445,7 +533,10 @@ function swallowGesture(e: PointerEvent): void {
  */
 function syncPin(): void {
   if (fallbackMode || !canLockLandscape()) return;
-  const bare = !lockActive && !document.fullscreenElement;
+  // Lying down, a frame that already fills the glass (itch's Fullscreen
+  // button around the embed) has no fuller spread to go back to. Upright
+  // the pin still lays it sideways, which itch's button does not.
+  const bare = !lockActive && !document.fullscreenElement && (inPortrait() || !windowFillsScreen());
   const wanted = bare && (!inPortrait() || declines >= 1);
   if (!wanted && !pinEl) return;
   const pin = ensurePin();

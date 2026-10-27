@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag } from './scene';
+import { Scene, mountScene, wobble, easeInOutSine, easeOutBack, easeOutCubic, paperTag, calm } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface, vgrad } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold } from './attend';
@@ -31,7 +31,6 @@ import { Hold } from './attend';
  * so the pot rocks on its burner and the sky leans against the rail.
  */
 
-const calm = () => document.body.classList.contains('reduce-motion');
 
 /** The overlay frame zeroes line-height for canvas layout; give wrapped hints theirs back. */
 function fixHintLeading(root: HTMLElement) {
@@ -425,6 +424,11 @@ export class GalleyPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /** See GamePanel.phase: 'done' once the adobo is off the heat. */
+  get phase(): 'cook' | 'simmer' | 'burnt' | 'done' {
+    return this.burnt ? 'burnt' : this.done ? 'done' : this.simmer >= 0 ? 'simmer' : 'cook';
   }
 
   /** True only while the pantry is live: not simmering, not burnt, not finished. */
@@ -1504,6 +1508,11 @@ export class StarPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /** See GamePanel.phase: 'done' once every reading is named; 'failed' at eight bells. */
+  get phase(): 'search' | 'failed' | 'done' {
+    return this.failed ? 'failed' : this.done ? 'done' : 'search';
   }
 
   open(onDone: () => void) {

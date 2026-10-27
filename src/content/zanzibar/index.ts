@@ -15,6 +15,9 @@ const RECALL: RecallManifest = {
     'page.dishes.sudado', // sour soup as medicine; Zuberi recognizes a believer
     'page.words.lamar', // Ríos, ashore, hears her word said back to her
     'c3.shellback', // Neptune's court does not revoke; the Capitana checks
+    'c11.chit.bombay', // Sethji's cousin's cargo, unloading at the jahazi
+    'c11.attar.mitti', // Mehr Aapa's bottled first rain, breathed out by the clove mats
+    'c2.gift.sent', // Pilar's swearing-in shelf holds the sea thing only if it was posted
   ],
   plants: [
     'c7.arrived', // hands the task list over once you step off the jahazi
@@ -55,9 +58,9 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
-      when: { has: ['pilar.gift.puffer'] },
+      when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
       body: [
-        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge: nine votes for, zero against, one abstention (the dog, on principle).',
+        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
         'The puffer fish you posted presides over the swearing-in shelf. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
         'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
         'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
@@ -66,8 +69,30 @@ export const CHAPTER: ChapterDef = {
     {
       id: 'c7.pilar',
       from: 'Pilar, Mayor of the Bridge (landslide)',
+      when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
       body: [
-        'Dear voter. You missed the election. I won in a landslide: nine votes for, zero against, one abstention (the dog, on principle).',
+        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
+        'The sea star you posted presides over the swearing-in shelf, four arms raised in every direction like a quorum. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
+        'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
+        'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
+      ],
+    },
+    {
+      id: 'c7.pilar',
+      from: 'Pilar, Mayor of the Bridge (landslide)',
+      when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
+      body: [
+        'Dear constituent abroad. I have been ELECTED. Mayor of the bridge, five votes to four: the fisherman came back with a bonito and voted for the toll. One abstention (the dog, on principle).',
+        'The comma claw you posted presides over the swearing-in shelf. My oath did not end, it paused there, so technically I am still being sworn in. Voters trust a leader with exhibits. It won me the tourist demographic, both of them.',
+        'My first act was to declare the bridge a city. My second was to tax it. Government is simple if you keep the books yourself.',
+        'Send facts. Museum admission is still one, but as mayor I now also accept taxes.',
+      ],
+    },
+    {
+      id: 'c7.pilar',
+      from: 'Pilar, Mayor of the Bridge (landslide)',
+      body: [
+        'Dear voter. You missed the election. I won in a landslide, five to four, once the fisherman came back with a bonito. One abstention (the dog, on principle).',
         'The Museum of the Sea thrives. The gift shop sells rocks, and, new this quarter, smaller rocks.',
         'As mayor I have annexed the fog and half the road. The other half votes wrong and will be dealt with by infrastructure.',
         'Send a fact for the museum. Officeholders cannot accept gifts, so I will log yours as taxes.',

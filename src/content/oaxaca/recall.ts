@@ -5,9 +5,11 @@ export const RECALL: RecallManifest = {
   consumes: [
     'keepsake.band', // Elías recognizes the cochineal at your wrist
     'riddle.cho', // Old Man Cho's question is answered at the ledger
+    'c11.seva.langar', // the ledger washed with the dishes, set beside the one written down
     'omiyage.petro', // an unposted gift becomes an ofrenda item
     'omiyage.pilar',
     'omiyage.aurelio',
+    'c2.gift.sent', // Pilar's museum letter names the sea thing only if it was posted
     'kanga.gift', // the one meant for giving finds its person
     'wish.road', // the tanzaku wish, refolded onto the altar
     'wish.people',

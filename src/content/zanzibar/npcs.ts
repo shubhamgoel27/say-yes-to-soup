@@ -58,6 +58,9 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     entry: [
       { when: { has: ['keepsake.band'], not: ['c7.met.amina'] }, node: 'c7.amina.band' },
       { when: { not: ['c7.met.amina'] }, node: 'c7.amina.first' },
+      // Met at the door, fed a line later: a journal closed in between went
+      // straight to the game and never tasted the mandazi.
+      { when: { has: ['c7.met.amina'], not: ['c7.kanga.game', 'page.dishes.mandazi'] }, node: 'c7.amina.welcome' },
       { when: { has: ['c7.met.amina'], not: ['c7.kanga.game'] }, node: 'c7.amina.game0' },
       { when: { has: ['c7.kanga.game'], not: ['c7.kanga.done'] }, node: 'c7.amina.pair' },
       { node: 'c7.amina.idle' },
@@ -127,6 +130,9 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c7.met.salma'] }, node: 'c7.salma.first' },
       { when: { has: ['c7.met.salma'], not: ['c7.salma.helped'] }, node: 'c7.salma.again' },
+      // The sack is carried as the haul opens; asante and pole are her thanks
+      // a line later. A reload in between hears the thanks again.
+      { when: { has: ['c7.salma.helped'], not: ['c7.salma.warm', 'page.words.pole'] }, node: 'c7.salma.carry2' },
       { when: { has: ['c7.salma.helped'], not: ['c7.salma.warm'] }, node: 'c7.salma.warm' },
       { node: 'c7.salma.idle' },
     ],
@@ -965,7 +971,7 @@ export const ZANZIBAR_NODES: NodeMap = {
     effects: ['set:c7.met.chasca', 'set:photo.flash', 'set:photo.c7.door'],
   },
   'c7.chasca.again': {
-    lines: [{ who: 'Chasca', text: 'Eight frames now, one per road. The album is starting to look like a sentence.' }],
+    lines: [{ who: 'Chasca', text: 'The carved door is in the album now, one more road. The album is starting to look like a sentence.' }],
   },
 
   // ---------------- the counter and the mail ----------------
@@ -1003,8 +1009,22 @@ export const ZANZIBAR_NODES: NodeMap = {
   'c7.ex.dhow': {
     lines: [{ text: 'A jahazi at anchor, lateen yard crossed like a drawn bow.' }],
   },
+  // Sethji's chit went down the coast with his cloves, and came ashore here.
+  'c7.ex.dhow.chit': {
+    lines: [
+      { text: 'A jahazi at anchor, unloading sacks stamped with a Bombay firm\'s mark. The same brass seal sat on Sethji\'s chit.' },
+      { text: 'Somewhere in this harbor his cousin\'s agent is counting them. Cloves came home to the island they left, by way of a ledger in Chandni Chowk.' },
+    ],
+  },
   'c7.ex.clovemat': {
     lines: [{ text: 'Cloves drying rust-red, fragrant enough to reorganize your priorities.' }],
+  },
+  // Mehr Aapa's mitti attar, met again: the same nose, a second season.
+  'c7.ex.clovemat.mitti': {
+    lines: [
+      { text: 'Cloves drying rust-red. A squall crosses the lane, and the hot mats breathe out exactly as Delhi\'s stones did.' },
+      { text: 'You touch your wrist out of habit. Mehr Aapa bottled this smell in a fingertip vial, and the coast gives it away by the yard.' },
+    ],
   },
   'c7.ex.kangarack': {
     lines: [{ text: 'Kangas in printed ranks: a rack of things it would be unwise to say out loud.' }],
@@ -1205,9 +1225,13 @@ export const ZANZIBAR_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   dhow: [
     { when: { has: ['c7.issa.winds'] }, node: 'c7.ex.dhow.winds' },
+    { when: { has: ['c11.chit.bombay'] }, node: 'c7.ex.dhow.chit' },
     { node: 'c7.ex.dhow' },
   ],
-  clovemat: [{ node: 'c7.ex.clovemat' }],
+  clovemat: [
+    { when: { has: ['c11.attar.mitti'] }, node: 'c7.ex.clovemat.mitti' },
+    { node: 'c7.ex.clovemat' },
+  ],
   kangarack: [{ node: 'c7.ex.kangarack' }],
   spicesack: [{ node: 'c7.ex.spicesack' }],
   marketlamp: [

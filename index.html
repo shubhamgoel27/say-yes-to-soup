@@ -37,10 +37,21 @@
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Not render-blocking: on a network that stalls Google's servers the
+         blocking stylesheet held back first paint, the loader included. The
+         page draws at once in the fallback serifs and swaps when it lands. -->
     <link
       href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400..600&family=Caveat:wght@500;600&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Literata:ital,opsz,wght@0,7..72,400..600;1,7..72,400..600&family=Caveat:wght@500;600&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <style>
       /*
        * The UI conceit: every surface you read is a page of Nani's journal.
@@ -80,6 +91,8 @@
         --fs-hand16: 16px;
         --fs-hand17: 17px;
         --fs-hand175: 17.5px;
+        /* The small caps that name a hand (NANI, 1974 / YOU / NOW). */
+        --fs-label: 10.5px;
       }
       body.text-large {
         --fs-11: 14px;
@@ -95,6 +108,7 @@
         --fs-hand16: 18.5px;
         --fs-hand17: 19.5px;
         --fs-hand175: 20px;
+        --fs-label: 13px;
       }
 
       /* The kitchen before the journey: painted from this file alone, so it is
@@ -615,6 +629,7 @@
          * book past the viewport, taking the end of the Route tab with it. */
         min-height: 0;
         max-height: 92vh;
+        max-height: 92dvh;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -733,10 +748,10 @@
       .j-nani span, .j-you span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
         transform: none;
       }
@@ -749,10 +764,10 @@
       .j-thread span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
       }
       .j-thread-rule {
@@ -860,10 +875,10 @@
       .jt-nani span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         transform: none;
       }
       .jt-nowcol, .jt-herecol { min-width: 0; }
@@ -888,7 +903,7 @@
       }
       .jt-k {
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: #6b5334;
@@ -909,10 +924,10 @@
       .jt-bag span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.75;
+        color: #6b5334;
         transform: none;
       }
       .jt-also, .jt-done { list-style: none; margin: 0; padding: 0; }
@@ -1619,6 +1634,7 @@
         padding: 24px 32px 14px;
         line-height: 1.45;
         max-height: 86vh;
+        max-height: 86dvh;
         overflow-y: auto;
         text-align: center;
         animation: letterOpen 0.4s ease-out;
@@ -2000,6 +2016,7 @@
         color: var(--ink);
         padding: 20px 28px 22px;
         max-height: 86vh;
+        max-height: 86dvh;
         overflow-y: auto;
       }
       .p-card.opening {
@@ -2234,6 +2251,7 @@
         border-radius: 6px;
         text-align: left;
         min-height: min(58vh, 372px);
+        min-height: min(58dvh, 372px);
         color: #3a2c1e;
         transform: rotate(-0.25deg);
         background:
@@ -2755,7 +2773,8 @@
         #title[hidden], #letter[hidden], #chapterclose[hidden], #cc-card[hidden] { display: none; }
         .t-card, .letter-fold, .cx-card, .cc-paper { margin: auto; }
         .cx-card { max-height: none; }
-        #textbox { bottom: 8px; }
+        /* Lying down, a phone's home indicator sits along this edge. */
+        #textbox { bottom: calc(8px + env(safe-area-inset-bottom)); }
       }
 
       /* The phone tier proper. */
@@ -2949,6 +2968,7 @@
           --fs-hand16: 17.5px;
           --fs-hand17: 18.5px;
           --fs-hand175: 19px;
+          --fs-label: 12px;
         }
       }
 
@@ -2984,6 +3004,7 @@
           width: min(96vw, 700px);
           max-width: calc(100vw - 2 * (152px + env(safe-area-inset-left, 0px)));
           max-height: calc(100vh - 8px);
+          max-height: calc(100dvh - 8px);
           box-sizing: border-box;
           overflow-y: auto;
           padding: 8px 12px 8px;
@@ -2994,17 +3015,24 @@
           height: auto !important;
           max-width: 100%;
           max-height: min(62vh, 400px);
+          max-height: min(62dvh, 400px);
         }
         .w-title { margin-bottom: 4px; }
         .w-hint { margin-bottom: 4px; }
         /* The key legend is desk furniture; the pad and taps replace it. */
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }
-        .p-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+        .p-card {
+          max-height: calc(100vh - 10px);
+          max-height: calc(100dvh - 10px);
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
         /* The how-to card holds still and its body scrolls: the foot (the
          * hint, the "more below" pill) stays on the page under the text. */
         .ht-card {
           max-height: calc(100vh - 10px);
+          max-height: calc(100dvh - 10px);
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
@@ -3014,6 +3042,10 @@
         /* A scene capped by height is narrower than its panel: sit it in
          * the middle rather than against the left rule. */
         .g-stage canvas { margin: 0 auto; }
+        /* The caps above follow the visible room (dvh: a phone's toolbar
+         * takes from 100vh). Should a card still outgrow it, it hangs from
+         * the top, where it scrolls, rather than off both edges at once. */
+        #pause, #weave, .mg-overlay, .ht-veil { place-items: safe center; }
       }
 
       /* ---- landscape phones: the cover and Settings open wide ----
@@ -3048,6 +3080,7 @@
           margin: 8px 0 0;
           width: 100%;
           max-width: calc((100vh - 170px) * 1.8);
+          max-width: calc((100dvh - 170px) * 1.8);
           justify-self: center;
         }
         .t-sub { grid-area: sub; margin: 4px 0 8px; max-width: none; align-self: end; }
@@ -3200,7 +3233,7 @@
          * page, even on a 320px-tall phone. */
         #title { padding: 6px 0; }
         .t-cover { padding-top: 12px; padding-bottom: 10px; }
-        .t-art { max-width: calc((100vh - 215px) * 1.8); }
+        .t-art { max-width: calc((100vh - 215px) * 1.8); max-width: calc((100dvh - 215px) * 1.8); }
         .t-sub { font-size: 14px; line-height: 1.35; margin-bottom: 4px; }
         .t-controls { margin-top: 6px; }
       }
@@ -3436,6 +3469,15 @@
        * responsive.ts) is 1 up to 1280x800 and follows the smaller of the
        * two stretches above it, capped, so a 1280 window is unchanged. */
       #plate, #toasts, #errand, #textbox, .mg-overlay, #weave, .ht-veil, .ht-strip { zoom: var(--ui-k, 1); }
+      /* Read aloud, never drawn: the dialogue line whole, for screen readers. */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
@@ -3461,18 +3503,67 @@
       </div>
       <p class="ld-slow">A slow road today. If nothing changes soon, a refresh usually helps.</p>
     </div>
+    <script>
+      // Plain script, ahead of the game's module: if the game never gets far
+      // enough to lift this loader (an old browser, a device out of canvas
+      // memory, a frame that throws every time), say so here instead of a
+      // bowl steaming forever. The game sets window.__soupBooted once a real
+      // frame has drawn; it calls window.__soupFail when it gives up itself.
+      (function () {
+        function fail(why) {
+          if (window.__soupBooted) return;
+          var p = document.querySelector('#loader .ld-slow');
+          if (!p) return;
+          // A later, better reason may replace an earlier one.
+          p.textContent =
+            'The game could not start in this browser' + (why ? ' (' + why + ')' : '') +
+            '. Reloading the page often helps, and your journal is kept safe in this browser. ' +
+            'If it keeps happening, an up-to-date Chrome, Firefox or Safari should carry it.';
+          p.style.animation = 'none';
+          p.style.opacity = '1';
+          p.style.color = '#e6d7bb';
+        }
+        window.__soupFail = fail;
+        function soon(why) {
+          setTimeout(function () { fail(why); }, 3000);
+        }
+        window.addEventListener('error', function (e) {
+          // Only the game's own scripts: an extension's error, or a
+          // cross-origin one the browser reduces to "Script error.", says
+          // nothing about whether the game is starting.
+          var file = e && e.filename ? String(e.filename) : '';
+          if (!file || file.indexOf(location.origin) !== 0) return;
+          soon(e.message ? String(e.message).slice(0, 220) : '');
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e && e.reason;
+          soon(r ? String((r && r.message) || r).slice(0, 220) : '');
+        });
+        // Patience is counted only while the page is in view: a tab opened in
+        // the background pauses the game's frames, and that is not a failure.
+        var waited = 0;
+        var tick = setInterval(function () {
+          if (window.__soupBooted) return clearInterval(tick);
+          if (document.visibilityState === 'visible') waited += 1;
+          if (waited >= 45) {
+            clearInterval(tick);
+            fail('');
+          }
+        }, 1000);
+      })();
+    </script>
     <div id="stage">
       <div id="frame">
         <canvas id="game"></canvas>
         <div id="hud">
           <div id="plate"></div>
-          <div id="toasts"></div>
+          <div id="toasts" role="status" aria-live="polite"></div>
           <div id="errand" hidden></div>
           <div id="textbox" hidden>
             <div id="tb-portrait"></div>
             <div id="tb-main">
               <div id="tb-name"></div>
-              <div id="tb-text"></div>
+              <div id="tb-text" aria-hidden="true"></div>
               <div id="tb-arrow">&#9662;</div>
               <div id="tb-choices"></div>
             </div>
@@ -3491,6 +3582,7 @@
         </div>
       </div>
     </div>
+    <div id="sr-line" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <pre id="debug"></pre>
     <script type="module" src="/src/main.ts"></script>
   </body>

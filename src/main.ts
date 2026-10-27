@@ -1,3 +1,5 @@
+// First, before any module that draws: canvas calls older browsers lack.
+import './engine/polyfills';
 import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
 import { Camera, wordsLiftTarget } from './engine/camera';
@@ -8,24 +10,26 @@ import { TileMap, stepFrom, type TileDef, type TriggerDef } from './engine/grid'
 import { DIR_VEC, Input, type Dir } from './engine/input';
 import { startLoop } from './engine/loop';
 import { Renderer, type Sprite } from './engine/renderer';
-import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot } from './engine/state';
-import { PLAYER_LOOK, makePortrait, makeSheet, type Look } from './art/character';
+import { GameState, activeSlot, firstBlankSlot, peekSlot, setActiveSlot, type TalkKind } from './engine/state';
+import { PLAYER_LOOK, makeSheet, type Look } from './art/character';
 import { lookFor } from './art/looks';
 import { cellHash } from './art/pix';
 import { GLOW_KINDS, WINDOW_OFFSETS } from './art/sets';
-import { makeDogSheet, makeLlamaSheet, makeMoundSheet } from './art/animals';
+import { makeMoundSheet } from './art/animals';
+import { Wardrobe } from './art/wardrobe';
 import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
-import { PauseMenu } from './ui/pause';
+import { askToKeepStorage, savesAreFragile } from './ui/embed';
+import { PauseMenu, REPLAY_GAMES } from './ui/pause';
 import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { capUnder } from './ui/games/scene';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { chipHolds } from './ui/taskpage';
-import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, trackUiScale, watchScrollCue } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, lastDevice, noteDevice, padWords, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -79,7 +83,7 @@ const $ = (id: string) => {
 // it with lighting, bloom, and shimmer-free zoom on top.
 const worldCanvas = $('game') as HTMLCanvasElement;
 console.info('[soup] boot: world composer');
-const renderer = new Renderer(worldCanvas);
+const renderer = new Renderer(worldCanvas, REGION_MAPS);
 console.info('[soup] boot: gpu stage');
 const stage = PixiStage.create(worldCanvas, $('frame'));
 // The frame turns with the screen (an upright phone gets an upright frame).
@@ -96,12 +100,40 @@ const audio = new AudioBus();
 // background, and only a later gesture may wake it. Cheap when running.
 window.addEventListener('keydown', () => audio.ensure());
 window.addEventListener('pointerdown', () => audio.ensure());
+// A touch's pointerdown carries no user activation, and iOS starts or wakes
+// Web Audio only from touchend or click: a player who only ever taps was
+// silent all session. Capture phase, so nothing that swallows the first
+// tap's click can swallow this too.
+for (const ev of ['pointerup', 'touchend', 'click']) {
+  window.addEventListener(ev, () => audio.ensure(), { capture: true, passive: true });
+}
+input.onOddPad = () => {
+  toasts.show('this controller is one the browser cannot read; an Xbox or PlayStation style pad, touch, or the keyboard will do');
+};
+// A pad press is not a user gesture to the browser either: try, and if the
+// band is still silent a moment later, say once how to let it in. A Steam
+// Deck player otherwise heard nothing and was never told why.
+let padSoundHinted = false;
+input.onPadPress = () => {
+  noteDevice('pad'); // hints and help speak in the pad's buttons from here
+  audio.ensure();
+  if (padSoundHinted) return;
+  window.setTimeout(() => {
+    if (padSoundHinted || audio.running || audio.muted) return;
+    padSoundHinted = true;
+    toasts.show('the band is waiting: browsers let sound in after one keystroke or click');
+  }, 1200);
+};
 
 const state = new GameState();
 state.load();
 
-const maps: Record<string, TileMap> = Object.fromEntries(
-  Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)]),
+// No prototype: a saved place names its map by string, and an unpacked
+// journal is someone else's file. On a plain object 'constructor' or
+// '__proto__' read as a map, and boot threw on every load from then on.
+const maps: Record<string, TileMap> = Object.assign(
+  Object.create(null) as Record<string, TileMap>,
+  Object.fromEntries(Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)])),
 );
 const startMapMaybe = maps['village'];
 if (!startMapMaybe) throw new Error('village map missing');
@@ -410,6 +442,7 @@ const textbox = new Textbox(
     text: $('tb-text'),
     arrow: $('tb-arrow'),
     choices: $('tb-choices'),
+    live: $('sr-line'),
   },
   state,
   (who) => audio.speak(who),
@@ -496,11 +529,42 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     audio.pageFlip();
   },
   saveNow: () => {
-    if (mode !== 'play') return false;
+    if (mode !== 'play') return null;
     state.save();
-    return !state.persistenceLost && !state.superseded;
+    return state.superseded ? 'elsewhere' : state.persistenceLost ? 'lost' : 'ok';
   },
 });
+
+/** Which panel's phase was last seen, and since when; see panelResting(). */
+let panelSeen: unknown = null;
+let panelPhase: unknown = null;
+let panelPhaseAt = 0;
+const DONE_GRACE_MS = 450;
+
+/** Is this panel showing its payoff (phase 'done': the next action closes
+ * it with the win)? See the GamePanel contract in content/schema.ts. */
+function panelDone(panel: unknown): boolean {
+  return (panel as { phase?: unknown }).phase === 'done';
+}
+
+/**
+ * A rhythm won on Space would close its own payoff on the next beat of the
+ * same rhythm, and a quick second tap or click did the same: for a moment
+ * after a panel reaches 'done', the action rests, from every hand. (The
+ * andes and the ofrenda keep graces of their own.) Called every frame from
+ * update() so the moment is stamped when it arrives, and again by the
+ * pointer path before it acts.
+ */
+function panelResting(panel: unknown): boolean {
+  const phase = (panel as { phase?: unknown }).phase;
+  const now = performance.now();
+  if (panel !== panelSeen || phase !== panelPhase) {
+    panelSeen = panel;
+    panelPhase = phase;
+    panelPhaseAt = now;
+  }
+  return phase === 'done' && now - panelPhaseAt < DONE_GRACE_MS;
+}
 
 /** Chapter mini-games: the engine owns one overlay root per panel. */
 function makeOverlayRoot(id: string): HTMLElement {
@@ -595,8 +659,55 @@ const hereSpot = (npc: string | null): Spot => ({ map: map.id, at: [player.x, pl
 /** A game whose start flag is raised but whose panel is not yet on screen,
  * and which the player has not set aside. */
 function pendingGame(): GameEntry | null {
-  return gameByFlag(armed.pending((f) => state.has(f) && (GAME_MAPS[f]?.has(map.id) ?? true), panelOpen));
+  // While a replay is on, only a game already won can be what is waiting: a
+  // story game armed but never played once opened in replay dress and
+  // skipped its own first-time narration.
+  const replaying = state.has('replay.mode');
+  return gameByFlag(
+    armed.pending(
+      (f) =>
+        state.has(f) &&
+        (GAME_MAPS[f]?.has(map.id) ?? true) &&
+        (!replaying || !DONE_FLAG.has(f) || state.has(DONE_FLAG.get(f)!)),
+      panelOpen,
+    ),
+  );
 }
+
+/** Each replayable game's start flag, and the flag its first win sets. */
+const DONE_FLAG = new Map(REPLAY_GAMES.map((g) => [g.flag, g.doneFlag]));
+
+/**
+ * A replay closed by a reload: load() drops replay.mode, but the start flag
+ * it raised stayed, and came back as a phantom story run (the chip saying
+ * the game was waiting, the first-time card, the first-time narration, and
+ * at the loom Carmen's wichuna errand all over again). A start flag whose
+ * game is already won is put down here, after every load.
+ */
+function dropOrphanedReplays() {
+  for (const [start, done] of DONE_FLAG) {
+    // Quietly: this runs at boot over the title, where a save would claim
+    // the journal from a window that is only looking at the cover (another
+    // window playing it then stopped saving) before any warning is wired.
+    // The next real save carries it.
+    if (state.has(start) && state.has(done) && !panelOpen(start)) state.unmarkQuietly([start]);
+  }
+}
+dropOrphanedReplays();
+
+/**
+ * A journal that set an omiyage on the ofrenda before the altar remembered
+ * whose it took has only the shared flag. Which one went is not written
+ * anywhere, so every omiyage still held is read as the one the altar took,
+ * as the Return used to read it; otherwise it offered to hand over a gift
+ * the altar already had.
+ */
+function settleOldOmiyage() {
+  const whose = ['petro', 'pilar', 'aurelio'];
+  if (!state.has('c9.of.omiyage') || whose.some((w) => state.has(`c9.of.omiyage.${w}`))) return;
+  state.markQuietly(whose.filter((w) => state.has(`omiyage.${w}`)).map((w) => `c9.of.omiyage.${w}`));
+}
+settleOldOmiyage();
 
 /** Open air near where a card was set aside: that card, forgiven. */
 function declinedNearHere(): GameEntry | null {
@@ -662,14 +773,21 @@ function openPanel(g: GameEntry) {
 function renderHowto() {
   const g = howtoFor;
   if (!g) return;
+  // The card's lines were worded when their chapter loaded, before anyone
+  // had touched a pad: a pad in hand rewords them as the card is drawn.
+  const padHand = lastDevice() === 'pad';
   const lines = (g.def.howTo ?? [])
+    .map((l) => (padHand ? padWords(l) : l))
     .map((l) => `<div class="ht-line">${l}</div>`)
     .join('');
   const replaying = state.has('replay.mode');
   const hardOffered = howtoOpts.includes(HARD_OPT);
   const hardDone = state.has(`hard.${g.def.flag}`);
   // The body scrolls when the glass is short; the foot never does, so the
-  // hint and the "more below" pill sit under the text, never over it.
+  // hint and the "more below" pill sit under the text, never over it. A
+  // cursor move re-renders, and must leave the body where the player had
+  // scrolled it: it once snapped to the top, hiding the row just chosen.
+  const scrolled = howtoEl.querySelector<HTMLElement>('.ht-body')?.scrollTop ?? 0;
   howtoEl.innerHTML = `
     <div class="ht-card">
       <div class="ht-body">
@@ -681,7 +799,7 @@ function renderHowto() {
       ${lines ? `<div class="ht-lines">${lines}</div>` : ''}
       </div>
       <div class="ht-side">
-      ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${g.def.hardHow}</div>` : ''}
+      ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${padHand ? padWords(g.def.hardHow) : g.def.hardHow}</div>` : ''}
       <div class="ht-opts">
         ${howtoOpts
           .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}${t === HARD_OPT && hardDone ? '&nbsp;&#10038;' : ''}</div>`)
@@ -694,7 +812,9 @@ function renderHowto() {
         <div class="ht-keys">${keysOrTaps('Space to begin &middot; Esc, not yet', 'tap a line to choose')}</div>
       </div>
     </div>`;
-  watchScrollCue(howtoEl.querySelector<HTMLElement>('.ht-body'), howtoEl.querySelector<HTMLElement>('.ht-more'));
+  const body = howtoEl.querySelector<HTMLElement>('.ht-body');
+  if (body) body.scrollTop = scrolled;
+  watchScrollCue(body, howtoEl.querySelector<HTMLElement>('.ht-more'));
 }
 
 function showHowto(g: GameEntry) {
@@ -709,6 +829,7 @@ function showHowto(g: GameEntry) {
     state.has('replay.mode') && g.def.hardHow ? ['Begin', HARD_OPT, 'Not yet'] : ['Begin', 'Not yet'];
   player.frozen = true;
   howtoEl.hidden = false;
+  howtoEl.innerHTML = ''; // a new card starts at its top
   renderHowto();
   audio.pageFlip();
 }
@@ -750,12 +871,14 @@ function showStrip(g: GameEntry) {
   stripFor = g;
   stripSel = 1; // "Keep at it" is the default: Esc twice changes nothing
   stripEl.hidden = false;
+  RUN.held = true; // this frame, not the next tick: the loom reads it on a tap
   renderStrip();
 }
 
 function closeStrip() {
   stripEl.hidden = true;
   stripFor = null;
+  RUN.held = false;
 }
 
 function stripActivate() {
@@ -967,12 +1090,47 @@ state.on('letter', (id) => {
 });
 // When saving stops working (full storage, private browsing), the player
 // hears about it once instead of losing every session from there on.
+// A warning a toast cannot carry: the toast queue holds through dialogue and
+// then shows for 2.4s, and a player who missed it played on for hours in a
+// window that saved nothing. This one stays, over everything, until the
+// journal under it changes or saving works again.
+const saveWarnEl = document.createElement('div');
+saveWarnEl.setAttribute('role', 'alert');
+saveWarnEl.hidden = true;
+Object.assign(saveWarnEl.style, {
+  position: 'absolute',
+  top: 'max(8px, env(safe-area-inset-top))',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: '90',
+  maxWidth: 'min(92%, 560px)',
+  padding: '8px 14px',
+  background: 'var(--paper, #f4ead6)',
+  color: 'var(--ink, #2b2118)',
+  border: '1px solid #a0522d',
+  borderRadius: '6px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+  font: '15px/1.4 Literata, Georgia, serif',
+  textAlign: 'center',
+  pointerEvents: 'none',
+});
+$('frame').appendChild(saveWarnEl);
+function showSaveWarning(text: string) {
+  saveWarnEl.textContent = text;
+  saveWarnEl.hidden = false;
+}
+function clearSaveWarning() {
+  saveWarnEl.hidden = true;
+}
 state.onPersistenceLost = () => {
-  toasts.show('⚠ the journal cannot be written here; this session will not be remembered');
+  showSaveWarning('⚠ this browser is not keeping the journal: what happens from here will not be remembered');
 };
 state.onSuperseded = () => {
-  toasts.show('⚠ this journal was written in another window; this one has stopped saving. Reload to pick up from there');
+  showSaveWarning('⚠ this journal is open in another window, which keeps it now; this one has stopped saving. Reload to pick up from there');
 };
+state.on('changed', () => {
+  if (!saveWarnEl.hidden && !state.persistenceLost && !state.superseded) clearSaveWarning();
+});
 // Bound mid-walk loss: the save also fires when the tab hides or closes,
 // and every 30 seconds of play, not only on story beats.
 // Only while playing: a fresh visitor idling at the title has no journey
@@ -1064,9 +1222,11 @@ function dropPlate() {
 
 // ---------------------------------------------------------------- villagers
 
-type Villager = Sprite & {
+type Villager = Omit<Sprite, 'sheet'> & {
+  /** Drawn from the wardrobe at the current fade; never assigned. */
+  readonly sheet: HTMLCanvasElement;
   def: NpcDef;
-  portrait: HTMLCanvasElement | null;
+  readonly portrait: HTMLCanvasElement | null;
   think: number;
   want: Dir | null;
   // -- village rhythm (all derived at boot; see the section below) --
@@ -1083,28 +1243,27 @@ type Villager = Sprite & {
   fade: number;
   /** Per-villager timing jitter so nobody moves in lockstep. Timing only. */
   jitter: number;
-  baseSheet: HTMLCanvasElement;
-  fadeSheet: HTMLCanvasElement | null;
+  /** Sheet, face and night fade, each baked on first need (art/wardrobe.ts). */
+  wardrobe: Wardrobe;
   /** The scene's costume this villager is wearing (see `dress`), if any. */
   costume?: string;
 };
 
-function sheetFor(def: NpcDef): HTMLCanvasElement {
-  if (def.sprite === 'dog') return makeDogSheet();
-  if (def.sprite === 'llama') return makeLlamaSheet('#e8ddc8');
-  if (def.sprite === 'llamaBrown') return makeLlamaSheet('#9c6b42');
-  return makeSheet(lookFor(def.id, def.look));
-}
-
 const villagers: Villager[] = NPCS.map((def) => {
-  const sheet = sheetFor(def);
-  return {
+  // Nobody's art is baked here: a sheet when they are first drawn, a face
+  // when they first speak. All 122 at boot held 175 MB of canvas.
+  const wardrobe = new Wardrobe(() => lookFor(def.id, def.look), def.sprite);
+  const v: Villager = {
     def,
     actor: new Actor(def.pos[0], def.pos[1], def.sits ?? 'down'),
-    sheet,
+    get sheet() {
+      return wardrobe.at(v.fade);
+    },
     rig: (def.sprite ? 'animal' : 'human') as 'animal' | 'human',
     species: def.sprite, greetId: def.id, // renderer idle life: tail wags, chews, greeting nods
-    portrait: def.sprite ? null : makePortrait(lookFor(def.id, def.look)),
+    get portrait() {
+      return wardrobe.portrait;
+    },
     think: Math.random() * 2,
     want: null,
     seat: def.sits ? { at: [def.pos[0], def.pos[1]] as [number, number], dir: def.sits } : null,
@@ -1114,9 +1273,9 @@ const villagers: Villager[] = NPCS.map((def) => {
     postBack: null,
     fade: 1,
     jitter: Math.random(),
-    baseSheet: sheet,
-    fadeSheet: null,
+    wardrobe,
   };
+  return v;
 });
 
 // Diners and other permanent sitters start, and stay, seated.
@@ -1248,23 +1407,13 @@ function refreshErranded() {
 refreshErranded();
 state.on('changed', refreshErranded);
 
-/** Swap in a sheet drawn at the current fade alpha; full sheets swap back. */
+/**
+ * The faded sheet is painted when the villager is drawn, so only people on
+ * screen fade one; once the fade comes to rest at full or at nothing, its
+ * 1.4 MB copy is handed back.
+ */
 function applyFade(v: Villager) {
-  if (v.fade >= 1) {
-    v.sheet = v.baseSheet;
-    return;
-  }
-  if (!v.fadeSheet) {
-    v.fadeSheet = document.createElement('canvas');
-    v.fadeSheet.width = v.baseSheet.width;
-    v.fadeSheet.height = v.baseSheet.height;
-  }
-  const g = v.fadeSheet.getContext('2d');
-  if (!g) return;
-  g.clearRect(0, 0, v.fadeSheet.width, v.fadeSheet.height);
-  g.globalAlpha = v.fade;
-  g.drawImage(v.baseSheet, 0, 0);
-  v.sheet = v.fadeSheet;
+  if (v.fade <= 0 || v.fade >= 1) v.wardrobe.settle();
 }
 
 /** One greedy step toward a cell, preferring the longer axis; null when stuck. */
@@ -1919,13 +2068,8 @@ function watched(v: Villager): boolean {
 /** Dress a villager for a scene (a mop wig, a little umbrella), or back in their own clothes. */
 function dress(v: Villager, look: Partial<Look> | undefined) {
   if (v.def.sprite) return;
-  const lk = { ...lookFor(v.def.id, v.def.look), ...(look ?? {}) };
-  v.baseSheet = makeSheet(lk);
-  v.sheet = v.baseSheet;
-  v.fadeSheet = null;
-  v.portrait = makePortrait(lk);
+  v.wardrobe.dress(look);
   v.costume = costumeKey(look) || undefined;
-  if (v.fade < 1) applyFade(v);
 }
 
 /**
@@ -2121,7 +2265,9 @@ function updateStaging(dt: number) {
   // The last page's hush: from its first word until the book is put down.
   // The book put down in front of you (not a reload after it) leaves the
   // night it was written in: the afterglow, held while you stay.
-  if (!lampOver && state.has('story.end') && !textbox.isOpen && !albumUI.isOpen) {
+  // Not while the closing book is still owed (a reload before it was read):
+  // it reopens a moment after Continue, and should play under the hush.
+  if (!lampOver && state.has('story.end') && state.has('end.book.read') && !textbox.isOpen && !albumUI.isOpen) {
     lampOver = true;
     if (lampT > 0 && map.id === 'village') afterglow = true;
   }
@@ -2699,11 +2845,20 @@ function refreshPlayerSheet() {
 /** ↑↑↓↓←→←→ on the title screen. Some traditions cross all borders. */
 const KONAMI: Dir[] = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
 let konamiAt = 0;
+/**
+ * Entered this session: the journey about to begin wears the gold too. On a
+ * fresh title screen with no journal yet, setting the flag saved one: an
+ * empty 'unsigned' journal took a shelf slot, Begin then started in another
+ * slot where the gold was wiped, and a later Continue skipped the flyleaf.
+ */
+let konamiThisSession = false;
 function feedKonami(d: Dir) {
   if (state.has('konami')) return;
   konamiAt = d === KONAMI[konamiAt] ? konamiAt + 1 : d === 'up' ? 1 : 0;
   if (konamiAt >= KONAMI.length) {
-    state.set('konami');
+    konamiThisSession = true;
+    if (state.hasSave()) state.set('konami');
+    else state.markQuietly(['konami']); // kept, unsaved, until a journey begins
     refreshPlayerSheet();
     audio.jingle();
     toasts.show('✦ 30 lives. (You will not need them here.)');
@@ -3544,6 +3699,16 @@ const ARRIVAL_HOUR: Record<string, number> = {
   oaxaca: 0.55,
 };
 
+/** A chapter's arrival narration, if this map owes one; true if it started. */
+function playArrival(): boolean {
+  const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
+  if (!arr || textbox.isOpen) return false;
+  const hour = ARRIVAL_HOUR[map.id];
+  if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
+  startNarration(arr.node);
+  return true;
+}
+
 function endWarp() {
   warp = null;
   player.frozen = false;
@@ -3551,13 +3716,7 @@ function endWarp() {
   journeyEl.classList.remove('show');
   setIris(1);
   // First footfall in a new chapter gets its narration, at its written hour.
-  const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
-  if (arr && !textbox.isOpen) {
-    const hour = ARRIVAL_HOUR[map.id];
-    if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
-    startNarration(arr.node);
-    return;
-  }
+  if (playArrival()) return;
   // Or the scene a dark was let fall for: it plays as the light comes up.
   // Only after time passing in place; a door from somewhere else could land
   // you across the map from where the scene is standing.
@@ -3608,8 +3767,11 @@ function updateWarp(dt: number) {
 const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 let talkingTo: Villager | null = null;
-let celebrated = state.has('story.complete');
-const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map((c) => c.flag));
+let celebrated = false;
+/** Chapter one's closing spread, which COMPLETIONS does not cover: unfolded,
+ * or scheduled this session. */
+let storyClosed = false;
+const celebratedFlags = new Set<string>();
 /**
  * The chapter-close spreads already unfolded (or never to unfold), keyed by
  * completion flag. Separate from the plates above: a chapter whose story
@@ -3617,7 +3779,7 @@ const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map
  * spread after the farewell.
  */
 const closeFlag = (c: { flag: string; closeOn?: string }) => c.closeOn ?? c.flag;
-const closedChapters = new Set(COMPLETIONS.filter((c) => state.has(closeFlag(c))).map((c) => c.flag));
+const closedChapters = new Set<string>();
 
 /**
  * The guards above keep a loaded journal from re-firing plates and the
@@ -3627,15 +3789,45 @@ const closedChapters = new Set(COMPLETIONS.filter((c) => state.has(closeFlag(c))
  * stale guards re-celebrated finished chapters one way and swallowed fresh
  * ones the other.
  */
-function resyncCelebrations() {
+function resyncCelebrations(trustFlags = false) {
   window.clearTimeout(ceremonyTimer);
+  // Zero too: whisperMustWait() reads a live timer as a ceremony on its way.
+  ceremonyTimer = 0;
   chapterClose.close();
-  celebrated = state.has('story.complete');
-  celebratedFlags.clear();
-  for (const c of COMPLETIONS) if (state.has(c.flag)) celebratedFlags.add(c.flag);
-  closedChapters.clear();
-  for (const c of COMPLETIONS) if (state.has(closeFlag(c))) closedChapters.add(c.flag);
+  seedCelebrations(trustFlags);
 }
+
+/**
+ * Seed the guards from what the journal has actually shown. They used to be
+ * read off the completion flags themselves, which are saved the moment the
+ * completing line opens: a tab closed during that conversation came back
+ * with the plate and the chapter's closing spread counted as seen, and they
+ * never came. Plates and spreads now leave their own seen-marks when they
+ * appear. A journal from before the marks existed is taken at its word once:
+ * whatever it had completed counts as celebrated, so nothing re-fires.
+ */
+function seedCelebrations(trustFlags = false) {
+  // trustFlags: the dev desk jumped over chapters, and everything completed
+  // counts as celebrated, exactly as an old journal is taken at its word.
+  if (trustFlags || !state.has('ceremonies.kept')) {
+    const marks = ['ceremonies.kept'];
+    if (state.has('story.complete')) marks.push('seen.plate.story.complete', 'seen.close.story.complete');
+    // A journal finished before the closing book kept its own mark: taken as read.
+    if (state.has('story.end')) marks.push('end.book.read');
+    for (const c of COMPLETIONS) {
+      if (state.has(c.flag)) marks.push(`seen.plate.${c.flag}`);
+      if (state.has(closeFlag(c))) marks.push(`seen.close.${c.flag}`);
+    }
+    state.markQuietly(marks);
+  }
+  celebrated = state.has('seen.plate.story.complete');
+  storyClosed = state.has('seen.close.story.complete');
+  celebratedFlags.clear();
+  for (const c of COMPLETIONS) if (state.has(`seen.plate.${c.flag}`)) celebratedFlags.add(c.flag);
+  closedChapters.clear();
+  for (const c of COMPLETIONS) if (state.has(`seen.close.${c.flag}`)) closedChapters.add(c.flag);
+}
+seedCelebrations();
 
 /** A journey taken from inside a conversation; the warp runs when it ends. */
 let pendingTravel: { map: string; x: number; y: number; dir: string } | null = null;
@@ -3812,36 +4004,10 @@ function endDialogue() {
   }
 
   // Mail handed over during the conversation unfolds now.
-  if (pendingLetter) {
-    const def = pickLetter(LETTERS, pendingLetter, (w) => state.check(w));
-    openLetterId = pendingLetter;
-    pendingLetter = null;
-    if (def) {
-      player.frozen = true;
-      audio.pageFlip();
-      title.showLetter({ from: def.from, body: def.body, typed: def.typed });
-      return;
-    }
-    openLetterId = null;
-  }
+  if (openPendingLetter()) return;
 
   // Chasca's album unfolds once the conversation has stepped back from it.
-  if (state.has('album.open')) {
-    state.clearFlag('album.open');
-    player.frozen = true;
-    audio.pageFlip();
-    albumUI.open((curtain) => {
-      // The closing book went dark over the end of the journey: hold it.
-      if (curtain) {
-        startCurtain();
-        return;
-      }
-      player.frozen = false;
-      // The first viewing earns her closing words; reopenings close quietly.
-      if (!state.has('c10.album.seen')) startNarration('c10.album.close');
-    });
-    return;
-  }
+  if (openRaisedAlbum()) return;
   if (
     state.has('dig.invite') &&
     !state.has('dig.done') &&
@@ -3891,6 +4057,7 @@ function endDialogue() {
   }
   if (state.has('story.complete') && !celebrated) {
     celebrated = true;
+    state.markQuietly(['seen.plate.story.complete']);
     applyGateState();
 
 // The identical top-level applyDressings serves here too; a nested copy of
@@ -3899,11 +4066,18 @@ applyDressings();
     showPlate(chapterPlate(0), 5200);
     toasts.show('✦ the journal remembers her now');
     toasts.show('the east gate stands open');
+    storyClosed = true;
+    scheduleCeremony('story.complete');
+  } else if (state.has('story.complete') && !storyClosed) {
+    // The plate was seen but the spread was not (the tab closed while it
+    // waited): it unfolds after this talk instead.
+    storyClosed = true;
     scheduleCeremony('story.complete');
   }
   for (const c of COMPLETIONS) {
     if (state.has(c.flag) && !celebratedFlags.has(c.flag)) {
       celebratedFlags.add(c.flag);
+      state.markQuietly([`seen.plate.${c.flag}`]);
       showPlate(c.plate, 5200);
       for (const t of c.toasts) toasts.show(t);
       celebrate();
@@ -3914,6 +4088,138 @@ applyDressings();
       scheduleCeremony(c.flag);
     }
   }
+}
+
+/** Open the album (or, after the last page, the closing book) if a
+ * conversation raised it; true if it opened. */
+function openRaisedAlbum(): boolean {
+  if (!state.has('album.open')) return false;
+  state.clearFlag('album.open');
+  player.frozen = true;
+  audio.pageFlip();
+  albumUI.open((curtain) => {
+    // The closing book went dark over the end of the journey: hold it.
+    if (curtain) {
+      // Read to its end: only now is it done. end.book is spent the moment
+      // the book opens, so a tab closed on its first spreads used to lose
+      // the closing leaves and the curtain for good.
+      state.markQuietly(['end.book.read']);
+      state.save();
+      startCurtain();
+      return;
+    }
+    player.frozen = false;
+    // The first viewing earns her closing words; reopenings close quietly.
+    if (!state.has('c10.album.seen')) startNarration('c10.album.close');
+  });
+  return true;
+}
+
+/** Unfold the letter waiting to be read, if there is one. */
+function openPendingLetter(): boolean {
+  if (!pendingLetter) return false;
+  const def = pickLetter(LETTERS, pendingLetter, (w) => state.check(w));
+  openLetterId = pendingLetter;
+  pendingLetter = null;
+  if (def) {
+    player.frozen = true;
+    audio.pageFlip();
+    title.showLetter({ from: def.from, body: def.body, typed: def.typed });
+    return true;
+  }
+  openLetterId = null;
+  return false;
+}
+
+// The text box keeps the journal told which conversation is open, so a tab
+// closed mid-talk reopens it on Continue (see resumeInterrupted).
+/** How the talk being opened was opened; recorded with it for resuming. */
+let openingKind: TalkKind = 'narration';
+textbox.onEnter = (id) => {
+  state.talk = { node: id, who: talkingTo?.def.id ?? null, kind: openingKind };
+  // A talk the player opened themselves while a resume waited supersedes it:
+  // resuming afterwards showed it twice and re-applied what it had set
+  // (a finished loom's start flag, and the whole loom again).
+  if (resumeTimer) {
+    window.clearTimeout(resumeTimer);
+    resumeTimer = 0;
+  }
+};
+textbox.onLeave = () => {
+  state.talk = null;
+  state.save();
+};
+
+/**
+ * Continue after a journey was put down mid-moment: the conversation that
+ * was open reopens at the node it stood on (its effects are idempotent, so
+ * entering again only shows the words again), a letter handed over but
+ * never unfolded unfolds, and a chapter's arrival that the warp never
+ * reached plays. Waits, like the intro, for nothing else to hold the screen.
+ */
+let resumeTimer = 0;
+function resumeInterrupted() {
+  window.clearTimeout(resumeTimer);
+  const tryResume = () => {
+    resumeTimer = 0;
+    if (ceremonyMustWait() || chapterClose.isOpen) {
+      resumeTimer = window.setTimeout(tryResume, 400);
+      return;
+    }
+    // Read now, not when Continue was pressed: whatever happened while this
+    // waited (a talk, a letter read) is what the journal says now.
+    const talk = state.talk;
+    const due = [...state.flagSet()]
+      .filter((f) => f.startsWith('letter.due.'))
+      .map((f) => f.slice('letter.due.'.length))
+      .filter((id) => !state.has(`letter.read.${id}`));
+    const node = talk ? NODES[talk.node] : undefined;
+    // Only a talk that carries the story: examines and pets are not worth
+    // standing the player back in front of, and a villager not here, or not
+    // within a few steps, is met again in their own time (their entry arms
+    // catch a reload up).
+    const v = talk?.who ? villagers.find((x) => x.def.id === talk.who && x.def.map === map.id) : undefined;
+    const near = !!v && Math.abs(v.actor.x - player.x) + Math.abs(v.actor.y - player.y) <= 4;
+    const resumable =
+      !!talk &&
+      !!node &&
+      talk.kind !== 'examine' &&
+      talk.kind !== 'pet' &&
+      (talk.who === null || near) &&
+      !!(node.effects?.length || node.choices?.length || node.next);
+    if (talk && node && resumable) {
+      // A letter owed from before unfolds when this talk closes.
+      if (due[0]) pendingLetter = due[0];
+      if (v) {
+        v.actor.face(OPPOSITE[player.dir]);
+        v.actor.frozen = true;
+        player.frozen = true;
+        talkingTo = v;
+        settleForTalk(v);
+        openingKind = 'talk';
+        textbox.open(NODES, talk.node, v.portrait, endDialogue);
+      } else {
+        // The wake lines, cut off: the welcome that follows them is still owed.
+        if (talk.node.startsWith('intro.')) pendingWelcome = true;
+        startNarration(talk.node);
+      }
+      return;
+    }
+    state.talk = null;
+    const letter = due[0];
+    if (letter) {
+      pendingLetter = letter;
+      if (openPendingLetter()) return;
+    }
+    // The last page was written, but the closing book was never read to its
+    // end: it opens again.
+    if (state.has('story.end') && !state.has('end.book.read')) {
+      state.markQuietly(['end.book', 'album.open']);
+      if (openRaisedAlbum()) return;
+    }
+    playArrival();
+  };
+  resumeTimer = window.setTimeout(tryResume, 700);
 }
 
 const PET_NODES = ['allqu.pet1', 'allqu.pet2', 'allqu.pet3', 'allqu.pet4', 'allqu.pet5'];
@@ -3932,6 +4238,7 @@ function startNpcDialogue(v: Villager) {
     v.actor.placeAt(ox, oy, OPPOSITE[player.dir]);
     v.actor.frozen = true;
     talkingTo = v;
+    openingKind = 'pet';
     textbox.open(NODES, node, null, endDialogue);
     return;
   }
@@ -3952,11 +4259,13 @@ function startNpcDialogue(v: Villager) {
   if (!v.def.sprite) renderer.wave(v.actor);
   if (v.def.sprite === 'dog') audio.bark();
   else if (v.def.sprite) audio.hum();
+  openingKind = 'talk';
   textbox.open(NODES, entry.node, v.portrait, endDialogue);
 }
 
-function startNarration(nodeId: string) {
+function startNarration(nodeId: string, kind: TalkKind = 'narration') {
   player.frozen = true;
+  openingKind = kind;
   textbox.open(NODES, nodeId, null, endDialogue);
 }
 
@@ -4045,8 +4354,14 @@ function openCeremony(flag: string, then?: () => void) {
   const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
   player.frozen = true;
   audio.pageFlip();
+  // Seen once it is actually on screen; until then a reload owes it again.
+  state.markQuietly([`seen.close.${flag}`]);
+  state.save();
   chapterClose.open(chapter, hues, () => {
     player.frozen = false;
+    // Where this browser may forget an embedded game's storage, the close of
+    // a chapter is the moment to suggest keeping a copy.
+    if (savesAreFragile()) toasts.show('a good moment to pack this journal on the shelf: this browser may not keep it');
     then?.();
   });
 }
@@ -4247,7 +4562,7 @@ function tryInteract(aimFirst = true): boolean {
     if (tarm && !sitKindsOn(map.id).has(tk)) {
       const [px, py] = player.occupies();
       player.face(thing[0] > px ? 'right' : thing[0] < px ? 'left' : thing[1] > py ? 'down' : 'up');
-      startNarration(tarm.node);
+      startNarration(tarm.node, 'examine');
       return true;
     }
   }
@@ -4260,7 +4575,7 @@ function tryInteract(aimFirst = true): boolean {
     (a) => (!a.map || a.map === map.id) && state.check(a.when) && (!a.dark || nightLevel(dayT) > 0.3),
   );
   if (arm) {
-    startNarration(arm.node);
+    startNarration(arm.node, 'examine');
     settleBesideProp(fx, fy);
     return true;
   }
@@ -4747,6 +5062,7 @@ let quietHud = false;
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
+  askToKeepStorage();
   if (freshStart && !override) {
     // Begin again has to mean the beginning. The title screen idles over
     // wherever the journey paused, and this function only ever repositioned
@@ -4800,19 +5116,20 @@ function beginPlay(freshStart: boolean) {
     // the fade. The village nameplate and both control hints were authored,
     // good, and never once seen by a new player.
     pendingWelcome = true;
+  } else {
+    resumeInterrupted();
   }
 }
 
 /**
- * A different journal was put on the table (chosen, erased, or unpacked
- * over): the loaded journey is forgotten wholesale and the new slot is read
- * from a clean slate, exactly like a boot. The world is stood back up for
- * the title's attract drift; Continue and Begin then travel the usual paths.
+ * Everything queued or counted for the journey being put down dies here,
+ * whichever way it is put down (another journal chosen, or Begin again). A
+ * pending whisper once crossed this seam and stamped its once-ever flag into
+ * the wrong save; a fading toast once followed the player into another
+ * journal's morning; a half-spilled chicha carried its sloshes into a fresh
+ * one, and petals sown in one journal counted toward another's path.
  */
-function reloadJourney() {
-  // Everything queued for the OLD journey dies here: a pending whisper once
-  // crossed this seam and stamped its once-ever flag into the wrong save; a
-  // fading toast once followed the player into another journal's morning.
+function dropJourneyTransients() {
   pendingWhisper = null;
   pendingWelcome = false;
   pendingLetter = null;
@@ -4823,11 +5140,40 @@ function reloadJourney() {
   introTimer = 0;
   window.clearTimeout(welcomeTimer);
   welcomeTimer = 0;
+  window.clearTimeout(resumeTimer);
+  resumeTimer = 0;
+  clearSaveWarning(); // the next journal's saves will speak for themselves
   toasts.dismissAll();
   dropPlate();
+  sloshes = 0;
+  PETAL_SOWN.clear();
+  // The ending's latches: a new journey begun right after the last page
+  // opened with the clock held at dusk, and a second ending in the same tab
+  // lost its hearth hush and the lamp's lean.
+  afterglow = false;
+  lampOver = false;
+  lampT = 0;
+  // Steps queued to settle someone for a talk belong to the old world.
+  settleSteps.clear();
+}
+
+/**
+ * A different journal was put on the table (chosen, erased, or unpacked
+ * over): the loaded journey is forgotten wholesale and the new slot is read
+ * from a clean slate, exactly like a boot. The world is stood back up for
+ * the title's attract drift; Continue and Begin then travel the usual paths.
+ */
+function reloadJourney() {
+  dropJourneyTransients();
   state.forget();
   state.load();
+  dropOrphanedReplays();
+  settleOldOmiyage();
+  journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
+  // The boats went with the overrides; forget them too, or a boat moored in
+  // the old journal never moors again in this one.
+  moored.clear();
   resyncCelebrations();
   applyGateState();
   applyDressings();
@@ -4915,7 +5261,13 @@ function titleActivate() {
     const blank = state.hasSave() ? firstBlankSlot() : null;
     openFlyleaf(
       blank === null
-        ? freshSlate
+        ? () => {
+            // The journal this window holds, not whichever one the shared
+            // shelf key names now: another window may have moved it, and
+            // Begin again here once erased the journal being played there.
+            setActiveSlot(state.slot);
+            freshSlate();
+          }
         : () => {
             setActiveSlot(blank);
             freshSlate();
@@ -4943,9 +5295,16 @@ function continueJourney() {
 
 /** Begin again's clean slate: wipe the active slot, stand the world back up. */
 function freshSlate() {
+  dropJourneyTransients();
   state.reset();
-  armed.clear();
+  // A new journey starts in the morning, as the first one did, not at
+  // whatever hour the last one was put down.
+  if (!Number.isFinite(todOverride)) dayT = 0.18;
+  journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
+  // The boats went with the overrides; forget them too, or a boat moored in
+  // the old journal never moors again in this one.
+  moored.clear();
   resyncCelebrations();
   applyGateState();
   applyDressings();
@@ -4961,6 +5320,7 @@ function openFlyleaf(setOut: () => void) {
   mode = 'naming';
   naming.open((res) => {
     setOut();
+    if (konamiThisSession) state.markQuietly(['konami']);
     state.playerName = res.name;
     state.playerLook = res.look;
     state.save();
@@ -5352,12 +5712,18 @@ function update(dt: number) {
   } else if (anyGameOpen()) {
     const g = games.find((x) => x.panel.isOpen);
     if (g) {
-      if (back || pauseKey) {
+      const resting = panelResting(g.panel);
+      if ((back || pauseKey) && panelDone(g.panel)) {
+        // On the payoff, Esc means 'done here', not 'Start over' or 'Step
+        // away': the strip's choices threw the win away, and the card came
+        // back to be won again.
+        if (!resting) g.panel.onAction();
+      } else if (back || pauseKey) {
         showStrip(g);
         audio.pageFlip();
       } else {
         if (menuDir) g.panel.onDir(menuDir);
-        if (act) g.panel.onAction();
+        if (act && !resting) g.panel.onAction();
       }
     }
   } else if (textbox.isOpen) {
@@ -5367,7 +5733,13 @@ function update(dt: number) {
       textbox.onDir(menuDir);
       audio.select();
     }
-    if (act || back) textbox.onAction();
+    // Esc mid-conversation opens the settings, straight to the sliders and
+    // with no road back to the title: volume and text speed were out of
+    // reach for the whole minute-long intro. X and Backspace still advance.
+    if (pauseKey && celebrateT <= 0) {
+      pauseMenu.open('settings');
+      audio.pageFlip();
+    } else if (act || back) textbox.onAction();
   } else if (journalUI.isOpen) {
     if (menuDir) {
       journalUI.onDir(menuDir);
@@ -5410,7 +5782,7 @@ function update(dt: number) {
     } else if (settling()) {
       // A talk's settling steps still landing after its words closed.
       landHeldSteps(dt);
-    } else if (act && (afterTalkHush() || spamHush() || groundHush() || introTimer !== 0)) {
+    } else if (act && (afterTalkHush() || spamHush() || groundHush() || introTimer !== 0 || resumeTimer !== 0)) {
       // The press that closed the last line had company: swallowed. So is
       // a press in the breath between the letter and the first words: it
       // used to read the well before the game had said anything at all.
@@ -5560,57 +5932,67 @@ function update(dt: number) {
   }
 
   motionWitness();
-  dev.publish({
-    mode,
-    map: map.id,
-    tile: [player.x, player.y],
-    px: player.renderPos(),
-    cam: [camera.x, camera.y],
-    dir: player.dir,
-    facing: player.facingCell(),
-    dialogue: textbox.currentNode,
-    journalOpen: journalUI.isOpen,
-    weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
-    howtoOpen: !howtoEl.hidden,
-    stripOpen: !stripEl.hidden,
-    card: modalCard(),
-    pages: state.pageCount(),
-    sitting,
-    pose: player.pose,
-    errand: state.errand,
-    npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
-    rhythm: {
-      nk: Number(nightLevel(dayT).toFixed(3)),
-      seated: villagersHere().filter((v) => v.seated).map((v) => v.def.id),
-      gone: villagers.filter((v) => v.def.map === map.id && v.fade <= 0.02).map((v) => v.def.id),
-      fading: villagers
-        .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
-        .map((v) => v.def.id),
-    },
-    stations: stationsRt.map((st) => ({
-      id: st.def.id,
-      on: st.def.mode === 'gather' ? gatherOn(st, nightLevel(dayT)) : roundRuns(st, nightLevel(dayT)),
-      idx: st.round.idx,
-      done: st.round.done,
-      here: st.berths.filter((b) => b.v.def.map === st.def.map).map((b) => b.v.def.id),
-      seated: st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).map((b) => b.v.def.id),
-      at: st.berths.map((b) => [b.v.def.map, ...b.v.actor.occupies(), b.v.actor.frozen ? 'F' : '']),
-      lamps: [...stationLampEase.entries()]
-        .filter(([k]) => k.startsWith(`${st.def.map}:`))
-        .map(([, e]) => Number(e.k.toFixed(2))),
-    })),
-    bumps,
-    auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
-    thread: {
-      out: renderer.threadOut,
-      shownAt: Math.round(threadShownAt),
-      glintAt: Math.round(glintShownAt),
-      last: threadLast,
-    },
-  });
+  // The dev snapshot is built only where a walker can read it: in a shipped
+  // build publish() returned at once, after the object was built every frame.
+  if (import.meta.env.DEV) {
+    dev.publish({
+      mode,
+      map: map.id,
+      tile: [player.x, player.y],
+      px: player.renderPos(),
+      cam: [camera.x, camera.y],
+      dir: player.dir,
+      facing: player.facingCell(),
+      dialogue: textbox.currentNode,
+      journalOpen: journalUI.isOpen,
+      weaveOpen: games.some((g) => g.def.flag === 'weave.start' && g.panel.isOpen),
+      howtoOpen: !howtoEl.hidden,
+      stripOpen: !stripEl.hidden,
+      card: modalCard(),
+      pages: state.pageCount(),
+      sitting,
+      pose: player.pose,
+      errand: state.errand,
+      npcs: Object.fromEntries(villagersHere().map((v) => [v.def.id, v.actor.occupies()])),
+      rhythm: {
+        nk: Number(nightLevel(dayT).toFixed(3)),
+        seated: villagersHere().filter((v) => v.seated).map((v) => v.def.id),
+        gone: villagers.filter((v) => v.def.map === map.id && v.fade <= 0.02).map((v) => v.def.id),
+        fading: villagers
+          .filter((v) => v.def.map === map.id && v.fade > 0.02 && v.fade < 1)
+          .map((v) => v.def.id),
+      },
+      stations: stationsRt.map((st) => ({
+        id: st.def.id,
+        on: st.def.mode === 'gather' ? gatherOn(st, nightLevel(dayT)) : roundRuns(st, nightLevel(dayT)),
+        idx: st.round.idx,
+        done: st.round.done,
+        here: st.berths.filter((b) => b.v.def.map === st.def.map).map((b) => b.v.def.id),
+        seated: st.berths.filter((b) => b.v.def.map === st.def.map && b.v.seated).map((b) => b.v.def.id),
+        at: st.berths.map((b) => [b.v.def.map, ...b.v.actor.occupies(), b.v.actor.frozen ? 'F' : '']),
+        lamps: [...stationLampEase.entries()]
+          .filter(([k]) => k.startsWith(`${st.def.map}:`))
+          .map(([, e]) => Number(e.k.toFixed(2))),
+      })),
+      bumps,
+      auto: autoGoal ? { kind: autoGoal.kind, cell: autoGoal.cell, path: autoPath.slice(0, 8) } : null,
+      thread: {
+        out: renderer.threadOut,
+        shownAt: Math.round(threadShownAt),
+        glintAt: Math.round(glintShownAt),
+        last: threadLast,
+      },
+    });
+  }
 }
 
+/** Frames that rendered to the end; the loader waits for the first. */
+let framesDrawn = 0;
 function render() {
+  renderFrame();
+  framesDrawn++;
+}
+function renderFrame() {
   // The vista draws the village below the pass, from its own camera.
   const vm = shownMap();
   const cam = shownCam();
@@ -6147,6 +6529,9 @@ function interactableAt(x: number, y: number): boolean {
 
 /** Turn toward an adjacent cell and press the same button Space presses. */
 function faceAndInteract(tx: number, ty: number) {
+  // The intro is about to speak: a tap on the canvas in that moment read the
+  // q'epi before the game's first words, as the keyboard's act already may not.
+  if (introTimer || resumeTimer) return;
   const dir: Dir =
     tx > player.x ? 'right' : tx < player.x ? 'left' : ty > player.y ? 'down' : 'up';
   player.face(dir);
@@ -6622,18 +7007,8 @@ journalRoot.addEventListener('mouseover', (e) => {
   const item = (e.target as HTMLElement).closest('.j-item');
   if (item && steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
 });
-journalRoot.addEventListener(
-  'wheel',
-  (e) => {
-    if (!journalUI.isOpen) return;
-    const t = e.target as HTMLElement;
-    // The route and task pages scroll natively; entry lists page by cursor.
-    if (t.closest('.j-route') || t.closest('.j-tasks')) return;
-    e.preventDefault();
-    journalUI.onDir(e.deltaY > 0 ? 'down' : 'up');
-  },
-  { passive: false },
-);
+// The book decides: page text scrolls natively, entry lists step by cursor.
+journalRoot.addEventListener('wheel', (e) => journalUI.onWheel(e), { passive: false });
 
 // ---- minigame panels: the center acts, the edges steer all four ways ----
 //
@@ -6656,8 +7031,8 @@ function attachPanelPointer(
     // third of the card it sits in.
     const cap = capUnder(root, e.clientX, e.clientY);
     if (cap) {
-      if (cap === 'space') panel.onAction();
-      else panel.onDir(cap);
+      if (cap !== 'space') panel.onDir(cap);
+      else if (!panelResting(panel)) panel.onAction();
       return;
     }
     const card = root.querySelector('.w-panel') ?? root;
@@ -6668,7 +7043,7 @@ function attachPanelPointer(
     const dy = fromTop - 0.5;
     const EDGE = 1 / 6; // beyond a third from center in either axis steers
     if (Math.abs(dx) < EDGE + 0.0 && Math.abs(dy) < EDGE) {
-      panel.onAction();
+      if (!panelResting(panel)) panel.onAction();
       return;
     }
     if (Math.abs(dx) >= Math.abs(dy)) panel.onDir(dx < 0 ? 'left' : 'right');
@@ -6762,6 +7137,9 @@ const stick = makeStick(
   (d) => input.releaseDir(d),
   () => audio.ensure(),
 );
+// A blur or a released Cmd drops every held direction; the stick, still
+// believing it held one, ignored the thumb until it changed direction.
+input.onReleaseAll = () => stick.calm();
 
 if (isCoarseTouch()) {
   vpad.hidden = false;
@@ -6967,7 +7345,7 @@ function installCheats() {
       if (!arrival || arrival.map !== target.map || !state.check(arrival.when)) state.set(target.flag);
       // Chapters skipped over are already celebrated; without this, the
       // next dialogue to end replayed every plate and chapter-close at once.
-      resyncCelebrations();
+      resyncCelebrations(true);
       return jump(target.map);
     },
     /** Where on screen a villager's body (or a cell, given x and y) is drawn,
@@ -7127,7 +7505,7 @@ function installCheats() {
         'c10.pilar.seen', 'c10.album.seen', 'c10.well.called', 'c10.carmen.her', 'c10.apacheta.done',
       ]) state.set(f);
       // The endgame has its own authored ending; nothing here celebrates.
-      resyncCelebrations();
+      resyncCelebrations(true);
       return jump('village');
     },
     wipe() {
@@ -7140,7 +7518,7 @@ function installCheats() {
   (globalThis as unknown as { soup: typeof api }).soup = api;
   console.log('%csoup cheat desk ready. soup.help() for the list.', 'color:#c8a55b');
 }
-installCheats();
+if (import.meta.env.DEV) installCheats(); // the guard here, not inside, lets the build drop the desk
 
 // Dev-only: lets automation advance the simulation synchronously, independent
 // of rAF (which Chrome pauses entirely in hidden tabs).
@@ -7149,13 +7527,31 @@ dev.attachCommands((frames) => {
   render();
 });
 
-startLoop(update, render);
+type BootWindow = Window & { __soupBooted?: boolean; __soupFail?: (why: string) => void };
+stage.onGiveUp = () => {
+  const w = window as BootWindow;
+  if (!w.__soupBooted) w.__soupFail?.('the graphics would not start');
+  else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');
+};
+startLoop(update, render, (err) => {
+  const why = err instanceof Error ? err.message.slice(0, 220) : '';
+  const w = window as BootWindow;
+  if (!w.__soupBooted) w.__soupFail?.(why);
+  else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');
+});
 
 // The loader in index.html has been covering the wait since first paint; lift
-// it once the world has drawn a real frame beneath it.
-requestAnimationFrame(() => requestAnimationFrame(() => {
+// it once the world has drawn a real frame beneath it (a frame that threw
+// does not count: the loader's own script then explains instead).
+const liftLoader = () => {
+  if (framesDrawn === 0 || !stage.isLive) {
+    requestAnimationFrame(liftLoader);
+    return;
+  }
+  (window as BootWindow).__soupBooted = true;
   const loader = document.getElementById('loader');
   if (!loader) return;
   loader.classList.add('done');
   setTimeout(() => loader.remove(), 700);
-}));
+};
+requestAnimationFrame(() => requestAnimationFrame(liftLoader));

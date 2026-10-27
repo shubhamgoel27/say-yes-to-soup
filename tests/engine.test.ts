@@ -19,7 +19,7 @@ import type { Dir } from '../src/engine/input';
 const FRAME = 1 / 60;
 
 /** Runs the simulation for a stretch of time holding one direction. */
-function hold(actor: Actor, dir: Dir | null, seconds: number, blocked = never) {
+function hold(actor: Actor, dir: Dir | null, seconds: number, blocked: (x: number, y: number) => boolean = never) {
   let bumps = 0;
   const frames = Math.round(seconds / FRAME);
   for (let i = 0; i < frames; i++) {
@@ -465,7 +465,7 @@ describe('the stride pose survives micro-pauses', () => {
 describe('the wall lean never hides real movement', () => {
   it('walking away from a graze advances the render position every frame', () => {
     const a = new Actor(5, 5, 'up');
-    const wallAbove = (x: number, y: number) => y < 5;
+    const wallAbove = (_x: number, y: number) => y < 5;
     for (let i = 0; i < 30; i++) a.update(1 / 120, { intent: 'up', blocked: wallAbove });
     // Leaned into the wall; now walk right while the lean eases out.
     let prev = a.renderPos()[0];
@@ -479,5 +479,38 @@ describe('the wall lean never hides real movement', () => {
       prev = px;
     }
     assert.ok(advanced >= 10, `expected steady motion, saw only ${advanced} advancing frames`);
+  });
+});
+
+describe('TileMap runtime edits', () => {
+  const fresh = () =>
+    new TileMap({
+      ...OPEN,
+      ground: ['....', '....'],
+      objects: [' T  ', '    '],
+      triggers: [{ at: [3, 1], type: 'script', id: 'old' }],
+    });
+
+  it('counts a revision only when the object layer really changes', () => {
+    const m = fresh();
+    const r0 = m.objectsRev;
+    m.setObject(1, 0, { t: 'crop', tall: true });
+    assert.equal(m.objectsRev, r0, 'same kind again is no change');
+    m.setObject(2, 0, { t: 'well', solid: true });
+    assert.equal(m.objectsRev, r0 + 1);
+    m.clearOverrides();
+    assert.equal(m.objectsRev, r0 + 2);
+    m.clearOverrides();
+    assert.equal(m.objectsRev, r0 + 2, 'nothing left to clear');
+  });
+
+  it('a fresh journey forgets the doors a story opened', () => {
+    const m = fresh();
+    m.addTrigger({ at: [0, 1], type: 'door', to: 'east', spawn: [0, 0] });
+    m.addTrigger({ at: [3, 1], type: 'script', id: 'new' });
+    m.clearOverrides();
+    assert.equal(m.triggerAt(0, 1), undefined);
+    const kept = m.triggerAt(3, 1);
+    assert.equal(kept?.type === 'script' ? kept.id : null, 'old');
   });
 });

@@ -49,6 +49,14 @@ export class PixiStage {
   private ambientSprite!: Sprite;
   private lightPool: Sprite[] = [];
   private glowPool: Sprite[] = [];
+  /** GPU pieces this build made itself, released before a rebuild: the app's
+   * own destroy reaches only app.stage, which holds just the present sprite. */
+  private owned: { destroy(): void }[] = [];
+  /** Rebuilds tried since the last one that came up; see recover(). */
+  private rebuildTries = 0;
+  /** Told once the stage has stopped trying: the picture will not come back
+   * without a reload, and the player should hear so. */
+  onGiveUp: (() => void) | null = null;
   private specs: LightSpec[] = [];
   private zoom = 1;
   private zoomTarget = 1;
@@ -72,6 +80,10 @@ export class PixiStage {
 
   /** True from the end of init() until a recovery tears the app down. */
   private live = false;
+  /** Whether a built stage is drawing right now. */
+  get isLive(): boolean {
+    return this.live;
+  }
   /** Whether THIS boot planted the WebGPU crash canary (see init/render). */
   private canaryArmed = false;
   /** Callers who need the live canvas (pointer bindings); re-run per build. */
@@ -96,7 +108,12 @@ export class PixiStage {
     const s = new PixiStage();
     s.worldCanvas = worldCanvas;
     s.host = host;
-    void s.init().then(() => s.resize());
+    // A first build that throws (WebGPU init rejected) used to leave the
+    // stage dead with nothing ever trying again: an empty frame under the HUD.
+    void s
+      .init()
+      .then(() => s.resize())
+      .catch((e: unknown) => void s.recover(`first build failed: ${e instanceof Error ? e.message : String(e)}`));
     window.addEventListener('resize', () => s.resize());
     // Phones resize the visible viewport without always firing a window
     // resize (URL bar collapse, on-screen keyboard, rotation quirks); track
@@ -116,6 +133,11 @@ export class PixiStage {
    */
   private async init(): Promise<void> {
     const s = this;
+    // The frame this build is cut to. A phone turned while the build awaits
+    // (the GPU, the grain texture) changes it, and fitView() no-ops until
+    // the stage is live; the end of the build checks and catches up.
+    const cutW = VIEW_W;
+    const cutH = VIEW_H;
     const worldCanvas = this.worldCanvas;
     const host = this.host;
     const app = new Application();
@@ -258,6 +280,24 @@ export class PixiStage {
     (bloom as unknown as { _extractFilter: Filter })._extractFilter = new SoftExtractFilter(BLOOM_THRESHOLD);
     s.scene.filters = [grade, bloom];
     s.bloom = bloom;
+    // Everything above that outlives its sprites, for the next teardown.
+    // Containers go first so no sprite outlives the texture it shows; the
+    // textures are held here, since a destroyed sprite forgets its own.
+    const washTex = s.washSprite.texture;
+    const vigTex = s.vigSprite.texture;
+    s.owned = [
+      // Read at teardown, not now: a turned frame swaps the world texture.
+      { destroy: () => s.worldSprite.texture.destroy(true) },
+      { destroy: () => s.scene.destroy({ children: true }) },
+      { destroy: () => s.lightScene.destroy({ children: true }) },
+      grade,
+      bloom,
+      { destroy: () => s.lightRT.destroy(true) },
+      { destroy: () => radial.destroy(true) },
+      { destroy: () => halo.destroy(true) },
+      { destroy: () => washTex.destroy(true) },
+      { destroy: () => vigTex.destroy(true) },
+    ];
     s.applyBloom();
 
     // Compose at native art resolution, then scale smoothly to the window.
@@ -268,8 +308,10 @@ export class PixiStage {
     });
     s.present = new Sprite(s.prescaleRT);
     app.stage.addChild(s.present);
+    s.owned.push({ destroy: () => s.prescaleRT.destroy(true) });
     s.ambientSprite.tint = s.ambient;
     s.live = true;
+    if (VIEW_W !== cutW || VIEW_H !== cutH) s.fitView();
     // Pointer handlers bind to the canvas element, and this canvas is new on
     // every build; whoever registered gets the fresh one each time.
     for (const fn of s.canvasHooks) fn(app.canvas);
@@ -299,7 +341,21 @@ export class PixiStage {
     console.warn(`[soup] stage rebuilding: ${why}`);
     // A recovered WebGPU device has lost every resource anyway, and WebGL's
     // context restoration is the better-worn path; take it on the way back.
-    this.preference = 'webgl';
+    // Odd retries take the other road as well: WebGL's renderer is a lazy
+    // chunk fetched only now, and after a redeploy that old hashed file is
+    // gone, so retries that insist on WebGL could never succeed.
+    this.preference = this.rebuildTries % 2 === 0 ? 'webgl' : 'webgpu';
+    // Each piece on its own: a dead renderer may refuse any of them, and
+    // one refusal must not keep the rest (forty lights, the bloom chain,
+    // every frame-sized texture) alive across every recovery.
+    for (const o of this.owned) {
+      try {
+        o.destroy();
+      } catch {
+        // Gone with the device, or never fully made.
+      }
+    }
+    this.owned = [];
     try {
       this.app.canvas.remove();
       this.app.destroy(false, { children: true, texture: true });
@@ -310,6 +366,17 @@ export class PixiStage {
     try {
       await this.init();
       this.resize();
+      this.rebuildTries = 0;
+    } catch (e) {
+      // A rebuild that throws left nothing live, and nothing else would
+      // ever try again: the game simulated on behind a blank page. Try a
+      // few more times, further apart each time, then leave it be.
+      console.warn('[soup] stage rebuild failed', e);
+      if (++this.rebuildTries <= 4) {
+        setTimeout(() => void this.recover('retrying a failed rebuild'), 1500 * this.rebuildTries);
+      } else {
+        this.onGiveUp?.();
+      }
     } finally {
       this.recovering = false;
     }

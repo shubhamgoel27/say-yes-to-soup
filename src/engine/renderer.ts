@@ -1,11 +1,11 @@
 import { ART, TILE, VIEW_H, VIEW_W } from './config';
 import type { Actor } from './actor';
 import type { Dir } from './input';
-import type { TileMap } from './grid';
+import type { MapData, TileMap } from './grid';
 import type { Camera } from './camera';
 import { OVER_SEA, PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, outlineSheet, surface, type Surface } from '../art/pix';
+import { cellHash, context2d, outlineSheet, release, surface, type Surface } from '../art/pix';
 import { bodyCovered } from './stand';
 
 /**
@@ -485,8 +485,16 @@ type MoodPaint = { top: string; mid: string; bottom: string; vig: number; glow?:
 export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   private time = 0;
-  private tiles = new Tileset();
-  private atmospheres: Record<string, HTMLCanvasElement>;
+  private tiles: Tileset;
+  /**
+   * The frame-sized light pass, baked for the moods actually lit and no
+   * others. Each is a full-frame canvas (3.5 MB at 1280x720) and the
+   * chapters register twenty moods, so baking them all at boot, and again
+   * on every turn of the phone, held 91 MB for the one on screen. The
+   * current mood and the one before it are kept: a doorway walked back and
+   * forth bakes nothing.
+   */
+  private atmospheres = new Map<string, HTMLCanvasElement>();
   private noClouds = new Set<string>(['garua', 'interior']);
   private mood: Mood = 'warm';
   private nightK = 0;
@@ -546,6 +554,8 @@ export class Renderer {
   /** Per-map caster heights in tiles, spread across each footprint. Once. */
   private casterCache = new Map<string, { h: Float32Array; foot: Float32Array }>();
   /** The visible window's fields: distance to solid, to water, seam flag. */
+  /** Which map and object revision the fields were last built for. */
+  private fieldKey = '';
   private fx0 = 0;
   private fy0 = 0;
   private fw = 0;
@@ -638,16 +648,21 @@ export class Renderer {
   /** Debug knob (`?ambient=1`): keep rare set-pieces (condor, sail) on screen. */
   private ambientDebug = false;
 
-  constructor(readonly canvas: HTMLCanvasElement) {
-    const ctx = canvas.getContext('2d', { alpha: false });
-    if (!ctx) throw new Error('2d canvas context unavailable');
+  /** Given the maps, the tileset keeps one copy of each kind's art; see Tileset.roles. */
+  constructor(
+    readonly canvas: HTMLCanvasElement,
+    maps?: Record<string, MapData>,
+  ) {
+    this.tiles = new Tileset(maps && { maps, runKinds: RUN_WALLS });
+    const ctx = context2d(canvas, { alpha: false });
     this.ctx = ctx;
-    if (import.meta.env.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
+    // Guarded softly: node-side tests build a Renderer with no import.meta.env.
+    const devEnv = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
+    if (devEnv?.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
     canvas.width = W;
     canvas.height = H;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    this.atmospheres = buildAtmospheres();
 
     // Bake the soft-blob library.
     {
@@ -1065,13 +1080,39 @@ export class Renderer {
   registerMoods(specs: Record<string, MoodPaint>) {
     for (const [name, s] of Object.entries(specs)) {
       this.moodSpecs[name] = s;
-      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
+      this.dropAtmosphere(name);
       if (s.noClouds) this.noClouds.add(name);
     }
   }
 
-  /** Chapter moods as registered, so the frame-sized passes can be re-baked. */
-  private moodSpecs: Record<string, MoodPaint> = {};
+  /** Every mood's paint, built-in and registered: what an overlay is baked from. */
+  private moodSpecs: Record<string, MoodPaint> = { ...BUILT_IN_MOODS };
+
+  /** The current mood's light pass, baked the first time it is lit. Unknown moods light as warm. */
+  private atmosphere(): HTMLCanvasElement | null {
+    const name = Object.hasOwn(this.moodSpecs, this.mood) ? this.mood : 'warm';
+    let cv = this.atmospheres.get(name);
+    if (cv) {
+      // Most recently lit last.
+      this.atmospheres.delete(name);
+    } else {
+      const s = this.moodSpecs[name];
+      if (!s) return null;
+      cv = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
+      for (const [old, ocv] of this.atmospheres) {
+        if (this.atmospheres.size < 2) break;
+        this.dropAtmosphere(old, ocv);
+      }
+    }
+    this.atmospheres.set(name, cv);
+    return cv;
+  }
+
+  /** Forget a baked overlay and hand its pixels back; it is drawn from nowhere else. */
+  private dropAtmosphere(name: string, cv = this.atmospheres.get(name)) {
+    this.atmospheres.delete(name);
+    if (cv) release(cv);
+  }
 
   /**
    * The frame turned (config.setView): resize the canvas and re-bake every
@@ -1089,10 +1130,8 @@ export class Renderer {
     this.ctx.imageSmoothingEnabled = true;
     this.ctx.imageSmoothingQuality = 'high';
     this.shadowBuf = surface(SHW, SHH);
-    this.atmospheres = buildAtmospheres();
-    for (const [name, s] of Object.entries(this.moodSpecs)) {
-      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
-    }
+    // Re-baked at the new size when next lit: only the mood on screen.
+    for (const name of [...this.atmospheres.keys()]) this.dropAtmosphere(name);
   }
 
   setMood(mood: Mood) {
@@ -1246,6 +1285,21 @@ export class Renderer {
   forgetProps(mapId: string) {
     this.casterCache.delete(mapId);
     this.overhangCache.delete(mapId);
+    this.coverCache.delete(mapId);
+    this.chimneyCache.delete(mapId);
+    this.anchorCache.delete(mapId);
+    this.potCache.delete(mapId);
+  }
+
+  /** The object-layer revision each map's caches were worked out against. */
+  private propsRev = new Map<string, number>();
+
+  /** Drop a map's prop caches if its objects changed since they were built:
+   * a dressing adding a tall prop, a gate opening, a journal switched. */
+  private freshProps(map: TileMap) {
+    if (this.propsRev.get(map.id) === map.objectsRev) return;
+    this.propsRev.set(map.id, map.objectsRev);
+    this.forgetProps(map.id);
   }
   private castOffs: { kind: string; cx: number; cy: number; dir: number; t: number }[] = [];
   castOff(kind: string, cx: number, cy: number, away: 'left' | 'right') {
@@ -1387,6 +1441,8 @@ export class Renderer {
   private nudges = new Map<Actor, [number, number]>();
   /** Eased opacity per tall prop cell ("x,y"), 1 when nobody is behind it. */
   private veils = new Map<string, number>();
+  /** The map the veils belong to; another map starts every prop solid. */
+  private veilMap = '';
   private alphaCache = new Map<HTMLCanvasElement, Uint8ClampedArray | null>();
 
   /** Opaque enough at this pixel of a canvas to hide what is behind it? */
@@ -1580,6 +1636,7 @@ export class Renderer {
    * and a tree's air beside the canopy stays floor. Worked out once per map.
    */
   overhung(map: TileMap): Uint8Array {
+    this.freshProps(map);
     const hit = this.overhangCache.get(map.id);
     if (hit) return hit;
     const out = new Uint8Array(map.w * map.h);
@@ -1643,6 +1700,7 @@ export class Renderer {
   }
 
   coversBody(map: TileMap, x: number, y: number): boolean {
+    this.freshProps(map);
     let memo = this.coverCache.get(map.id);
     if (!memo) {
       memo = new Uint8Array(map.w * map.h);
@@ -1861,6 +1919,10 @@ export class Renderer {
     // Which room we are in decides what its walls are made of. One lookup a
     // frame, and only when the map actually changed.
     this.tiles.setMap(map.id);
+    if (map.id !== this.veilMap) {
+      this.veilMap = map.id;
+      this.veils.clear();
+    }
     const kindAt = (x: number, y: number) => (map.inBounds(x, y) ? map.ground(x, y).t : 'scree');
     this.warmSeams(map, kindAt);
 
@@ -1879,7 +1941,16 @@ export class Renderer {
     type TallEntry = { cx: number; cy: number; kind: string };
     const tall: TallEntry[] = [];
 
-    this.buildFields(map, x0, y0, x1, y1);
+    // The fields depend only on the map's ground and objects, so they are
+    // worked out over the whole map (plus a ring of off-map solid) once per
+    // object revision. Built from the cull window instead, cells near its
+    // edge could not see walls or water just past it, and wear patches up to
+    // five tiles wide changed colour and strength as the window slid.
+    const fieldKey = `${map.id}:${map.objectsRev}`;
+    if (fieldKey !== this.fieldKey) {
+      this.fieldKey = fieldKey;
+      this.buildFields(map, -1, -1, map.w, map.h);
+    }
 
     // Where everybody is, worked out once. Two passes want it now: the sun
     // lays their shadows down with the buildings' before the ground is
@@ -2192,7 +2263,7 @@ export class Renderer {
     this.drawCastOffs(cam);
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
-    const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
+    const atm = this.atmosphere();
     if (atm) ctx.drawImage(atm, 0, 0);
 
   }
@@ -2521,14 +2592,14 @@ export class Renderer {
   }
 
   /**
-   * The visible window's three fields, rebuilt once a frame and read by every
-   * pass that needs to know what a cell is *near*: how far to the nearest
+   * A map's three fields, rebuilt when the map or its objects change and read
+   * by every pass that needs to know what a cell is *near*: how far to the nearest
    * solid thing, how far to water, and whether a ground seam runs through it.
    *
    * This is what turns a flat probability into a place. Weeds want wall bases
    * and seams; shells want the tide line; the middle of a thoroughfare wants
-   * to stay bare, because feet keep it bare. Two chamfer sweeps over some six
-   * hundred cells, into arrays allocated once.
+   * to stay bare, because feet keep it bare. Two chamfer sweeps over the map,
+   * into arrays grown only when a bigger map comes along.
    */
   private buildFields(map: TileMap, x0: number, y0: number, x1: number, y1: number) {
     const w = x1 - x0 + 1;
@@ -2608,6 +2679,7 @@ export class Renderer {
    * single cell that happens to carry its sprite. Worked out once per map.
    */
   private casterHeights(map: TileMap): { h: Float32Array; foot: Float32Array } {
+    this.freshProps(map);
     const hit = this.casterCache.get(map.id);
     if (hit) return hit;
     const grid = new Float32Array(map.w * map.h);
@@ -2763,7 +2835,18 @@ export class Renderer {
         // A lone tree, cactus or lamp swept as a square left a tile-edged
         // block on the ground; its base is round, so its shadow is a capsule.
         if (this.wallRun(map, cx, cy) >= 0) sweep(bx, by + inset, w, w, dx, dy);
-        else if (round.length < 512) round.push(bx + w / 2, by + inset + w / 2, w / 2, dx, dy);
+        else {
+          // Only a capsule that can reach the buffer takes a slot. Scanned in
+          // row order from well off the top-left, the margin's props once
+          // filled the budget and on-screen trees in the lower right went
+          // shadowless, popping as the camera moved.
+          const x = bx + w / 2;
+          const y = by + inset + w / 2;
+          const r = w / 2;
+          const onBuffer =
+            x + r + Math.max(0, dx) >= 0 && x - r + Math.min(0, dx) <= SHW && y + r + Math.max(0, dy) >= 0 && y - r + Math.min(0, dy) <= SHH;
+          if (onBuffer && round.length < 2048) round.push(x, y, r, dx, dy);
+        }
       }
     }
     // And the people. Their base is a shoe's width of ground at their feet,
@@ -3490,6 +3573,7 @@ export class Renderer {
 
   /** Scan a map once for the things its set-pieces hang from. */
   private regionalAnchors(map: TileMap): RegionAnchors {
+    this.freshProps(map);
     let a = this.anchorCache.get(map.id);
     if (a) return a;
     const water: [number, number][] = [];
@@ -3802,6 +3886,7 @@ export class Renderer {
    * of text may be pointing the player at them.
    */
   private drawPotSteam(map: TileMap, cam: Camera) {
+    this.freshProps(map);
     let pots = this.potCache.get(map.id);
     if (!pots) {
       pots = [];
@@ -3981,6 +4066,7 @@ export class Renderer {
    * buildings, anchored to the real roofline of each sprite. Found once.
    */
   private chimneysFor(map: TileMap): [number, number][] {
+    this.freshProps(map);
     let cells = this.chimneyCache.get(map.id);
     if (cells) return cells;
     cells = map.smoke.map(([ex, ey]) => [ex * TILE + TILE / 2, ey * TILE] as [number, number]);
@@ -4083,7 +4169,10 @@ export class Renderer {
       // Fog bands sliding sideways, barely there, plus the finest drizzle.
       for (let i = 0; i < 4; i++) {
         const h1 = cellHash(i, 211, 13);
-        const wy = ((h1 * H * 1.4 + this.time * 6 * (i % 2 ? 1 : -1)) % (H * 1.4)) - H * 0.2;
+        // Wrapped both ways: the leftward bands go negative a few minutes in,
+        // and JS % keeps the sign, which parked them above the canvas for good.
+        const P = H * 1.4;
+        const wy = ((((h1 * P + this.time * 6 * (i % 2 ? 1 : -1)) % P) + P) % P) - H * 0.2;
         const grad = ctx.createLinearGradient(0, wy - 40, 0, wy + 40);
         grad.addColorStop(0, 'rgba(215,222,226,0)');
         grad.addColorStop(0.5, `rgba(215,222,226,${mood === 'garua' ? 0.1 : 0.06})`);
@@ -4562,17 +4651,20 @@ function makeAtmosphere(
 }
 
 /** The built-in moods every chapter can use without registering anything. */
-function buildAtmospheres(): Record<string, HTMLCanvasElement> {
-  const make = makeAtmosphere;
-  return {
-    warm: make('rgba(255,214,140,0.09)', 'rgba(255,214,140,0.02)', 'rgba(120,80,140,0.06)', 0.3),
-    cool: make('rgba(150,180,215,0.10)', 'rgba(170,190,210,0.03)', 'rgba(90,110,150,0.07)', 0.34),
-    dusty: make('rgba(255,196,120,0.13)', 'rgba(255,220,160,0.05)', 'rgba(200,140,90,0.07)', 0.26),
-    interior: make('rgba(40,24,12,0.10)', 'rgba(0,0,0,0)', 'rgba(30,18,10,0.12)', 0.46, 'rgba(255,170,80,0.10)'),
-    // Winter coast: a pearl-grey fog ceiling, sea and sky one color. Flat
-    // light, soft vignette, no gold anywhere.
-    garua: make('rgba(202,208,214,0.20)', 'rgba(192,199,205,0.11)', 'rgba(168,180,190,0.10)', 0.2),
-    // Summer coast: hard blue glare off the water, black noon shadows.
-    glare: make('rgba(165,215,250,0.10)', 'rgba(255,250,235,0.05)', 'rgba(255,238,200,0.06)', 0.2),
-  };
-}
+const BUILT_IN_MOODS: Record<string, MoodPaint> = {
+  warm: { top: 'rgba(255,214,140,0.09)', mid: 'rgba(255,214,140,0.02)', bottom: 'rgba(120,80,140,0.06)', vig: 0.3 },
+  cool: { top: 'rgba(150,180,215,0.10)', mid: 'rgba(170,190,210,0.03)', bottom: 'rgba(90,110,150,0.07)', vig: 0.34 },
+  dusty: { top: 'rgba(255,196,120,0.13)', mid: 'rgba(255,220,160,0.05)', bottom: 'rgba(200,140,90,0.07)', vig: 0.26 },
+  interior: {
+    top: 'rgba(40,24,12,0.10)',
+    mid: 'rgba(0,0,0,0)',
+    bottom: 'rgba(30,18,10,0.12)',
+    vig: 0.46,
+    glow: 'rgba(255,170,80,0.10)',
+  },
+  // Winter coast: a pearl-grey fog ceiling, sea and sky one color. Flat
+  // light, soft vignette, no gold anywhere.
+  garua: { top: 'rgba(202,208,214,0.20)', mid: 'rgba(192,199,205,0.11)', bottom: 'rgba(168,180,190,0.10)', vig: 0.2 },
+  // Summer coast: hard blue glare off the water, black noon shadows.
+  glare: { top: 'rgba(165,215,250,0.10)', mid: 'rgba(255,250,235,0.05)', bottom: 'rgba(255,238,200,0.06)', vig: 0.2 },
+};

@@ -1,6 +1,6 @@
 import type { Dir } from '../../engine/input';
 import type { AudioBus } from '../../engine/audio';
-import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy } from './scene';
+import { Scene, easeInCubic, easeOutBack, easeOutCubic, keyCap, mountScene, squashed, wobble, PressMarks, offBy, calm } from './scene';
 import { Rng, dot, oval, rect, rr, shade, surface } from '../../art/pix';
 import { RUN, coach, freshRun, tip } from './run';
 import { Hold, missLine } from './attend';
@@ -24,7 +24,6 @@ import { Hold, missLine } from './attend';
 
 // ---------------------------------------------------------------- shared kit
 
-const calm = (): boolean => typeof document !== 'undefined' && document.body.classList.contains('reduce-motion');
 
 type TextOpt = { size?: number; color?: string; align?: CanvasTextAlign; italic?: boolean; bold?: boolean; alpha?: number };
 
@@ -452,7 +451,8 @@ export class ScopaPanel {
   private hand: Card[] = [];
   private opp: Card[] = [];
   private cursor = 0;
-  private phase: ScopaPhase = 'play';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: ScopaPhase = 'play';
   private waitT = 0;
   private myCards = 0;
   private oppCards = 0;
@@ -477,6 +477,9 @@ export class ScopaPanel {
   private fedKey = -1; // the card you just fed, watched for one opposing turn
   private fedLight = false; // whether the table was sweepable right after that feed
   private consolI = 0;
+  /** Story matches lost this sitting. Each one, he watches the cards a
+   * little less and the espresso a little more: a story table always ends. */
+  private losses = 0;
   private hint = '';
   private flourish = '';
   private onDone: (() => void) | null = null;
@@ -508,11 +511,13 @@ export class ScopaPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.steamAt = this.sparkleAt = 0; // scene time restarts at zero; old stamps froze the steam
     freshRun(SCOPA_FLAG);
     this.hard = RUN.hard;
     this.myPts = 0;
     this.oppPts = 0;
     this.target = this.hard ? 8 : 6;
+    this.losses = 0;
     this.coachI = 0;
     this.lesson = '';
     this.missedSette = 0;
@@ -845,6 +850,9 @@ export class ScopaPanel {
         }
         continue;
       }
+      // After a lost match or two, he lets some captures go by, more each
+      // time, never all: a beaten player was losing forty matches running.
+      if (Math.random() < Math.min(0.8, this.losses * 0.25)) continue;
       const single = this.table.some((t) => t.v === c.v);
       const sum = single ? null : findSum(this.table, c.v);
       if (!single && !sum) continue;
@@ -1074,9 +1082,11 @@ export class ScopaPanel {
           const said = this.lesson || CONSOLATIONS[this.consolI % CONSOLATIONS.length] || '';
           this.consolI++;
           this.lesson = '';
+          this.losses++;
+          const eased = this.losses >= 2 ? ' He orders another espresso and seems to watch it more than the cards.' : '';
           this.hint =
             `${this.oppPts} to ${this.myPts}, his. He gathers the cards without hurrying and taps them square. ` +
-            `"${said}" Nobody has ever left this table after one game. Space, and he deals again.`;
+            `"${said}"${eased} Nobody has ever left this table after one game. Space, and he deals again.`;
         }
       } else {
         this.startRound();
@@ -1094,6 +1104,8 @@ export class ScopaPanel {
       }
       this.myPts = 0;
       this.oppPts = 0;
+      // Three down and he shortens the evening: first to four, not six.
+      if (this.losses >= 3) this.target = 4;
       // A fresh match gets a fresh diagnosis; the old misses were coached.
       freshRun(SCOPA_FLAG);
       this.missedSette = 0;
@@ -1483,7 +1495,8 @@ const PISCI_LEGEND = [{ keys: ['space'], does: 'pull on the rais\u2019s call' }]
 const PISCI_FLAG = 'c8.pisci.start';
 
 export class PisciPanel {
-  private phase: PisciPhase = 'row';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: PisciPhase = 'row';
   private strokes = 0; // good strokes this leg
   private broke = 0; // mistimed pulls this pass; enough and the stroke breaks
   private leg = 0; // 0..2; the fish escapes after legs 0 and 1
@@ -1527,13 +1540,14 @@ export class PisciPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.foamAt = this.smokeAt = this.sparkAt = 0; // scene time restarts at zero
     freshRun(PISCI_FLAG);
     this.hard = RUN.hard;
-    this.baseSpeed = this.hard ? 0.85 : 0.5;
-    this.gain = this.hard ? 0.2 : 0.14;
-    this.winHi = this.hard ? 0.13 : 0.24;
+    this.baseSpeed = this.hard ? 0.72 : 0.5;
+    this.gain = this.hard ? 0.12 : 0.14;
+    this.winHi = this.hard ? 0.14 : 0.24;
     this.winLo = this.hard ? -0.05 : -0.08;
-    this.brokeLimit = this.hard ? 2 : 3;
+    this.brokeLimit = 3;
     this.early = 0;
     this.late = 0;
     this.marks.clear();
@@ -1552,7 +1566,7 @@ export class PisciPanel {
     this.pullT = 9;
     this.prevLeap = 0;
     this.hint = this.hard
-      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
+      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Three missed calls in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
       : 'The rais lifts his arm. Space to pull as his call reaches the boat.';
     this.root.hidden = false;
     this.setHint(this.hint);
@@ -2146,7 +2160,8 @@ const BURST_LINES = [
 const BURST_HELP = 'The second Space stops the cream: press it while the meter sits in the gold, not when the shell is full.';
 
 export class CannoloPanel {
-  private phase: CannoloPhase = 'pipe';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: CannoloPhase = 'pipe';
   private shell = 0; // 0..2
   private end = 0; // 0..1, both ends or it is not a cannolo
   private fill = 0; // 0..1 for the current end
@@ -2195,6 +2210,7 @@ export class CannoloPanel {
 
   open(onDone: () => void) {
     this.onDone = onDone;
+    this.spitAt = 0; // stamps are scene time, and restart() winds it back to zero
     freshRun(CANNOLO_FLAG);
     this.hard = RUN.hard;
     this.shellsN = this.hard ? 5 : 3;

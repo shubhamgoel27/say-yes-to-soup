@@ -91,7 +91,7 @@ Callao, then the old road UP through La Bajada, arriving at the east gate).
   Joseph's cousin: consumes joseph.letter context.
 - **C6 kerala**: id c6, delivering joseph.letter to Mariamma opens every
   door; monsoon arrives mid-chapter (mood shift); vanchipattu rowing
-  minigame; sadya-on-banana-leaf serving. Rhymes: dishes.chaya ~
+  minigame; sadya-on-banana-leaf serving. Rhymes: words.chaya ~
   dishes.emoliente; words.chetta ~ words.causa (family words for strangers).
 - **Delhi (slots between c6 and c7)**: id delhi, flags c11. (numbering is
   taken through c10; narrative order is unchanged). Fictional mohalla
@@ -144,7 +144,7 @@ Callao, then the old road UP through La Bajada, arriving at the east gate).
   (photo.* flags become vignettes); the player writes the journal's last
   page; a letter from a woman in coastal Australia honestly deferring that
   chapter ("some stories are not mine to mail; come hear them told right").
-  Rhymes: words.elsewhere ~ words.haku; customs.home ~ customs.tomakusunchis.
+  Rhymes: words.elsewhere ~ words.haku; customs.home ~ words.tomakusunchis.
   Completion flag story.end.
 
 ## Tone guardrails (unchanged, forever)

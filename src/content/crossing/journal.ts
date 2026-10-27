@@ -251,7 +251,9 @@ export const CROSSING_TASKS: TaskDef[] = [
   {
     // Once Ben has fed you the galley half of the arrival line is stale; the
     // chip kept sending you to the garlic between every errand.
-    when: { has: ['c3.arrived', 'c3.met.ben'], not: ['c3.complete'] },
+    // Fed means the coffee page, not only the meeting: a reload between
+    // the two used to say 'Ben has fed you' to someone he had not.
+    when: { has: ['c3.arrived', 'c3.met.ben', 'page.dishes.galleycoffee'], not: ['c3.complete'] },
     text: 'Ben has fed you; the ship is yours to walk. Go round the rail all the way: two dozen people live on this deck, and every one of them has a watch to keep.',
     who: ['hanaC3', 'olena', 'joseph', 'bosun', 'riosC3', 'mangben'],
   },

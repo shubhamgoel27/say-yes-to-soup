@@ -30,7 +30,7 @@ export const HER_NODES: NodeMap = {
   // Busan: the sum has stopped coming out the same way twice.
   'her.you.busan': {
     lines: [
-      { text: 'She is labelling a canister against her knee, tongue between her teeth.' },
+      { text: 'She is labeling a canister against her knee, tongue between her teeth.' },
       { who: 'Chasca', text: 'An ocean and a market since you gave me those dates. Do they still work?' },
       { text: 'You do the arithmetic while she writes. Twice, and it comes out different both times.' },
     ],

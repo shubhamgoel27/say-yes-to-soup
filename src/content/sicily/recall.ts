@@ -7,6 +7,7 @@ export const RECALL: RecallManifest = {
     'page.words.polepole', // the passeggiata recognizes Zanzibar's pace
     'keepsake.band', // Concetta reads the woven band at the Sunday table
     'pilar.gift.puffer', // Pilar's letter reacts to the museum's weirdest exhibit
+    'c2.gift.sent', // the one that was actually posted
     'c3.cook.done', // Mang Ben, ashore, hears his adobo order recited back
     'page.dishes.sinigang', // sour soups compared across three coastlines
   ],

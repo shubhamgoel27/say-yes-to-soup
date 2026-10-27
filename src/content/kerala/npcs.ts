@@ -26,12 +26,17 @@ export const KERALA_NPCS: NpcDef[] = [
     entry: [
       { when: { has: ['joseph.letter'], not: ['c6.letter.delivered'] }, node: 'c6.mariamma.letter' },
       { when: { has: ['c6.letter.delivered'], not: ['c6.letter.heard'] }, node: 'c6.mariamma.read' },
+      // The letter is heard as the reading opens; the parcel, and her page,
+      // come after. A journal closed in between picks up at the parcel.
+      { when: { has: ['c6.letter.heard'], not: ['c6.kunje', 'page.people.mariamma'] }, node: 'c6.mariamma.waitread' },
       // The umbrella visit ends with her deciding something; this is it.
       { when: { has: ['c6.letter.heard'], not: ['c6.kunje'] }, node: 'c6.mariamma.adopt' },
       { when: { not: ['met.mariamma'] }, node: 'c6.mariamma.nofirst' },
       // Back from Shaji's with chaya in you: the kitchen lesson, and the
       // sadya plan in the same sitting.
       { when: { has: ['c6.letter.delivered', 'c6.chaya'], not: ['c6.mariamma2'] }, node: 'c6.mariamma.kitchen' },
+      // The kitchen lesson is marked as it opens; chetta is its second line.
+      { when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask', 'page.words.chetta'] }, node: 'c6.mariamma.kitchen2' },
       { when: { has: ['c6.mariamma2', 'c6.chaya'], not: ['c6.sadya.ask'] }, node: 'c6.mariamma.sadyaplan' },
       { when: { has: ['c6.sadya.ask'], not: ['c6.sadya.done'] }, node: 'c6.mariamma.sadyastart' },
       // After the feast, once you are sitting in her house the way a guest
@@ -94,6 +99,9 @@ export const KERALA_NPCS: NpcDef[] = [
       { when: { has: ['c6.kunje'], not: ['met.shaji'] }, node: 'c6.shaji.firstwarm' },
       { when: { not: ['met.shaji'] }, node: 'c6.shaji.first' },
       { when: { has: ['met.shaji', 'c6.kunje'], not: ['c6.chaya'] }, node: 'c6.shaji.chaya' },
+      // The chaya is poured before you ask about the glass; the parotta's
+      // page waits on the asking. A reload in between pours it again.
+      { when: { has: ['c6.chaya'], not: ['page.dishes.parotta'] }, node: 'c6.shaji.chaya' },
       { when: { has: ['c6.chaya', 'c6.mariamma2'], not: ['c6.wobble'] }, node: 'c6.shaji.wobble' },
       { when: { has: ['c6.chaya', 'page.words.chetta'], not: ['c6.chetta'] }, node: 'c6.shaji.chetta' },
       { when: { has: ['c6.rain'], not: ['c6.rainchaya'] }, node: 'c6.shaji.rainstall' },
@@ -324,6 +332,15 @@ export const KERALA_NODES: NodeMap = {
       'clear:joseph.letter',
       'letter:joseph.amma',
     ],
+  },
+  // Joseph's letter, if the journal was closed before it could unfold: it
+  // waits on her table until it is read.
+  'c6.ex.letter': {
+    lines: [
+      { text: 'Joseph’s letter lies open on her table, held flat under a steel tumbler so it cannot fly away.' },
+      { text: 'You carried it across a whole ocean. Mariamma catches your eye and nods at it: read.' },
+    ],
+    effects: ['letter:joseph.amma'],
   },
   'c6.mariamma.read': {
     lines: [
@@ -861,7 +878,7 @@ export const KERALA_NODES: NodeMap = {
   // for a second visit, when he has had time to sit down.
   'c6.joseph.home': {
     lines: [
-      { text: 'A duffel hits the floor with the sound of nine months ending. In the doorway, salt-stained and grinning: Joseph.' },
+      { text: 'A duffel hits the floor with the sound of a contract ending. In the doorway, salt-stained and grinning: Joseph.' },
       { text: 'He sees his own letter on the shelf, soft at the creases, and stops. An able seaman, suddenly unable.' },
       { who: 'Joseph', text: 'You beat me home, friend. I sent you the slow road so I would win the race to my own kitchen.' },
     ],
@@ -906,7 +923,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.joseph.idle': {
     lines: [
-      { who: 'Joseph', text: 'Nine months of watches to sleep off, and Amma wakes me only for meals. It is the correct system; do not tell the sea.' },
+      { who: 'Joseph', text: 'A whole contract of watches to sleep off, and Amma wakes me only for meals. It is the correct system; do not tell the sea.' },
     ],
   },
 
@@ -1469,6 +1486,11 @@ export const KERALA_EXAMINES: Record<string, ExamineArm[]> = {
   shelf: [{ map: 'mariamma-veedu', node: 'c6.ex.shelf' }],
   mat: [{ map: 'mariamma-veedu', node: 'c6.ex.mat' }],
   stool: [{ map: 'mariamma-veedu', node: 'c6.ex.stool' }],
+  // Delivered is saved as the door opens; the letter unfolds only when the
+  // words close. A journal closed in between finds it here, unread.
+  table: [
+    { map: 'mariamma-veedu', when: { has: ['c6.letter.delivered'], not: ['letter.read.joseph.amma'] }, node: 'c6.ex.letter' },
+  ],
 };
 
 /** Event-triggered nodes, listed with their gating so tests can walk them. */

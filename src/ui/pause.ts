@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { goSideways, isCoarseTouch, isPhone, keysOrTaps } from './responsive';
+import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice, looksFullscreen } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -116,7 +116,9 @@ type Hooks = {
   /** "The journal" chosen: the menu closes and the engine opens the book. */
   onJournal?: () => void;
   /** Save the journey now; false when the browser would not keep it. */
-  saveNow?: () => boolean;
+  /** Save now; 'ok', 'lost' (the browser will not keep it), or 'elsewhere'
+   * (another window holds this journal and this one stopped saving). */
+  saveNow?: () => 'ok' | 'lost' | 'elsewhere' | null;
 };
 
 /** The controls card, in the words of whatever is holding the game. */
@@ -137,6 +139,16 @@ function HELP_ROWS(): [string, string][] {
     ['Pause', '&#9776;'],
     ['Volume', 'Settings'],
   ];
+  // A gamepad in hand: its own buttons, not a keyboard's.
+  const pad: [string, string][] = [
+    ['Walk', 'the stick or the d-pad'],
+    ['Talk, touch, sit', 'A'],
+    ['Back', 'B'],
+    ['The journal', 'Y'],
+    ['Ask the thread', 'X, once the band is on your wrist'],
+    ['Pause', 'Start'],
+  ];
+  if (lastDevice() === 'pad') return pad;
   return isCoarseTouch() ? glass : desk;
 }
 
@@ -151,7 +163,7 @@ export class PauseMenu {
    * a menu the player never passed through. */
   private direct = false;
   /** What the pause card says about the save: written, refused, or nothing (the title). */
-  private saved: 'ok' | 'lost' | null = null;
+  private saved: 'ok' | 'lost' | 'elsewhere' | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -173,7 +185,7 @@ export class PauseMenu {
     this.root.hidden = false;
     // A rest is a safe place to stop: the journey is written down the moment
     // the menu opens, and the card says so in one quiet line.
-    this.saved = !fromTitle && this.hooks.saveNow ? (this.hooks.saveNow() ? 'ok' : 'lost') : null;
+    this.saved = !fromTitle && this.hooks.saveNow ? this.hooks.saveNow() : null;
     // The entrance animation belongs to opening, not to every re-render:
     // render() rebuilds the card on each cursor move, and replaying the
     // book-open there made the whole panel flicker on every arrow press.
@@ -296,8 +308,8 @@ export class PauseMenu {
       },
       {
         label: 'Sound',
-        // The (M) is a key; a touch screen has none to press.
-        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() ? '' : ' (M)'),
+        // The (M) is a key; a touch screen or a gamepad has none to press.
+        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() || lastDevice() === 'pad' ? '' : ' (M)'),
         adjust: () => void this.audio.toggleMute(),
       },
       {
@@ -346,9 +358,16 @@ export class PauseMenu {
         ? [
             {
               label: 'Fullscreen',
-              value: () => (document.fullscreenElement ? 'on' : 'off'),
+              // itch's Fullscreen button fills the screen from the page around
+              // the game, so this document never sees a fullscreen element
+              // there; the row used to read "off" while the game filled the glass.
+              value: () => (looksFullscreen() ? 'on' : 'off'),
               adjust: () => {
                 if (document.fullscreenElement) void document.exitFullscreen();
+                // Full, but not this page's doing (itch's button, the browser's
+                // own): only that button or Esc can leave it, and there is
+                // nothing fuller to enter.
+                else if (looksFullscreen()) return;
                 // On a phone the room and the landscape lock travel together;
                 // elsewhere fullscreen alone is the whole ask.
                 else if (isPhone()) void goSideways();
@@ -382,6 +401,12 @@ export class PauseMenu {
       else if (dir === 'down') this.cursor = (this.cursor + 1) % items.length;
       else items[this.cursor]?.adjust(dir === 'right' ? 1 : -1);
       this.render();
+    } else if (dir === 'up' || dir === 'down') {
+      // How to play and the credits have no cursor: the arrows read down
+      // the card instead, so a keyboard or a pad reaches the lines below the
+      // fold on a short window (the thanks, the licences, the last word).
+      const card = this.root.querySelector<HTMLElement>('.p-card');
+      card?.scrollBy?.({ top: dir === 'down' ? 80 : -80, behavior: 'smooth' });
     }
   }
 
@@ -409,7 +434,9 @@ export class PauseMenu {
           ? '<div class="p-saved">the journal is saved; you can put it down here</div>'
           : this.saved === 'lost'
             ? '<div class="p-saved lost">this browser is not keeping the journal right now</div>'
-            : ''
+            : this.saved === 'elsewhere'
+              ? '<div class="p-saved lost">another window has this journal now; reload to carry on from there</div>'
+              : ''
       }`;
     } else if (this.screen === 'games') {
       // The games shelf: every won game with the village that taught it.
@@ -479,7 +506,7 @@ export class PauseMenu {
         Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
         Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
         the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0);
-        the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).
+        the pasted mango is a USDA pomological watercolor, D. G. Passmore, 1907 (public domain).
         Everything else, the art, the music, the weather and the gulls, is cooked
         fresh by the game at runtime.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>

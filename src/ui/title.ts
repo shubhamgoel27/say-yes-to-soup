@@ -17,11 +17,15 @@ import {
   unpackJournal,
   writeSlotRaw,
 } from '../engine/state';
+import { FRAGILE_NOTE, savesAreFragile } from './embed';
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
 import { shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
-import { isCoarseTouch } from './responsive';
+import { isCoarseTouch, keysOrTaps } from './responsive';
+
+/** Saves may not outlast this browser (itch's embed in Safari or Brave). */
+const FRAGILE = savesAreFragile();
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -505,6 +509,14 @@ export class TitleScreen {
    * in the document while the picker is up; some browsers ignore detached
    * ones. It is invisible and removed as soon as the picker settles. */
   private pickPack(row: number) {
+    // A file picker opens only from a key, click or tap; a pad press is no
+    // gesture to the browser, and the picker silently never came.
+    const ua = (navigator as { userActivation?: { isActive: boolean } }).userActivation;
+    if (ua && !ua.isActive) {
+      this.shelfNote = 'the browser opens its file picker only for a click, a tap or a key: choose unpack with one of those.';
+      this.renderShelf();
+      return;
+    }
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.soup,application/json,text/plain';
@@ -646,6 +658,7 @@ export class TitleScreen {
           <div class="sh-heading">Nani&rsquo;s journals</div>
           <div class="sh-rows">${rows}</div>
           <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
+          ${FRAGILE ? `<div class="sh-note" role="note">${FRAGILE_NOTE}</div>` : ''}
           <div class="sh-hint">${
             COARSE
               ? hintPhrases(['tap a journal to open it', 'tap a word beneath it to act'])
@@ -716,6 +729,7 @@ export class TitleScreen {
           </div>
           <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
           <div class="t-menu">${menu}</div>
+          ${FRAGILE ? `<div class="t-sub" role="note" style="margin-top:8px;font-size:0.82em;opacity:0.9">${FRAGILE_NOTE}</div>` : ''}
         </div>
         <div class="t-controls">${
           COARSE
@@ -843,6 +857,15 @@ export class NamingCard {
   private onKey = (e: KeyboardEvent) => {
     if (!this.isOpen) return;
     e.stopPropagation();
+    // Mid-composition (kana to kanji, jamo to hangul), Enter and Esc belong
+    // to the input method: Enter confirms the conversion, it does not sign.
+    if (e.isComposing || e.keyCode === 229) return;
+    // Enter held from the cover repeats into the card: one press signed the
+    // name, the next chose the look, and the flyleaf was gone unread.
+    if (e.repeat && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) {
+      e.preventDefault();
+      return;
+    }
     if (e.code === 'Escape') {
       e.preventDefault();
       this.back();
@@ -973,20 +996,28 @@ export class NamingCard {
           <input class="cc-input" type="text" maxlength="${NAME_MAX}" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>
-          <div class="cc-hint">${
-            COARSE
-              ? 'leave it blank and you are &ldquo;traveler&rdquo;'
-              : 'leave it blank and you are &ldquo;traveler&rdquo; &middot; Enter writes it in &middot; Esc back'
-          }</div>
+          <div class="cc-hint">${keysOrTaps(
+            'leave it blank and you are &ldquo;traveler&rdquo; &middot; Enter writes it in &middot; Esc back',
+            'leave it blank and you are &ldquo;traveler&rdquo;',
+            COARSE,
+          )}</div>
         </div>`;
       const input = this.root.querySelector<HTMLInputElement>('.cc-input');
       if (input) {
         input.value = this.name;
-        input.addEventListener('input', () => {
+        const tidy = () => {
           const clean = ccClean(input.value);
           if (clean !== input.value) input.value = clean;
           this.name = clean;
+        };
+        // Mid-composition the field belongs to the input method: rewriting
+        // it there (Pinyin's syllable apostrophes are not in the filter)
+        // tore the conversion apart and left Latin letters in the name.
+        input.addEventListener('input', (ev) => {
+          if ((ev as InputEvent).isComposing) return;
+          tidy();
         });
+        input.addEventListener('compositionend', tidy);
         input.focus();
       }
       return;
@@ -1006,9 +1037,7 @@ export class NamingCard {
         <div class="cc-fig"><canvas width="${CHAR_W * ART * 2}" height="${CHAR_H * ART * 2}"></canvas></div>
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
-        <div class="cc-hint">${
-          COARSE ? 'tap a colour to choose' : 'arrows choose &middot; Enter sets out &middot; Esc back'
-        }</div>
+        <div class="cc-hint">${keysOrTaps('arrows choose &middot; Enter sets out &middot; Esc back', 'tap a color to choose', COARSE)}</div>
       </div>`;
     this.renderRows();
     this.startWalk();

@@ -74,3 +74,77 @@ describe('a pad that goes away mid-walk', () => {
     assert.equal(held(), null);
   });
 });
+
+describe('shortcuts are not steps', () => {
+  const chord = (rigged: ReturnType<typeof rig>, code: string, mods: Record<string, boolean>) => {
+    const e = new Event('keydown') as Event & Record<string, unknown>;
+    Object.assign(e, { code, repeat: false, ...mods });
+    rigged.target.dispatchEvent(e);
+  };
+
+  it('Cmd+A does not start a walk the missing keyup could never end', () => {
+    const r = rig();
+    chord(r, 'KeyA', { metaKey: true });
+    assert.equal(r.held(), null);
+  });
+
+  it('letting go of Cmd releases a direction whose keyup macOS swallowed', () => {
+    const r = rig();
+    r.key('keydown', 'KeyD');
+    assert.equal(r.held(), 'right');
+    // Cmd goes down, D comes up under it: macOS sends no keyup for D.
+    r.key('keyup', 'MetaLeft');
+    assert.equal(r.held(), null);
+  });
+});
+
+describe('a pad across a lost focus', () => {
+  it('a stick still held after the window comes back walks again', () => {
+    const { target, input, held } = rig();
+    pads = [stickRight()];
+    target.dispatchEvent(new Event('gamepadconnected'));
+    input.pollGamepad();
+    assert.equal(held(), 'right');
+    target.dispatchEvent(new Event('blur'));
+    assert.equal(held(), null);
+    input.pollGamepad();
+    assert.equal(held(), 'right');
+  });
+});
+
+describe('held keys and an embedding page', () => {
+  const keyEv = (r: ReturnType<typeof rig>, code: string, repeat: boolean, target?: unknown) => {
+    const e = new Event('keydown', { cancelable: true }) as Event & Record<string, unknown>;
+    Object.assign(e, { code, repeat });
+    if (target) Object.defineProperty(e, 'target', { value: target });
+    r.target.dispatchEvent(e);
+    return e.defaultPrevented;
+  };
+
+  it('a held arrow or Space does not scroll the page around the game', () => {
+    const r = rig();
+    assert.equal(keyEv(r, 'ArrowDown', true), true);
+    assert.equal(keyEv(r, 'Space', true), true);
+    assert.equal(keyEv(r, 'PageDown', false), true);
+  });
+
+  it("keys typed into a field stay the field's", () => {
+    const r = rig();
+    assert.equal(keyEv(r, 'Space', true, { tagName: 'INPUT' }), false);
+    assert.equal(keyEv(r, 'End', false, { tagName: 'INPUT' }), false);
+  });
+
+  it('X on a pad asks for the thread and reports the press', () => {
+    const { target, input } = rig();
+    let presses = 0;
+    input.onPadPress = () => presses++;
+    const pad = stickRight();
+    pad.axes = [0, 0, 0, 0];
+    pads = [pad];
+    target.dispatchEvent(new Event('gamepadconnected'));
+    pad.buttons[2]!.pressed = true;
+    input.pollGamepad();
+    assert.equal(input.takeThread(), true);
+    assert.equal(presses, 1);
+  });
+});

@@ -26,6 +26,9 @@ export const CROSSING_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c3.met.ben'] }, node: 'c3.ben.first' },
+      // Met at the doorway, fed a line later: a journal closed between the
+      // two skipped the plate (and its page) straight to the favor.
+      { when: { has: ['c3.met.ben'], not: ['c3.baon', 'page.dishes.galleycoffee'] }, node: 'c3.ben.first2' },
       { when: { has: ['c3.met.ben'], not: ['c3.baon'] }, node: 'c3.ben.baon' },
       { when: { has: ['c3.baon'], not: ['c3.baon.done'] }, node: 'c3.ben.wait' },
       { when: { has: ['c3.baon.done'], not: ['c3.cook.done'] }, node: 'c3.ben.cookoffer' },
@@ -524,7 +527,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.jos.entrust.what': {
     lines: [
-      { who: 'Joseph', text: 'Sandalwood soap, and a photograph of this ship. She will scold the soap for its price and frame the photograph.' },
+      { who: 'Joseph', text: 'A folding umbrella from Japan, smaller than my hand. She will scold it for its price and carry it every day of the rains.' },
     ],
     next: 'c3.jos.entrust.yes',
   },
@@ -603,7 +606,7 @@ export const CROSSING_NODES: NodeMap = {
   'c3.hana.words': {
     lines: [
       { who: 'Hana', text: 'You gave me a constellation, so: arigatou. Your first word of Japanese.' },
-      { who: 'Hana', text: 'In Shionoura, ask for Minato-ya, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
+      { who: 'Hana', text: 'In Shionoura, ask for the Shiosai, my grandmother Fumi’s inn. Say arigatou at her door and let her decide the rest.' },
     ],
     effects: ['set:c3.hana.tanabata'],
   },
@@ -722,7 +725,7 @@ export const CROSSING_NODES: NodeMap = {
   // sitting on the foredeck when the light comes back (./staging.ts).
   'c3.bosun.tonoon': {
     lines: [
-      { text: 'You sleep badly. Somewhere aft, someone is practising a royal voice through a funnel of rolled cardboard.' },
+      { text: 'You sleep badly. Somewhere aft, someone is practicing a royal voice through a funnel of rolled cardboard.' },
     ],
     effects: ['set:c3.court.noon', 'travel:ship,22,9,up'],
   },
@@ -781,7 +784,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Three photographs now: the star plain, the sea’s edge, the middle of everything. The album is growing a spine.' },
+      { who: 'Chasca', text: 'The middle of everything is in the album now, and you in front of it. The album is growing a spine.' },
     ],
   },
 
@@ -1204,7 +1207,12 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c3.complete'] }, node: 'c3.ex.galleyplant2' },
     { node: 'c3.ex.galleyplant' },
   ],
-  stove: [{ node: 'c3.ex.stove' }],
+  stove: [
+    // After the adobo, the stockpot is the line worth reading: the galley
+    // has no separate pot to stand at, and this arm was once unreachable.
+    { map: 'galley', when: { has: ['c3.cook.done'] }, node: 'c3.ex.pot' },
+    { node: 'c3.ex.stove' },
+  ],
   galleycounter: [{ node: 'c3.ex.counter' }],
   karaoke: [
     { when: { has: ['c3.cook.done'], not: ['c3.karaoke.done'] }, node: 'c3.karaoke.call' },
@@ -1224,9 +1232,11 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   table: [{ map: 'galley', node: 'c3.ex.table' }],
   shelf: [{ map: 'galley', node: 'c3.ex.shelf' }],
-  pot: [{ map: 'galley', node: 'c3.ex.pot' }],
-  // The entry hook: La Caleta's pier sign now boards the Yacana.
-  piersign: [{ map: 'la-caleta', when: { has: ['c2.complete'] }, node: 'c3.board' }],
+  // The entry hook: La Caleta's pier sign now boards the Yacana, and only
+  // until she sails. The ship has no road back to this pier, so a sign that
+  // still boarded her in the Return (the homecoming lands two tiles from it)
+  // put the player back on the freighter with every leg to sail again.
+  piersign: [{ map: 'la-caleta', when: { has: ['c2.complete'], not: ['c3.arrived'] }, node: 'c3.board' }],
 };
 
 /** Event-triggered nodes, listed with gating so tests can prove them reachable. */
@@ -1241,7 +1251,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.puffer'] },
+    when: { has: ['pilar.gift.puffer', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a fish that had clearly heard amazing news and decided to stay that way forever.',
       'The puffer fish now guards the toll sign. Traffic pays faster. Astonishment, it turns out, is good for business.',
@@ -1252,7 +1262,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.star'] },
+    when: { has: ['pilar.gift.star', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a sea star with four arms that refuses to discuss the fifth. I respect it deeply.',
       'It has been appointed Toll Inspector. It inspects nothing, slowly. The position suits it and morale at the bridge is high.',
@@ -1263,7 +1273,7 @@ export const CROSSING_LETTERS: LetterDef[] = [
   {
     id: 'c3.pilar',
     from: 'Pilar, Bridge Authority, Marine Acquisitions Desk',
-    when: { has: ['pilar.gift.claw'] },
+    when: { has: ['pilar.gift.claw', 'c2.gift.sent'] },
     body: [
       'Dear business partner. The box arrived. Inside was a crab claw shaped exactly like a comma. The sea punctuates! This changes everything.',
       'The claw now sits on the toll sign, where it makes the sign a longer sentence. Tourists read it twice. Twice the facts. Genius.',
