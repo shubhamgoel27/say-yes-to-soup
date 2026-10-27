@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
-import { ghost } from './panelrig';
+import { ghost, play, seedRandom, type Bot } from './panelrig';
 
 /**
  * Launch fixes in the minigame panels, each pinned so it stays fixed. The
@@ -8,7 +8,7 @@ import { ghost } from './panelrig';
  */
 
 const { GAMES } = await import('../src/content/world');
-const { RUN, takeCoach } = await import('../src/ui/games/run');
+const { RUN, takeCoach, verdictFor } = await import('../src/ui/games/run');
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -39,4 +39,47 @@ describe('the pisci, the hard telling', () => {
     p.onAction();
     assert.equal(p.phase, 'lost', 'the third breaks the stroke');
   });
+});
+
+/** Play `flag` in the given telling with `bot`, seeded, and report how it went. */
+function run(flag: string, hard: boolean, bot: Bot, seed = 1, maxSeconds = 400) {
+  const g = GAMES.find((x) => x.flag === flag);
+  assert.ok(g, `no game ${flag}`);
+  const undo = seedRandom(seed * 7919);
+  try {
+    const p = g.make(ghost(), ghost(), () => new Set()) as Any;
+    RUN.hard = hard;
+    const r = play(p, bot, maxSeconds);
+    return { ...r, p, verdict: verdictFor(flag, true, hard) };
+  } finally {
+    undo();
+  }
+}
+
+describe('the kite, the hard telling', () => {
+  for (const flag of ['c11.kite.start', 'c11.duel.start']) {
+    it(`${flag}: a held Up meets the weather before any rival falls, and earns no star`, () => {
+      // The opening steady air used to outlast seven strokes: a hand that
+      // only held Up cut the waxed rival in two seconds, star and all.
+      let turned = false;
+      let cuts = 0;
+      let last = -1;
+      const r = run(flag, true, (p, t) => {
+        if (p.phase === 'duel') {
+          if (p.wind !== 'steady') turned = true;
+          p.onDir('up');
+        } else if (t - last >= 0.3) {
+          last = t;
+          p.onAction();
+        }
+        if (p.cuts > cuts) {
+          assert.ok(turned, `rival ${p.cuts} fell before the sky ever turned`);
+          cuts = p.cuts;
+          turned = false;
+        }
+      });
+      assert.ok(r.done);
+      assert.notEqual(r.verdict, 'star');
+    });
+  }
 });
