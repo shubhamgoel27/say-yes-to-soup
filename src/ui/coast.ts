@@ -1639,12 +1639,15 @@ export class CevichePanel {
 
   /** The run's own verdict on the lime: early hands or married fish. */
   private cevAdvice(): string {
-    if (this.earlies > this.spoiled) {
-      const at = (this.lastEarlyKiss / this.kissRate).toFixed(1);
-      const brightens = (this.zoneLo / this.kissRate).toFixed(1);
-      return `You pulled at ${at} seconds; the bar only brightens at ${brightens}. Wait for it.`;
-    }
+    if (this.earlies > this.spoiled) return this.earlyAdvice();
     return `The lime had the fish for the whole bar${this.spoiled > 1 ? `, ${this.spoiled} times` : ''}; pull the instant it brightens. A kiss, not a marriage.`;
+  }
+
+  /** The early hand, named: when it pulled, and when the bar brightens. */
+  private earlyAdvice(): string {
+    const at = (this.lastEarlyKiss / this.kissRate).toFixed(1);
+    const brightens = (this.zoneLo / this.kissRate).toFixed(1);
+    return `You pulled at ${at} seconds; the bar only brightens at ${brightens}. Wait for it.`;
   }
 
   onAction() {
@@ -1715,6 +1718,8 @@ export class CevichePanel {
           if (!this.hard && !this.trust) {
             this.petro.start(PETRO_HOLD);
             this.hint = 'Too soon. Petro takes the bowl back for a second. "The lime has barely said hello, corazón. Wait for it to burn bright."';
+          } else if (this.hard) {
+            this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello, and Petro saw it. Back in. The hard noon wants the sliver, exactly.`;
           } else {
             this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello. Back in. Wait for the bright zone, then pull.`;
           }
@@ -1754,9 +1759,13 @@ export class CevichePanel {
         this.pour = 1;
         this.audio.weaveDone();
         this.advance();
-        // Done with a wobble: Petro's second lisa was promised, so the win
-        // (and the hard star) stands; the next card still owes the fix.
-        if (this.spoiled + this.earlies > 0) tip('c2.cook.start', this.cevAdvice());
+        // Done with a wobble: Petro's second lisa was promised, so a spoiled
+        // fish leaves the win (and the hard star) standing; the next card
+        // still owes the fix. An early pull does not: the hard card asks for
+        // the kiss exactly, and with no hold in the hard noon a hand mashing
+        // Space always had a pull land in the sliver, star and all.
+        if (this.hard && this.earlies > 0) coach('c2.cook.start', this.earlyAdvice());
+        else if (this.spoiled + this.earlies > 0) tip('c2.cook.start', this.cevAdvice());
         if (sc) {
           this.pourAt = sc.time;
           sc.flash('#ffe9c0', 0.3);
@@ -1770,7 +1779,9 @@ export class CevichePanel {
                 ? 'The second glass goes out. Petro tastes it: "Edible. Next time, let the lime do the talking." The fishermen do not complain; they are busy. Press Space.'
                 : !this.hard
                   ? 'The second glass goes out, and the fishermen raise it to the kitchen. Noon, near enough, which is exactly on time. Press Space.'
-                  : 'The tiger gets its glass. Noon, near enough, which is exactly on time. Press Space.';
+                  : this.earlies > 0
+                    ? 'The tiger gets its glass. Petro tastes it and says nothing about the early pull, which is how you know she noticed. Press Space.'
+                    : 'The tiger gets its glass. Noon, near enough, which is exactly on time. Press Space.';
         break;
       }
       case 'done': {

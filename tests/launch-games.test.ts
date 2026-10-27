@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
 import { ghost, play, seedRandom, type Bot } from './panelrig';
+import { BOTS } from './bots';
 
 /**
  * Launch fixes in the minigame panels, each pinned so it stays fixed. The
@@ -124,5 +125,40 @@ describe('the caballito, the hard water', () => {
     p.x = (p.zoneLo + p.zoneHi) / 2;
     p.onAction();
     assert.equal(p.waves, 1, 'back in the water after the beat');
+  });
+});
+
+describe('the ceviche, the hard noon', () => {
+  it('a hand mashing Space through the lime never earns the star', () => {
+    for (const n of [3, 6, 15, 30]) {
+      for (let seed = 1; seed <= 4; seed++) {
+        const r = run('c2.cook.start', true, mash(n), seed);
+        assert.ok(r.done, 'the dish still comes out, or the noon ends kindly');
+        assert.notEqual(r.verdict, 'star', `mashing every ${n} frames took the star (seed ${seed})`);
+        takeCoach('c2.cook.start');
+      }
+    }
+  });
+
+  it('one early pull costs the star, names itself, and the dish still comes out', () => {
+    let pulledEarly = false;
+    const careful = BOTS['c2.cook.start']!();
+    const r = run('c2.cook.start', true, (p, t) => {
+      if (p.step === 'lime' && !pulledEarly && p.kiss > 0.1) {
+        pulledEarly = true;
+        p.onAction();
+        return;
+      }
+      careful(p, t);
+    });
+    assert.ok(pulledEarly && r.done);
+    assert.equal(r.verdict, 'short');
+    assert.match(takeCoach('c2.cook.start') ?? '', /You pulled at [\d.]+ seconds; the bar only brightens at/);
+  });
+
+  it('a careful noon with nothing early still takes the star', () => {
+    const r = run('c2.cook.start', true, BOTS['c2.cook.start']!());
+    assert.ok(r.done);
+    assert.equal(r.verdict, 'star');
   });
 });
