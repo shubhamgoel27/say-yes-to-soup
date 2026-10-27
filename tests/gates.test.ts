@@ -71,13 +71,13 @@ describe('a gift set on the ofrenda is not given again', () => {
   it('Aurelio: the omiyage becomes a telling once it went to Nani', () => {
     const before = offered('c10.aurelio.soup', ['omiyage.aurelio']);
     assert.ok(before.includes('c10.aurelio.omiyage'));
-    const after = offered('c10.aurelio.soup', ['omiyage.aurelio', 'c9.of.omiyage']);
+    const after = offered('c10.aurelio.soup', ['omiyage.aurelio', 'c9.of.omiyage', 'c9.of.omiyage.aurelio']);
     assert.ok(!after.includes('c10.aurelio.omiyage'));
     assert.ok(after.includes('c10.aurelio.ofrenda'));
   });
 
   it('Pilar: same for her omiyage', () => {
-    const after = offered('c10.pilar.museum', ['omiyage.pilar', 'c9.of.omiyage']);
+    const after = offered('c10.pilar.museum', ['omiyage.pilar', 'c9.of.omiyage', 'c9.of.omiyage.pilar']);
     assert.ok(!after.includes('c10.pilar.wing'));
     assert.ok(after.includes('c10.pilar.ofrenda'));
   });

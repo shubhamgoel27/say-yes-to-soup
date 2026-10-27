@@ -394,9 +394,11 @@ export const RETURN_NODES: NodeMap = {
     ],
     choices: [
       // A gift set on Nani's ofrenda in Oaxaca cannot also be handed over
-      // here; the choice becomes the telling of where it went instead.
-      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage'] } },
-      { text: 'Tell him where his omiyage went', goto: 'c10.aurelio.ofrenda', when: { has: ['omiyage.aurelio', 'c9.of.omiyage'] } },
+      // here; the choice becomes the telling of where it went instead. Only
+      // his own: the altar takes one omiyage, and if it took Petro's or
+      // Pilar's, his is still in your bag.
+      { text: 'Give him the omiyage from Shionoura', goto: 'c10.aurelio.omiyage', when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage.aurelio'] } },
+      { text: 'Tell him where his omiyage went', goto: 'c10.aurelio.ofrenda', when: { has: ['omiyage.aurelio', 'c9.of.omiyage.aurelio'] } },
       { text: 'Tell him about a ledger in Oaxaca', goto: 'c10.aurelio.ledger', when: { has: ['c9.debt.paid'] } },
       { text: 'Say yes to soup', goto: 'c10.aurelio.eat' },
     ],
@@ -659,8 +661,9 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Pilar', text: 'The museum accepts donations, facts, rocks, and respectful staring.' },
     ],
     choices: [
-      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] } },
-      { text: 'Explain where her omiyage went', goto: 'c10.pilar.ofrenda', when: { has: ['omiyage.pilar', 'c9.of.omiyage'] } },
+      // Hers only if hers is the one the altar took (see Aurelio's soup).
+      { text: 'Present the omiyage from Shionoura', goto: 'c10.pilar.wing', when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage.pilar'] } },
+      { text: 'Explain where her omiyage went', goto: 'c10.pilar.ofrenda', when: { has: ['omiyage.pilar', 'c9.of.omiyage.pilar'] } },
       { text: 'Stare respectfully', goto: 'c10.pilar.stare' },
     ],
   },

@@ -504,17 +504,17 @@ export const OAXACA_NODES: NodeMap = {
     choices: [
       {
         text: 'The omiyage from Shionoura, chosen for Doña Petro and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.petro',
         when: { has: ['omiyage.petro'], not: ['c9.of.omiyage'] },
       },
       {
         text: 'The omiyage from Shionoura, chosen for Pilar and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.pilar',
         when: { has: ['omiyage.pilar'], not: ['c9.of.omiyage'] },
       },
       {
         text: 'The omiyage from Shionoura, chosen for Aurelio and never posted',
-        goto: 'c9.altar.omiyage',
+        goto: 'c9.altar.omiyage.aurelio',
         when: { has: ['omiyage.aurelio'], not: ['c9.of.omiyage'] },
       },
       {
@@ -541,12 +541,31 @@ export const OAXACA_NODES: NodeMap = {
       { text: 'Not yet. Your hands are not ready.', goto: 'c9.altar.wait' },
     ],
   },
-  'c9.altar.omiyage': {
+  // One omiyage fits on the altar (c9.of.omiyage), and the Return needs to
+  // know whose it was: the other two are still in your bag for the well and
+  // the bridge, and only the one placed here becomes a telling.
+  'c9.altar.omiyage.petro': {
     lines: [
-      { text: 'The little parcel from the Seto sea, still in its careful paper.' },
+      { text: 'The lemon yokan meant for Doña Petro, still in paper the color of sea haze.' },
       { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
     ],
-    effects: ['set:c9.of.omiyage'],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.petro'],
+    next: 'c9.altar.hub',
+  },
+  'c9.altar.omiyage.pilar': {
+    lines: [
+      { text: 'The tenugui meant for Pilar’s museum, its one emphatic tai still folded small.' },
+      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
+    ],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.pilar'],
+    next: 'c9.altar.hub',
+  },
+  'c9.altar.omiyage.aurelio': {
+    lines: [
+      { text: 'The olive-leaf tea meant for Don Aurelio, the tin still smelling of a warm, dry hillside.' },
+      { who: 'Doña Refugio', text: 'A gift that traveled this far is not late. It is on time for a different person.' },
+    ],
+    effects: ['set:c9.of.omiyage', 'set:c9.of.omiyage.aurelio'],
     next: 'c9.altar.hub',
   },
   'c9.altar.kanga': {

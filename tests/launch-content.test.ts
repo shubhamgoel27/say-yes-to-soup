@@ -498,3 +498,44 @@ describe('no conversation can be cut off for good by closing the journal', () =>
     );
   });
 });
+
+/** The choices a node offers under these flags. */
+const offered = (nodeId: string, flags: Iterable<string>) => {
+  const set = new Set(flags);
+  return (NODES[nodeId]?.choices ?? []).filter((c) => holds(set, c.when)).map((c) => c.goto);
+};
+
+describe('the ofrenda remembers whose omiyage it took', () => {
+  const people = ['petro', 'pilar', 'aurelio'] as const;
+  const carrying = people.map((p) => `omiyage.${p}`);
+
+  it('each omiyage set on the altar is marked as that person’s, and only one fits', () => {
+    for (const who of people) {
+      const choice = NODES['c9.altar.hub']!.choices!.find((c) => (c.when?.has ?? []).includes(`omiyage.${who}`))!;
+      const effects = NODES[choice.goto]!.effects ?? [];
+      assert.ok(effects.includes(`set:c9.of.omiyage.${who}`), `${choice.goto} does not say whose omiyage it was`);
+      assert.ok(effects.includes('set:c9.of.omiyage'), `${choice.goto} does not fill the altar's one omiyage place`);
+      for (const other of people) {
+        if (other !== who) assert.ok(!effects.includes(`set:c9.of.omiyage.${other}`));
+      }
+    }
+    const placed = [...carrying, 'c9.of.omiyage', 'c9.of.omiyage.petro'];
+    assert.ok(!offered('c9.altar.hub', placed).some((g) => g.startsWith('c9.altar.omiyage')));
+  });
+
+  it('with only Petro’s placed, Aurelio and Pilar are handed theirs, not told it went to Oaxaca', () => {
+    const petrosPlaced = [...carrying, 'c9.of.omiyage', 'c9.of.omiyage.petro'];
+    const soup = offered('c10.aurelio.soup', petrosPlaced);
+    assert.ok(soup.includes('c10.aurelio.omiyage') && !soup.includes('c10.aurelio.ofrenda'), soup.join());
+    const museum = offered('c10.pilar.museum', petrosPlaced);
+    assert.ok(museum.includes('c10.pilar.wing') && !museum.includes('c10.pilar.ofrenda'), museum.join());
+  });
+
+  it('with Aurelio’s placed, he hears where it went and Pilar still gets hers', () => {
+    const his = [...carrying, 'c9.of.omiyage', 'c9.of.omiyage.aurelio'];
+    const soup = offered('c10.aurelio.soup', his);
+    assert.ok(soup.includes('c10.aurelio.ofrenda') && !soup.includes('c10.aurelio.omiyage'), soup.join());
+    const museum = offered('c10.pilar.museum', his);
+    assert.ok(museum.includes('c10.pilar.wing') && !museum.includes('c10.pilar.ofrenda'), museum.join());
+  });
+});
