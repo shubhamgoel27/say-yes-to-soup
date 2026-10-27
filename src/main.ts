@@ -4965,7 +4965,13 @@ function titleActivate() {
     const blank = state.hasSave() ? firstBlankSlot() : null;
     openFlyleaf(
       blank === null
-        ? freshSlate
+        ? () => {
+            // The journal this window holds, not whichever one the shared
+            // shelf key names now: another window may have moved it, and
+            // Begin again here once erased the journal being played there.
+            setActiveSlot(state.slot);
+            freshSlate();
+          }
         : () => {
             setActiveSlot(blank);
             freshSlate();
