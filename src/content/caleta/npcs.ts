@@ -49,6 +49,10 @@ export const CALETA_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.simon'] }, node: 'mar.simon.first' },
+      // Met as the rail scene opens, la mar only once you answer him: a
+      // journal closed between the two lost the word for good. He waits for
+      // your answer again.
+      { when: { has: ['met.simon'], not: ['c2.trade', 'page.words.lamar'] }, node: 'mar.simon.first' },
       { when: { has: ['met.simon'], not: ['c2.trade'] }, node: 'mar.simon.trade' },
       { when: { has: ['c2.trade', 'c2.ride.done'], not: ['c2.nets.done'] }, node: 'mar.simon.nets' },
       // Once you are somebody's casero the pier talks to you differently, and

@@ -58,6 +58,9 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     entry: [
       { when: { has: ['keepsake.band'], not: ['c7.met.amina'] }, node: 'c7.amina.band' },
       { when: { not: ['c7.met.amina'] }, node: 'c7.amina.first' },
+      // Met at the door, fed a line later: a journal closed in between went
+      // straight to the game and never tasted the mandazi.
+      { when: { has: ['c7.met.amina'], not: ['c7.kanga.game', 'page.dishes.mandazi'] }, node: 'c7.amina.welcome' },
       { when: { has: ['c7.met.amina'], not: ['c7.kanga.game'] }, node: 'c7.amina.game0' },
       { when: { has: ['c7.kanga.game'], not: ['c7.kanga.done'] }, node: 'c7.amina.pair' },
       { node: 'c7.amina.idle' },
@@ -127,6 +130,9 @@ export const ZANZIBAR_NPCS: NpcDef[] = [
     entry: [
       { when: { not: ['c7.met.salma'] }, node: 'c7.salma.first' },
       { when: { has: ['c7.met.salma'], not: ['c7.salma.helped'] }, node: 'c7.salma.again' },
+      // The sack is carried as the haul opens; asante and pole are her thanks
+      // a line later. A reload in between hears the thanks again.
+      { when: { has: ['c7.salma.helped'], not: ['c7.salma.warm', 'page.words.pole'] }, node: 'c7.salma.carry2' },
       { when: { has: ['c7.salma.helped'], not: ['c7.salma.warm'] }, node: 'c7.salma.warm' },
       { node: 'c7.salma.idle' },
     ],

@@ -26,6 +26,9 @@ export const CROSSING_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c3.met.ben'] }, node: 'c3.ben.first' },
+      // Met at the doorway, fed a line later: a journal closed between the
+      // two skipped the plate (and its page) straight to the favor.
+      { when: { has: ['c3.met.ben'], not: ['c3.baon', 'page.dishes.galleycoffee'] }, node: 'c3.ben.first2' },
       { when: { has: ['c3.met.ben'], not: ['c3.baon'] }, node: 'c3.ben.baon' },
       { when: { has: ['c3.baon'], not: ['c3.baon.done'] }, node: 'c3.ben.wait' },
       { when: { has: ['c3.baon.done'], not: ['c3.cook.done'] }, node: 'c3.ben.cookoffer' },

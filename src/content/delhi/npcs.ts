@@ -183,6 +183,8 @@ export const DELHI_NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['c11.met.sushila'] }, node: 'c11.sushila.first' },
+      // Met while the wing is still loose; her page waits on holding it.
+      { when: { has: ['c11.met.sushila'], not: ['page.people.sushila'] }, node: 'c11.sushila.first' },
       {
         when: { has: ['c11.met.sushila', 'c11.met.yusuf'], not: ['errand.pigeon-home', 'c11.pigeon.home'] },
         node: 'c11.sushila.errand',
