@@ -1564,7 +1564,7 @@ export class PisciPanel {
     this.pullT = 9;
     this.prevLeap = 0;
     this.hint = this.hard
-      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Two missed calls in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
+      ? 'Feast tempo tonight: the call comes fast and the crest is a hand-width. Three missed calls in one pass and the fish keeps the sea. Space to pull as the call reaches the boat.'
       : 'The rais lifts his arm. Space to pull as his call reaches the boat.';
     this.root.hidden = false;
     this.setHint(this.hint);
