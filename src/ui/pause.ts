@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice } from './responsive';
+import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice, looksFullscreen } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -356,9 +356,16 @@ export class PauseMenu {
         ? [
             {
               label: 'Fullscreen',
-              value: () => (document.fullscreenElement ? 'on' : 'off'),
+              // itch's Fullscreen button fills the screen from the page around
+              // the game, so this document never sees a fullscreen element
+              // there; the row used to read "off" while the game filled the glass.
+              value: () => (looksFullscreen() ? 'on' : 'off'),
               adjust: () => {
                 if (document.fullscreenElement) void document.exitFullscreen();
+                // Full, but not this page's doing (itch's button, the browser's
+                // own): only that button or Esc can leave it, and there is
+                // nothing fuller to enter.
+                else if (looksFullscreen()) return;
                 // On a phone the room and the landscape lock travel together;
                 // elsewhere fullscreen alone is the whole ask.
                 else if (isPhone()) void goSideways();

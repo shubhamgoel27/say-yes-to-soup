@@ -205,6 +205,36 @@ export function isPhone(): boolean {
   return Math.min(s.width, s.height) < 600;
 }
 
+/**
+ * Whether a window of iw x ih covers a screen of sw x sh, to within `slack`
+ * CSS px on each side. Sides are compared long to long and short to short,
+ * since some browsers keep reporting the screen upright when it lies down.
+ * Pure, for the tests.
+ */
+export function fillsScreen(iw: number, ih: number, sw: number, sh: number, slack = 8): boolean {
+  if (!(iw > 0 && ih > 0 && sw > 0 && sh > 0)) return false;
+  return (
+    Math.abs(Math.max(iw, ih) - Math.max(sw, sh)) <= slack && Math.abs(Math.min(iw, ih) - Math.min(sw, sh)) <= slack
+  );
+}
+
+function windowFillsScreen(): boolean {
+  if (typeof window === 'undefined' || !window.screen) return false;
+  return fillsScreen(window.innerWidth, window.innerHeight, window.screen.width, window.screen.height);
+}
+
+/**
+ * Fullscreen as the player sees it: this page's own, or a window that covers
+ * the glass anyway. Inside itch's embed the Fullscreen button makes the
+ * parent page's iframe the fullscreen element, so this document's
+ * fullscreenElement stays null while the game fills the screen; the
+ * browser's own full screen (F11) looks the same from in here.
+ */
+export function looksFullscreen(): boolean {
+  if (typeof document !== 'undefined' && document.fullscreenElement) return true;
+  return windowFillsScreen();
+}
+
 function inPortrait(): boolean {
   if (typeof matchMedia === 'function') return matchMedia('(orientation: portrait)').matches;
   return window.innerHeight > window.innerWidth;
@@ -497,7 +527,10 @@ function swallowGesture(e: PointerEvent): void {
  */
 function syncPin(): void {
   if (fallbackMode || !canLockLandscape()) return;
-  const bare = !lockActive && !document.fullscreenElement;
+  // Lying down, a frame that already fills the glass (itch's Fullscreen
+  // button around the embed) has no fuller spread to go back to. Upright
+  // the pin still lays it sideways, which itch's button does not.
+  const bare = !lockActive && !document.fullscreenElement && (inPortrait() || !windowFillsScreen());
   const wanted = bare && (!inPortrait() || declines >= 1);
   if (!wanted && !pinEl) return;
   const pin = ensurePin();

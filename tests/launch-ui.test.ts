@@ -6,7 +6,7 @@ import { ROUTE } from '../src/content/route';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import { PauseMenu } from '../src/ui/pause';
 import { Textbox } from '../src/ui/textbox';
-import { keysOrTaps, lastDevice, noteDevice, padWords } from '../src/ui/responsive';
+import { fillsScreen, keysOrTaps, lastDevice, noteDevice, padWords } from '../src/ui/responsive';
 import { handWords } from '../src/ui/games/scene';
 import type { NodeMap } from '../src/content/schema';
 import type { GameState } from '../src/engine/state';
@@ -351,6 +351,48 @@ describe('the earlier pages of the Tasks tab open to every hand', () => {
       }
     } finally {
       noteDevice('keys');
+    }
+  });
+});
+
+describe('itch\'s Fullscreen button counts as full screen', () => {
+  it('knows a window that covers the glass, whichever way the screen reports itself', () => {
+    assert.equal(fillsScreen(915, 412, 915, 412), true, 'a phone lying down, itch fullscreen');
+    assert.equal(fillsScreen(915, 412, 412, 915), true, 'a screen still reported upright');
+    assert.equal(fillsScreen(1920, 1080, 1920, 1080), true, 'a desk, full');
+    assert.equal(fillsScreen(915, 356, 915, 412), false, 'the browser toolbar is showing');
+    assert.equal(fillsScreen(1920, 969, 1920, 1080), false, 'a maximised window');
+    assert.equal(fillsScreen(1152, 648, 1920, 1080), false, 'the itch embed in its page');
+    assert.equal(fillsScreen(2133, 1200, 1920, 1080), false, 'a zoomed-out page');
+    assert.equal(fillsScreen(0, 0, 0, 0), false);
+  });
+
+  it('Settings reads "on" while the frame fills the screen, and leaves it alone', () => {
+    fakeDocument();
+    let asked = 0;
+    const doc = (globalThis as unknown as { document: Record<string, unknown> }).document;
+    doc.documentElement = { requestFullscreen: () => void asked++ };
+    doc.fullscreenEnabled = true;
+    doc.fullscreenElement = null;
+    const win = { innerWidth: 1920, innerHeight: 1080, screen: { width: 1920, height: 1080 } };
+    (globalThis as { window?: unknown }).window = win;
+    try {
+      const root = { hidden: true, innerHTML: '', querySelector: () => null };
+      const audio = { mix: { music: 1, sfx: 1, ambience: 1 }, muted: false };
+      const menu = new PauseMenu(root as never, audio as never, { onTextSpeed() {}, onToTitle() {} });
+      const row = () => root.innerHTML.replace(/<[^>]+>/g, '|').replace(/\s*\|\s*/g, '|').match(/Fullscreen\|+(\w+)\|/)?.[1];
+      menu.open('settings', true);
+      assert.equal(row(), 'on', 'itch has the game full screen');
+      const onRow = () => root.innerHTML.includes('&#9656;&nbsp;Fullscreen');
+      for (let i = 0; i < 12 && !onRow(); i++) menu.onDir('down');
+      assert.ok(onRow(), 'the cursor reaches the row');
+      menu.onAction();
+      assert.equal(asked, 0, 'nothing fuller to ask for');
+      win.innerHeight = 969; // back in the page
+      menu.open('settings', true);
+      assert.equal(row(), 'off');
+    } finally {
+      delete (globalThis as { window?: unknown }).window;
     }
   });
 });
