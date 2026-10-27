@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { JOURNAL } from '../src/content/world';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
+import { PauseMenu } from '../src/ui/pause';
 import type { GameState } from '../src/engine/state';
 
 /**
@@ -153,5 +154,40 @@ describe('the journal labels follow Large text', () => {
       assert.doesNotMatch(block, /opacity/, `${sel} is solid ink, not see-through`);
     }
     assert.ok(px(rule('body.text-large')) > px(rule(':root')));
+  });
+});
+
+/** Just enough of a page for the overlays to draw into. */
+function fakeDocument() {
+  (globalThis as { document?: unknown }).document = {
+    body: { classList: { toggle() {}, contains: () => false } },
+    documentElement: {},
+  };
+}
+
+describe('the keyboard reaches the whole of How to play and the credits', () => {
+  it('up and down read down a card that has no cursor', () => {
+    fakeDocument();
+    const scrolled: number[] = [];
+    const card = {
+      scrollTop: 0,
+      scrollHeight: 900,
+      clientHeight: 400,
+      scrollBy: (o: { top: number }) => void scrolled.push(o.top),
+      querySelector: () => null,
+      querySelectorAll: () => [],
+    };
+    const root = { hidden: true, innerHTML: '', querySelector: (sel: string) => (sel === '.p-card' ? card : null) };
+    const audio = { mix: { music: 1, sfx: 1, ambience: 1 }, muted: false };
+    const menu = new PauseMenu(root as never, audio as never, { onTextSpeed() {}, onToTitle() {} });
+    for (const screen of ['help', 'credits'] as const) {
+      menu.open(screen, true);
+      scrolled.length = 0;
+      menu.onDir('down');
+      menu.onDir('down');
+      menu.onDir('up');
+      menu.onDir('left');
+      assert.deepEqual(scrolled, [80, 80, -80], screen);
+    }
   });
 });

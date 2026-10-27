@@ -382,6 +382,12 @@ export class PauseMenu {
       else if (dir === 'down') this.cursor = (this.cursor + 1) % items.length;
       else items[this.cursor]?.adjust(dir === 'right' ? 1 : -1);
       this.render();
+    } else if (dir === 'up' || dir === 'down') {
+      // How to play and the credits have no cursor: the arrows read down
+      // the card instead, so a keyboard or a pad reaches the lines below the
+      // fold on a short window (the thanks, the licences, the last word).
+      const card = this.root.querySelector<HTMLElement>('.p-card');
+      card?.scrollBy?.({ top: dir === 'down' ? 80 : -80, behavior: 'smooth' });
     }
   }
 
