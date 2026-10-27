@@ -384,7 +384,7 @@ export const OAXACA_NODES: NodeMap = {
   // The walls themselves; without this arm they fall through to the
   // village's adobe line, which reads strangely far from the altiplano.
   'c9.ex.wall': {
-    lines: [{ text: "Adobe under paint the colour of a parrot's opinion. Where a flake has fallen, an older colour was waiting." }],
+    lines: [{ text: "Adobe under paint the color of a parrot's opinion. Where a flake has fallen, an older color was waiting." }],
   },
   // ---------------- arrival ----------------
   'c9.arrive': {
@@ -1371,7 +1371,7 @@ export const OAXACA_NODES: NodeMap = {
     effects: ['set:c9.alebrije.close'],
   },
   'c9.ex.wallcal': {
-    lines: [{ text: 'Cal above, colour below. The top has gone brown with thirty years of comal smoke; Refugio calls that seasoning.' }],
+    lines: [{ text: 'Cal above, color below. The top has gone brown with thirty years of comal smoke; Refugio calls that seasoning.' }],
   },
   'c9.ex.floorsaltillo': {
     lines: [{ text: 'Saltillo tiles, no two the same red. A marigold petal has got into the grout. Several have. It is that month.' }],
