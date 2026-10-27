@@ -15,6 +15,10 @@ import type { NodeMap } from '../content/schema';
  * the game loop, not a timer, so it cannot be throttled independently. */
 const DEFAULT_CPS = 60;
 
+/** How long the live region stays empty before a line is written into it:
+ * long enough for a screen reader to see the clearing as its own change. */
+const LIVE_GAP_MS = 100;
+
 type Els = {
   root: HTMLElement;
   portrait: HTMLElement;
@@ -45,6 +49,8 @@ export class Textbox {
   /** True during the brief press animation after confirming a choice. */
   private picking = false;
   private onClose: (() => void) | null = null;
+  /** The line waiting to be handed to the screen reader. */
+  private liveTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private els: Els,
@@ -102,9 +108,34 @@ export class Textbox {
     this.stopType();
     this.els.root.hidden = true;
     this.els.choices.innerHTML = '';
+    // The last line must not linger in the live region once the box is
+    // gone: it was read again on review, and a conversation reopened on the
+    // same first line was not news to the reader, so it went unspoken.
+    this.say('');
     const done = this.onClose;
     this.onClose = null;
     done?.();
+  }
+
+  /**
+   * Hand a line to the screen reader. The region is emptied at once and the
+   * line written a moment later, so a line identical to the one before (a
+   * villager repeating themselves, a conversation reopened on its first
+   * line) is still a change, and so still spoken. A newer line replaces one
+   * still waiting, so fast reading or arrowing through choices does not
+   * queue up a backlog.
+   */
+  private say(text: string) {
+    const live = this.els.live;
+    if (!live) return;
+    if (this.liveTimer !== null) clearTimeout(this.liveTimer);
+    this.liveTimer = null;
+    live.textContent = '';
+    if (!text) return;
+    this.liveTimer = setTimeout(() => {
+      this.liveTimer = null;
+      live.textContent = text;
+    }, LIVE_GAP_MS);
   }
 
   /** Choices whose `when` the player has earned (or that have none). */
@@ -167,7 +198,7 @@ export class Textbox {
     this.shown = 0;
     this.els.text.textContent = '';
     this.typing = true;
-    if (this.els.live) this.els.live.textContent = line.who ? `${line.who}: ${this.lineText}` : this.lineText;
+    this.say(line.who ? `${line.who}: ${this.lineText}` : this.lineText);
   }
 
   /** Advance the typewriter. Called from the fixed-timestep update. */
@@ -216,12 +247,9 @@ export class Textbox {
       this.els.choices.appendChild(div);
     });
     // Read the options once as they appear, then each one the cursor lands on.
-    const live = this.els.live;
-    if (live) {
+    if (this.els.live) {
       const opts = this.activeChoices(node).map((c) => c.text);
-      live.textContent = entering
-        ? `Choose: ${opts.map((t, i) => `${i + 1}, ${t}`).join('; ')}`
-        : (opts[this.cursor] ?? '');
+      this.say(entering ? `Choose: ${opts.map((t, i) => `${i + 1}, ${t}`).join('; ')}` : (opts[this.cursor] ?? ''));
     }
   }
 

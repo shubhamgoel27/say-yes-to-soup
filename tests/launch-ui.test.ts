@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { JOURNAL } from '../src/content/world';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import { PauseMenu } from '../src/ui/pause';
+import { Textbox } from '../src/ui/textbox';
+import type { NodeMap } from '../src/content/schema';
 import type { GameState } from '../src/engine/state';
 
 /**
@@ -188,6 +190,72 @@ describe('the keyboard reaches the whole of How to play and the credits', () => 
       menu.onDir('up');
       menu.onDir('left');
       assert.deepEqual(scrolled, [80, 80, -80], screen);
+    }
+  });
+});
+
+describe('the screen reader hears each line, once, and only while it is up', () => {
+  function el() {
+    return {
+      hidden: true,
+      textContent: '',
+      innerHTML: '',
+      offsetWidth: 0,
+      children: [],
+      style: {},
+      classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+      appendChild() {},
+    };
+  }
+
+  it('clears the line when the box closes, and says a repeated line again', () => {
+    fakeDocument();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+      const live = el();
+      const els = { root: el(), portrait: el(), name: el(), text: el(), arrow: el(), choices: el(), live };
+      const state = { apply() {}, check: () => true, playerName: '' } as unknown as GameState;
+      const tb = new Textbox(els as never, state);
+      const nodes = { n: { lines: [{ who: 'Carmen', text: 'Sit.' }] } } as unknown as NodeMap;
+
+      tb.open(nodes, 'n', null);
+      assert.equal(live.textContent, '', 'emptied first, so the line is news');
+      mock.timers.tick(100);
+      assert.equal(live.textContent, 'Carmen: Sit.');
+
+      tb.onAction(); // finish typing
+      tb.onAction(); // last line: the box closes
+      assert.equal(tb.isOpen, false);
+      assert.equal(live.textContent, '', 'nothing lingers to be read on review');
+      mock.timers.tick(500);
+      assert.equal(live.textContent, '');
+
+      // The same first line again: still a change, so still spoken.
+      tb.open(nodes, 'n', null);
+      assert.equal(live.textContent, '');
+      mock.timers.tick(100);
+      assert.equal(live.textContent, 'Carmen: Sit.');
+    } finally {
+      mock.timers.reset();
+    }
+  });
+
+  it('a newer line replaces one still waiting', () => {
+    fakeDocument();
+    mock.timers.enable({ apis: ['setTimeout'] });
+    try {
+      const live = el();
+      const els = { root: el(), portrait: el(), name: el(), text: el(), arrow: el(), choices: el(), live };
+      const state = { apply() {}, check: () => true, playerName: '' } as unknown as GameState;
+      const tb = new Textbox(els as never, state);
+      const nodes = { n: { lines: [{ text: 'One.' }, { text: 'Two.' }] } } as unknown as NodeMap;
+      tb.open(nodes, 'n', null);
+      tb.onAction(); // finish
+      tb.onAction(); // next line, before the first was handed over
+      mock.timers.tick(100);
+      assert.equal(live.textContent, 'Two.');
+    } finally {
+      mock.timers.reset();
     }
   });
 });
