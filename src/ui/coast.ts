@@ -529,7 +529,7 @@ export class WavePanel {
         this.hint =
           !this.hard && this.set === 1
             ? 'The wave sets you down on the sand like a parcel. The boys on the beach are already pointing past you at the next set, bigger: "Otra, otra." Space to paddle out again.'
-            : !this.hard && this.escapes === 0
+            : !this.hard && this.escapes === 0 && this.earlyMisses + this.lateMisses === 0
               ? 'Six strokes, six swells, not one wasted. The second wave sets you down on the sand like a parcel, and the boys on the beach whistle. Press Space.'
               : !this.hard && this.holds >= 2
                 ? 'The wave sets you down on the sand like a parcel, mostly sideways. Someone on the beach is laughing kindly. Press Space.'

@@ -209,3 +209,30 @@ describe('the ceviche clock', () => {
     assert.equal(p.clock(), '12:59');
   });
 });
+
+describe('the caballito, the story', () => {
+  /** The careful story rider, plus `early` eager strokes on the first swells. */
+  function ride(early: number) {
+    const careful = BOTS['wave.start']!();
+    let left = early;
+    let said = '';
+    const r = run('wave.start', false, (p, t) => {
+      if (p.phase === 'done') said = p.hint;
+      if (p.phase === 'paddle' && left > 0 && p.x > p.zoneHi + 0.3 && !p.eager.on) {
+        left--;
+        p.onAction();
+        return;
+      }
+      careful(p, t);
+    });
+    assert.ok(r.done);
+    return { said, escapes: r.p.escapes };
+  }
+
+  it('"not one wasted" only for six strokes on six swells', () => {
+    assert.match(ride(0).said, /not one wasted/);
+    const wobbly = ride(1);
+    assert.equal(wobbly.escapes, 0, 'the eager stroke cost no swell');
+    assert.doesNotMatch(wobbly.said, /not one wasted/);
+  });
+});
