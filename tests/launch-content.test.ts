@@ -184,13 +184,26 @@ describe('a journal closed mid-conversation does not strand the story', () => {
     });
   }
 
-  it('re-entering those lines doubles nothing', () => {
-    // Each catch-up re-enters a line whose effects only raise flags, fill
-    // pages (a page already held is not filled twice) or name the errand
-    // already named: nothing counts, nothing is handed out twice.
-    for (const id of ['rosa.bundle', 'justina.watia', 'c11.jog.meal', 'c8.alfio.first']) {
-      for (const eff of NODES[id]!.effects ?? []) {
-        assert.match(eff, /^(set|journal|errand):/, `${id}: ${eff} is not safe to apply twice`);
+  it('re-entering a scene through a catch-up arm doubles nothing', () => {
+    // Each catch-up re-enters lines whose effects only raise flags, fill
+    // pages (a page already held is not filled twice), name the errand
+    // already named, or unfold a letter not yet read: nothing counts up,
+    // nothing is handed out twice, wherever the scene goes from there.
+    const reentered = [
+      'rosa.bundle', 'justina.watia', 'c11.jog.meal', 'c8.alfio.first',
+      'mar.simon.first', 'c3.ben.first2', 'c6.mariamma.waitread', 'c6.mariamma.kitchen2', 'c6.shaji.chaya',
+      'c11.sushila.first', 'c7.amina.welcome', 'c7.salma.carry2', 'mar.post.pilar', 'c10.traveler.mail',
+    ];
+    const armNodes = new Set([
+      ...NPCS.flatMap((n) => n.entry.map((e) => e.node)),
+      ...Object.values(EXAMINES).flatMap((arms) => arms.map((a) => a.node)),
+    ]);
+    for (const start of reentered) {
+      assert.ok(armNodes.has(start), `${start} is no longer opened by any arm; update this list`);
+      for (const id of reach(start)) {
+        for (const eff of NODES[id]!.effects ?? []) {
+          assert.match(eff, /^(set|journal|errand|letter):/, `${start} reaches ${id}: ${eff} is not safe to apply twice`);
+        }
       }
     }
   });
