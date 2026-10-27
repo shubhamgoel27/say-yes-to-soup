@@ -236,3 +236,18 @@ describe('the caballito, the story', () => {
     assert.doesNotMatch(wobbly.said, /not one wasted/);
   });
 });
+
+describe('the ceviche, a late pull', () => {
+  for (const hard of [false, true]) {
+    it(`${hard ? 'hard' : 'story'}: a pull past the bright zone is answered, not ignored`, () => {
+      const p = opened('c2.cook.start', hard);
+      while (p.step !== 'lime') p.onAction();
+      while (p.kiss < p.zoneHi + 0.02) p.tick(1 / 60);
+      const before = p.hint;
+      p.onAction();
+      assert.notEqual(p.hint, before);
+      assert.match(p.hint, /Too late/);
+      assert.equal(p.step, 'lime', 'the fish stays in; the lime has it');
+    });
+  }
+});

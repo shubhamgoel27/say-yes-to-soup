@@ -1723,6 +1723,14 @@ export class CevichePanel {
           } else {
             this.hint = `Too soon, ${offBy((this.kiss - this.zoneLo) / this.kissRate)}; the lime has barely said hello. Back in. Wait for the bright zone, then pull.`;
           }
+        } else {
+          // Past the bright zone the lime already has it: no pull saves this
+          // fish, and the press is answered instead of swallowed in silence.
+          this.audio.bump();
+          sc?.thump(calm() ? 0 : 2, 0.02);
+          this.hint = this.hard
+            ? `Too late, ${offBy((this.kiss - this.zoneHi) / this.kissRate)}; the sliver has gone by and the lime has the fish now.`
+            : 'Too late. The bright moment went by and the lime is marrying the fish; Petro lets it finish. Next one, pull while the bar burns.';
         }
         break;
       }
