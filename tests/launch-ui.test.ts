@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
+import { readFileSync } from 'node:fs';
 import { JOURNAL } from '../src/content/world';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import type { GameState } from '../src/engine/state';
@@ -106,5 +107,32 @@ describe('the wheel over the journal', () => {
     w.hold(1000); // the page text took the wheel up to here
     for (let t = 1016; t < 1600; t += 16) assert.equal(w.feed(0, 40, 0, t), 0, `momentum at ${t}`);
     assert.equal(w.feed(0, 100, 0, 2000), 1, 'a fresh turn after a rest');
+  });
+});
+
+describe('cards on a phone lying down fit the room the toolbar leaves', () => {
+  it('every height cap in vh is followed by its dvh twin (desktop-only tiers aside)', () => {
+    // 100vh is the room with the toolbar hidden; a phone held sideways in
+    // the browser shows less, and #frame already follows dvh. A card capped
+    // in vh alone was centred in that smaller frame and lost its title and
+    // its foot. Browsers without dvh drop the twin and keep the vh line.
+    const lines = readFileSync('index.html', 'utf8').split('\n');
+    const bare: string[] = [];
+    lines.forEach((line, i) => {
+      if (/^\s*\*/.test(line)) return; // comment prose
+      const m = line.match(/([a-z-]+):[^;]*\b\d+(?:\.\d+)?vh\b/);
+      if (!m || m[1] === 'font-size') return;
+      let media = '';
+      for (let j = i; j >= 0; j--) {
+        if (lines[j]?.includes('@media')) {
+          media = lines[j] ?? '';
+          break;
+        }
+      }
+      if (media.includes('pointer: fine')) return; // a desk, where dvh is vh
+      const ahead = [line.slice((m.index ?? 0) + m[0].length), ...lines.slice(i + 1, i + 4)].join('\n');
+      if (!new RegExp(`${m[1]}:[^;]*\\d+dvh`).test(ahead)) bare.push(`${i + 1}: ${line.trim()}`);
+    });
+    assert.deepEqual(bare, []);
   });
 });
