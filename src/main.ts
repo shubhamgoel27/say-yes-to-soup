@@ -527,11 +527,36 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
   },
 });
 
-/** Which panel's phase was last seen, and since when; see the panel branch of update(). */
+/** Which panel's phase was last seen, and since when; see panelResting(). */
 let panelSeen: unknown = null;
 let panelPhase: unknown = null;
 let panelPhaseAt = 0;
 const DONE_GRACE_MS = 450;
+
+/** Is this panel showing its payoff (phase 'done': the next action closes
+ * it with the win)? See the GamePanel contract in content/schema.ts. */
+function panelDone(panel: unknown): boolean {
+  return (panel as { phase?: unknown }).phase === 'done';
+}
+
+/**
+ * A rhythm won on Space would close its own payoff on the next beat of the
+ * same rhythm, and a quick second tap or click did the same: for a moment
+ * after a panel reaches 'done', the action rests, from every hand. (The
+ * andes and the ofrenda keep graces of their own.) Called every frame from
+ * update() so the moment is stamped when it arrives, and again by the
+ * pointer path before it acts.
+ */
+function panelResting(panel: unknown): boolean {
+  const phase = (panel as { phase?: unknown }).phase;
+  const now = performance.now();
+  if (panel !== panelSeen || phase !== panelPhase) {
+    panelSeen = panel;
+    panelPhase = phase;
+    panelPhaseAt = now;
+  }
+  return phase === 'done' && now - panelPhaseAt < DONE_GRACE_MS;
+}
 
 /** Chapter mini-games: the engine owns one overlay root per panel. */
 function makeOverlayRoot(id: string): HTMLElement {
@@ -5516,18 +5541,13 @@ function update(dt: number) {
   } else if (anyGameOpen()) {
     const g = games.find((x) => x.panel.isOpen);
     if (g) {
-      // A rhythm won on Space would close its own payoff on the next beat
-      // of the same rhythm: for a moment after a panel reaches 'done', the
-      // action key rests. (The andes and the ofrenda keep graces of their own.)
-      const phase = (g.panel as { phase?: unknown }).phase;
-      const now = performance.now();
-      if (g !== panelSeen || phase !== panelPhase) {
-        panelSeen = g;
-        panelPhase = phase;
-        panelPhaseAt = now;
-      }
-      const resting = phase === 'done' && now - panelPhaseAt < DONE_GRACE_MS;
-      if (back || pauseKey) {
+      const resting = panelResting(g.panel);
+      if ((back || pauseKey) && panelDone(g.panel)) {
+        // On the payoff, Esc means 'done here', not 'Start over' or 'Step
+        // away': the strip's choices threw the win away, and the card came
+        // back to be won again.
+        if (!resting) g.panel.onAction();
+      } else if (back || pauseKey) {
         showStrip(g);
         audio.pageFlip();
       } else {
@@ -6837,8 +6857,8 @@ function attachPanelPointer(
     // third of the card it sits in.
     const cap = capUnder(root, e.clientX, e.clientY);
     if (cap) {
-      if (cap === 'space') panel.onAction();
-      else panel.onDir(cap);
+      if (cap !== 'space') panel.onDir(cap);
+      else if (!panelResting(panel)) panel.onAction();
       return;
     }
     const card = root.querySelector('.w-panel') ?? root;
@@ -6849,7 +6869,7 @@ function attachPanelPointer(
     const dy = fromTop - 0.5;
     const EDGE = 1 / 6; // beyond a third from center in either axis steers
     if (Math.abs(dx) < EDGE + 0.0 && Math.abs(dy) < EDGE) {
-      panel.onAction();
+      if (!panelResting(panel)) panel.onAction();
       return;
     }
     if (Math.abs(dx) >= Math.abs(dy)) panel.onDir(dx < 0 ? 'left' : 'right');
