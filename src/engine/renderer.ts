@@ -1,7 +1,7 @@
 import { ART, TILE, VIEW_H, VIEW_W } from './config';
 import type { Actor } from './actor';
 import type { Dir } from './input';
-import type { TileMap } from './grid';
+import type { MapData, TileMap } from './grid';
 import type { Camera } from './camera';
 import { OVER_SEA, PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
@@ -485,7 +485,7 @@ type MoodPaint = { top: string; mid: string; bottom: string; vig: number; glow?:
 export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   private time = 0;
-  private tiles = new Tileset();
+  private tiles: Tileset;
   /**
    * The frame-sized light pass, baked for the moods actually lit and no
    * others. Each is a full-frame canvas (3.5 MB at 1280x720) and the
@@ -648,7 +648,12 @@ export class Renderer {
   /** Debug knob (`?ambient=1`): keep rare set-pieces (condor, sail) on screen. */
   private ambientDebug = false;
 
-  constructor(readonly canvas: HTMLCanvasElement) {
+  /** Given the maps, the tileset keeps one copy of each kind's art; see Tileset.roles. */
+  constructor(
+    readonly canvas: HTMLCanvasElement,
+    maps?: Record<string, MapData>,
+  ) {
+    this.tiles = new Tileset(maps && { maps, runKinds: RUN_WALLS });
     const ctx = context2d(canvas, { alpha: false });
     this.ctx = ctx;
     // Guarded softly: node-side tests build a Renderer with no import.meta.env.

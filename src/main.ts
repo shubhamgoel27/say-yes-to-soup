@@ -80,7 +80,7 @@ const $ = (id: string) => {
 // it with lighting, bloom, and shimmer-free zoom on top.
 const worldCanvas = $('game') as HTMLCanvasElement;
 console.info('[soup] boot: world composer');
-const renderer = new Renderer(worldCanvas);
+const renderer = new Renderer(worldCanvas, REGION_MAPS);
 console.info('[soup] boot: gpu stage');
 const stage = PixiStage.create(worldCanvas, $('frame'));
 // The frame turns with the screen (an upright phone gets an upright frame).

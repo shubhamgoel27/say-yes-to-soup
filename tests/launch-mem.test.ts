@@ -177,3 +177,80 @@ describe('villager art on demand', async () => {
     assert.equal(busy.size, 5, 'a crowd on screen outgrows the cap rather than re-bake every frame');
   });
 });
+
+describe('tile art', () => {
+  it('keeps one copy of each kind, and every map still draws from live canvases', async () => {
+    const { Renderer } = await import('../src/engine/renderer');
+    const { REGION_MAPS } = await import('../src/content/world');
+    const tileBytes = (maps?: typeof REGION_MAPS) => {
+      const from = made.length;
+      const r = new Renderer(countingCanvas() as unknown as HTMLCanvasElement, maps);
+      return { r, bytes: held(made.slice(from)) };
+    };
+    const both = tileBytes();
+    const lean = tileBytes(REGION_MAPS);
+    assert.ok(lean.bytes < both.bytes * 0.6, `kept ${(lean.bytes / MB).toFixed(1)} MB of ${(both.bytes / MB).toFixed(1)} MB`);
+
+    // Draw every cell of every map through both tilesets the way the
+    // composer does. The lean one must hand out the same kind of copy (as
+    // painted, or inked) of the same size every time, and never a canvas it
+    // has handed back: the stand-in context throws on one of those.
+    type Tiles = {
+      setMap(id: string): void;
+      drawGround(g: unknown, k: string, sx: number, sy: number, cx: number, cy: number, conn: () => boolean, t: number): void;
+      drawFlat(g: unknown, k: string, sx: number, sy: number, cx: number, cy: number, t: number): void;
+      drawTall(g: unknown, k: string, sx: number, sy: number, cx: number, cy: number): void;
+      drawBuildingCap(g: unknown, k: string, sx: number, sy: number, cx: number, cy: number): void;
+      drawWallRun(g: unknown, k: string, sx: number, sy: number, cx: number, cy: number, e: object): void;
+      groundImage(k: string, v: number): HTMLCanvasElement | null;
+      isBuilding(k: string): boolean;
+      inkCache: Map<unknown, unknown>;
+    };
+    const tilesOf = (r: unknown) => (r as { tiles: Tiles }).tiles;
+    const drawn: Counted[] = [];
+    const sink = countingCanvas().getContext('2d') as Record<string, unknown>;
+    const draw = sink.drawImage as (img: Counted) => void;
+    sink.drawImage = (img: Counted) => {
+      draw(img);
+      drawn.push(img);
+    };
+    const inkedOf = new Map<Tiles, Set<unknown>>();
+    /** What one tileset hands out for one call: its copies' kinds and sizes. */
+    const handout = (t: Tiles, call: (t: Tiles) => unknown) => {
+      drawn.length = 0;
+      const got = call(t) as Counted | null | undefined;
+      let inked = inkedOf.get(t);
+      if (!inked || inked.size < t.inkCache.size) inkedOf.set(t, (inked = new Set(t.inkCache.values())));
+      return [...drawn, ...(got ? [got] : [])]
+        .map((c) => `${inked.has(c) ? 'inked' : 'painted'} ${c.width}x${c.height}`)
+        .join(', ');
+    };
+    const a = tilesOf(both.r);
+    const b = tilesOf(lean.r);
+    let calls = 0;
+    for (const [id, m] of Object.entries(REGION_MAPS)) {
+      a.setMap(id);
+      b.setMap(id);
+      const same = (what: string, call: (t: Tiles) => unknown) => {
+        calls++;
+        const want = handout(a, call);
+        assert.equal(handout(b, call), want, `${id}: ${what}`);
+      };
+      for (let y = -1; y <= m.ground.length; y++) {
+        for (let x = -1; x <= (m.ground[0]?.length ?? 0); x++) {
+          const gk = m.legend[m.ground[y]?.[x] ?? '']?.t ?? (y < 0 || x < 0 ? 'scree' : 'void');
+          same(`ground ${gk}`, (t) => t.drawGround(sink, gk, 0, 0, x, y, () => false, 0));
+          same(`seam ${gk}`, (t) => t.groundImage(gk, 0));
+          const o = m.legend[m.objects?.[y]?.[x] ?? ' '];
+          if (!o) continue;
+          if (o.tall) {
+            same(`prop ${o.t}`, (t) => t.drawTall(sink, o.t, 0, 0, x, y));
+            same(`cap ${o.t}`, (t) => t.drawBuildingCap(sink, o.t, 0, 0, x, y));
+            same(`run ${o.t}`, (t) => t.drawWallRun(sink, o.t, 0, 0, x, y, { left: true, right: true, top: true }));
+          } else same(`flat ${o.t}`, (t) => t.drawFlat(sink, o.t, 0, 0, x, y, 0));
+        }
+      }
+    }
+    assert.ok(calls > 10_000);
+  });
+});
