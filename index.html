@@ -80,6 +80,8 @@
         --fs-hand16: 16px;
         --fs-hand17: 17px;
         --fs-hand175: 17.5px;
+        /* The small caps that name a hand (NANI, 1974 / YOU / NOW). */
+        --fs-label: 10.5px;
       }
       body.text-large {
         --fs-11: 14px;
@@ -95,6 +97,7 @@
         --fs-hand16: 18.5px;
         --fs-hand17: 19.5px;
         --fs-hand175: 20px;
+        --fs-label: 13px;
       }
 
       /* The kitchen before the journey: painted from this file alone, so it is
@@ -734,10 +737,10 @@
       .j-nani span, .j-you span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
         transform: none;
       }
@@ -750,10 +753,10 @@
       .j-thread span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
       }
       .j-thread-rule {
@@ -861,10 +864,10 @@
       .jt-nani span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         transform: none;
       }
       .jt-nowcol, .jt-herecol { min-width: 0; }
@@ -889,7 +892,7 @@
       }
       .jt-k {
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: #6b5334;
@@ -910,10 +913,10 @@
       .jt-bag span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.75;
+        color: #6b5334;
         transform: none;
       }
       .jt-also, .jt-done { list-style: none; margin: 0; padding: 0; }
@@ -2953,6 +2956,7 @@
           --fs-hand16: 17.5px;
           --fs-hand17: 18.5px;
           --fs-hand175: 19px;
+          --fs-label: 12px;
         }
       }
 

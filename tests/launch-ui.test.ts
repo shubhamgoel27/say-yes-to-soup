@@ -136,3 +136,22 @@ describe('cards on a phone lying down fit the room the toolbar leaves', () => {
     assert.deepEqual(bare, []);
   });
 });
+
+describe('the journal labels follow Large text', () => {
+  const css = readFileSync('index.html', 'utf8');
+  const rule = (sel: string) => {
+    const at = css.indexOf(`${sel} {`);
+    assert.ok(at >= 0, `${sel} is styled`);
+    return css.slice(at, css.indexOf('}', at));
+  };
+  const px = (block: string) => Number(block.match(/--fs-label:\s*([\d.]+)px/)?.[1]);
+
+  it('NANI, 1974 / YOU / NOW are sized from the tier, which Large text raises', () => {
+    for (const sel of ['.j-nani span, .j-you span', '.j-thread span', '.jt-nani span', '.jt-k', '.jt-bag span']) {
+      const block = rule(sel);
+      assert.match(block, /font-size: var\(--fs-label\)/, sel);
+      assert.doesNotMatch(block, /opacity/, `${sel} is solid ink, not see-through`);
+    }
+    assert.ok(px(rule('body.text-large')) > px(rule(':root')));
+  });
+});
