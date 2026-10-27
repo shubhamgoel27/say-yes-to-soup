@@ -337,7 +337,8 @@ const LOOM_LEGEND = [
 ] as const;
 
 export class WeavePanel {
-  private phase: Phase = 'show';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: Phase = 'show';
   private row = 0;
   private seq: number[] = [];
   private at = 0; // reveal index or input index

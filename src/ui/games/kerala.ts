@@ -171,7 +171,8 @@ function hyacinth(g: CanvasRenderingContext2D, x: number, y: number, s: number, 
 const ROW_LEGEND = [{ keys: ['space'], does: 'pull on the call, when the blade is in the water' }] as const;
 
 export class RowPanel {
-  private phase: RowPhase = 'row';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: RowPhase = 'row';
   private x = 1; // the beat marker, 1 -> 0 across the track
   private speed = 0.5;
   private progress = 0;
@@ -1060,7 +1061,8 @@ const SADYA_LEGEND = [
 ] as const;
 
 export class SadyaPanel {
-  private phase: SadyaPhase = 'serve';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: SadyaPhase = 'serve';
   private placed: (string | null)[] = [];
   private course = 0;
   private cur = 0;
@@ -1708,7 +1710,8 @@ const SURRENDER_HELP =
   'One Space lifts the arm and it keeps climbing on its own; wait until the stream passes the chalk mark, then Space again.';
 
 export class ChayaPanel {
-  private phase: ChayaPhase = 'boil';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: ChayaPhase = 'boil';
   private boil = 0;
   private stirs = 0;
   private pullIdx = 0;

@@ -426,6 +426,11 @@ export class GalleyPanel {
     return !this.root.hidden;
   }
 
+  /** See GamePanel.phase: 'done' once the adobo is off the heat. */
+  get phase(): 'cook' | 'simmer' | 'burnt' | 'done' {
+    return this.burnt ? 'burnt' : this.done ? 'done' : this.simmer >= 0 ? 'simmer' : 'cook';
+  }
+
   /** True only while the pantry is live: not simmering, not burnt, not finished. */
   private get feeding(): boolean {
     return !this.done && !this.burnt && this.simmer < 0;
@@ -1503,6 +1508,11 @@ export class StarPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /** See GamePanel.phase: 'done' once every reading is named; 'failed' at eight bells. */
+  get phase(): 'search' | 'failed' | 'done' {
+    return this.failed ? 'failed' : this.done ? 'done' : 'search';
   }
 
   open(onDone: () => void) {

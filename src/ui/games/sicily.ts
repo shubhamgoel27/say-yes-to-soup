@@ -451,7 +451,8 @@ export class ScopaPanel {
   private hand: Card[] = [];
   private opp: Card[] = [];
   private cursor = 0;
-  private phase: ScopaPhase = 'play';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: ScopaPhase = 'play';
   private waitT = 0;
   private myCards = 0;
   private oppCards = 0;
@@ -1494,7 +1495,8 @@ const PISCI_LEGEND = [{ keys: ['space'], does: 'pull on the rais\u2019s call' }]
 const PISCI_FLAG = 'c8.pisci.start';
 
 export class PisciPanel {
-  private phase: PisciPhase = 'row';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: PisciPhase = 'row';
   private strokes = 0; // good strokes this leg
   private broke = 0; // mistimed pulls this pass; enough and the stroke breaks
   private leg = 0; // 0..2; the fish escapes after legs 0 and 1
@@ -2158,7 +2160,8 @@ const BURST_LINES = [
 const BURST_HELP = 'The second Space stops the cream: press it while the meter sits in the gold, not when the shell is full.';
 
 export class CannoloPanel {
-  private phase: CannoloPhase = 'pipe';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: CannoloPhase = 'pipe';
   private shell = 0; // 0..2
   private end = 0; // 0..1, both ends or it is not a cannolo
   private fill = 0; // 0..1 for the current end

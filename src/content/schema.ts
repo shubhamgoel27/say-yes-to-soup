@@ -200,6 +200,21 @@ export type MapMeta = {
  */
 export type GamePanel = {
   readonly isOpen: boolean;
+  /**
+   * Where the run stands, in the panel's own words ('play', 'lost', ...),
+   * with one word shared by every panel: 'done' means the won payoff is up,
+   * and the engine relies on it. Exactly while phase is 'done', the panel is
+   * finished and the next onAction closes it with the win, calling onDone
+   * (a panel may ignore presses for a short beat of its own first, but never
+   * does anything else with them); at no other time does onAction close a
+   * won run. The engine rests the action key for a moment after 'done'
+   * appears, so the press that won does not also skip the payoff, and routes
+   * Esc or back on a 'done' panel to onAction instead of the Start over /
+   * Step away strip, which would throw the win away. A story beat that
+   * looks finished but plays on with Space (a second set, a second plate,
+   * the dig) is not 'done'; neither is a lost run, even one Space closes.
+   */
+  readonly phase: string;
   open(onDone: () => void): void;
   onDir(dir: 'up' | 'down' | 'left' | 'right'): void;
   onAction(): void;

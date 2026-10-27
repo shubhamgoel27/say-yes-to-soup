@@ -232,7 +232,8 @@ const ROSE_A1 = -Math.PI * 0.14;
 const roseAng = (v: number) => ROSE_A0 + (ROSE_A1 - ROSE_A0) * Math.max(0, Math.min(1, v));
 
 export class SailPanel {
-  private phase: SailPhase = 'sail';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: SailPhase = 'sail';
   private wind = 0.5; // where the good trim lives on the track, 0..1
   private windTarget = 0.5;
   private shiftT = 0; // seconds until the kaskazi wanders again
@@ -1204,7 +1205,8 @@ const UROJO_LEGEND = [
 ] as const;
 
 export class UrojoPanel {
-  private phase: UrojoPhase = 'build';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: UrojoPhase = 'build';
   private round = 0;
   private cur = 0;
   private counts: number[] = [];

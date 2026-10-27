@@ -615,7 +615,8 @@ const P_COACH: Record<PFault, (where: string) => string> = {
 const TAWA_LEGEND = [{ keys: ['space'], does: 'stop the pin, turn the parantha, lift it off' }] as const;
 
 export class ParanthaPanel {
-  private phase: PPhase = 'roll';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: PPhase = 'roll';
   private course = 0;
   private meter = 0; // rolling meter position, bounces 0..1
   private dir = 1;
@@ -1887,7 +1888,8 @@ const KITE_LEGEND = [
 ] as const;
 
 export class PatangPanel {
-  private phase: KPhase = 'launch';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: KPhase = 'launch';
   private wind: Wind = 'steady';
   private windT = 0;
   private skySeed = 0x9e3779b9;

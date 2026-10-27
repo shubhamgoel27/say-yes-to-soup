@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { afterEach, describe, it } from 'node:test';
-import { ghost, play, seedRandom, type Bot } from './panelrig';
-import { BOTS } from './bots';
+import { DT, ghost, play, seedRandom, type Bot } from './panelrig';
+import { BOTS, STORY_BOTS } from './bots';
 
 /**
  * Launch fixes in the minigame panels, each pinned so it stays fixed. The
@@ -9,7 +9,7 @@ import { BOTS } from './bots';
  */
 
 const { GAMES } = await import('../src/content/world');
-const { RUN, takeCoach, verdictFor, tickPanels } = await import('../src/ui/games/run');
+const { RUN, takeCoach, peekCoach, verdictFor, tickPanels } = await import('../src/ui/games/run');
 
 type Any = any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -296,4 +296,90 @@ describe('the loom, by pointer', () => {
     tap(0);
     assert.equal(p.at, 1, 'with the strip gone, the right ball answers');
   });
+});
+
+// ------------------------------------------------------------ the payoff contract
+
+/**
+ * The engine treats a panel whose `phase` reads 'done' as showing its payoff:
+ * it rests the action key for a beat after the payoff appears, and Esc there
+ * closes the panel through onAction (keeping the win) instead of offering
+ * "Step away", which would throw the win away. So for every game, in every
+ * telling: 'done' appears only on the won payoff, holds there untouched, and
+ * the next onAction closes the panel with the win, once.
+ */
+function payoff(flag: string, hard: boolean, bot: Bot, seed: number) {
+  const g = GAMES.find((x) => x.flag === flag)!;
+  const undo = seedRandom(seed * 7919);
+  const problems: string[] = [];
+  let calls = 0;
+  const fired = () => calls; // read through a call: onDone bumps it behind the checker's back
+  let won = false;
+  try {
+    const p = g.make(ghost(), ghost(), () => new Set()) as Any;
+    RUN.hard = hard;
+    p.open(() => {
+      calls++;
+    });
+    const act = p.onAction.bind(p);
+    p.onAction = () => {
+      const before = p.phase;
+      const n = fired();
+      act();
+      if (fired() > n) {
+        // Closing from anywhere but 'done' is only ever a run that fell short.
+        if (before !== 'done' && !(hard && peekCoach(flag))) problems.push(`closed with a win from phase ${String(before)}`);
+      } else if (before === 'done' && p.phase !== 'done') {
+        problems.push(`'done' went on to ${String(p.phase)} instead of closing`);
+      }
+    };
+    let t = 0;
+    while (fired() === 0 && t < 400) {
+      if (p.phase === 'done') {
+        // The payoff stands on its own: nothing pressed, it neither closes nor moves.
+        for (let i = 0; i < 120; i++) p.tick(DT);
+        if (p.phase !== 'done' || fired() || !p.isOpen) problems.push(`'done' did not hold (now ${String(p.phase)})`);
+        p.onAction();
+        if (fired() !== 1 || p.isOpen) problems.push("the first onAction on a standing 'done' did not close the panel");
+        else won = true;
+        if (hard && peekCoach(flag)) problems.push(`a 'done' close filed a fault: ${takeCoach(flag)}`);
+        break;
+      }
+      bot(p, t);
+      if (fired()) break;
+      p.tick(DT);
+      t += DT;
+    }
+    // Closed is closed: more presses and frames never report again.
+    for (let i = 0; i < 5; i++) {
+      p.onAction();
+      p.tick(DT);
+    }
+    if (fired() !== 1) problems.push(`onDone fired ${fired()} times`);
+  } finally {
+    undo();
+    RUN.hard = false;
+    takeCoach(flag);
+  }
+  return { problems, won };
+}
+
+describe("every panel's 'done' is its payoff, and the next press closes it with the win", () => {
+  for (const g of GAMES) {
+    for (const hard of g.hardHow ? [false, true] : [false]) {
+      it(`${g.flag}, ${hard ? 'hard' : 'story'}`, () => {
+        const bot = hard ? BOTS[g.flag] : (STORY_BOTS[g.flag] ?? BOTS[g.flag]);
+        assert.ok(bot, `no player for ${g.flag}`);
+        // Scopa is a real card game: a careful hand still loses some deals.
+        const seeds = g.flag === 'c8.scopa.start' ? [1, 4, 5] : [1];
+        let won = false;
+        for (const seed of seeds) {
+          const r = payoff(g.flag, hard, bot(), seed);
+          assert.deepEqual(r.problems, [], `${g.flag} (seed ${seed})`);
+          won ||= r.won;
+        }
+        assert.ok(won, `${g.flag}: never reached a won 'done'`);
+      });
+    }
+  }
 });

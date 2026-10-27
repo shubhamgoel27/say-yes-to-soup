@@ -303,6 +303,11 @@ export class MolePanel {
     return !this.root.hidden;
   }
 
+  /** See GamePanel.phase: 'done' once the mole goes glossy; 'scorched' until Space starts the next pot. */
+  get phase(): 'stir' | 'smoke' | 'scorched' | 'done' {
+    return this.failed ? 'scorched' : this.done ? 'done' : this.smoke >= 0 ? 'smoke' : 'stir';
+  }
+
   open(onDone: () => void) {
     this.onDone = onDone;
     this.begin(RUN.hard);
@@ -1237,6 +1242,11 @@ export class OfrendaPanel {
 
   get isOpen(): boolean {
     return !this.root.hidden;
+  }
+
+  /** See GamePanel.phase: 'done' once the last thing is set on the altar. */
+  get phase(): 'set' | 'done' {
+    return this.done ? 'done' : 'set';
   }
 
   open(onDone: () => void) {

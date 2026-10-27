@@ -66,7 +66,8 @@ export class KingyoPanel {
   private cx = 0.5; // the poi's position over the tub, 0..1
   private soak = 0; // 0..100; at 100 the paper gives way
   private caught = 0;
-  private phase: 'scoop' | 'torn' | 'between' | 'done' = 'scoop';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: 'scoop' | 'torn' | 'between' | 'done' = 'scoop';
   /** Story: which paper this is. The second is for the uncle's granddaughter. */
   private sheet = 1;
   /** Fish already in the bowl when the second paper went in. */
@@ -960,7 +961,8 @@ const DASHI_LEGEND = [
 ] as const;
 
 export class DashiPanel {
-  private phase: DashiPhase = 'steep';
+  /** 'done' is the won payoff and only that; see GamePanel.phase. */
+  phase: DashiPhase = 'steep';
   private dropped = false; // the kombu and iriko are in the water
   private steepT = 0; // seconds rested before the flame goes on
   private heat = 0; // 0..100 toward the boil
