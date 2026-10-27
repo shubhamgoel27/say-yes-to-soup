@@ -107,6 +107,9 @@ window.addEventListener('pointerdown', () => audio.ensure());
 for (const ev of ['pointerup', 'touchend', 'click']) {
   window.addEventListener(ev, () => audio.ensure(), { capture: true, passive: true });
 }
+input.onOddPad = () => {
+  toasts.show('this controller is one the browser cannot read; an Xbox or PlayStation style pad, touch, or the keyboard will do');
+};
 // A pad press is not a user gesture to the browser either: try, and if the
 // band is still silent a moment later, say once how to let it in. A Steam
 // Deck player otherwise heard nothing and was never told why.
@@ -526,9 +529,9 @@ const pauseMenu = new PauseMenu($('pause'), audio, {
     audio.pageFlip();
   },
   saveNow: () => {
-    if (mode !== 'play') return false;
+    if (mode !== 'play') return null;
     state.save();
-    return !state.persistenceLost && !state.superseded;
+    return state.superseded ? 'elsewhere' : state.persistenceLost ? 'lost' : 'ok';
   },
 });
 

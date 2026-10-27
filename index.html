@@ -2773,7 +2773,8 @@
         #title[hidden], #letter[hidden], #chapterclose[hidden], #cc-card[hidden] { display: none; }
         .t-card, .letter-fold, .cx-card, .cc-paper { margin: auto; }
         .cx-card { max-height: none; }
-        #textbox { bottom: 8px; }
+        /* Lying down, a phone's home indicator sits along this edge. */
+        #textbox { bottom: calc(8px + env(safe-area-inset-bottom)); }
       }
 
       /* The phone tier proper. */

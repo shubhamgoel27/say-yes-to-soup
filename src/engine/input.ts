@@ -185,6 +185,10 @@ export class Input {
   /** Told of every pad button press: the pad is the device in hand, and a
    * press is the moment to try waking audio (a keyboard or tap would have). */
   onPadPress: (() => void) | null = null;
+  /** Told once when a pad is connected that the browser gives no standard
+   * button layout for, so it cannot be read. */
+  onOddPad: (() => void) | null = null;
+  private oddPadTold = false;
 
   pollGamepad() {
     // navigator.getGamepads() every frame is measurable overhead; skip it
@@ -192,6 +196,12 @@ export class Input {
     if (!this.padSeen) return;
     const pads = navigator.getGamepads?.() ?? [];
     const pad = pads.find((p) => p && p.connected && p.mapping === 'standard');
+    // A pad the browser cannot map was ignored without a word, and its owner
+    // pressed buttons at a game that seemed not to listen. Say so once.
+    if (!pad && !this.oddPadTold && pads.some((p) => p && p.connected)) {
+      this.oddPadTold = true;
+      this.onOddPad?.();
+    }
     // A resting controller with axis drift must not ghost-drive the menus:
     // ignore every pad until it shows a deliberate press or a hard stick push.
     if (pad && !this.padAwake) {

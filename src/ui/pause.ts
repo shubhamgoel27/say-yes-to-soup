@@ -116,7 +116,9 @@ type Hooks = {
   /** "The journal" chosen: the menu closes and the engine opens the book. */
   onJournal?: () => void;
   /** Save the journey now; false when the browser would not keep it. */
-  saveNow?: () => boolean;
+  /** Save now; 'ok', 'lost' (the browser will not keep it), or 'elsewhere'
+   * (another window holds this journal and this one stopped saving). */
+  saveNow?: () => 'ok' | 'lost' | 'elsewhere' | null;
 };
 
 /** The controls card, in the words of whatever is holding the game. */
@@ -161,7 +163,7 @@ export class PauseMenu {
    * a menu the player never passed through. */
   private direct = false;
   /** What the pause card says about the save: written, refused, or nothing (the title). */
-  private saved: 'ok' | 'lost' | null = null;
+  private saved: 'ok' | 'lost' | 'elsewhere' | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -183,7 +185,7 @@ export class PauseMenu {
     this.root.hidden = false;
     // A rest is a safe place to stop: the journey is written down the moment
     // the menu opens, and the card says so in one quiet line.
-    this.saved = !fromTitle && this.hooks.saveNow ? (this.hooks.saveNow() ? 'ok' : 'lost') : null;
+    this.saved = !fromTitle && this.hooks.saveNow ? this.hooks.saveNow() : null;
     // The entrance animation belongs to opening, not to every re-render:
     // render() rebuilds the card on each cursor move, and replaying the
     // book-open there made the whole panel flicker on every arrow press.
@@ -432,7 +434,9 @@ export class PauseMenu {
           ? '<div class="p-saved">the journal is saved; you can put it down here</div>'
           : this.saved === 'lost'
             ? '<div class="p-saved lost">this browser is not keeping the journal right now</div>'
-            : ''
+            : this.saved === 'elsewhere'
+              ? '<div class="p-saved lost">another window has this journal now; reload to carry on from there</div>'
+              : ''
       }`;
     } else if (this.screen === 'games') {
       // The games shelf: every won game with the village that taught it.
