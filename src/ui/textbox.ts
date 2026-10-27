@@ -45,6 +45,11 @@ export class Textbox {
   /** True during the brief press animation after confirming a choice. */
   private picking = false;
   private onClose: (() => void) | null = null;
+  /** Told of each node as it opens, before its effects apply (so the save
+   * those effects trigger already knows which talk is open). */
+  onEnter: ((id: string) => void) | null = null;
+  /** Told when the box closes, before the caller's own onClose. */
+  onLeave: (() => void) | null = null;
 
   constructor(
     private els: Els,
@@ -100,6 +105,7 @@ export class Textbox {
 
   private close() {
     this.stopType();
+    this.onLeave?.();
     this.els.root.hidden = true;
     this.els.choices.innerHTML = '';
     const done = this.onClose;
@@ -121,6 +127,7 @@ export class Textbox {
     }
     this.nodeId = id;
     this.lineIdx = 0;
+    this.onEnter?.(id);
     this.state.apply(node.effects);
     this.els.choices.innerHTML = '';
     this.showLine();

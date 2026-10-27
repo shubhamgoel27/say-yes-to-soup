@@ -3581,6 +3581,16 @@ const ARRIVAL_HOUR: Record<string, number> = {
   oaxaca: 0.55,
 };
 
+/** A chapter's arrival narration, if this map owes one; true if it started. */
+function playArrival(): boolean {
+  const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
+  if (!arr || textbox.isOpen) return false;
+  const hour = ARRIVAL_HOUR[map.id];
+  if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
+  startNarration(arr.node);
+  return true;
+}
+
 function endWarp() {
   warp = null;
   player.frozen = false;
@@ -3588,13 +3598,7 @@ function endWarp() {
   journeyEl.classList.remove('show');
   setIris(1);
   // First footfall in a new chapter gets its narration, at its written hour.
-  const arr = ARRIVALS.find((a) => a.map === map.id && !state.has(a.flag) && state.check(a.when));
-  if (arr && !textbox.isOpen) {
-    const hour = ARRIVAL_HOUR[map.id];
-    if (hour !== undefined && !Number.isFinite(todOverride)) dayT = hour;
-    startNarration(arr.node);
-    return;
-  }
+  if (playArrival()) return;
   // Or the scene a dark was let fall for: it plays as the light comes up.
   // Only after time passing in place; a door from somewhere else could land
   // you across the map from where the scene is standing.
@@ -3645,8 +3649,8 @@ function updateWarp(dt: number) {
 const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' };
 
 let talkingTo: Villager | null = null;
-let celebrated = state.has('story.complete');
-const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map((c) => c.flag));
+let celebrated = false;
+const celebratedFlags = new Set<string>();
 /**
  * The chapter-close spreads already unfolded (or never to unfold), keyed by
  * completion flag. Separate from the plates above: a chapter whose story
@@ -3654,7 +3658,7 @@ const celebratedFlags = new Set(COMPLETIONS.filter((c) => state.has(c.flag)).map
  * spread after the farewell.
  */
 const closeFlag = (c: { flag: string; closeOn?: string }) => c.closeOn ?? c.flag;
-const closedChapters = new Set(COMPLETIONS.filter((c) => state.has(closeFlag(c))).map((c) => c.flag));
+const closedChapters = new Set<string>();
 
 /**
  * The guards above keep a loaded journal from re-firing plates and the
@@ -3669,12 +3673,35 @@ function resyncCelebrations() {
   // Zero too: whisperMustWait() reads a live timer as a ceremony on its way.
   ceremonyTimer = 0;
   chapterClose.close();
-  celebrated = state.has('story.complete');
-  celebratedFlags.clear();
-  for (const c of COMPLETIONS) if (state.has(c.flag)) celebratedFlags.add(c.flag);
-  closedChapters.clear();
-  for (const c of COMPLETIONS) if (state.has(closeFlag(c))) closedChapters.add(c.flag);
+  seedCelebrations();
 }
+
+/**
+ * Seed the guards from what the journal has actually shown. They used to be
+ * read off the completion flags themselves, which are saved the moment the
+ * completing line opens: a tab closed during that conversation came back
+ * with the plate and the chapter's closing spread counted as seen, and they
+ * never came. Plates and spreads now leave their own seen-marks when they
+ * appear. A journal from before the marks existed is taken at its word once:
+ * whatever it had completed counts as celebrated, so nothing re-fires.
+ */
+function seedCelebrations() {
+  if (!state.has('ceremonies.kept')) {
+    const marks = ['ceremonies.kept'];
+    if (state.has('story.complete')) marks.push('seen.plate.story.complete');
+    for (const c of COMPLETIONS) {
+      if (state.has(c.flag)) marks.push(`seen.plate.${c.flag}`);
+      if (state.has(closeFlag(c))) marks.push(`seen.close.${c.flag}`);
+    }
+    state.markQuietly(marks);
+  }
+  celebrated = state.has('seen.plate.story.complete');
+  celebratedFlags.clear();
+  for (const c of COMPLETIONS) if (state.has(`seen.plate.${c.flag}`)) celebratedFlags.add(c.flag);
+  closedChapters.clear();
+  for (const c of COMPLETIONS) if (state.has(`seen.close.${c.flag}`)) closedChapters.add(c.flag);
+}
+seedCelebrations();
 
 /** A journey taken from inside a conversation; the warp runs when it ends. */
 let pendingTravel: { map: string; x: number; y: number; dir: string } | null = null;
@@ -3851,18 +3878,7 @@ function endDialogue() {
   }
 
   // Mail handed over during the conversation unfolds now.
-  if (pendingLetter) {
-    const def = pickLetter(LETTERS, pendingLetter, (w) => state.check(w));
-    openLetterId = pendingLetter;
-    pendingLetter = null;
-    if (def) {
-      player.frozen = true;
-      audio.pageFlip();
-      title.showLetter({ from: def.from, body: def.body, typed: def.typed });
-      return;
-    }
-    openLetterId = null;
-  }
+  if (openPendingLetter()) return;
 
   // Chasca's album unfolds once the conversation has stepped back from it.
   if (state.has('album.open')) {
@@ -3930,6 +3946,7 @@ function endDialogue() {
   }
   if (state.has('story.complete') && !celebrated) {
     celebrated = true;
+    state.markQuietly(['seen.plate.story.complete']);
     applyGateState();
 
 // The identical top-level applyDressings serves here too; a nested copy of
@@ -3943,6 +3960,7 @@ applyDressings();
   for (const c of COMPLETIONS) {
     if (state.has(c.flag) && !celebratedFlags.has(c.flag)) {
       celebratedFlags.add(c.flag);
+      state.markQuietly([`seen.plate.${c.flag}`]);
       showPlate(c.plate, 5200);
       for (const t of c.toasts) toasts.show(t);
       celebrate();
@@ -3953,6 +3971,81 @@ applyDressings();
       scheduleCeremony(c.flag);
     }
   }
+}
+
+/** Unfold the letter waiting to be read, if there is one. */
+function openPendingLetter(): boolean {
+  if (!pendingLetter) return false;
+  const def = pickLetter(LETTERS, pendingLetter, (w) => state.check(w));
+  openLetterId = pendingLetter;
+  pendingLetter = null;
+  if (def) {
+    player.frozen = true;
+    audio.pageFlip();
+    title.showLetter({ from: def.from, body: def.body, typed: def.typed });
+    return true;
+  }
+  openLetterId = null;
+  return false;
+}
+
+// The text box keeps the journal told which conversation is open, so a tab
+// closed mid-talk reopens it on Continue (see resumeInterrupted).
+textbox.onEnter = (id) => {
+  state.talk = { node: id, who: talkingTo?.def.id ?? null };
+};
+textbox.onLeave = () => {
+  state.talk = null;
+  state.save();
+};
+
+/**
+ * Continue after a journey was put down mid-moment: the conversation that
+ * was open reopens at the node it stood on (its effects are idempotent, so
+ * entering again only shows the words again), a letter handed over but
+ * never unfolded unfolds, and a chapter's arrival that the warp never
+ * reached plays. Waits, like the intro, for nothing else to hold the screen.
+ */
+let resumeTimer = 0;
+function resumeInterrupted() {
+  window.clearTimeout(resumeTimer);
+  const talk = state.talk;
+  const due = [...state.flagSet()]
+    .filter((f) => f.startsWith('letter.due.'))
+    .map((f) => f.slice('letter.due.'.length))
+    .filter((id) => !state.has(`letter.read.${id}`));
+  const tryResume = () => {
+    resumeTimer = 0;
+    if (ceremonyMustWait()) {
+      resumeTimer = window.setTimeout(tryResume, 400);
+      return;
+    }
+    const node = talk ? NODES[talk.node] : undefined;
+    // Only a talk that carries the story: a lone examine line is not worth
+    // standing the player back in front of.
+    if (talk && node && (node.effects?.length || node.choices?.length || node.next)) {
+      const v = talk.who ? villagers.find((x) => x.def.id === talk.who && x.def.map === map.id) : undefined;
+      if (v) {
+        v.actor.face(OPPOSITE[player.dir]);
+        v.actor.frozen = true;
+        player.frozen = true;
+        talkingTo = v;
+        settleForTalk(v);
+        textbox.open(NODES, talk.node, v.portrait, endDialogue);
+      } else {
+        startNarration(talk.node);
+      }
+      return;
+    }
+    state.talk = null;
+    const letter = due[0];
+    if (letter) {
+      pendingLetter = letter;
+      if (openPendingLetter()) return;
+    }
+    playArrival();
+  };
+  resumeTimer = window.setTimeout(tryResume, 700);
 }
 
 const PET_NODES = ['allqu.pet1', 'allqu.pet2', 'allqu.pet3', 'allqu.pet4', 'allqu.pet5'];
@@ -4084,6 +4177,9 @@ function openCeremony(flag: string, then?: () => void) {
   const hues = PETALS[regionFor(map.id)] ?? PETALS['andes'] ?? ['#f2e6d0'];
   player.frozen = true;
   audio.pageFlip();
+  // Seen once it is actually on screen; until then a reload owes it again.
+  state.markQuietly([`seen.close.${flag}`]);
+  state.save();
   chapterClose.open(chapter, hues, () => {
     player.frozen = false;
     then?.();
@@ -4839,6 +4935,8 @@ function beginPlay(freshStart: boolean) {
     // the fade. The village nameplate and both control hints were authored,
     // good, and never once seen by a new player.
     pendingWelcome = true;
+  } else {
+    resumeInterrupted();
   }
 }
 
@@ -4861,6 +4959,8 @@ function dropJourneyTransients() {
   introTimer = 0;
   window.clearTimeout(welcomeTimer);
   welcomeTimer = 0;
+  window.clearTimeout(resumeTimer);
+  resumeTimer = 0;
   toasts.dismissAll();
   dropPlate();
   sloshes = 0;
