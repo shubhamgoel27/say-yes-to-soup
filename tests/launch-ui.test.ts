@@ -63,6 +63,27 @@ describe('a journal list keeps the chosen row on the page', () => {
       assert.equal(steering(), false, `${type} done: a later key press reveals again`);
     }
   });
+
+  it('keeps the browser\'s answering mouseover from undoing a key or wheel step', () => {
+    const heard: Record<string, ((e: Event) => void)[]> = {};
+    const root = {
+      hidden: true,
+      addEventListener(type: string, fn: (e: Event) => void) {
+        (heard[type] ??= []).push(fn);
+      },
+    } as unknown as HTMLElement;
+    const ui = new JournalUI(root, JOURNAL, [], [], { hasPage: () => false } as unknown as GameState);
+    (ui as unknown as { steeredAt: number }).steeredAt = 1000; // the arrows just redrew the list
+    const over = (timeStamp: number, type = 'mouseover') => {
+      let stopped = false;
+      const ev = { type, timeStamp, eventPhase: 1, stopPropagation: () => void (stopped = true) } as unknown as Event;
+      for (const fn of heard[type] ?? []) fn(ev);
+      return stopped;
+    };
+    assert.equal(over(1100), true, 'an echo under the resting mouse goes no further');
+    assert.equal(over(1100, 'click'), false, 'a click always counts');
+    assert.equal(over(1400), false, 'a hover after the moment is the player\'s');
+  });
 });
 
 describe('the wheel over the journal', () => {

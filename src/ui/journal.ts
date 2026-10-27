@@ -169,6 +169,8 @@ export class JournalUI {
   /** The latest pointer event to reach the book. While it is still being
    * dispatched, whatever the cursor does is the pointer's doing. */
   private pointerEv: Event | null = null;
+  /** When the arrows, the pad or the wheel last redrew the list. */
+  private steeredAt = -Infinity;
 
   constructor(
     private root: HTMLElement,
@@ -185,8 +187,22 @@ export class JournalUI {
     // or tap is the row under the pointer, and the list must not slide out
     // from under it (the next click would land on a neighbour).
     for (const type of ['mouseover', 'click', 'pointerdown', 'pointerup']) {
-      this.root.addEventListener?.(type, (e) => (this.pointerEv = e), true);
+      this.root.addEventListener?.(type, (e) => this.heard(e), true);
     }
+  }
+
+  /**
+   * A pointer event on its way into the book. A redraw from the arrows, the
+   * pad or the wheel puts new rows (and, scrolled, different rows) under a
+   * resting mouse, and the browser answers with a mouseover where the mouse
+   * already was. That is not the player choosing the row under it, and
+   * taken as a hover it snapped the cursor back from where the keys or the
+   * wheel had just moved it; for a moment after such a redraw, a mouseover
+   * goes no further than the book.
+   */
+  private heard(e: Event) {
+    this.pointerEv = e;
+    if (e.type === 'mouseover' && e.timeStamp - this.steeredAt < 250) e.stopPropagation();
   }
 
   /** True while a hover, click or tap on the book is moving the cursor. */
@@ -401,7 +417,9 @@ export class JournalUI {
     const list = this.root.querySelector<HTMLElement>('.j-list, .j-ph-grid');
     if (!list) return;
     if (kept > 0) list.scrollTop = kept;
-    if (!this.pointerSteering) this.keepSelVisible(list);
+    if (this.pointerSteering) return;
+    this.steeredAt = performance.now();
+    this.keepSelVisible(list);
   }
 
   /** Scroll a page list just enough to show its selected row, the place
