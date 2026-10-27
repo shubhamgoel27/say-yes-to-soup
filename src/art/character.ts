@@ -1,5 +1,5 @@
 import { ART, PAL } from '../engine/config';
-import { dot, outlineSheet, oval, rr, shade, surface, vgrad } from './pix';
+import { dot, outlineSheet, oval, release, rr, shade, surface, vgrad } from './pix';
 import {
   coversHair,
   drawApron,
@@ -135,7 +135,9 @@ export function makeSheet(look: Look): HTMLCanvasElement {
     }
   }
   // The cut-paper edge: figures are illustrations pasted into the world.
-  return outlineSheet(cv, AW, AH);
+  const inked = outlineSheet(cv, AW, AH);
+  release(cv);
+  return inked;
 }
 
 /**

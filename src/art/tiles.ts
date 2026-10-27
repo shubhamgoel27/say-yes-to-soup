@@ -1,5 +1,6 @@
 import { ART, PAL, TILE } from '../engine/config';
-import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, rr, shade, softShadow, surface, vgrad } from './pix';
+import type { MapData } from '../engine/grid';
+import { Rng, blob, cellHash, dot, glowSpot, mute, outlineSheet, oval, rect, release, rr, shade, softShadow, surface, vgrad } from './pix';
 import { ART_SETS, MAP_PINS, MAP_SKINS, SOFT_KINDS } from './sets';
 import { floorPour, grit } from './sets/floor';
 
@@ -60,6 +61,14 @@ export const OVER_SEA = new Set(['hullstern', 'hullport', 'hullstbd', 'hullbowpo
 /** A baked roof cap plus where it hangs relative to its sprite's draw origin. */
 type Cap = { cv: HTMLCanvasElement; dx: number; dy: number };
 
+/**
+ * What the world asks of the tileset: every map, so it can tell which art is
+ * laid as ground (drawn as painted) and which only ever stands as a prop
+ * (drawn inked), and the kinds the renderer draws as wall runs, whose fill is
+ * read off the painted art.
+ */
+export type TileUse = { maps: Record<string, MapData>; runKinds: ReadonlySet<string> };
+
 export class Tileset {
   private v = new Map<string, HTMLCanvasElement[]>();
   private water: HTMLCanvasElement[] = [];
@@ -69,7 +78,7 @@ export class Tileset {
   /** The long soft shadow a building lays on the ground at its feet. */
   private baseShade: HTMLCanvasElement;
 
-  constructor() {
+  constructor(use?: TileUse) {
     // Baked once: at 60fps a per-building createLinearGradient is a small
     // allocation and a shader rebuild every frame, for a strip that never
     // changes. One 8px-wide gradient, stretched to whatever width it lands on.
@@ -1693,13 +1702,85 @@ export class Tileset {
       for (const k of set.pathy ?? []) PATHY.add(k);
     }
 
+    for (const [kind, list] of this.v) for (const cvs of list) this.paintedAs.set(cvs, kind);
+
     // Pre-ink everything at boot. Outlining a 352px building takes a few
     // milliseconds; done lazily it lands mid-walk as a dropped frame, done
     // here it hides inside the load.
+    //
+    // Told the maps, it inks only what a map stands up as a prop, and keeps
+    // one copy of each: art only ever laid as ground is never drawn inked,
+    // and art only ever drawn inked has no use for its painted copy once the
+    // ink (and a building's roof cap) is made from it. Both copies of every
+    // kind came to 73 MB of canvas; see roles() for what keeps a copy.
+    const roles = use ? this.roles(use) : null;
     for (const [kind, list] of this.v) {
+      if (roles?.groundOnly.has(kind)) continue;
       for (const cvs of list) this.inked(cvs, kind);
       if (BUILDINGS.has(kind)) for (const cvs of list) this.bakeCap(cvs, kind);
+      if (roles?.inkOnly.has(kind)) this.keepInkedOnly(kind, list);
     }
+  }
+
+  /**
+   * Which painted copies the world can do without, from every map's layers.
+   * groundOnly: art laid as ground and never named by a map's props; a prop
+   * a story places later is inked the first time it is drawn. inkOnly: art
+   * a map stands up as a prop that is never ground (out of bounds reads as
+   * scree, a missing cell as void), never reached by a kind drawn without
+   * ink, and never a wall run's face. Anything else keeps both, as before.
+   */
+  private roles(use: TileUse): { groundOnly: Set<string>; inkOnly: Set<string> } {
+    const skins = Object.values(MAP_SKINS);
+    /** Every art a kind can be drawn with, on any map. */
+    const artsOf = (kind: string) => [ART_ALIAS[kind] ?? kind, ...skins.flatMap((sk) => (sk[kind] ? [sk[kind]!] : []))];
+    const ground = new Set<string>();
+    const props = new Set<string>();
+    for (const [id, m] of Object.entries(use.maps)) {
+      const art = (kind: string) => MAP_SKINS[id]?.[kind] ?? ART_ALIAS[kind] ?? kind;
+      const groundKinds = new Set(['scree', 'void']);
+      for (const row of m.ground) for (const ch of row) groundKinds.add(m.legend[ch]?.t ?? 'void');
+      for (const k of groundKinds) {
+        ground.add(art(k));
+        if (k === 'path') ground.add(art('pathCore'));
+      }
+      for (const row of m.objects ?? []) {
+        for (const ch of row) {
+          const t = m.legend[ch]?.t;
+          if (t) props.add(art(t));
+        }
+      }
+    }
+    const painted = new Set<string>();
+    for (const k of [...NO_INK, ...SOFT_KINDS, ...use.runKinds]) for (const a of artsOf(k)) painted.add(a);
+    const groundOnly = new Set<string>();
+    const inkOnly = new Set<string>();
+    for (const kind of this.v.keys()) {
+      if (NO_INK.has(kind) || SOFT_KINDS.has(kind)) continue; // never inked: one copy already
+      if (ground.has(kind) && !props.has(kind) && !BUILDINGS.has(kind)) groundOnly.add(kind);
+      else if (props.has(kind) && !ground.has(kind) && !painted.has(kind)) inkOnly.add(kind);
+    }
+    return { groundOnly, inkOnly };
+  }
+
+  /** Swap a kind's painted variants for their inked ones, and hand the painted ones back. */
+  private keepInkedOnly(kind: string, list: HTMLCanvasElement[]) {
+    const inked = list.map((cvs) => this.inkCache.get(cvs) ?? cvs);
+    list.forEach((raw, i) => {
+      const ink = inked[i]!;
+      if (ink === raw) return;
+      this.inkCache.delete(raw);
+      this.inkCache.set(ink, ink);
+      const cap = this.caps.get(raw);
+      if (cap) {
+        this.caps.delete(raw);
+        this.caps.set(ink, cap);
+      }
+      this.paintedAs.delete(raw);
+      this.paintedAs.set(ink, kind);
+      release(raw);
+    });
+    this.v.set(kind, inked);
   }
 
   /**
@@ -2082,11 +2163,17 @@ export class Tileset {
    * Cached per source canvas; costs nothing after the first frame each.
    */
   private inkCache = new Map<HTMLCanvasElement, HTMLCanvasElement>();
+  /** The kind each canvas was painted as. */
+  private paintedAs = new Map<HTMLCanvasElement, string>();
   private inked(cvs: HTMLCanvasElement, kind: string): HTMLCanvasElement {
     if (NO_INK.has(kind) || SOFT_KINDS.has(kind)) return cvs;
     let out = this.inkCache.get(cvs);
     if (!out) {
-      const building = BUILDINGS.has(kind);
+      // Inked as the boot pass inks it, in the style of the art it was
+      // painted as, unless that art is never inked: then the kind drawn.
+      const art = this.paintedAs.get(cvs);
+      const style = art !== undefined && !NO_INK.has(art) && !SOFT_KINDS.has(art) ? art : kind;
+      const building = BUILDINGS.has(style);
       out = outlineSheet(cvs, cvs.width, cvs.height, 'rgba(38,26,16,0.5)', building ? 3 : 2);
       if (building) {
         // One sun for everyone: shade gathers left, light rests on the right.
