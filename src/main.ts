@@ -120,8 +120,12 @@ input.onPadPress = () => {
 const state = new GameState();
 state.load();
 
-const maps: Record<string, TileMap> = Object.fromEntries(
-  Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)]),
+// No prototype: a saved place names its map by string, and an unpacked
+// journal is someone else's file. On a plain object 'constructor' or
+// '__proto__' read as a map, and boot threw on every load from then on.
+const maps: Record<string, TileMap> = Object.assign(
+  Object.create(null) as Record<string, TileMap>,
+  Object.fromEntries(Object.entries(REGION_MAPS).map(([id, data]) => [id, new TileMap(data)])),
 );
 const startMapMaybe = maps['village'];
 if (!startMapMaybe) throw new Error('village map missing');
