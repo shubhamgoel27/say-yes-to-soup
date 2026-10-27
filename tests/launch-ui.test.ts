@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { describe, it, mock } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { JOURNAL } from '../src/content/world';
+import { CHAPTERS, JOURNAL, TASKS } from '../src/content/world';
+import { ROUTE } from '../src/content/route';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import { PauseMenu } from '../src/ui/pause';
 import { Textbox } from '../src/ui/textbox';
@@ -323,5 +324,33 @@ describe('a gamepad in hand reads the pad\'s own buttons', () => {
     }
     menu.open('settings', true);
     assert.match(text(), /on \(M\)/);
+  });
+});
+
+describe('the earlier pages of the Tasks tab open to every hand', () => {
+  it('lie open for the keyboard and the pad, folded for a click or a tap', () => {
+    fakeDocument();
+    const flags = new Set(['intro.done', CHAPTERS[1]?.arrival?.flag ?? '']);
+    const state = {
+      has: (f: string) => flags.has(f),
+      check: () => false,
+      hasPage: () => false,
+      errand: null,
+      flagSet: () => flags,
+      place: null,
+    } as unknown as GameState;
+    const root = { hidden: true, innerHTML: '', querySelector: () => null, querySelectorAll: () => [] };
+    const ui = new JournalUI(root as never, JOURNAL, TASKS, ROUTE, state);
+    const leaves = () => [...root.innerHTML.matchAll(/<details class="jt-leaf"( open)?>/g)].map((m) => !!m[1]);
+    try {
+      for (const [hand, open] of [['keys', true], ['pad', true], ['mouse', false], ['touch', false]] as const) {
+        noteDevice(hand);
+        ui.open(); // the book opens on the Tasks tab
+        assert.ok(leaves().length > 0, 'chapter one is behind the traveler');
+        assert.ok(leaves().every((o) => o === open), `${hand}: ${open ? 'open' : 'folded'}`);
+      }
+    } finally {
+      noteDevice('keys');
+    }
   });
 });

@@ -8,7 +8,7 @@ import { makePhotoArt } from '../art/albumart';
 import { PHOTOS } from './album';
 import { openTasks } from '../content/guide';
 import { taskPage, type ChapterLeaf } from './taskpage';
-import { keysOrTaps } from './responsive';
+import { keysOrTaps, lastDevice } from './responsive';
 
 export type { TaskDef };
 
@@ -679,6 +679,10 @@ export class JournalUI {
       page.done.length || page.dishes.length || page.people.length
         ? doneList(page) + marks(page)
         : '<div class="jt-none">Nothing crossed off here yet. The day is young.</div>';
+    // A folded leaf opens to a click or a tap, and to nothing on a keyboard
+    // or a pad (the action key closes the book). For those hands the earlier
+    // pages lie open, and the arrows read down to them.
+    const unfold = lastDevice() === 'keys' || lastDevice() === 'pad' ? ' open' : '';
     const pastHtml = page.past.length
       ? `<div class="jt-past"><div class="jt-k">earlier pages</div>${page.past
           .map((leaf) => {
@@ -689,7 +693,7 @@ export class JournalUI {
             ]
               .filter(Boolean)
               .join(' &middot; ');
-            return `<details class="jt-leaf"><summary><span class="jt-leaf-name">${leaf.place}</span><span class="jt-leaf-tally">${tally}</span></summary>${doneList(leaf)}${marks(leaf)}</details>`;
+            return `<details class="jt-leaf"${unfold}><summary><span class="jt-leaf-name">${leaf.place}</span><span class="jt-leaf-tally">${tally}</span></summary>${doneList(leaf)}${marks(leaf)}</details>`;
           })
           .join('')}</div>`
       : '';
