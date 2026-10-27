@@ -78,7 +78,18 @@ describe('the shelf: slot key prefixing', () => {
     assert.ok(s.has('survived'), 'the last known-good copy must engage');
   });
 
+  it('?fresh does nothing outside the dev server', () => {
+    store.set('elsewhere.save', rawSave(['keep']));
+    setActiveSlot(0);
+    loc.search = '?fresh';
+    GameState.freshConsumed = false;
+    new GameState().load();
+    assert.ok(store.has('elsewhere.save'), 'a shipped build never erases on a URL');
+  });
+
   it('?fresh clears only the active slot', () => {
+    GameState.allowFresh = true;
+    GameState.freshConsumed = false;
     store.set('elsewhere.save', rawSave(['keep']));
     store.set('elsewhere.save.2', rawSave(['wipe']));
     setActiveSlot(1);
@@ -86,6 +97,7 @@ describe('the shelf: slot key prefixing', () => {
     new GameState().load();
     assert.ok(!store.has('elsewhere.save.2'), 'the active slot is cleared');
     assert.ok(store.has('elsewhere.save'), 'the neighbouring journal is untouched');
+    GameState.allowFresh = false;
   });
 });
 

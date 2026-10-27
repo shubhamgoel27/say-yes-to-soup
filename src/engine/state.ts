@@ -282,6 +282,10 @@ type Events = {
 export class GameState {
   /** ?fresh may clear storage once per page load; see load(). */
   static freshConsumed = false;
+  /** ?fresh is for automation on the dev server only. In a shipped build a
+   * shared or bookmarked link carrying it erased the player's journal and its
+   * backup on every load, including the reload a warning had asked for. */
+  static allowFresh = (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true;
   private flags = new Set<string>();
   private journal = new Set<string>();
   errand: string | null = null;
@@ -578,7 +582,7 @@ export class GameState {
       // ?fresh serves automation; it must fire once per page load, not on
       // every journal switch (reloadJourney re-enters load(), and a shared
       // link with ?fresh once ate the active slot on every shelf browse).
-      if (new URLSearchParams(location.search).has('fresh') && !GameState.freshConsumed) {
+      if (GameState.allowFresh && new URLSearchParams(location.search).has('fresh') && !GameState.freshConsumed) {
         GameState.freshConsumed = true;
         localStorage.removeItem(k.save);
         localStorage.removeItem(k.bak);
