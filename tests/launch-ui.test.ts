@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { JOURNAL } from '../src/content/world';
-import { JournalUI, revealScroll } from '../src/ui/journal';
+import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import type { GameState } from '../src/engine/state';
 
 /**
@@ -55,5 +55,56 @@ describe('a journal list keeps the chosen row on the page', () => {
       (ev as { eventPhase: number }).eventPhase = 0; // dispatch finished
       assert.equal(steering(), false, `${type} done: a later key press reveals again`);
     }
+  });
+});
+
+describe('the wheel over the journal', () => {
+  it('lets a page that still has text below scroll, and turns pages at its ends', () => {
+    // 600px of page in a 300px window.
+    assert.equal(canScrollFurther(0, 300, 600, 40), true);
+    assert.equal(canScrollFurther(300, 300, 600, 40), false, 'at the foot: the wheel turns the page');
+    assert.equal(canScrollFurther(0, 300, 600, -40), false, 'at the head going up: the wheel turns back');
+    assert.equal(canScrollFurther(120, 300, 600, -40), true);
+    assert.equal(canScrollFurther(0, 300, 300, 40), false, 'a short page never scrolls');
+    assert.equal(canScrollFurther(120, 300, 600, 0), false);
+  });
+
+  it('turns one page per mouse notch, in either delta mode', () => {
+    const w = new WheelSteps();
+    assert.equal(w.feed(0, 100, 0, 1000), 1);
+    assert.equal(w.feed(0, 100, 0, 1100), 1);
+    assert.equal(w.feed(0, -100, 0, 1200), -1);
+    assert.equal(w.feed(0, 3, 1, 1300), 1, 'Firefox counts lines');
+    assert.equal(w.feed(0, -1, 2, 1400), -1);
+  });
+
+  it('turns a trackpad glide into a step per 80px, not one per event', () => {
+    const w = new WheelSteps();
+    const steps: number[] = [];
+    for (let i = 0; i < 40; i++) steps.push(w.feed(0, 8, 0, 1000 + i * 16));
+    assert.equal(steps.filter((s) => s !== 0).length, (40 * 8) / 80);
+    assert.ok(steps.every((s) => s >= 0));
+  });
+
+  it('reads sideways and empty deltas as nothing (deltaY 0 once meant up)', () => {
+    const w = new WheelSteps();
+    assert.equal(w.feed(0, 0, 0, 1000), 0);
+    assert.equal(w.feed(30, 10, 0, 1010), 0);
+    assert.equal(w.feed(-30, -30, 0, 1020), 0);
+  });
+
+  it('starts afresh after a pause or a change of direction', () => {
+    const w = new WheelSteps();
+    assert.equal(w.feed(0, 60, 0, 1000), 0);
+    assert.equal(w.feed(0, 60, 0, 2000), 0, 'the earlier 60px went stale');
+    assert.equal(w.feed(0, -60, 0, 2010), 0, 'reversing drops the downward travel');
+    assert.equal(w.feed(0, -60, 0, 2020), -1);
+  });
+
+  it('does not let the glide that scrolled a page go on to turn it', () => {
+    const w = new WheelSteps();
+    w.hold(1000); // the page text took the wheel up to here
+    for (let t = 1016; t < 1600; t += 16) assert.equal(w.feed(0, 40, 0, t), 0, `momentum at ${t}`);
+    assert.equal(w.feed(0, 100, 0, 2000), 1, 'a fresh turn after a rest');
   });
 });

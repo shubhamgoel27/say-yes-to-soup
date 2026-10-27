@@ -6673,18 +6673,8 @@ journalRoot.addEventListener('mouseover', (e) => {
   const item = (e.target as HTMLElement).closest('.j-item');
   if (item && steerTo(journalRoot, '.j-item', item, (d) => journalUI.onDir(d))) audio.select();
 });
-journalRoot.addEventListener(
-  'wheel',
-  (e) => {
-    if (!journalUI.isOpen) return;
-    const t = e.target as HTMLElement;
-    // The route and task pages scroll natively; entry lists page by cursor.
-    if (t.closest('.j-route') || t.closest('.j-tasks')) return;
-    e.preventDefault();
-    journalUI.onDir(e.deltaY > 0 ? 'down' : 'up');
-  },
-  { passive: false },
-);
+// The book decides: page text scrolls natively, entry lists step by cursor.
+journalRoot.addEventListener('wheel', (e) => journalUI.onWheel(e), { passive: false });
 
 // ---- minigame panels: the center acts, the edges steer all four ways ----
 //

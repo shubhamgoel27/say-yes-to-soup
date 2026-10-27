@@ -93,6 +93,58 @@ export function revealScroll(
   return scroll;
 }
 
+/** Whether a box scrolled to `top` still has somewhere to go along `dy`. */
+export function canScrollFurther(top: number, view: number, height: number, dy: number): boolean {
+  if (dy > 0) return top + view < height - 1;
+  if (dy < 0) return top > 0;
+  return false;
+}
+
+/**
+ * Wheel travel turned into page steps. A mouse notch (or any line- or
+ * page-mode event) is one step; a trackpad's pixels add up to one step per
+ * `stride`, so a swipe no longer spins through the list and wraps. Sideways
+ * and empty deltas are not a step (deltaY 0 used to read as "up"). After the
+ * page text has been scrolling, the same glide does not go on to turn the
+ * page: a pause of `rest` ms comes first.
+ */
+export class WheelSteps {
+  private acc = 0;
+  private lastAt = -Infinity;
+  private heldAt = -Infinity;
+
+  constructor(
+    private stride = 80,
+    private rest = 250,
+  ) {}
+
+  /** The wheel just scrolled something natively at `now`. */
+  hold(now: number) {
+    this.heldAt = now;
+    this.acc = 0;
+  }
+
+  /** One wheel event: 1 for a page down, -1 for up, 0 for not yet. */
+  feed(dx: number, dy: number, mode: number, now: number): -1 | 0 | 1 {
+    if (Math.abs(dx) >= Math.abs(dy)) return 0;
+    if (now - this.heldAt < this.rest) {
+      this.heldAt = now;
+      return 0;
+    }
+    if (mode !== 0) {
+      this.acc = 0;
+      return dy > 0 ? 1 : -1;
+    }
+    if (now - this.lastAt > 400 || Math.sign(dy) !== Math.sign(this.acc)) this.acc = 0;
+    this.lastAt = now;
+    this.acc += dy;
+    if (Math.abs(this.acc) < this.stride) return 0;
+    const step = this.acc > 0 ? 1 : -1;
+    this.acc = 0;
+    return step;
+  }
+}
+
 export class JournalUI {
   private tab = 0;
   private opening = false;
@@ -230,6 +282,36 @@ export class JournalUI {
       else this.cursor = (this.cursor + 1) % count;
     }
     this.render();
+  }
+
+  /** Wheel travel over the book, waiting to become a page step. */
+  private wheel = new WheelSteps();
+
+  /**
+   * The wheel over the book. A page's own text scrolls natively for as long
+   * as it has further to go that way: the end of a dish page (your entry,
+   * her margin note) sat below the fold in a 1280x720 frame and the wheel
+   * would not reach it. Elsewhere the wheel turns pages, one per notch or
+   * per 80px of a trackpad's glide; sideways travel is left to the tab
+   * strip. The route and task pages scroll natively throughout.
+   */
+  onWheel(e: WheelEvent) {
+    if (!this.isOpen) return;
+    const t = e.target as HTMLElement | null;
+    if (!t || typeof t.closest !== 'function') return;
+    if (t.closest('.j-route, .j-tasks')) return;
+    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) {
+      if (!t.closest('.j-tabs')) e.preventDefault();
+      return;
+    }
+    const page = t.closest<HTMLElement>('.j-detail');
+    if (page && canScrollFurther(page.scrollTop, page.clientHeight, page.scrollHeight, e.deltaY)) {
+      this.wheel.hold(e.timeStamp);
+      return;
+    }
+    e.preventDefault();
+    const step = this.wheel.feed(e.deltaX, e.deltaY, e.deltaMode, e.timeStamp);
+    if (step !== 0) this.onDir(step > 0 ? 'down' : 'up');
   }
 
   private tabEntries(): JournalEntry[] {
