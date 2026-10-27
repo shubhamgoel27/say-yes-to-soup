@@ -29,7 +29,7 @@ import { capUnder } from './ui/games/scene';
 import { makeStick } from './ui/stick';
 import { ChapterCloseUI, closingChapter } from './ui/chapterclose';
 import { chipHolds } from './ui/taskpage';
-import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, noteDevice, trackUiScale, watchScrollCue } from './ui/responsive';
+import { ChipFold, initRotateNudge, isCoarseTouch, keysOrTaps, lastDevice, noteDevice, padWords, trackUiScale, watchScrollCue } from './ui/responsive';
 import { onTouchTap, touchActive } from './ui/pointer';
 import { PixiStage, type LightSpec } from './render/stage';
 import {
@@ -695,6 +695,20 @@ function dropOrphanedReplays() {
 }
 dropOrphanedReplays();
 
+/**
+ * A journal that set an omiyage on the ofrenda before the altar remembered
+ * whose it took has only the shared flag. Which one went is not written
+ * anywhere, so every omiyage still held is read as the one the altar took,
+ * as the Return used to read it; otherwise it offered to hand over a gift
+ * the altar already had.
+ */
+function settleOldOmiyage() {
+  const whose = ['petro', 'pilar', 'aurelio'];
+  if (!state.has('c9.of.omiyage') || whose.some((w) => state.has(`c9.of.omiyage.${w}`))) return;
+  state.markQuietly(whose.filter((w) => state.has(`omiyage.${w}`)).map((w) => `c9.of.omiyage.${w}`));
+}
+settleOldOmiyage();
+
 /** Open air near where a card was set aside: that card, forgiven. */
 function declinedNearHere(): GameEntry | null {
   return gameByFlag(armed.nearHere(map.id, player.x, player.y, (f) => state.has(f)));
@@ -759,7 +773,11 @@ function openPanel(g: GameEntry) {
 function renderHowto() {
   const g = howtoFor;
   if (!g) return;
+  // The card's lines were worded when their chapter loaded, before anyone
+  // had touched a pad: a pad in hand rewords them as the card is drawn.
+  const padHand = lastDevice() === 'pad';
   const lines = (g.def.howTo ?? [])
+    .map((l) => (padHand ? padWords(l) : l))
     .map((l) => `<div class="ht-line">${l}</div>`)
     .join('');
   const replaying = state.has('replay.mode');
@@ -781,7 +799,7 @@ function renderHowto() {
       ${lines ? `<div class="ht-lines">${lines}</div>` : ''}
       </div>
       <div class="ht-side">
-      ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${g.def.hardHow}</div>` : ''}
+      ${hardOffered && g.def.hardHow ? `<div class="ht-hard">${padHand ? padWords(g.def.hardHow) : g.def.hardHow}</div>` : ''}
       <div class="ht-opts">
         ${howtoOpts
           .map((t, i) => `<div class="ht-opt${i === howtoSel ? ' sel' : ''}" data-ht="${i}">${i === howtoSel ? '&#9656;&nbsp;' : ''}${t}${t === HARD_OPT && hardDone ? '&nbsp;&#10038;' : ''}</div>`)
@@ -5150,6 +5168,7 @@ function reloadJourney() {
   state.forget();
   state.load();
   dropOrphanedReplays();
+  settleOldOmiyage();
   journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   // The boats went with the overrides; forget them too, or a boat moored in

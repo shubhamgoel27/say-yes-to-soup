@@ -121,12 +121,13 @@ describe('the wheel over the journal', () => {
     assert.equal(w.feed(-30, -30, 0, 1020), 0);
   });
 
-  it('starts afresh after a pause or a change of direction', () => {
+  it('turns at once on the first notch of a turn, however small', () => {
     const w = new WheelSteps();
-    assert.equal(w.feed(0, 60, 0, 1000), 0);
-    assert.equal(w.feed(0, 60, 0, 2000), 0, 'the earlier 60px went stale');
-    assert.equal(w.feed(0, -60, 0, 2010), 0, 'reversing drops the downward travel');
-    assert.equal(w.feed(0, -60, 0, 2020), -1);
+    assert.equal(w.feed(0, 4, 0, 1000), 1, 'a slow Mac notch is a few pixels');
+    assert.equal(w.feed(0, 4, 0, 2000), 1, 'and so is the next, a second later');
+    assert.equal(w.feed(0, -4, 0, 2010), -1, 'reversing is a new turn');
+    assert.equal(w.feed(0, -60, 0, 2020), 0, 'the rest of a burst is summed');
+    assert.equal(w.feed(0, -30, 0, 2030), -1);
   });
 
   it('does not let the glide that scrolled a page go on to turn it', () => {
@@ -415,5 +416,13 @@ describe('itch\'s Fullscreen button counts as full screen', () => {
     } finally {
       delete (globalThis as { window?: unknown }).window;
     }
+  });
+});
+
+describe('pad words in prose', () => {
+  it('a sentence never opens on a bare A that reads as the article', () => {
+    assert.equal(padWords('A swell rolls in. Space to paddle.'), 'A swell rolls in. The A button to paddle.');
+    assert.equal(padWords('Space paddles, Esc rests.'), 'The A button paddles, B rests.');
+    assert.equal(padWords('Space to begin &middot; Esc, not yet'), 'A to begin &middot; B, not yet');
   });
 });

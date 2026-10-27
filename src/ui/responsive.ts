@@ -71,7 +71,13 @@ if (typeof window !== 'undefined' && typeof window.addEventListener === 'functio
  */
 export function padWords(keys: string): string {
   if (keys === 'space') return 'A'; // a painted key cap
+  // In prose a sentence opening on a bare 'A' reads as the article ("A to
+  // paddle"), so there the key is named as a button. Legends and chips
+  // ('A to begin · B, not yet') keep the short form.
+  const prose = /[.!?](\s|$)/.test(keys);
+  const opener = prose ? /(^|[.!?]\s+)(Space|Enter|Esc)\b/g : /(?!)/g;
   return keys
+    .replace(opener, (_m, lead: string, k: string) => `${lead}The ${k === 'Esc' ? 'B' : 'A'} button`)
     .replace(/\bthe arrow keys or WASD\b/g, 'the stick or the d-pad')
     .replace(/\b(?:the )?arrow keys\b/g, 'the d-pad')
     .replace(/\bany key\b/g, 'any button')

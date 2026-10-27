@@ -725,7 +725,7 @@ export const CROSSING_NODES: NodeMap = {
   // sitting on the foredeck when the light comes back (./staging.ts).
   'c3.bosun.tonoon': {
     lines: [
-      { text: 'You sleep badly. Somewhere aft, someone is practising a royal voice through a funnel of rolled cardboard.' },
+      { text: 'You sleep badly. Somewhere aft, someone is practicing a royal voice through a funnel of rolled cardboard.' },
     ],
     effects: ['set:c3.court.noon', 'travel:ship,22,9,up'],
   },

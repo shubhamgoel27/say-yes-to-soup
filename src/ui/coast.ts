@@ -599,9 +599,11 @@ export class WavePanel {
     if (this.stage === 'paddle') {
       if (this.eager.on) {
         // The paddle is still coming back from the last eager stroke; pushing
-        // again only keeps it in the air.
+        // again only keeps it in the air. Said, not silent: a press swallowed
+        // without a word read as the game ignoring a good stroke.
         this.eager.start(EAGER_HOLD);
         this.paddleK = Math.min(this.paddleK, 0.5);
+        this.hint = 'The paddle is still coming back up. Wait for it, then for the swell.';
         return;
       }
       // The strike zone: the wave is on top of you.

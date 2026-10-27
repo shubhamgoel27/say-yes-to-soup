@@ -120,6 +120,7 @@ export function canScrollFurther(top: number, view: number, height: number, dy: 
 export class WheelSteps {
   private acc = 0;
   private lastAt = -Infinity;
+  private lastDir = 0;
   private heldAt = -Infinity;
 
   constructor(
@@ -140,17 +141,22 @@ export class WheelSteps {
       this.heldAt = now;
       return 0;
     }
-    if (mode !== 0) {
-      this.acc = 0;
-      return dy > 0 ? 1 : -1;
-    }
-    if (now - this.lastAt > 400 || Math.sign(dy) !== Math.sign(this.acc)) this.acc = 0;
+    const dir = dy > 0 ? 1 : -1;
+    // The first event of a turn steps at once, whatever its size: a slow
+    // notch on a Mac mouse arrives as a few pixels, and summing to a stride
+    // within a burst meant a slow wheel never turned a page at all. Only
+    // the rest of a burst (a trackpad's glide) is summed, one step a stride.
+    const fresh = mode !== 0 || now - this.lastAt > 400 || dir !== this.lastDir;
     this.lastAt = now;
+    this.lastDir = dir;
+    if (fresh) {
+      this.acc = 0;
+      return dir;
+    }
     this.acc += dy;
     if (Math.abs(this.acc) < this.stride) return 0;
-    const step = this.acc > 0 ? 1 : -1;
     this.acc = 0;
-    return step;
+    return dir;
   }
 }
 
@@ -322,6 +328,9 @@ export class JournalUI {
    */
   onWheel(e: WheelEvent) {
     if (!this.isOpen) return;
+    // deltaMode first: Firefox reports lines only if it is read before the
+    // deltas, and pixels otherwise.
+    const mode = e.deltaMode;
     const t = e.target as HTMLElement | null;
     if (!t || typeof t.closest !== 'function') return;
     if (t.closest('.j-route, .j-tasks')) return;
@@ -335,7 +344,7 @@ export class JournalUI {
       return;
     }
     e.preventDefault();
-    const step = this.wheel.feed(e.deltaX, e.deltaY, e.deltaMode, e.timeStamp);
+    const step = this.wheel.feed(e.deltaX, e.deltaY, mode, e.timeStamp);
     if (step !== 0) this.onDir(step > 0 ? 'down' : 'up');
   }
 

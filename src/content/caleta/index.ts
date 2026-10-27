@@ -28,7 +28,7 @@ export const CHAPTER: ChapterDef = {
         handWords('Past the break the horse leans; the arrows keep it in the middle while the wave carries you home.'),
       ],
       hardHow:
-        'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. On the ride home, a rail held under is a swim.',
+        'The hard water: swells come fast, the strike is a handsbreadth wide, and only two may escape you. An eager stroke still hangs the paddle in the air a beat. On the ride home, a rail held under is a swim.',
       make: (root, audio) => new WavePanel(root, audio as AudioBus),
     },
     {
