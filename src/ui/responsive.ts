@@ -33,12 +33,64 @@ export function isCoarseTouch(): boolean {
   return typeof matchMedia === 'function' && matchMedia(COARSE_TOUCH_QUERY).matches;
 }
 
+/** What the player last played with: the keys, a mouse (still the desk's
+ * words), a finger, or a gamepad. */
+export type Device = 'keys' | 'mouse' | 'touch' | 'pad';
+
+let device: Device | null = null;
+
 /**
- * Keyboard words on a desk, finger words on glass. Copy that names a key
- * (Space, Esc, N, the arrows) reads as a riddle under a thumb, so every such
- * line passes both spellings through here. Same capability test as the pad.
+ * Record the hand on the game. Keys and pointers are heard here; the engine's
+ * gamepad poll (src/engine/input.ts) calls noteDevice('pad') on each button
+ * press or deliberate stick push, since a pad fires no DOM events.
  */
-export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch()): string {
+export function noteDevice(d: Device): void {
+  device = d;
+}
+
+/** The device the player last used, or the one this screen implies before
+ * anything has been pressed. */
+export function lastDevice(): Device {
+  return device ?? (isCoarseTouch() ? 'touch' : 'keys');
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+  // Capture on window, before any card can stop the event on its way down.
+  window.addEventListener('keydown', () => noteDevice('keys'), { capture: true, passive: true });
+  window.addEventListener('pointerdown', (e) => noteDevice(e.pointerType === 'mouse' ? 'mouse' : 'touch'), {
+    capture: true,
+    passive: true,
+  });
+}
+
+/**
+ * Keyboard copy in a gamepad's words: Space (and Enter) is A, Esc is B, J is
+ * Y, N is X, the arrow keys are the stick or the d-pad, and any key is any
+ * button. Only the spellings the game's copy uses are rewritten; a lone
+ * capital J or N in prose is left alone. Pure, for the tests.
+ */
+export function padWords(keys: string): string {
+  if (keys === 'space') return 'A'; // a painted key cap
+  return keys
+    .replace(/\bthe arrow keys or WASD\b/g, 'the stick or the d-pad')
+    .replace(/\b(?:the )?arrow keys\b/g, 'the d-pad')
+    .replace(/\bany key\b/g, 'any button')
+    .replace(/\b(?:Space|Enter)\b/g, 'A')
+    .replace(/\bEsc\b/g, 'B')
+    .replace(/\b([Pp]ress) J\b/g, '$1 Y')
+    .replace(/\bJ (close|closes|opens)\b/g, 'Y $1')
+    .replace(/\b([Pp]ress) N\b/g, '$1 X');
+}
+
+/**
+ * Keyboard words on a desk, finger words on glass, and pad words while a
+ * gamepad is in hand. Copy that names a key (Space, Esc, N, the arrows)
+ * reads as a riddle under a thumb, so every such line passes both spellings
+ * through here; a pad player gets the keyboard spelling in the pad's words.
+ * Same capability test as the touch pad.
+ */
+export function keysOrTaps(keys: string, taps: string, coarse = isCoarseTouch(), pad = device === 'pad'): string {
+  if (pad) return padWords(keys);
   return coarse ? taps : keys;
 }
 

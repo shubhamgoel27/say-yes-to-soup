@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { goSideways, isCoarseTouch, isPhone, keysOrTaps } from './responsive';
+import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -137,6 +137,16 @@ function HELP_ROWS(): [string, string][] {
     ['Pause', '&#9776;'],
     ['Volume', 'Settings'],
   ];
+  // A gamepad in hand: its own buttons, not a keyboard's.
+  const pad: [string, string][] = [
+    ['Walk', 'the stick or the d-pad'],
+    ['Talk, touch, sit', 'A'],
+    ['Back', 'B'],
+    ['The journal', 'Y'],
+    ['Ask the thread', 'X, once the band is on your wrist'],
+    ['Pause', 'Start'],
+  ];
+  if (lastDevice() === 'pad') return pad;
   return isCoarseTouch() ? glass : desk;
 }
 
@@ -296,8 +306,8 @@ export class PauseMenu {
       },
       {
         label: 'Sound',
-        // The (M) is a key; a touch screen has none to press.
-        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() ? '' : ' (M)'),
+        // The (M) is a key; a touch screen or a gamepad has none to press.
+        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() || lastDevice() === 'pad' ? '' : ' (M)'),
         adjust: () => void this.audio.toggleMute(),
       },
       {

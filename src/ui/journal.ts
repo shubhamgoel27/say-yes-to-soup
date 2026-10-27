@@ -8,6 +8,7 @@ import { makePhotoArt } from '../art/albumart';
 import { PHOTOS } from './album';
 import { openTasks } from '../content/guide';
 import { taskPage, type ChapterLeaf } from './taskpage';
+import { keysOrTaps } from './responsive';
 
 export type { TaskDef };
 
@@ -56,16 +57,24 @@ const PHOTO_TILTS = [-1.9, 1.5, -1.1, 2.1];
 const COARSE =
   typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
-/** The one-line hint at the book's foot, per tab flavor. */
+/** The one-line hint at the book's foot, per tab flavor; a pad reads Y
+ * where the keyboard reads J. */
 function hintLine(kind: 'pages' | 'photos' | 'flat'): string {
-  if (COARSE) {
-    if (kind === 'pages') return 'tap a tab &nbsp; tap a page &nbsp; &#9998; closes';
-    if (kind === 'photos') return 'tap a tab &nbsp; tap a print &nbsp; &#9998; closes';
-    return 'tap a tab for sections &nbsp; &#9998; closes';
+  if (kind === 'pages') {
+    return keysOrTaps(
+      '&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close',
+      'tap a tab &nbsp; tap a page &nbsp; &#9998; closes',
+      COARSE,
+    );
   }
-  if (kind === 'pages') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close';
-  if (kind === 'photos') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close';
-  return '&#8592;&#8594; sections &nbsp; J close';
+  if (kind === 'photos') {
+    return keysOrTaps(
+      '&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close',
+      'tap a tab &nbsp; tap a print &nbsp; &#9998; closes',
+      COARSE,
+    );
+  }
+  return keysOrTaps('&#8592;&#8594; sections &nbsp; J close', 'tap a tab for sections &nbsp; &#9998; closes', COARSE);
 }
 
 /** One key per rhyme regardless of which half the player is looking at. */

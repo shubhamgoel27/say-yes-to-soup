@@ -5,6 +5,8 @@ import { JOURNAL } from '../src/content/world';
 import { JournalUI, WheelSteps, canScrollFurther, revealScroll } from '../src/ui/journal';
 import { PauseMenu } from '../src/ui/pause';
 import { Textbox } from '../src/ui/textbox';
+import { keysOrTaps, lastDevice, noteDevice, padWords } from '../src/ui/responsive';
+import { handWords } from '../src/ui/games/scene';
 import type { NodeMap } from '../src/content/schema';
 import type { GameState } from '../src/engine/state';
 
@@ -257,5 +259,69 @@ describe('the screen reader hears each line, once, and only while it is up', () 
     } finally {
       mock.timers.reset();
     }
+  });
+});
+
+describe('a gamepad in hand reads the pad\'s own buttons', () => {
+  it('spells the keyboard copy in pad words', () => {
+    assert.equal(padWords('Space to begin &middot; Esc, not yet'), 'A to begin &middot; B, not yet');
+    assert.equal(padWords('press J to open the journal'), 'press Y to open the journal');
+    assert.equal(padWords('press N when the way is lost'), 'press X when the way is lost');
+    assert.equal(padWords('you sit. (any key to rise)'), 'you sit. (any button to rise)');
+    assert.equal(
+      padWords('walk with the arrow keys or WASD, or click where you want to go'),
+      'walk with the stick or the d-pad, or click where you want to go',
+    );
+    assert.equal(padWords('&#8592;&#8594; adjust &nbsp; Esc back'), '&#8592;&#8594; adjust &nbsp; B back');
+    assert.equal(padWords('&#8592;&#8594; sections &nbsp; J close'), '&#8592;&#8594; sections &nbsp; Y close');
+    assert.equal(padWords('Press Space.'), 'Press A.');
+    assert.equal(padWords('space'), 'A', 'the painted key cap');
+  });
+
+  it('leaves a lone capital in prose alone', () => {
+    assert.equal(padWords('J. Smith signed it, and N was the ninth.'), 'J. Smith signed it, and N was the ninth.');
+  });
+
+  it('follows the last device used: pad words on a pad, keys and taps as before otherwise', () => {
+    assert.equal(lastDevice(), 'keys', 'nothing pressed on a desk yet');
+    noteDevice('pad');
+    try {
+      assert.equal(lastDevice(), 'pad');
+      assert.equal(keysOrTaps('Esc back', 'tap beside the page'), 'B back');
+      assert.equal(keysOrTaps('Esc back', 'tap beside the page', true), 'B back', 'a pad on a phone is still a pad');
+      assert.equal(handWords('Arrows to drift it, Space to scoop.'), 'Arrows to drift it, A to scoop.');
+    } finally {
+      noteDevice('keys');
+    }
+    assert.equal(keysOrTaps('Esc back', 'tap beside the page'), 'Esc back');
+    assert.equal(keysOrTaps('Esc back', 'tap beside the page', true), 'tap beside the page');
+    noteDevice('touch');
+    assert.equal(keysOrTaps('Esc back', 'tap beside the page', false), 'Esc back', 'the screen test still decides');
+    noteDevice('keys');
+  });
+
+  it('How to play lists the pad\'s buttons to a pad player, and Settings drops the (M)', () => {
+    fakeDocument();
+    const root = { hidden: true, innerHTML: '', querySelector: () => null };
+    const audio = { mix: { music: 1, sfx: 1, ambience: 1 }, muted: false };
+    const menu = new PauseMenu(root as never, audio as never, { onTextSpeed() {}, onToTitle() {} });
+    const text = () => root.innerHTML.replace(/<[^>]+>/g, '|').replace(/\s*\|\s*/g, '|');
+    menu.open('help', true);
+    assert.match(text(), /J \/ Tab \/ Y/);
+    assert.match(text(), /Esc back/);
+    noteDevice('pad');
+    try {
+      menu.open('help', true);
+      assert.match(text(), /The journal\|+Y\|/);
+      assert.match(text(), /Pause\|+Start\|/);
+      assert.match(text(), /B back/);
+      assert.doesNotMatch(text(), /\bEsc\b|\bSpace\b|\bJ \//);
+      menu.open('settings', true);
+      assert.match(text(), /Sound\|+on\|/, 'no M key on a pad');
+    } finally {
+      noteDevice('keys');
+    }
+    menu.open('settings', true);
+    assert.match(text(), /on \(M\)/);
   });
 });
