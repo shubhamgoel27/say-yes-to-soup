@@ -2,7 +2,7 @@ import type { Dir } from '../engine/input';
 import type { AudioBus } from '../engine/audio';
 import { CHAPTERS, NODES } from '../content/world';
 import { ROUTE } from '../content/route';
-import { goSideways, isCoarseTouch, isPhone, keysOrTaps } from './responsive';
+import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice, looksFullscreen } from './responsive';
 
 /**
  * The pause menu: a page torn from the journal, because every surface here is.
@@ -137,6 +137,16 @@ function HELP_ROWS(): [string, string][] {
     ['Pause', '&#9776;'],
     ['Volume', 'Settings'],
   ];
+  // A gamepad in hand: its own buttons, not a keyboard's.
+  const pad: [string, string][] = [
+    ['Walk', 'the stick or the d-pad'],
+    ['Talk, touch, sit', 'A'],
+    ['Back', 'B'],
+    ['The journal', 'Y'],
+    ['Ask the thread', 'X, once the band is on your wrist'],
+    ['Pause', 'Start'],
+  ];
+  if (lastDevice() === 'pad') return pad;
   return isCoarseTouch() ? glass : desk;
 }
 
@@ -296,8 +306,8 @@ export class PauseMenu {
       },
       {
         label: 'Sound',
-        // The (M) is a key; a touch screen has none to press.
-        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() ? '' : ' (M)'),
+        // The (M) is a key; a touch screen or a gamepad has none to press.
+        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() || lastDevice() === 'pad' ? '' : ' (M)'),
         adjust: () => void this.audio.toggleMute(),
       },
       {
@@ -346,9 +356,16 @@ export class PauseMenu {
         ? [
             {
               label: 'Fullscreen',
-              value: () => (document.fullscreenElement ? 'on' : 'off'),
+              // itch's Fullscreen button fills the screen from the page around
+              // the game, so this document never sees a fullscreen element
+              // there; the row used to read "off" while the game filled the glass.
+              value: () => (looksFullscreen() ? 'on' : 'off'),
               adjust: () => {
                 if (document.fullscreenElement) void document.exitFullscreen();
+                // Full, but not this page's doing (itch's button, the browser's
+                // own): only that button or Esc can leave it, and there is
+                // nothing fuller to enter.
+                else if (looksFullscreen()) return;
                 // On a phone the room and the landscape lock travel together;
                 // elsewhere fullscreen alone is the whole ask.
                 else if (isPhone()) void goSideways();
@@ -382,6 +399,12 @@ export class PauseMenu {
       else if (dir === 'down') this.cursor = (this.cursor + 1) % items.length;
       else items[this.cursor]?.adjust(dir === 'right' ? 1 : -1);
       this.render();
+    } else if (dir === 'up' || dir === 'down') {
+      // How to play and the credits have no cursor: the arrows read down
+      // the card instead, so a keyboard or a pad reaches the lines below the
+      // fold on a short window (the thanks, the licences, the last word).
+      const card = this.root.querySelector<HTMLElement>('.p-card');
+      card?.scrollBy?.({ top: dir === 'down' ? 80 : -80, behavior: 'smooth' });
     }
   }
 

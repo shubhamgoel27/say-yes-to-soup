@@ -8,6 +8,7 @@ import { makePhotoArt } from '../art/albumart';
 import { PHOTOS } from './album';
 import { openTasks } from '../content/guide';
 import { taskPage, type ChapterLeaf } from './taskpage';
+import { keysOrTaps, lastDevice } from './responsive';
 
 export type { TaskDef };
 
@@ -56,21 +57,101 @@ const PHOTO_TILTS = [-1.9, 1.5, -1.1, 2.1];
 const COARSE =
   typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
-/** The one-line hint at the book's foot, per tab flavor. */
+/** The one-line hint at the book's foot, per tab flavor; a pad reads Y
+ * where the keyboard reads J. */
 function hintLine(kind: 'pages' | 'photos' | 'flat'): string {
-  if (COARSE) {
-    if (kind === 'pages') return 'tap a tab &nbsp; tap a page &nbsp; &#9998; closes';
-    if (kind === 'photos') return 'tap a tab &nbsp; tap a print &nbsp; &#9998; closes';
-    return 'tap a tab for sections &nbsp; &#9998; closes';
+  if (kind === 'pages') {
+    return keysOrTaps(
+      '&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close',
+      'tap a tab &nbsp; tap a page &nbsp; &#9998; closes',
+      COARSE,
+    );
   }
-  if (kind === 'pages') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; pages &nbsp; J close';
-  if (kind === 'photos') return '&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close';
-  return '&#8592;&#8594; sections &nbsp; J close';
+  if (kind === 'photos') {
+    return keysOrTaps(
+      '&#8592;&#8594; sections &nbsp; &#8593;&#8595; photos &nbsp; J close',
+      'tap a tab &nbsp; tap a print &nbsp; &#9998; closes',
+      COARSE,
+    );
+  }
+  return keysOrTaps('&#8592;&#8594; sections &nbsp; J close', 'tap a tab for sections &nbsp; &#9998; closes', COARSE);
 }
 
 /** One key per rhyme regardless of which half the player is looking at. */
 function threadKey(a: string, b: string): string {
   return [a, b].sort().join('~');
+}
+
+/**
+ * Where a scrolled list must sit so a row spanning [top, bottom) (in the
+ * list's own content coordinates) is wholly on the page, with `pad` of air
+ * above and `padEnd` below (the list's foot fades out, so the last row needs
+ * more). The scroll it already has when the row is on the page: the list
+ * moves only as far as it must, never recentres.
+ */
+export function revealScroll(
+  top: number,
+  bottom: number,
+  scroll: number,
+  view: number,
+  pad = 8,
+  padEnd = pad,
+): number {
+  if (top - pad < scroll) return Math.max(0, top - pad);
+  if (bottom + padEnd > scroll + view) return Math.min(Math.max(0, top - pad), bottom + padEnd - view);
+  return scroll;
+}
+
+/** Whether a box scrolled to `top` still has somewhere to go along `dy`. */
+export function canScrollFurther(top: number, view: number, height: number, dy: number): boolean {
+  if (dy > 0) return top + view < height - 1;
+  if (dy < 0) return top > 0;
+  return false;
+}
+
+/**
+ * Wheel travel turned into page steps. A mouse notch (or any line- or
+ * page-mode event) is one step; a trackpad's pixels add up to one step per
+ * `stride`, so a swipe no longer spins through the list and wraps. Sideways
+ * and empty deltas are not a step (deltaY 0 used to read as "up"). After the
+ * page text has been scrolling, the same glide does not go on to turn the
+ * page: a pause of `rest` ms comes first.
+ */
+export class WheelSteps {
+  private acc = 0;
+  private lastAt = -Infinity;
+  private heldAt = -Infinity;
+
+  constructor(
+    private stride = 80,
+    private rest = 250,
+  ) {}
+
+  /** The wheel just scrolled something natively at `now`. */
+  hold(now: number) {
+    this.heldAt = now;
+    this.acc = 0;
+  }
+
+  /** One wheel event: 1 for a page down, -1 for up, 0 for not yet. */
+  feed(dx: number, dy: number, mode: number, now: number): -1 | 0 | 1 {
+    if (Math.abs(dx) >= Math.abs(dy)) return 0;
+    if (now - this.heldAt < this.rest) {
+      this.heldAt = now;
+      return 0;
+    }
+    if (mode !== 0) {
+      this.acc = 0;
+      return dy > 0 ? 1 : -1;
+    }
+    if (now - this.lastAt > 400 || Math.sign(dy) !== Math.sign(this.acc)) this.acc = 0;
+    this.lastAt = now;
+    this.acc += dy;
+    if (Math.abs(this.acc) < this.stride) return 0;
+    const step = this.acc > 0 ? 1 : -1;
+    this.acc = 0;
+    return step;
+  }
 }
 
 export class JournalUI {
@@ -83,6 +164,13 @@ export class JournalUI {
   private seenPages = new Set<string>();
   /** Rhyme pairs whose stitched thread has already drawn itself in. */
   private seenThreads = new Set<string>();
+  /** The tab the book last drew, so a redraw of the same tab keeps its place. */
+  private drawnTab = -1;
+  /** The latest pointer event to reach the book. While it is still being
+   * dispatched, whatever the cursor does is the pointer's doing. */
+  private pointerEv: Event | null = null;
+  /** When the arrows, the pad or the wheel last redrew the list. */
+  private steeredAt = -Infinity;
 
   constructor(
     private root: HTMLElement,
@@ -95,6 +183,31 @@ export class JournalUI {
     private placeOf: (id: string) => string | undefined = () => undefined,
   ) {
     this.resync();
+    // Captured before main.ts's own handlers hear it: a row chosen by hover
+    // or tap is the row under the pointer, and the list must not slide out
+    // from under it (the next click would land on a neighbour).
+    for (const type of ['mouseover', 'click', 'pointerdown', 'pointerup']) {
+      this.root.addEventListener?.(type, (e) => this.heard(e), true);
+    }
+  }
+
+  /**
+   * A pointer event on its way into the book. A redraw from the arrows, the
+   * pad or the wheel puts new rows (and, scrolled, different rows) under a
+   * resting mouse, and the browser answers with a mouseover where the mouse
+   * already was. That is not the player choosing the row under it, and
+   * taken as a hover it snapped the cursor back from where the keys or the
+   * wheel had just moved it; for a moment after such a redraw, a mouseover
+   * goes no further than the book.
+   */
+  private heard(e: Event) {
+    this.pointerEv = e;
+    if (e.type === 'mouseover' && e.timeStamp - this.steeredAt < 250) e.stopPropagation();
+  }
+
+  /** True while a hover, click or tap on the book is moving the cursor. */
+  private get pointerSteering(): boolean {
+    return !!this.pointerEv && this.pointerEv.eventPhase !== 0; // 0: Event.NONE, dispatch over
   }
 
   /** Everything already written counts as seen: at boot, and whenever a
@@ -196,6 +309,36 @@ export class JournalUI {
     this.render();
   }
 
+  /** Wheel travel over the book, waiting to become a page step. */
+  private wheel = new WheelSteps();
+
+  /**
+   * The wheel over the book. A page's own text scrolls natively for as long
+   * as it has further to go that way: the end of a dish page (your entry,
+   * her margin note) sat below the fold in a 1280x720 frame and the wheel
+   * would not reach it. Elsewhere the wheel turns pages, one per notch or
+   * per 80px of a trackpad's glide; sideways travel is left to the tab
+   * strip. The route and task pages scroll natively throughout.
+   */
+  onWheel(e: WheelEvent) {
+    if (!this.isOpen) return;
+    const t = e.target as HTMLElement | null;
+    if (!t || typeof t.closest !== 'function') return;
+    if (t.closest('.j-route, .j-tasks')) return;
+    if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) {
+      if (!t.closest('.j-tabs')) e.preventDefault();
+      return;
+    }
+    const page = t.closest<HTMLElement>('.j-detail');
+    if (page && canScrollFurther(page.scrollTop, page.clientHeight, page.scrollHeight, e.deltaY)) {
+      this.wheel.hold(e.timeStamp);
+      return;
+    }
+    e.preventDefault();
+    const step = this.wheel.feed(e.deltaX, e.deltaY, e.deltaMode, e.timeStamp);
+    if (step !== 0) this.onDir(step > 0 ? 'down' : 'up');
+  }
+
   private tabEntries(): JournalEntry[] {
     const t = TABS[this.tab]?.id;
     if (t === 'tasks' || t === 'route') return [];
@@ -255,10 +398,57 @@ export class JournalUI {
     sync();
   }
 
+  /**
+   * Every render rebuilds the book through innerHTML, and a rebuilt list
+   * starts at its top: with fifty pages on a tab the cursor walked off the
+   * page under the arrows, and a hover after dragging the scrollbar snapped
+   * the list back so the click picked the wrong row. The same tab keeps its
+   * scroll; the arrows, the pad and the wheel then bring the chosen row onto
+   * the page, while a hover or a tap (whose row is already under the
+   * pointer) leaves the list exactly where it was.
+   */
   private render() {
     const prev = this.root.querySelector<HTMLElement>('.j-tabs')?.scrollLeft ?? 0;
+    const same = this.drawnTab === this.tab;
+    const kept = same ? (this.root.querySelector<HTMLElement>('.j-list, .j-ph-grid')?.scrollTop ?? 0) : 0;
     this.renderTab();
+    this.drawnTab = this.tab;
     this.fitTabs(prev);
+    const list = this.root.querySelector<HTMLElement>('.j-list, .j-ph-grid');
+    if (!list) return;
+    if (kept > 0) list.scrollTop = kept;
+    if (this.pointerSteering) return;
+    this.steeredAt = performance.now();
+    this.keepSelVisible(list);
+  }
+
+  /** Scroll a page list just enough to show its selected row, the place
+   * heading it starts included; the last row brings the foot along. */
+  private keepSelVisible(list: HTMLElement) {
+    if (list.scrollHeight <= list.clientHeight) return;
+    const sel = list.querySelector<HTMLElement>('.j-item.sel');
+    if (!sel) return;
+    const rows = list.querySelectorAll('.j-item');
+    if (rows[0] === sel) {
+      list.scrollTop = 0;
+      return;
+    }
+    if (rows[rows.length - 1] === sel) {
+      list.scrollTop = list.scrollHeight;
+      return;
+    }
+    const head = sel.previousElementSibling;
+    const topEl = head?.classList.contains('j-place') ? (head as HTMLElement) : sel;
+    const box = list.getBoundingClientRect();
+    const at = (y: number) => y - box.top - list.clientTop + list.scrollTop;
+    list.scrollTop = revealScroll(
+      at(topEl.getBoundingClientRect().top),
+      at(sel.getBoundingClientRect().bottom),
+      list.scrollTop,
+      list.clientHeight,
+      8,
+      20,
+    );
   }
 
   private renderTab() {
@@ -423,7 +613,6 @@ export class JournalUI {
       copy.getContext('2d')?.drawImage(src, 0, 0);
       slot.appendChild(copy);
     }
-    this.root.querySelector('.j-ph-print.sel')?.scrollIntoView({ block: 'nearest' });
   }
 
   /**
@@ -508,6 +697,10 @@ export class JournalUI {
       page.done.length || page.dishes.length || page.people.length
         ? doneList(page) + marks(page)
         : '<div class="jt-none">Nothing crossed off here yet. The day is young.</div>';
+    // A folded leaf opens to a click or a tap, and to nothing on a keyboard
+    // or a pad (the action key closes the book). For those hands the earlier
+    // pages lie open, and the arrows read down to them.
+    const unfold = lastDevice() === 'keys' || lastDevice() === 'pad' ? ' open' : '';
     const pastHtml = page.past.length
       ? `<div class="jt-past"><div class="jt-k">earlier pages</div>${page.past
           .map((leaf) => {
@@ -518,7 +711,7 @@ export class JournalUI {
             ]
               .filter(Boolean)
               .join(' &middot; ');
-            return `<details class="jt-leaf"><summary><span class="jt-leaf-name">${leaf.place}</span><span class="jt-leaf-tally">${tally}</span></summary>${doneList(leaf)}${marks(leaf)}</details>`;
+            return `<details class="jt-leaf"${unfold}><summary><span class="jt-leaf-name">${leaf.place}</span><span class="jt-leaf-tally">${tally}</span></summary>${doneList(leaf)}${marks(leaf)}</details>`;
           })
           .join('')}</div>`
       : '';

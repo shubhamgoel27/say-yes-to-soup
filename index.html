@@ -91,6 +91,8 @@
         --fs-hand16: 16px;
         --fs-hand17: 17px;
         --fs-hand175: 17.5px;
+        /* The small caps that name a hand (NANI, 1974 / YOU / NOW). */
+        --fs-label: 10.5px;
       }
       body.text-large {
         --fs-11: 14px;
@@ -106,6 +108,7 @@
         --fs-hand16: 18.5px;
         --fs-hand17: 19.5px;
         --fs-hand175: 20px;
+        --fs-label: 13px;
       }
 
       /* The kitchen before the journey: painted from this file alone, so it is
@@ -626,6 +629,7 @@
          * book past the viewport, taking the end of the Route tab with it. */
         min-height: 0;
         max-height: 92vh;
+        max-height: 92dvh;
         overflow: hidden;
         display: flex;
         flex-direction: column;
@@ -744,10 +748,10 @@
       .j-nani span, .j-you span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
         transform: none;
       }
@@ -760,10 +764,10 @@
       .j-thread span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         font-style: normal;
       }
       .j-thread-rule {
@@ -871,10 +875,10 @@
       .jt-nani span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.65;
+        color: #6b5334;
         transform: none;
       }
       .jt-nowcol, .jt-herecol { min-width: 0; }
@@ -899,7 +903,7 @@
       }
       .jt-k {
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
         color: #6b5334;
@@ -920,10 +924,10 @@
       .jt-bag span {
         display: block;
         font-family: 'Literata', Georgia, serif;
-        font-size: 10.5px;
+        font-size: var(--fs-label);
         text-transform: uppercase;
         letter-spacing: 0.14em;
-        opacity: 0.75;
+        color: #6b5334;
         transform: none;
       }
       .jt-also, .jt-done { list-style: none; margin: 0; padding: 0; }
@@ -1630,6 +1634,7 @@
         padding: 24px 32px 14px;
         line-height: 1.45;
         max-height: 86vh;
+        max-height: 86dvh;
         overflow-y: auto;
         text-align: center;
         animation: letterOpen 0.4s ease-out;
@@ -2011,6 +2016,7 @@
         color: var(--ink);
         padding: 20px 28px 22px;
         max-height: 86vh;
+        max-height: 86dvh;
         overflow-y: auto;
       }
       .p-card.opening {
@@ -2245,6 +2251,7 @@
         border-radius: 6px;
         text-align: left;
         min-height: min(58vh, 372px);
+        min-height: min(58dvh, 372px);
         color: #3a2c1e;
         transform: rotate(-0.25deg);
         background:
@@ -2960,6 +2967,7 @@
           --fs-hand16: 17.5px;
           --fs-hand17: 18.5px;
           --fs-hand175: 19px;
+          --fs-label: 12px;
         }
       }
 
@@ -2995,6 +3003,7 @@
           width: min(96vw, 700px);
           max-width: calc(100vw - 2 * (152px + env(safe-area-inset-left, 0px)));
           max-height: calc(100vh - 8px);
+          max-height: calc(100dvh - 8px);
           box-sizing: border-box;
           overflow-y: auto;
           padding: 8px 12px 8px;
@@ -3005,17 +3014,24 @@
           height: auto !important;
           max-width: 100%;
           max-height: min(62vh, 400px);
+          max-height: min(62dvh, 400px);
         }
         .w-title { margin-bottom: 4px; }
         .w-hint { margin-bottom: 4px; }
         /* The key legend is desk furniture; the pad and taps replace it. */
         .w-legend { display: none; }
         .ht-strip-card { margin-top: 2%; }
-        .p-card { max-height: calc(100vh - 10px); overflow-y: auto; box-sizing: border-box; }
+        .p-card {
+          max-height: calc(100vh - 10px);
+          max-height: calc(100dvh - 10px);
+          overflow-y: auto;
+          box-sizing: border-box;
+        }
         /* The how-to card holds still and its body scrolls: the foot (the
          * hint, the "more below" pill) stays on the page under the text. */
         .ht-card {
           max-height: calc(100vh - 10px);
+          max-height: calc(100dvh - 10px);
           box-sizing: border-box;
           display: flex;
           flex-direction: column;
@@ -3025,6 +3041,10 @@
         /* A scene capped by height is narrower than its panel: sit it in
          * the middle rather than against the left rule. */
         .g-stage canvas { margin: 0 auto; }
+        /* The caps above follow the visible room (dvh: a phone's toolbar
+         * takes from 100vh). Should a card still outgrow it, it hangs from
+         * the top, where it scrolls, rather than off both edges at once. */
+        #pause, #weave, .mg-overlay, .ht-veil { place-items: safe center; }
       }
 
       /* ---- landscape phones: the cover and Settings open wide ----
@@ -3059,6 +3079,7 @@
           margin: 8px 0 0;
           width: 100%;
           max-width: calc((100vh - 170px) * 1.8);
+          max-width: calc((100dvh - 170px) * 1.8);
           justify-self: center;
         }
         .t-sub { grid-area: sub; margin: 4px 0 8px; max-width: none; align-self: end; }
@@ -3211,7 +3232,7 @@
          * page, even on a 320px-tall phone. */
         #title { padding: 6px 0; }
         .t-cover { padding-top: 12px; padding-bottom: 10px; }
-        .t-art { max-width: calc((100vh - 215px) * 1.8); }
+        .t-art { max-width: calc((100vh - 215px) * 1.8); max-width: calc((100dvh - 215px) * 1.8); }
         .t-sub { font-size: 14px; line-height: 1.35; margin-bottom: 4px; }
         .t-controls { margin-top: 6px; }
       }
