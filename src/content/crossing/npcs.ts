@@ -784,7 +784,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Three photographs now: the star plain, the sea’s edge, the middle of everything. The album is growing a spine.' },
+      { who: 'Chasca', text: 'The middle of everything is in the album now, and you in front of it. The album is growing a spine.' },
     ],
   },
 

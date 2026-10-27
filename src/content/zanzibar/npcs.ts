@@ -971,7 +971,7 @@ export const ZANZIBAR_NODES: NodeMap = {
     effects: ['set:c7.met.chasca', 'set:photo.flash', 'set:photo.c7.door'],
   },
   'c7.chasca.again': {
-    lines: [{ who: 'Chasca', text: 'Eight frames now, one per road. The album is starting to look like a sentence.' }],
+    lines: [{ who: 'Chasca', text: 'The carved door is in the album now, one more road. The album is starting to look like a sentence.' }],
   },
 
   // ---------------- the counter and the mail ----------------

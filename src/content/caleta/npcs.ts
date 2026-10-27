@@ -972,7 +972,7 @@ export const CALETA_NODES: NodeMap = {
   },
   'mar.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Two photographs of you now: the star plain and the sea’s edge. The album is becoming a road.' },
+      { who: 'Chasca', text: 'The sea’s edge is in the album now, and you in front of it. The album is becoming a road.' },
     ],
   },
 

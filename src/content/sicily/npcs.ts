@@ -920,7 +920,7 @@ export const SICILY_NODES: NodeMap = {
   },
   'c8.chasca.album': {
     lines: [
-      { who: 'Chasca', text: 'Nine photographs now, and you in front of each one, slightly more somebody.' },
+      { who: 'Chasca', text: 'The stones are in the album now, and you in front of them, slightly more somebody.' },
       { who: 'Chasca', text: 'The album ends where you end. No, that came out wrong. Where you arrive. Better.' },
     ],
   },
