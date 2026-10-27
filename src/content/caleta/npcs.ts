@@ -1363,6 +1363,9 @@ export const CALETA_EXAMINES: Record<string, ExamineArm[]> = {
     { when: { has: ['c2.gift.sent'], not: ['letter.read.home.aurelio'] }, node: 'mar.post.aurelio' },
     { node: 'mar.post.idle' },
   ],
+  // On this pier the Crossing's gangway front-runs these words once the
+  // chapter is done, and from the first night at sea on, the Return's
+  // homecoming sign front-runs both (this chapter cannot name either flag).
   piersign: [
     { when: { has: ['c2.complete'] }, node: 'mar.pier.next' },
     { node: 'mar.pier.locked' },

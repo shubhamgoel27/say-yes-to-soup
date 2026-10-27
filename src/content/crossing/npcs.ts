@@ -1229,8 +1229,11 @@ export const CROSSING_EXAMINES: Record<string, ExamineArm[]> = {
   ],
   table: [{ map: 'galley', node: 'c3.ex.table' }],
   shelf: [{ map: 'galley', node: 'c3.ex.shelf' }],
-  // The entry hook: La Caleta's pier sign now boards the Yacana.
-  piersign: [{ map: 'la-caleta', when: { has: ['c2.complete'] }, node: 'c3.board' }],
+  // The entry hook: La Caleta's pier sign now boards the Yacana, and only
+  // until she sails. The ship has no road back to this pier, so a sign that
+  // still boarded her in the Return (the homecoming lands two tiles from it)
+  // put the player back on the freighter with every leg to sail again.
+  piersign: [{ map: 'la-caleta', when: { has: ['c2.complete'], not: ['c3.arrived'] }, node: 'c3.board' }],
 };
 
 /** Event-triggered nodes, listed with gating so tests can prove them reachable. */

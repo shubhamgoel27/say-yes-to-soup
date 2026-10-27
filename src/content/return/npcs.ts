@@ -192,6 +192,13 @@ export const RETURN_NODES: NodeMap = {
     ],
     effects: ['set:c10.arrived', 'journal:words.elsewhere'],
   },
+  // The sign that once boarded you, read from the other side of the trip.
+  'c10.ex.piersign': {
+    lines: [
+      { text: 'THE CROSSING, says the board, the paint gone soft in the garúa. Under it, in chalk and in a hurry, someone has added: YA VOLVIÓ.' },
+      { text: 'The thirty rungs were kinder going down. The road up starts where the pier ends.' },
+    ],
+  },
 
   // ---------------- Marisol, your stall forever ----------------
   'c10.marisol.reunion': {
@@ -943,6 +950,12 @@ export const RETURN_EXAMINES: Record<string, ExamineArm[]> = {
     { map: 'village', when: { has: ['c10.well.called'], not: ['c10.carmen.her'] }, node: 'c10.ex.jug.waiting' },
     { node: 'c10.ex.jug' },
   ],
+  // La Caleta's pier sign, home again. Tagged to the pier so it front-runs
+  // the Crossing's gangway and the coast's own sign. Gated on the crossing
+  // having begun, not on c10.arrived: past the first night at sea the only
+  // way back to this pier is the voyage home, and a save that lands here
+  // before the homecoming's arrival flag is raised must read this too.
+  piersign: [{ map: 'la-caleta', when: { has: ['c3.arrived'] }, node: 'c10.ex.piersign' }],
   // The cairn on the pass road. Tagged to the road so it front-runs the
   // first chapter's own apacheta words only while the stone is in hand.
   apacheta: [

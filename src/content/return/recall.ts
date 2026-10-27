@@ -10,6 +10,7 @@ export const RECALL: RecallManifest = {
   consumes: [
     'c9.complete', // the arrival gate: the ship home sails after Oaxaca
     'c2.complete', // story spine flag (permitted in Return conds)
+    'c3.arrived', // past it, La Caleta's pier sign only ever welcomes you home
     'story.complete', // story spine flag (permitted in Return conds)
     'c9.debt.paid', // Aurelio hears about the ledger: the seed came up
     'pilar.gift.puffer', // the museum's exhibit one, variant by creature
