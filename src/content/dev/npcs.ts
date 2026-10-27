@@ -80,6 +80,11 @@ export const NPCS: NpcDef[] = [
     },
     entry: [
       { when: { not: ['met.rosa'] }, node: 'rosa.first' },
+      // Effects land (and save) as each line opens, and met.rosa rises two
+      // lines before the bundle is asked for. A journal closed in between
+      // came back with a Rosa who had nothing to say and a chapter that
+      // could not go on; she asks again.
+      { when: { has: ['met.rosa'], not: ['errand.rosa-bundle', 'bundle.delivered'] }, node: 'rosa.bundle' },
       { when: { has: ['errand.rosa-bundle'], not: ['bundle.delivered'] }, node: 'rosa.waiting' },
       { when: { has: ['bundle.delivered'], not: ['rosa.thanked'] }, node: 'rosa.even' },
       { when: { has: ['carry.chicha'] }, node: 'rosa.carrying' },
@@ -109,6 +114,9 @@ export const NPCS: NpcDef[] = [
     },
     entry: [
       { when: { has: ['errand.rosa-bundle'], not: ['bundle.delivered'] }, node: 'justina.bundle' },
+      // The bundle is delivered a line before she points at the mounds; a
+      // journal closed between the two had no dig and no way to one.
+      { when: { has: ['bundle.delivered'], not: ['dig.invite'] }, node: 'justina.watia' },
       // Normally handed over the moment the watia is eaten; this arm only
       // catches a journey saved between the two.
       {

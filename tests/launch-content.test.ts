@@ -121,3 +121,65 @@ describe('the Return never puts you back on the ship', () => {
     assert.ok(!reach(home!).some((id) => (NODES[id]!.effects ?? []).some((e) => e.startsWith('travel:'))));
   });
 });
+
+/** The node a person opens with under these flags, as the engine picks it. */
+const entryFor = (npcId: string, flags: Iterable<string>) => {
+  const set = new Set(flags);
+  return NPCS.find((n) => n.id === npcId)?.entry.find((e) => holds(set, e.when))?.node;
+};
+
+/** Every flag (and page) raised along any open branch from `start`. */
+const raises = (start: string, flags: Iterable<string>): Set<string> => {
+  const out = new Set(flags);
+  for (const id of reach(start)) {
+    for (const eff of NODES[id]!.effects ?? []) {
+      if (eff.startsWith('set:')) out.add(eff.slice(4));
+      if (eff.startsWith('journal:')) out.add(`page.${eff.slice(8)}`);
+    }
+  }
+  return out;
+};
+
+/**
+ * Effects land, and save, as each line opens. A journal closed between the
+ * line that marks the meeting and the line that hands over the errand came
+ * back with a person who no longer had the errand to give.
+ */
+describe('a journal closed mid-conversation does not strand the story', () => {
+  const afterNode = (...nodes: string[]) =>
+    nodes.flatMap((id) =>
+      (NODES[id]!.effects ?? []).flatMap((e) =>
+        e.startsWith('set:') ? [e.slice(4)] : e.startsWith('journal:') ? [`page.${e.slice(8)}`] : [],
+      ),
+    );
+
+  const cases: [string, string, string[], string[], string][] = [
+    // [who, why, saved before the reload, the line the reload landed on, what must still be reachable]
+    ['rosa', 'the bundle', [], ['rosa.first', 'rosa.coins'], 'errand.rosa-bundle'],
+    ['rosa', 'the bundle', [], ['rosa.first', 'rosa.thanks'], 'errand.rosa-bundle'],
+    ['justina', 'the dig', ['met.rosa', 'errand.rosa-bundle'], ['justina.bundle'], 'dig.invite'],
+    ['joginder', 'the seva', ['c11.arrived', 'c11.met.jog', 'c11.rumal'], ['c11.jog.meal'], 'errand.seva-atta'],
+    ['alfio', 'the granita', ['c8.arrived'], ['c8.alfio.first'], 'c8.granita'],
+    ['alfio', 'the granita', ['c8.arrived'], ['c8.alfio.first', 'c8.alfio.cappuccino'], 'c8.granita'],
+  ];
+  for (const [who, why, before, lines, need] of cases) {
+    it(`${who}: reloaded after ${lines.at(-1)}, ${why} is still offered`, () => {
+      const saved = [...before, ...afterNode(...lines)];
+      assert.ok(!saved.includes(need), `${need} was already saved; the case proves nothing`);
+      const node = entryFor(who, saved);
+      assert.ok(node, `${who} has nothing to say`);
+      assert.ok(raises(node, saved).has(need), `${who} opens with ${node}, which never reaches ${need}`);
+    });
+  }
+
+  it('re-entering those lines doubles nothing', () => {
+    // Each catch-up re-enters a line whose effects only raise flags, fill
+    // pages (a page already held is not filled twice) or name the errand
+    // already named: nothing counts, nothing is handed out twice.
+    for (const id of ['rosa.bundle', 'justina.watia', 'c11.jog.meal', 'c8.alfio.first']) {
+      for (const eff of NODES[id]!.effects ?? []) {
+        assert.match(eff, /^(set|journal|errand):/, `${id}: ${eff} is not safe to apply twice`);
+      }
+    }
+  });
+});

@@ -78,6 +78,9 @@ export const DELHI_NPCS: NpcDef[] = [
       // Head covered first, then the row: both are the player's own doing.
       { when: { has: ['c11.met.jog'], not: ['c11.rumal'] }, node: 'c11.jog.basket' },
       { when: { has: ['c11.rumal'], not: ['c11.jog.fed'] }, node: 'c11.jog.sit' },
+      // Fed is saved as the meal opens, the Tuesday ask only once you answer
+      // him. A journal closed at the meal sits you back down in the row.
+      { when: { has: ['c11.jog.fed'], not: ['errand.seva-atta', 'c11.seva.done'] }, node: 'c11.jog.meal' },
       { when: { has: ['errand.seva-atta'], not: ['c11.seva.done'] }, node: 'c11.jog.seva' },
       { when: { has: ['c11.seva.done'], not: ['c11.jog2'] }, node: 'c11.jog.tuesday' },
       { node: 'c11.jog.idle' },
