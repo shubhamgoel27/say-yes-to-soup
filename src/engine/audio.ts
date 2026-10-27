@@ -314,6 +314,8 @@ export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private windGain: GainNode | null = null;
+  /** Depth of the wind's slow breath; scaled with the wind itself. */
+  private windLfoGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
   private sfxGain: GainNode | null = null;
   /** One 3s noise buffer shared by every burst sound. Allocating a fresh
@@ -464,6 +466,7 @@ export class AudioBus {
       // The audition harness reads counters and taps the bus. Dev only.
       if (import.meta.env.DEV) (globalThis as unknown as { __soupAudio: AudioBus }).__soupAudio = this;
       this.windGain = windGain;
+      this.windLfoGain = lfoGain;
       this.musicGain = musicGain;
       this.sfxGain = sfxGain;
       this.applyScene();
@@ -624,9 +627,16 @@ export class AudioBus {
 
   /** Typewriter tick, throttled to every third character. */
   blip() {
+    this.pluck(1150, 0, 0.025, 0.05);
+  }
+
+  /** The typewriter's tick: one in three letters, or it chatters. Kept apart
+   * from blip(), whose callers are single cues (a minigame's tick, the SFX
+   * slider's preview) and once went silent two times in three. */
+  private typeBlip() {
     this.blipCount++;
     if (this.blipCount % 3 !== 0) return;
-    this.pluck(1150, 0, 0.025, 0.05);
+    this.blip();
   }
 
   /**
@@ -635,7 +645,7 @@ export class AudioBus {
    */
   speak(who: string | undefined) {
     if (!who) {
-      this.blip();
+      this.typeBlip();
       return;
     }
     const v = VOICES[this.region] ?? VOICES['andes'];
@@ -867,6 +877,9 @@ export class AudioBus {
     let target = this.scene === 'interior' ? 0.03 : this.scene === 'road' ? 0.14 : 0.1;
     if (this.sitting && this.scene !== 'interior') target += 0.06;
     this.windGain.gain.setTargetAtTime(target * this.mix.ambience, this.ctx.currentTime, 1.0);
+    // The breath rides on top of the level; left at its fixed depth it kept
+    // the wind audible with Ambience at zero, and swinging past zero indoors.
+    this.windLfoGain?.gain.setTargetAtTime(0.45 * target * this.mix.ambience, this.ctx.currentTime, 1.0);
   }
 
   // ----------------------------------------------------------- instruments
@@ -1423,6 +1436,8 @@ export class AudioBus {
 
   /** Grid-locked region gestures: strums and picking, not melody. */
   private gesture(t: number, step: number, bar: number, chord: number[]) {
+    // The ending's hush is the hum alone; the region's hands rest with it.
+    if (this.hearthPrev) return;
     const r = this.region;
     if (r === 'andes' && step === 0 && bar % 2 === 1) {
       // Charango rasgueado on the bar turn: doubled courses, ten cents apart.

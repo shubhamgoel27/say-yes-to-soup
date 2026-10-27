@@ -52,3 +52,21 @@ describe('the music slider is the ceiling for everything else', () => {
     assert.ok(last()! > seated);
   });
 });
+
+describe('the ambience slider reaches the wind', () => {
+  it('at zero, the wind and its breath both fall silent', () => {
+    const bus = new AudioBus();
+    const level: number[] = [];
+    const breath: number[] = [];
+    Object.assign(bus as unknown as Record<string, unknown>, {
+      ctx: { currentTime: 0, state: 'running' },
+      windGain: { gain: { setTargetAtTime: (v: number) => void level.push(v) } },
+      windLfoGain: { gain: { setTargetAtTime: (v: number) => void breath.push(v) } },
+    });
+    bus.setMix('ambience', 0);
+    assert.equal(level.at(-1), 0);
+    assert.equal(breath.at(-1), 0);
+    bus.setMix('ambience', 1);
+    assert.ok(breath.at(-1)! > 0 && breath.at(-1)! < level.at(-1)!, 'the breath stays shallower than the wind');
+  });
+});
