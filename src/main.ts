@@ -5071,6 +5071,14 @@ function dropJourneyTransients() {
   dropPlate();
   sloshes = 0;
   PETAL_SOWN.clear();
+  // The ending's latches: a new journey begun right after the last page
+  // opened with the clock held at dusk, and a second ending in the same tab
+  // lost its hearth hush and the lamp's lean.
+  afterglow = false;
+  lampOver = false;
+  lampT = 0;
+  // Steps queued to settle someone for a talk belong to the old world.
+  settleSteps.clear();
 }
 
 /**
@@ -5212,6 +5220,9 @@ function continueJourney() {
 function freshSlate() {
   dropJourneyTransients();
   state.reset();
+  // A new journey starts in the morning, as the first one did, not at
+  // whatever hour the last one was put down.
+  if (!Number.isFinite(todOverride)) dayT = 0.18;
   journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   // The boats went with the overrides; forget them too, or a boat moored in
