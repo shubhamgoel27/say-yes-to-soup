@@ -378,6 +378,11 @@ export class AudioBus {
     void ctx.resume().catch(() => {});
   }
 
+  /** True once the context exists and is actually playing. */
+  get running(): boolean {
+    return this.ctx?.state === 'running';
+  }
+
   /** Create the context. Must be called from a user gesture the first time. */
   ensure() {
     if (this.ctx) {

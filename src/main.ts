@@ -96,6 +96,26 @@ const audio = new AudioBus();
 // background, and only a later gesture may wake it. Cheap when running.
 window.addEventListener('keydown', () => audio.ensure());
 window.addEventListener('pointerdown', () => audio.ensure());
+// A touch's pointerdown carries no user activation, and iOS starts or wakes
+// Web Audio only from touchend or click: a player who only ever taps was
+// silent all session. Capture phase, so nothing that swallows the first
+// tap's click can swallow this too.
+for (const ev of ['pointerup', 'touchend', 'click']) {
+  window.addEventListener(ev, () => audio.ensure(), { capture: true, passive: true });
+}
+// A pad press is not a user gesture to the browser either: try, and if the
+// band is still silent a moment later, say once how to let it in. A Steam
+// Deck player otherwise heard nothing and was never told why.
+let padSoundHinted = false;
+input.onPadPress = () => {
+  audio.ensure();
+  if (padSoundHinted) return;
+  window.setTimeout(() => {
+    if (padSoundHinted || audio.running || audio.muted) return;
+    padSoundHinted = true;
+    toasts.show('the band is waiting: browsers let sound in after one keystroke or click');
+  }, 1200);
+};
 
 const state = new GameState();
 state.load();
