@@ -5884,7 +5884,13 @@ function update(dt: number) {
   });
 }
 
+/** Frames that rendered to the end; the loader waits for the first. */
+let framesDrawn = 0;
 function render() {
+  renderFrame();
+  framesDrawn++;
+}
+function renderFrame() {
   // The vista draws the village below the pass, from its own camera.
   const vm = shownMap();
   const cam = shownCam();
@@ -7423,13 +7429,31 @@ dev.attachCommands((frames) => {
   render();
 });
 
-startLoop(update, render);
+type BootWindow = Window & { __soupBooted?: boolean; __soupFail?: (why: string) => void };
+stage.onGiveUp = () => {
+  const w = window as BootWindow;
+  if (!w.__soupBooted) w.__soupFail?.('the graphics would not start');
+  else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');
+};
+startLoop(update, render, (err) => {
+  const why = err instanceof Error ? err.message.slice(0, 140) : '';
+  const w = window as BootWindow;
+  if (!w.__soupBooted) w.__soupFail?.(why);
+  else toasts.showNow('⚠ the picture has stopped; reloading the page brings it back, and the journal is saved');
+});
 
 // The loader in index.html has been covering the wait since first paint; lift
-// it once the world has drawn a real frame beneath it.
-requestAnimationFrame(() => requestAnimationFrame(() => {
+// it once the world has drawn a real frame beneath it (a frame that threw
+// does not count: the loader's own script then explains instead).
+const liftLoader = () => {
+  if (framesDrawn === 0 || !stage.isLive) {
+    requestAnimationFrame(liftLoader);
+    return;
+  }
+  (window as BootWindow).__soupBooted = true;
   const loader = document.getElementById('loader');
   if (!loader) return;
   loader.classList.add('done');
   setTimeout(() => loader.remove(), 700);
-}));
+};
+requestAnimationFrame(() => requestAnimationFrame(liftLoader));

@@ -3470,6 +3470,41 @@
       </div>
       <p class="ld-slow">A slow road today. If nothing changes soon, a refresh usually helps.</p>
     </div>
+    <script>
+      // Plain script, ahead of the game's module: if the game never gets far
+      // enough to lift this loader (an old browser, a device out of canvas
+      // memory, a frame that throws every time), say so here instead of a
+      // bowl steaming forever. The game sets window.__soupBooted once a real
+      // frame has drawn; it calls window.__soupFail when it gives up itself.
+      (function () {
+        var told = false;
+        function fail(why) {
+          if (told || window.__soupBooted) return;
+          told = true;
+          var p = document.querySelector('#loader .ld-slow');
+          if (!p) return;
+          p.textContent =
+            'The game could not start in this browser' + (why ? ' (' + why + ')' : '') +
+            '. Reloading the page often helps, and your journal is kept safe in this browser. ' +
+            'If it keeps happening, an up-to-date Chrome, Firefox or Safari should carry it.';
+          p.style.animation = 'none';
+          p.style.opacity = '1';
+          p.style.color = '#e6d7bb';
+        }
+        window.__soupFail = fail;
+        function soon(why) {
+          setTimeout(function () { fail(why); }, 3000);
+        }
+        window.addEventListener('error', function (e) {
+          soon(e && e.message ? String(e.message).slice(0, 140) : '');
+        });
+        window.addEventListener('unhandledrejection', function (e) {
+          var r = e && e.reason;
+          soon(r ? String((r && r.message) || r).slice(0, 140) : '');
+        });
+        setTimeout(function () { fail(''); }, 45000);
+      })();
+    </script>
     <div id="stage">
       <div id="frame">
         <canvas id="game"></canvas>

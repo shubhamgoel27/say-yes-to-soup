@@ -54,6 +54,9 @@ export class PixiStage {
   private owned: { destroy(): void }[] = [];
   /** Rebuilds tried since the last one that came up; see recover(). */
   private rebuildTries = 0;
+  /** Told once the stage has stopped trying: the picture will not come back
+   * without a reload, and the player should hear so. */
+  onGiveUp: (() => void) | null = null;
   private specs: LightSpec[] = [];
   private zoom = 1;
   private zoomTarget = 1;
@@ -77,6 +80,10 @@ export class PixiStage {
 
   /** True from the end of init() until a recovery tears the app down. */
   private live = false;
+  /** Whether a built stage is drawing right now. */
+  get isLive(): boolean {
+    return this.live;
+  }
   /** Whether THIS boot planted the WebGPU crash canary (see init/render). */
   private canaryArmed = false;
   /** Callers who need the live canvas (pointer bindings); re-run per build. */
@@ -101,7 +108,12 @@ export class PixiStage {
     const s = new PixiStage();
     s.worldCanvas = worldCanvas;
     s.host = host;
-    void s.init().then(() => s.resize());
+    // A first build that throws (WebGPU init rejected) used to leave the
+    // stage dead with nothing ever trying again: an empty frame under the HUD.
+    void s
+      .init()
+      .then(() => s.resize())
+      .catch((e: unknown) => void s.recover(`first build failed: ${e instanceof Error ? e.message : String(e)}`));
     window.addEventListener('resize', () => s.resize());
     // Phones resize the visible viewport without always firing a window
     // resize (URL bar collapse, on-screen keyboard, rotation quirks); track
@@ -329,7 +341,10 @@ export class PixiStage {
     console.warn(`[soup] stage rebuilding: ${why}`);
     // A recovered WebGPU device has lost every resource anyway, and WebGL's
     // context restoration is the better-worn path; take it on the way back.
-    this.preference = 'webgl';
+    // Odd retries take the other road as well: WebGL's renderer is a lazy
+    // chunk fetched only now, and after a redeploy that old hashed file is
+    // gone, so retries that insist on WebGL could never succeed.
+    this.preference = this.rebuildTries % 2 === 0 ? 'webgl' : 'webgpu';
     // Each piece on its own: a dead renderer may refuse any of them, and
     // one refusal must not keep the rest (forty lights, the bloom chain,
     // every frame-sized texture) alive across every recovery.
@@ -359,6 +374,8 @@ export class PixiStage {
       console.warn('[soup] stage rebuild failed', e);
       if (++this.rebuildTries <= 4) {
         setTimeout(() => void this.recover('retrying a failed rebuild'), 1500 * this.rebuildTries);
+      } else {
+        this.onGiveUp?.();
       }
     } finally {
       this.recovering = false;
