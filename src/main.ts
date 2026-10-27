@@ -18,7 +18,7 @@ import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
-import { PauseMenu } from './ui/pause';
+import { PauseMenu, REPLAY_GAMES } from './ui/pause';
 import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
 import { capUnder } from './ui/games/scene';
@@ -651,8 +651,37 @@ const hereSpot = (npc: string | null): Spot => ({ map: map.id, at: [player.x, pl
 /** A game whose start flag is raised but whose panel is not yet on screen,
  * and which the player has not set aside. */
 function pendingGame(): GameEntry | null {
-  return gameByFlag(armed.pending((f) => state.has(f) && (GAME_MAPS[f]?.has(map.id) ?? true), panelOpen));
+  // While a replay is on, only a game already won can be what is waiting: a
+  // story game armed but never played once opened in replay dress and
+  // skipped its own first-time narration.
+  const replaying = state.has('replay.mode');
+  return gameByFlag(
+    armed.pending(
+      (f) =>
+        state.has(f) &&
+        (GAME_MAPS[f]?.has(map.id) ?? true) &&
+        (!replaying || !DONE_FLAG.has(f) || state.has(DONE_FLAG.get(f)!)),
+      panelOpen,
+    ),
+  );
 }
+
+/** Each replayable game's start flag, and the flag its first win sets. */
+const DONE_FLAG = new Map(REPLAY_GAMES.map((g) => [g.flag, g.doneFlag]));
+
+/**
+ * A replay closed by a reload: load() drops replay.mode, but the start flag
+ * it raised stayed, and came back as a phantom story run (the chip saying
+ * the game was waiting, the first-time card, the first-time narration, and
+ * at the loom Carmen's wichuna errand all over again). A start flag whose
+ * game is already won is put down here, after every load.
+ */
+function dropOrphanedReplays() {
+  for (const [start, done] of DONE_FLAG) {
+    if (state.has(start) && state.has(done) && !panelOpen(start)) state.clearFlag(start);
+  }
+}
+dropOrphanedReplays();
 
 /** Open air near where a card was set aside: that card, forgiven. */
 function declinedNearHere(): GameEntry | null {
@@ -5002,6 +5031,7 @@ function reloadJourney() {
   dropJourneyTransients();
   state.forget();
   state.load();
+  dropOrphanedReplays();
   journalUI.resync();
   for (const tm of Object.values(maps)) tm.clearOverrides();
   // The boats went with the overrides; forget them too, or a boat moored in
