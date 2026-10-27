@@ -111,3 +111,40 @@ describe('a pad across a lost focus', () => {
     assert.equal(held(), 'right');
   });
 });
+
+describe('held keys and an embedding page', () => {
+  const keyEv = (r: ReturnType<typeof rig>, code: string, repeat: boolean, target?: unknown) => {
+    const e = new Event('keydown', { cancelable: true }) as Event & Record<string, unknown>;
+    Object.assign(e, { code, repeat });
+    if (target) Object.defineProperty(e, 'target', { value: target });
+    r.target.dispatchEvent(e);
+    return e.defaultPrevented;
+  };
+
+  it('a held arrow or Space does not scroll the page around the game', () => {
+    const r = rig();
+    assert.equal(keyEv(r, 'ArrowDown', true), true);
+    assert.equal(keyEv(r, 'Space', true), true);
+    assert.equal(keyEv(r, 'PageDown', false), true);
+  });
+
+  it("keys typed into a field stay the field's", () => {
+    const r = rig();
+    assert.equal(keyEv(r, 'Space', true, { tagName: 'INPUT' }), false);
+    assert.equal(keyEv(r, 'End', false, { tagName: 'INPUT' }), false);
+  });
+
+  it('X on a pad asks for the thread and reports the press', () => {
+    const { target, input } = rig();
+    let presses = 0;
+    input.onPadPress = () => presses++;
+    const pad = stickRight();
+    pad.axes = [0, 0, 0, 0];
+    pads = [pad];
+    target.dispatchEvent(new Event('gamepadconnected'));
+    pad.buttons[2]!.pressed = true;
+    input.pollGamepad();
+    assert.equal(input.takeThread(), true);
+    assert.equal(presses, 1);
+  });
+});
