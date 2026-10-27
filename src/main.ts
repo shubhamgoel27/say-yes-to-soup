@@ -1,3 +1,5 @@
+// First, before any module that draws: canvas calls older browsers lack.
+import './engine/polyfills';
 import { Actor } from './engine/actor';
 import { AudioBus } from './engine/audio';
 import { Camera, wordsLiftTarget } from './engine/camera';
