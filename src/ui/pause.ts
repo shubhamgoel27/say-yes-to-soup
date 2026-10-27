@@ -506,7 +506,7 @@ export class PauseMenu {
         Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
         Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
         the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0);
-        the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).
+        the pasted mango is a USDA pomological watercolor, D. G. Passmore, 1907 (public domain).
         Everything else, the art, the music, the weather and the gulls, is cooked
         fresh by the game at runtime.</p>
         <p class="p-c-sec">Made with love, and with soup.</p>

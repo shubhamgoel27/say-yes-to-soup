@@ -1037,7 +1037,7 @@ export class NamingCard {
         <div class="cc-fig"><canvas width="${CHAR_W * ART * 2}" height="${CHAR_H * ART * 2}"></canvas></div>
         <div class="cc-rows">${rows}</div>
         <div class="cc-actions"><button class="cc-btn" type="button">set out</button></div>
-        <div class="cc-hint">${keysOrTaps('arrows choose &middot; Enter sets out &middot; Esc back', 'tap a colour to choose', COARSE)}</div>
+        <div class="cc-hint">${keysOrTaps('arrows choose &middot; Enter sets out &middot; Esc back', 'tap a color to choose', COARSE)}</div>
       </div>`;
     this.renderRows();
     this.startWalk();

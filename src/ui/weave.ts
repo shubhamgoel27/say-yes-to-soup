@@ -560,7 +560,7 @@ export class WeavePanel {
   private diagnose(): string {
     const timeouts = this.slips.filter((s) => s.got < 0);
     const wrongs = this.slips.filter((s) => s.got >= 0);
-    const cname = (i: number) => COLORS[i]?.name ?? 'that colour';
+    const cname = (i: number) => COLORS[i]?.name ?? 'that color';
     const cdir = (i: number) => COLORS[i]?.dir ?? 'right';
     const common = (xs: number[]): number => {
       const counts = new Map<number, number>();
@@ -577,7 +577,7 @@ export class WeavePanel {
     }
     if (timeouts.length > wrongs.length) {
       const step = common(timeouts.map((s) => s.step));
-      return `Your colours were true but your hands hung back; the ${ORDINAL[step] ?? 'next'} call died waiting. Answer while the note still rings.`;
+      return `Your colors were true but your hands hung back; the ${ORDINAL[step] ?? 'next'} call died waiting. Answer while the note still rings.`;
     }
     // A repeated confusion: the same call kept drawing the same wrong ball.
     const pairCount = new Map<string, number>();
@@ -593,7 +593,7 @@ export class WeavePanel {
     }
     const step = common(wrongs.map((s) => s.step));
     const want = wrongs.find((s) => s.step === step)?.want ?? 0;
-    return `You lost it at the ${ORDINAL[step] ?? 'late'} colour; the call there was ${cname(want)}, the ${cdir(want)} ball. The early colours keep; spend your care on the tail.`;
+    return `You lost it at the ${ORDINAL[step] ?? 'late'} color; the call there was ${cname(want)}, the ${cdir(want)} ball. The early colors keep; spend your care on the tail.`;
   }
 
   onAction() {

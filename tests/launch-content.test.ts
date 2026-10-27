@@ -491,10 +491,14 @@ function sweepStuckReloads(): string[] {
  * fails the suite too, so this list can only shrink.
  */
 const KNOWN_STUCK: string[] = [
-  // Pre-launch review item 16 (engine-owned): story.end is raised on the
+  // Recovered by the engine, not by content: story.end is raised on the
   // written last line, two lines before the closing book's end.book, and the
   // book consumes end.book as it opens, so a catch-up arm here would replay
-  // the ending to anyone who had already read it.
+  // the ending to anyone who had already read it. Instead main.ts keeps
+  // end.book.read, set only when the book is read to its end, and Continue
+  // on a journal with story.end but not end.book.read opens the book again
+  // (resumeInterrupted). This content-only sweep cannot see that, so the
+  // three stay listed; deleting the engine rule must not delete these too.
   'examine well@village: reload after c10.lastline.begun loses end.book',
   'examine well@village: reload after c10.lastline.trick loses end.book',
   'examine well@village: reload after c10.lastline.word loses end.book',

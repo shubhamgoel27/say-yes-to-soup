@@ -525,7 +525,7 @@ export class AlbumUI {
             <p>Paper &amp; cloth textures from ambientCG (CC0). Ornaments from FreeSVG (CC0).
             Nani&rsquo;s star charts are Urania&rsquo;s Mirror, Sidney Hall, 1825 (public domain);
             the kitchen fish print is Utagawa Hiroshige, from Uozukushi (The Met, CC0);
-            the pasted mango is a USDA pomological watercolour, D. G. Passmore, 1907 (public domain).</p>
+            the pasted mango is a USDA pomological watercolor, D. G. Passmore, 1907 (public domain).</p>
             <p>Everything else, the art, the music, the weather and the gulls, is cooked fresh by the game at runtime.</p>
             <p class="cr-type">Type set in Fraunces, Literata &amp; Caveat (OFL, Google Fonts).</p>
           </div>`;
