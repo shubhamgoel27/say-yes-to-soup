@@ -578,3 +578,23 @@ describe('a sea thing only arrives if it was posted', () => {
     }
   });
 });
+
+describe('the Return lands on a La Caleta that has moved on', () => {
+  const home = [...RETURN_FLAGS];
+  const present = (id: string, flags: Iterable<string>) => holds(new Set(flags), NPCS.find((n) => n.id === id)!.when);
+
+  it('the chapter-two Chasca, Faustino and his llama are not on the pier twice', () => {
+    for (const id of ['chascaC', 'faustinoC', 'llama-costa']) {
+      assert.ok(present(id, ['c2.arrived']), `${id} should still be on the coast in chapter two`);
+      assert.ok(!present(id, home), `${id} is still on the coast in the Return`);
+    }
+    // Their homecomings happen up the road.
+    for (const id of ['chasca', 'faustino']) assert.ok(present(id, home), `${id} should greet you on the road`);
+  });
+
+  it('Capitana Ríos greets you home, and never says the Pacific is long again', () => {
+    assert.ok(present('rios', home));
+    assert.equal(entryFor('rios', home), 'c10.rios.reunion');
+    assert.equal(entryFor('rios', [...home, 'c10.rios.seen']), 'c10.rios.after');
+  });
+});

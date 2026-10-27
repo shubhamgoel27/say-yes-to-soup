@@ -83,6 +83,15 @@ export const RETURN_EXTENSIONS: NpcExtension[] = [
     npcId: 'felix',
     entry: [{ when: { has: ['c10.arrived'], not: ['c10.felix.seen'] }, node: 'c10.felix.reunion' }],
   },
+  {
+    // The pier where she first looked you over. She speaks first; the old
+    // "the Pacific is long" belongs to the morning you sailed.
+    npcId: 'rios',
+    entry: [
+      { when: { has: ['c10.arrived'], not: ['c10.rios.seen'] }, node: 'c10.rios.reunion' },
+      { when: { has: ['c10.arrived'] }, node: 'c10.rios.after' },
+    ],
+  },
   // ---- the road up ----
   {
     npcId: 'chasca',
@@ -257,6 +266,21 @@ export const RETURN_NODES: NodeMap = {
       { who: 'Maestro Félix', text: 'The going wears out; the knowing how comes home.' },
     ],
     effects: ['set:c10.felix.seen'],
+  },
+
+  // ---------------- Capitana Ríos, on her own pier ----------------
+  'c10.rios.reunion': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'The galley hand, back on my pier. Report.' },
+      { text: 'You give her the short version, which is still long. She hears it the way she reads weather: all of it, nodding at none of it.' },
+      { who: 'Capitana Ríos', text: 'All the way round and up the same pier. La mar approves. So do I, which is rarer.' },
+    ],
+    effects: ['set:c10.rios.seen'],
+  },
+  'c10.rios.after': {
+    lines: [
+      { who: 'Capitana Ríos', text: 'Go up. Somebody on that mountain has soup, and the galley coffee is still a punishment from God.' },
+    ],
   },
 
   // ---------------- Chasca, home too, with THE ALBUM ----------------

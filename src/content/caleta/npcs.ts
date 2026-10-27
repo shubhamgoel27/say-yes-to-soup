@@ -209,7 +209,9 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'faustinoC',
     name: 'Faustino',
     map: 'la-caleta',
-    when: { has: ['c2.arrived'] },
+    // Down with the trade for this chapter only. In the Return he is home on
+    // the pass road, and a second Faustino here replayed his first descent.
+    when: { has: ['c2.arrived'], not: ['c10.arrived'] },
     pos: [8, 22],
     range: 1,
     look: {
@@ -230,7 +232,7 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'llama-costa',
     name: 'Llama',
     map: 'la-caleta',
-    when: { has: ['c2.arrived'] },
+    when: { has: ['c2.arrived'], not: ['c10.arrived'] },
     pos: [6, 23],
     range: 1,
     sprite: 'llamaBrown',
@@ -248,6 +250,9 @@ export const CALETA_NPCS: NpcDef[] = [
     id: 'chascaC',
     name: 'Chasca',
     map: 'la-caleta',
+    // In the Return she is home too, on the road up with the album; this pier
+    // copy of her would meet you for the first time all over again.
+    when: { not: ['c10.arrived'] },
     pos: [25, 24],
     range: 0,
     look: {
