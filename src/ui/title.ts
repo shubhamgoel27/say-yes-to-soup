@@ -21,7 +21,7 @@ import { FRAGILE_NOTE, savesAreFragile } from './embed';
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
-import { shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
+import { routeStamps, shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
 import { isCoarseTouch, keysOrTaps } from './responsive';
 
 /** Saves may not outlast this browser (itch's embed in Safari or Brave). */
@@ -41,12 +41,13 @@ export type TitleChoice = 'new' | 'continue' | 'journals' | 'settings' | 'credit
 const COARSE = isCoarseTouch();
 
 /**
- * One quiet line under Continue: where the journey paused and how far the
- * journal has come. Read straight from the save on disk (the title renders
- * before the engine restores state), and any trouble reading it means no
- * line, never a crash.
+ * Where the journal on the table paused and how full it is, for the cover's
+ * Continue row. Read straight from the save on disk (the title renders before
+ * the engine restores state), and any trouble reading it means nothing to
+ * say, never a crash.
  */
-function welcomeBackLine(): string | null {
+type JournalSummary = { where: string; pages: number; threads: number };
+function journalSummary(): JournalSummary | null {
   try {
     const data = peekSlot(activeSlot());
     if (!data) return null;
@@ -63,25 +64,22 @@ function welcomeBackLine(): string | null {
         ? data.journal.filter((p): p is string => typeof p === 'string' && JOURNAL_BY_ID.has(p))
         : [],
     );
-    const threads = JOURNAL.filter(
-      (e) => e.rhyme && held.has(e.id) && held.has(e.rhyme.with),
-    ).length;
-    const tally = [
-      `${held.size} page${held.size === 1 ? '' : 's'}`,
-      threads ? `${threads} thread${threads === 1 ? '' : 's'}` : '',
-    ]
-      .filter(Boolean)
-      .join(', ');
-    // Two lines, each whole: as one line it ran under the cover's woven band
-    // at desk widths, and a wrap left the middot dangling at a line's head.
-    return `<span class="t-nw">${where}</span><br><span class="t-nw">${tally}</span>`;
+    const threads = JOURNAL.filter((e) => e.rhyme && held.has(e.id) && held.has(e.rhyme.with)).length;
+    return { where, pages: held.size, threads };
   } catch {
     return null;
   }
 }
 
+/** How many journals on the shelf have been written in. */
+function writtenCount(): number {
+  let n = 0;
+  for (let i = 0; i < SLOT_COUNT; i++) if (slotOccupied(i)) n++;
+  return n;
+}
+
 /**
- * Whether the old code lives in this save. Read the same way welcomeBackLine
+ * Whether the old code lives in this save. Read the same way journalSummary
  * reads (title renders before the engine restores state); any trouble reading
  * simply means no shimmer.
  */
@@ -179,8 +177,8 @@ export class TitleScreen {
   private confirm: ConfirmCard | null = null;
   /** Begin again has a blank journal to start in (nothing is erased). */
   private blankFree = false;
-  /** The welcome-back line under Continue; null when there is nothing to say. */
-  private welcomeBack: string | null = null;
+  /** Where the journal on the table paused, for Continue; null when none. */
+  private summary: JournalSummary | null = null;
   /** The journal on the table has been written to its last page. */
   private finished = false;
 
@@ -212,6 +210,9 @@ export class TitleScreen {
     private onBeginInBlank?: (row: number) => void,
   ) {
     this.titleEl.addEventListener('click', this.onShelfClick);
+    window.addEventListener('resize', () => {
+      if (this.titleOpen && !this.shelf) this.placeRibbon();
+    });
     this.titleEl.addEventListener('mouseover', this.onShelfHover);
     // A finger cannot hover first: the tapped element is taken on
     // pointerdown, before the steer's re-render can move the verbs line
@@ -232,7 +233,7 @@ export class TitleScreen {
     this.confirm = null;
     this.blankFree = hasSave && firstBlankSlot() !== null;
     this.shelf = false;
-    this.welcomeBack = hasSave ? welcomeBackLine() : null;
+    this.summary = hasSave ? journalSummary() : null;
     this.finished = hasSave && savedFlag('story.end');
     this.konami = !this.shimmered && hasSave && savedKonami();
     if (this.konami) this.shimmered = true;
@@ -416,14 +417,17 @@ export class TitleScreen {
     return journeyEnded(row) ? VERBS_ENDED : VERBS_FULL;
   }
 
+  /** The journals stand side by side, so left and right walk the shelf; the
+   * card's deeds are stacked, so up and down choose among them. */
   shelfDir(dir: Dir) {
-    if (dir === 'up' || dir === 'down') {
-      const d = dir === 'down' ? 1 : SLOT_COUNT - 1;
+    if (dir === 'left' || dir === 'right') {
+      const d = dir === 'right' ? 1 : SLOT_COUNT - 1;
       this.shelfRow = (this.shelfRow + d) % SLOT_COUNT;
       this.shelfVerb = 0;
       this.shelfNote = null;
     } else {
-      this.shelfVerb = stepShelfVerb(this.shelfVerb, dir, this.shelfVerbs(this.shelfRow).length);
+      const step = dir === 'down' ? 'right' : 'left';
+      this.shelfVerb = stepShelfVerb(this.shelfVerb, step, this.shelfVerbs(this.shelfRow).length);
     }
     this.renderShelf();
   }
@@ -625,62 +629,109 @@ export class TitleScreen {
     this.renderShelf();
   }
 
+  /**
+   * The shelf by the stove: the three journals stand on it as books, each in
+   * its own cloth, the woven band tied round its foot and the name on a paper
+   * label down the spine. The chosen one is lifted out a finger's height;
+   * the one open on the table wears the band as its bookmark, trailing over
+   * the top. Beside them, a card says who, where and how far, and what can
+   * be done with it.
+   */
   private renderShelf() {
     const open = activeSlot();
-    const rows = Array.from({ length: SLOT_COUNT }, (_, i) => {
+    const CLOTHS = ['#5c2a1e', '#23405c', '#3f5a35'];
+    const ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+    const spines = Array.from({ length: SLOT_COUNT }, (_, i) => {
       const lines = shelfLines(peekSlot(i));
       const sel = i === this.shelfRow;
-      // Whole phrases: a row wraps between them, never inside one.
-      const phrases = (ps: string[]) => ps.map((p) => `<span class="t-nw">${p}</span>`).join(' &middot; ');
-      const verbs = sel
-        ? this.shelfVerbs(i)
-            .map((v, j) => {
-              const on = j === this.shelfVerb;
-              return `<span class="sh-verb${on ? ' on' : ''}" data-verb="${j}">${v}</span>`;
-            })
-            .join('<span class="sh-dot">&middot;</span>')
-        : '';
       return `
-        <div class="sh-row${sel ? ' sel' : ''}${lines ? '' : ' blank'}" data-row="${i}">
-          <span class="sh-band"></span>
-          <div class="sh-body">
-            <div class="sh-fly">${sel ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}<span class="t-nw">${lines?.who ?? 'a blank journal'}</span>${i === open ? ' <span class="sh-mark t-nw">open on the table</span>' : ''}</div>
-            ${lines ? `<div class="sh-where">${phrases(lines.where.split(' &middot; '))}</div>` : ''}
-            ${lines ? `<div class="sh-when">${phrases(lines.tally)}</div>` : ''}
-            ${sel ? `<div class="sh-verbs">${verbs}</div>` : ''}
-          </div>
+        <div class="sh-row sv-spine${sel ? ' sel' : ''}${lines ? '' : ' blank'}${i === open && lines ? ' open' : ''}"
+          data-row="${i}" role="option" aria-selected="${sel}" aria-label="${lines ? `${lines.who}’s journal` : 'a blank journal'}"
+          style="--cloth:${CLOTHS[i % CLOTHS.length]}">
+          ${i === open && lines ? '<span class="sv-tail" aria-hidden="true"></span>' : ''}
+          <span class="sv-label"><span class="sv-name" style="--len:${Math.max(6, (lines?.who ?? '').length)}">${lines?.who ?? ''}</span></span>
+          <span class="sv-band" aria-hidden="true"></span>
+          <span class="sv-no">${ROMAN[i] ?? String(i + 1)}</span>
         </div>`;
     }).join('');
+    const row = this.shelfRow;
+    const lines = shelfLines(peekSlot(row));
+    // Whole phrases: a line wraps between them, never inside one.
+    const phrases = (ps: string[]) => ps.map((p) => `<span class="t-nw">${p}</span>`).join(' &middot; ');
+    const verbs = this.shelfVerbs(row)
+      .map(
+        (v, j) =>
+          `<span class="sh-verb${j === this.shelfVerb ? ' on' : ''}" data-verb="${j}" data-name="${v}" role="button">${v}</span>`,
+      )
+      .join('');
     this.titleEl.innerHTML = `
-      <div class="t-card">
-        <div class="sh-card">
-          <div class="sh-kicker">the shelf by the stove</div>
-          <div class="sh-heading">Nani&rsquo;s journals</div>
-          <div class="sh-rows">${rows}</div>
-          <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
-          ${FRAGILE ? `<div class="sh-note" role="note">${FRAGILE_NOTE}</div>` : ''}
-          <div class="sh-hint">${
-            COARSE
-              ? hintPhrases(['tap a journal to open it', 'tap a word beneath it to act'])
-              : hintPhrases(['&#8593;&#8595; choose a journal', '&#8592;&#8594; choose what to do', 'Space does it', 'Esc back'])
-          }</div>
+      <div class="t-card sv">
+        <div class="sv-room">
+          <div class="sv-shelf" role="listbox" aria-label="Nani&rsquo;s journals">
+            <div class="sv-books">${spines}</div>
+            <div class="sv-plank" aria-hidden="true"></div>
+          </div>
+          <div class="sh-card sv-card">
+            <div class="sh-kicker">the shelf by the stove</div>
+            <h2 class="sh-heading">Nani&rsquo;s journals</h2>
+            <div class="sv-detail" aria-live="polite">
+              <div class="sh-fly">${lines ? `<span class="t-nw">${lines.who}</span>` : 'a blank journal'}</div>
+              ${row === open && lines ? '<div class="sh-mark">open on the table</div>' : ''}
+              ${
+                lines
+                  ? `<div class="sh-where">${phrases(lines.where.split(' &middot; '))}</div>
+                     <div class="sh-when">${phrases(lines.tally)}</div>`
+                  : '<div class="sh-where">every page still to come</div>'
+              }
+            </div>
+            <div class="sh-verbs">${verbs}</div>
+            <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
+            ${FRAGILE ? `<div class="sh-note" role="note">${FRAGILE_NOTE}</div>` : ''}
+            <div class="sh-hint">${
+              COARSE
+                ? hintPhrases(['tap a journal to open it', 'tap a word on the card to act'])
+                : hintPhrases(['&#8592;&#8594; choose a journal', '&#8593;&#8595; choose what to do', 'Space does it', 'Esc back'])
+            }</div>
+          </div>
         </div>
       </div>`;
     this.renderConfirm();
   }
 
-  /** One menu row's markup; shared by the full render and the cursor update. */
+  /**
+   * One contents line: the label, a dotted leader, and a folio that means
+   * something. Continue's folio is the page the journal has reached; Begin is
+   * page one; the shelf counts its written journals; Settings and Credits are
+   * front matter, so they take roman numerals, as a book's preface does.
+   */
   private optHtml(i: number): string {
     const o = this.options[i];
     if (!o) return '';
+    const s = this.summary;
+    const folio =
+      o.id === 'continue'
+        ? s
+          ? `p.&nbsp;${s.pages}`
+          : ''
+        : o.id === 'new'
+          ? 'p.&nbsp;1'
+          : o.id === 'journals'
+            ? writtenCount() === 0
+              ? `${SLOT_COUNT}&nbsp;blank`
+              : `${writtenCount()}&nbsp;of&nbsp;${SLOT_COUNT}`
+            : o.id === 'settings'
+              ? 'i'
+              : 'ii';
     // Begin again says, before it is chosen, that nothing will be lost.
     const sub =
-      o.id === 'continue' && this.welcomeBack
-        ? `<div class="t-opt-sub">${this.welcomeBack}</div>`
+      o.id === 'continue' && s
+        ? `<span class="t-nw">${s.where}</span>${s.threads ? ` <span class="t-nw">&middot; ${s.threads} thread${s.threads === 1 ? '' : 's'} stitched</span>` : ''}`
         : o.id === 'new' && this.blankFree && i === this.cursor
-          ? '<div class="t-opt-sub">in a blank journal; this one stays on the shelf</div>'
+          ? 'in a blank journal; this one stays on the shelf'
           : '';
-    return `${i === this.cursor ? '<span class="t-arr">&#9656;</span>&nbsp;' : ''}${o.label}${sub}`;
+    return `<span class="cv-line"><span class="cv-lab">${o.label}</span><span class="cv-lead" aria-hidden="true"></span><span class="cv-folio">${folio}</span></span>${
+      sub ? `<span class="t-opt-sub">${sub}</span>` : ''
+    }`;
   }
 
   private optClass(i: number): string {
@@ -690,8 +741,8 @@ export class TitleScreen {
   /**
    * A cursor move touches only the menu rows. Rebuilding the whole cover on
    * every arrow press repainted the gouache and restarted the steam, the
-   * breathing canvas and the manicule's pulse, a flicker per keypress.
-   * Only rows whose state changed are rewritten.
+   * breathing canvas and the ribbon, a flicker per keypress. Only rows whose
+   * state changed are rewritten, and the ribbon slides to the new line.
    */
   private renderMenu() {
     const rows = this.titleEl.querySelectorAll<HTMLElement>('.t-menu .t-opt');
@@ -707,29 +758,89 @@ export class TitleScreen {
         el.innerHTML = html;
         el.dataset.html = html;
       }
+      el.setAttribute('aria-current', i === this.cursor ? 'true' : 'false');
     });
+    this.placeRibbon();
+  }
+
+  /**
+   * The woven band is the bookmark: it hangs from the head of the contents
+   * page down to the chosen line. Measured, not guessed, so a wrapped label
+   * or a late webfont still ends it on the line; re-measured on resize and
+   * once the fonts land.
+   */
+  private placeRibbon = () => {
+    const page = this.titleEl.querySelector<HTMLElement>('.cv-contents');
+    const sel = page?.querySelector<HTMLElement>('.t-opt.sel .cv-line');
+    if (!page || !sel) return;
+    const pr = page.getBoundingClientRect();
+    const sr = sel.getBoundingClientRect();
+    page.style.setProperty('--rib', `${Math.round(sr.top - pr.top + sr.height / 2)}px`);
+  };
+
+  /** Nani's route along the foot of the contents page, inked as far as this
+   * journal has come. */
+  private routeHtml(): string {
+    const stamps = routeStamps(this.hasSave ? peekSlot(activeSlot()) : null);
+    const inked = stamps.filter((s) => s.stamped).length;
+    const here = stamps.find((s) => s.here);
+    const marks = stamps
+      .map(
+        (s, i) =>
+          `<li class="cv-stop${s.stamped ? ' inked' : ''}${s.here ? ' here' : ''}" style="--tilt:${((i * 37) % 9) - 4}deg" title="${s.name}"><span class="cv-sr">${s.name}${s.stamped ? ', reached' : ''}</span></li>`,
+      )
+      .join('');
+    const first = stamps[0]?.name ?? '';
+    const last = stamps[stamps.length - 1]?.name ?? '';
+    const note = !this.hasSave
+      ? 'eleven stops, none of them inked yet'
+      : this.finished
+        ? 'every stop inked, and home again'
+        : here && here !== stamps[0]
+          ? `${inked} of ${stamps.length} inked &middot; you are in ${here.name}`
+          : `${inked} of ${stamps.length} inked &middot; you are where she began`;
+    return `
+      <div class="cv-route" aria-label="Nani’s 1974 route">
+        <div class="cv-route-head">her route, 1974</div>
+        <ol class="cv-stops">${marks}</ol>
+        <div class="cv-ends"><span>${first}</span><span>${last}</span></div>
+        <div class="cv-route-note">${note}</div>
+      </div>`;
   }
 
   private render() {
     const menu = this.options
-      .map((_, i) => `<div class="${this.optClass(i)}">${this.optHtml(i)}</div>`)
+      .map(
+        (_, i) =>
+          `<div class="${this.optClass(i)}" role="menuitem" aria-current="${i === this.cursor}">${this.optHtml(i)}</div>`,
+      )
       .join('');
     // The shimmer plays once on load; cursor moves rebuild this DOM and must
     // not replay it, so the flag is spent on the first render.
     const shimmer = this.konami;
     this.konami = false;
     this.titleEl.innerHTML = `
-      <div class="t-card">
-        <div class="t-cover">
-          <div class="t-band${shimmer ? ' shimmer' : ''}"></div>
-          <div class="t-kicker">${this.finished ? 'a journal, full' : 'a journal, half full'}</div>
-          <div class="t-name">SAY YES<br>TO SOUP</div>
-          <div class="t-art">
-            <span class="t-steam s1"></span><span class="t-steam s2"></span><span class="t-steam s3"></span>
-          </div>
-          <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
-          <div class="t-menu">${menu}</div>
-          ${FRAGILE ? `<div class="t-sub" role="note" style="margin-top:8px;font-size:0.82em;opacity:0.9">${FRAGILE_NOTE}</div>` : ''}
+      <div class="t-card cv">
+        <div class="cv-book">
+          <section class="cv-page cv-front">
+            <div class="cv-kicker">${this.finished ? 'a journal, full' : 'a journal, half full'}</div>
+            <h1 class="cv-title">Say yes<br>to soup</h1>
+            <figure class="cv-plate">
+              <span class="cv-corner tl"></span><span class="cv-corner tr"></span>
+              <span class="cv-corner bl"></span><span class="cv-corner br"></span>
+              <span class="t-steam s1"></span><span class="t-steam s2"></span><span class="t-steam s3"></span>
+            </figure>
+            <p class="cv-cap">the road, as she drew it</p>
+            <p class="cv-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</p>
+          </section>
+          <section class="cv-page cv-contents">
+            <div class="cv-ribbon${shimmer ? ' shimmer' : ''}" aria-hidden="true"></div>
+            <h2 class="cv-head">Contents</h2>
+            <div class="t-menu" role="menu" aria-label="Contents">${menu}</div>
+            <p class="cv-motto">say yes to soup, ask about the bread, and if someone corrects you, thank them twice.<span class="cv-sig">N.</span></p>
+            ${this.routeHtml()}
+            ${FRAGILE ? `<p class="cv-fragile" role="note">${FRAGILE_NOTE}</p>` : ''}
+          </section>
         </div>
         <div class="t-controls">${
           COARSE
@@ -744,8 +855,11 @@ export class TitleScreen {
         }
         </div>
       </div>`;
-    const art = this.titleEl.querySelector('.t-art');
-    if (art) art.insertBefore(makeCoverArt(), art.firstChild);
+    const plate = this.titleEl.querySelector('.cv-plate');
+    if (plate) plate.insertBefore(makeCoverArt(), plate.firstChild);
+    this.placeRibbon();
+    // Late webfonts move the lines; the ribbon follows them once they land.
+    void document.fonts?.ready.then(this.placeRibbon);
     this.renderConfirm();
   }
 }
@@ -991,8 +1105,9 @@ export class NamingCard {
     if (this.step === 1) {
       this.root.innerHTML = `
         <div class="cc-paper">
-          <div class="cc-kicker">the name on the flyleaf</div>
+          <div class="cc-kicker">ex libris</div>
           <p class="cc-copy">Nani left the flyleaf blank for you. What do the villages call you?</p>
+          <div class="cc-belongs">this journal belongs to</div>
           <input class="cc-input" type="text" maxlength="${NAME_MAX}" spellcheck="false"
             autocomplete="off" placeholder="traveler" aria-label="your name" />
           <div class="cc-actions"><button class="cc-btn" type="button">write it down</button></div>

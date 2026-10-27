@@ -13,7 +13,7 @@ import { goSideways, isCoarseTouch, isPhone, keysOrTaps, lastDevice, looksFullsc
  */
 
 /** Just enough of the GameState to ask one question. */
-type FlagSource = { has(flag: string): boolean };
+type FlagSource = { has(flag: string): boolean; pageCount?(): number };
 let flags: FlagSource | null = null;
 
 /**
@@ -281,7 +281,7 @@ export class PauseMenu {
     // wider or narrower than its neighbours.
     const bar = (v: number) => {
       const n = pct(v);
-      const cells = Array.from({ length: 10 }, (_, i) => `<i class="p-cell${i < n ? ' on' : ''}"></i>`).join('');
+      const cells = Array.from({ length: 10 }, (_, i) => `<i class="p-cell${i < n ? ' on' : ''}" style="--i:${i}"></i>`).join('');
       return `<span class="p-bar" role="img" aria-label="${n} of 10">${cells}</span>`;
     };
     const speedNames: Record<Prefs['textSpeed'], string> = {
@@ -307,9 +307,12 @@ export class PauseMenu {
         adjust: (d: number) => this.audio.setMix('ambience', this.audio.mix.ambience + d * 0.1),
       },
       {
-        label: 'Sound',
-        // The (M) is a key; a touch screen or a gamepad has none to press.
-        value: () => (this.audio.muted ? 'off' : 'on') + (isCoarseTouch() || lastDevice() === 'pad' ? '' : ' (M)'),
+        label: 'All sound',
+        // M is a key; a touch screen or a gamepad has none to press, so the
+        // cap is drawn only for a keyboard.
+        value: () =>
+          (this.audio.muted ? 'muted' : 'on') +
+          (isCoarseTouch() || lastDevice() === 'pad' ? '' : ' <span class="p-key" title="the M key">M</span>'),
         adjust: () => void this.audio.toggleMute(),
       },
       {
@@ -428,15 +431,24 @@ export class PauseMenu {
     let body = '';
     if (this.screen === 'menu') {
       body = `<div class="p-menu">${this.menuItems()
-        .map((it, i) => `<div class="p-opt${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`)
+        .map((it, i) => {
+          // The journal's line carries its folio, as the cover's contents do.
+          const pages = it.label === 'The journal' ? flags?.pageCount?.() : undefined;
+          const folio =
+            pages !== undefined
+              ? `<span class="p-lead" aria-hidden="true"></span><span class="p-folio">p.&nbsp;${pages}</span>`
+              : '';
+          return `<div class="p-opt${i === this.cursor ? ' sel' : ''}"><span class="p-opt-lab">${it.label}</span>${folio}</div>`;
+        })
         .join('')}</div>${
-        this.saved === 'ok'
+        `<div class="p-hint-line">${keysOrTaps('&#8593;&#8595; choose &nbsp;&middot;&nbsp; Space opens &nbsp;&middot;&nbsp; Esc back', 'tap a line; tap beside the page to go back')}</div>` +
+        (this.saved === 'ok'
           ? '<div class="p-saved">the journal is saved; you can put it down here</div>'
           : this.saved === 'lost'
             ? '<div class="p-saved lost">this browser is not keeping the journal right now</div>'
             : this.saved === 'elsewhere'
               ? '<div class="p-saved lost">another window has this journal now; reload to carry on from there</div>'
-              : ''
+              : '')
       }`;
     } else if (this.screen === 'games') {
       // The games shelf: every won game with the village that taught it.
@@ -448,7 +460,7 @@ export class PauseMenu {
           const head =
             it.tag !== lastChapter ? `<div class="p-g-chapter">${it.tag}</div>` : '';
           lastChapter = it.tag;
-          return `${head}<div class="p-opt p-g-row${i === this.cursor ? ' sel' : ''}">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</div>`;
+          return `${head}<div class="p-opt p-g-row${i === this.cursor ? ' sel' : ''}"><span class="p-opt-lab">${it.label}</span></div>`;
         })
         .join('');
       // Once every hard telling on the route is done clean, the shelf says
@@ -467,7 +479,7 @@ export class PauseMenu {
       body = `<div class="p-settings">${this.settingsItems()
         .map(
           (it, i) => `<div class="p-row${i === this.cursor ? ' sel' : ''}">
-            <span class="p-label">${i === this.cursor ? '&#9656;&nbsp;' : ''}${it.label}</span>
+            <span class="p-label">${it.label}</span>
             <span class="p-value">${it.value()}</span>
           </div>`,
         )
