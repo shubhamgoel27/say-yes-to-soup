@@ -303,7 +303,7 @@ function drawSwell(g: CanvasRenderingContext2D, wx: number, baseY: number, h: nu
   oval(g, wx - 46, baseY + 22, 32, 7, 'rgba(246,240,226,0.45)');
 }
 
-/** Story telling: seconds an eager paddle stays out of the water. */
+/** Seconds an eager paddle stays out of the water, in either telling. */
 const EAGER_HOLD = 0.4;
 
 const WAVE_LEGEND = [
@@ -343,10 +343,11 @@ export class WavePanel {
   private lastLateSwell = 0;
   private escapes = 0; // swells that rolled past unpunched
 
-  // The story telling's attention: an eager stroke leaves the paddle out of
-  // the water for a beat (mashing keeps it there), and two swells lost that
-  // way earn a slow, wide one that waits for you. The ride home leans too,
-  // so the arrows matter; a horse pinned on its rail rights itself in time.
+  // Attention: an eager stroke leaves the paddle out of the water for a beat
+  // (mashing keeps it there), in both tellings. In the story, two swells lost
+  // that way earn a slow, wide one that waits for you; the hard water only
+  // counts them as escapes. The story's ride home leans too, so the arrows
+  // matter; a horse pinned on its rail rights itself in time.
   private eager = new Hold();
   private eagerEscapes = 0;
   private lull = false; // the mercy swell: no hold on this one
@@ -640,8 +641,11 @@ export class WavePanel {
         const off = this.x > this.zoneHi ? (this.zoneHi - this.x) / this.speed : (this.zoneLo - this.x) / this.speed;
         const far = this.hard ? ` That was ${offBy(off)}.` : '';
         this.hint = (this.x > this.zoneHi ? 'Too eager. Let the swell reach the horse first.' : 'Late; it is already past the bow.') + far;
-        // Story only: an eager stroke leaves the paddle in the air a beat.
-        if (!this.hard && !this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
+        // An eager stroke leaves the paddle in the air a beat, in the hard
+        // water too: without it a hand mashing Space always had a stroke
+        // landing in the strike, and won the hard star without looking.
+        // (The story's slow mercy swell lets the paddle straight back in.)
+        if (!this.lull && this.x > this.zoneHi) this.eager.start(EAGER_HOLD);
       }
     } else if (this.phase === 'done' && !this.hard && this.set === 1) {
       // The second set: the same three strokes against taller water.

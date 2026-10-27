@@ -83,3 +83,46 @@ describe('the kite, the hard telling', () => {
     });
   }
 });
+
+/** Space every `n` frames, the way a hand mashes; Space only, unless `also` steers. */
+const mash = (n: number, also?: Bot): Bot => {
+  let f = 0;
+  return (p, t) => {
+    also?.(p, t);
+    if (f++ % n === 0) p.onAction();
+  };
+};
+
+describe('the caballito, the hard water', () => {
+  it('a hand mashing Space through the paddle never earns the star', () => {
+    // A rider who steers the ride home properly, and never looks at the swells.
+    const ride: Bot = (p) => {
+      if (p.phase !== 'ride') return;
+      if (p.balance > 0.08) p.onDir('left');
+      else if (p.balance < -0.08) p.onDir('right');
+    };
+    for (const n of [3, 6, 15]) {
+      for (let seed = 1; seed <= 6; seed++) {
+        const r = run('wave.start', true, mash(n, ride), seed);
+        assert.ok(r.done);
+        assert.notEqual(r.verdict, 'star', `mashing every ${n} frames took the star (seed ${seed})`);
+        takeCoach('wave.start');
+      }
+    }
+  });
+
+  it('an eager stroke leaves the paddle in the air for a beat, as in the story', () => {
+    const p = opened('wave.start', true);
+    p.onAction(); // the swell is still far out
+    assert.equal(p.earlyMisses, 1);
+    p.x = (p.zoneLo + p.zoneHi) / 2; // and now it is right on the horse
+    p.onAction();
+    assert.equal(p.waves, 0, 'the paddle was still in the air');
+    p.x = 1; // the next swell, far out again: the beat passes, nothing escapes
+    for (let i = 0; i < 30; i++) p.tick(1 / 60);
+    assert.equal(p.escapes, 0);
+    p.x = (p.zoneLo + p.zoneHi) / 2;
+    p.onAction();
+    assert.equal(p.waves, 1, 'back in the water after the beat');
+  });
+});
