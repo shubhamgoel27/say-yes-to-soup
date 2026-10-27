@@ -852,6 +852,12 @@ export class NamingCard {
     // Mid-composition (kana to kanji, jamo to hangul), Enter and Esc belong
     // to the input method: Enter confirms the conversion, it does not sign.
     if (e.isComposing || e.keyCode === 229) return;
+    // Enter held from the cover repeats into the card: one press signed the
+    // name, the next chose the look, and the flyleaf was gone unread.
+    if (e.repeat && (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape')) {
+      e.preventDefault();
+      return;
+    }
     if (e.code === 'Escape') {
       e.preventDefault();
       this.back();
@@ -991,11 +997,19 @@ export class NamingCard {
       const input = this.root.querySelector<HTMLInputElement>('.cc-input');
       if (input) {
         input.value = this.name;
-        input.addEventListener('input', () => {
+        const tidy = () => {
           const clean = ccClean(input.value);
           if (clean !== input.value) input.value = clean;
           this.name = clean;
+        };
+        // Mid-composition the field belongs to the input method: rewriting
+        // it there (Pinyin's syllable apostrophes are not in the filter)
+        // tore the conversion apart and left Latin letters in the name.
+        input.addEventListener('input', (ev) => {
+          if ((ev as InputEvent).isComposing) return;
+          tidy();
         });
+        input.addEventListener('compositionend', tidy);
         input.focus();
       }
       return;
