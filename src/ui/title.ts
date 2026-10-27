@@ -17,11 +17,15 @@ import {
   unpackJournal,
   writeSlotRaw,
 } from '../engine/state';
+import { FRAGILE_NOTE, savesAreFragile } from './embed';
 import { ROUTE } from '../content/route';
 import { CHAPTERS, JOURNAL, JOURNAL_BY_ID, REGION_MAPS } from '../content/world';
 import { onTouchTap, touchActive } from './pointer';
 import { shelfLines, shelfOneLine, shelfOpenPlan, stepShelfVerb } from './shelfline';
 import { isCoarseTouch } from './responsive';
+
+/** Saves may not outlast this browser (itch's embed in Safari or Brave). */
+const FRAGILE = savesAreFragile();
 
 /**
  * The front door of the game: a quiet title card, then Nani's letter as the
@@ -646,6 +650,7 @@ export class TitleScreen {
           <div class="sh-heading">Nani&rsquo;s journals</div>
           <div class="sh-rows">${rows}</div>
           <div class="sh-note${this.shelfNote ? '' : ' empty'}">${this.shelfNote ?? ''}</div>
+          ${FRAGILE ? `<div class="sh-note" role="note">${FRAGILE_NOTE}</div>` : ''}
           <div class="sh-hint">${
             COARSE
               ? hintPhrases(['tap a journal to open it', 'tap a word beneath it to act'])
@@ -716,6 +721,7 @@ export class TitleScreen {
           </div>
           <div class="t-sub">an unhurried journey through the world&rsquo;s kitchens, courtyards, and words</div>
           <div class="t-menu">${menu}</div>
+          ${FRAGILE ? `<div class="t-sub" role="note" style="margin-top:8px;font-size:0.82em;opacity:0.9">${FRAGILE_NOTE}</div>` : ''}
         </div>
         <div class="t-controls">${
           COARSE

@@ -18,6 +18,7 @@ import { Textbox } from './ui/textbox';
 import { JournalUI } from './ui/journal';
 import { Toasts } from './ui/toast';
 import { NamingCard, TitleScreen } from './ui/title';
+import { askToKeepStorage, savesAreFragile } from './ui/embed';
 import { PauseMenu, REPLAY_GAMES } from './ui/pause';
 import { AlbumUI, PHOTOS } from './ui/album';
 import { RUN, everyStar, freshRun, takeCoach, tickPanels, verdictFor } from './ui/games/run';
@@ -4271,6 +4272,9 @@ function openCeremony(flag: string, then?: () => void) {
   state.save();
   chapterClose.open(chapter, hues, () => {
     player.frozen = false;
+    // Where this browser may forget an embedded game's storage, the close of
+    // a chapter is the moment to suggest keeping a copy.
+    if (savesAreFragile()) toasts.show('a good moment to pack this journal on the shelf: this browser may not keep it');
     then?.();
   });
 }
@@ -4971,6 +4975,7 @@ let quietHud = false;
 
 function beginPlay(freshStart: boolean) {
   mode = 'play';
+  askToKeepStorage();
   if (freshStart && !override) {
     // Begin again has to mean the beginning. The title screen idles over
     // wherever the journey paused, and this function only ever repositioned
