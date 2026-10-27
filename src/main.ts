@@ -2828,11 +2828,20 @@ function refreshPlayerSheet() {
 /** ↑↑↓↓←→←→ on the title screen. Some traditions cross all borders. */
 const KONAMI: Dir[] = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right'];
 let konamiAt = 0;
+/**
+ * Entered this session: the journey about to begin wears the gold too. On a
+ * fresh title screen with no journal yet, setting the flag saved one: an
+ * empty 'unsigned' journal took a shelf slot, Begin then started in another
+ * slot where the gold was wiped, and a later Continue skipped the flyleaf.
+ */
+let konamiThisSession = false;
 function feedKonami(d: Dir) {
   if (state.has('konami')) return;
   konamiAt = d === KONAMI[konamiAt] ? konamiAt + 1 : d === 'up' ? 1 : 0;
   if (konamiAt >= KONAMI.length) {
-    state.set('konami');
+    konamiThisSession = true;
+    if (state.hasSave()) state.set('konami');
+    else state.markQuietly(['konami']); // kept, unsaved, until a journey begins
     refreshPlayerSheet();
     audio.jingle();
     toasts.show('✦ 30 lives. (You will not need them here.)');
@@ -5223,6 +5232,7 @@ function openFlyleaf(setOut: () => void) {
   mode = 'naming';
   naming.open((res) => {
     setOut();
+    if (konamiThisSession) state.markQuietly(['konami']);
     state.playerName = res.name;
     state.playerLook = res.look;
     state.save();
