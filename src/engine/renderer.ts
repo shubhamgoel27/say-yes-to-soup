@@ -5,7 +5,7 @@ import type { TileMap } from './grid';
 import type { Camera } from './camera';
 import { OVER_SEA, PATHY, Tileset, WATERY } from '../art/tiles';
 import { CHAR_H, CHAR_W, DIR_ROW } from '../art/character';
-import { cellHash, context2d, outlineSheet, surface, type Surface } from '../art/pix';
+import { cellHash, context2d, outlineSheet, release, surface, type Surface } from '../art/pix';
 import { bodyCovered } from './stand';
 
 /**
@@ -486,7 +486,15 @@ export class Renderer {
   readonly ctx: CanvasRenderingContext2D;
   private time = 0;
   private tiles = new Tileset();
-  private atmospheres: Record<string, HTMLCanvasElement>;
+  /**
+   * The frame-sized light pass, baked for the moods actually lit and no
+   * others. Each is a full-frame canvas (3.5 MB at 1280x720) and the
+   * chapters register twenty moods, so baking them all at boot, and again
+   * on every turn of the phone, held 91 MB for the one on screen. The
+   * current mood and the one before it are kept: a doorway walked back and
+   * forth bakes nothing.
+   */
+  private atmospheres = new Map<string, HTMLCanvasElement>();
   private noClouds = new Set<string>(['garua', 'interior']);
   private mood: Mood = 'warm';
   private nightK = 0;
@@ -643,12 +651,13 @@ export class Renderer {
   constructor(readonly canvas: HTMLCanvasElement) {
     const ctx = context2d(canvas, { alpha: false });
     this.ctx = ctx;
-    if (import.meta.env.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
+    // Guarded softly: node-side tests build a Renderer with no import.meta.env.
+    const devEnv = (import.meta as unknown as { env?: { DEV?: boolean } }).env;
+    if (devEnv?.DEV) (globalThis as unknown as { __soupWorld: Renderer }).__soupWorld = this;
     canvas.width = W;
     canvas.height = H;
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    this.atmospheres = buildAtmospheres();
 
     // Bake the soft-blob library.
     {
@@ -1066,13 +1075,39 @@ export class Renderer {
   registerMoods(specs: Record<string, MoodPaint>) {
     for (const [name, s] of Object.entries(specs)) {
       this.moodSpecs[name] = s;
-      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
+      this.dropAtmosphere(name);
       if (s.noClouds) this.noClouds.add(name);
     }
   }
 
-  /** Chapter moods as registered, so the frame-sized passes can be re-baked. */
-  private moodSpecs: Record<string, MoodPaint> = {};
+  /** Every mood's paint, built-in and registered: what an overlay is baked from. */
+  private moodSpecs: Record<string, MoodPaint> = { ...BUILT_IN_MOODS };
+
+  /** The current mood's light pass, baked the first time it is lit. Unknown moods light as warm. */
+  private atmosphere(): HTMLCanvasElement | null {
+    const name = Object.hasOwn(this.moodSpecs, this.mood) ? this.mood : 'warm';
+    let cv = this.atmospheres.get(name);
+    if (cv) {
+      // Most recently lit last.
+      this.atmospheres.delete(name);
+    } else {
+      const s = this.moodSpecs[name];
+      if (!s) return null;
+      cv = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
+      for (const [old, ocv] of this.atmospheres) {
+        if (this.atmospheres.size < 2) break;
+        this.dropAtmosphere(old, ocv);
+      }
+    }
+    this.atmospheres.set(name, cv);
+    return cv;
+  }
+
+  /** Forget a baked overlay and hand its pixels back; it is drawn from nowhere else. */
+  private dropAtmosphere(name: string, cv = this.atmospheres.get(name)) {
+    this.atmospheres.delete(name);
+    if (cv) release(cv);
+  }
 
   /**
    * The frame turned (config.setView): resize the canvas and re-bake every
@@ -1090,10 +1125,8 @@ export class Renderer {
     this.ctx.imageSmoothingEnabled = true;
     this.ctx.imageSmoothingQuality = 'high';
     this.shadowBuf = surface(SHW, SHH);
-    this.atmospheres = buildAtmospheres();
-    for (const [name, s] of Object.entries(this.moodSpecs)) {
-      this.atmospheres[name] = makeAtmosphere(s.top, s.mid, s.bottom, s.vig, s.glow);
-    }
+    // Re-baked at the new size when next lit: only the mood on screen.
+    for (const name of [...this.atmospheres.keys()]) this.dropAtmosphere(name);
   }
 
   setMood(mood: Mood) {
@@ -2225,7 +2258,7 @@ export class Renderer {
     this.drawCastOffs(cam);
     this.drawMotes(map, cam);
     this.drawWeather(map, cam);
-    const atm = this.atmospheres[this.mood] ?? this.atmospheres['warm'];
+    const atm = this.atmosphere();
     if (atm) ctx.drawImage(atm, 0, 0);
 
   }
@@ -4613,17 +4646,20 @@ function makeAtmosphere(
 }
 
 /** The built-in moods every chapter can use without registering anything. */
-function buildAtmospheres(): Record<string, HTMLCanvasElement> {
-  const make = makeAtmosphere;
-  return {
-    warm: make('rgba(255,214,140,0.09)', 'rgba(255,214,140,0.02)', 'rgba(120,80,140,0.06)', 0.3),
-    cool: make('rgba(150,180,215,0.10)', 'rgba(170,190,210,0.03)', 'rgba(90,110,150,0.07)', 0.34),
-    dusty: make('rgba(255,196,120,0.13)', 'rgba(255,220,160,0.05)', 'rgba(200,140,90,0.07)', 0.26),
-    interior: make('rgba(40,24,12,0.10)', 'rgba(0,0,0,0)', 'rgba(30,18,10,0.12)', 0.46, 'rgba(255,170,80,0.10)'),
-    // Winter coast: a pearl-grey fog ceiling, sea and sky one color. Flat
-    // light, soft vignette, no gold anywhere.
-    garua: make('rgba(202,208,214,0.20)', 'rgba(192,199,205,0.11)', 'rgba(168,180,190,0.10)', 0.2),
-    // Summer coast: hard blue glare off the water, black noon shadows.
-    glare: make('rgba(165,215,250,0.10)', 'rgba(255,250,235,0.05)', 'rgba(255,238,200,0.06)', 0.2),
-  };
-}
+const BUILT_IN_MOODS: Record<string, MoodPaint> = {
+  warm: { top: 'rgba(255,214,140,0.09)', mid: 'rgba(255,214,140,0.02)', bottom: 'rgba(120,80,140,0.06)', vig: 0.3 },
+  cool: { top: 'rgba(150,180,215,0.10)', mid: 'rgba(170,190,210,0.03)', bottom: 'rgba(90,110,150,0.07)', vig: 0.34 },
+  dusty: { top: 'rgba(255,196,120,0.13)', mid: 'rgba(255,220,160,0.05)', bottom: 'rgba(200,140,90,0.07)', vig: 0.26 },
+  interior: {
+    top: 'rgba(40,24,12,0.10)',
+    mid: 'rgba(0,0,0,0)',
+    bottom: 'rgba(30,18,10,0.12)',
+    vig: 0.46,
+    glow: 'rgba(255,170,80,0.10)',
+  },
+  // Winter coast: a pearl-grey fog ceiling, sea and sky one color. Flat
+  // light, soft vignette, no gold anywhere.
+  garua: { top: 'rgba(202,208,214,0.20)', mid: 'rgba(192,199,205,0.11)', bottom: 'rgba(168,180,190,0.10)', vig: 0.2 },
+  // Summer coast: hard blue glare off the water, black noon shadows.
+  glare: { top: 'rgba(165,215,250,0.10)', mid: 'rgba(255,250,235,0.05)', bottom: 'rgba(255,238,200,0.06)', vig: 0.2 },
+};
