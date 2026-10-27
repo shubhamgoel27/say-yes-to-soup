@@ -1058,12 +1058,47 @@ state.on('letter', (id) => {
 });
 // When saving stops working (full storage, private browsing), the player
 // hears about it once instead of losing every session from there on.
+// A warning a toast cannot carry: the toast queue holds through dialogue and
+// then shows for 2.4s, and a player who missed it played on for hours in a
+// window that saved nothing. This one stays, over everything, until the
+// journal under it changes or saving works again.
+const saveWarnEl = document.createElement('div');
+saveWarnEl.setAttribute('role', 'alert');
+saveWarnEl.hidden = true;
+Object.assign(saveWarnEl.style, {
+  position: 'absolute',
+  top: 'max(8px, env(safe-area-inset-top))',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  zIndex: '90',
+  maxWidth: 'min(92%, 560px)',
+  padding: '8px 14px',
+  background: 'var(--paper, #f4ead6)',
+  color: 'var(--ink, #2b2118)',
+  border: '1px solid #a0522d',
+  borderRadius: '6px',
+  boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+  font: '15px/1.4 Literata, Georgia, serif',
+  textAlign: 'center',
+  pointerEvents: 'none',
+});
+$('frame').appendChild(saveWarnEl);
+function showSaveWarning(text: string) {
+  saveWarnEl.textContent = text;
+  saveWarnEl.hidden = false;
+}
+function clearSaveWarning() {
+  saveWarnEl.hidden = true;
+}
 state.onPersistenceLost = () => {
-  toasts.show('⚠ the journal cannot be written here; this session will not be remembered');
+  showSaveWarning('⚠ this browser is not keeping the journal: what happens from here will not be remembered');
 };
 state.onSuperseded = () => {
-  toasts.show('⚠ this journal was written in another window; this one has stopped saving. Reload to pick up from there');
+  showSaveWarning('⚠ this journal is open in another window, which keeps it now; this one has stopped saving. Reload to pick up from there');
 };
+state.on('changed', () => {
+  if (!saveWarnEl.hidden && !state.persistenceLost && !state.superseded) clearSaveWarning();
+});
 // Bound mid-walk loss: the save also fires when the tab hides or closes,
 // and every 30 seconds of play, not only on story beats.
 // Only while playing: a fresh visitor idling at the title has no journey
@@ -5015,6 +5050,7 @@ function dropJourneyTransients() {
   welcomeTimer = 0;
   window.clearTimeout(resumeTimer);
   resumeTimer = 0;
+  clearSaveWarning(); // the next journal's saves will speak for themselves
   toasts.dismissAll();
   dropPlate();
   sloshes = 0;
