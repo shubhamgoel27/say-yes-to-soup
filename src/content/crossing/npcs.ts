@@ -527,7 +527,7 @@ export const CROSSING_NODES: NodeMap = {
   },
   'c3.jos.entrust.what': {
     lines: [
-      { who: 'Joseph', text: 'Sandalwood soap, and a photograph of this ship. She will scold the soap for its price and frame the photograph.' },
+      { who: 'Joseph', text: 'A folding umbrella from Japan, smaller than my hand. She will scold it for its price and carry it every day of the rains.' },
     ],
     next: 'c3.jos.entrust.yes',
   },

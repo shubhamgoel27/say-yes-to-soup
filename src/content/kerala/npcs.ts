@@ -878,7 +878,7 @@ export const KERALA_NODES: NodeMap = {
   // for a second visit, when he has had time to sit down.
   'c6.joseph.home': {
     lines: [
-      { text: 'A duffel hits the floor with the sound of nine months ending. In the doorway, salt-stained and grinning: Joseph.' },
+      { text: 'A duffel hits the floor with the sound of a contract ending. In the doorway, salt-stained and grinning: Joseph.' },
       { text: 'He sees his own letter on the shelf, soft at the creases, and stops. An able seaman, suddenly unable.' },
       { who: 'Joseph', text: 'You beat me home, friend. I sent you the slow road so I would win the race to my own kitchen.' },
     ],
@@ -923,7 +923,7 @@ export const KERALA_NODES: NodeMap = {
   },
   'c6.joseph.idle': {
     lines: [
-      { who: 'Joseph', text: 'Nine months of watches to sleep off, and Amma wakes me only for meals. It is the correct system; do not tell the sea.' },
+      { who: 'Joseph', text: 'A whole contract of watches to sleep off, and Amma wakes me only for meals. It is the correct system; do not tell the sea.' },
     ],
   },
 
