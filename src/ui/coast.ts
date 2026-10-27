@@ -1830,6 +1830,16 @@ export class CevichePanel {
     this.ui?.setHint(hintHtml(this.hint));
   }
 
+  /**
+   * The kitchen clock: a minute past noon, half a minute a step, a minute a
+   * spoiled lisa. The story's fish never run out, so the minutes stop at
+   * :59 rather than reading 12:67; the clock approves of noon, not of one.
+   */
+  private clock(): string {
+    const min = 1 + CEVICHE_ORDER.indexOf(this.step) * 0.5 + this.spoiled + (this.plate - 1) * 4.5;
+    return `12:${String(Math.min(59, Math.floor(min))).padStart(2, '0')}`;
+  }
+
   /** One ingredient on the shelf, painted at its own small still-life scale. */
   private paintMiseItem(g: CanvasRenderingContext2D, i: number, x: number, y: number) {
     switch (i) {
@@ -2228,11 +2238,10 @@ export class CevichePanel {
     }
 
     // The clock, still approving.
-    const clockMin = 1 + idx * 0.5 + this.spoiled + (this.plate - 1) * 4.5;
     g.fillStyle = 'rgba(255,248,235,0.65)';
     g.font = '11px system-ui, sans-serif';
     g.textAlign = 'right';
-    g.fillText(`12:${String(Math.floor(clockMin)).padStart(2, '0')} · the clock approves`, 628, 332);
+    g.fillText(`${this.clock()} · the clock approves`, 628, 332);
     g.textAlign = 'left';
   }
 }

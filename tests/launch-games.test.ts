@@ -198,3 +198,14 @@ describe('the dashi, the pale band', () => {
     assert.match(p.hint, /first big bubbles/);
   });
 });
+
+describe('the ceviche clock', () => {
+  it('reads a minute past noon at the board, and never 12:67 however many lisas die', () => {
+    const p = opened('c2.cook.start', false);
+    assert.equal(p.clock(), '12:01');
+    p.spoiled = 66; // the story's fish never run out
+    p.plate = 2;
+    p.step = 'pour';
+    assert.equal(p.clock(), '12:59');
+  });
+});
