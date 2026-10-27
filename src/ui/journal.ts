@@ -73,6 +73,26 @@ function threadKey(a: string, b: string): string {
   return [a, b].sort().join('~');
 }
 
+/**
+ * Where a scrolled list must sit so a row spanning [top, bottom) (in the
+ * list's own content coordinates) is wholly on the page, with `pad` of air
+ * above and `padEnd` below (the list's foot fades out, so the last row needs
+ * more). The scroll it already has when the row is on the page: the list
+ * moves only as far as it must, never recentres.
+ */
+export function revealScroll(
+  top: number,
+  bottom: number,
+  scroll: number,
+  view: number,
+  pad = 8,
+  padEnd = pad,
+): number {
+  if (top - pad < scroll) return Math.max(0, top - pad);
+  if (bottom + padEnd > scroll + view) return Math.min(Math.max(0, top - pad), bottom + padEnd - view);
+  return scroll;
+}
+
 export class JournalUI {
   private tab = 0;
   private opening = false;
@@ -83,6 +103,11 @@ export class JournalUI {
   private seenPages = new Set<string>();
   /** Rhyme pairs whose stitched thread has already drawn itself in. */
   private seenThreads = new Set<string>();
+  /** The tab the book last drew, so a redraw of the same tab keeps its place. */
+  private drawnTab = -1;
+  /** The latest pointer event to reach the book. While it is still being
+   * dispatched, whatever the cursor does is the pointer's doing. */
+  private pointerEv: Event | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -95,6 +120,17 @@ export class JournalUI {
     private placeOf: (id: string) => string | undefined = () => undefined,
   ) {
     this.resync();
+    // Captured before main.ts's own handlers hear it: a row chosen by hover
+    // or tap is the row under the pointer, and the list must not slide out
+    // from under it (the next click would land on a neighbour).
+    for (const type of ['mouseover', 'click', 'pointerdown', 'pointerup']) {
+      this.root.addEventListener?.(type, (e) => (this.pointerEv = e), true);
+    }
+  }
+
+  /** True while a hover, click or tap on the book is moving the cursor. */
+  private get pointerSteering(): boolean {
+    return !!this.pointerEv && this.pointerEv.eventPhase !== 0; // 0: Event.NONE, dispatch over
   }
 
   /** Everything already written counts as seen: at boot, and whenever a
@@ -255,10 +291,55 @@ export class JournalUI {
     sync();
   }
 
+  /**
+   * Every render rebuilds the book through innerHTML, and a rebuilt list
+   * starts at its top: with fifty pages on a tab the cursor walked off the
+   * page under the arrows, and a hover after dragging the scrollbar snapped
+   * the list back so the click picked the wrong row. The same tab keeps its
+   * scroll; the arrows, the pad and the wheel then bring the chosen row onto
+   * the page, while a hover or a tap (whose row is already under the
+   * pointer) leaves the list exactly where it was.
+   */
   private render() {
     const prev = this.root.querySelector<HTMLElement>('.j-tabs')?.scrollLeft ?? 0;
+    const same = this.drawnTab === this.tab;
+    const kept = same ? (this.root.querySelector<HTMLElement>('.j-list, .j-ph-grid')?.scrollTop ?? 0) : 0;
     this.renderTab();
+    this.drawnTab = this.tab;
     this.fitTabs(prev);
+    const list = this.root.querySelector<HTMLElement>('.j-list, .j-ph-grid');
+    if (!list) return;
+    if (kept > 0) list.scrollTop = kept;
+    if (!this.pointerSteering) this.keepSelVisible(list);
+  }
+
+  /** Scroll a page list just enough to show its selected row, the place
+   * heading it starts included; the last row brings the foot along. */
+  private keepSelVisible(list: HTMLElement) {
+    if (list.scrollHeight <= list.clientHeight) return;
+    const sel = list.querySelector<HTMLElement>('.j-item.sel');
+    if (!sel) return;
+    const rows = list.querySelectorAll('.j-item');
+    if (rows[0] === sel) {
+      list.scrollTop = 0;
+      return;
+    }
+    if (rows[rows.length - 1] === sel) {
+      list.scrollTop = list.scrollHeight;
+      return;
+    }
+    const head = sel.previousElementSibling;
+    const topEl = head?.classList.contains('j-place') ? (head as HTMLElement) : sel;
+    const box = list.getBoundingClientRect();
+    const at = (y: number) => y - box.top - list.clientTop + list.scrollTop;
+    list.scrollTop = revealScroll(
+      at(topEl.getBoundingClientRect().top),
+      at(sel.getBoundingClientRect().bottom),
+      list.scrollTop,
+      list.clientHeight,
+      8,
+      20,
+    );
   }
 
   private renderTab() {
@@ -423,7 +504,6 @@ export class JournalUI {
       copy.getContext('2d')?.drawImage(src, 0, 0);
       slot.appendChild(copy);
     }
-    this.root.querySelector('.j-ph-print.sel')?.scrollIntoView({ block: 'nearest' });
   }
 
   /**
