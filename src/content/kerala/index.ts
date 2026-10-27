@@ -208,6 +208,6 @@ export const CHAPTER: ChapterDef = {
   ],
   completion: {
     flag: 'c6.complete',
-    toasts: ['✦ the village calls you kunje now', 'a spice ship is turning west'],
+    toasts: ['✦ the village calls you kunje now', 'the rails run north'],
   },
 };
