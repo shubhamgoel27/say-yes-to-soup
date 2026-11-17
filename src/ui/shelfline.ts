@@ -93,3 +93,33 @@ export function stepShelfVerb(at: number, dir: 'left' | 'right', count: number):
 export function shelfOpenPlan(occupied: boolean): 'resume' | 'flyleaf' {
   return occupied ? 'resume' : 'flyleaf';
 }
+
+/** One stop on Nani's 1974 route, as the cover's route strip draws it. */
+export type RouteStamp = {
+  /** The stop's name on the route ("La Caleta", "the walled city"). */
+  name: string;
+  /** This journal has reached it: the stop is inked. */
+  stamped: boolean;
+  /** The furthest stop reached: where the journal now is. */
+  here: boolean;
+};
+
+/**
+ * Nani's route, stamped as far as this journal has come. A stop is reached
+ * when its chapter's arrival flag is in the journal (the first village needs
+ * none: every written journal began there), so the strip follows the story
+ * rather than the map underfoot, which in the Return is La Caleta again. No
+ * journal at all is eleven empty stops.
+ */
+export function routeStamps(data: SaveData | null): RouteStamp[] {
+  const flags = new Set(Array.isArray(data?.flags) ? data.flags : []);
+  const reached = ROUTE.map((_stop, i) => {
+    if (!data) return false;
+    if (i === 0) return true;
+    const flag = CHAPTERS[i]?.arrival?.flag;
+    return !!flag && flags.has(flag);
+  });
+  // Where the journal is now: the furthest reached stop.
+  const last = reached.lastIndexOf(true);
+  return ROUTE.map((stop, i) => ({ name: stop.name, stamped: reached[i] === true, here: i === last }));
+}

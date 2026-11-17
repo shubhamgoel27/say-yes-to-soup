@@ -340,12 +340,13 @@ describe('a gamepad in hand reads the pad\'s own buttons', () => {
       assert.match(text(), /B back/);
       assert.doesNotMatch(text(), /\bEsc\b|\bSpace\b|\bJ \//);
       menu.open('settings', true);
-      assert.match(text(), /Sound\|+on\|/, 'no M key on a pad');
+      assert.match(text(), /All sound\|+on\|/, 'no M key on a pad');
+      assert.doesNotMatch(text(), /\|M\|/, 'no key cap on a pad');
     } finally {
       noteDevice('keys');
     }
     menu.open('settings', true);
-    assert.match(text(), /on \(M\)/);
+    assert.match(text(), /All sound\|+on\|+M\|/, 'a keyboard sees the M key cap');
   });
 });
 
@@ -405,7 +406,8 @@ describe('itch\'s Fullscreen button counts as full screen', () => {
       const row = () => root.innerHTML.replace(/<[^>]+>/g, '|').replace(/\s*\|\s*/g, '|').match(/Fullscreen\|+(\w+)\|/)?.[1];
       menu.open('settings', true);
       assert.equal(row(), 'on', 'itch has the game full screen');
-      const onRow = () => root.innerHTML.includes('&#9656;&nbsp;Fullscreen');
+      // The chosen row carries .sel (its bookmark is drawn in CSS).
+      const onRow = () => /class="p-row sel">\s*<span class="p-label">Fullscreen/.test(root.innerHTML);
       for (let i = 0; i < 12 && !onRow(); i++) menu.onDir('down');
       assert.ok(onRow(), 'the cursor reaches the row');
       menu.onAction();

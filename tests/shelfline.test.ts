@@ -62,3 +62,20 @@ describe('the shelf cursor and the blank journal', () => {
     assert.equal(shelfOpenPlan(true), 'resume');
   });
 });
+
+describe('the cover’s route strip', () => {
+  it('stamps the first stop and every chapter arrived at, and marks the furthest', async () => {
+    const { routeStamps } = await import('../src/ui/shelfline');
+    const s = routeStamps(save({ flags: ['intro.done', 'c2.arrived', 'c3.arrived'] } as Partial<SaveData>));
+    assert.equal(s.length, 11);
+    assert.deepEqual(s.map((x) => x.stamped).slice(0, 4), [true, true, true, false]);
+    assert.equal(s.filter((x) => x.here).length, 1);
+    assert.equal(s[2]!.here, true);
+  });
+
+  it('no journal, no stamps', async () => {
+    const { routeStamps } = await import('../src/ui/shelfline');
+    const s = routeStamps(null);
+    assert.ok(s.every((x) => !x.stamped && !x.here));
+  });
+});
